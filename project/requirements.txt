@@ -1,0 +1,8 @@
+torch
+torchvision
+numpy
+pillow
+tqdm
+
+# Optional, only needed for CLAHE preprocessing.
+opencv-python
