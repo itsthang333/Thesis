@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # FracAtlas Anatomy-Aware Weakly Supervised Segmentation Pipeline
 
 This project implements a clean PyTorch baseline for weakly supervised medical image segmentation on the FracAtlas X-ray dataset.
