@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+# Dataset download here: 
+https://www.kaggle.com/datasets/mahmudulhasantasin/fracatlas-original-dataset
+
 # FracAtlas Anatomy-Aware Weakly Supervised Segmentation Pipeline
 
 This project implements a clean PyTorch baseline for weakly supervised medical image segmentation on the FracAtlas X-ray dataset.
