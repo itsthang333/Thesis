@@ -39,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kernel-size", type=int, default=5)
     parser.add_argument("--fusion", type=str, default="weighted_mean", choices=("weighted_mean", "max"))
     parser.add_argument("--use-clahe", action="store_true")
+    parser.add_argument("--crf-iter", type=int, default=5)
     return parser.parse_args()
 
 
