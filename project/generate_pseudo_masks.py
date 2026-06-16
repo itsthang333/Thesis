@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import pydensecrf.densecrf as dcrf
+from pydensecrf.utils import create_pairwise_bilateral, create_pairwise_gaussian, unary_from_softmax
+
 import argparse
 import sys
 from pathlib import Path
@@ -94,7 +97,9 @@ def main() -> None:
                 )
 
             aggregated_cam = aggregate_cam_heatmaps(per_class_cams, weights=class_weights, mode=args.fusion)
-            pseudo_mask = cam_to_pseudo_mask(
+            
+            # Hàm cũ của bạn (vẫn giữ để lấy mask thô)
+            pseudo_mask_raw = cam_to_pseudo_mask(
                 aggregated_cam,
                 percentile=args.percentile,
                 min_area=args.min_area,
@@ -102,13 +107,53 @@ def main() -> None:
             )
 
             image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
+            image_np_uint8 = np.array(image_pil)
+            
+            prob_mask = normalize_min_max(aggregated_cam)
+            
+            refined_mask = apply_dense_crf(image_np_uint8, prob_mask)
+
             mask_path = mask_dir / f"{Path(image_name).stem}.png"
             overlay_path = overlay_dir / f"{Path(image_name).stem}_aggregated.png"
-            save_mask(pseudo_mask, mask_path)
+            
+            save_mask(refined_mask, mask_path) 
             save_overlay(image_pil, aggregated_cam, overlay_path)
 
     gradcam.close()
 
+def apply_dense_crf(image_np: np.ndarray, prob_mask: np.ndarray, iter_num: int = 5) -> np.ndarray:
+    H, W = prob_mask.shape
+    
+    # Tạo tensor xác suất cho 2 class (Background, Foreground)
+    # Background prob = 1 - prob_mask
+    U = np.stack([1.0 - prob_mask, prob_mask], axis=0)
+    
+    # Thêm nhiễu nhỏ để tránh log(0)
+    U = U + 1e-5
+    U = U / U.sum(axis=0, keepdims=True)
+    
+    # Tính unary potential
+    unary = unary_from_softmax(U)
+    unary = np.ascontiguousarray(unary)
+    
+    image_np = np.ascontiguousarray(image_np)
+    
+    d = dcrf.DenseCRF2D(W, H, 2)
+    d.setUnaryEnergy(unary)
+    
+    # Pairwise Gaussian (làm mịn mask)
+    d.addPairwiseEnergy(create_pairwise_gaussian(sdims=(3, 3), shape=(H, W)), compat=3)
+    
+    # Pairwise Bilateral (bám viền xương dựa trên màu/độ sáng ảnh gốc)
+    d.addPairwiseEnergy(
+        create_pairwise_bilateral(sdims=(50, 50), srgb=(13, 13, 13), rgbim=image_np, compat=10),
+        compat=10
+    )
+    
+    Q = d.inference(iter_num)
+    map_soln = np.argmax(Q, axis=0).reshape((H, W))
+    
+    return (map_soln * 255).astype(np.uint8)
 
 if __name__ == "__main__":
     main()

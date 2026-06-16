@@ -47,6 +47,25 @@ def seed_everything(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
 
+import torch.nn.functional as F
+
+def focal_dice_loss(logits: torch.Tensor, targets: torch.Tensor, alpha: float = 0.25, gamma: float = 2.0) -> torch.Tensor:
+    # 1. Tính Focal Loss
+    bce_loss = F.binary_cross_entropy_with_logits(logits, targets, reduction='none')
+    pt = torch.exp(-bce_loss) # Xác suất dự đoán đúng
+    focal_loss = alpha * (1 - pt) ** gamma * bce_loss
+    focal_loss = focal_loss.mean()
+    
+    # 2. Tính Dice Loss
+    probs = torch.sigmoid(logits)
+    smooth = 1e-6
+    intersection = (probs * targets).sum(dim=(2, 3))
+    union = probs.sum(dim=(2, 3)) + targets.sum(dim=(2, 3))
+    dice_score = (2.0 * intersection + smooth) / (union + smooth)
+    dice_loss = 1.0 - dice_score.mean()
+    
+    # Trọng số kết hợp: 1 * Focal + 1 * Dice (có thể tinh chỉnh sau)
+    return focal_loss + dice_loss
 
 def run_epoch(model, loader, optimizer, device, train: bool) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
@@ -67,7 +86,7 @@ def run_epoch(model, loader, optimizer, device, train: bool) -> tuple[float, dic
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
-                loss = bce_dice_loss(logits, masks)
+                loss = focal_dice_loss(logits, masks)
 
             if train:
                 optimizer.zero_grad(set_to_none=True)
