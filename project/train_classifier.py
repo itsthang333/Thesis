@@ -71,7 +71,7 @@ def classification_metrics(logits: torch.Tensor, targets: torch.Tensor) -> dict[
     return {"acc": accuracy, "precision": precision, "recall": recall, "f1": f1}
 
 
-def run_epoch(model, loader, criterion, optimizer, device, train: bool) -> tuple[float, dict[str, float]]:
+def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
     aggregate = {"acc": 0.0, "precision": 0.0, "recall": 0.0, "f1": 0.0}
     batches = 0
@@ -80,7 +80,6 @@ def run_epoch(model, loader, criterion, optimizer, device, train: bool) -> tuple
     else:
         model.eval()
 
-    scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
     for images, targets, _ in progress:
         images = images.to(device)
@@ -152,6 +151,7 @@ def main() -> None:
     model = DenseNet121AnatomyClassifier(num_classes=len(target_columns), pretrained=not args.no_pretrained).to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
 
     history_path = args.output_dir / "training_log.csv"
     best_val_loss = float("inf")
@@ -161,8 +161,8 @@ def main() -> None:
         writer.writerow(["epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1", "val_loss", "val_acc", "val_precision", "val_recall", "val_f1"])
 
     for epoch in range(1, args.epochs + 1):
-        train_loss, train_metrics = run_epoch(model, train_loader, criterion, optimizer, device, train=True)
-        val_loss, val_metrics = run_epoch(model, val_loader, criterion, optimizer, device, train=False)
+        train_loss, train_metrics = run_epoch(model, train_loader, criterion, optimizer, scaler, device, train=True)
+        val_loss, val_metrics = run_epoch(model, val_loader, criterion, optimizer, scaler, device, train=False)
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -185,10 +185,10 @@ def main() -> None:
             f"val_loss={val_loss:.4f} val_f1={val_metrics['f1']:.4f}"
         )
 
-        save_checkpoint(args.output_dir / "last.pt", model, optimizer, epoch, best_val_loss, target_columns)
+        save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            save_checkpoint(args.output_dir / "best.pt", model, optimizer, epoch, best_val_loss, target_columns)
+            save_checkpoint(args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns)
 
 
 if __name__ == "__main__":

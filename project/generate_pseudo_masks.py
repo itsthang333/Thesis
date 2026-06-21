@@ -1,12 +1,24 @@
 from __future__ import annotations
 
+"""Stage 2 — Generate pseudo bone masks using LayerCAM + SAM.
+
+Pipeline per pipeline.md:
+  Image
+  → DenseNet121 → logits → sigmoid weights
+  → LayerCAM (denseblock2/3/4, confidence-filtered, weighted-average fused)
+  → Adaptive threshold → connected components → peak extraction (SAM prompts)
+  → SAM ViT-B → candidate masks
+  → CAM-guided mask selection (score = mean CAM inside mask)
+  → Morphological refinement (closing → opening → fill_holes → remove_small)
+  → Final pseudo mask saved as PNG
+"""
+
 import argparse
 import sys
 from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -16,45 +28,70 @@ if str(ROOT) not in sys.path:
 
 from datasets.fracatlas import FracAtlasClassificationDataset
 from models.classifier import DenseNet121AnatomyClassifier
-from models.gradcam import GradCAM
-from pseudo.cam_to_mask import aggregate_cam_heatmaps, cam_to_pseudo_mask, normalize_min_max
+from models.layercam import LayerCAM
+from pseudo.generate_layercam import generate_fused_cam
+from pseudo.extract_prompts import extract_point_prompts
+from pseudo.sam_refine import SAMPredictor
+from pseudo.mask_selection import select_and_fuse_masks
+from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate pseudo masks from Grad-CAM")
+    parser = argparse.ArgumentParser(description="Generate pseudo masks via LayerCAM + SAM")
     parser.add_argument("--data-root", type=Path, default=ROOT.parent / "FracAtlas")
     parser.add_argument("--csv-path", type=Path, default=None)
     parser.add_argument("--image-root", type=Path, default=None)
-    parser.add_argument("--checkpoint", type=Path, default=ROOT / "outputs" / "classifier" / "best.pt")
+    parser.add_argument("--classifier-checkpoint", type=Path,
+                        default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
+    parser.add_argument("--sam-checkpoint", type=Path, default=None,
+                        help="Path to sam_vit_b_01ec64.pth (auto-downloaded if absent)")
     parser.add_argument("--target-columns", type=str, default="hand,leg,hip,shoulder")
     parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "pseudo_masks")
-    parser.add_argument("--percentile", type=float, default=80.0)
-    parser.add_argument("--min-area", type=int, default=200)
-    parser.add_argument("--kernel-size", type=int, default=5)
-    parser.add_argument("--fusion", type=str, default="weighted_mean", choices=("weighted_mean", "max"))
+    parser.add_argument("--confidence-threshold", type=float, default=0.5,
+                        help="Min sigmoid score for a class CAM to participate in fusion")
+    parser.add_argument("--cam-percentile", type=float, default=85.0,
+                        help="Percentile threshold for foreground extraction (85/90/95)")
+    parser.add_argument("--max-points", type=int, default=5,
+                        help="Max SAM prompt points per image")
+    parser.add_argument("--min-component-area", type=int, default=100,
+                        help="Min pixels for a CAM component to generate a prompt")
+    parser.add_argument("--mask-score-threshold", type=float, default=0.4,
+                        help="Min mean-CAM score for a SAM mask to be kept")
+    parser.add_argument("--closing-kernel", type=int, default=5)
+    parser.add_argument("--opening-kernel", type=int, default=3)
+    parser.add_argument("--min-size", type=int, default=200)
     parser.add_argument("--use-clahe", action="store_true")
-    parser.add_argument("--confidence-threshold", type=float, default=0.3)
     return parser.parse_args()
 
 
-def load_classifier(checkpoint_path: Path, num_classes: int, device: torch.device) -> DenseNet121AnatomyClassifier:
+def load_classifier(
+    checkpoint_path: Path,
+    num_classes: int,
+    device: torch.device,
+) -> DenseNet121AnatomyClassifier:
     model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
-    state_dict = torch.load(checkpoint_path, map_location="cpu")
-    model.load_state_dict(state_dict["model_state_dict"], strict=True)
+    state = torch.load(checkpoint_path, map_location="cpu")
+    model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device)
     model.eval()
     return model
+
+
+def tensor_to_rgb_numpy(image_tensor: torch.Tensor) -> np.ndarray:
+    """Convert a [3,H,W] normalised tensor to [H,W,3] uint8 RGB numpy for SAM."""
+    pil = tensor_to_pil(image_tensor.detach().cpu())
+    return np.array(pil, dtype=np.uint8)
 
 
 def main() -> None:
     args = parse_args()
     csv_path = args.csv_path or (args.data_root / "dataset.csv")
     image_root = args.image_root or (args.data_root / "images")
-    target_columns = [column.strip() for column in args.target_columns.split(",") if column.strip()]
+    target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
     dataset = FracAtlasClassificationDataset(
         csv_path=csv_path,
@@ -64,87 +101,106 @@ def main() -> None:
         augment=False,
         use_clahe=args.use_clahe,
     )
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.num_workers,
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = load_classifier(args.checkpoint, num_classes=len(target_columns), device=device)
-    gradcam = GradCAM(model, model.features.denseblock4, device=device)
+    classifier = load_classifier(args.classifier_checkpoint, len(target_columns), device)
+    layercam = LayerCAM(classifier, device=device)
+
+    sam_predictor = SAMPredictor(
+        checkpoint_path=args.sam_checkpoint,
+        auto_download=(args.sam_checkpoint is None),
+        device=str(device),
+    )
 
     mask_dir = args.output_dir / "masks"
     overlay_dir = args.output_dir / "overlays"
     mask_dir.mkdir(parents=True, exist_ok=True)
     overlay_dir.mkdir(parents=True, exist_ok=True)
 
-    for images, _, image_names in tqdm(loader, desc="pseudo-masks"):
-        images = images.to(device)
+    skipped = 0
+    try:
+        for images, _, image_names in tqdm(loader, desc="pseudo-masks"):
+            images = images.to(device)
 
-        for index, image_name in enumerate(image_names):
-            image_tensor = images[index : index + 1]
-            
-            model.zero_grad(set_to_none=True)
-            if hasattr(gradcam, '_clear_buffers'):
-                gradcam._clear_buffers()
-                
-            logits = model(image_tensor)
-            class_probs = torch.sigmoid(logits)[0].detach().cpu().numpy()
+            for idx, image_name in enumerate(image_names):
+                image_tensor = images[idx : idx + 1]  # [1,3,H,W]
+                mask_path = mask_dir / f"{Path(image_name).stem}.png"
 
-            if np.max(class_probs) < args.confidence_threshold:
-                continue
+                # ── 1. Classifier forward ─────────────────────────────────────
+                with torch.no_grad():
+                    logits = classifier(image_tensor)
+                    class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
 
-            class_weights = class_probs.copy()
-            class_weights[class_weights < args.confidence_threshold] = 0.0
-            
-            activations = gradcam.activations
-            if activations is None:
-                raise RuntimeError("Activations were not captured.")
+                # Skip images where classifier is not confident about any class
+                if float(class_weights.max()) < args.confidence_threshold:
+                    save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
+                    skipped += 1
+                    continue
 
-            per_class_cams: list[np.ndarray] = []
-            
-            for class_index, class_name in enumerate(target_columns):
-                model.zero_grad(set_to_none=True)
-                
-                logits[0, class_index].backward(retain_graph=True)
-                
-                gradients = gradcam.gradients
-                if gradients is None:
-                    raise RuntimeError(f"Gradients not captured for class {class_name}.")
-                
-                weights = gradients.mean(dim=(2, 3), keepdim=True)
-                cam = (weights * activations).sum(dim=1, keepdim=True)
-                cam = torch.relu(cam)
-                cam = cam - cam.amin(dim=(2, 3), keepdim=True)
-                cam = cam / (cam.amax(dim=(2, 3), keepdim=True) + 1e-8)
-                cam = F.interpolate(cam, size=image_tensor.shape[-2:], mode="bilinear", align_corners=False)
-                
-                cam_np = cam.squeeze().detach().cpu().numpy()
-                per_class_cams.append(cam_np)
-                
-                save_overlay(
-                    tensor_to_pil(image_tensor[0].detach().cpu()),
-                    normalize_min_max(cam_np),
-                    overlay_dir / f"{Path(image_name).stem}_{class_name}.png",
+                # ── 2. LayerCAM fusion ────────────────────────────────────────
+                fused_cam, per_class_cams, active_indices = generate_fused_cam(
+                    layercam,
+                    image_tensor,
+                    class_weights=class_weights,
+                    confidence_threshold=args.confidence_threshold,
                 )
 
-            del logits, activations, gradients
-            model.zero_grad(set_to_none=True)
-            if hasattr(gradcam, '_clear_buffers'):
-                gradcam._clear_buffers()
+                # save per-class and fused CAM overlays
+                image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
+                for local_i, cls_i in enumerate(active_indices):
+                    cls_name = target_columns[cls_i]
+                    save_overlay(
+                        image_pil,
+                        per_class_cams[local_i],
+                        overlay_dir / f"{Path(image_name).stem}_{cls_name}.png",
+                    )
+                save_overlay(
+                    image_pil,
+                    fused_cam,
+                    overlay_dir / f"{Path(image_name).stem}_fused_layercam.png",
+                )
 
-            aggregated_cam = aggregate_cam_heatmaps(per_class_cams, weights=class_weights, mode=args.fusion)
-            pseudo_mask = cam_to_pseudo_mask(
-                aggregated_cam,
-                percentile=args.percentile,
-                min_area=args.min_area,
-                kernel_size=args.kernel_size,
-            )
+                # ── 3. Prompt extraction ──────────────────────────────────────
+                point_prompts = extract_point_prompts(
+                    fused_cam,
+                    cam_percentile=args.cam_percentile,
+                    max_points=args.max_points,
+                    min_component_area=args.min_component_area,
+                )
 
-            image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
-            mask_path = mask_dir / f"{Path(image_name).stem}.png"
-            overlay_path = overlay_dir / f"{Path(image_name).stem}_aggregated.png"
-            save_mask(pseudo_mask, mask_path)
-            save_overlay(image_pil, aggregated_cam, overlay_path)
+                # ── 4. SAM candidate masks ────────────────────────────────────
+                image_rgb = tensor_to_rgb_numpy(image_tensor[0])
+                sam_masks, _sam_scores = sam_predictor.predict_from_points(
+                    image_rgb, point_prompts
+                )
 
-    gradcam.close()
+                # ── 5. CAM-guided mask selection ──────────────────────────────
+                refined = select_and_fuse_masks(
+                    sam_masks,
+                    fused_cam,
+                    mask_score_threshold=args.mask_score_threshold,
+                )
+
+                # ── 6. Morphological refinement ───────────────────────────────
+                final_mask = morphological_refinement(
+                    refined,
+                    closing_kernel=args.closing_kernel,
+                    opening_kernel=args.opening_kernel,
+                    min_size=args.min_size,
+                )
+
+                # ── 7. Save ───────────────────────────────────────────────────
+                save_mask(final_mask, mask_path)
+    finally:
+        layercam.close()
+
+    print(f"\nDone. Masks saved to {mask_dir} (skipped {skipped} low-confidence images)")
 
 
 if __name__ == "__main__":

@@ -54,7 +54,7 @@ def build_aligned_indices(dataset: FracAtlasSegmentationDataset, data_root: Path
     global_stems = []
     
     if csv_path.exists():
-        with csv_path.open("r", encoding="utf-8") as f:
+        with csv_path.open("r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             col_name = "image_id" if "image_id" in reader.fieldnames else reader.fieldnames[0]
             for row in reader:
@@ -74,16 +74,12 @@ def build_aligned_indices(dataset: FracAtlasSegmentationDataset, data_root: Path
     train_indices = []
     val_indices = []
     
-    dataset_paths = getattr(dataset, "image_paths", getattr(dataset, "images", None))
-    
-    print("Đang đồng bộ hóa Train/Val split với Stage 1...")
-    for i in range(len(dataset)):
-        if dataset_paths is not None:
-            stem = Path(dataset_paths[i]).stem
-        else:
-            _, _, name = dataset[i]
-            stem = Path(name).stem
+    # FracAtlasSegmentationDataset.samples is list[tuple[Path, Path]]
+    dataset_paths = [s[0] for s in dataset.samples]
 
+    print("Đang đồng bộ hóa Train/Val split với Stage 1...")
+    for i, img_path in enumerate(dataset_paths):
+        stem = img_path.stem
         if stem in stage1_train_stems:
             train_indices.append(i)
         elif stem in stage1_val_stems:
@@ -93,7 +89,7 @@ def build_aligned_indices(dataset: FracAtlasSegmentationDataset, data_root: Path
     return train_indices, val_indices
 
 
-def run_epoch(model, loader, optimizer, scaler, device, train: bool) -> tuple[float, dict[str, float]]:
+def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
     total_dice = 0.0
     total_iou = 0.0
@@ -186,7 +182,7 @@ def main() -> None:
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet(in_channels=3, out_channels=1, base_channels=32).to(device)
+    model = UNet(in_channels=3, out_channels=1, base_channels=64).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
@@ -201,8 +197,8 @@ def main() -> None:
         writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
 
     for epoch in range(1, args.epochs + 1):
-        train_loss, train_metrics = run_epoch(model, train_loader, optimizer, scaler, device, train=True)
-        val_loss, val_metrics = run_epoch(model, val_loader, optimizer, scaler, device, train=False)
+        train_loss, train_metrics = run_epoch(model, train_loader, scaler, device, train=True, optimizer=optimizer)
+        val_loss, val_metrics = run_epoch(model, val_loader, scaler, device, train=False)
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -221,11 +217,11 @@ def main() -> None:
             f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f}"
         )
 
-        save_checkpoint(args.output_dir / "last.pt", model, optimizer, epoch, best_val_dice)
-        
+        save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice)
+
         if val_metrics["dice"] > best_val_dice:
             best_val_dice = val_metrics["dice"]
-            save_checkpoint(args.output_dir / "best.pt", model, optimizer, epoch, best_val_dice)
+            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice)
             print(f"--> Đã lưu Best Model mới với Dice = {best_val_dice:.4f}")
 
 

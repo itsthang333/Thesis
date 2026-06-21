@@ -6,3 +6,7 @@ tqdm
 
 # Optional, only needed for CLAHE preprocessing.
 opencv-python
+
+# SAM — install from source (required for Stage 2 pseudo mask generation)
+# pip install git+https://github.com/facebookresearch/segment-anything.git
+segment-anything @ git+https://github.com/facebookresearch/segment-anything.git

@@ -43,6 +43,3 @@ class DenseNet121AnatomyClassifier(nn.Module):
         if return_features:
             return logits, features
         return logits
-
-
-ResNet50Classifier = DenseNet121AnatomyClassifier
