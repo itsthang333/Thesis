@@ -23,18 +23,24 @@ class GradCAM:
         self.device = device or next(model.parameters()).device
         self.activations: torch.Tensor | None = None
         self.gradients: torch.Tensor | None = None
+        
         self._forward_handle = target_layer.register_forward_hook(self._forward_hook)
         self._backward_handle = target_layer.register_full_backward_hook(self._backward_hook)
 
     def close(self) -> None:
         self._forward_handle.remove()
         self._backward_handle.remove()
+        self._clear_buffers()
+
+    def _clear_buffers(self) -> None:
+        self.activations = None
+        self.gradients = None
 
     def _forward_hook(self, module, inputs, output):
-        self.activations = output.detach()
+        self.activations = output
 
     def _backward_hook(self, module, grad_input, grad_output):
-        self.gradients = grad_output[0].detach()
+        self.gradients = grad_output[0]
 
     def _resolve_logits(self, outputs):
         if isinstance(outputs, (tuple, list)):
@@ -43,6 +49,9 @@ class GradCAM:
 
     def _compute_cam(self, input_tensor: torch.Tensor, class_index: int) -> GradCAMOutput:
         self.model.zero_grad(set_to_none=True)
+        self._clear_buffers()
+
+        # --- Forward Pass ---
         outputs = self.model(input_tensor)
         logits = self._resolve_logits(outputs)
 
@@ -54,19 +63,27 @@ class GradCAM:
         else:
             selected_scores = logits[:, class_index]
 
-        selected_scores.sum().backward()
+        # --- Backward Pass ---
+        selected_scores.sum().backward(retain_graph=True)
 
         if self.activations is None or self.gradients is None:
             raise RuntimeError("Grad-CAM hooks did not capture activations and gradients.")
 
         activations = self.activations
         gradients = self.gradients
+        
         weights = gradients.mean(dim=(2, 3), keepdim=True)
         cam = (weights * activations).sum(dim=1, keepdim=True)
         cam = torch.relu(cam)
+        
         cam = cam - cam.amin(dim=(2, 3), keepdim=True)
         cam = cam / (cam.amax(dim=(2, 3), keepdim=True) + 1e-8)
+        
         cam = F.interpolate(cam, size=input_tensor.shape[-2:], mode="bilinear", align_corners=False)
+        
+        self._clear_buffers()
+        self.model.zero_grad(set_to_none=True)
+
         return GradCAMOutput(logits=logits, cam=cam.squeeze(1))
 
     def cam_for_class(self, input_tensor: torch.Tensor, class_index: int) -> GradCAMOutput:

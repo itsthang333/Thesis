@@ -21,10 +21,11 @@ from models.unet import UNet
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train U-Net on pseudo masks")
+    parser = argparse.ArgumentParser(description="Train U-Net on pseudo masks with GT validation")
     parser.add_argument("--data-root", type=Path, default=ROOT.parent / "FracAtlas")
     parser.add_argument("--image-root", type=Path, default=None)
-    parser.add_argument("--mask-root", type=Path, default=ROOT / "outputs" / "pseudo_masks" / "masks")
+    parser.add_argument("--mask-root", type=Path, default=ROOT / "outputs" / "pseudo_masks" / "masks", help="Pseudo masks cho Train")
+    parser.add_argument("--gt-mask-root", type=Path, default=None, help="Ground Truth masks cho Validation")
     parser.add_argument("--image-size", type=int, default=SegmentationConfig.image_size)
     parser.add_argument("--batch-size", type=int, default=SegmentationConfig.batch_size)
     parser.add_argument("--lr", type=float, default=SegmentationConfig.lr)
@@ -48,7 +49,51 @@ def seed_everything(seed: int) -> None:
     np.random.seed(seed)
 
 
-def run_epoch(model, loader, optimizer, device, train: bool) -> tuple[float, dict[str, float]]:
+def build_aligned_indices(dataset: FracAtlasSegmentationDataset, data_root: Path, image_root: Path, val_fraction: float, seed: int) -> tuple[list[int], list[int]]:
+    csv_path = data_root / "dataset.csv"
+    global_stems = []
+    
+    if csv_path.exists():
+        with csv_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            col_name = "image_id" if "image_id" in reader.fieldnames else reader.fieldnames[0]
+            for row in reader:
+                global_stems.append(Path(row[col_name]).stem)
+    else:
+        global_files = sorted([f for f in image_root.iterdir() if f.is_file()])
+        global_stems = [f.stem for f in global_files if f.suffix.lower() in (".jpg", ".png", ".jpeg")]
+
+    if not global_stems:
+        raise RuntimeError("Không tìm thấy dữ liệu gốc để tái tạo tập split của Stage 1.")
+
+    global_train_idx, global_val_idx = build_train_val_indices(len(global_stems), val_fraction=val_fraction, seed=seed)
+    
+    stage1_train_stems = {global_stems[i] for i in global_train_idx}
+    stage1_val_stems = {global_stems[i] for i in global_val_idx}
+
+    train_indices = []
+    val_indices = []
+    
+    dataset_paths = getattr(dataset, "image_paths", getattr(dataset, "images", None))
+    
+    print("Đang đồng bộ hóa Train/Val split với Stage 1...")
+    for i in range(len(dataset)):
+        if dataset_paths is not None:
+            stem = Path(dataset_paths[i]).stem
+        else:
+            _, _, name = dataset[i]
+            stem = Path(name).stem
+
+        if stem in stage1_train_stems:
+            train_indices.append(i)
+        elif stem in stage1_val_stems:
+            val_indices.append(i)
+            
+    print(f"Đã ánh xạ: {len(train_indices)} ảnh cho Train, {len(val_indices)} ảnh cho Validation.")
+    return train_indices, val_indices
+
+
+def run_epoch(model, loader, optimizer, scaler, device, train: bool) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
     total_dice = 0.0
     total_iou = 0.0
@@ -58,7 +103,6 @@ def run_epoch(model, loader, optimizer, device, train: bool) -> tuple[float, dic
     else:
         model.eval()
 
-    scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
     for images, masks, _ in progress:
         images = images.to(device)
@@ -106,16 +150,37 @@ def main() -> None:
     seed_everything(args.seed)
 
     image_root = args.image_root or (args.data_root / "images")
-    dataset = FracAtlasSegmentationDataset(
+    
+    train_base_dataset = FracAtlasSegmentationDataset(
         image_roots=image_root,
         mask_root=args.mask_root,
         image_size=args.image_size,
-        augment=True,
+        augment=True, # Train CẦN augment
         use_clahe=args.use_clahe,
     )
-    train_indices, val_indices = build_train_val_indices(len(dataset), val_fraction=args.val_fraction, seed=args.seed)
-    train_dataset = Subset(dataset, train_indices)
-    val_dataset = Subset(dataset, val_indices)
+    
+    val_mask_root = args.gt_mask_root if args.gt_mask_root else args.mask_root
+    if not args.gt_mask_root:
+        print("[CẢNH BÁO] Không có GT masks. Model đang đánh giá validation trên Pseudo Masks!")
+        
+    val_base_dataset = FracAtlasSegmentationDataset(
+        image_roots=image_root,
+        mask_root=val_mask_root,
+        image_size=args.image_size,
+        augment=False,
+        use_clahe=args.use_clahe,
+    )
+    
+    train_indices, val_indices = build_aligned_indices(
+        dataset=train_base_dataset, 
+        data_root=args.data_root, 
+        image_root=image_root, 
+        val_fraction=args.val_fraction, 
+        seed=args.seed
+    )
+    
+    train_dataset = Subset(train_base_dataset, train_indices)
+    val_dataset = Subset(val_base_dataset, val_indices)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
@@ -124,16 +189,20 @@ def main() -> None:
     model = UNet(in_channels=3, out_channels=1, base_channels=32).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
+    scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
+
     history_path = args.output_dir / "training_log.csv"
-    best_val_loss = float("inf")
+    
+    best_val_dice = 0.0 
+    
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with history_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
 
     for epoch in range(1, args.epochs + 1):
-        train_loss, train_metrics = run_epoch(model, train_loader, optimizer, device, train=True)
-        val_loss, val_metrics = run_epoch(model, val_loader, optimizer, device, train=False)
+        train_loss, train_metrics = run_epoch(model, train_loader, optimizer, scaler, device, train=True)
+        val_loss, val_metrics = run_epoch(model, val_loader, optimizer, scaler, device, train=False)
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -152,10 +221,12 @@ def main() -> None:
             f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f}"
         )
 
-        save_checkpoint(args.output_dir / "last.pt", model, optimizer, epoch, best_val_loss)
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            save_checkpoint(args.output_dir / "best.pt", model, optimizer, epoch, best_val_loss)
+        save_checkpoint(args.output_dir / "last.pt", model, optimizer, epoch, best_val_dice)
+        
+        if val_metrics["dice"] > best_val_dice:
+            best_val_dice = val_metrics["dice"]
+            save_checkpoint(args.output_dir / "best.pt", model, optimizer, epoch, best_val_dice)
+            print(f"--> Đã lưu Best Model mới với Dice = {best_val_dice:.4f}")
 
 
 if __name__ == "__main__":

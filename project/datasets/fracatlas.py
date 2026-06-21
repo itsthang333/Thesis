@@ -66,7 +66,10 @@ def _apply_clahe(image: Image.Image) -> Image.Image:
     return Image.fromarray(rgb)
 
 
-def _make_image_transform(image_size: int, augment: bool = False) -> transforms.Compose:
+# --- REFACTOR: TÁCH BIỆT CÁC HÀM TRANSFORM ---
+
+def _make_classification_transform(image_size: int, augment: bool = False) -> transforms.Compose:
+    """Transform dành riêng cho Classification (chỉ áp dụng trên ảnh, tự do augment hình học)"""
     transform_list: list[object] = [transforms.Resize((image_size, image_size))]
     if augment:
         transform_list.append(transforms.RandomHorizontalFlip(p=0.5))
@@ -79,7 +82,20 @@ def _make_image_transform(image_size: int, augment: bool = False) -> transforms.
     return transforms.Compose(transform_list)
 
 
-def _make_mask_transform(image_size: int) -> transforms.Compose:
+def _make_segmentation_image_transform(image_size: int) -> transforms.Compose:
+    """
+    Transform ảnh cơ bản cho Segmentation.
+    KHÔNG ĐƯỢC CHỨA hình học (Flip, Rotate...) vì chúng phải được áp dụng đồng bộ với mask.
+    """
+    return transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+    ])
+
+
+def _make_segmentation_mask_transform(image_size: int) -> transforms.Compose:
+    """Transform cho Mask (Dùng nội suy NEAREST để giữ nguyên giá trị nhãn)"""
     return transforms.Compose(
         [
             transforms.Resize((image_size, image_size), interpolation=transforms.InterpolationMode.NEAREST),
@@ -104,7 +120,8 @@ class FracAtlasClassificationDataset(Dataset):
         self.image_size = image_size
         self.augment = augment
         self.use_clahe = use_clahe
-        self.image_transform = _make_image_transform(image_size, augment=augment)
+        # Sử dụng đúng hàm transform của classification
+        self.image_transform = _make_classification_transform(image_size, augment=augment)
 
         with self.csv_path.open("r", newline="", encoding="utf-8-sig") as handle:
             reader = csv.DictReader(handle)
@@ -172,8 +189,10 @@ class FracAtlasSegmentationDataset(Dataset):
         self.image_size = image_size
         self.augment = augment
         self.use_clahe = use_clahe
-        self.image_transform = _make_image_transform(image_size, augment=False)
-        self.mask_transform = _make_mask_transform(image_size)
+        
+        # Sử dụng các hàm transform đã được thiết kế an toàn cho Segmentation
+        self.image_transform = _make_segmentation_image_transform(image_size)
+        self.mask_transform = _make_segmentation_mask_transform(image_size)
 
         self.samples: list[tuple[Path, Path]] = []
         unique_image_paths = sorted(set(self.image_index.values()))
@@ -209,6 +228,7 @@ class FracAtlasSegmentationDataset(Dataset):
         if self.use_clahe:
             image = _apply_clahe(image)
 
+        # Áp dụng Augmentation HÌNH HỌC thủ công đồng thời lên cả Image và Mask
         if self.augment and random.random() < 0.5:
             image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             mask = mask.transpose(Image.Transpose.FLIP_LEFT_RIGHT)

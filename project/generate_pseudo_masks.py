@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -36,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kernel-size", type=int, default=5)
     parser.add_argument("--fusion", type=str, default="weighted_mean", choices=("weighted_mean", "max"))
     parser.add_argument("--use-clahe", action="store_true")
+    parser.add_argument("--confidence-threshold", type=float, default=0.3)
     return parser.parse_args()
 
 
@@ -78,20 +80,55 @@ def main() -> None:
 
         for index, image_name in enumerate(image_names):
             image_tensor = images[index : index + 1]
-            with torch.no_grad():
-                logits = model(image_tensor)
-                class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
+            
+            model.zero_grad(set_to_none=True)
+            if hasattr(gradcam, '_clear_buffers'):
+                gradcam._clear_buffers()
+                
+            logits = model(image_tensor)
+            class_probs = torch.sigmoid(logits)[0].detach().cpu().numpy()
+
+            if np.max(class_probs) < args.confidence_threshold:
+                continue
+
+            class_weights = class_probs.copy()
+            class_weights[class_weights < args.confidence_threshold] = 0.0
+            
+            activations = gradcam.activations
+            if activations is None:
+                raise RuntimeError("Activations were not captured.")
 
             per_class_cams: list[np.ndarray] = []
-            class_names = target_columns
-            for class_index, class_name in enumerate(class_names):
-                cam_output = gradcam.cam_for_class(image_tensor, class_index=class_index)
-                per_class_cams.append(cam_output.cam[0].detach().cpu().numpy())
+            
+            for class_index, class_name in enumerate(target_columns):
+                model.zero_grad(set_to_none=True)
+                
+                logits[0, class_index].backward(retain_graph=True)
+                
+                gradients = gradcam.gradients
+                if gradients is None:
+                    raise RuntimeError(f"Gradients not captured for class {class_name}.")
+                
+                weights = gradients.mean(dim=(2, 3), keepdim=True)
+                cam = (weights * activations).sum(dim=1, keepdim=True)
+                cam = torch.relu(cam)
+                cam = cam - cam.amin(dim=(2, 3), keepdim=True)
+                cam = cam / (cam.amax(dim=(2, 3), keepdim=True) + 1e-8)
+                cam = F.interpolate(cam, size=image_tensor.shape[-2:], mode="bilinear", align_corners=False)
+                
+                cam_np = cam.squeeze().detach().cpu().numpy()
+                per_class_cams.append(cam_np)
+                
                 save_overlay(
                     tensor_to_pil(image_tensor[0].detach().cpu()),
-                    normalize_min_max(per_class_cams[-1]),
+                    normalize_min_max(cam_np),
                     overlay_dir / f"{Path(image_name).stem}_{class_name}.png",
                 )
+
+            del logits, activations, gradients
+            model.zero_grad(set_to_none=True)
+            if hasattr(gradcam, '_clear_buffers'):
+                gradcam._clear_buffers()
 
             aggregated_cam = aggregate_cam_heatmaps(per_class_cams, weights=class_weights, mode=args.fusion)
             pseudo_mask = cam_to_pseudo_mask(
