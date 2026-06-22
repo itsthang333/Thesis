@@ -72,6 +72,8 @@ class SAMPredictor:
         self,
         image_rgb: np.ndarray,
         point_prompts: list[tuple[int, int]],
+        debug_dir: str | Path | None = None,
+        image_pil=None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Run SAM with foreground point prompts.
 
@@ -82,6 +84,8 @@ class SAMPredictor:
         Args:
             image_rgb:     [H, W, 3] uint8 RGB numpy array.
             point_prompts: list of (row, col) tuples from extract_prompts.
+            debug_dir:     If set, saves mask PNGs, overlay PNGs, and scores.json.
+            image_pil:     PIL Image used for overlays (falls back to image_rgb).
 
         Returns:
             masks:  [P*3, H, W] bool array — 3 candidates per prompt point.
@@ -108,4 +112,53 @@ class SAMPredictor:
             all_masks.append(masks)    # [3, H, W]
             all_scores.append(scores)  # [3]
 
-        return np.concatenate(all_masks, axis=0), np.concatenate(all_scores, axis=0)
+        combined_masks = np.concatenate(all_masks, axis=0)
+        combined_scores = np.concatenate(all_scores, axis=0)
+
+        if debug_dir is not None:
+            self._save_debug(debug_dir, image_rgb, image_pil, combined_masks, combined_scores)
+
+        return combined_masks, combined_scores
+
+    def _save_debug(
+        self,
+        debug_dir: str | Path,
+        image_rgb: np.ndarray,
+        image_pil,
+        masks: np.ndarray,
+        scores: np.ndarray,
+    ) -> None:
+        """Save candidate masks, overlays, and scores JSON for debugging."""
+        import json
+        from PIL import Image as _Image
+
+        debug_dir = Path(debug_dir)
+        debug_dir.mkdir(parents=True, exist_ok=True)
+
+        base_img = np.array(image_pil.convert("RGB")) if image_pil is not None else image_rgb
+
+        score_info: dict[str, dict] = {}
+        for idx in range(masks.shape[0]):
+            mask = masks[idx]  # bool [H, W]
+            area = int(mask.sum())
+
+            # mask PNG (white on black)
+            mask_path = debug_dir / f"mask_{idx}.png"
+            _Image.fromarray(mask.astype(np.uint8) * 255, mode="L").save(mask_path)
+
+            # overlay PNG
+            overlay = base_img.copy().astype(np.float32)
+            green = np.zeros_like(overlay)
+            green[..., 1] = 255.0
+            overlay[mask] = overlay[mask] * 0.4 + green[mask] * 0.6
+            overlay_path = debug_dir / f"overlay_mask_{idx}.png"
+            _Image.fromarray(overlay.clip(0, 255).astype(np.uint8)).save(overlay_path)
+
+            score_info[f"mask_{idx}"] = {
+                "score": round(float(scores[idx]), 4),
+                "area": area,
+            }
+
+        scores_path = debug_dir / "scores.json"
+        with scores_path.open("w") as f:
+            json.dump(score_info, f, indent=2)

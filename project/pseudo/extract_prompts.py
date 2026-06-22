@@ -45,6 +45,8 @@ def extract_point_prompts(
     cam_percentile: float = 85.0,
     max_points: int = 5,
     min_component_area: int = 100,
+    debug_dir: str | None = None,
+    image_pil=None,
 ) -> list[tuple[int, int]]:
     """Return (row, col) peak points for SAM prompts.
 
@@ -53,6 +55,8 @@ def extract_point_prompts(
         cam_percentile:      Threshold percentile (85 / 90 / 95 per pipeline.md).
         max_points:          Cap on number of prompt points.
         min_component_area:  Ignore components smaller than this.
+        debug_dir:           If set, saves foreground.png, component_*.png, layercam_with_points.png.
+        image_pil:           PIL Image for the CAM+points overlay.
 
     Returns:
         List of (row, col) tuples, sorted by CAM value descending.
@@ -76,5 +80,67 @@ def extract_point_prompts(
     # sort by cam value descending, cap at max_points
     peaks.sort(key=lambda x: x[0], reverse=True)
     peaks = peaks[:max_points]
+    result = [(r, c) for _, r, c in peaks]
 
-    return [(r, c) for _, r, c in peaks]
+    if debug_dir is not None:
+        _save_prompt_debug(debug_dir, bone_cam, fg, components, min_component_area, result, image_pil)
+
+    return result
+
+
+def _save_prompt_debug(
+    debug_dir,
+    bone_cam: np.ndarray,
+    fg: np.ndarray,
+    components: list,
+    min_component_area: int,
+    point_prompts: list[tuple[int, int]],
+    image_pil,
+) -> None:
+    """Save foreground mask, per-component masks, and CAM+points overlay."""
+    from pathlib import Path
+    from PIL import Image as _Image, ImageDraw
+
+    debug_dir = Path(debug_dir)
+    debug_dir.mkdir(parents=True, exist_ok=True)
+
+    # foreground mask
+    _Image.fromarray(fg * 255, mode="L").save(debug_dir / "foreground.png")
+
+    # per-component masks (only those above min_component_area)
+    h, w = bone_cam.shape
+    comp_idx = 0
+    for comp in components:
+        if len(comp) < min_component_area:
+            continue
+        comp_mask = np.zeros((h, w), dtype=np.uint8)
+        for r, c in comp:
+            comp_mask[r, c] = 255
+        _Image.fromarray(comp_mask, mode="L").save(debug_dir / f"component_{comp_idx}.png")
+        comp_idx += 1
+
+    # CAM + prompt points overlay — jet colormap
+    red = np.clip(1.5 - np.abs(4.0 * bone_cam - 3.0), 0.0, 1.0)
+    green = np.clip(1.5 - np.abs(4.0 * bone_cam - 2.0), 0.0, 1.0)
+    blue = np.clip(1.5 - np.abs(4.0 * bone_cam - 1.0), 0.0, 1.0)
+    cam_rgb = (np.stack([red, green, blue], axis=-1) * 255).astype(np.uint8)
+
+    if image_pil is not None:
+        base = np.array(image_pil.convert("RGB")).astype(np.float32)
+        cam_rgb_f = cam_rgb.astype(np.float32)
+        blended = (0.55 * base + 0.45 * cam_rgb_f).clip(0, 255).astype(np.uint8)
+        overlay_img = _Image.fromarray(blended)
+    else:
+        overlay_img = _Image.fromarray(cam_rgb)
+
+    draw = ImageDraw.Draw(overlay_img)
+    for i, (r, c) in enumerate(point_prompts):
+        radius = max(6, min(h, w) // 60)
+        draw.ellipse(
+            [c - radius, r - radius, c + radius, r + radius],
+            fill=(255, 0, 0),
+            outline=(255, 255, 255),
+        )
+        draw.text((c + radius + 2, r - radius), str(i), fill=(255, 255, 0))
+
+    overlay_img.save(debug_dir / "layercam_with_points.png")

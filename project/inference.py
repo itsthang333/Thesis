@@ -42,6 +42,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--closing-kernel", type=int, default=5)
     parser.add_argument("--opening-kernel", type=int, default=3)
     parser.add_argument("--min-size", type=int, default=200)
+    parser.add_argument("--selection-method", type=str, default="mean",
+                        choices=["mean", "sum", "mean_area"],
+                        help="CAM-guided mask scoring method")
+    parser.add_argument("--debug", action="store_true",
+                        help="Save SAM candidate masks and prompt overlays for debugging")
     return parser.parse_args()
 
 
@@ -106,20 +111,29 @@ def main() -> None:
                      args.output_dir / f"{stem}_fused_layercam.png")
 
         # ── Stage 3: prompt extraction ───────────────────────────────────────
+        debug_dir = args.output_dir / "debug" / stem if args.debug else None
         point_prompts = extract_point_prompts(
             fused_cam,
             cam_percentile=args.cam_percentile,
             max_points=args.max_points,
             min_component_area=args.min_component_area,
+            debug_dir=debug_dir,
+            image_pil=image_pil_denorm,
         )
 
         # ── Stage 4: SAM ────────────────────────────────────────────────────
         image_rgb = np.array(image_pil_denorm, dtype=np.uint8)
-        sam_masks, _ = sam_predictor.predict_from_points(image_rgb, point_prompts)
+        sam_masks, _ = sam_predictor.predict_from_points(
+            image_rgb, point_prompts,
+            debug_dir=debug_dir,
+            image_pil=image_pil_denorm,
+        )
 
         # ── Stage 5: CAM-guided mask selection ──────────────────────────────
         refined = select_and_fuse_masks(
-            sam_masks, fused_cam, mask_score_threshold=args.mask_score_threshold
+            sam_masks, fused_cam,
+            mask_score_threshold=args.mask_score_threshold,
+            selection_method=args.selection_method,
         )
 
         # ── Stage 6: morphological refinement ───────────────────────────────
