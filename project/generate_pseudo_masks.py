@@ -66,7 +66,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-size", type=int, default=200)
     parser.add_argument("--use-clahe", action="store_true")
     parser.add_argument("--selection-method", type=str, default="mean",
-                        choices=["mean", "sum", "mean_area"],
+                        choices=["mean", "sum", "mean_area", "coverage", "hybrid"],
                         help="CAM-guided mask scoring method")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")

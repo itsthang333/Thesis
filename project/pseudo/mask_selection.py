@@ -5,10 +5,12 @@ from __future__ import annotations
 import numpy as np
 
 # Supported scoring methods:
-#   "mean"      : score = mean(cam inside mask)                   — default
+#   "mean"      : score = mean(cam inside mask)
 #   "sum"       : score = sum(cam inside mask)                    — favors large masks
 #   "mean_area" : score = mean(cam) * sqrt(area)                  — balanced size+quality
-SELECTION_METHODS = ("mean", "sum", "mean_area")
+#   "coverage"  : score = fraction of mask pixels where cam > 0.5 — rewards full coverage
+#   "hybrid"    : score = 0.7*mean(cam) + 0.3*log1p(area)/log1p(H*W) — mean + area bonus
+SELECTION_METHODS = ("mean", "sum", "mean_area", "coverage", "hybrid")
 
 
 def score_masks(
@@ -21,7 +23,7 @@ def score_masks(
     Args:
         masks:    [N, H, W] bool or uint8.
         bone_cam: [H, W] float32 in [0, 1].
-        method:   One of "mean", "sum", "mean_area".
+        method:   One of "mean", "sum", "mean_area", "coverage", "hybrid".
 
     Returns:
         scores: [N] float32 array.
@@ -43,6 +45,14 @@ def score_masks(
             scores[i] = float(cam_vals.sum())
         elif method == "mean_area":
             scores[i] = float(cam_vals.mean()) * float(np.sqrt(area))
+        elif method == "coverage":
+            # fraction of mask pixels that are "activated" (cam > 0.5)
+            scores[i] = float((cam_vals > 0.5).sum()) / area
+        elif method == "hybrid":
+            # mean CAM quality + log-normalised area bonus
+            total_pixels = float(bone_cam.size)
+            area_bonus = float(np.log1p(area) / np.log1p(total_pixels))
+            scores[i] = 0.7 * float(cam_vals.mean()) + 0.3 * area_bonus
     return scores
 
 

@@ -57,7 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-component-area", type=int, default=100)
     parser.add_argument("--mask-score-threshold", type=float, default=0.4)
     parser.add_argument("--selection-method", type=str, default="mean",
-                        choices=["mean", "sum", "mean_area"])
+                        choices=["mean", "sum", "mean_area", "coverage", "hybrid"])
     parser.add_argument("--fusion-topk", type=int, default=0,
                         help="0=OR all above-thresh, k>1=union top-k, k<0=intersect top-|k|")
     parser.add_argument("--closing-kernel", type=int, default=5)
