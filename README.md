@@ -1,281 +1,311 @@
-<<<<<<< HEAD
-# Dataset download here: 
-https://www.kaggle.com/datasets/mahmudulhasantasin/fracatlas-original-dataset
+# Phân đoạn ảnh xương dựa trên học giám sát yếu (Weakly-Supervised Bone Segmentation)
 
-# FracAtlas Anatomy-Aware Weakly Supervised Segmentation Pipeline
+> **Thesis project** — FracAtlas X-ray dataset  
+> Pipeline: **DenseNet121 → LayerCAM → SAM ViT-B → U-Net**
 
-This project implements a clean PyTorch baseline for weakly supervised medical image segmentation on the FracAtlas X-ray dataset.
+---
 
-Pipeline:
+## Mục tiêu
 
-`X-ray -> DenseNet121 multi-label anatomy classifier -> per-class Grad-CAM -> CAM aggregation -> pseudo bone mask generation -> U-Net segmentation -> final bone mask`
+Phân đoạn vùng xương (bone vs background) trong ảnh X-quang chỉ sử dụng nhãn phân loại mức ảnh (image-level anatomy labels: `hand`, `leg`, `hip`, `shoulder`) thay vì nhãn pixel.
 
-Current target:
+---
 
-- bone vs background
-- anatomy-aware localization, not fracture localization
+## Pipeline tổng quan
 
-## What Is Included
+```
+X-ray image
+  │
+  ▼
+DenseNet121 (multi-label anatomy classifier)
+  │  sigmoid scores per class
+  ▼
+LayerCAM (multi-layer: denseblock2/3/4, weighted fusion)
+  │  confidence-filtered fused CAM [H, W]
+  ▼
+Adaptive threshold → connected components → peak extraction
+  │  point prompts [(row, col), ...]
+  ▼
+SAM ViT-B (point-prompted, multimask_output=True)
+  │  candidate masks [N, H, W]
+  ▼
+CAM-guided mask selection + fusion (mean / sum / mean_area)
+  │  fused binary mask [H, W]
+  ▼
+Morphological refinement (closing → opening → fill_holes → remove_small)
+  │  pseudo mask [H, W]
+  ▼
+U-Net (BCE + Dice loss)
+  │
+  ▼
+Final segmentation mask
+```
 
-- `train_classifier.py` trains a DenseNet121 multi-label anatomy classifier.
-- `generate_pseudo_masks.py` runs per-class Grad-CAM and aggregates anatomy CAMs into pseudo segmentation masks.
-- `train_segmentation.py` trains a U-Net on the pseudo masks.
-- `inference.py` runs the full pipeline on one image and saves CAM, pseudo mask, and final segmentation outputs.
+---
 
-Core modules:
+## Cấu trúc thư mục
 
-- `datasets/fracatlas.py` FracAtlas dataset loading, indexing, CLAHE preprocessing, and train/val splits.
-- `models/classifier.py` DenseNet121 classifier with explicit feature extraction for Grad-CAM.
-- `models/gradcam.py` manual Grad-CAM implementation using forward and backward hooks plus CAM aggregation helpers.
-- `models/unet.py` binary U-Net segmentation model.
-- `models/losses.py` Dice, IoU, and combined BCE + Dice losses.
-- `pseudo/cam_to_mask.py` CAM normalization, thresholding, morphology, and component filtering.
-- `pseudo/visualization.py` CAM overlay and mask saving helpers.
+```
+Thesis/
+├── project/                        # Source code
+│   ├── train_classifier.py         # Stage 1: train DenseNet121
+│   ├── generate_pseudo_masks.py    # Stage 2: LayerCAM + SAM → pseudo masks
+│   ├── train_segmentation.py       # Stage 3: train U-Net
+│   ├── inference.py                # Stage 4: full pipeline inference (1 ảnh)
+│   ├── visualize_pipeline.py       # Debug strip 6-panel (+ --debug flag)
+│   │
+│   ├── datasets/
+│   │   └── fracatlas.py            # Dataset loading, CLAHE, train/val split
+│   │
+│   ├── models/
+│   │   ├── classifier.py           # DenseNet121AnatomyClassifier
+│   │   ├── layercam.py             # LayerCAM (hooks on denseblock2/3/4)
+│   │   ├── unet.py                 # U-Net (base_channels=64, encoder 64→1024)
+│   │   └── losses.py               # bce_dice_loss, dice_coefficient, iou_score
+│   │
+│   └── pseudo/
+│       ├── generate_layercam.py    # generate_fused_cam (weighted CAM fusion)
+│       ├── extract_prompts.py      # extract_point_prompts (CAM → SAM prompts)
+│       ├── sam_refine.py           # SAMPredictor wrapper
+│       ├── mask_selection.py       # score_masks, select_and_fuse_masks
+│       ├── morphology.py           # morphological_refinement
+│       └── visualization.py        # overlay_heatmap, save_mask, tensor_to_pil
+│
+├── thesis_experiment.ipynb         # Notebook chạy trên Google Colab
+└── FracAtlas/                      # Dataset (không commit vào git)
+    ├── dataset.csv
+    └── images/
+```
 
-## Data Layout
+---
 
-Expected workspace layout:
+## Dataset
 
-```text
-project/
+FracAtlas: [Kaggle link](https://www.kaggle.com/datasets/mahmudulhasantasin/fracatlas-original-dataset)
+
+`dataset.csv` cần có cột `image_id` và các cột nhãn `hand`, `leg`, `hip`, `shoulder` (giá trị 0/1).
+
+```
 FracAtlas/
-  dataset.csv
-  images/
-  Annotations/
-    COCO JSON/
-    PASCAL VOC/
-    YOLO/
+├── dataset.csv
+└── images/
+    ├── IMG0000001.jpg
+    └── ...
 ```
 
-The code expects `dataset.csv` to contain at least the `image_id` column and one or more anatomy label columns such as `hand`, `leg`, `hip`, and `shoulder`.
+---
 
-By default, the scripts look for images under:
+## Cài đặt môi trường
 
-- `FracAtlas/images`
-
-If your images live elsewhere, pass `--image-root` explicitly.
-
-## Environment Setup
-
-The repository was validated with a local virtual environment at:
-
-- `d:/thesis/.venv/Scripts/python.exe`
-
-Install dependencies:
-
-```powershell
-cd D:\thesis\project
-d:/thesis/.venv/Scripts/python.exe -m pip install -r requirements.txt
+```bash
+pip install torch torchvision numpy pillow tqdm opencv-python kagglehub
+pip install git+https://github.com/facebookresearch/segment-anything.git
 ```
 
-Optional dependency:
+SAM checkpoint (375 MB) — tải về thủ công hoặc để `auto_download=True`:
 
-- `opencv-python` is only needed if you enable CLAHE preprocessing.
-
-## Stage 1: Train the Classifier
-
-Train the DenseNet121 classifier on FracAtlas anatomy labels.
-
-Default target columns:
-
-- `hand`
-- `leg`
-- `hip`
-- `shoulder`
-
-Example:
-
-```powershell
-cd D:\thesis\project
-d:/thesis/.venv/Scripts/python.exe train_classifier.py `
-  --data-root D:\thesis\FracAtlas `
-  --target-columns hand,leg,hip,shoulder `
-  --batch-size 8 `
-  --image-size 512 `
-  --epochs 25 `
-  --lr 1e-4 `
-  --weight-decay 1e-4 `
-  --output-dir D:\thesis\project\outputs\classifier
+```bash
+wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
 ```
 
-Useful flags:
+---
 
-- `--no-pretrained` disables ImageNet weights.
-- `--use-clahe` applies CLAHE-like contrast enhancement before resizing and normalization.
-- `--target-columns hand,leg,hip,shoulder,frontal,lateral,oblique` enables multi-label anatomy and view classification.
+## Chạy từng stage
 
-What the classifier returns:
+### Stage 1 — Train classifier
 
-- logits with shape `[B, C]`
-- final convolutional feature maps with shape `[B, 1024, H/32, W/32]`
-
-Grad-CAM target layer:
-
-- `model.features.denseblock4`
-
-Outputs saved in:
-
-- `outputs/classifier/best.pt`
-- `outputs/classifier/last.pt`
-- `outputs/classifier/training_log.csv`
-
-## Stage 2: Generate Pseudo Masks
-
-Run Grad-CAM independently for each anatomy class, aggregate the class CAMs, and convert the result into a binary pseudo bone mask.
-
-Example:
-
-```powershell
-cd D:\thesis\project
-d:/thesis/.venv/Scripts/python.exe generate_pseudo_masks.py `
-  --data-root D:\thesis\FracAtlas `
-  --checkpoint D:\thesis\project\outputs\classifier\best.pt `
-  --target-columns hand,leg,hip,shoulder `
-  --percentile 80 `
-  --min-area 200 `
-  --kernel-size 5 `
-  --output-dir D:\thesis\project\outputs\pseudo_masks
+```bash
+python train_classifier.py \
+  --data-root ../FracAtlas \
+  --target-columns hand,leg,hip,shoulder \
+  --image-size 384 \
+  --batch-size 4 \
+  --epochs 25 \
+  --output-dir outputs/classifier
 ```
 
-What happens in this stage:
+Checkpoint lưu tại `outputs/classifier/best_classifier.pt`.
 
-- Grad-CAM feature activations and gradients are captured from `features.denseblock4`.
-- CAMs are produced separately for each anatomy class.
-- The per-class CAMs are normalized and fused with weighted averaging or max fusion.
-- A percentile threshold turns the aggregated CAM into a binary foreground mask.
-- Morphology cleanup removes noise.
-- Hole filling restores enclosed bone regions.
-- Connected-component filtering removes tiny fragments and keeps the largest component by default.
+---
 
-Saved outputs:
+### Stage 2 — Sinh pseudo masks (LayerCAM + SAM)
 
-- `outputs/pseudo_masks/masks/*.png`
-- `outputs/pseudo_masks/overlays/*.png`
-
-Pseudo mask encoding:
-
-- `0 = background`
-- `1 = bone`
-
-## Stage 3: Train the Segmentation Model
-
-Train the U-Net using the pseudo masks as supervision.
-
-Important:
-
-- The segmentation loader expects image/mask files to share the same stem, for example `IMG0000019.jpg` and `IMG0000019.png`.
-- Masks should be stored in the directory passed via `--mask-root`.
-
-Example:
-
-```powershell
-cd D:\thesis\project
-d:/thesis/.venv/Scripts/python.exe train_segmentation.py `
-  --data-root D:\thesis\FracAtlas `
-  --mask-root D:\thesis\project\outputs\pseudo_masks\masks `
-  --batch-size 8 `
-  --image-size 512 `
-  --epochs 25 `
-  --lr 1e-4 `
-  --weight-decay 1e-4 `
-  --output-dir D:\thesis\project\outputs\segmentation
+```bash
+python generate_pseudo_masks.py \
+  --data-root ../FracAtlas \
+  --classifier-checkpoint outputs/classifier/best_classifier.pt \
+  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
+  --target-columns hand,leg,hip,shoulder \
+  --image-size 384 \
+  --confidence-threshold 0.5 \
+  --cam-percentile 85.0 \
+  --max-points 5 \
+  --mask-score-threshold 0.4 \
+  --selection-method mean \
+  --output-dir outputs/pseudo_masks
 ```
 
-U-Net tensor flow:
+**Flags quan trọng:**
 
-- input image: `[B, 3, H, W]`
-- output logits: `[B, 1, H, W]`
-- sigmoid probability map: `[B, 1, H, W]`
+| Flag | Mặc định | Mô tả |
+|------|----------|-------|
+| `--confidence-threshold` | `0.5` | Sigmoid score tối thiểu để class tham gia CAM fusion |
+| `--cam-percentile` | `85.0` | Ngưỡng percentile để tách foreground từ CAM |
+| `--max-points` | `5` | Số lượng prompt points tối đa gửi cho SAM |
+| `--mask-score-threshold` | `0.4` | Min CAM mean score để giữ mask SAM |
+| `--selection-method` | `mean` | `mean` / `sum` / `mean_area` |
+| `--debug` | off | Lưu debug output: SAM masks, scores.json, CAM overlay |
 
-Loss:
-
-- `BCEWithLogits + Dice`
-
-Metrics:
-
-- Dice
-- IoU
-
-Saved outputs:
-
-- `outputs/segmentation/best.pt`
-- `outputs/segmentation/last.pt`
-- `outputs/segmentation/training_log.csv`
-
-## Stage 4: Full Inference
-
-Run the complete pipeline on a single X-ray:
-
-`image -> anatomy classifier -> per-class Grad-CAM -> CAM aggregation -> pseudo mask -> U-Net -> final mask`
-
-Example:
-
-```powershell
-cd D:\thesis\project
-d:/thesis/.venv/Scripts/python.exe inference.py `
-  --image-path D:\thesis\FracAtlas\images\IMG0000019.jpg `
-  --classifier-checkpoint D:\thesis\project\outputs\classifier\best.pt `
-  --segmentation-checkpoint D:\thesis\project\outputs\segmentation\best.pt `
-  --image-size 512 `
-  --percentile 80 `
-  --min-area 200 `
-  --kernel-size 5 `
-  --output-dir D:\thesis\project\outputs\inference
+Kết quả:
+```
+outputs/pseudo_masks/
+├── masks/          # binary PNG (0=background, 1=bone)
+├── overlays/       # LayerCAM overlay PNG
+└── debug/<stem>/   # (nếu --debug) mask_*.png, scores.json, foreground.png, ...
 ```
 
-Inference outputs:
+---
 
-- `*_cam_overlay.png`
-- `*_pseudo_mask.png`
-- `*_segmentation_mask.png`
-- `*_final_overlay.png`
+### Stage 3 — Train U-Net
 
-## Grad-CAM Notes
-
-The Grad-CAM implementation is manual and does not depend on external Grad-CAM libraries.
-
-The tensor flow is:
-
-```text
-input image [B, 3, H, W]
-  -> DenseNet121 backbone
-  -> target layer: features.denseblock4
-  -> activations [B, 1024, H/32, W/32]
-  -> gradients from selected anatomy class score
-  -> channel weights via global average pooling
-  -> CAM [B, 1, H/32, W/32]
-  -> upsampled CAM [B, H, W]
+```bash
+python train_segmentation.py \
+  --data-root ../FracAtlas \
+  --mask-root outputs/pseudo_masks/masks \
+  --image-size 384 \
+  --batch-size 4 \
+  --epochs 25 \
+  --output-dir outputs/segmentation
 ```
 
-For multi-label anatomy supervision, the classifier predicts several anatomy classes at once, and each class gets its own CAM. These CAMs are then fused into a single attention map that better covers the full bone extent than a fracture-only CAM.
+Checkpoint lưu tại `outputs/segmentation/best_unet.pt`.
 
-For binary classification, the code uses the single output logit. For multi-label classification, it selects the requested class index or the highest-scoring class.
+---
 
-## Practical Tips
+### Stage 4 — Inference (1 ảnh)
 
-- Start with `--image-size 512` if GPU memory allows.
-- If you run out of memory, try `--image-size 384` or `--batch-size 4`.
-- If pseudo masks are too sparse, lower `--threshold` slightly.
-- If pseudo masks are too noisy, raise `--threshold` or increase `--min-area`.
-- Use the pseudo-mask overlays before segmentation training to sanity-check the CAM quality.
+```bash
+python inference.py \
+  --image-path ../FracAtlas/images/IMG0000019.jpg \
+  --classifier-checkpoint outputs/classifier/best_classifier.pt \
+  --segmentation-checkpoint outputs/segmentation/best_unet.pt \
+  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
+  --image-size 384 \
+  --output-dir outputs/inference
+```
 
-## Extending The Baseline
+Outputs:
+```
+outputs/inference/
+├── <stem>_fused_layercam.png
+├── <stem>_pseudo_mask.png
+├── <stem>_segmentation_mask.png
+└── <stem>_final_overlay.png
+```
 
-This codebase is intentionally modular so you can add later research ideas without rewriting the pipeline:
+---
 
-- multi-scale CAM
-- AdvCAM
-- SAM refinement
-- S2C refinement
+### Visualize pipeline (1 ảnh, debug strip)
 
-The best insertion points are:
+```bash
+python visualize_pipeline.py \
+  --image-path ../FracAtlas/images/IMG0000019.jpg \
+  --classifier-checkpoint outputs/classifier/best_classifier.pt \
+  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
+  --selection-method mean \
+  --debug \
+  --output-path outputs/viz/IMG0000019_pipeline.png
+```
 
-- CAM generation: `models/gradcam.py`
-- CAM-to-mask logic: `pseudo/cam_to_mask.py`
-- Segmentation model/losses: `models/unet.py` and `models/losses.py`
+Sinh 6-panel figure: **Original | LayerCAM | Foreground | Prompts | SAM masks | Pseudo Mask**
 
-## Notes
+Với `--debug`, thêm vào `outputs/viz/debug/<stem>/`:
+- `mask_0.png`, `overlay_mask_0.png`, ... — các mask SAM candidate
+- `scores.json` — CAM score + area của từng mask
+- `foreground.png` — vùng foreground từ CAM threshold
+- `component_*.png` — từng connected component
+- `layercam_with_points.png` — CAM overlay với prompt points
 
-- The project currently assumes the FracAtlas images and labels are available locally.
-- The dataset split is a simple seeded random split; if you need a stratified split, add it in `datasets/fracatlas.py` or in the training scripts.
-- The code compiles cleanly under the workspace Python environment.
+---
+
+## Notebook (Google Colab)
+
+`thesis_experiment.ipynb` — chạy toàn bộ pipeline trên Colab, lưu output vào Google Drive.
+
+### Cấu trúc notebook
+
+| Section | Nội dung |
+|---------|---------|
+| 1. Setup | Mount Drive, clone repo, cài dependencies, tải SAM checkpoint |
+| 2. Stage 1 | Train DenseNet121 classifier |
+| 3. Stage 2 | Sinh pseudo masks (LayerCAM + SAM) |
+| 4. Stage 3 | Train U-Net |
+| 5. Inference | Chạy pipeline 1 ảnh, hiển thị kết quả |
+| 6. Debug & Experiments | E1–E5: debug SAM masks, CAM coverage, selection comparison, batch 20 ảnh |
+| 7. Bottleneck Analysis | Task A/B/C trên 100 ảnh: SAM success rate, bảng GOOD/PARTIAL/BAD, winner/runner-up |
+| 8. Multi-Mask Fusion | So sánh top-k union vs intersection vs OR-all |
+| 9. Best Strategy Training | Regen pseudo masks + retrain U-Net với strategy tốt nhất, so sánh Dice/IoU |
+
+### Outputs trên Drive
+
+```
+ThesisOutputs/
+├── classifier/          # best_classifier.pt, training_log.csv
+├── pseudo_masks/        # masks/, overlays/
+├── segmentation/        # best_unet.pt, training_log.csv
+├── inference/           # per-image outputs
+├── debug_viz/           # pipeline strips + debug outputs (E1-E3)
+├── e4_selection/        # so sánh mean/sum/mean_area (E4)
+├── e5_batch20/          # grid 20 ảnh đại diện (E5)
+├── bottleneck_100/      # Task A/B/C — 100 ảnh analysis
+├── fusion_compare/      # so sánh fusion strategies (Bước 2)
+└── pseudo_masks_best_*/  # pseudo masks với best strategy
+```
+
+---
+
+## Chi tiết kỹ thuật
+
+### LayerCAM
+
+Khác Grad-CAM: không dùng GAP(gradients) × activations mà dùng **element-wise** `A × relu(G)`.
+
+```
+layer_cam = relu(A * relu(G))   # element-wise, không có GAP
+```
+
+3 layers được hook: `denseblock2` (weight 0.2), `denseblock3` (0.3), `denseblock4` (0.5).  
+Chỉ các class có sigmoid score ≥ `confidence_threshold` tham gia fusion.
+
+### SAM Prompt Strategy
+
+Từ fused CAM:
+1. Threshold theo percentile → binary foreground
+2. Connected components filtering (min area = 100px)
+3. Lấy peak point (argmax CAM) trong mỗi component
+4. Gửi từng point riêng lẻ cho SAM với `multimask_output=True` → 3 masks/point
+
+### Mask Selection Methods
+
+| Method | Công thức |
+|--------|-----------|
+| `mean` | `mean(CAM[mask])` |
+| `sum` | `sum(CAM[mask])` — ưu tiên mask lớn |
+| `mean_area` | `mean(CAM[mask]) × sqrt(area)` — cân bằng quality + size |
+
+### Fusion Topk (`fusion_topk`)
+
+| Giá trị | Hành vi |
+|---------|---------|
+| `0` hoặc `1` | OR tất cả masks >= threshold (mặc định) |
+| `k > 1` | Union (OR) của top-k masks |
+| `k < 0` | Intersection (AND) của top-\|k\| masks |
+
+---
+
+## Ghi chú
+
+- Pipeline không cần GT masks ở Stage 1–2, chỉ cần image-level labels.
+- SAM checkpoint **không** được commit vào git (375 MB) — tải về riêng hoặc dùng `auto_download=True`.
+- Dataset FracAtlas **không** được commit vào git — tải từ Kaggle.
+- Segmentation checkpoint lưu tên `best_unet.pt` (không phải `best.pt`).

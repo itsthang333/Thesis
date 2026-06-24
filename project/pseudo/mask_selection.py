@@ -51,17 +51,23 @@ def select_and_fuse_masks(
     bone_cam: np.ndarray,
     mask_score_threshold: float = 0.4,
     selection_method: str = "mean",
+    fusion_topk: int = 0,
 ) -> np.ndarray:
-    """Select masks whose CAM score exceeds threshold, then logical-OR them.
+    """Select masks whose CAM score exceeds threshold, then fuse them.
 
-    If no mask passes the threshold, fall back to the single best-scoring mask
-    to guarantee a non-empty pseudo mask.
+    fusion_topk controls how the top-scored masks are combined:
+      0 or 1 : logical-OR of all above-threshold masks (original behaviour)
+      k > 1  : union (logical-OR) of the top-k above-threshold masks
+      k < 0  : intersection (logical-AND) of the top-|k| above-threshold masks
+
+    If no mask passes the threshold, fall back to the single best-scoring mask.
 
     Args:
         masks:               [N, H, W] bool/uint8 from SAM.
         bone_cam:            [H, W] float32 in [0, 1].
         mask_score_threshold: Masks below this are discarded.
         selection_method:    "mean" | "sum" | "mean_area" (see SELECTION_METHODS).
+        fusion_topk:         Fusion mode (0=default OR, k>1=top-k union, k<0=top-|k| intersection).
 
     Returns:
         pseudo_mask: [H, W] uint8 binary mask (0 / 1).
@@ -71,13 +77,32 @@ def select_and_fuse_masks(
         return np.zeros((h, w), dtype=np.uint8)
 
     scores = score_masks(masks, bone_cam, method=selection_method)
-    selected = masks[scores >= mask_score_threshold]
+    order = np.argsort(scores)[::-1]
+    above = [i for i in order if scores[i] >= mask_score_threshold]
 
     # fallback: keep best mask if nothing passes threshold
-    if selected.shape[0] == 0:
-        best_idx = int(np.argmax(scores))
-        selected = masks[best_idx : best_idx + 1]
+    if not above:
+        above = [int(order[0])]
 
-    # logical OR fusion
-    fused = selected.any(axis=0).astype(np.uint8)
-    return fused
+    if fusion_topk == 1:
+        # top-1 only — return the single best-scoring mask
+        return masks[above[0]].copy().astype(np.uint8)
+    elif fusion_topk == 0:
+        # default: logical-OR of all above-threshold masks
+        selected = masks[above]
+        return selected.any(axis=0).astype(np.uint8)
+    elif fusion_topk > 1:
+        # union of top-k
+        topk = above[:fusion_topk]
+        fused = masks[topk[0]].copy().astype(bool)
+        for i in topk[1:]:
+            fused = fused | masks[i].astype(bool)
+        return fused.astype(np.uint8)
+    else:
+        # fusion_topk < 0 → intersection of top-|k|
+        k = abs(fusion_topk)
+        topk = above[:k]
+        fused = masks[topk[0]].copy().astype(bool)
+        for i in topk[1:]:
+            fused = fused & masks[i].astype(bool)
+        return fused.astype(np.uint8)

@@ -58,6 +58,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mask-score-threshold", type=float, default=0.4)
     parser.add_argument("--selection-method", type=str, default="mean",
                         choices=["mean", "sum", "mean_area"])
+    parser.add_argument("--fusion-topk", type=int, default=0,
+                        help="0=OR all above-thresh, k>1=union top-k, k<0=intersect top-|k|")
     parser.add_argument("--closing-kernel", type=int, default=5)
     parser.add_argument("--opening-kernel", type=int, default=3)
     parser.add_argument("--min-size", type=int, default=200)
@@ -231,6 +233,7 @@ def main() -> None:
             sam_masks, fused_cam,
             mask_score_threshold=args.mask_score_threshold,
             selection_method=args.selection_method,
+            fusion_topk=args.fusion_topk,
         )
 
         # ── Stage 6: Morphological refinement ───────────────────────────────
