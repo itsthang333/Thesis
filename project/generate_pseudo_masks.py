@@ -68,6 +68,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--selection-method", type=str, default="mean",
                         choices=["mean", "sum", "mean_area", "coverage", "hybrid"],
                         help="CAM-guided mask scoring method")
+    parser.add_argument("--fusion-topk", type=int, default=0,
+                        help="0=OR all above-thresh, 1=top-1 only, k>1=union top-k, k<0=intersect top-|k|")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
     return parser.parse_args()
@@ -207,6 +209,7 @@ def main() -> None:
                     fused_cam,
                     mask_score_threshold=args.mask_score_threshold,
                     selection_method=args.selection_method,
+                    fusion_topk=args.fusion_topk,
                 )
 
                 # ── 6. Morphological refinement ───────────────────────────────
