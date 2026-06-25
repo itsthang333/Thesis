@@ -18,7 +18,11 @@ from models.layercam import LayerCAM
 from models.unet import UNet
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
-from pseudo.bone_morphology import build_bone_guidance, fuse_cam_with_bone_guidance
+from pseudo.bone_morphology import (
+    build_bone_guidance,
+    build_class_conditioned_components,
+    fuse_cam_with_bone_guidance,
+)
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -46,6 +50,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-hole-area", type=int, default=500)
     parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
     parser.add_argument("--bone-support-percentile", type=float, default=62.0)
+    parser.add_argument("--morphology-fusion-mode", type=str, default="components",
+                        choices=["components", "weighted"])
+    parser.add_argument("--sam-prompt-mode", type=str, default="box_point",
+                        choices=["point", "joint_points", "box", "box_point"])
+    parser.add_argument("--max-bone-components", type=int, default=6)
+    parser.add_argument("--points-per-component", type=int, default=3)
+    parser.add_argument("--bbox-padding-ratio", type=float, default=0.05)
+    parser.add_argument("--negative-points-per-component", type=int, default=0)
+    parser.add_argument("--sam-single-mask", action="store_true")
     parser.add_argument("--disable-bone-morphology", action="store_true")
     parser.add_argument("--selection-method", type=str, default="bone_hybrid",
                         choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"],
@@ -127,33 +140,61 @@ def main() -> None:
         image_rgb = np.array(image_pil_denorm, dtype=np.uint8)
         bone_likelihood = None
         bone_support = None
+        bone_components = []
         prompt_map = fused_cam
         if not args.disable_bone_morphology:
-            bone_likelihood, bone_support = build_bone_guidance(
-                image_rgb,
-                fused_cam,
-                seed_percentile=args.bone_seed_percentile,
-                support_percentile=args.bone_support_percentile,
-                min_component_area=max(20, args.min_component_area // 2),
-                debug_dir=debug_dir,
-            )
+            if args.morphology_fusion_mode == "components":
+                active_weights = [float(class_weights[i]) for i in active_indices]
+                bone_likelihood, bone_support, bone_components = build_class_conditioned_components(
+                    image_rgb,
+                    per_class_cams,
+                    active_weights,
+                    seed_percentile=args.bone_seed_percentile,
+                    support_percentile=args.bone_support_percentile,
+                    min_component_area=max(20, args.min_component_area // 2),
+                    max_components=args.max_bone_components,
+                    points_per_component=args.points_per_component,
+                    bbox_padding_ratio=args.bbox_padding_ratio,
+                    debug_dir=debug_dir,
+                )
+            else:
+                bone_likelihood, bone_support = build_bone_guidance(
+                    image_rgb,
+                    fused_cam,
+                    seed_percentile=args.bone_seed_percentile,
+                    support_percentile=args.bone_support_percentile,
+                    min_component_area=max(20, args.min_component_area // 2),
+                    debug_dir=debug_dir,
+                )
             prompt_map = fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
-        point_prompts = extract_point_prompts(
-            prompt_map,
-            cam_percentile=args.cam_percentile,
-            max_points=args.max_points,
-            min_component_area=args.min_component_area,
-            support_mask=bone_support,
-            debug_dir=debug_dir,
-            image_pil=image_pil_denorm,
-        )
 
         # ── Stage 4: SAM ────────────────────────────────────────────────────
-        sam_masks, _ = sam_predictor.predict_from_points(
-            image_rgb, point_prompts,
-            debug_dir=debug_dir,
-            image_pil=image_pil_denorm,
-        )
+        component_ids = None
+        if bone_components:
+            sam_masks, sam_scores, component_ids = sam_predictor.predict_from_components(
+                image_rgb,
+                bone_components,
+                prompt_mode=args.sam_prompt_mode,
+                multimask_output=not args.sam_single_mask,
+                negative_points_per_component=args.negative_points_per_component,
+                debug_dir=debug_dir,
+                image_pil=image_pil_denorm,
+            )
+        else:
+            point_prompts = extract_point_prompts(
+                prompt_map,
+                cam_percentile=args.cam_percentile,
+                max_points=args.max_points,
+                min_component_area=args.min_component_area,
+                support_mask=bone_support,
+                debug_dir=debug_dir,
+                image_pil=image_pil_denorm,
+            )
+            sam_masks, sam_scores = sam_predictor.predict_from_points(
+                image_rgb, point_prompts,
+                debug_dir=debug_dir,
+                image_pil=image_pil_denorm,
+            )
 
         # ── Stage 5: CAM-guided mask selection ──────────────────────────────
         refined = select_and_fuse_masks(
@@ -163,6 +204,13 @@ def main() -> None:
             fusion_topk=args.fusion_topk,
             bone_likelihood=bone_likelihood,
             bone_support=bone_support,
+            sam_scores=sam_scores,
+            component_ids=component_ids,
+            component_masks=(
+                np.stack([component.mask for component in bone_components])
+                if bone_components else None
+            ),
+            best_per_component=component_ids is not None,
         )
 
         # ── Stage 6: morphological refinement ───────────────────────────────

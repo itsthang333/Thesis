@@ -1,138 +1,108 @@
-# Weakly-Supervised Bone Segmentation with LayerCAM and SAM
+# Weakly-Supervised Bone Segmentation with LayerCAM, Bone Morphology, and SAM
 
-## 1. Overview
+## 1. Objective
 
-### Baseline Pipeline
+The project generates pseudo bone masks from image-level anatomy labels and
+uses those pseudo masks to train a U-Net segmentation model.
 
-```text
-Image
-↓
-DenseNet121
-↓
-Grad-CAM
-↓
-Pseudo Mask
-↓
-U-Net
-↓
-Bone Segmentation
-```
+The target is the visible bone region in an X-ray image, not the complete
+hand, leg, hip, shoulder, or surrounding soft-tissue silhouette.
 
-### Proposed Pipeline
+## 2. Current Pipeline
 
 ```text
-Image
-↓
-DenseNet121
-↓
-LayerCAM
-↓
-CAM Aggregation
-↓
-CAM Normalization
-↓
-Adaptive Threshold
-↓
-Connected Components
-↓
-Peak Extraction
-↓
-SAM ViT-B
-↓
-CAM-guided Mask Selection
-↓
-Morphological Refinement
-↓
-Final Pseudo Mask
-↓
-U-Net
-↓
-Bone Segmentation Mask
+X-ray image
+    |
+    +--> Multi-label DenseNet121 anatomy classifier
+    |        |
+    |        +--> sigmoid scores: hand, leg, hip, shoulder
+    |        |
+    |        +--> per-class multi-layer LayerCAM
+    |
+    +--> X-ray bone enhancement
+             |
+             +--> intensity response
+             +--> cortical-edge response
+             +--> morphological reconstruction
+                         |
+Per-class CAM ---------> CAM-selected full bone components
+                                      |
+                                      +--> component bounding box
+                                      +--> structured positive points
+                                      |
+                                      v
+                             SAM ViT-B candidates
+                                      |
+                             best mask per component
+                                      |
+                         conservative post-processing
+                                      |
+                               pseudo bone mask
+                                      |
+                                U-Net training
+                                      |
+                          final bone segmentation mask
 ```
+
+The central design principle is:
+
+> Bone morphology proposes complete candidate structures, LayerCAM selects the
+> anatomically relevant candidates, and SAM refines their boundaries.
+
+CAM is not treated as a bone boundary mask. SAM is not expected to infer the
+bone target from one unconstrained hotspot.
 
 ---
 
-# 2. Stage 1 — Anatomy Classification
+## 3. Stage 1: Multi-Label Anatomy Classification
 
-## Objective
+### Objective
 
-Train an anatomy classifier using image-level labels.
+Train a classifier that:
 
-The classifier serves two purposes:
+1. predicts which anatomical regions are present;
+2. supplies semantic features and class-specific gradients for LayerCAM.
 
-1. Anatomy prediction.
-2. Feature extraction for LayerCAM generation.
-
----
-
-## Input
+### Input
 
 ```python
-image.shape = [3, 512, 512]
+image.shape = [3, image_size, image_size]
 ```
 
----
+The notebook currently uses:
 
-## Labels
+```python
+image_size = 384
+```
 
-Multi-label anatomy labels:
+### Labels
 
 ```python
 [hand, leg, hip, shoulder]
 ```
 
+These are multi-label targets. More than one value may be positive for mixed or
+multiscan images.
+
 Examples:
 
 ```python
-[1,0,0,0]
-[0,1,0,0]
-[0,0,1,0]
-[0,0,0,1]
+[1, 0, 0, 0]
+[0, 1, 0, 0]
+[1, 1, 0, 0]
 ```
 
----
-
-## Model
+### Model and loss
 
 ```python
 DenseNet121(pretrained=True)
+criterion = BCEWithLogitsLoss()
+probabilities = sigmoid(logits)
 ```
 
----
+The main pipeline does not use single-label CrossEntropy training.
 
-## Output
-
-```python
-logits =
-[
-    l_hand,
-    l_leg,
-    l_hip,
-    l_shoulder
-]
-```
-
-```python
-probs = sigmoid(logits)
-```
-
-Example:
-
-```python
-[0.92, 0.05, 0.01, 0.02]
-```
-
----
-
-## Loss
-
-```python
-BCEWithLogitsLoss()
-```
-
----
-
-## Saved Model
+### Checkpoint
 
 ```text
 outputs/classifier/best_classifier.pt
@@ -140,27 +110,9 @@ outputs/classifier/best_classifier.pt
 
 ---
 
-# 3. Stage 2 — Bone Activation Map Generation using LayerCAM
+## 4. Stage 2: Per-Class LayerCAM Generation
 
-## Objective
-
-Generate localization maps highlighting bone regions.
-
-LayerCAM is selected instead of Grad-CAM because it can utilize information from multiple feature layers and reduce discriminative-region bias.
-
----
-
-## Input
-
-```text
-Image
-+
-best_classifier.pt
-```
-
----
-
-## Feature Layers
+### Target layers
 
 ```python
 model.features.denseblock2
@@ -168,481 +120,353 @@ model.features.denseblock3
 model.features.denseblock4
 ```
 
----
+### Multi-layer fusion
 
-## LayerCAM Generation
-
-For each anatomy class:
+For each active anatomy class:
 
 ```python
-cam2_hand
-cam2_leg
-cam2_hip
-cam2_shoulder
+class_cam =
+    0.2 * denseblock2_cam
+  + 0.3 * denseblock3_cam
+  + 0.5 * denseblock4_cam
 ```
+
+Each class CAM is resized to the input image resolution and normalized to
+`[0, 1]`.
+
+### Active classes
 
 ```python
-cam3_hand
-cam3_leg
-cam3_hip
-cam3_shoulder
+class_probability >= confidence_threshold
 ```
+
+Default:
 
 ```python
-cam4_hand
-cam4_leg
-cam4_hip
-cam4_shoulder
+confidence_threshold = 0.5
 ```
 
----
-
-## Multi-layer Fusion
-
-Example:
-
-```python
-cam_hand =
-0.2 * cam2_hand +
-0.3 * cam3_hand +
-0.5 * cam4_hand
-```
-
-Similarly for:
-
-```python
-cam_leg
-cam_hip
-cam_shoulder
-```
+The per-class CAMs are preserved for class-conditioned morphology. A weighted
+fused CAM is also retained for visualization, fallback prompting, and final
+mask scoring.
 
 ---
 
-## Resize
+## 5. Stage 3: Bone-Specific Morphology
 
-Upsample to:
+This stage adapts the morphology-CAM fusion idea from MorSeg-CAM-SAM to X-ray
+bone segmentation.
 
-```python
-[512,512]
+The breast-lesion assumptions from the original paper are not used:
+
+- bone candidates are not required to be oval or compact;
+- elongated components are not removed;
+- no breast parenchymal-layer prior is used;
+- fixed BUSI thresholds are not transferred to FracAtlas.
+
+### 5.1 Bone likelihood
+
+For each active class CAM:
+
+```text
+X-ray
+  -> grayscale
+  -> percentile normalization
+  -> optional CLAHE
+  -> cortical edge response
 ```
 
-using bilinear interpolation.
+The initial likelihood is:
+
+```python
+bone_likelihood =
+    0.45 * enhanced_intensity
+  + 0.25 * cortical_edge
+  + 0.30 * class_cam
+```
+
+This map is normalized to `[0, 1]`.
+
+### 5.2 Seed and support masks
+
+Default thresholds:
+
+```python
+bone_seed_percentile = 88
+bone_support_percentile = 62
+```
+
+High-confidence seed pixels must also pass a CAM gate. The lower-confidence
+support mask must satisfy:
+
+- bone-likelihood threshold;
+- relaxed CAM gate;
+- intensity or cortical-edge evidence.
+
+### 5.3 Morphological reconstruction
+
+High-confidence bone seeds are expanded only through connected pixels inside
+the support mask.
+
+```text
+seed pixels
+    -> constrained flood fill inside support
+    -> reconstructed bone candidates
+```
+
+This is safer than unconstrained dilation because growth cannot freely spread
+into surrounding soft tissue.
+
+### 5.4 CAM-selected full components
+
+Each reconstructed connected component is scored using:
+
+```text
+CAM recall
+CAM precision
+mean CAM activation
+mean bone likelihood
+```
+
+The complete component is retained. CAM selects the component but does not crop
+the component to the CAM hotspot.
+
+Default:
+
+```python
+max_bone_components = 6
+```
+
+### 5.5 Per-class processing
+
+Morphology is performed separately for every active anatomy CAM:
+
+```text
+hand CAM     -> hand-supported bone candidates
+leg CAM      -> leg-supported bone candidates
+hip CAM      -> hip-supported bone candidates
+shoulder CAM -> shoulder-supported bone candidates
+```
+
+Candidates are merged only after class-specific processing. Components with
+IoU greater than or equal to `0.65` are treated as duplicates.
+
+This prevents a strong class CAM from suppressing a weaker class in mixed
+images.
 
 ---
 
-## CAM Aggregation
+## 6. Stage 4: Component-Wise Prompt Generation
 
-Classifier confidence is used as weights.
-
-```python
-weights = sigmoid(logits)
-```
-
-Example:
+Every selected `BoneComponent` contains:
 
 ```python
-weights =
-[0.92, 0.05, 0.01, 0.02]
+component.mask
+component.score
+component.bbox
+component.positive_points
 ```
+
+### Bounding box
+
+The smallest component bounding box is expanded by:
+
+```python
+bbox_padding_ratio = 0.05
+```
+
+### Structured positive points
+
+Points are selected deterministically from:
+
+1. the strongest bone-likelihood/CAM response;
+2. the component centroid;
+3. interior points along the major axis for elongated bones.
+
+Default:
+
+```python
+points_per_component = 3
+```
+
+Random contour points are not used.
+
+### Prompt modes
+
+```text
+point        : strongest point only
+joint_points : all structured points in one SAM call
+box          : component box only
+box_point    : component box and all structured points
+```
+
+Default:
+
+```python
+sam_prompt_mode = "box_point"
+```
+
+Optional deterministic negative points can be placed on background positions
+inside the expanded box:
+
+```python
+negative_points_per_component = 0
+```
+
+They are disabled by default and reserved for ablation.
 
 ---
 
-### Weighted Aggregation
+## 7. Stage 5: SAM Candidate Generation
 
-```python
-bone_cam =
-Σ(weights_i * cam_i)
-/
-Σ(weights_i)
-```
+### Model
 
----
-
-## CAM Normalization
-
-```python
-bone_cam =
-(bone_cam - bone_cam.min())
-/
-(bone_cam.max() - bone_cam.min())
-```
-
----
-
-## Output
-
-```python
-bone_cam.shape = [512,512]
-bone_cam ∈ [0,1]
-```
-
----
-
-# 4. Stage 3 — Prompt Extraction from Bone CAM
-
-## Objective
-
-Generate point prompts for SAM.
-
----
-
-## Adaptive Threshold
-
-Threshold is configurable.
-
-```python
-cam_percentile = 85
-```
-
-or
-
-```python
-cam_percentile ∈ {85,90,95}
-```
-
----
-
-```python
-threshold =
-np.percentile(
-    bone_cam,
-    cam_percentile
-)
-
-fg =
-bone_cam > threshold
-```
-
----
-
-## Connected Components
-
-```python
-components =
-connected_components(fg)
-```
-
----
-
-## Peak Extraction
-
-For each component:
-
-```python
-peak =
-argmax(
-    bone_cam
-    inside component
-)
-```
-
-Example:
-
-```python
-[
- (220,145),
- (310,278),
- (180,400)
-]
-```
-
----
-
-## Prompt Selection
-
-One peak point is selected from each connected component.
-
-Optionally:
-
-```python
-max_points = 5
-```
-
-to prevent excessive prompts.
-
----
-
-## Output
-
-```python
-point_prompts
-```
-
----
-
-# 5. Stage 4 — SAM Candidate Mask Generation
-
-## Objective
-
-Recover object boundaries using SAM.
-
----
-
-## Input
-
-```python
-image
-point_prompts
-```
-
----
-
-## Model
-
-```python
+```text
 SAM ViT-B
 ```
 
-Reason:
+SAM is called once for each selected bone component.
 
-* Lightweight
-* Easier deployment
-* Suitable for thesis-scale experiments
-
----
-
-## Prediction
+Default behavior:
 
 ```python
-masks,
-scores,
-logits =
-sam.predict(
-    point_coords=points,
-    point_labels=[1]
-)
+multimask_output = True
 ```
 
+Therefore, each component normally produces three SAM candidates. The
+`--sam-single-mask` option requests only one mask per component.
+
+Each generated mask retains its `component_id`, allowing candidate selection to
+be performed within the morphology proposal that generated it.
+
 ---
 
-## Output
+## 8. Stage 6: Bone-Aware Mask Selection
+
+The default scoring method is:
 
 ```python
-Mask_1
-Mask_2
+selection_method = "bone_hybrid"
+```
+
+For a SAM mask, the score combines:
+
+```text
+mean bone likelihood
+mean CAM activation
+bone-component recall
+bone-component precision
+SAM predicted quality
+large-mask penalty
+```
+
+Approximate implemented weighting:
+
+```python
+score =
+    0.25 * bone_mean
+  + 0.25 * cam_mean
+  + 0.20 * component_recall
+  + 0.20 * component_precision
+  + 0.10 * sam_quality
+  - 0.40 * large_mask_penalty
+```
+
+### Best mask per component
+
+For component-wise prompting:
+
+```text
+three SAM candidates for component 0 -> keep the best candidate
+three SAM candidates for component 1 -> keep the best candidate
 ...
-Mask_N
+union the selected component masks
 ```
 
-Each mask:
+This replaces global top-3 union as the default behavior. It prevents several
+nearly identical candidates from one prompt from dominating the final mask.
 
-```python
-shape = [512,512]
-```
+The original global ranking and `fusion_topk` behavior remains available when
+the component pipeline is disabled.
 
 ---
 
-# 6. Stage 5 — CAM-guided Mask Selection
+## 9. Stage 7: Conservative Morphological Refinement
 
-## Objective
+The post-processing objective is to remove noise without destroying small bones
+or filling normal spaces between bones.
 
-Select masks most consistent with LayerCAM activations.
+Default sequence:
 
----
-
-## Mask Scoring
-
-```python
-score(mask)
-=
-mean(
-    bone_cam[mask == 1]
-)
+```text
+small closing
+optional opening
+selective hole filling
+small-component filtering
+bone-guidance component filtering
 ```
 
----
-
-## Example
+Defaults:
 
 ```python
-Mask A = 0.84
-Mask B = 0.72
-Mask C = 0.18
-Mask D = 0.05
+closing_kernel = 5
+opening_kernel = 0
+max_hole_area = 500
+min_size = 40
 ```
 
----
+Important constraints:
 
-## Selection Rule
+- opening is disabled by default because erosion may remove phalanges or thin
+  wrist structures;
+- only enclosed holes up to `max_hole_area` are filled;
+- spaces between separate bones should remain background;
+- small components are retained more conservatively than in the old pipeline;
+- components with weak bone-likelihood support can be discarded.
 
-```python
-mask_score_threshold = 0.4
-```
+The result is saved as:
 
-```python
-selected =
-score(mask)
->
-mask_score_threshold
-```
-
-The threshold will be selected using validation experiments.
-
----
-
-## Mask Fusion
-
-```python
-pseudo_mask =
-logical_or(
-    selected_masks
-)
+```text
+outputs/pseudo_masks/masks/<image_stem>.png
 ```
 
 ---
 
-## Output
+## 10. Stage 8: U-Net Training
 
-```python
-refined_pseudo_mask
+### Training pair
+
+```text
+input  = X-ray image
+target = generated pseudo bone mask
 ```
 
----
+### Model
 
-# 7. Stage 6 — Morphological Refinement
-
-## Objective
-
-Remove noise and improve pseudo-label quality.
-
----
-
-## Binary Closing
-
-```python
-binary_closing(
-    mask,
-    disk(5)
-)
-```
-
----
-
-## Binary Opening
-
-```python
-binary_opening(
-    mask,
-    disk(3)
-)
-```
-
----
-
-## Fill Holes
-
-```python
-binary_fill_holes()
-```
-
----
-
-## Remove Small Objects
-
-```python
-remove_small_objects(
-    mask,
-    min_size=200
-)
-```
-
----
-
-## Output
-
-```python
-final_pseudo_mask
-```
-
----
-
-# 8. Stage 7 — Segmentation Training
-
-## Objective
-
-Train a segmentation network using refined pseudo labels.
-
----
-
-## Dataset
-
-Input:
-
-```python
-image
-```
-
-Target:
-
-```python
-final_pseudo_mask
-```
-
----
-
-## Model
-
-```python
+```text
 U-Net
+encoder channels: 64 -> 128 -> 256 -> 512 -> 1024
 ```
 
-Encoder:
-
-```text
-64
-128
-256
-512
-1024
-```
-
-Decoder:
-
-```text
-1024
-512
-256
-128
-64
-```
-
----
-
-## Output
-
-```python
-pred_mask
-```
-
-```python
-shape = [1,512,512]
-```
-
----
-
-## Loss
+### Loss
 
 ```python
 loss =
-0.5 * BCEWithLogitsLoss()
-+
-0.5 * DiceLoss()
+    0.5 * BCEWithLogitsLoss()
+  + 0.5 * DiceLoss()
 ```
 
----
+### Metrics
 
-## Metrics
-
-```python
+```text
 Dice
 IoU
-Precision
-Recall
 ```
 
----
+When a ground-truth mask directory is supplied, validation should use ground
+truth rather than pseudo masks.
 
-## Saved Model
+### Checkpoint
 
 ```text
 outputs/segmentation/best_unet.pt
@@ -650,201 +474,177 @@ outputs/segmentation/best_unet.pt
 
 ---
 
-# 9. Inference
+## 11. Preview and Full Generation Modes
 
-## Deployment Inference
+Pseudo-mask generation is expensive because it runs LayerCAM and SAM.
 
-After training, only U-Net is required.
+### Preview
+
+The notebook defaults to:
+
+```python
+RUN_FULL_PSEUDO_MASKS = False
+```
+
+This passes:
 
 ```text
-Image
-↓
-U-Net
-↓
-Bone Segmentation Mask
+--max-images 10
 ```
+
+Only ten images are processed for visual inspection.
+
+### Full pseudo-mask generation
+
+Before U-Net training:
+
+```python
+RUN_FULL_PSEUDO_MASKS = True
+```
+
+This passes:
+
+```text
+--process-all
+```
+
+Even in full mode, overlays and debug images are limited by:
+
+```text
+--save-visuals-limit 10
+```
+
+The notebook checks that a sufficiently large pseudo-mask set exists before
+starting segmentation training.
 
 ---
 
-## Visualization Pipeline
+## 12. Baseline and Ablation Modes
 
-For qualitative analysis and thesis figures:
-
-```text
-Image
-↓
-DenseNet121
-↓
-LayerCAM
-↓
-CAM Aggregation
-↓
-Peak Extraction
-↓
-SAM ViT-B
-↓
-CAM-guided Selection
-↓
-Pseudo Mask
-```
-
----
-
-# 10. Directory Structure
+### Original CAM-only point baseline
 
 ```text
-datasets/
-└── fracatlas.py
-
-models/
-├── classifier.py
-├── layercam.py
-├── unet.py
-└── losses.py
-
-pseudo/
-├── generate_layercam.py
-├── extract_prompts.py
-├── sam_refine.py
-├── mask_selection.py
-└── morphology.py
-
-outputs/
-├── classifier/
-├── pseudo_masks/
-└── segmentation/
-
-train_classifier.py
-generate_pseudo_masks.py
-train_segmentation.py
-
-inference.py
-visualize_pipeline.py
+--disable-bone-morphology
+--selection-method mean
 ```
 
----
+### Previous weighted bone-guidance baseline
 
-# 11. Experimental Plan
+```text
+--morphology-fusion-mode weighted
+--sam-prompt-mode point
+```
 
-## Experiment 1 — CAM Comparison
+### Current proposed configuration
+
+```text
+--morphology-fusion-mode components
+--sam-prompt-mode box_point
+--selection-method bone_hybrid
+--max-bone-components 6
+--points-per-component 3
+```
+
+### Prompt ablation
 
 Compare:
 
 ```text
-Grad-CAM
-Grad-CAM++
-LayerCAM
+point
+joint_points
+box
+box_point
 ```
 
-Metrics:
+### Additional ablations
 
 ```text
-Dice
-IoU
-CAM Coverage
+per-class morphology vs fused-CAM morphology
+multimask vs --sam-single-mask
+negative points 0 vs 1 vs 2
+opening kernel 0 vs 3
+different seed/support percentiles
 ```
 
 ---
 
-## Experiment 2 — Effect of SAM
-
-Compare:
+## 13. Directory Structure
 
 ```text
-LayerCAM
-```
-
-vs
-
-```text
-LayerCAM + SAM
-```
-
----
-
-## Experiment 3 — Effect of Morphological Refinement
-
-Compare:
-
-```text
-LayerCAM + SAM
-```
-
-vs
-
-```text
-LayerCAM + SAM + Morphology
+project/
+|-- datasets/
+|   `-- fracatlas.py
+|-- models/
+|   |-- classifier.py
+|   |-- layercam.py
+|   |-- unet.py
+|   `-- losses.py
+|-- pseudo/
+|   |-- generate_layercam.py
+|   |-- bone_morphology.py
+|   |-- extract_prompts.py
+|   |-- sam_refine.py
+|   |-- mask_selection.py
+|   |-- morphology.py
+|   `-- visualization.py
+|-- train_classifier.py
+|-- generate_pseudo_masks.py
+|-- train_segmentation.py
+|-- inference.py
+`-- visualize_pipeline.py
 ```
 
 ---
 
-## Experiment 4 — Final Segmentation Performance
+## 14. Research Contribution
 
-Baseline:
+The proposed method adapts morphology-enhanced CAM-guided SAM from compact
+breast-lesion segmentation to projected X-ray bone structures.
 
-```text
-DenseNet121
-↓
-Grad-CAM
-↓
-Pseudo Mask
-↓
-U-Net
-```
+The adaptation consists of:
 
-Proposed:
+1. bone-specific intensity and cortical-edge likelihood;
+2. seed-constrained morphological reconstruction;
+3. per-class CAM selection of complete morphology components;
+4. component-wise structured box and point prompts;
+5. best-mask-per-component selection;
+6. conservative post-processing that preserves spaces between bones.
 
-```text
-DenseNet121
-↓
-LayerCAM
-↓
-SAM
-↓
-Pseudo Mask
-↓
-U-Net
-```
-
-Metrics:
-
-```text
-Dice
-IoU
-Precision
-Recall
-```
+The expected benefit is improved pseudo-mask coverage of complete bone
+structures while reducing SAM masks that follow surrounding soft-tissue
+silhouettes.
 
 ---
 
-# Expected Research Contribution
+## 15. Implementation Status
 
-## Baseline
+Implemented:
 
-```text
-DenseNet121
-↓
-Grad-CAM
-↓
-Pseudo Mask
-↓
-U-Net
-```
+- multi-label anatomy classifier path;
+- multi-layer and per-class LayerCAM;
+- bone-specific morphology and reconstruction;
+- class-conditioned full-component selection;
+- component deduplication;
+- structured points and padded bounding boxes;
+- point, joint-point, box, and box-point SAM modes;
+- optional negative points;
+- best SAM mask per morphology component;
+- bone-aware scoring;
+- conservative post-processing;
+- preview/full generation controls;
+- visualization of bone guidance, boxes, and points.
 
-## Proposed
+Verified locally:
 
-```text
-DenseNet121
-↓
-LayerCAM
-↓
-CAM-guided SAM Refinement
-↓
-Morphological Refinement
-↓
-U-Net
-```
+- Python syntax compilation;
+- notebook JSON validity;
+- Git whitespace checks.
 
-## Main Idea
+Not yet verified locally:
 
-LayerCAM improves bone localization coverage and reduces discriminative-region bias, while SAM refines object boundaries. Their combination generates higher-quality pseudo labels, leading to improved weakly-supervised bone segmentation performance on FracAtlas X-ray images.
+- end-to-end GPU execution with PyTorch and SAM;
+- qualitative quality on the ten-image preview;
+- quantitative Dice/IoU improvement.
+
+The next required step is to run the ten-image preview on the GPU environment
+and tune the morphology thresholds before generating all pseudo masks.

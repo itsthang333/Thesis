@@ -19,6 +19,7 @@ def score_masks(
     method: str = "mean",
     bone_likelihood: np.ndarray | None = None,
     bone_support: np.ndarray | None = None,
+    sam_scores: np.ndarray | None = None,
 ) -> np.ndarray:
     """Score each SAM mask by CAM activation inside the mask.
 
@@ -62,15 +63,21 @@ def score_masks(
             bone_mean = float(bone_likelihood[m].mean())
             cam_mean = float(cam_vals.mean())
             support_recall = 0.0
+            support_precision = 0.0
             if bone_support is not None and bone_support.any():
-                support_recall = float((m & bone_support.astype(bool)).sum()) / float(bone_support.sum())
+                overlap = float((m & bone_support.astype(bool)).sum())
+                support_recall = overlap / float(bone_support.sum())
+                support_precision = overlap / area
             area_ratio = area / float(bone_cam.size)
-            large_mask_penalty = max(0.0, area_ratio - 0.55)
+            large_mask_penalty = max(0.0, area_ratio - 0.45)
+            sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
             scores[i] = (
-                0.40 * bone_mean
-                + 0.35 * cam_mean
-                + 0.25 * support_recall
-                - 0.30 * large_mask_penalty
+                0.25 * bone_mean
+                + 0.25 * cam_mean
+                + 0.20 * support_recall
+                + 0.20 * support_precision
+                + 0.10 * sam_quality
+                - 0.40 * large_mask_penalty
             )
     return scores
 
@@ -83,15 +90,21 @@ def select_and_fuse_masks(
     fusion_topk: int = 0,
     bone_likelihood: np.ndarray | None = None,
     bone_support: np.ndarray | None = None,
+    sam_scores: np.ndarray | None = None,
+    component_ids: np.ndarray | None = None,
+    component_masks: np.ndarray | None = None,
+    best_per_component: bool = False,
 ) -> np.ndarray:
-    """Select masks whose CAM score exceeds threshold, then fuse them.
+    """Select and fuse masks using CAM and bone morphology evidence.
 
     fusion_topk controls how the top-scored masks are combined:
       0 or 1 : logical-OR of all above-threshold masks (original behaviour)
       k > 1  : union (logical-OR) of the top-k above-threshold masks
       k < 0  : intersection (logical-AND) of the top-|k| above-threshold masks
 
-    If no mask passes the threshold, fall back to the single best-scoring mask.
+    With best_per_component enabled, the best SAM candidate from each complete
+    morphology proposal is selected before union. Otherwise the original
+    global top-k behavior is preserved for ablation.
 
     Args:
         masks:               [N, H, W] bool/uint8 from SAM.
@@ -113,7 +126,33 @@ def select_and_fuse_masks(
         method=selection_method,
         bone_likelihood=bone_likelihood,
         bone_support=bone_support,
+        sam_scores=sam_scores,
     )
+
+    if best_per_component and component_ids is not None and component_ids.size == masks.shape[0]:
+        selected_indices: list[int] = []
+        for component_id in np.unique(component_ids):
+            candidates = np.where(component_ids == component_id)[0]
+            if candidates.size == 0:
+                continue
+            component_scores = scores[candidates]
+            if (
+                component_masks is not None
+                and 0 <= int(component_id) < component_masks.shape[0]
+            ):
+                component_scores = score_masks(
+                    masks[candidates],
+                    bone_cam,
+                    method=selection_method,
+                    bone_likelihood=bone_likelihood,
+                    bone_support=component_masks[int(component_id)],
+                    sam_scores=sam_scores[candidates] if sam_scores is not None else None,
+                )
+            best_index = int(candidates[np.argmax(component_scores)])
+            selected_indices.append(best_index)
+        if selected_indices:
+            return masks[selected_indices].any(axis=0).astype(np.uint8)
+
     order = np.argsort(scores)[::-1]
     above = [i for i in order if scores[i] >= mask_score_threshold]
 

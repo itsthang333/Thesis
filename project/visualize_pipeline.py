@@ -34,7 +34,11 @@ from models.layercam import LayerCAM
 from models.unet import UNet
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
-from pseudo.bone_morphology import build_bone_guidance, fuse_cam_with_bone_guidance
+from pseudo.bone_morphology import (
+    build_bone_guidance,
+    build_class_conditioned_components,
+    fuse_cam_with_bone_guidance,
+)
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -67,6 +71,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-hole-area", type=int, default=500)
     parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
     parser.add_argument("--bone-support-percentile", type=float, default=62.0)
+    parser.add_argument("--morphology-fusion-mode", type=str, default="components",
+                        choices=["components", "weighted"])
+    parser.add_argument("--sam-prompt-mode", type=str, default="box_point",
+                        choices=["point", "joint_points", "box", "box_point"])
+    parser.add_argument("--max-bone-components", type=int, default=6)
+    parser.add_argument("--points-per-component", type=int, default=3)
+    parser.add_argument("--bbox-padding-ratio", type=float, default=0.05)
+    parser.add_argument("--negative-points-per-component", type=int, default=0)
+    parser.add_argument("--sam-single-mask", action="store_true")
     parser.add_argument("--disable-bone-morphology", action="store_true")
     parser.add_argument("--debug", action="store_true",
                         help="Save SAM candidate masks, prompt overlays, scores.json alongside the strip")
@@ -112,6 +125,22 @@ def _make_prompts_panel(image_rgb: np.ndarray, bone_cam: np.ndarray, point_promp
         draw.ellipse([c - radius, r - radius, c + radius, r + radius],
                      fill=(255, 0, 0), outline=(255, 255, 255))
         draw.text((c + radius + 2, r - radius), str(i + 1), fill=(255, 255, 0))
+    return np.array(pil)
+
+
+def _make_component_prompts_panel(
+    image_rgb: np.ndarray,
+    bone_cam: np.ndarray,
+    components,
+) -> np.ndarray:
+    points = [point for component in components for point in component.positive_points]
+    panel = _make_prompts_panel(image_rgb, bone_cam, points)
+    pil = Image.fromarray(panel)
+    draw = ImageDraw.Draw(pil)
+    for index, component in enumerate(components):
+        x0, y0, x1, y1 = component.bbox
+        draw.rectangle([x0, y0, x1, y1], outline=(0, 255, 0), width=2)
+        draw.text((x0 + 2, y0 + 2), f"C{index}", fill=(0, 255, 0))
     return np.array(pil)
 
 
@@ -217,34 +246,68 @@ def main() -> None:
         debug_dir = output_path.parent / "debug" / stem if args.debug else None
         bone_likelihood = None
         bone_support = None
+        bone_components = []
         prompt_map = fused_cam
         if not args.disable_bone_morphology:
-            bone_likelihood, bone_support = build_bone_guidance(
-                image_rgb,
-                fused_cam,
-                seed_percentile=args.bone_seed_percentile,
-                support_percentile=args.bone_support_percentile,
-                min_component_area=max(20, args.min_component_area // 2),
-                debug_dir=debug_dir,
-            )
+            if args.morphology_fusion_mode == "components":
+                active_weights = [float(class_weights[i]) for i in active_indices]
+                bone_likelihood, bone_support, bone_components = build_class_conditioned_components(
+                    image_rgb,
+                    per_class_cams,
+                    active_weights,
+                    seed_percentile=args.bone_seed_percentile,
+                    support_percentile=args.bone_support_percentile,
+                    min_component_area=max(20, args.min_component_area // 2),
+                    max_components=args.max_bone_components,
+                    points_per_component=args.points_per_component,
+                    bbox_padding_ratio=args.bbox_padding_ratio,
+                    debug_dir=debug_dir,
+                )
+            else:
+                bone_likelihood, bone_support = build_bone_guidance(
+                    image_rgb,
+                    fused_cam,
+                    seed_percentile=args.bone_seed_percentile,
+                    support_percentile=args.bone_support_percentile,
+                    min_component_area=max(20, args.min_component_area // 2),
+                    debug_dir=debug_dir,
+                )
             prompt_map = fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
-        point_prompts = extract_point_prompts(
-            prompt_map,
-            cam_percentile=args.cam_percentile,
-            max_points=args.max_points,
-            min_component_area=args.min_component_area,
-            support_mask=bone_support,
-            debug_dir=debug_dir,
-            image_pil=image_pil_denorm,
-        )
+        point_prompts = [
+            point
+            for component in bone_components
+            for point in component.positive_points
+        ]
+        if not point_prompts:
+            point_prompts = extract_point_prompts(
+                prompt_map,
+                cam_percentile=args.cam_percentile,
+                max_points=args.max_points,
+                min_component_area=args.min_component_area,
+                support_mask=bone_support,
+                debug_dir=debug_dir,
+                image_pil=image_pil_denorm,
+            )
         print(f"Prompt points: {point_prompts}")
 
         # ── Stage 4: SAM ─────────────────────────────────────────────────────
-        sam_masks, sam_scores = sam_predictor.predict_from_points(
-            image_rgb, point_prompts,
-            debug_dir=debug_dir,
-            image_pil=image_pil_denorm,
-        )
+        component_ids = None
+        if bone_components:
+            sam_masks, sam_scores, component_ids = sam_predictor.predict_from_components(
+                image_rgb,
+                bone_components,
+                prompt_mode=args.sam_prompt_mode,
+                multimask_output=not args.sam_single_mask,
+                negative_points_per_component=args.negative_points_per_component,
+                debug_dir=debug_dir,
+                image_pil=image_pil_denorm,
+            )
+        else:
+            sam_masks, sam_scores = sam_predictor.predict_from_points(
+                image_rgb, point_prompts,
+                debug_dir=debug_dir,
+                image_pil=image_pil_denorm,
+            )
         print(f"SAM masks: {sam_masks.shape[0]}, scores: {sam_scores.round(3)}")
 
         # ── Stage 5: Mask selection ──────────────────────────────────────────
@@ -255,6 +318,13 @@ def main() -> None:
             fusion_topk=args.fusion_topk,
             bone_likelihood=bone_likelihood,
             bone_support=bone_support,
+            sam_scores=sam_scores,
+            component_ids=component_ids,
+            component_masks=(
+                np.stack([component.mask for component in bone_components])
+                if bone_components else None
+            ),
+            best_per_component=component_ids is not None,
         )
 
         # ── Stage 6: Morphological refinement ───────────────────────────────
@@ -273,7 +343,12 @@ def main() -> None:
             ("LayerCAM (fused)", overlay_heatmap(image_pil_denorm, fused_cam)),
             ("Bone guidance", overlay_heatmap(image_pil_denorm, prompt_map)),
             (f"Bone foreground (P{int(args.cam_percentile)})", _make_foreground_panel(image_rgb, prompt_map, args.cam_percentile)),
-            (f"Prompts ({len(point_prompts)} pts)", _make_prompts_panel(image_rgb, prompt_map, point_prompts)),
+            (
+                f"{args.sam_prompt_mode} ({len(bone_components)} comps)",
+                _make_component_prompts_panel(image_rgb, prompt_map, bone_components)
+                if bone_components
+                else _make_prompts_panel(image_rgb, prompt_map, point_prompts),
+            ),
             (f"SAM ({sam_masks.shape[0]} masks)", _make_sam_panel(image_rgb, sam_masks)),
             ("Pseudo Mask", np.stack([pseudo_mask * 255] * 3, axis=-1).astype(np.uint8)),
         ]

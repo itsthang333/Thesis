@@ -12,6 +12,8 @@ from pathlib import Path
 
 import numpy as np
 
+from pseudo.bone_morphology import BoneComponent
+
 
 _SAM_CHECKPOINT_URL = (
     "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
@@ -120,6 +122,124 @@ class SAMPredictor:
 
         return combined_masks, combined_scores
 
+    def predict_from_components(
+        self,
+        image_rgb: np.ndarray,
+        components: list[BoneComponent],
+        prompt_mode: str = "box_point",
+        multimask_output: bool = True,
+        negative_points_per_component: int = 0,
+        debug_dir: str | Path | None = None,
+        image_pil=None,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Prompt SAM once per selected bone component.
+
+        prompt_mode:
+          point        - strongest structured point only
+          joint_points - all structured points in one SAM call
+          box          - component bounding box only
+          box_point    - component box plus all structured points
+        """
+        valid_modes = {"point", "joint_points", "box", "box_point"}
+        if prompt_mode not in valid_modes:
+            raise ValueError(f"Unknown prompt_mode '{prompt_mode}'. Choose from {sorted(valid_modes)}.")
+        if not components:
+            h, w = image_rgb.shape[:2]
+            return (
+                np.zeros((0, h, w), dtype=bool),
+                np.zeros(0, dtype=np.float32),
+                np.zeros(0, dtype=np.int32),
+            )
+
+        self._predictor.set_image(image_rgb)
+        all_masks: list[np.ndarray] = []
+        all_scores: list[np.ndarray] = []
+        component_ids: list[int] = []
+
+        for component in components:
+            points = list(component.positive_points)
+            if prompt_mode == "point":
+                points = points[:1]
+
+            point_coords = None
+            point_labels = None
+            if prompt_mode in {"point", "joint_points", "box_point"} and points:
+                point_coords = np.asarray([(col, row) for row, col in points], dtype=np.float32)
+                point_labels = np.ones(len(points), dtype=np.int32)
+                if negative_points_per_component > 0:
+                    negative_points = self._sample_negative_points(
+                        component,
+                        count=negative_points_per_component,
+                    )
+                    if negative_points:
+                        negative_coords = np.asarray(
+                            [(col, row) for row, col in negative_points],
+                            dtype=np.float32,
+                        )
+                        point_coords = np.concatenate([point_coords, negative_coords], axis=0)
+                        point_labels = np.concatenate(
+                            [point_labels, np.zeros(len(negative_points), dtype=np.int32)],
+                            axis=0,
+                        )
+
+            box = None
+            if prompt_mode in {"box", "box_point"}:
+                box = np.asarray(component.bbox, dtype=np.float32)
+
+            masks, scores, _ = self._predictor.predict(
+                point_coords=point_coords,
+                point_labels=point_labels,
+                box=box,
+                multimask_output=multimask_output,
+            )
+            all_masks.append(masks)
+            all_scores.append(scores)
+            component_ids.extend([component.component_id] * masks.shape[0])
+
+        combined_masks = np.concatenate(all_masks, axis=0)
+        combined_scores = np.concatenate(all_scores, axis=0)
+        component_id_array = np.asarray(component_ids, dtype=np.int32)
+        if debug_dir is not None:
+            self._save_debug(
+                debug_dir,
+                image_rgb,
+                image_pil,
+                combined_masks,
+                combined_scores,
+                component_ids=component_id_array,
+            )
+        return combined_masks, combined_scores, component_id_array
+
+    @staticmethod
+    def _sample_negative_points(
+        component: BoneComponent,
+        count: int,
+    ) -> list[tuple[int, int]]:
+        """Choose deterministic background points inside the expanded box."""
+        x0, y0, x1, y1 = component.bbox
+        mask = component.mask.astype(bool)
+        candidates = [
+            (y0, x0),
+            (y0, x1),
+            (y1, x0),
+            (y1, x1),
+            ((y0 + y1) // 2, x0),
+            ((y0 + y1) // 2, x1),
+            (y0, (x0 + x1) // 2),
+            (y1, (x0 + x1) // 2),
+        ]
+        positives = component.positive_points
+        selected: list[tuple[int, int]] = []
+        for row, col in candidates:
+            if mask[row, col]:
+                continue
+            if any((row - pr) ** 2 + (col - pc) ** 2 < 8 ** 2 for pr, pc in positives):
+                continue
+            selected.append((row, col))
+            if len(selected) >= count:
+                break
+        return selected
+
     def _save_debug(
         self,
         debug_dir: str | Path,
@@ -127,6 +247,7 @@ class SAMPredictor:
         image_pil,
         masks: np.ndarray,
         scores: np.ndarray,
+        component_ids: np.ndarray | None = None,
     ) -> None:
         """Save candidate masks, overlays, and scores JSON for debugging."""
         import json
@@ -158,6 +279,8 @@ class SAMPredictor:
                 "score": round(float(scores[idx]), 4),
                 "area": area,
             }
+            if component_ids is not None:
+                score_info[f"mask_{idx}"]["component_id"] = int(component_ids[idx])
 
         scores_path = debug_dir / "scores.json"
         with scores_path.open("w") as f:
