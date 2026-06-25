@@ -42,8 +42,8 @@ def binary_opening(mask: np.ndarray, kernel_size: int = 3) -> np.ndarray:
     return _morph_op(_morph_op(mask, kernel_size, "erode"), kernel_size, "dilate")
 
 
-def fill_holes(mask: np.ndarray) -> np.ndarray:
-    """Flood-fill enclosed background regions (4-connectivity from border)."""
+def fill_holes(mask: np.ndarray, max_hole_area: int | None = None) -> np.ndarray:
+    """Fill enclosed holes, optionally only when they are sufficiently small."""
     mask = mask.astype(np.uint8)
     h, w = mask.shape
     visited = np.zeros((h, w), dtype=bool)
@@ -69,8 +69,16 @@ def fill_holes(mask: np.ndarray) -> np.ndarray:
                 visited[nr, nc] = True
                 queue.append((nr, nc))
 
+    holes = (mask == 0) & (~visited)
+    if max_hole_area is None:
+        filled = mask.copy()
+        filled[holes] = 1
+        return filled
+
     filled = mask.copy()
-    filled[(mask == 0) & (~visited)] = 1
+    for component in _component_masks(holes.astype(np.uint8)):
+        if int(component.sum()) <= max_hole_area:
+            filled[component.astype(bool)] = 1
     return filled
 
 
@@ -110,15 +118,62 @@ def remove_small_objects(mask: np.ndarray, min_size: int = 200) -> np.ndarray:
 def morphological_refinement(
     mask: np.ndarray,
     closing_kernel: int = 5,
-    opening_kernel: int = 3,
+    opening_kernel: int = 0,
     min_size: int = 200,
+    guidance_map: np.ndarray | None = None,
+    guidance_threshold: float = 0.20,
+    max_hole_area: int = 500,
 ) -> np.ndarray:
     """Full refinement pipeline per pipeline.md Stage 6.
 
     Returns [H, W] uint8 binary mask.
     """
-    mask = binary_closing(mask, kernel_size=closing_kernel)
-    mask = binary_opening(mask, kernel_size=opening_kernel)
-    mask = fill_holes(mask)
+    if closing_kernel > 1:
+        mask = binary_closing(mask, kernel_size=closing_kernel)
+    if opening_kernel > 1:
+        mask = binary_opening(mask, kernel_size=opening_kernel)
+    mask = fill_holes(mask, max_hole_area=max_hole_area)
     mask = remove_small_objects(mask, min_size=min_size)
+
+    if guidance_map is not None and mask.any():
+        filtered = np.zeros_like(mask, dtype=np.uint8)
+        for component in _component_masks(mask):
+            region = component.astype(bool)
+            if float(guidance_map[region].mean()) >= guidance_threshold:
+                filtered |= component
+        if filtered.any():
+            mask = filtered
     return mask
+
+
+def _component_masks(mask: np.ndarray) -> list[np.ndarray]:
+    """Return 8-connected binary component masks."""
+    h, w = mask.shape
+    visited = np.zeros((h, w), dtype=bool)
+    components: list[np.ndarray] = []
+    offsets = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
+
+    for r in range(h):
+        for c in range(w):
+            if mask[r, c] == 0 or visited[r, c]:
+                continue
+            queue: deque[tuple[int, int]] = deque([(r, c)])
+            visited[r, c] = True
+            coords: list[tuple[int, int]] = []
+            while queue:
+                cr, cc = queue.popleft()
+                coords.append((cr, cc))
+                for dr, dc in offsets:
+                    nr, nc = cr + dr, cc + dc
+                    if (
+                        0 <= nr < h and 0 <= nc < w
+                        and mask[nr, nc] > 0
+                        and not visited[nr, nc]
+                    ):
+                        visited[nr, nc] = True
+                        queue.append((nr, nc))
+            component = np.zeros((h, w), dtype=np.uint8)
+            rr, cc = zip(*coords)
+            component[np.asarray(rr), np.asarray(cc)] = 1
+            components.append(component)
+    return components

@@ -31,6 +31,7 @@ from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
+from pseudo.bone_morphology import build_bone_guidance, fuse_cam_with_bone_guidance
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -51,6 +52,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "pseudo_masks")
+    parser.add_argument("--max-images", type=int, default=0,
+                        help="Preview mode limit; 0 processes all images (the notebook preview passes 10)")
+    parser.add_argument("--process-all", action="store_true",
+                        help="Process the full dataset when generating pseudo masks for segmentation training")
+    parser.add_argument("--save-visuals-limit", type=int, default=10,
+                        help="Maximum number of images for which CAM overlays/debug visuals are saved")
     parser.add_argument("--confidence-threshold", type=float, default=0.5,
                         help="Min sigmoid score for a class CAM to participate in fusion")
     parser.add_argument("--cam-percentile", type=float, default=85.0,
@@ -62,13 +69,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mask-score-threshold", type=float, default=0.4,
                         help="Min mean-CAM score for a SAM mask to be kept")
     parser.add_argument("--closing-kernel", type=int, default=5)
-    parser.add_argument("--opening-kernel", type=int, default=3)
-    parser.add_argument("--min-size", type=int, default=200)
+    parser.add_argument("--opening-kernel", type=int, default=0,
+                        help="0 disables opening; recommended for thin hand/wrist bones")
+    parser.add_argument("--min-size", type=int, default=40,
+                        help="Minimum final component size; kept small for phalanges/carpal bones")
+    parser.add_argument("--max-hole-area", type=int, default=500,
+                        help="Only fill enclosed holes up to this area; preserves gaps between bones")
+    parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
+    parser.add_argument("--bone-support-percentile", type=float, default=62.0)
+    parser.add_argument("--disable-bone-morphology", action="store_true",
+                        help="Run the original CAM-only baseline without pre-SAM bone morphology")
     parser.add_argument("--use-clahe", action="store_true")
-    parser.add_argument("--selection-method", type=str, default="mean",
-                        choices=["mean", "sum", "mean_area", "coverage", "hybrid"],
+    parser.add_argument("--selection-method", type=str, default="bone_hybrid",
+                        choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"],
                         help="CAM-guided mask scoring method")
-    parser.add_argument("--fusion-topk", type=int, default=0,
+    parser.add_argument("--fusion-topk", type=int, default=3,
                         help="0=OR all above-thresh, 1=top-1 only, k>1=union top-k, k<0=intersect top-|k|")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
@@ -138,13 +153,18 @@ def main() -> None:
     overlay_dir.mkdir(parents=True, exist_ok=True)
 
     skipped = 0
+    processed = 0
+    process_limit = None if args.process_all or args.max_images <= 0 else args.max_images
     try:
         for images, _, image_names in tqdm(loader, desc="pseudo-masks"):
             images = images.to(device)
 
             for idx, image_name in enumerate(image_names):
+                if process_limit is not None and processed >= process_limit:
+                    break
                 image_tensor = images[idx : idx + 1]  # [1,3,H,W]
                 mask_path = mask_dir / f"{Path(image_name).stem}.png"
+                save_visuals = processed < max(0, args.save_visuals_limit)
 
                 # ── 1. Classifier forward ─────────────────────────────────────
                 with torch.no_grad():
@@ -156,6 +176,7 @@ def main() -> None:
                 if classifier_task != "single-label" and float(class_weights.max()) < args.confidence_threshold:
                     save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
                     skipped += 1
+                    processed += 1
                     continue
 
                 # ── 2. LayerCAM fusion ────────────────────────────────────────
@@ -166,37 +187,55 @@ def main() -> None:
                     confidence_threshold=args.confidence_threshold,
                 )
 
-                # save per-class and fused CAM overlays
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
-                for local_i, cls_i in enumerate(active_indices):
-                    cls_name = target_columns[cls_i]
+                image_rgb = tensor_to_rgb_numpy(image_tensor[0])
+                if save_visuals:
+                    for local_i, cls_i in enumerate(active_indices):
+                        cls_name = target_columns[cls_i]
+                        save_overlay(
+                            image_pil,
+                            per_class_cams[local_i],
+                            overlay_dir / f"{Path(image_name).stem}_{cls_name}.png",
+                        )
                     save_overlay(
                         image_pil,
-                        per_class_cams[local_i],
-                        overlay_dir / f"{Path(image_name).stem}_{cls_name}.png",
+                        fused_cam,
+                        overlay_dir / f"{Path(image_name).stem}_fused_layercam.png",
                     )
-                save_overlay(
-                    image_pil,
-                    fused_cam,
-                    overlay_dir / f"{Path(image_name).stem}_fused_layercam.png",
-                )
 
                 # ── 3. Prompt extraction ──────────────────────────────────────
                 debug_dir = (
                     args.output_dir / "debug" / Path(image_name).stem
-                    if args.debug else None
+                    if args.debug and save_visuals else None
                 )
+                bone_likelihood = None
+                bone_support = None
+                prompt_map = fused_cam
+                if not args.disable_bone_morphology:
+                    bone_likelihood, bone_support = build_bone_guidance(
+                        image_rgb,
+                        fused_cam,
+                        seed_percentile=args.bone_seed_percentile,
+                        support_percentile=args.bone_support_percentile,
+                        min_component_area=max(20, args.min_component_area // 2),
+                        debug_dir=debug_dir,
+                    )
+                    prompt_map = fuse_cam_with_bone_guidance(
+                        fused_cam,
+                        bone_likelihood,
+                        bone_support,
+                    )
                 point_prompts = extract_point_prompts(
-                    fused_cam,
+                    prompt_map,
                     cam_percentile=args.cam_percentile,
                     max_points=args.max_points,
                     min_component_area=args.min_component_area,
+                    support_mask=bone_support,
                     debug_dir=debug_dir,
                     image_pil=image_pil,
                 )
 
                 # ── 4. SAM candidate masks ────────────────────────────────────
-                image_rgb = tensor_to_rgb_numpy(image_tensor[0])
                 sam_masks, _sam_scores = sam_predictor.predict_from_points(
                     image_rgb, point_prompts,
                     debug_dir=debug_dir,
@@ -210,6 +249,8 @@ def main() -> None:
                     mask_score_threshold=args.mask_score_threshold,
                     selection_method=args.selection_method,
                     fusion_topk=args.fusion_topk,
+                    bone_likelihood=bone_likelihood,
+                    bone_support=bone_support,
                 )
 
                 # ── 6. Morphological refinement ───────────────────────────────
@@ -218,14 +259,20 @@ def main() -> None:
                     closing_kernel=args.closing_kernel,
                     opening_kernel=args.opening_kernel,
                     min_size=args.min_size,
+                    guidance_map=bone_likelihood,
+                    max_hole_area=args.max_hole_area,
                 )
 
                 # ── 7. Save ───────────────────────────────────────────────────
                 save_mask(final_mask, mask_path)
+                processed += 1
+            if process_limit is not None and processed >= process_limit:
+                break
     finally:
         layercam.close()
 
-    print(f"\nDone. Masks saved to {mask_dir} (skipped {skipped} low-confidence images)")
+    mode = "full dataset" if args.process_all else f"preview ({processed} images)"
+    print(f"\nDone: {mode}. Masks saved to {mask_dir} (skipped {skipped} low-confidence images)")
 
 
 if __name__ == "__main__":

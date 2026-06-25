@@ -34,6 +34,7 @@ from models.layercam import LayerCAM
 from models.unet import UNet
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
+from pseudo.bone_morphology import build_bone_guidance, fuse_cam_with_bone_guidance
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -56,13 +57,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-points", type=int, default=5)
     parser.add_argument("--min-component-area", type=int, default=100)
     parser.add_argument("--mask-score-threshold", type=float, default=0.4)
-    parser.add_argument("--selection-method", type=str, default="mean",
-                        choices=["mean", "sum", "mean_area", "coverage", "hybrid"])
-    parser.add_argument("--fusion-topk", type=int, default=0,
+    parser.add_argument("--selection-method", type=str, default="bone_hybrid",
+                        choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"])
+    parser.add_argument("--fusion-topk", type=int, default=3,
                         help="0=OR all above-thresh, k>1=union top-k, k<0=intersect top-|k|")
     parser.add_argument("--closing-kernel", type=int, default=5)
-    parser.add_argument("--opening-kernel", type=int, default=3)
-    parser.add_argument("--min-size", type=int, default=200)
+    parser.add_argument("--opening-kernel", type=int, default=0)
+    parser.add_argument("--min-size", type=int, default=40)
+    parser.add_argument("--max-hole-area", type=int, default=500)
+    parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
+    parser.add_argument("--bone-support-percentile", type=float, default=62.0)
+    parser.add_argument("--disable-bone-morphology", action="store_true")
     parser.add_argument("--debug", action="store_true",
                         help="Save SAM candidate masks, prompt overlays, scores.json alongside the strip")
     return parser.parse_args()
@@ -210,11 +215,25 @@ def main() -> None:
 
         # ── Stage 3: Prompt extraction ───────────────────────────────────────
         debug_dir = output_path.parent / "debug" / stem if args.debug else None
+        bone_likelihood = None
+        bone_support = None
+        prompt_map = fused_cam
+        if not args.disable_bone_morphology:
+            bone_likelihood, bone_support = build_bone_guidance(
+                image_rgb,
+                fused_cam,
+                seed_percentile=args.bone_seed_percentile,
+                support_percentile=args.bone_support_percentile,
+                min_component_area=max(20, args.min_component_area // 2),
+                debug_dir=debug_dir,
+            )
+            prompt_map = fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
         point_prompts = extract_point_prompts(
-            fused_cam,
+            prompt_map,
             cam_percentile=args.cam_percentile,
             max_points=args.max_points,
             min_component_area=args.min_component_area,
+            support_mask=bone_support,
             debug_dir=debug_dir,
             image_pil=image_pil_denorm,
         )
@@ -234,6 +253,8 @@ def main() -> None:
             mask_score_threshold=args.mask_score_threshold,
             selection_method=args.selection_method,
             fusion_topk=args.fusion_topk,
+            bone_likelihood=bone_likelihood,
+            bone_support=bone_support,
         )
 
         # ── Stage 6: Morphological refinement ───────────────────────────────
@@ -242,14 +263,17 @@ def main() -> None:
             closing_kernel=args.closing_kernel,
             opening_kernel=args.opening_kernel,
             min_size=args.min_size,
+            guidance_map=bone_likelihood,
+            max_hole_area=args.max_hole_area,
         )
 
         # ── Build panels ─────────────────────────────────────────────────────
         panels: list[tuple[str, np.ndarray]] = [
             ("Original", image_rgb),
             ("LayerCAM (fused)", overlay_heatmap(image_pil_denorm, fused_cam)),
-            (f"Foreground (P{int(args.cam_percentile)})", _make_foreground_panel(image_rgb, fused_cam, args.cam_percentile)),
-            (f"Prompts ({len(point_prompts)} pts)", _make_prompts_panel(image_rgb, fused_cam, point_prompts)),
+            ("Bone guidance", overlay_heatmap(image_pil_denorm, prompt_map)),
+            (f"Bone foreground (P{int(args.cam_percentile)})", _make_foreground_panel(image_rgb, prompt_map, args.cam_percentile)),
+            (f"Prompts ({len(point_prompts)} pts)", _make_prompts_panel(image_rgb, prompt_map, point_prompts)),
             (f"SAM ({sam_masks.shape[0]} masks)", _make_sam_panel(image_rgb, sam_masks)),
             ("Pseudo Mask", np.stack([pseudo_mask * 255] * 3, axis=-1).astype(np.uint8)),
         ]

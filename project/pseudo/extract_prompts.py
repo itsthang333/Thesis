@@ -45,6 +45,7 @@ def extract_point_prompts(
     cam_percentile: float = 85.0,
     max_points: int = 5,
     min_component_area: int = 100,
+    support_mask: np.ndarray | None = None,
     debug_dir: str | None = None,
     image_pil=None,
 ) -> list[tuple[int, int]]:
@@ -63,24 +64,54 @@ def extract_point_prompts(
     """
     threshold = float(np.percentile(bone_cam, cam_percentile))
     fg = (bone_cam > threshold).astype(np.uint8)
+    if support_mask is not None and support_mask.any():
+        supported = (fg.astype(bool) & support_mask.astype(bool)).astype(np.uint8)
+        if supported.any():
+            fg = supported
 
     components = _connected_components(fg)
 
-    peaks: list[tuple[float, int, int]] = []  # (cam_value, row, col)
+    peaks: list[tuple[float, int, int]] = []  # (priority, row, col)
     for comp in components:
         if len(comp) < min_component_area:
             continue
         rows = np.array([p[0] for p in comp])
         cols = np.array([p[1] for p in comp])
         cam_vals = bone_cam[rows, cols]
+
+        # Semantic point: strongest CAM/bone-likelihood response.
         best_idx = int(np.argmax(cam_vals))
         r, c = int(rows[best_idx]), int(cols[best_idx])
         peaks.append((float(cam_vals[best_idx]), r, c))
 
-    # sort by cam value descending, cap at max_points
+        # Geometric point: component pixel nearest its centroid. This is more
+        # likely to lie inside bone than an edge-only activation.
+        centroid_r = float(rows.mean())
+        centroid_c = float(cols.mean())
+        distances = (rows - centroid_r) ** 2 + (cols - centroid_c) ** 2
+        center_idx = int(np.argmin(distances))
+        center_r, center_c = int(rows[center_idx]), int(cols[center_idx])
+        if (center_r, center_c) != (r, c):
+            peaks.append((float(cam_vals[center_idx]) + 0.05, center_r, center_c))
+
+    # Prefer high-confidence points while suppressing near-duplicates.
     peaks.sort(key=lambda x: x[0], reverse=True)
-    peaks = peaks[:max_points]
-    result = [(r, c) for _, r, c in peaks]
+    result: list[tuple[int, int]] = []
+    min_distance = max(6.0, min(bone_cam.shape) * 0.04)
+    for _, r, c in peaks:
+        if all((r - pr) ** 2 + (c - pc) ** 2 >= min_distance ** 2 for pr, pc in result):
+            result.append((r, c))
+        if len(result) >= max_points:
+            break
+
+    # Robust fallback for sparse wrist/finger candidates or aggressive
+    # morphology thresholds.
+    if not result:
+        candidate = support_mask.astype(bool) if support_mask is not None and support_mask.any() else np.ones_like(bone_cam, dtype=bool)
+        masked_values = np.where(candidate, bone_cam, -np.inf)
+        flat_index = int(np.argmax(masked_values))
+        r, c = np.unravel_index(flat_index, bone_cam.shape)
+        result = [(int(r), int(c))]
 
     if debug_dir is not None:
         _save_prompt_debug(debug_dir, bone_cam, fg, components, min_component_area, result, image_pil)

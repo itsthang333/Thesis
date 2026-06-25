@@ -10,13 +10,15 @@ import numpy as np
 #   "mean_area" : score = mean(cam) * sqrt(area)                  — balanced size+quality
 #   "coverage"  : score = fraction of mask pixels where cam > 0.5 — rewards full coverage
 #   "hybrid"    : score = 0.7*mean(cam) + 0.3*log1p(area)/log1p(H*W) — mean + area bonus
-SELECTION_METHODS = ("mean", "sum", "mean_area", "coverage", "hybrid")
+SELECTION_METHODS = ("mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid")
 
 
 def score_masks(
     masks: np.ndarray,
     bone_cam: np.ndarray,
     method: str = "mean",
+    bone_likelihood: np.ndarray | None = None,
+    bone_support: np.ndarray | None = None,
 ) -> np.ndarray:
     """Score each SAM mask by CAM activation inside the mask.
 
@@ -53,6 +55,23 @@ def score_masks(
             total_pixels = float(bone_cam.size)
             area_bonus = float(np.log1p(area) / np.log1p(total_pixels))
             scores[i] = 0.7 * float(cam_vals.mean()) + 0.3 * area_bonus
+        elif method == "bone_hybrid":
+            if bone_likelihood is None:
+                scores[i] = float(cam_vals.mean())
+                continue
+            bone_mean = float(bone_likelihood[m].mean())
+            cam_mean = float(cam_vals.mean())
+            support_recall = 0.0
+            if bone_support is not None and bone_support.any():
+                support_recall = float((m & bone_support.astype(bool)).sum()) / float(bone_support.sum())
+            area_ratio = area / float(bone_cam.size)
+            large_mask_penalty = max(0.0, area_ratio - 0.55)
+            scores[i] = (
+                0.40 * bone_mean
+                + 0.35 * cam_mean
+                + 0.25 * support_recall
+                - 0.30 * large_mask_penalty
+            )
     return scores
 
 
@@ -62,6 +81,8 @@ def select_and_fuse_masks(
     mask_score_threshold: float = 0.4,
     selection_method: str = "mean",
     fusion_topk: int = 0,
+    bone_likelihood: np.ndarray | None = None,
+    bone_support: np.ndarray | None = None,
 ) -> np.ndarray:
     """Select masks whose CAM score exceeds threshold, then fuse them.
 
@@ -86,7 +107,13 @@ def select_and_fuse_masks(
         h, w = bone_cam.shape
         return np.zeros((h, w), dtype=np.uint8)
 
-    scores = score_masks(masks, bone_cam, method=selection_method)
+    scores = score_masks(
+        masks,
+        bone_cam,
+        method=selection_method,
+        bone_likelihood=bone_likelihood,
+        bone_support=bone_support,
+    )
     order = np.argsort(scores)[::-1]
     above = [i for i in order if scores[i] >= mask_score_threshold]
 
