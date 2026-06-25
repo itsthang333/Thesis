@@ -152,7 +152,7 @@ class LayerCAM:
         class_weights: Sequence[float],
         confidence_threshold: float = 0.5,
     ) -> tuple[torch.Tensor, list[np.ndarray], list[float], list[int]]:
-        """Run CAM only for classes whose sigmoid score >= confidence_threshold.
+        """Run CAM only for classes whose classifier score >= confidence_threshold.
 
         Returns:
             logits:         [1, C]

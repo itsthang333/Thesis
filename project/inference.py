@@ -50,12 +50,18 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121AnatomyClassifier, list[str]]:
+def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121AnatomyClassifier, list[str], str]:
     checkpoint = torch.load(path, map_location="cpu")
     target_columns = checkpoint.get("target_columns", ["hand", "leg", "hip", "shoulder"])
     model = DenseNet121AnatomyClassifier(num_classes=len(target_columns), pretrained=False)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
-    return model.to(device).eval(), list(target_columns)
+    return model.to(device).eval(), list(target_columns), checkpoint.get("task", "multi-label")
+
+
+def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
+    if task == "single-label":
+        return torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
+    return torch.sigmoid(logits)[0].detach().cpu().numpy()
 
 
 def load_segmentation_model(path: Path, device: torch.device) -> UNet:
@@ -71,7 +77,7 @@ def main() -> None:
     stem = args.image_path.stem
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    classifier, target_columns = load_classifier(args.classifier_checkpoint, device)
+    classifier, target_columns, classifier_task = load_classifier(args.classifier_checkpoint, device)
     segmentation_model = load_segmentation_model(args.segmentation_checkpoint, device)
     layercam = LayerCAM(classifier, device=device)
     sam_predictor = SAMPredictor(
@@ -89,7 +95,7 @@ def main() -> None:
         # ── Stage 1: classifier → class weights ─────────────────────────────
         with torch.no_grad():
             logits = classifier(image_tensor)
-            class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
+            class_weights = classifier_class_weights(logits, classifier_task)
 
         # ── Stage 2: LayerCAM → fused CAM ───────────────────────────────────
         fused_cam, per_class_cams, active_indices = generate_fused_cam(

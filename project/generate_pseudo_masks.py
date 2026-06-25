@@ -77,13 +77,19 @@ def load_classifier(
     checkpoint_path: Path,
     num_classes: int,
     device: torch.device,
-) -> DenseNet121AnatomyClassifier:
+) -> tuple[DenseNet121AnatomyClassifier, str]:
     model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     state = torch.load(checkpoint_path, map_location="cpu")
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device)
     model.eval()
-    return model
+    return model, state.get("task", "multi-label")
+
+
+def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
+    if task == "single-label":
+        return torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
+    return torch.sigmoid(logits)[0].detach().cpu().numpy()
 
 
 def tensor_to_rgb_numpy(image_tensor: torch.Tensor) -> np.ndarray:
@@ -114,7 +120,8 @@ def main() -> None:
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    classifier = load_classifier(args.classifier_checkpoint, len(target_columns), device)
+    classifier, classifier_task = load_classifier(args.classifier_checkpoint, len(target_columns), device)
+    print(f"Loaded classifier checkpoint task={classifier_task}")
     layercam = LayerCAM(classifier, device=device)
 
     sam_predictor = SAMPredictor(
@@ -140,10 +147,11 @@ def main() -> None:
                 # ── 1. Classifier forward ─────────────────────────────────────
                 with torch.no_grad():
                     logits = classifier(image_tensor)
-                    class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
+                    class_weights = classifier_class_weights(logits, classifier_task)
 
-                # Skip images where classifier is not confident about any class
-                if float(class_weights.max()) < args.confidence_threshold:
+                # For multi-label checkpoints, low confidence can mean no reliable anatomy class.
+                # For single-label checkpoints, LayerCAM will fall back to the top softmax class.
+                if classifier_task != "single-label" and float(class_weights.max()) < args.confidence_threshold:
                     save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
                     skipped += 1
                     continue

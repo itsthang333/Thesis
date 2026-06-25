@@ -113,6 +113,8 @@ class FracAtlasClassificationDataset(Dataset):
         image_size: int = 512,
         augment: bool = False,
         use_clahe: bool = False,
+        single_label_only: bool = False,
+        return_class_index: bool = False,
     ) -> None:
         self.csv_path = Path(csv_path)
         self.image_index = build_image_index(image_roots)
@@ -120,6 +122,8 @@ class FracAtlasClassificationDataset(Dataset):
         self.image_size = image_size
         self.augment = augment
         self.use_clahe = use_clahe
+        self.single_label_only = single_label_only
+        self.return_class_index = return_class_index
         # Sử dụng đúng hàm transform của classification
         self.image_transform = _make_classification_transform(image_size, augment=augment)
 
@@ -129,6 +133,9 @@ class FracAtlasClassificationDataset(Dataset):
 
         self.samples: list[dict[str, object]] = []
         for row in self.rows:
+            target_values = [float(row.get(column, 0.0) or 0.0) for column in self.target_columns]
+            if self.single_label_only and sum(value > 0.0 for value in target_values) != 1:
+                continue
             image_name = row["image_id"]
             image_path = self._resolve_image_path(image_name)
             if image_path is None:
@@ -169,6 +176,15 @@ class FracAtlasClassificationDataset(Dataset):
         image_tensor = self.image_transform(image)
 
         target_values = [float(row.get(column, 0.0) or 0.0) for column in self.target_columns]
+        if self.return_class_index:
+            positive_indices = [i for i, value in enumerate(target_values) if value > 0.0]
+            if len(positive_indices) != 1:
+                raise ValueError(
+                    "return_class_index=True requires exactly one positive target. "
+                    "Use single_label_only=True when constructing the dataset."
+                )
+            return image_tensor, torch.tensor(positive_indices[0], dtype=torch.long), image_path.name
+
         target_tensor = torch.tensor(target_values, dtype=torch.float32)
         if target_tensor.numel() == 1:
             target_tensor = target_tensor.view(1)

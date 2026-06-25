@@ -22,7 +22,7 @@ def generate_fused_cam(
     Args:
         layercam:             Initialised LayerCAM instance.
         image_tensor:         [1, 3, H, W] on the correct device.
-        class_weights:        sigmoid(logits), shape [C], numpy float32.
+        class_weights:        classifier scores, shape [C], numpy float32.
         confidence_threshold: Classes below this are excluded from fusion.
 
     Returns:

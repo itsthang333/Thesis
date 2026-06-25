@@ -147,6 +147,12 @@ def build_figure(panels: list[tuple[str, np.ndarray]], output_path: Path) -> Non
     print(f"Saved pipeline visualization to {output_path}")
 
 
+def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
+    if task == "single-label":
+        return torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
+    return torch.sigmoid(logits)[0].detach().cpu().numpy()
+
+
 def main() -> None:
     args = parse_args()
     stem = args.image_path.stem
@@ -157,6 +163,7 @@ def main() -> None:
     # ── Load models ──────────────────────────────────────────────────────────
     clf_ckpt = torch.load(args.classifier_checkpoint, map_location="cpu")
     target_columns = clf_ckpt.get("target_columns", ["hand", "leg", "hip", "shoulder"])
+    classifier_task = clf_ckpt.get("task", "multi-label")
     classifier = DenseNet121AnatomyClassifier(num_classes=len(target_columns), pretrained=False)
     classifier.load_state_dict(clf_ckpt["model_state_dict"], strict=True)
     classifier = classifier.to(device).eval()
@@ -186,9 +193,10 @@ def main() -> None:
         # ── Stage 1: classifier ──────────────────────────────────────────────
         with torch.no_grad():
             logits = classifier(image_tensor)
-            class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
+            class_weights = classifier_class_weights(logits, classifier_task)
 
         active_labels = [target_columns[i] for i, w in enumerate(class_weights) if w >= args.confidence_threshold]
+        print(f"Classifier task: {classifier_task}")
         print(f"Active classes: {active_labels} (scores: {class_weights.round(3)})")
 
         # ── Stage 2: LayerCAM ────────────────────────────────────────────────
