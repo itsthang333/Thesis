@@ -111,15 +111,19 @@ class LayerCAM:
             state.activations = None
             state.gradients = None
 
-        outputs = self.model(input_tensor)
-        logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
-        if logits.ndim == 1:
-            logits = logits.unsqueeze(0)
+        # torch.enable_grad() guarantees backward() works even when the caller
+        # is wrapped in torch.no_grad() (e.g. the inference loop).
+        with torch.enable_grad():
+            outputs = self.model(input_tensor)
+            logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
+            if logits.ndim == 1:
+                logits = logits.unsqueeze(0)
 
-        score = logits[:, class_index].sum()
-        score.backward()
+            score = logits[:, class_index].sum()
+            score.backward()
 
         input_size = input_tensor.shape[-2:]
+
         fused = None
         for state, w in zip(self._states, self.LAYER_WEIGHTS):
             if state.activations is None or state.gradients is None:

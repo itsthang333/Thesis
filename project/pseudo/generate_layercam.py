@@ -42,7 +42,12 @@ def generate_fused_cam(
     w_arr = np.clip(w_arr, 0.0, None)
     w_arr = w_arr / (w_arr.sum() + 1e-8)
 
-    fused = sum(w * cam for w, cam in zip(w_arr, per_class_cams))
+    # Use np.zeros as start so sum() on an empty iterable returns a zero array,
+    # not Python int 0 (which would crash on .astype()).
+    zeros = np.zeros_like(per_class_cams[0]) if per_class_cams else None
+    if zeros is None:
+        raise RuntimeError("generate_fused_cam: no active CAMs to fuse.")
+    fused = sum((w * cam for w, cam in zip(w_arr, per_class_cams)), zeros)
     fused = fused.astype(np.float32)
 
     mn, mx = float(fused.min()), float(fused.max())

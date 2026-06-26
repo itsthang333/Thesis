@@ -414,8 +414,10 @@ def build_bone_guidance(
     bone_likelihood = _normalise_percentile(bone_likelihood, low=1.0, high=99.0)
 
     seed_threshold = float(np.percentile(bone_likelihood, seed_percentile))
+    # min() so that a caller passing support_percentile < 68 actually gets a
+    # looser threshold (more support pixels) rather than being silently overridden.
     support_threshold = float(
-        max(
+        min(
             np.percentile(bone_likelihood, support_percentile),
             np.percentile(bone_likelihood, 68.0),
         )

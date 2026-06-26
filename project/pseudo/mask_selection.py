@@ -2,6 +2,9 @@ from __future__ import annotations
 
 """CAM-guided SAM mask scoring and selection (pipeline.md Stage 5)."""
 
+import csv
+from pathlib import Path
+
 import numpy as np
 
 # Supported scoring methods:
@@ -30,6 +33,25 @@ def _binary_dilation(mask: np.ndarray, kernel_size: int = 9) -> np.ndarray:
     return output.astype(np.uint8)
 
 
+def _elongation_score(mask: np.ndarray) -> float:
+    """Normalized elongation score in [0, 1].
+
+    Bone masks are typically elongated; soft-tissue masks tend to be compact.
+    Computed from bounding box aspect ratio: ratio = max(w,h) / min(w,h).
+    Mapped to [0,1] with a soft cap at ratio=10 (very elongated → 1.0).
+    Empty masks return 0.
+    """
+    rows, cols = np.where(mask)
+    if rows.size == 0:
+        return 0.0
+    h = int(rows.max() - rows.min()) + 1
+    w = int(cols.max() - cols.min()) + 1
+    if min(h, w) == 0:
+        return 0.0
+    ratio = float(max(h, w)) / float(min(h, w))
+    return float(min(1.0, (ratio - 1.0) / 9.0))
+
+
 def score_masks(
     masks: np.ndarray,
     bone_cam: np.ndarray,
@@ -43,7 +65,7 @@ def score_masks(
     Args:
         masks:    [N, H, W] bool or uint8.
         bone_cam: [H, W] float32 in [0, 1].
-        method:   One of "mean", "sum", "mean_area", "coverage", "hybrid".
+        method:   One of "mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid".
 
     Returns:
         scores: [N] float32 array.
@@ -66,18 +88,13 @@ def score_masks(
         elif method == "mean_area":
             scores[i] = float(cam_vals.mean()) * float(np.sqrt(area))
         elif method == "coverage":
-            # fraction of mask pixels that are "activated" (cam > 0.5)
             scores[i] = float((cam_vals > 0.5).sum()) / area
         elif method == "hybrid":
-            # mean CAM quality + log-normalised area bonus
             total_pixels = float(bone_cam.size)
             area_bonus = float(np.log1p(area) / np.log1p(total_pixels))
             scores[i] = 0.7 * float(cam_vals.mean()) + 0.3 * area_bonus
         elif method == "bone_hybrid":
-            if bone_likelihood is None:
-                scores[i] = float(cam_vals.mean())
-                continue
-            bone_mean = float(bone_likelihood[m].mean())
+            bone_mean = float(bone_likelihood[m].mean()) if bone_likelihood is not None else 0.0
             cam_mean = float(cam_vals.mean())
             support_recall = 0.0
             support_precision = 0.0
@@ -95,16 +112,79 @@ def score_masks(
             large_mask_penalty = max(0.0, area_ratio - expected_area)
             soft_tissue_penalty = max(0.0, 0.55 - support_precision)
             sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
+            elongation = _elongation_score(m)
             scores[i] = (
-                0.25 * bone_mean
-                + 0.10 * cam_mean
-                + 0.25 * support_recall
-                + 0.30 * support_precision
-                + 0.10 * sam_quality
+                0.20 * bone_mean
+                + 0.15 * cam_mean
+                + 0.20 * support_precision
+                + 0.20 * support_recall
+                + 0.15 * sam_quality
+                + 0.10 * elongation
                 - 0.90 * large_mask_penalty
                 - 0.35 * soft_tissue_penalty
             )
     return scores
+
+
+def score_masks_detailed(
+    masks: np.ndarray,
+    bone_cam: np.ndarray,
+    method: str = "bone_hybrid",
+    bone_likelihood: np.ndarray | None = None,
+    bone_support: np.ndarray | None = None,
+    sam_scores: np.ndarray | None = None,
+    component_ids: np.ndarray | None = None,
+) -> list[dict]:
+    """Return per-candidate scoring breakdown for ranking debug CSV (Section 10)."""
+    n = masks.shape[0]
+    rows = []
+    for i in range(n):
+        m = masks[i].astype(bool)
+        area = int(m.sum())
+        cam_vals = bone_cam[m] if area > 0 else np.array([0.0])
+        bone_mean = float(bone_likelihood[m].mean()) if bone_likelihood is not None and area > 0 else 0.0
+        cam_mean = float(cam_vals.mean())
+        support_recall = 0.0
+        support_precision = 0.0
+        if bone_support is not None and bone_support.any() and area > 0:
+            overlap = float((m & bone_support.astype(bool)).sum())
+            support_recall = overlap / float(bone_support.sum())
+            support_precision = overlap / float(area)
+        sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
+        elongation = _elongation_score(m)
+        rows.append({
+            "candidate_id": i,
+            "component_id": int(component_ids[i]) if component_ids is not None else -1,
+            "area": area,
+            "bone_mean": round(bone_mean, 4),
+            "cam_mean": round(cam_mean, 4),
+            "support_precision": round(support_precision, 4),
+            "support_recall": round(support_recall, 4),
+            "sam_score": round(sam_quality, 4),
+            "elongation_score": round(elongation, 4),
+            "final_score": 0.0,  # filled below
+        })
+
+    final_scores = score_masks(masks, bone_cam, method=method,
+                               bone_likelihood=bone_likelihood,
+                               bone_support=bone_support, sam_scores=sam_scores)
+    for i, row in enumerate(rows):
+        row["final_score"] = round(float(final_scores[i]), 4)
+    return rows
+
+
+def save_ranking_csv(rows: list[dict], path: Path) -> None:
+    """Save per-candidate ranking details to CSV."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "candidate_id", "component_id", "area",
+        "bone_mean", "cam_mean", "support_precision", "support_recall",
+        "sam_score", "elongation_score", "final_score",
+    ]
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def select_and_fuse_masks(

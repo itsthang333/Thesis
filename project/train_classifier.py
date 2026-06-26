@@ -198,10 +198,11 @@ def main() -> None:
             f"val_loss={val_loss:.4f} val_f1={val_metrics['f1']:.4f}"
         )
 
-        save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             save_checkpoint(args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns)
+        # Save last checkpoint AFTER updating best_val_loss so the stored metric is current.
+        save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns)
 
 
 if __name__ == "__main__":

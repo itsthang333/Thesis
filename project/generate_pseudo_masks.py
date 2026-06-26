@@ -37,7 +37,7 @@ from pseudo.bone_morphology import (
     fuse_cam_with_bone_guidance,
 )
 from pseudo.sam_refine import SAMPredictor
-from pseudo.mask_selection import select_and_fuse_masks
+from pseudo.mask_selection import select_and_fuse_masks, score_masks_detailed, save_ranking_csv
 from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
@@ -61,9 +61,9 @@ def parse_args() -> argparse.Namespace:
                         help="Process the full dataset when generating pseudo masks for segmentation training")
     parser.add_argument("--save-visuals-limit", type=int, default=10,
                         help="Maximum number of images for which CAM overlays/debug visuals are saved")
-    parser.add_argument("--confidence-threshold", type=float, default=0.5,
+    parser.add_argument("--confidence-threshold", type=float, default=0.45,
                         help="Min sigmoid score for a class CAM to participate in fusion")
-    parser.add_argument("--cam-percentile", type=float, default=85.0,
+    parser.add_argument("--cam-percentile", type=float, default=90.0,
                         help="Percentile threshold for foreground extraction (85/90/95)")
     parser.add_argument("--max-points", type=int, default=5,
                         help="Max SAM prompt points per image")
@@ -71,7 +71,7 @@ def parse_args() -> argparse.Namespace:
                         help="Min pixels for a CAM component to generate a prompt")
     parser.add_argument("--mask-score-threshold", type=float, default=0.4,
                         help="Min mean-CAM score for a SAM mask to be kept")
-    parser.add_argument("--closing-kernel", type=int, default=5)
+    parser.add_argument("--closing-kernel", type=int, default=3)
     parser.add_argument("--opening-kernel", type=int, default=0,
                         help="0 disables opening; recommended for thin hand/wrist bones")
     parser.add_argument("--min-size", type=int, default=40,
@@ -96,7 +96,7 @@ def parse_args() -> argparse.Namespace:
                         choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"],
                         help="CAM-guided mask scoring method")
     parser.add_argument("--fusion-topk", type=int, default=3,
-                        help="0=OR all above-thresh, 1=top-1 only, k>1=union top-k, k<0=intersect top-|k|")
+                        help="Union of top-k masks; k>1=top-k union, k<0=intersection, 1=top-1 only")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
     return parser.parse_args()
@@ -197,7 +197,7 @@ def main() -> None:
                 )
 
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
-                image_rgb = tensor_to_rgb_numpy(image_tensor[0])
+                image_rgb = np.array(image_pil, dtype=np.uint8)
                 if save_visuals:
                     for local_i, cls_i in enumerate(active_indices):
                         cls_name = target_columns[cls_i]
@@ -280,22 +280,40 @@ def main() -> None:
                     )
 
                 # ── 5. CAM-guided mask selection ──────────────────────────────
-                refined = select_and_fuse_masks(
-                    sam_masks,
-                    fused_cam,
-                    mask_score_threshold=args.mask_score_threshold,
-                    selection_method=args.selection_method,
-                    fusion_topk=args.fusion_topk,
-                    bone_likelihood=bone_likelihood,
-                    bone_support=bone_support,
-                    sam_scores=sam_scores,
-                    component_ids=component_ids,
-                    component_masks=(
-                        np.stack([component.mask for component in bone_components])
-                        if bone_components else None
-                    ),
-                    best_per_component=component_ids is not None,
-                )
+                if sam_masks.shape[0] == 0:
+                    refined = np.zeros((args.image_size, args.image_size), dtype=np.uint8)
+                else:
+                    refined = select_and_fuse_masks(
+                        sam_masks,
+                        fused_cam,
+                        mask_score_threshold=args.mask_score_threshold,
+                        selection_method=args.selection_method,
+                        fusion_topk=args.fusion_topk,
+                        bone_likelihood=bone_likelihood,
+                        bone_support=bone_support,
+                        sam_scores=sam_scores,
+                        component_ids=component_ids,
+                        component_masks=(
+                            np.stack([component.mask for component in bone_components])
+                            if bone_components else None
+                        ),
+                        best_per_component=component_ids is not None,
+                    )
+
+                # ── 5b. Ranking debug CSV ─────────────────────────────────────
+                if args.debug and sam_masks.shape[0] > 0:
+                    ranking_rows = score_masks_detailed(
+                        sam_masks, fused_cam,
+                        method=args.selection_method,
+                        bone_likelihood=bone_likelihood,
+                        bone_support=bone_support,
+                        sam_scores=sam_scores,
+                        component_ids=component_ids,
+                    )
+                    save_ranking_csv(
+                        ranking_rows,
+                        args.output_dir / "debug" / Path(image_name).stem / "ranking.csv",
+                    )
 
                 # ── 6. Morphological refinement ───────────────────────────────
                 final_mask = morphological_refinement(

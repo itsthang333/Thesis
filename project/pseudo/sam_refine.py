@@ -228,9 +228,12 @@ class SAMPredictor:
             (y0, (x0 + x1) // 2),
             (y1, (x0 + x1) // 2),
         ]
+        h, w = mask.shape
         positives = component.positive_points
         selected: list[tuple[int, int]] = []
         for row, col in candidates:
+            row = max(0, min(row, h - 1))
+            col = max(0, min(col, w - 1))
             if mask[row, col]:
                 continue
             if any((row - pr) ** 2 + (col - pc) ** 2 < 8 ** 2 for pr, pc in positives):

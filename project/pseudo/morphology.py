@@ -117,7 +117,7 @@ def remove_small_objects(mask: np.ndarray, min_size: int = 200) -> np.ndarray:
 
 def morphological_refinement(
     mask: np.ndarray,
-    closing_kernel: int = 5,
+    closing_kernel: int = 3,
     opening_kernel: int = 0,
     min_size: int = 200,
     guidance_map: np.ndarray | None = None,
@@ -172,6 +172,8 @@ def _component_masks(mask: np.ndarray) -> list[np.ndarray]:
                     ):
                         visited[nr, nc] = True
                         queue.append((nr, nc))
+            if not coords:
+                continue
             component = np.zeros((h, w), dtype=np.uint8)
             rr, cc = zip(*coords)
             component[np.asarray(rr), np.asarray(cc)] = 1

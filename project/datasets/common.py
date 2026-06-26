@@ -47,7 +47,7 @@ def apply_clahe(image: Image.Image) -> Image.Image:
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     l_channel = clahe.apply(l_channel)
     merged = cv2.merge((l_channel, a_channel, b_channel))
-    rgb = cv2.cvtColor(cv2.cvtColor(merged, cv2.COLOR_LAB2BGR), cv2.COLOR_BGR2RGB)
+    rgb = cv2.cvtColor(merged, cv2.COLOR_LAB2RGB)
     return Image.fromarray(rgb)
 
 
@@ -74,10 +74,12 @@ def make_segmentation_image_transform(image_size: int) -> transforms.Compose:
     )
 
 
-def make_segmentation_mask_transform(image_size: int) -> transforms.Compose:
-    return transforms.Compose(
-        [
-            transforms.Resize((image_size, image_size), interpolation=transforms.InterpolationMode.NEAREST),
-            transforms.ToTensor(),
-        ]
-    )
+def make_segmentation_mask_transform(image_size: int):
+    import torch
+
+    def _transform(mask: Image.Image) -> torch.Tensor:
+        mask = mask.resize((image_size, image_size), Image.NEAREST)
+        arr = np.array(mask, dtype=np.float32)
+        return torch.from_numpy(arr).unsqueeze(0)
+
+    return _transform
