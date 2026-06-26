@@ -26,6 +26,7 @@ Thumbs.db
 outputs/
 runs/
 checkpoints/
+.tmp_notebook_outputs/
 *.pt
 *.pth
 *.ckpt
