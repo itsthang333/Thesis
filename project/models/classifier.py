@@ -12,7 +12,7 @@ except Exception:  # pragma: no cover - torchvision version differences
 
 
 class DenseNet121AnatomyClassifier(nn.Module):
-    """DenseNet121 multi-label anatomy classifier with explicit feature extraction for Grad-CAM.
+    """DenseNet121 classifier with explicit feature extraction for LayerCAM.
 
     Input:  [B, 3, H, W]
     Output: logits [B, C] and final feature maps [B, 1024, H/32, W/32]

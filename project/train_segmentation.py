@@ -7,7 +7,7 @@ from pathlib import Path
 
 import torch
 from torch import nn
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 ROOT = Path(__file__).resolve().parent
@@ -15,23 +15,22 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config import SegmentationConfig
-from datasets.fracatlas import FracAtlasSegmentationDataset, build_train_val_indices
+from datasets.ramh1200 import RAMH1200SegmentationDataset
 from models.losses import bce_dice_loss, dice_coefficient, iou_score
 from models.unet import UNet
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train U-Net on pseudo masks with GT validation")
-    parser.add_argument("--data-root", type=Path, default=ROOT.parent / "FracAtlas")
-    parser.add_argument("--image-root", type=Path, default=None)
-    parser.add_argument("--mask-root", type=Path, default=ROOT / "outputs" / "pseudo_masks" / "masks", help="Pseudo masks cho Train")
-    parser.add_argument("--gt-mask-root", type=Path, default=None, help="Ground Truth masks cho Validation")
+    parser = argparse.ArgumentParser(description="Train U-Net on RAM-H1200 bone masks")
+    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1")
+    parser.add_argument("--train-split", type=str, default="train")
+    parser.add_argument("--val-split", type=str, default="val")
+    parser.add_argument("--annotation-name", type=str, default="_annotations_bone_rle.coco.json")
     parser.add_argument("--image-size", type=int, default=SegmentationConfig.image_size)
     parser.add_argument("--batch-size", type=int, default=SegmentationConfig.batch_size)
     parser.add_argument("--lr", type=float, default=SegmentationConfig.lr)
     parser.add_argument("--weight-decay", type=float, default=SegmentationConfig.weight_decay)
     parser.add_argument("--epochs", type=int, default=SegmentationConfig.epochs)
-    parser.add_argument("--val-fraction", type=float, default=SegmentationConfig.val_fraction)
     parser.add_argument("--seed", type=int, default=SegmentationConfig.seed)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "segmentation")
@@ -49,44 +48,28 @@ def seed_everything(seed: int) -> None:
     np.random.seed(seed)
 
 
-def build_aligned_indices(dataset: FracAtlasSegmentationDataset, data_root: Path, image_root: Path, val_fraction: float, seed: int) -> tuple[list[int], list[int]]:
-    csv_path = data_root / "dataset.csv"
-    global_stems = []
-    
-    if csv_path.exists():
-        with csv_path.open("r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            col_name = "image_id" if "image_id" in reader.fieldnames else reader.fieldnames[0]
-            for row in reader:
-                global_stems.append(Path(row[col_name]).stem)
-    else:
-        global_files = sorted([f for f in image_root.iterdir() if f.is_file()])
-        global_stems = [f.stem for f in global_files if f.suffix.lower() in (".jpg", ".png", ".jpeg")]
-
-    if not global_stems:
-        raise RuntimeError("Không tìm thấy dữ liệu gốc để tái tạo tập split của Stage 1.")
-
-    global_train_idx, global_val_idx = build_train_val_indices(len(global_stems), val_fraction=val_fraction, seed=seed)
-    
-    stage1_train_stems = {global_stems[i] for i in global_train_idx}
-    stage1_val_stems = {global_stems[i] for i in global_val_idx}
-
-    train_indices = []
-    val_indices = []
-    
-    # FracAtlasSegmentationDataset.samples is list[tuple[Path, Path]]
-    dataset_paths = [s[0] for s in dataset.samples]
-
-    print("Đang đồng bộ hóa Train/Val split với Stage 1...")
-    for i, img_path in enumerate(dataset_paths):
-        stem = img_path.stem
-        if stem in stage1_train_stems:
-            train_indices.append(i)
-        elif stem in stage1_val_stems:
-            val_indices.append(i)
-            
-    print(f"Đã ánh xạ: {len(train_indices)} ảnh cho Train, {len(val_indices)} ảnh cho Validation.")
-    return train_indices, val_indices
+def build_datasets(args: argparse.Namespace) -> tuple[RAMH1200SegmentationDataset, RAMH1200SegmentationDataset]:
+    train_dataset = RAMH1200SegmentationDataset(
+        root=args.ram_root,
+        split=args.train_split,
+        image_size=args.image_size,
+        augment=True,
+        use_clahe=args.use_clahe,
+        annotation_name=args.annotation_name,
+    )
+    val_dataset = RAMH1200SegmentationDataset(
+        root=args.ram_root,
+        split=args.val_split,
+        image_size=args.image_size,
+        augment=False,
+        use_clahe=args.use_clahe,
+        annotation_name=args.annotation_name,
+    )
+    print(
+        f"Loaded RAM-H1200: {len(train_dataset)} train images from {args.train_split}, "
+        f"{len(val_dataset)} validation images from {args.val_split}."
+    )
+    return train_dataset, val_dataset
 
 
 def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tuple[float, dict[str, float]]:
@@ -94,10 +77,7 @@ def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tup
     total_dice = 0.0
     total_iou = 0.0
     batches = 0
-    if train:
-        model.train()
-    else:
-        model.eval()
+    model.train(train)
 
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
     for images, masks, _ in progress:
@@ -136,6 +116,7 @@ def save_checkpoint(path: Path, model: nn.Module, optimizer: torch.optim.Optimiz
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "best_metric": best_metric,
+            "dataset": "RAM-H1200",
         },
         path,
     )
@@ -145,52 +126,18 @@ def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
-    image_root = args.image_root or (args.data_root / "images")
-    
-    train_base_dataset = FracAtlasSegmentationDataset(
-        image_roots=image_root,
-        mask_root=args.mask_root,
-        image_size=args.image_size,
-        augment=True, # Train CẦN augment
-        use_clahe=args.use_clahe,
-    )
-    
-    val_mask_root = args.gt_mask_root if args.gt_mask_root else args.mask_root
-    if not args.gt_mask_root:
-        print("[CẢNH BÁO] Không có GT masks. Model đang đánh giá validation trên Pseudo Masks!")
-        
-    val_base_dataset = FracAtlasSegmentationDataset(
-        image_roots=image_root,
-        mask_root=val_mask_root,
-        image_size=args.image_size,
-        augment=False,
-        use_clahe=args.use_clahe,
-    )
-    
-    train_indices, val_indices = build_aligned_indices(
-        dataset=train_base_dataset, 
-        data_root=args.data_root, 
-        image_root=image_root, 
-        val_fraction=args.val_fraction, 
-        seed=args.seed
-    )
-    
-    train_dataset = Subset(train_base_dataset, train_indices)
-    val_dataset = Subset(val_base_dataset, val_indices)
-
+    train_dataset, val_dataset = build_datasets(args)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet(in_channels=3, out_channels=1, base_channels=64).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
 
     history_path = args.output_dir / "training_log.csv"
-    
-    best_val_dice = 0.0 
-    
+    best_val_dice = 0.0
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with history_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -202,15 +149,17 @@ def main() -> None:
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
-            writer.writerow([
-                epoch,
-                train_loss,
-                train_metrics["dice"],
-                train_metrics["iou"],
-                val_loss,
-                val_metrics["dice"],
-                val_metrics["iou"],
-            ])
+            writer.writerow(
+                [
+                    epoch,
+                    train_loss,
+                    train_metrics["dice"],
+                    train_metrics["iou"],
+                    val_loss,
+                    val_metrics["dice"],
+                    val_metrics["iou"],
+                ]
+            )
 
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_dice={train_metrics['dice']:.4f} "
@@ -218,11 +167,10 @@ def main() -> None:
         )
 
         save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice)
-
         if val_metrics["dice"] > best_val_dice:
             best_val_dice = val_metrics["dice"]
             save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice)
-            print(f"--> Đã lưu Best Model mới với Dice = {best_val_dice:.4f}")
+            print(f"--> Saved new best model with Dice = {best_val_dice:.4f}")
 
 
 if __name__ == "__main__":

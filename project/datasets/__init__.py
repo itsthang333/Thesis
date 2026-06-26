@@ -1,6 +1,6 @@
-from .fracatlas import (
-    FracAtlasClassificationDataset,
-    FracAtlasSegmentationDataset,
-    build_image_index,
-    build_train_val_indices,
+from .common import build_image_index
+from .ramh1200 import (
+    RAMH1200ClassificationDataset,
+    RAMH1200SegmentationDataset,
+    resolve_ramh1200_segmentation_root,
 )

@@ -3,6 +3,7 @@ torchvision
 numpy
 pillow
 tqdm
+pycocotools
 
 # Optional, only needed for CLAHE preprocessing.
 opencv-python

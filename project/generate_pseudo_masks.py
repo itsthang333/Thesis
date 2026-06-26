@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from datasets.fracatlas import FracAtlasClassificationDataset
+from datasets.ramh1200 import RAMH1200ClassificationDataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from pseudo.generate_layercam import generate_fused_cam
@@ -43,15 +43,14 @@ from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate pseudo masks via LayerCAM + SAM")
-    parser.add_argument("--data-root", type=Path, default=ROOT.parent / "FracAtlas")
-    parser.add_argument("--csv-path", type=Path, default=None)
-    parser.add_argument("--image-root", type=Path, default=None)
+    parser = argparse.ArgumentParser(description="Generate RAM-H1200 pseudo masks via LayerCAM + SAM")
+    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1")
+    parser.add_argument("--split", type=str, default="val")
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
     parser.add_argument("--sam-checkpoint", type=Path, default=None,
                         help="Path to sam_vit_b_01ec64.pth (auto-downloaded if absent)")
-    parser.add_argument("--target-columns", type=str, default="hand,leg,hip,shoulder")
+    parser.add_argument("--target-columns", type=str, default="hand")
     parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
@@ -130,16 +129,13 @@ def tensor_to_rgb_numpy(image_tensor: torch.Tensor) -> np.ndarray:
 
 def main() -> None:
     args = parse_args()
-    csv_path = args.csv_path or (args.data_root / "dataset.csv")
-    image_root = args.image_root or (args.data_root / "images")
     target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
-    dataset = FracAtlasClassificationDataset(
-        csv_path=csv_path,
-        image_roots=image_root,
+    dataset = RAMH1200ClassificationDataset(
+        root=args.ram_root,
+        split=args.split,
         target_columns=target_columns,
         image_size=args.image_size,
-        augment=False,
         use_clahe=args.use_clahe,
     )
     loader = DataLoader(

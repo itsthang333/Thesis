@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from datasets.fracatlas import _make_classification_transform
+from config import DEFAULT_ANATOMY_COLUMNS
+from datasets.common import make_classification_transform
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from models.unet import UNet
@@ -71,7 +72,7 @@ def parse_args() -> argparse.Namespace:
 
 def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121AnatomyClassifier, list[str], str]:
     checkpoint = torch.load(path, map_location="cpu")
-    target_columns = checkpoint.get("target_columns", ["hand", "leg", "hip", "shoulder"])
+    target_columns = checkpoint.get("target_columns", list(DEFAULT_ANATOMY_COLUMNS))
     model = DenseNet121AnatomyClassifier(num_classes=len(target_columns), pretrained=False)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     return model.to(device).eval(), list(target_columns), checkpoint.get("task", "multi-label")
@@ -107,7 +108,7 @@ def main() -> None:
 
     try:
         # ── Load image ──────────────────────────────────────────────────────
-        transform = _make_classification_transform(args.image_size, augment=False)
+        transform = make_classification_transform(args.image_size, augment=False)
         image_pil = Image.open(args.image_path).convert("RGB")
         image_tensor = transform(image_pil).unsqueeze(0).to(device)  # [1,3,H,W]
 
