@@ -69,7 +69,7 @@ The dataset loader accepts either `val` or `validation`.
 The annotation loader excludes non-bone categories by keyword:
 
 ```text
-soft, tissue, implant, artifact, marker, label, ruler
+soft, tissue, implant, intravenous, cannula, ring, artifact, marker, label, ruler
 ```
 
 ## 3. Stage 1: DenseNet121 Hand Checkpoint
@@ -135,20 +135,23 @@ Bone likelihood:
 
 ```python
 bone_likelihood =
-    0.45 * enhanced_intensity
-  + 0.25 * cortical_edge
-  + 0.30 * cam
+    0.58 * enhanced_intensity
+  + 0.32 * cortical_edge
+  + 0.10 * cam
 ```
 
 Default thresholds:
 
 ```python
 bone_seed_percentile = 88
-bone_support_percentile = 62
+bone_support_percentile = 68
 ```
 
-High-confidence seeds are reconstructed only through connected pixels inside
-the support mask. This keeps growth constrained and reduces soft-tissue spread.
+Because RAM-H1200 uses a hand-level classifier label, CAM can behave like a
+hand-silhouette map. The morphology stage therefore uses CAM as a weak semantic
+anchor and gives more weight to bright radiopaque structures plus cortical edge
+response. High-confidence seeds are reconstructed only through stricter
+radiographic support, which reduces soft-tissue spread before SAM prompting.
 
 ## 6. Stage 4: Component-Wise SAM Prompts
 
@@ -166,8 +169,8 @@ Default prompt configuration:
 ```text
 sam_prompt_mode = box_point
 points_per_component = 3
-bbox_padding_ratio = 0.05
-max_bone_components = 6
+bbox_padding_ratio = 0.02
+max_bone_components = 12
 ```
 
 Available prompt modes:
@@ -199,10 +202,13 @@ bone-component recall
 bone-component precision
 SAM predicted quality
 large-mask penalty
+soft-tissue / low-precision penalty
 ```
 
 For component-wise prompting, the best candidate is selected per component and
-the selected masks are unioned.
+the selected masks are unioned. In `bone_hybrid` mode, the fused SAM mask is
+also constrained by a dilated bone-support map so that SAM can refine local
+shape but cannot freely expand to the full hand silhouette.
 
 ## 8. Stage 6: Conservative Post-Processing
 

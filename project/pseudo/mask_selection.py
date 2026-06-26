@@ -13,6 +13,23 @@ import numpy as np
 SELECTION_METHODS = ("mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid")
 
 
+def _binary_dilation(mask: np.ndarray, kernel_size: int = 9) -> np.ndarray:
+    if kernel_size <= 1:
+        return mask.astype(np.uint8)
+    if kernel_size % 2 == 0:
+        kernel_size += 1
+    pad = kernel_size // 2
+    padded = np.pad(mask.astype(bool), pad, mode="constant", constant_values=False)
+    output = np.zeros_like(mask, dtype=bool)
+    for row_offset in range(kernel_size):
+        for col_offset in range(kernel_size):
+            output |= padded[
+                row_offset : row_offset + mask.shape[0],
+                col_offset : col_offset + mask.shape[1],
+            ]
+    return output.astype(np.uint8)
+
+
 def score_masks(
     masks: np.ndarray,
     bone_cam: np.ndarray,
@@ -69,15 +86,23 @@ def score_masks(
                 support_recall = overlap / float(bone_support.sum())
                 support_precision = overlap / area
             area_ratio = area / float(bone_cam.size)
-            large_mask_penalty = max(0.0, area_ratio - 0.45)
+            support_area_ratio = (
+                float(bone_support.sum()) / float(bone_cam.size)
+                if bone_support is not None and bone_support.any()
+                else 0.0
+            )
+            expected_area = max(0.08, min(0.35, support_area_ratio * 2.6 + 0.03))
+            large_mask_penalty = max(0.0, area_ratio - expected_area)
+            soft_tissue_penalty = max(0.0, 0.55 - support_precision)
             sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
             scores[i] = (
                 0.25 * bone_mean
-                + 0.25 * cam_mean
-                + 0.20 * support_recall
-                + 0.20 * support_precision
+                + 0.10 * cam_mean
+                + 0.25 * support_recall
+                + 0.30 * support_precision
                 + 0.10 * sam_quality
-                - 0.40 * large_mask_penalty
+                - 0.90 * large_mask_penalty
+                - 0.35 * soft_tissue_penalty
             )
     return scores
 
@@ -120,6 +145,13 @@ def select_and_fuse_masks(
         h, w = bone_cam.shape
         return np.zeros((h, w), dtype=np.uint8)
 
+    def constrain_to_bone_support(fused_mask: np.ndarray) -> np.ndarray:
+        fused_mask = fused_mask.astype(np.uint8)
+        if selection_method != "bone_hybrid" or bone_support is None or not bone_support.any():
+            return fused_mask
+        clipped = fused_mask & _binary_dilation(bone_support, kernel_size=11)
+        return clipped.astype(np.uint8) if clipped.any() else fused_mask
+
     scores = score_masks(
         masks,
         bone_cam,
@@ -148,10 +180,12 @@ def select_and_fuse_masks(
                     bone_support=component_masks[int(component_id)],
                     sam_scores=sam_scores[candidates] if sam_scores is not None else None,
                 )
-            best_index = int(candidates[np.argmax(component_scores)])
-            selected_indices.append(best_index)
+            best_local = int(np.argmax(component_scores))
+            best_index = int(candidates[best_local])
+            if float(component_scores[best_local]) >= mask_score_threshold:
+                selected_indices.append(best_index)
         if selected_indices:
-            return masks[selected_indices].any(axis=0).astype(np.uint8)
+            return constrain_to_bone_support(masks[selected_indices].any(axis=0))
 
     order = np.argsort(scores)[::-1]
     above = [i for i in order if scores[i] >= mask_score_threshold]
@@ -162,18 +196,18 @@ def select_and_fuse_masks(
 
     if fusion_topk == 1:
         # top-1 only — return the single best-scoring mask
-        return masks[above[0]].copy().astype(np.uint8)
+        fused = masks[above[0]].copy().astype(np.uint8)
     elif fusion_topk == 0:
         # default: logical-OR of all above-threshold masks
         selected = masks[above]
-        return selected.any(axis=0).astype(np.uint8)
+        fused = selected.any(axis=0).astype(np.uint8)
     elif fusion_topk > 1:
         # union of top-k
         topk = above[:fusion_topk]
         fused = masks[topk[0]].copy().astype(bool)
         for i in topk[1:]:
             fused = fused | masks[i].astype(bool)
-        return fused.astype(np.uint8)
+        fused = fused.astype(np.uint8)
     else:
         # fusion_topk < 0 → intersection of top-|k|
         k = abs(fusion_topk)
@@ -181,4 +215,5 @@ def select_and_fuse_masks(
         fused = masks[topk[0]].copy().astype(bool)
         for i in topk[1:]:
             fused = fused & masks[i].astype(bool)
-        return fused.astype(np.uint8)
+        fused = fused.astype(np.uint8)
+    return constrain_to_bone_support(fused)

@@ -14,8 +14,6 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from pseudo.morphology import binary_closing
-
 try:
     import cv2  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
@@ -409,27 +407,41 @@ def build_bone_guidance(
     edge = _cortical_edge_response(gray)
     cam = _normalise_percentile(fused_cam, low=0.0, high=100.0)
 
-    # Bright radiopaque structures and paired cortical edges are useful but not
-    # sufficient alone; CAM suppresses text markers and unrelated anatomy.
-    bone_likelihood = 0.45 * gray + 0.25 * edge + 0.30 * cam
+    # RAM-H1200 only has a hand-level image label, so the classifier CAM often
+    # marks the hand silhouette. Weight radiographic evidence more strongly and
+    # keep CAM as a weak semantic anchor rather than the main foreground cue.
+    bone_likelihood = 0.58 * gray + 0.32 * edge + 0.10 * cam
     bone_likelihood = _normalise_percentile(bone_likelihood, low=1.0, high=99.0)
 
     seed_threshold = float(np.percentile(bone_likelihood, seed_percentile))
-    support_threshold = float(np.percentile(bone_likelihood, support_percentile))
+    support_threshold = float(
+        max(
+            np.percentile(bone_likelihood, support_percentile),
+            np.percentile(bone_likelihood, 68.0),
+        )
+    )
     cam_gate = cam >= float(np.percentile(cam, 65.0))
-    relaxed_cam_gate = cam >= float(np.percentile(cam, 35.0))
+    relaxed_cam_gate = cam >= float(np.percentile(cam, 25.0))
+    strong_bone_evidence = (
+        ((gray >= float(np.percentile(gray, 72.0))) & (edge >= float(np.percentile(edge, 45.0))))
+        | (edge >= float(np.percentile(edge, 82.0)))
+    )
     radiographic_support = (
-        (gray >= float(np.percentile(gray, 55.0)))
-        | (edge >= float(np.percentile(edge, 75.0)))
+        ((gray >= float(np.percentile(gray, 66.0))) & (edge >= float(np.percentile(edge, 35.0))))
+        | (edge >= float(np.percentile(edge, 78.0)))
+        | ((gray >= float(np.percentile(gray, 76.0))) & relaxed_cam_gate)
     )
 
-    seeds = ((bone_likelihood >= seed_threshold) & cam_gate).astype(np.uint8)
+    seeds = (
+        (bone_likelihood >= seed_threshold)
+        & (cam_gate | strong_bone_evidence)
+        & strong_bone_evidence
+    ).astype(np.uint8)
     support = (
         (bone_likelihood >= support_threshold)
-        & relaxed_cam_gate
         & radiographic_support
+        & (relaxed_cam_gate | strong_bone_evidence)
     ).astype(np.uint8)
-    support = binary_closing(support, kernel_size=3)
     reconstructed = morphological_reconstruction(seeds, support)
     reconstructed = _select_cam_supported_components(
         reconstructed,

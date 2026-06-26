@@ -71,14 +71,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-size", type=int, default=40)
     parser.add_argument("--max-hole-area", type=int, default=500)
     parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
-    parser.add_argument("--bone-support-percentile", type=float, default=62.0)
+    parser.add_argument("--bone-support-percentile", type=float, default=68.0)
     parser.add_argument("--morphology-fusion-mode", type=str, default="components",
                         choices=["components", "weighted"])
     parser.add_argument("--sam-prompt-mode", type=str, default="box_point",
                         choices=["point", "joint_points", "box", "box_point"])
-    parser.add_argument("--max-bone-components", type=int, default=6)
+    parser.add_argument("--max-bone-components", type=int, default=12)
     parser.add_argument("--points-per-component", type=int, default=3)
-    parser.add_argument("--bbox-padding-ratio", type=float, default=0.05)
+    parser.add_argument("--bbox-padding-ratio", type=float, default=0.02)
     parser.add_argument("--negative-points-per-component", type=int, default=0)
     parser.add_argument("--sam-single-mask", action="store_true")
     parser.add_argument("--disable-bone-morphology", action="store_true")
