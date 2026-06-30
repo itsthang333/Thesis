@@ -33,3 +33,12 @@ checkpoints/
 
 # Local FracAtlas dataset and annotations
 FracAtlas/
+
+# Local datasets downloaded outside Git
+dataset/
+RAM-H1200-v1/
+
+report_assets/
+
+report.md
+
