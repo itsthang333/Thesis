@@ -66,22 +66,29 @@ def parse_args() -> argparse.Namespace:
                         choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"])
     parser.add_argument("--fusion-topk", type=int, default=3,
                         help="0=OR all above-thresh, k>1=union top-k, k<0=intersect top-|k|")
-    parser.add_argument("--closing-kernel", type=int, default=5)
+    parser.add_argument("--closing-kernel", type=int, default=0)
     parser.add_argument("--opening-kernel", type=int, default=0)
     parser.add_argument("--min-size", type=int, default=40)
-    parser.add_argument("--max-hole-area", type=int, default=500)
+    parser.add_argument("--max-hole-area", type=int, default=0)
+    parser.add_argument("--guidance-threshold", type=float, default=0.40)
     parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
     parser.add_argument("--bone-support-percentile", type=float, default=68.0)
     parser.add_argument("--morphology-fusion-mode", type=str, default="components",
                         choices=["components", "weighted"])
-    parser.add_argument("--sam-prompt-mode", type=str, default="box_point",
+    parser.add_argument("--sam-prompt-mode", type=str, default="joint_points",
                         choices=["point", "joint_points", "box", "box_point"])
     parser.add_argument("--max-bone-components", type=int, default=12)
     parser.add_argument("--points-per-component", type=int, default=3)
-    parser.add_argument("--bbox-padding-ratio", type=float, default=0.02)
-    parser.add_argument("--negative-points-per-component", type=int, default=0)
+    parser.add_argument("--bbox-padding-ratio", type=float, default=0.01)
+    parser.add_argument("--negative-points-per-component", type=int, default=4)
+    parser.add_argument("--prompt-border-margin", type=int, default=2)
+    parser.add_argument("--max-box-area-ratio", type=float, default=0.35)
     parser.add_argument("--sam-single-mask", action="store_true")
+    parser.add_argument("--support-clip-kernel", type=int, default=5)
     parser.add_argument("--disable-bone-morphology", action="store_true")
+    parser.add_argument("--preprocessing-mode", type=str, default="none",
+                        choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
+                        help="Optional X-ray preprocessing before classifier/CAM")
     parser.add_argument("--debug", action="store_true",
                         help="Save SAM candidate masks, prompt overlays, scores.json alongside the strip")
     return parser.parse_args()
@@ -221,7 +228,11 @@ def main() -> None:
 
     try:
         # ── Load & preprocess image ──────────────────────────────────────────
-        transform = make_classification_transform(args.image_size, augment=False)
+        transform = make_classification_transform(
+            args.image_size,
+            augment=False,
+            preprocessing_mode=args.preprocessing_mode,
+        )
         image_pil = Image.open(args.image_path).convert("RGB")
         image_tensor = transform(image_pil).unsqueeze(0).to(device)
         image_pil_denorm = tensor_to_pil(image_tensor[0].detach().cpu())
@@ -300,6 +311,12 @@ def main() -> None:
                 prompt_mode=args.sam_prompt_mode,
                 multimask_output=not args.sam_single_mask,
                 negative_points_per_component=args.negative_points_per_component,
+                prompt_border_margin=args.prompt_border_margin,
+                max_box_area_ratio=(
+                    args.max_box_area_ratio
+                    if args.max_box_area_ratio and args.max_box_area_ratio > 0
+                    else None
+                ),
                 debug_dir=debug_dir,
                 image_pil=image_pil_denorm,
             )
@@ -326,6 +343,7 @@ def main() -> None:
                 if bone_components else None
             ),
             best_per_component=component_ids is not None,
+            support_clip_kernel=args.support_clip_kernel,
         )
 
         # ── Stage 6: Morphological refinement ───────────────────────────────
@@ -335,6 +353,7 @@ def main() -> None:
             opening_kernel=args.opening_kernel,
             min_size=args.min_size,
             guidance_map=bone_likelihood,
+            guidance_threshold=args.guidance_threshold,
             max_hole_area=args.max_hole_area,
         )
 

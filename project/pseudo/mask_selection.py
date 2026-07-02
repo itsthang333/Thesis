@@ -81,28 +81,35 @@ def score_masks(
             cam_mean = float(cam_vals.mean())
             support_recall = 0.0
             support_precision = 0.0
+            outside_support_ratio = 1.0
             if bone_support is not None and bone_support.any():
-                overlap = float((m & bone_support.astype(bool)).sum())
+                support_bool = bone_support.astype(bool)
+                overlap = float((m & support_bool).sum())
                 support_recall = overlap / float(bone_support.sum())
                 support_precision = overlap / area
+                outside_support_ratio = max(0.0, 1.0 - support_precision)
             area_ratio = area / float(bone_cam.size)
             support_area_ratio = (
                 float(bone_support.sum()) / float(bone_cam.size)
                 if bone_support is not None and bone_support.any()
                 else 0.0
             )
-            expected_area = max(0.08, min(0.35, support_area_ratio * 2.6 + 0.03))
+            expected_area = max(0.05, min(0.28, support_area_ratio * 1.35 + 0.015))
             large_mask_penalty = max(0.0, area_ratio - expected_area)
-            soft_tissue_penalty = max(0.0, 0.55 - support_precision)
+            soft_tissue_penalty = max(0.0, 0.65 - support_precision)
+            border_touch_count = int(m[0, :].any()) + int(m[-1, :].any()) + int(m[:, 0].any()) + int(m[:, -1].any())
+            border_touch_penalty = border_touch_count / 4.0
             sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
             scores[i] = (
-                0.25 * bone_mean
-                + 0.10 * cam_mean
-                + 0.25 * support_recall
-                + 0.30 * support_precision
-                + 0.10 * sam_quality
-                - 0.90 * large_mask_penalty
+                0.30 * bone_mean
+                + 0.15 * cam_mean
+                + 0.10 * support_recall
+                + 0.35 * support_precision
+                + 0.05 * sam_quality
+                - 1.20 * large_mask_penalty
+                - 0.80 * outside_support_ratio
                 - 0.35 * soft_tissue_penalty
+                - 0.30 * border_touch_penalty
             )
     return scores
 
@@ -119,6 +126,7 @@ def select_and_fuse_masks(
     component_ids: np.ndarray | None = None,
     component_masks: np.ndarray | None = None,
     best_per_component: bool = False,
+    support_clip_kernel: int = 5,
 ) -> np.ndarray:
     """Select and fuse masks using CAM and bone morphology evidence.
 
@@ -147,9 +155,19 @@ def select_and_fuse_masks(
 
     def constrain_to_bone_support(fused_mask: np.ndarray) -> np.ndarray:
         fused_mask = fused_mask.astype(np.uint8)
-        if selection_method != "bone_hybrid" or bone_support is None or not bone_support.any():
+        if (
+            selection_method != "bone_hybrid"
+            or bone_support is None
+            or not bone_support.any()
+            or support_clip_kernel < 0
+        ):
             return fused_mask
-        clipped = fused_mask & _binary_dilation(bone_support, kernel_size=11)
+        support_constraint = (
+            bone_support.astype(np.uint8)
+            if support_clip_kernel <= 1
+            else _binary_dilation(bone_support, kernel_size=support_clip_kernel)
+        )
+        clipped = fused_mask & support_constraint
         return clipped.astype(np.uint8) if clipped.any() else fused_mask
 
     scores = score_masks(

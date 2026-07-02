@@ -117,12 +117,12 @@ def remove_small_objects(mask: np.ndarray, min_size: int = 200) -> np.ndarray:
 
 def morphological_refinement(
     mask: np.ndarray,
-    closing_kernel: int = 5,
+    closing_kernel: int = 0,
     opening_kernel: int = 0,
     min_size: int = 200,
     guidance_map: np.ndarray | None = None,
-    guidance_threshold: float = 0.20,
-    max_hole_area: int = 500,
+    guidance_threshold: float = 0.40,
+    max_hole_area: int = 0,
 ) -> np.ndarray:
     """Full refinement pipeline per pipeline.md Stage 6.
 

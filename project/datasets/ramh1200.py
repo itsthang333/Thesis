@@ -225,11 +225,13 @@ class RAMH1200ClassificationDataset(Dataset):
         target_columns: Sequence[str] = DEFAULT_ANATOMY_COLUMNS,
         image_size: int = 512,
         use_clahe: bool = False,
+        preprocessing_mode: str = "none",
     ) -> None:
         self.segmentation_root = resolve_ramh1200_segmentation_root(root)
         self.split, self.split_dir = _resolve_split_dir(self.segmentation_root, split)
         self.target_columns = list(target_columns)
         self.use_clahe = use_clahe
+        self.preprocessing_mode = "clahe" if use_clahe and preprocessing_mode == "none" else preprocessing_mode
         if not self.split_dir.exists():
             raise FileNotFoundError(f"RAM-H1200 split directory not found: {self.split_dir}")
 
@@ -241,7 +243,11 @@ class RAMH1200ClassificationDataset(Dataset):
         if not self.image_paths:
             raise FileNotFoundError(f"No RAM-H1200 images found in: {self.split_dir}")
 
-        self.image_transform = make_classification_transform(image_size, augment=False)
+        self.image_transform = make_classification_transform(
+            image_size,
+            augment=False,
+            preprocessing_mode=self.preprocessing_mode,
+        )
         self.target = torch.tensor(
             [1.0 if column.lower() == "hand" else 0.0 for column in self.target_columns],
             dtype=torch.float32,
@@ -253,6 +259,6 @@ class RAMH1200ClassificationDataset(Dataset):
     def __getitem__(self, index: int):
         image_path = self.image_paths[index]
         image = Image.open(image_path).convert("RGB")
-        if self.use_clahe:
+        if self.use_clahe and self.preprocessing_mode != "clahe":
             image = apply_clahe(image)
         return self.image_transform(image), self.target.clone(), image_path.name

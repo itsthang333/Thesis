@@ -35,6 +35,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "classifier")
     parser.add_argument("--no-pretrained", action="store_true")
     parser.add_argument("--use-clahe", action="store_true")
+    parser.add_argument("--preprocessing-mode", type=str, default="none",
+                        choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
+                        help="Optional X-ray preprocessing before resize/normalization")
     return parser.parse_args()
 
 
@@ -146,6 +149,7 @@ def main() -> None:
         target_columns=target_columns,
         image_size=args.image_size,
         use_clahe=args.use_clahe,
+        preprocessing_mode=args.preprocessing_mode,
     )
     val_dataset = RAMH1200ClassificationDataset(
         root=args.ram_root,
@@ -153,6 +157,7 @@ def main() -> None:
         target_columns=target_columns,
         image_size=args.image_size,
         use_clahe=args.use_clahe,
+        preprocessing_mode=args.preprocessing_mode,
     )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)

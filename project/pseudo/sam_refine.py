@@ -129,6 +129,8 @@ class SAMPredictor:
         prompt_mode: str = "box_point",
         multimask_output: bool = True,
         negative_points_per_component: int = 0,
+        prompt_border_margin: int = 2,
+        max_box_area_ratio: float | None = None,
         debug_dir: str | Path | None = None,
         image_pil=None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -139,6 +141,14 @@ class SAMPredictor:
           joint_points - all structured points in one SAM call
           box          - component bounding box only
           box_point    - component box plus all structured points
+
+        prompt_border_margin removes positive points that lie directly on the
+        image border. Those points often make SAM lock onto the hand/wrist
+        silhouette instead of the internal bone support.
+
+        max_box_area_ratio drops the box prompt when a component bbox is too
+        large relative to the image. The positive points are still used, so SAM
+        can refine locally without being encouraged to segment the full hand.
         """
         valid_modes = {"point", "joint_points", "box", "box_point"}
         if prompt_mode not in valid_modes:
@@ -156,8 +166,17 @@ class SAMPredictor:
         all_scores: list[np.ndarray] = []
         component_ids: list[int] = []
 
+        h, w = image_rgb.shape[:2]
+
         for component in components:
-            points = list(component.positive_points)
+            original_points = list(component.positive_points)
+            points = self._filter_border_points(
+                original_points,
+                image_shape=(h, w),
+                margin=prompt_border_margin,
+            )
+            if not points:
+                points = original_points[:1]
             if prompt_mode == "point":
                 points = points[:1]
 
@@ -184,7 +203,13 @@ class SAMPredictor:
 
             box = None
             if prompt_mode in {"box", "box_point"}:
-                box = np.asarray(component.bbox, dtype=np.float32)
+                use_box = True
+                if max_box_area_ratio is not None:
+                    x0, y0, x1, y1 = component.bbox
+                    box_area = max(1, x1 - x0 + 1) * max(1, y1 - y0 + 1)
+                    use_box = (box_area / float(h * w)) <= max_box_area_ratio
+                if use_box:
+                    box = np.asarray(component.bbox, dtype=np.float32)
 
             masks, scores, _ = self._predictor.predict(
                 point_coords=point_coords,
@@ -209,6 +234,21 @@ class SAMPredictor:
                 component_ids=component_id_array,
             )
         return combined_masks, combined_scores, component_id_array
+
+    @staticmethod
+    def _filter_border_points(
+        points: list[tuple[int, int]],
+        image_shape: tuple[int, int],
+        margin: int,
+    ) -> list[tuple[int, int]]:
+        if margin <= 0:
+            return points
+        h, w = image_shape
+        return [
+            (row, col)
+            for row, col in points
+            if margin <= row < h - margin and margin <= col < w - margin
+        ]
 
     @staticmethod
     def _sample_negative_points(
