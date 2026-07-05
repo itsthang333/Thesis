@@ -175,6 +175,7 @@ def main() -> None:
 
     skipped = 0
     processed = 0
+    visualized = 0
     process_limit = None if args.process_all or args.max_images <= 0 else args.max_images
     try:
         for images, _, image_names in tqdm(loader, desc="pseudo-masks"):
@@ -185,7 +186,7 @@ def main() -> None:
                     break
                 image_tensor = images[idx : idx + 1]  # [1,3,H,W]
                 mask_path = mask_dir / f"{Path(image_name).stem}.png"
-                save_visuals = processed < max(0, args.save_visuals_limit)
+                save_visuals = visualized < max(0, args.save_visuals_limit)
 
                 # ── 1. Classifier forward ─────────────────────────────────────
                 with torch.no_grad():
@@ -223,6 +224,7 @@ def main() -> None:
                         fused_cam,
                         overlay_dir / f"{Path(image_name).stem}_fused_layercam.png",
                     )
+                    visualized += 1
 
                 # ── 3. Prompt extraction ──────────────────────────────────────
                 debug_dir = (

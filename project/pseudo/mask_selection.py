@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import numpy as np
 
+try:
+    import cv2  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    cv2 = None
+
 # Supported scoring methods:
 #   "mean"      : score = mean(cam inside mask)
 #   "sum"       : score = sum(cam inside mask)                    — favors large masks
@@ -18,6 +23,11 @@ def _binary_dilation(mask: np.ndarray, kernel_size: int = 9) -> np.ndarray:
         return mask.astype(np.uint8)
     if kernel_size % 2 == 0:
         kernel_size += 1
+
+    if cv2 is not None:
+        kernel = np.ones((kernel_size, kernel_size), dtype=np.uint8)
+        return cv2.dilate(mask.astype(np.uint8), kernel, iterations=1)
+
     pad = kernel_size // 2
     padded = np.pad(mask.astype(bool), pad, mode="constant", constant_values=False)
     output = np.zeros_like(mask, dtype=bool)
@@ -139,6 +149,12 @@ def select_and_fuse_masks(
     morphology proposal is selected before union. Otherwise the original
     global top-k behavior is preserved for ablation.
 
+    component_masks is accepted for call-site backward compatibility but is
+    unused: bone_hybrid's support_area_ratio/expected_area/large_mask_penalty
+    terms are only meaningful relative to the whole-image bone_support map, so
+    per-component re-scoring must not substitute a single component's mask
+    for it.
+
     Args:
         masks:               [N, H, W] bool/uint8 from SAM.
         bone_cam:            [H, W] float32 in [0, 1].
@@ -185,19 +201,12 @@ def select_and_fuse_masks(
             candidates = np.where(component_ids == component_id)[0]
             if candidates.size == 0:
                 continue
+            # Reuse the globally-scored candidates for this component. score_masks
+            # already received the global bone_support above — bone_hybrid's
+            # support_area_ratio/expected_area/large_mask_penalty terms are only
+            # meaningful relative to the whole-image support map, so re-scoring
+            # with a single component's mask here would corrupt those ratios.
             component_scores = scores[candidates]
-            if (
-                component_masks is not None
-                and 0 <= int(component_id) < component_masks.shape[0]
-            ):
-                component_scores = score_masks(
-                    masks[candidates],
-                    bone_cam,
-                    method=selection_method,
-                    bone_likelihood=bone_likelihood,
-                    bone_support=component_masks[int(component_id)],
-                    sam_scores=sam_scores[candidates] if sam_scores is not None else None,
-                )
             best_local = int(np.argmax(component_scores))
             best_index = int(candidates[best_local])
             if float(component_scores[best_local]) >= mask_score_threshold:

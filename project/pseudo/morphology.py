@@ -15,6 +15,11 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+try:
+    import cv2  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    cv2 = None
+
 
 # ---------------------------------------------------------------------------
 # low-level morphology via max-pool (torch, no scipy dependency)
@@ -42,34 +47,65 @@ def binary_opening(mask: np.ndarray, kernel_size: int = 3) -> np.ndarray:
     return _morph_op(_morph_op(mask, kernel_size, "erode"), kernel_size, "dilate")
 
 
+def _label_components_bfs(mask: np.ndarray, offsets: list[tuple[int, int]]) -> tuple[np.ndarray, int]:
+    """Pure-Python BFS fallback labeling. Returns (labels, num_components), 0 = background."""
+    h, w = mask.shape
+    labels = np.zeros((h, w), dtype=np.int32)
+    next_label = 0
+
+    for r in range(h):
+        for c in range(w):
+            if mask[r, c] == 0 or labels[r, c] != 0:
+                continue
+            next_label += 1
+            queue: deque[tuple[int, int]] = deque([(r, c)])
+            labels[r, c] = next_label
+            while queue:
+                cr, cc = queue.popleft()
+                for dr, dc in offsets:
+                    nr, nc = cr + dr, cc + dc
+                    if (
+                        0 <= nr < h and 0 <= nc < w
+                        and labels[nr, nc] == 0
+                        and mask[nr, nc] > 0
+                    ):
+                        labels[nr, nc] = next_label
+                        queue.append((nr, nc))
+    return labels, next_label
+
+
+def _label_components(mask: np.ndarray, connectivity: int = 8) -> tuple[np.ndarray, int]:
+    """Label connected components. Uses cv2 when available (much faster), else BFS.
+
+    Returns (labels, num_components) where labels is [H, W] int32 with 0 = background
+    and components numbered 1..num_components.
+    """
+    mask = mask.astype(np.uint8)
+    if cv2 is not None:
+        num_labels, labels = cv2.connectedComponents(mask, connectivity=connectivity)
+        return labels.astype(np.int32), num_labels - 1
+
+    offsets_4 = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    offsets_8 = offsets_4 + [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+    offsets = offsets_8 if connectivity == 8 else offsets_4
+    return _label_components_bfs(mask, offsets)
+
+
 def fill_holes(mask: np.ndarray, max_hole_area: int | None = None) -> np.ndarray:
     """Fill enclosed holes, optionally only when they are sufficiently small."""
     mask = mask.astype(np.uint8)
     h, w = mask.shape
-    visited = np.zeros((h, w), dtype=bool)
-    queue: deque[tuple[int, int]] = deque()
+    background = (mask == 0).astype(np.uint8)
 
-    for r in range(h):
-        for c in (0, w - 1):
-            if mask[r, c] == 0 and not visited[r, c]:
-                visited[r, c] = True
-                queue.append((r, c))
-    for c in range(w):
-        for r in (0, h - 1):
-            if mask[r, c] == 0 and not visited[r, c]:
-                visited[r, c] = True
-                queue.append((r, c))
+    # Label background components (4-connectivity, matching the original flood-fill)
+    # then mark labels touching the border as "outside" — everything else is a hole.
+    labels, num_labels = _label_components(background, connectivity=4)
+    border_labels = set(labels[0, :].tolist()) | set(labels[-1, :].tolist())
+    border_labels |= set(labels[:, 0].tolist()) | set(labels[:, -1].tolist())
+    border_labels.discard(0)
 
-    offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    while queue:
-        r, c = queue.popleft()
-        for dr, dc in offsets:
-            nr, nc = r + dr, c + dc
-            if 0 <= nr < h and 0 <= nc < w and not visited[nr, nc] and mask[nr, nc] == 0:
-                visited[nr, nc] = True
-                queue.append((nr, nc))
+    holes = background.astype(bool) & ~np.isin(labels, list(border_labels))
 
-    holes = (mask == 0) & (~visited)
     if max_hole_area is None:
         filled = mask.copy()
         filled[holes] = 1
@@ -84,35 +120,14 @@ def fill_holes(mask: np.ndarray, max_hole_area: int | None = None) -> np.ndarray
 
 def remove_small_objects(mask: np.ndarray, min_size: int = 200) -> np.ndarray:
     """Remove connected components (8-connectivity) smaller than min_size pixels."""
-    h, w = mask.shape
-    visited = np.zeros((h, w), dtype=bool)
-    output = np.zeros((h, w), dtype=np.uint8)
-    offsets = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
+    labels, num_labels = _label_components(mask, connectivity=8)
+    if num_labels == 0:
+        return np.zeros_like(mask, dtype=np.uint8)
 
-    for r in range(h):
-        for c in range(w):
-            if mask[r, c] == 0 or visited[r, c]:
-                continue
-            queue: deque[tuple[int, int]] = deque([(r, c)])
-            visited[r, c] = True
-            comp: list[tuple[int, int]] = []
-            while queue:
-                cr, cc = queue.popleft()
-                comp.append((cr, cc))
-                for dr, dc in offsets:
-                    nr, nc = cr + dr, cc + dc
-                    if (
-                        0 <= nr < h and 0 <= nc < w
-                        and not visited[nr, nc]
-                        and mask[nr, nc] > 0
-                    ):
-                        visited[nr, nc] = True
-                        queue.append((nr, nc))
-            if len(comp) >= min_size:
-                for pr, pc in comp:
-                    output[pr, pc] = 1
-
-    return output
+    sizes = np.bincount(labels.ravel(), minlength=num_labels + 1)
+    keep = sizes >= min_size
+    keep[0] = False  # background never kept
+    return keep[labels].astype(np.uint8)
 
 
 def morphological_refinement(
@@ -147,33 +162,6 @@ def morphological_refinement(
 
 
 def _component_masks(mask: np.ndarray) -> list[np.ndarray]:
-    """Return 8-connected binary component masks."""
-    h, w = mask.shape
-    visited = np.zeros((h, w), dtype=bool)
-    components: list[np.ndarray] = []
-    offsets = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
-
-    for r in range(h):
-        for c in range(w):
-            if mask[r, c] == 0 or visited[r, c]:
-                continue
-            queue: deque[tuple[int, int]] = deque([(r, c)])
-            visited[r, c] = True
-            coords: list[tuple[int, int]] = []
-            while queue:
-                cr, cc = queue.popleft()
-                coords.append((cr, cc))
-                for dr, dc in offsets:
-                    nr, nc = cr + dr, cc + dc
-                    if (
-                        0 <= nr < h and 0 <= nc < w
-                        and mask[nr, nc] > 0
-                        and not visited[nr, nc]
-                    ):
-                        visited[nr, nc] = True
-                        queue.append((nr, nc))
-            component = np.zeros((h, w), dtype=np.uint8)
-            rr, cc = zip(*coords)
-            component[np.asarray(rr), np.asarray(cc)] = 1
-            components.append(component)
-    return components
+    """Return 8-connected binary component masks, in label order."""
+    labels, num_labels = _label_components(mask, connectivity=8)
+    return [(labels == label_id).astype(np.uint8) for label_id in range(1, num_labels + 1)]

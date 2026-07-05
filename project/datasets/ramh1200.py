@@ -22,7 +22,7 @@ from datasets.common import (
 
 try:
     from pycocotools import mask as coco_mask  # type: ignore
-except Exception:  # pragma: no cover - optional dependency
+except ImportError:  # pragma: no cover - optional dependency
     coco_mask = None
 
 

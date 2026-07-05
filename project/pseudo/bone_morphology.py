@@ -16,7 +16,7 @@ from PIL import Image
 
 try:
     import cv2  # type: ignore
-except Exception:  # pragma: no cover - optional dependency
+except ImportError:  # pragma: no cover - optional dependency
     cv2 = None
 
 
@@ -69,35 +69,55 @@ def _cortical_edge_response(gray: np.ndarray) -> np.ndarray:
     return _normalise_percentile(magnitude, low=5.0, high=99.0)
 
 
+def _dilate3x3(mask: np.ndarray) -> np.ndarray:
+    """8-connected one-pixel dilation. Uses cv2 when available, else numpy shifts."""
+    mask = mask.astype(np.uint8)
+    if cv2 is not None:
+        kernel = np.ones((3, 3), dtype=np.uint8)
+        return cv2.dilate(mask, kernel, iterations=1)
+
+    padded = np.pad(mask.astype(bool), 1, mode="constant", constant_values=False)
+    out = np.zeros_like(mask, dtype=bool)
+    for dr in (-1, 0, 1):
+        for dc in (-1, 0, 1):
+            out |= padded[1 + dr : 1 + dr + mask.shape[0], 1 + dc : 1 + dc + mask.shape[1]]
+    return out.astype(np.uint8)
+
+
 def morphological_reconstruction(
     seed: np.ndarray,
     support: np.ndarray,
     max_iterations: int | None = None,
 ) -> np.ndarray:
-    """Grow seed pixels inside support using a single constrained flood-fill."""
-    del max_iterations  # retained for API compatibility
-    current = seed.astype(bool) & support.astype(bool)
-    support_bool = support.astype(bool)
-    queue: deque[tuple[int, int]] = deque(map(tuple, np.argwhere(current)))
-    h, w = current.shape
-    offsets = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+    """Grow seed pixels inside support via iterative dilation-and-intersect.
 
-    while queue:
-        row, col = queue.popleft()
-        for dr, dc in offsets:
-            nr, nc = row + dr, col + dc
-            if (
-                0 <= nr < h
-                and 0 <= nc < w
-                and support_bool[nr, nc]
-                and not current[nr, nc]
-            ):
-                current[nr, nc] = True
-                queue.append((nr, nc))
+    Equivalent to a constrained flood-fill (8-connectivity) but vectorised: each
+    iteration dilates the current region by one pixel and clips it back to the
+    support mask, which converges to the same fixed point as pixel-by-pixel BFS.
+    """
+    support_bool = support.astype(bool)
+    current = seed.astype(bool) & support_bool
+    if not current.any():
+        return current.astype(np.uint8)
+
+    iterations = 0
+    limit = max_iterations if max_iterations is not None else max(current.shape)
+    while iterations < limit:
+        grown = _dilate3x3(current).astype(bool) & support_bool
+        if np.array_equal(grown, current):
+            break
+        current = grown
+        iterations += 1
     return current.astype(np.uint8)
 
 
 def _connected_components(binary: np.ndarray) -> list[np.ndarray]:
+    """Return 8-connected binary component masks. Uses cv2 when available, else BFS."""
+    binary = binary.astype(np.uint8)
+    if cv2 is not None:
+        num_labels, labels = cv2.connectedComponents(binary, connectivity=8)
+        return [(labels == label_id).astype(np.uint8) for label_id in range(1, num_labels)]
+
     h, w = binary.shape
     visited = np.zeros((h, w), dtype=bool)
     components: list[np.ndarray] = []

@@ -13,9 +13,14 @@ from collections import deque
 
 import numpy as np
 
+try:
+    import cv2  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    cv2 = None
 
-def _connected_components(binary: np.ndarray) -> list[list[tuple[int, int]]]:
-    """4-connectivity BFS over foreground pixels."""
+
+def _connected_components_bfs(binary: np.ndarray) -> list[list[tuple[int, int]]]:
+    """4-connectivity BFS over foreground pixels (fallback when cv2 is unavailable)."""
     h, w = binary.shape
     visited = np.zeros((h, w), dtype=bool)
     components: list[list[tuple[int, int]]] = []
@@ -37,6 +42,19 @@ def _connected_components(binary: np.ndarray) -> list[list[tuple[int, int]]]:
                         visited[nr, nc] = True
                         queue.append((nr, nc))
             components.append(comp)
+    return components
+
+
+def _connected_components(binary: np.ndarray) -> list[list[tuple[int, int]]]:
+    """4-connectivity labelling. Uses cv2 (vectorised) when available, else BFS."""
+    if cv2 is None:
+        return _connected_components_bfs(binary)
+
+    num_labels, labels = cv2.connectedComponents(binary.astype(np.uint8), connectivity=4)
+    components: list[list[tuple[int, int]]] = []
+    for label_id in range(1, num_labels):
+        rows, cols = np.where(labels == label_id)
+        components.append(list(zip(rows.tolist(), cols.tolist())))
     return components
 
 
