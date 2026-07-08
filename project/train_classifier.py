@@ -52,6 +52,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cam-preview-count", type=int, default=4,
                         help="Number of fixed positive-class validation images to snapshot "
                         "CAM for when --save-cam-epochs is set")
+    parser.add_argument("--early-stop-patience", type=int, default=0,
+                        help="Stop training if val_f1 does not improve for this many consecutive "
+                        "epochs. 0 disables early stopping (always run the full --epochs).")
     return parser.parse_args()
 
 
@@ -272,6 +275,7 @@ def main() -> None:
 
     history_path = args.output_dir / "training_log.csv"
     best_val_f1 = -1.0
+    epochs_without_improvement = 0
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with history_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -327,12 +331,22 @@ def main() -> None:
         save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_f1, target_columns, args.dataset)
         if val_metrics["f1"] > best_val_f1:
             best_val_f1 = val_metrics["f1"]
+            epochs_without_improvement = 0
             save_checkpoint(args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_f1, target_columns, args.dataset)
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
+        else:
+            epochs_without_improvement += 1
 
         if epoch in cam_epochs and cam_preview_indices:
             save_cam_preview(model, val_dataset, cam_preview_indices, epoch, cam_output_dir, device)
             print(f"  --> Saved CAM preview for epoch {epoch} to {cam_output_dir}")
+
+        if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
+            print(
+                f"Early stopping: val_f1 did not improve for {epochs_without_improvement} epochs "
+                f"(patience={args.early_stop_patience}). Best val_f1={best_val_f1:.4f}."
+            )
+            break
 
 
 if __name__ == "__main__":

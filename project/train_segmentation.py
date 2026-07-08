@@ -38,6 +38,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "segmentation")
     parser.add_argument("--use-clahe", action="store_true")
+    parser.add_argument("--early-stop-patience", type=int, default=0,
+                        help="Stop training if val_dice does not improve for this many consecutive "
+                        "epochs. 0 disables early stopping (always run the full --epochs).")
     return parser.parse_args()
 
 
@@ -149,6 +152,7 @@ def main() -> None:
 
     history_path = args.output_dir / "training_log.csv"
     best_val_dice = 0.0
+    epochs_without_improvement = 0
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with history_path.open("w", newline="", encoding="utf-8") as handle:
@@ -181,8 +185,18 @@ def main() -> None:
         save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset)
         if val_metrics["dice"] > best_val_dice:
             best_val_dice = val_metrics["dice"]
+            epochs_without_improvement = 0
             save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset)
             print(f"--> Saved new best model with Dice = {best_val_dice:.4f}")
+        else:
+            epochs_without_improvement += 1
+
+        if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
+            print(
+                f"Early stopping: val_dice did not improve for {epochs_without_improvement} epochs "
+                f"(patience={args.early_stop_patience}). Best val_dice={best_val_dice:.4f}."
+            )
+            break
 
 
 if __name__ == "__main__":
