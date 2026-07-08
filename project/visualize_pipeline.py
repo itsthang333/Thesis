@@ -28,18 +28,14 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import DEFAULT_ANATOMY_COLUMNS
+from config import DEFAULT_ANATOMY_COLUMNS, DEFAULT_DATASET, SUPPORTED_DATASETS
 from datasets.common import make_classification_transform
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from models.unet import UNet
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
-from pseudo.bone_morphology import (
-    build_bone_guidance,
-    build_class_conditioned_components,
-    fuse_cam_with_bone_guidance,
-)
+from pseudo.morphology_factory import get_morphology_module
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -48,6 +44,8 @@ from pseudo.visualization import overlay_heatmap, tensor_to_pil
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Visualize full WSSS pipeline for one image")
+    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS,
+                        help="Which morphology/prior to use: ramh1200 (bone) or btxrd (tumor)")
     parser.add_argument("--image-path", type=Path, required=True)
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
@@ -71,8 +69,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-size", type=int, default=40)
     parser.add_argument("--max-hole-area", type=int, default=0)
     parser.add_argument("--guidance-threshold", type=float, default=0.40)
-    parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
-    parser.add_argument("--bone-support-percentile", type=float, default=68.0)
+    parser.add_argument("--bone-seed-percentile", type=float, default=None,
+                        help="Defaults to 88.0 for ramh1200 or 82.0 for btxrd")
+    parser.add_argument("--bone-support-percentile", type=float, default=None,
+                        help="Defaults to 68.0 for ramh1200 or 55.0 for btxrd")
     parser.add_argument("--morphology-fusion-mode", type=str, default="components",
                         choices=["components", "weighted"])
     parser.add_argument("--sam-prompt-mode", type=str, default="joint_points",
@@ -202,6 +202,17 @@ def main() -> None:
     stem = args.image_path.stem
     output_path = args.output_path or (ROOT / "outputs" / "viz" / f"{stem}_pipeline.png")
 
+    morphology = get_morphology_module(args.dataset)
+    default_seed_percentile, default_support_percentile = (
+        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 55.0)
+    )
+    bone_seed_percentile = (
+        args.bone_seed_percentile if args.bone_seed_percentile is not None else default_seed_percentile
+    )
+    bone_support_percentile = (
+        args.bone_support_percentile if args.bone_support_percentile is not None else default_support_percentile
+    )
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # ── Load models ──────────────────────────────────────────────────────────
@@ -263,12 +274,12 @@ def main() -> None:
         if not args.disable_bone_morphology:
             if args.morphology_fusion_mode == "components":
                 active_weights = [float(class_weights[i]) for i in active_indices]
-                bone_likelihood, bone_support, bone_components = build_class_conditioned_components(
+                bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
                     image_rgb,
                     per_class_cams,
                     active_weights,
-                    seed_percentile=args.bone_seed_percentile,
-                    support_percentile=args.bone_support_percentile,
+                    seed_percentile=bone_seed_percentile,
+                    support_percentile=bone_support_percentile,
                     min_component_area=max(20, args.min_component_area // 2),
                     max_components=args.max_bone_components,
                     points_per_component=args.points_per_component,
@@ -276,15 +287,15 @@ def main() -> None:
                     debug_dir=debug_dir,
                 )
             else:
-                bone_likelihood, bone_support = build_bone_guidance(
+                bone_likelihood, bone_support = morphology.build_bone_guidance(
                     image_rgb,
                     fused_cam,
-                    seed_percentile=args.bone_seed_percentile,
-                    support_percentile=args.bone_support_percentile,
+                    seed_percentile=bone_seed_percentile,
+                    support_percentile=bone_support_percentile,
                     min_component_area=max(20, args.min_component_area // 2),
                     debug_dir=debug_dir,
                 )
-            prompt_map = fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
+            prompt_map = morphology.fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
         point_prompts = [
             point
             for component in bone_components

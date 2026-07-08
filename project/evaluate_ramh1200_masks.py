@@ -15,18 +15,21 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import SegmentationConfig
-from datasets.ramh1200 import RAMH1200SegmentationDataset
+from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
+from datasets.factory import build_segmentation_dataset
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate predicted masks against RAM-H1200 bone GT masks")
-    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1")
+    parser = argparse.ArgumentParser(description="Evaluate predicted masks against RAM-H1200/BTXRD GT masks")
+    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS)
+    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
+                        help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
     parser.add_argument("--split", type=str, default="val")
-    parser.add_argument("--annotation-name", type=str, default="_annotations_bone_rle.coco.json")
+    parser.add_argument("--annotation-name", type=str, default="_annotations_bone_rle.coco.json",
+                        help="RAM-H1200 only; ignored for --dataset btxrd")
     parser.add_argument("--pred-mask-root", type=Path, default=ROOT / "outputs" / "pseudo_masks" / "masks")
     parser.add_argument("--image-size", type=int, default=SegmentationConfig.image_size)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
-    parser.add_argument("--output-csv", type=Path, default=ROOT / "outputs" / "ramh1200_eval.csv")
+    parser.add_argument("--output-csv", type=Path, default=ROOT / "outputs" / "eval.csv")
     return parser.parse_args()
 
 
@@ -64,7 +67,8 @@ def binary_metrics(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-6) 
 
 def main() -> None:
     args = parse_args()
-    dataset = RAMH1200SegmentationDataset(
+    dataset = build_segmentation_dataset(
+        args.dataset,
         root=args.ram_root,
         split=args.split,
         image_size=args.image_size,
@@ -113,7 +117,7 @@ def main() -> None:
         writer.writerow(["mean", "ok", mean_dice, mean_iou])
         writer.writerow(["missing", missing, "", ""])
 
-    print(f"RAM-H1200 {args.split}: Dice={mean_dice:.4f}, IoU={mean_iou:.4f}, missing={missing}")
+    print(f"{args.dataset} {args.split}: Dice={mean_dice:.4f}, IoU={mean_iou:.4f}, missing={missing}")
     print(f"Saved per-image results to {args.output_csv}")
 
 

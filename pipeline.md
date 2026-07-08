@@ -1,8 +1,39 @@
-# RAM-H1200 Bone Segmentation Pipeline
+# RAM-H1200 / BTXRD Segmentation Pipeline
 
-## 1. Objective
+## 0. Two Datasets, One Pipeline
 
-This project now uses RAM-H1200 as the only dataset.
+This document describes the pipeline as implemented for **RAM-H1200**
+(sections 1-13 below). The same DenseNet121 -> LayerCAM -> SAM architecture
+also runs on **BTXRD** (bone tumor segmentation) via `--dataset btxrd`, with
+two deliberate differences:
+
+- **Classifier target**: RAM-H1200 uses `hand` (whole-hand presence); BTXRD
+  uses `tumor` (tumor vs normal). Both are still single binary image-level
+  labels — the WSSS setup (SAM/morphology never see ground-truth
+  polygons/boxes) is unchanged.
+- **Morphology prior before SAM**: RAM-H1200's `pseudo/bone_morphology.py`
+  assumes the target is radiopaque bone, since a hand-only label makes CAM
+  behave like a hand-silhouette map (see Stage 3 below). BTXRD's classifier is
+  trained directly on tumor presence, so its CAM is a much stronger
+  localization signal; `pseudo/tumor_morphology.py` instead weights CAM more
+  heavily (55% vs bone_morphology's 10%) and looks for local intensity
+  *anomalies* — both lytic (locally darker) and sclerotic (locally brighter)
+  lesions — rather than assuming the target is always the brightest tissue.
+  `pseudo/morphology_factory.py` selects between the two by `--dataset`.
+
+Everything downstream of the morphology stage (SAM prompting, `bone_hybrid`
+mask selection, Stage 6 morphological refinement) is dataset-agnostic and
+unchanged between the two datasets.
+
+BTXRD also differs in one structural way: it ships with no predefined
+train/val/test split, so `project/datasets/btxrd.py` derives an 80/10/10
+split stratified by normal/benign/malignant with a fixed seed (42).
+
+See `btxrd_kaggle.ipynb` for the BTXRD equivalent of the walkthrough below.
+
+## 1. Objective (RAM-H1200)
+
+This document's sections 1-13 describe the RAM-H1200 branch in detail.
 
 The target is binary visible-bone segmentation on hand radiographs. RAM-H1200
 provides full-hand X-ray images and COCO RLE bone instance annotations, which

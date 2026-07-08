@@ -14,6 +14,13 @@ DEFAULT_VAL_FRACTION = 0.2
 DEFAULT_SEED = 42
 DEFAULT_ANATOMY_COLUMNS = ("hand",)
 
+SUPPORTED_DATASETS = ("ramh1200", "btxrd")
+DEFAULT_DATASET = "ramh1200"
+DATASET_TARGET_COLUMNS = {
+    "ramh1200": ("hand",),
+    "btxrd": ("tumor",),
+}
+
 
 @dataclass
 class ClassifierConfig:

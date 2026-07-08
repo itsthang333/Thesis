@@ -14,17 +14,21 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import ClassifierConfig, DEFAULT_ANATOMY_COLUMNS
-from datasets.ramh1200 import RAMH1200ClassificationDataset
+from config import ClassifierConfig, DATASET_TARGET_COLUMNS, DEFAULT_DATASET, SUPPORTED_DATASETS
+from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train RAM-H1200 hand classifier for LayerCAM feature extraction")
-    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1")
+    parser = argparse.ArgumentParser(description="Train a hand/tumor classifier for LayerCAM feature extraction")
+    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS,
+                        help="Which dataset to train on: ramh1200 (hand-only) or btxrd (tumor-vs-normal)")
+    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
+                        help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
     parser.add_argument("--train-split", type=str, default="train")
     parser.add_argument("--val-split", type=str, default="val")
-    parser.add_argument("--target-columns", type=str, default=",".join(DEFAULT_ANATOMY_COLUMNS))
+    parser.add_argument("--target-columns", type=str, default=None,
+                        help="Defaults to 'hand' for ramh1200 or 'tumor' for btxrd")
     parser.add_argument("--image-size", type=int, default=ClassifierConfig.image_size)
     parser.add_argument("--batch-size", type=int, default=ClassifierConfig.batch_size)
     parser.add_argument("--lr", type=float, default=ClassifierConfig.lr)
@@ -116,6 +120,7 @@ def save_checkpoint(
     epoch: int,
     best_metric: float,
     target_columns: list[str],
+    dataset: str,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -126,7 +131,7 @@ def save_checkpoint(
             "best_metric": best_metric,
             "target_columns": target_columns,
             "task": "multi-label",
-            "dataset": "RAM-H1200",
+            "dataset": dataset,
         },
         path,
     )
@@ -136,14 +141,19 @@ def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
-    target_columns = [column.strip() for column in args.target_columns.split(",") if column.strip()]
-    if target_columns != ["hand"]:
+    default_columns = DATASET_TARGET_COLUMNS[args.dataset]
+    if args.target_columns is None:
+        target_columns = list(default_columns)
+    else:
+        target_columns = [column.strip() for column in args.target_columns.split(",") if column.strip()]
+    if tuple(target_columns) != default_columns:
         print(
-            "[WARNING] RAM-H1200 segmentation images are hand radiographs. "
-            "Use '--target-columns hand' unless you intentionally prepared extra RAM-H1200 labels."
+            f"[WARNING] '{args.dataset}' expects target-columns={list(default_columns)}. "
+            "Only change this if you intentionally prepared extra labels for this dataset."
         )
 
-    train_dataset = RAMH1200ClassificationDataset(
+    train_dataset = build_classification_dataset(
+        args.dataset,
         root=args.ram_root,
         split=args.train_split,
         target_columns=target_columns,
@@ -151,7 +161,8 @@ def main() -> None:
         use_clahe=args.use_clahe,
         preprocessing_mode=args.preprocessing_mode,
     )
-    val_dataset = RAMH1200ClassificationDataset(
+    val_dataset = build_classification_dataset(
+        args.dataset,
         root=args.ram_root,
         split=args.val_split,
         target_columns=target_columns,
@@ -203,10 +214,10 @@ def main() -> None:
             f"val_loss={val_loss:.4f} val_f1={val_metrics['f1']:.4f}"
         )
 
-        save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns)
+        save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns, args.dataset)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            save_checkpoint(args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns)
+            save_checkpoint(args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns, args.dataset)
 
 
 if __name__ == "__main__":

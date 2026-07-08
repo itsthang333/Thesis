@@ -26,16 +26,13 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from datasets.ramh1200 import RAMH1200ClassificationDataset
+from config import DATASET_TARGET_COLUMNS, DEFAULT_DATASET, SUPPORTED_DATASETS
+from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
-from pseudo.bone_morphology import (
-    build_bone_guidance,
-    build_class_conditioned_components,
-    fuse_cam_with_bone_guidance,
-)
+from pseudo.morphology_factory import get_morphology_module
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -43,14 +40,17 @@ from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate RAM-H1200 pseudo masks via LayerCAM + SAM")
-    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1")
+    parser = argparse.ArgumentParser(description="Generate RAM-H1200/BTXRD pseudo masks via LayerCAM + SAM")
+    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS)
+    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
+                        help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
     parser.add_argument("--split", type=str, default="val")
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
     parser.add_argument("--sam-checkpoint", type=Path, default=None,
                         help="Path to sam_vit_b_01ec64.pth (auto-downloaded if absent)")
-    parser.add_argument("--target-columns", type=str, default="hand")
+    parser.add_argument("--target-columns", type=str, default=None,
+                        help="Defaults to 'hand' for ramh1200 or 'tumor' for btxrd")
     parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
@@ -80,8 +80,10 @@ def parse_args() -> argparse.Namespace:
                         help="Only fill enclosed holes up to this area; preserves gaps between bones")
     parser.add_argument("--guidance-threshold", type=float, default=0.40,
                         help="Minimum mean bone-likelihood for keeping a final mask component")
-    parser.add_argument("--bone-seed-percentile", type=float, default=88.0)
-    parser.add_argument("--bone-support-percentile", type=float, default=68.0)
+    parser.add_argument("--bone-seed-percentile", type=float, default=None,
+                        help="Defaults to 88.0 for ramh1200 or 82.0 for btxrd")
+    parser.add_argument("--bone-support-percentile", type=float, default=None,
+                        help="Defaults to 68.0 for ramh1200 or 55.0 for btxrd")
     parser.add_argument("--morphology-fusion-mode", type=str, default="components",
                         choices=["components", "weighted"])
     parser.add_argument("--sam-prompt-mode", type=str, default="box_point",
@@ -140,9 +142,24 @@ def tensor_to_rgb_numpy(image_tensor: torch.Tensor) -> np.ndarray:
 
 def main() -> None:
     args = parse_args()
-    target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
+    if args.target_columns is None:
+        target_columns = list(DATASET_TARGET_COLUMNS[args.dataset])
+    else:
+        target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
-    dataset = RAMH1200ClassificationDataset(
+    morphology = get_morphology_module(args.dataset)
+    default_seed_percentile, default_support_percentile = (
+        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 55.0)
+    )
+    bone_seed_percentile = (
+        args.bone_seed_percentile if args.bone_seed_percentile is not None else default_seed_percentile
+    )
+    bone_support_percentile = (
+        args.bone_support_percentile if args.bone_support_percentile is not None else default_support_percentile
+    )
+
+    dataset = build_classification_dataset(
+        args.dataset,
         root=args.ram_root,
         split=args.split,
         target_columns=target_columns,
@@ -238,12 +255,12 @@ def main() -> None:
                 if not args.disable_bone_morphology:
                     if args.morphology_fusion_mode == "components":
                         active_weights = [float(class_weights[i]) for i in active_indices]
-                        bone_likelihood, bone_support, bone_components = build_class_conditioned_components(
+                        bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
                             image_rgb,
                             per_class_cams,
                             active_weights,
-                            seed_percentile=args.bone_seed_percentile,
-                            support_percentile=args.bone_support_percentile,
+                            seed_percentile=bone_seed_percentile,
+                            support_percentile=bone_support_percentile,
                             min_component_area=max(20, args.min_component_area // 2),
                             max_components=args.max_bone_components,
                             points_per_component=args.points_per_component,
@@ -251,15 +268,15 @@ def main() -> None:
                             debug_dir=debug_dir,
                         )
                     else:
-                        bone_likelihood, bone_support = build_bone_guidance(
+                        bone_likelihood, bone_support = morphology.build_bone_guidance(
                             image_rgb,
                             fused_cam,
-                            seed_percentile=args.bone_seed_percentile,
-                            support_percentile=args.bone_support_percentile,
+                            seed_percentile=bone_seed_percentile,
+                            support_percentile=bone_support_percentile,
                             min_component_area=max(20, args.min_component_area // 2),
                             debug_dir=debug_dir,
                         )
-                    prompt_map = fuse_cam_with_bone_guidance(
+                    prompt_map = morphology.fuse_cam_with_bone_guidance(
                         fused_cam,
                         bone_likelihood,
                         bone_support,

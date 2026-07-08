@@ -14,18 +14,21 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import SegmentationConfig
-from datasets.ramh1200 import RAMH1200SegmentationDataset
+from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
+from datasets.factory import build_segmentation_dataset
 from models.losses import bce_dice_loss, dice_coefficient, iou_score
 from models.unet import UNet
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train U-Net on RAM-H1200 bone masks")
-    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1")
+    parser = argparse.ArgumentParser(description="Train U-Net on RAM-H1200 bone masks or BTXRD tumor masks")
+    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS)
+    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
+                        help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
     parser.add_argument("--train-split", type=str, default="train")
     parser.add_argument("--val-split", type=str, default="val")
-    parser.add_argument("--annotation-name", type=str, default="_annotations_bone_rle.coco.json")
+    parser.add_argument("--annotation-name", type=str, default="_annotations_bone_rle.coco.json",
+                        help="RAM-H1200 only; ignored for --dataset btxrd")
     parser.add_argument("--image-size", type=int, default=SegmentationConfig.image_size)
     parser.add_argument("--batch-size", type=int, default=SegmentationConfig.batch_size)
     parser.add_argument("--lr", type=float, default=SegmentationConfig.lr)
@@ -48,8 +51,9 @@ def seed_everything(seed: int) -> None:
     np.random.seed(seed)
 
 
-def build_datasets(args: argparse.Namespace) -> tuple[RAMH1200SegmentationDataset, RAMH1200SegmentationDataset]:
-    train_dataset = RAMH1200SegmentationDataset(
+def build_datasets(args: argparse.Namespace):
+    train_dataset = build_segmentation_dataset(
+        args.dataset,
         root=args.ram_root,
         split=args.train_split,
         image_size=args.image_size,
@@ -57,7 +61,8 @@ def build_datasets(args: argparse.Namespace) -> tuple[RAMH1200SegmentationDatase
         use_clahe=args.use_clahe,
         annotation_name=args.annotation_name,
     )
-    val_dataset = RAMH1200SegmentationDataset(
+    val_dataset = build_segmentation_dataset(
+        args.dataset,
         root=args.ram_root,
         split=args.val_split,
         image_size=args.image_size,
@@ -66,7 +71,7 @@ def build_datasets(args: argparse.Namespace) -> tuple[RAMH1200SegmentationDatase
         annotation_name=args.annotation_name,
     )
     print(
-        f"Loaded RAM-H1200: {len(train_dataset)} train images from {args.train_split}, "
+        f"Loaded {args.dataset}: {len(train_dataset)} train images from {args.train_split}, "
         f"{len(val_dataset)} validation images from {args.val_split}."
     )
     return train_dataset, val_dataset
@@ -108,7 +113,14 @@ def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tup
     return total_loss / batches, {"dice": total_dice / batches, "iou": total_iou / batches}
 
 
-def save_checkpoint(path: Path, model: nn.Module, optimizer: torch.optim.Optimizer, epoch: int, best_metric: float) -> None:
+def save_checkpoint(
+    path: Path,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    epoch: int,
+    best_metric: float,
+    dataset: str,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
@@ -116,7 +128,7 @@ def save_checkpoint(path: Path, model: nn.Module, optimizer: torch.optim.Optimiz
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "best_metric": best_metric,
-            "dataset": "RAM-H1200",
+            "dataset": dataset,
         },
         path,
     )
@@ -166,10 +178,10 @@ def main() -> None:
             f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f}"
         )
 
-        save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice)
+        save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset)
         if val_metrics["dice"] > best_val_dice:
             best_val_dice = val_metrics["dice"]
-            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice)
+            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset)
             print(f"--> Saved new best model with Dice = {best_val_dice:.4f}")
 
 

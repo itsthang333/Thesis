@@ -9,10 +9,14 @@ Designed for Google Colab + Google Drive workflow:
 """
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
-from pseudo.bone_morphology import BoneComponent
+# Accepts either pseudo.bone_morphology.BoneComponent or
+# pseudo.tumor_morphology.TumorComponent — both share the same fields
+# (mask, bbox, positive_points, component_id), selected via --dataset.
+Component = Any
 
 
 _SAM_CHECKPOINT_URL = (
@@ -125,7 +129,7 @@ class SAMPredictor:
     def predict_from_components(
         self,
         image_rgb: np.ndarray,
-        components: list[BoneComponent],
+        components: list[Component],
         prompt_mode: str = "box_point",
         multimask_output: bool = True,
         negative_points_per_component: int = 0,
@@ -252,7 +256,7 @@ class SAMPredictor:
 
     @staticmethod
     def _sample_negative_points(
-        component: BoneComponent,
+        component: Component,
         count: int,
     ) -> list[tuple[int, int]]:
         """Choose deterministic background points inside the expanded box."""
