@@ -34,6 +34,12 @@ class TumorComponent:
     score: float
     bbox: tuple[int, int, int, int]  # x0, y0, x1, y1
     positive_points: tuple[tuple[int, int], ...]  # row, col
+    # Chosen from low-CAM pixels inside the component's support region (see
+    # _select_negative_points), not sam_refine.py's bbox-corner heuristic —
+    # a wide support mask (by design, see build_tumor_guidance) can have
+    # corners that are still close to the lesion, while low-CAM interior
+    # points reliably mark "definitely not the lesion" regardless of shape.
+    negative_points: tuple[tuple[int, int], ...] = ()
 
 
 def _normalise_percentile(
@@ -198,53 +204,137 @@ def _component_bbox(mask: np.ndarray, padding_ratio: float = 0.05) -> tuple[int,
     )
 
 
+def _adaptive_point_count(area: int, base_max_points: int) -> int:
+    """Scale positive-point count to component size instead of a fixed count.
+
+    A 20px lesion and a 2000px lesion get the same fixed point budget under a
+    constant max_points, which either wastes prompts on tiny lesions or under-
+    samples large ones. Small components get fewer points (a single CAM peak
+    is usually representative); large components get more, capped by
+    base_max_points (the caller's own --points-per-component budget), so this
+    never prompts more points than the caller asked for.
+    """
+    if area < 150:
+        target = 2
+    elif area < 600:
+        target = 3
+    elif area < 2000:
+        target = 5
+    else:
+        target = 6
+    return max(1, min(base_max_points, target))
+
+
+def _find_local_maxima(
+    values: np.ndarray,
+    rows: np.ndarray,
+    cols: np.ndarray,
+    max_points: int,
+    min_distance: float,
+) -> list[tuple[float, int, int]]:
+    """Greedy non-maximum suppression over scattered (row, col, value) samples.
+
+    Repeatedly takes the highest remaining value, then removes every
+    unselected sample within min_distance of it, so selected peaks are true
+    local maxima of the response rather than points from unrelated summary
+    statistics (centroid, axis quantiles) that ignore the response entirely.
+    """
+    order = np.argsort(values)[::-1]
+    suppressed = np.zeros(values.shape[0], dtype=bool)
+    selected: list[tuple[float, int, int]] = []
+    min_distance_sq = min_distance ** 2
+
+    for index in order:
+        if suppressed[index]:
+            continue
+        row, col = int(rows[index]), int(cols[index])
+        selected.append((float(values[index]), row, col))
+        if len(selected) >= max_points:
+            break
+        dist_sq = (rows - row) ** 2 + (cols - col) ** 2
+        suppressed |= dist_sq < min_distance_sq
+
+    return selected
+
+
+def _select_negative_points(
+    component: np.ndarray,
+    cam: np.ndarray,
+    positive_points: tuple[tuple[int, int], ...],
+    max_points: int = 4,
+    low_percentile: float = 20.0,
+) -> tuple[tuple[int, int], ...]:
+    """Pick negative SAM prompt points at the component's lowest-CAM pixels.
+
+    sam_refine.py's default negative-point heuristic samples the support
+    bounding box's corners, which can still land close to the lesion when the
+    support region is wide (an intentional tradeoff — see build_tumor_guidance).
+    Sampling low-CAM local minima *inside the component itself* instead marks
+    "definitely not the lesion, even though it's inside the search region we
+    gave SAM" — the exact ambiguity a wide-but-safe support mask creates —
+    using the same non-maximum-suppression as the positive points, just on
+    inverted CAM values so negatives spread out instead of clustering.
+    """
+    rows, cols = np.where(component > 0)
+    if rows.size == 0 or max_points <= 0:
+        return ()
+
+    values = cam[rows, cols]
+    threshold = float(np.percentile(values, low_percentile))
+    low_mask = values <= threshold
+    if not low_mask.any():
+        return ()
+
+    low_rows, low_cols, low_values = rows[low_mask], cols[low_mask], values[low_mask]
+    min_distance = max(4.0, min(component.shape) * 0.03)
+    # Negate values so _find_local_maxima's "highest first" greedy selection
+    # picks the lowest-CAM points (local minima) instead of peaks.
+    candidates = _find_local_maxima(-low_values, low_rows, low_cols, max_points, min_distance)
+
+    selected: list[tuple[int, int]] = []
+    min_sep_sq = (min_distance * 1.5) ** 2
+    for _, row, col in candidates:
+        if any((row - pr) ** 2 + (col - pc) ** 2 < min_sep_sq for pr, pc in positive_points):
+            continue
+        selected.append((row, col))
+    return tuple(selected)
+
+
 def _structured_component_points(
     component: np.ndarray,
     tumor_likelihood: np.ndarray,
     cam: np.ndarray,
     max_points: int = 3,
 ) -> tuple[tuple[int, int], ...]:
+    """Pick positive SAM prompt points at true local maxima of the CAM.
+
+    Support masks are intentionally permissive (they only need to avoid
+    missing the lesion, per build_tumor_guidance's own design — see that
+    function's docstring), so a component can be much larger than the actual
+    lesion. Picking points from the component's geometry (centroid, principal-
+    axis quantiles) — as an earlier version of this function did — samples
+    wherever the *support region* happens to be shaped, not wherever the
+    lesion evidence actually peaks, which is a mismatch that shows up as a low
+    point-in-lesion hit rate independent of how good the CAM itself is.
+    Peaks are also taken from cam alone (not blended with tumor_likelihood):
+    the prompt must stay faithful to the classifier's own evidence, while
+    tumor_likelihood's intensity/edge terms exist only to shape the support
+    region in build_tumor_guidance, not to relocate prompts away from CAM.
+    """
     rows, cols = np.where(component > 0)
     if rows.size == 0:
         return ()
 
-    response = 0.45 * tumor_likelihood + 0.55 * cam
-    values = response[rows, cols]
-    peak_index = int(np.argmax(values))
-    candidates: list[tuple[float, int, int]] = [
-        (float(values[peak_index]) + 1.0, int(rows[peak_index]), int(cols[peak_index]))
-    ]
+    area = int(rows.size)
+    adaptive_max_points = _adaptive_point_count(area, max_points)
+    values = cam[rows, cols]
+    min_distance = max(4.0, min(component.shape) * 0.03)
 
-    centroid_r = float(rows.mean())
-    centroid_c = float(cols.mean())
-    centroid_index = int(np.argmin((rows - centroid_r) ** 2 + (cols - centroid_c) ** 2))
-    candidates.append(
-        (float(values[centroid_index]) + 0.5, int(rows[centroid_index]), int(cols[centroid_index]))
-    )
+    peaks = _find_local_maxima(values, rows, cols, adaptive_max_points, min_distance)
+    if not peaks:
+        return ()
 
-    coords = np.stack([rows, cols], axis=1).astype(np.float32)
-    if coords.shape[0] >= 3:
-        centered = coords - coords.mean(axis=0, keepdims=True)
-        covariance = centered.T @ centered / max(1, coords.shape[0] - 1)
-        eigenvalues, eigenvectors = np.linalg.eigh(covariance)
-        major_axis = eigenvectors[:, int(np.argmax(eigenvalues))]
-        projections = centered @ major_axis
-        for quantile in (0.25, 0.75):
-            target = float(np.quantile(projections, quantile))
-            axis_index = int(np.argmin(np.abs(projections - target)))
-            candidates.append(
-                (float(values[axis_index]) + 0.25, int(rows[axis_index]), int(cols[axis_index]))
-            )
-
-    candidates.sort(key=lambda item: item[0], reverse=True)
-    selected: list[tuple[int, int]] = []
-    min_distance = max(4.0, min(component.shape) * 0.025)
-    for _, row, col in candidates:
-        if all((row - pr) ** 2 + (col - pc) ** 2 >= min_distance ** 2 for pr, pc in selected):
-            selected.append((row, col))
-        if len(selected) >= max_points:
-            break
-    return tuple(selected)
+    return tuple((row, col) for _, row, col in peaks)
 
 
 def select_tumor_components(
@@ -255,6 +345,7 @@ def select_tumor_components(
     max_components: int = 6,
     points_per_component: int = 3,
     bbox_padding_ratio: float = 0.05,
+    negative_points_per_component: int = 4,
 ) -> list[TumorComponent]:
     """Rank full morphology components using CAM, without trimming their shape."""
     cam = _normalise_percentile(fused_cam, low=0.0, high=100.0)
@@ -286,17 +377,24 @@ def select_tumor_components(
     ranked.sort(key=lambda item: item[0], reverse=True)
     components: list[TumorComponent] = []
     for component_id, (score, component) in enumerate(ranked[:max_components]):
+        positive_points = _structured_component_points(
+            component,
+            tumor_likelihood=tumor_likelihood,
+            cam=cam,
+            max_points=points_per_component,
+        )
         components.append(
             TumorComponent(
                 component_id=component_id,
                 mask=component.astype(np.uint8),
                 score=float(score),
                 bbox=_component_bbox(component, padding_ratio=bbox_padding_ratio),
-                positive_points=_structured_component_points(
+                positive_points=positive_points,
+                negative_points=_select_negative_points(
                     component,
-                    tumor_likelihood=tumor_likelihood,
                     cam=cam,
-                    max_points=points_per_component,
+                    positive_points=positive_points,
+                    max_points=negative_points_per_component,
                 ),
             )
         )
@@ -313,6 +411,7 @@ def build_class_conditioned_components(
     max_components: int = 6,
     points_per_component: int = 3,
     bbox_padding_ratio: float = 0.05,
+    negative_points_per_component: int = 4,
     debug_dir: str | Path | None = None,
 ) -> tuple[np.ndarray, np.ndarray, list[TumorComponent]]:
     """Build candidates per active class CAM, then merge non-duplicates.
@@ -357,6 +456,7 @@ def build_class_conditioned_components(
             max_components=max_components,
             points_per_component=points_per_component,
             bbox_padding_ratio=bbox_padding_ratio,
+            negative_points_per_component=negative_points_per_component,
         )
         combined_likelihood = np.maximum(combined_likelihood, likelihood * float(class_weight))
         combined_support |= support

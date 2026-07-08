@@ -281,6 +281,15 @@ def main() -> None:
                 if not args.disable_bone_morphology:
                     if args.morphology_fusion_mode == "components":
                         active_weights = [float(class_weights[i]) for i in active_indices]
+                        # Precomputed low-CAM negative points are BTXRD-only for now
+                        # (see tumor_morphology.TumorComponent.negative_points);
+                        # bone_morphology.build_class_conditioned_components doesn't
+                        # accept this kwarg, so only pass it for that dataset.
+                        extra_component_kwargs = (
+                            {"negative_points_per_component": args.negative_points_per_component}
+                            if args.dataset == "btxrd"
+                            else {}
+                        )
                         bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
                             image_rgb,
                             per_class_cams,
@@ -292,6 +301,7 @@ def main() -> None:
                             points_per_component=args.points_per_component,
                             bbox_padding_ratio=args.bbox_padding_ratio,
                             debug_dir=debug_dir,
+                            **extra_component_kwargs,
                         )
                     else:
                         bone_likelihood, bone_support = morphology.build_bone_guidance(

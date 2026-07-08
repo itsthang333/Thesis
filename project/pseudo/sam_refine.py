@@ -190,10 +190,18 @@ class SAMPredictor:
                 point_coords = np.asarray([(col, row) for row, col in points], dtype=np.float32)
                 point_labels = np.ones(len(points), dtype=np.int32)
                 if negative_points_per_component > 0:
-                    negative_points = self._sample_negative_points(
-                        component,
-                        count=negative_points_per_component,
-                    )
+                    # Prefer negative points precomputed from low-CAM pixels
+                    # inside the component (see TumorComponent.negative_points)
+                    # over the bbox-corner heuristic below, which can still
+                    # land close to the lesion when the support region is wide.
+                    precomputed_negatives = getattr(component, "negative_points", ())
+                    if precomputed_negatives:
+                        negative_points = list(precomputed_negatives[:negative_points_per_component])
+                    else:
+                        negative_points = self._sample_negative_points(
+                            component,
+                            count=negative_points_per_component,
+                        )
                     if negative_points:
                         negative_coords = np.asarray(
                             [(col, row) for row, col in negative_points],

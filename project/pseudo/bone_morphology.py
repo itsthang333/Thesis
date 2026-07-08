@@ -29,6 +29,10 @@ class BoneComponent:
     score: float
     bbox: tuple[int, int, int, int]  # x0, y0, x1, y1
     positive_points: tuple[tuple[int, int], ...]  # row, col
+    # Empty by default: sam_refine.py falls back to its bbox-corner heuristic
+    # when a component has no precomputed negative points (RAM-H1200's
+    # current behavior, kept as-is here).
+    negative_points: tuple[tuple[int, int], ...] = ()
 
 
 def _normalise_percentile(
