@@ -27,12 +27,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config import DATASET_TARGET_COLUMNS, DEFAULT_DATASET, SUPPORTED_DATASETS
-from datasets.factory import build_classification_dataset
+from datasets.factory import build_classification_dataset, build_segmentation_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
 from pseudo.morphology_factory import get_morphology_module
+from pseudo.prompt_metrics import (
+    binary_mask_localization_metrics,
+    cam_localization_metrics,
+    point_prompt_hit_rate,
+)
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -112,6 +117,11 @@ def parse_args() -> argparse.Namespace:
                         help="Clip fused SAM masks to dilated bone support; 0/1 means no dilation, -1 disables")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
+    parser.add_argument("--evaluate-prompt-quality", action="store_true",
+                        help="Log CAM localization and point-prompt hit-rate against ground-truth "
+                        "masks to prompt_quality.csv. Isolates CAM/prompt failure from SAM/mask-"
+                        "selection failure, unlike the final pseudo-mask Dice/IoU. Only meaningful "
+                        "on images that actually have a lesion/bone GT mask.")
     return parser.parse_args()
 
 
@@ -174,6 +184,20 @@ def main() -> None:
         num_workers=args.num_workers,
     )
 
+    gt_masks_by_name: dict[str, np.ndarray] = {}
+    if args.evaluate_prompt_quality:
+        seg_dataset = build_segmentation_dataset(
+            args.dataset,
+            root=args.ram_root,
+            split=args.split,
+            image_size=args.image_size,
+            augment=False,
+        )
+        for index in range(len(seg_dataset)):
+            _, mask_tensor, image_name = seg_dataset[index]
+            gt_masks_by_name[str(image_name)] = (mask_tensor[0].numpy() > 0.5)
+        print(f"Loaded {len(gt_masks_by_name)} ground-truth masks for prompt-quality evaluation")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     classifier, classifier_task = load_classifier(args.classifier_checkpoint, len(target_columns), device)
     print(f"Loaded classifier checkpoint task={classifier_task}")
@@ -189,6 +213,8 @@ def main() -> None:
     overlay_dir = args.output_dir / "overlays"
     mask_dir.mkdir(parents=True, exist_ok=True)
     overlay_dir.mkdir(parents=True, exist_ok=True)
+
+    prompt_quality_rows: list[list[object]] = []
 
     skipped = 0
     processed = 0
@@ -316,6 +342,41 @@ def main() -> None:
                         image_pil=image_pil,
                     )
 
+                # ── 4b. Prompt-quality metrics (optional, pre-SAM diagnostics) ──
+                if args.evaluate_prompt_quality:
+                    gt_mask = gt_masks_by_name.get(str(image_name))
+                    if gt_mask is not None:
+                        all_points = (
+                            [point for component in bone_components for point in component.positive_points]
+                            if bone_components
+                            else point_prompts
+                        )
+                        # bone_components/bone_support come from morphological
+                        # reconstruction (seed+support thresholds, not a single
+                        # percentile cut), so compare that concrete mask
+                        # directly rather than recomputing a percentile cut on
+                        # prompt_map, which would not reflect what SAM actually
+                        # receives in this mode.
+                        if bone_support is not None:
+                            fg_metrics = binary_mask_localization_metrics(bone_support, gt_mask)
+                        else:
+                            fg_metrics = cam_localization_metrics(prompt_map, gt_mask, percentile=args.cam_percentile)
+                            fg_metrics = {
+                                "iou": fg_metrics["cam_iou"],
+                                "recall": fg_metrics["cam_recall"],
+                                "precision": fg_metrics["cam_precision"],
+                            }
+                        hit_metrics = point_prompt_hit_rate(all_points, gt_mask)
+                        prompt_quality_rows.append([
+                            image_name,
+                            fg_metrics["iou"],
+                            fg_metrics["recall"],
+                            fg_metrics["precision"],
+                            hit_metrics["point_hit_rate"],
+                            hit_metrics["num_points"],
+                            hit_metrics["num_hits"],
+                        ])
+
                 # ── 5. CAM-guided mask selection ──────────────────────────────
                 refined = select_and_fuse_masks(
                     sam_masks,
@@ -356,6 +417,29 @@ def main() -> None:
 
     mode = "full dataset" if args.process_all else f"preview ({processed} images)"
     print(f"\nDone: {mode}. Masks saved to {mask_dir} (skipped {skipped} low-confidence images)")
+
+    if args.evaluate_prompt_quality:
+        import csv
+
+        quality_csv = args.output_dir / "prompt_quality.csv"
+        with quality_csv.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "image_name", "foreground_iou", "foreground_recall", "foreground_precision",
+                "point_hit_rate", "num_points", "num_hits",
+            ])
+            writer.writerows(prompt_quality_rows)
+
+        def _mean(column_index: int) -> float:
+            values = [row[column_index] for row in prompt_quality_rows if row[column_index] == row[column_index]]
+            return sum(values) / len(values) if values else float("nan")
+
+        print(
+            f"Prompt quality ({len(prompt_quality_rows)} images with GT): "
+            f"mean foreground_iou={_mean(1):.4f} mean foreground_recall={_mean(2):.4f} "
+            f"mean foreground_precision={_mean(3):.4f} mean point_hit_rate={_mean(4):.4f}"
+        )
+        print(f"Saved per-image prompt-quality metrics to {quality_csv}")
 
 
 if __name__ == "__main__":
