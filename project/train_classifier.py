@@ -210,8 +210,9 @@ def main() -> None:
             )
 
         print(
-            f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_f1={train_metrics['f1']:.4f} "
-            f"val_loss={val_loss:.4f} val_f1={val_metrics['f1']:.4f}"
+            f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
+            f"train_f1={train_metrics['f1']:.4f} | val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
+            f"val_f1={val_metrics['f1']:.4f}"
         )
 
         save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_loss, target_columns, args.dataset)
