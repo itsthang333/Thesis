@@ -215,6 +215,7 @@ def main() -> None:
     overlay_dir.mkdir(parents=True, exist_ok=True)
 
     prompt_quality_rows: list[list[object]] = []
+    skipped_image_names: list[str] = []
 
     skipped = 0
     processed = 0
@@ -241,6 +242,7 @@ def main() -> None:
                 if classifier_task != "single-label" and float(class_weights.max()) < args.confidence_threshold:
                     save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
                     skipped += 1
+                    skipped_image_names.append(str(image_name))
                     processed += 1
                     continue
 
@@ -427,6 +429,11 @@ def main() -> None:
 
     mode = "full dataset" if args.process_all else f"preview ({processed} images)"
     print(f"\nDone: {mode}. Masks saved to {mask_dir} (skipped {skipped} low-confidence images)")
+
+    if skipped_image_names:
+        skipped_path = args.output_dir / "skipped_low_confidence.txt"
+        skipped_path.write_text("\n".join(skipped_image_names) + "\n", encoding="utf-8")
+        print(f"Saved list of {len(skipped_image_names)} skipped image names to {skipped_path}")
 
     if args.evaluate_prompt_quality:
         import csv

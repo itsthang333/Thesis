@@ -30,7 +30,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--output-csv", type=Path, default=ROOT / "outputs" / "eval.csv")
+    parser.add_argument("--skipped-list", type=Path, default=None,
+                        help="Path to skipped_low_confidence.txt from generate_pseudo_masks.py "
+                        "(defaults to <pred-mask-root>/../skipped_low_confidence.txt if present). "
+                        "Tumor images the classifier skipped for low confidence get an all-zero "
+                        "pseudo-mask by construction; reporting their Dice alongside images that "
+                        "actually ran CAM/SAM would blame the wrong pipeline stage for the failure.")
     return parser.parse_args()
+
+
+def load_skipped_names(path: Path | None, pred_mask_root: Path) -> set[str]:
+    candidate = path if path is not None else pred_mask_root.parent / "skipped_low_confidence.txt"
+    if not candidate.exists():
+        return set()
+    return {Path(line.strip()).stem for line in candidate.read_text(encoding="utf-8").splitlines() if line.strip()}
 
 
 def resolve_pred_mask(mask_root: Path, image_name: str) -> Path | None:
@@ -78,9 +91,25 @@ def main() -> None:
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
+    skipped_names = load_skipped_names(args.skipped_list, args.pred_mask_root)
+    if skipped_names:
+        print(f"Loaded {len(skipped_names)} low-confidence-skipped image names")
+
     rows: list[list[object]] = []
-    dice_values: list[float] = []
-    iou_values: list[float] = []
+    # Split metrics by whether the GT mask actually has a lesion/bone region,
+    # and further split tumor images by whether the classifier skipped them
+    # for low confidence. A pooled mean over all three conflates three
+    # different failure modes: normal images trivially score Dice=1 when both
+    # prediction and GT are empty (a correct *detection*, not evidence of good
+    # *segmentation*); classifier-skipped tumor images always get Dice≈0 by
+    # construction (an all-zero mask was saved before CAM/SAM ever ran) and
+    # blame the classifier threshold, not CAM/SAM/morphology; only tumor
+    # images that actually ran the full pipeline reflect CAM/SAM quality.
+    tumor_dice: list[float] = []
+    tumor_iou: list[float] = []
+    tumor_skipped_count = 0
+    normal_specificity: list[float] = []  # 1.0 if predicted mask is also empty, else 0.0
+    normal_false_positive_pixels = 0
     missing = 0
 
     for _, gt_masks, image_names in tqdm(loader, desc="evaluate"):
@@ -91,7 +120,7 @@ def main() -> None:
             pred_path = resolve_pred_mask(args.pred_mask_root, image_name)
             if pred_path is None:
                 missing += 1
-                rows.append([image_name, "missing", "", ""])
+                rows.append([image_name, "missing", "", "", "", ""])
                 continue
             pred_masks.append(load_pred_mask(pred_path, args.image_size))
             valid_gt.append(gt_masks[index])
@@ -101,23 +130,50 @@ def main() -> None:
             continue
 
         for image_name, pred_mask, gt_mask in zip(valid_names, pred_masks, valid_gt):
+            is_tumor = bool(gt_mask.sum().item() > 0)
+            was_skipped = Path(image_name).stem in skipped_names
             dice, iou = binary_metrics(pred_mask, gt_mask)
-            dice_values.append(dice)
-            iou_values.append(iou)
-            rows.append([image_name, "ok", dice, iou])
+            group = "tumor" if is_tumor else "normal"
+            rows.append([image_name, "ok", group, was_skipped, dice, iou])
+            if is_tumor:
+                if was_skipped:
+                    tumor_skipped_count += 1
+                else:
+                    tumor_dice.append(dice)
+                    tumor_iou.append(iou)
+            else:
+                predicted_empty = bool(pred_mask.sum().item() == 0)
+                normal_specificity.append(1.0 if predicted_empty else 0.0)
+                if not predicted_empty:
+                    normal_false_positive_pixels += int(pred_mask.sum().item())
 
-    mean_dice = sum(dice_values) / max(1, len(dice_values))
-    mean_iou = sum(iou_values) / max(1, len(iou_values))
+    mean_tumor_dice = sum(tumor_dice) / max(1, len(tumor_dice))
+    mean_tumor_iou = sum(tumor_iou) / max(1, len(tumor_iou))
+    specificity = sum(normal_specificity) / max(1, len(normal_specificity))
+    false_positive_rate = 1.0 - specificity
 
     with args.output_csv.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["image_name", "status", "dice", "iou"])
+        writer.writerow(["image_name", "status", "group", "skipped_low_confidence", "dice", "iou"])
         writer.writerows(rows)
         writer.writerow([])
-        writer.writerow(["mean", "ok", mean_dice, mean_iou])
-        writer.writerow(["missing", missing, "", ""])
+        writer.writerow(["tumor_images_evaluated", len(tumor_dice), "", "", "", ""])
+        writer.writerow(["tumor_images_skipped_low_confidence", tumor_skipped_count, "", "", "", ""])
+        writer.writerow(["mean_tumor_dice", "", "", "", mean_tumor_dice, ""])
+        writer.writerow(["mean_tumor_iou", "", "", "", "", mean_tumor_iou])
+        writer.writerow(["normal_images", len(normal_specificity), "", "", "", ""])
+        writer.writerow(["specificity_empty_mask_rate", "", "", "", specificity, ""])
+        writer.writerow(["false_positive_rate", "", "", "", false_positive_rate, ""])
+        writer.writerow(["normal_false_positive_pixels_total", normal_false_positive_pixels, "", "", "", ""])
+        writer.writerow(["missing", missing, "", "", "", ""])
 
-    print(f"{args.dataset} {args.split}: Dice={mean_dice:.4f}, IoU={mean_iou:.4f}, missing={missing}")
+    print(
+        f"{args.dataset} {args.split}: "
+        f"tumor images evaluated={len(tumor_dice)} (skipped for low confidence={tumor_skipped_count}) "
+        f"Dice={mean_tumor_dice:.4f} IoU={mean_tumor_iou:.4f} | "
+        f"normal images={len(normal_specificity)} specificity={specificity:.4f} "
+        f"false_positive_rate={false_positive_rate:.4f} | missing={missing}"
+    )
     print(f"Saved per-image results to {args.output_csv}")
 
 
