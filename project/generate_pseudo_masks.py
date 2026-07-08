@@ -38,6 +38,7 @@ from pseudo.prompt_metrics import (
     cam_localization_metrics,
     point_prompt_hit_rate,
 )
+from pseudo.oracle_diagnostics import oracle_vs_selected_metrics
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
@@ -355,39 +356,39 @@ def main() -> None:
                     )
 
                 # ── 4b. Prompt-quality metrics (optional, pre-SAM diagnostics) ──
-                if args.evaluate_prompt_quality:
-                    gt_mask = gt_masks_by_name.get(str(image_name))
-                    if gt_mask is not None:
-                        all_points = (
-                            [point for component in bone_components for point in component.positive_points]
-                            if bone_components
-                            else point_prompts
-                        )
-                        # bone_components/bone_support come from morphological
-                        # reconstruction (seed+support thresholds, not a single
-                        # percentile cut), so compare that concrete mask
-                        # directly rather than recomputing a percentile cut on
-                        # prompt_map, which would not reflect what SAM actually
-                        # receives in this mode.
-                        if bone_support is not None:
-                            fg_metrics = binary_mask_localization_metrics(bone_support, gt_mask)
-                        else:
-                            fg_metrics = cam_localization_metrics(prompt_map, gt_mask, percentile=args.cam_percentile)
-                            fg_metrics = {
-                                "iou": fg_metrics["cam_iou"],
-                                "recall": fg_metrics["cam_recall"],
-                                "precision": fg_metrics["cam_precision"],
-                            }
-                        hit_metrics = point_prompt_hit_rate(all_points, gt_mask)
-                        prompt_quality_rows.append([
-                            image_name,
-                            fg_metrics["iou"],
-                            fg_metrics["recall"],
-                            fg_metrics["precision"],
-                            hit_metrics["point_hit_rate"],
-                            hit_metrics["num_points"],
-                            hit_metrics["num_hits"],
-                        ])
+                gt_mask = gt_masks_by_name.get(str(image_name)) if args.evaluate_prompt_quality else None
+                prompt_quality_entry: list[object] | None = None
+                if gt_mask is not None:
+                    all_points = (
+                        [point for component in bone_components for point in component.positive_points]
+                        if bone_components
+                        else point_prompts
+                    )
+                    # bone_components/bone_support come from morphological
+                    # reconstruction (seed+support thresholds, not a single
+                    # percentile cut), so compare that concrete mask
+                    # directly rather than recomputing a percentile cut on
+                    # prompt_map, which would not reflect what SAM actually
+                    # receives in this mode.
+                    if bone_support is not None:
+                        fg_metrics = binary_mask_localization_metrics(bone_support, gt_mask)
+                    else:
+                        fg_metrics = cam_localization_metrics(prompt_map, gt_mask, percentile=args.cam_percentile)
+                        fg_metrics = {
+                            "iou": fg_metrics["cam_iou"],
+                            "recall": fg_metrics["cam_recall"],
+                            "precision": fg_metrics["cam_precision"],
+                        }
+                    hit_metrics = point_prompt_hit_rate(all_points, gt_mask)
+                    prompt_quality_entry = [
+                        image_name,
+                        fg_metrics["iou"],
+                        fg_metrics["recall"],
+                        fg_metrics["precision"],
+                        hit_metrics["point_hit_rate"],
+                        hit_metrics["num_points"],
+                        hit_metrics["num_hits"],
+                    ]
 
                 # ── 5. CAM-guided mask selection ──────────────────────────────
                 refined = select_and_fuse_masks(
@@ -407,6 +408,16 @@ def main() -> None:
                     best_per_component=component_ids is not None,
                     support_clip_kernel=args.support_clip_kernel,
                 )
+
+                # ── 5b. SAM-vs-selection oracle diagnostic (optional) ───────────
+                if prompt_quality_entry is not None:
+                    oracle_metrics = oracle_vs_selected_metrics(sam_masks, refined, gt_mask)
+                    prompt_quality_entry.extend([
+                        oracle_metrics["best_single_dice"],
+                        oracle_metrics["selected_dice"],
+                        oracle_metrics["gap_dice"],
+                    ])
+                    prompt_quality_rows.append(prompt_quality_entry)
 
                 # ── 6. Morphological refinement ───────────────────────────────
                 final_mask = morphological_refinement(
@@ -444,6 +455,7 @@ def main() -> None:
             writer.writerow([
                 "image_name", "foreground_iou", "foreground_recall", "foreground_precision",
                 "point_hit_rate", "num_points", "num_hits",
+                "oracle_best_single_dice", "selected_dice", "oracle_gap_dice",
             ])
             writer.writerows(prompt_quality_rows)
 
@@ -455,6 +467,13 @@ def main() -> None:
             f"Prompt quality ({len(prompt_quality_rows)} images with GT): "
             f"mean foreground_iou={_mean(1):.4f} mean foreground_recall={_mean(2):.4f} "
             f"mean foreground_precision={_mean(3):.4f} mean point_hit_rate={_mean(4):.4f}"
+        )
+        print(
+            f"SAM-vs-selection oracle diagnostic: "
+            f"mean oracle_best_single_dice={_mean(7):.4f} mean selected_dice={_mean(8):.4f} "
+            f"mean gap={_mean(9):.4f} "
+            "(large gap => mask_selection.py is discarding good candidates; "
+            "small gap + low oracle => SAM/prompts never produced a good candidate)"
         )
         print(f"Saved per-image prompt-quality metrics to {quality_csv}")
 
