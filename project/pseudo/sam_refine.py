@@ -24,17 +24,31 @@ _SAM_CHECKPOINT_URL = (
 )
 _DEFAULT_CHECKPOINT_NAME = "sam_vit_b_01ec64.pth"
 
+_SAM2_CHECKPOINT_URL = (
+    "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_tiny.pt"
+)
+_SAM2_DEFAULT_CHECKPOINT_NAME = "sam2.1_hiera_tiny.pt"
+_SAM2_DEFAULT_MODEL_CFG = "configs/sam2.1/sam2.1_hiera_t.yaml"
 
-def _download_sam_checkpoint(dest: Path) -> None:
+
+def _download_checkpoint(url: str, dest: Path, label: str) -> None:
     import urllib.request
     dest.parent.mkdir(parents=True, exist_ok=True)
-    print(f"[SAM] Downloading SAM ViT-B checkpoint to {dest} ...")
-    urllib.request.urlretrieve(_SAM_CHECKPOINT_URL, str(dest))
-    print("[SAM] Download complete.")
+    print(f"[{label}] Downloading checkpoint to {dest} ...")
+    urllib.request.urlretrieve(url, str(dest))
+    print(f"[{label}] Download complete.")
+
+
+def _download_sam_checkpoint(dest: Path) -> None:
+    _download_checkpoint(_SAM_CHECKPOINT_URL, dest, "SAM")
 
 
 class SAMPredictor:
-    """Thin wrapper around segment_anything.SamPredictor.
+    """Thin wrapper around segment_anything.SamPredictor / SAM2's SAM2ImagePredictor.
+
+    Both expose the same predict(point_coords, point_labels, box,
+    multimask_output) -> (masks, scores, logits) signature, so every method
+    below other than __init__ is identical regardless of --sam-version.
 
     Usage:
         predictor = SAMPredictor(checkpoint_path="/drive/MyDrive/sam_vit_b_01ec64.pth")
@@ -46,7 +60,20 @@ class SAMPredictor:
         checkpoint_path: str | Path | None = None,
         auto_download: bool = True,
         device: str = "cuda",
+        sam_version: str = "v1",
+        sam2_model_cfg: str = _SAM2_DEFAULT_MODEL_CFG,
     ) -> None:
+        if sam_version not in {"v1", "v2"}:
+            raise ValueError(f"Unknown sam_version '{sam_version}'. Choose from: v1, v2.")
+        self._sam_version = sam_version
+        self._device = device
+
+        if sam_version == "v1":
+            self._init_v1(checkpoint_path, auto_download, device)
+        else:
+            self._init_v2(checkpoint_path, auto_download, device, sam2_model_cfg)
+
+    def _init_v1(self, checkpoint_path, auto_download, device) -> None:
         try:
             from segment_anything import SamPredictor, sam_model_registry
         except ImportError as exc:
@@ -57,7 +84,6 @@ class SAMPredictor:
 
         if checkpoint_path is None:
             checkpoint_path = Path(_DEFAULT_CHECKPOINT_NAME)
-
         checkpoint_path = Path(checkpoint_path)
 
         if not checkpoint_path.exists():
@@ -72,7 +98,31 @@ class SAMPredictor:
         sam = sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
         sam.to(device=device)
         self._predictor = SamPredictor(sam)
-        self._device = device
+
+    def _init_v2(self, checkpoint_path, auto_download, device, model_cfg) -> None:
+        try:
+            from sam2.build_sam import build_sam2
+            from sam2.sam2_image_predictor import SAM2ImagePredictor
+        except ImportError as exc:
+            raise ImportError(
+                "sam2 is not installed. Run: pip install git+https://github.com/facebookresearch/sam2.git"
+            ) from exc
+
+        if checkpoint_path is None:
+            checkpoint_path = Path(_SAM2_DEFAULT_CHECKPOINT_NAME)
+        checkpoint_path = Path(checkpoint_path)
+
+        if not checkpoint_path.exists():
+            if auto_download:
+                _download_checkpoint(_SAM2_CHECKPOINT_URL, checkpoint_path, "SAM2")
+            else:
+                raise FileNotFoundError(
+                    f"SAM2 checkpoint not found at {checkpoint_path}. "
+                    "Pass auto_download=True or provide the correct path."
+                )
+
+        sam2_model = build_sam2(model_cfg, str(checkpoint_path), device=device)
+        self._predictor = SAM2ImagePredictor(sam2_model)
 
     def predict_from_points(
         self,

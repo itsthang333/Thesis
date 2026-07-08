@@ -54,7 +54,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
     parser.add_argument("--sam-checkpoint", type=Path, default=None,
-                        help="Path to sam_vit_b_01ec64.pth (auto-downloaded if absent)")
+                        help="Path to sam_vit_b_01ec64.pth (v1) or sam2.1_hiera_tiny.pt (v2); "
+                        "auto-downloaded if absent")
+    parser.add_argument("--sam-version", type=str, default="v1", choices=["v1", "v2"],
+                        help="v1=original SAM (ViT-B, SamPredictor API); "
+                        "v2=SAM2 (Hiera-tiny, SAM2ImagePredictor — same point/box prompt "
+                        "API, different checkpoint/package, trained on video not natural "
+                        "images specifically for medical domains)")
+    parser.add_argument("--sam2-model-cfg", type=str, default="configs/sam2.1/sam2.1_hiera_t.yaml",
+                        help="SAM2 model config name (only used when --sam-version v2)")
     parser.add_argument("--target-columns", type=str, default=None,
                         help="Defaults to 'hand' for ramh1200 or 'tumor' for btxrd")
     parser.add_argument("--image-size", type=int, default=512)
@@ -208,6 +216,8 @@ def main() -> None:
         checkpoint_path=args.sam_checkpoint,
         auto_download=(args.sam_checkpoint is None),
         device=str(device),
+        sam_version=args.sam_version,
+        sam2_model_cfg=args.sam2_model_cfg,
     )
 
     mask_dir = args.output_dir / "masks"

@@ -52,6 +52,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--segmentation-checkpoint", type=Path, default=None,
                         help="Optional: add U-Net overlay as 7th panel")
     parser.add_argument("--sam-checkpoint", type=Path, default=None)
+    parser.add_argument("--sam-version", type=str, default="v1", choices=["v1", "v2"])
+    parser.add_argument("--sam2-model-cfg", type=str, default="configs/sam2.1/sam2.1_hiera_t.yaml")
     parser.add_argument("--output-path", type=Path, default=None,
                         help="Where to save the figure (default: outputs/viz/<stem>_pipeline.png)")
     parser.add_argument("--image-size", type=int, default=512)
@@ -228,6 +230,8 @@ def main() -> None:
         checkpoint_path=args.sam_checkpoint,
         auto_download=(args.sam_checkpoint is None),
         device=str(device),
+        sam_version=args.sam_version,
+        sam2_model_cfg=args.sam2_model_cfg,
     )
 
     seg_model = None

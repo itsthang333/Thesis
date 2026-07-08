@@ -36,6 +36,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--segmentation-checkpoint", type=Path,
                         default=ROOT / "outputs" / "segmentation" / "best_unet.pt")
     parser.add_argument("--sam-checkpoint", type=Path, default=None)
+    parser.add_argument("--sam-version", type=str, default="v1", choices=["v1", "v2"])
+    parser.add_argument("--sam2-model-cfg", type=str, default="configs/sam2.1/sam2.1_hiera_t.yaml")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "inference")
     parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--confidence-threshold", type=float, default=0.5)
@@ -122,6 +124,8 @@ def main() -> None:
         checkpoint_path=args.sam_checkpoint,
         auto_download=(args.sam_checkpoint is None),
         device=str(device),
+        sam_version=args.sam_version,
+        sam2_model_cfg=args.sam2_model_cfg,
     )
 
     try:
