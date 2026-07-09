@@ -124,7 +124,17 @@ def parse_args() -> argparse.Namespace:
                         choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"],
                         help="CAM-guided mask scoring method")
     parser.add_argument("--fusion-topk", type=int, default=3,
-                        help="0=OR all above-thresh, 1=top-1 only, k>1=union top-k, k<0=intersect top-|k|")
+                        help="0=OR all above-thresh, 1=top-1 only, k>1=union top-k, k<0=intersect top-|k|. "
+                        "Only used when --disable-best-per-component is set or components are unavailable "
+                        "-- best_per_component (on by default whenever component_ids exist) takes priority "
+                        "over fusion_topk in select_and_fuse_masks and returns before fusion_topk's branch runs.")
+    parser.add_argument("--disable-best-per-component", action="store_true",
+                        help="Disable per-component best-candidate selection (which unions the single best "
+                        "SAM candidate from every kept morphology component, up to --max-bone-components) "
+                        "and fall back to fusion_topk's global top-k selection across all candidates instead. "
+                        "Per-component selection can union in a non-lesion component's mask alongside the "
+                        "real lesion's, which is invisible to fusion_topk and can dilute Dice more than "
+                        "fusion_topk ever could -- this flag isolates that effect for A/B testing.")
     parser.add_argument("--support-clip-kernel", type=int, default=5,
                         help="Clip fused SAM masks to dilated bone support; 0/1 means no dilation, -1 disables")
     parser.add_argument("--debug", action="store_true",
@@ -418,7 +428,7 @@ def main() -> None:
                         np.stack([component.mask for component in bone_components])
                         if bone_components else None
                     ),
-                    best_per_component=component_ids is not None,
+                    best_per_component=component_ids is not None and not args.disable_best_per_component,
                     support_clip_kernel=args.support_clip_kernel,
                 )
 
