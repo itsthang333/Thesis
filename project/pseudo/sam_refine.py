@@ -30,6 +30,21 @@ _SAM2_CHECKPOINT_URL = (
 _SAM2_DEFAULT_CHECKPOINT_NAME = "sam2.1_hiera_tiny.pt"
 _SAM2_DEFAULT_MODEL_CFG = "configs/sam2.1/sam2.1_hiera_t.yaml"
 
+# MedSAM2 (bowang-lab/MedSAM2) fine-tunes SAM2's Hiera-tiny backbone on medical
+# imagery and ships its own vendored `sam2/` package + config
+# (configs/sam2.1_hiera_t512.yaml, note: no "sam2.1/" subfolder, unlike the
+# original SAM2 repo's configs/sam2.1/sam2.1_hiera_t.yaml). Its build_sam2()/
+# SAM2ImagePredictor API is identical to original SAM2's (confirmed via
+# MedSAM2's own app.py), so _init_v2 below is reused as-is — only the
+# checkpoint source and config path differ. The two `sam2` packages
+# (facebookresearch/sam2 vs bowang-lab/MedSAM2's vendored copy) occupy the
+# same Python import name and cannot both be installed in one environment;
+# switching sam_version between "v2" and "medsam2" in the same venv requires
+# reinstalling the matching package first.
+_MEDSAM2_CHECKPOINT_URL = "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
+_MEDSAM2_DEFAULT_CHECKPOINT_NAME = "MedSAM2_latest.pt"
+_MEDSAM2_DEFAULT_MODEL_CFG = "configs/sam2.1_hiera_t512.yaml"
+
 
 def _download_checkpoint(url: str, dest: Path, label: str) -> None:
     import urllib.request
@@ -61,17 +76,31 @@ class SAMPredictor:
         auto_download: bool = True,
         device: str = "cuda",
         sam_version: str = "v1",
-        sam2_model_cfg: str = _SAM2_DEFAULT_MODEL_CFG,
+        sam2_model_cfg: str | None = None,
     ) -> None:
-        if sam_version not in {"v1", "v2"}:
-            raise ValueError(f"Unknown sam_version '{sam_version}'. Choose from: v1, v2.")
+        if sam_version not in {"v1", "v2", "medsam2"}:
+            raise ValueError(f"Unknown sam_version '{sam_version}'. Choose from: v1, v2, medsam2.")
         self._sam_version = sam_version
         self._device = device
 
         if sam_version == "v1":
             self._init_v1(checkpoint_path, auto_download, device)
+        elif sam_version == "v2":
+            self._init_v2(
+                checkpoint_path, auto_download, device,
+                sam2_model_cfg or _SAM2_DEFAULT_MODEL_CFG,
+                default_checkpoint_name=_SAM2_DEFAULT_CHECKPOINT_NAME,
+                checkpoint_url=_SAM2_CHECKPOINT_URL,
+                label="SAM2",
+            )
         else:
-            self._init_v2(checkpoint_path, auto_download, device, sam2_model_cfg)
+            self._init_v2(
+                checkpoint_path, auto_download, device,
+                sam2_model_cfg or _MEDSAM2_DEFAULT_MODEL_CFG,
+                default_checkpoint_name=_MEDSAM2_DEFAULT_CHECKPOINT_NAME,
+                checkpoint_url=_MEDSAM2_CHECKPOINT_URL,
+                label="MedSAM2",
+            )
 
     def _init_v1(self, checkpoint_path, auto_download, device) -> None:
         try:
@@ -99,25 +128,39 @@ class SAMPredictor:
         sam.to(device=device)
         self._predictor = SamPredictor(sam)
 
-    def _init_v2(self, checkpoint_path, auto_download, device, model_cfg) -> None:
+    def _init_v2(
+        self,
+        checkpoint_path,
+        auto_download,
+        device,
+        model_cfg,
+        default_checkpoint_name,
+        checkpoint_url,
+        label,
+    ) -> None:
         try:
             from sam2.build_sam import build_sam2
             from sam2.sam2_image_predictor import SAM2ImagePredictor
         except ImportError as exc:
+            install_hint = (
+                "pip install git+https://github.com/bowang-lab/MedSAM2.git"
+                if label == "MedSAM2"
+                else "pip install git+https://github.com/facebookresearch/sam2.git"
+            )
             raise ImportError(
-                "sam2 is not installed. Run: pip install git+https://github.com/facebookresearch/sam2.git"
+                f"sam2 is not installed (needed for --sam-version, {label}). Run: {install_hint}"
             ) from exc
 
         if checkpoint_path is None:
-            checkpoint_path = Path(_SAM2_DEFAULT_CHECKPOINT_NAME)
+            checkpoint_path = Path(default_checkpoint_name)
         checkpoint_path = Path(checkpoint_path)
 
         if not checkpoint_path.exists():
             if auto_download:
-                _download_checkpoint(_SAM2_CHECKPOINT_URL, checkpoint_path, "SAM2")
+                _download_checkpoint(checkpoint_url, checkpoint_path, label)
             else:
                 raise FileNotFoundError(
-                    f"SAM2 checkpoint not found at {checkpoint_path}. "
+                    f"{label} checkpoint not found at {checkpoint_path}. "
                     "Pass auto_download=True or provide the correct path."
                 )
 

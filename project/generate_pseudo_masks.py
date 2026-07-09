@@ -56,13 +56,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sam-checkpoint", type=Path, default=None,
                         help="Path to sam_vit_b_01ec64.pth (v1) or sam2.1_hiera_tiny.pt (v2); "
                         "auto-downloaded if absent")
-    parser.add_argument("--sam-version", type=str, default="v1", choices=["v1", "v2"],
+    parser.add_argument("--sam-version", type=str, default="v1", choices=["v1", "v2", "medsam2"],
                         help="v1=original SAM (ViT-B, SamPredictor API); "
-                        "v2=SAM2 (Hiera-tiny, SAM2ImagePredictor — same point/box prompt "
-                        "API, different checkpoint/package, trained on video not natural "
-                        "images specifically for medical domains)")
-    parser.add_argument("--sam2-model-cfg", type=str, default="configs/sam2.1/sam2.1_hiera_t.yaml",
-                        help="SAM2 model config name (only used when --sam-version v2)")
+                        "v2=SAM2 (Hiera-tiny by default, SAM2ImagePredictor — same "
+                        "point/box prompt API, different checkpoint/package); "
+                        "medsam2=SAM2 fine-tuned on medical imagery (bowang-lab/MedSAM2), "
+                        "same API, its own vendored sam2 package/checkpoint/config")
+    parser.add_argument("--sam2-model-cfg", type=str, default=None,
+                        help="Overrides the default config for --sam-version v2/medsam2 "
+                        "(v2 default: configs/sam2.1/sam2.1_hiera_t.yaml; "
+                        "medsam2 default: configs/sam2.1_hiera_t512.yaml)")
     parser.add_argument("--target-columns", type=str, default=None,
                         help="Defaults to 'hand' for ramh1200 or 'tumor' for btxrd")
     parser.add_argument("--image-size", type=int, default=512)
