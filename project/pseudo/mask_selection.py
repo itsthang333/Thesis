@@ -89,37 +89,50 @@ def score_masks(
                 continue
             bone_mean = float(bone_likelihood[m].mean())
             cam_mean = float(cam_vals.mean())
+            # bone_support is derived from a CAM percentile cut in the pre-SAM
+            # morphology stage, not ground truth -- it typically UNDER-covers
+            # the true lesion (support subset-of lesion), not the other way
+            # around. support_recall (does the candidate contain the support
+            # region?) is therefore a meaningful bonus: a good candidate
+            # should contain the seed region SAM was prompted from. But the
+            # inverse -- support_precision / outside_support_ratio, "does the
+            # candidate stay INSIDE the support region?" -- assumes the
+            # opposite (lesion subset-of support) and heavily penalizes any
+            # candidate that correctly extends beyond a too-narrow support to
+            # cover the rest of the real lesion. That assumption was verified
+            # wrong in practice (support_loss_dice ~ 0 while selection_loss_dice
+            # was the dominant term in this project's own oracle diagnostic),
+            # so precision-vs-support is intentionally dropped here in favor
+            # of weighting CAM/bone_likelihood more heavily as the primary
+            # "is this actually the lesion" signal.
             support_recall = 0.0
-            support_precision = 0.0
-            outside_support_ratio = 1.0
             if bone_support is not None and bone_support.any():
                 support_bool = bone_support.astype(bool)
                 overlap = float((m & support_bool).sum())
                 support_recall = overlap / float(bone_support.sum())
-                support_precision = overlap / area
-                outside_support_ratio = max(0.0, 1.0 - support_precision)
             area_ratio = area / float(bone_cam.size)
             support_area_ratio = (
                 float(bone_support.sum()) / float(bone_cam.size)
                 if bone_support is not None and bone_support.any()
                 else 0.0
             )
-            expected_area = max(0.05, min(0.28, support_area_ratio * 1.35 + 0.015))
+            # expected_area is a soft ceiling on plausible lesion size, not a
+            # hard support-shape constraint -- kept mild (lower weight below)
+            # so it only discourages implausibly large candidates (e.g. the
+            # whole hand) rather than penalizing any candidate larger than a
+            # narrow support region.
+            expected_area = max(0.08, min(0.35, support_area_ratio * 2.0 + 0.05))
             large_mask_penalty = max(0.0, area_ratio - expected_area)
-            soft_tissue_penalty = max(0.0, 0.65 - support_precision)
             border_touch_count = int(m[0, :].any()) + int(m[-1, :].any()) + int(m[:, 0].any()) + int(m[:, -1].any())
             border_touch_penalty = border_touch_count / 4.0
             sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
             scores[i] = (
-                0.30 * bone_mean
-                + 0.15 * cam_mean
-                + 0.10 * support_recall
-                + 0.35 * support_precision
-                + 0.05 * sam_quality
-                - 1.20 * large_mask_penalty
-                - 0.80 * outside_support_ratio
-                - 0.35 * soft_tissue_penalty
-                - 0.30 * border_touch_penalty
+                0.45 * bone_mean
+                + 0.30 * cam_mean
+                + 0.15 * support_recall
+                + 0.10 * sam_quality
+                - 0.40 * large_mask_penalty
+                - 0.20 * border_touch_penalty
             )
     return scores
 

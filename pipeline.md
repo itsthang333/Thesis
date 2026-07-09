@@ -229,12 +229,25 @@ The score combines:
 ```text
 mean bone likelihood
 mean CAM activation
-bone-component recall
-bone-component precision
+bone-support recall (does the candidate contain the seed support region?)
 SAM predicted quality
-large-mask penalty
-soft-tissue / low-precision penalty
+large-mask penalty (soft ceiling on plausible lesion size)
+border-touch penalty
 ```
+
+An earlier version also penalized candidates for extending *outside* the bone-
+support region (`support precision` / `outside-support ratio` / `soft-tissue
+penalty`). That assumed the support region should bound the lesion
+(`lesion ⊆ support`), but on BTXRD the opposite holds: `bone_support` is a
+narrow CAM-percentile seed strictly inside the true lesion (`support ⊆
+lesion`), so a correct candidate routinely extends beyond it. Penalizing that
+extension discarded good candidates in favor of tiny ones that stayed fully
+inside the narrow seed — confirmed via an oracle diagnostic that decomposed
+the pseudo-mask Dice gap into a support-clipping term (near zero) and a
+mask-selection term (the dominant one). Those three terms were removed; CAM/
+bone-likelihood weighting was increased to compensate as the primary
+"is this the lesion" signal, and `support recall` (candidate contains the
+support seed) was kept since that direction of the assumption still holds.
 
 For component-wise prompting, the best candidate is selected per component and
 the selected masks are unioned. In `bone_hybrid` mode, the fused SAM mask is
