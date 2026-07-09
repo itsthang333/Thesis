@@ -434,11 +434,21 @@ def main() -> None:
 
                 # ── 5b. SAM-vs-selection oracle diagnostic (optional) ───────────
                 if prompt_quality_entry is not None:
-                    oracle_metrics = oracle_vs_selected_metrics(sam_masks, refined, gt_mask)
+                    oracle_metrics = oracle_vs_selected_metrics(
+                        sam_masks,
+                        refined,
+                        gt_mask,
+                        bone_support=bone_support,
+                        selection_method=args.selection_method,
+                        support_clip_kernel=args.support_clip_kernel,
+                    )
                     prompt_quality_entry.extend([
                         oracle_metrics["best_single_dice"],
+                        oracle_metrics["best_single_dice_clipped"],
                         oracle_metrics["selected_dice"],
                         oracle_metrics["gap_dice"],
+                        oracle_metrics["support_loss_dice"],
+                        oracle_metrics["selection_loss_dice"],
                     ])
                     prompt_quality_rows.append(prompt_quality_entry)
 
@@ -478,7 +488,8 @@ def main() -> None:
             writer.writerow([
                 "image_name", "foreground_iou", "foreground_recall", "foreground_precision",
                 "point_hit_rate", "num_points", "num_hits",
-                "oracle_best_single_dice", "selected_dice", "oracle_gap_dice",
+                "oracle_best_single_dice", "oracle_best_single_dice_clipped", "selected_dice",
+                "oracle_gap_dice", "support_loss_dice", "selection_loss_dice",
             ])
             writer.writerows(prompt_quality_rows)
 
@@ -492,11 +503,15 @@ def main() -> None:
             f"mean foreground_precision={_mean(3):.4f} mean point_hit_rate={_mean(4):.4f}"
         )
         print(
-            f"SAM-vs-selection oracle diagnostic: "
-            f"mean oracle_best_single_dice={_mean(7):.4f} mean selected_dice={_mean(8):.4f} "
-            f"mean gap={_mean(9):.4f} "
-            "(large gap => mask_selection.py is discarding good candidates; "
-            "small gap + low oracle => SAM/prompts never produced a good candidate)"
+            f"SAM-vs-selection oracle diagnostic (total gap decomposed into support-clip loss "
+            f"vs. mask-selection loss): "
+            f"mean oracle_best_single_dice={_mean(7):.4f} "
+            f"mean oracle_best_single_dice_clipped={_mean(8):.4f} "
+            f"mean selected_dice={_mean(9):.4f} mean total_gap={_mean(10):.4f} "
+            f"mean support_loss={_mean(11):.4f} mean selection_loss={_mean(12):.4f} "
+            "(large support_loss => bone_support under-covers the lesion, fix morphology "
+            "seed/support percentiles, not mask_selection.py; large selection_loss => "
+            "bone_hybrid scoring is discarding a good clipped candidate, fix mask_selection.py)"
         )
         print(f"Saved per-image prompt-quality metrics to {quality_csv}")
 

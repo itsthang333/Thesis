@@ -124,6 +124,35 @@ def score_masks(
     return scores
 
 
+def constrain_to_bone_support(
+    fused_mask: np.ndarray,
+    bone_support: np.ndarray | None,
+    selection_method: str = "bone_hybrid",
+    support_clip_kernel: int = 5,
+) -> np.ndarray:
+    """Intersect a candidate/fused mask with the (optionally dilated) bone/tumor
+    support region, falling back to the unclipped mask if the intersection is
+    empty. Shared by select_and_fuse_masks (applied to its final fused mask)
+    and oracle_diagnostics (applied per-candidate, to measure how much Dice
+    the clip step itself costs, independent of mask-selection scoring).
+    """
+    fused_mask = fused_mask.astype(np.uint8)
+    if (
+        selection_method != "bone_hybrid"
+        or bone_support is None
+        or not bone_support.any()
+        or support_clip_kernel < 0
+    ):
+        return fused_mask
+    support_constraint = (
+        bone_support.astype(np.uint8)
+        if support_clip_kernel <= 1
+        else _binary_dilation(bone_support, kernel_size=support_clip_kernel)
+    )
+    clipped = fused_mask & support_constraint
+    return clipped.astype(np.uint8) if clipped.any() else fused_mask
+
+
 def select_and_fuse_masks(
     masks: np.ndarray,
     bone_cam: np.ndarray,
@@ -169,22 +198,8 @@ def select_and_fuse_masks(
         h, w = bone_cam.shape
         return np.zeros((h, w), dtype=np.uint8)
 
-    def constrain_to_bone_support(fused_mask: np.ndarray) -> np.ndarray:
-        fused_mask = fused_mask.astype(np.uint8)
-        if (
-            selection_method != "bone_hybrid"
-            or bone_support is None
-            or not bone_support.any()
-            or support_clip_kernel < 0
-        ):
-            return fused_mask
-        support_constraint = (
-            bone_support.astype(np.uint8)
-            if support_clip_kernel <= 1
-            else _binary_dilation(bone_support, kernel_size=support_clip_kernel)
-        )
-        clipped = fused_mask & support_constraint
-        return clipped.astype(np.uint8) if clipped.any() else fused_mask
+    def _clip(fused_mask: np.ndarray) -> np.ndarray:
+        return constrain_to_bone_support(fused_mask, bone_support, selection_method, support_clip_kernel)
 
     scores = score_masks(
         masks,
@@ -212,7 +227,7 @@ def select_and_fuse_masks(
             if float(component_scores[best_local]) >= mask_score_threshold:
                 selected_indices.append(best_index)
         if selected_indices:
-            return constrain_to_bone_support(masks[selected_indices].any(axis=0))
+            return _clip(masks[selected_indices].any(axis=0))
 
     order = np.argsort(scores)[::-1]
     above = [i for i in order if scores[i] >= mask_score_threshold]
@@ -243,4 +258,4 @@ def select_and_fuse_masks(
         for i in topk[1:]:
             fused = fused & masks[i].astype(bool)
         fused = fused.astype(np.uint8)
-    return constrain_to_bone_support(fused)
+    return _clip(fused)
