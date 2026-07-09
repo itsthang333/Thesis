@@ -164,8 +164,57 @@ class SAMPredictor:
                     "Pass auto_download=True or provide the correct path."
                 )
 
-        sam2_model = build_sam2(model_cfg, str(checkpoint_path), device=device)
+        sam2_model = self._build_sam2_with_config_fallback(build_sam2, model_cfg, checkpoint_path, device)
         self._predictor = SAM2ImagePredictor(sam2_model)
+
+    @staticmethod
+    def _build_sam2_with_config_fallback(build_sam2, model_cfg, checkpoint_path, device):
+        """Call build_sam2(), recovering from Hydra not finding the config.
+
+        build_sam2() resolves model_cfg (e.g. "configs/sam2.1_hiera_t512.yaml")
+        through Hydra's search path *inside the installed sam2 package*
+        (pkg://sam2). Some pip-installable forks (observed with
+        bowang-lab/MedSAM2's git+pip install) don't ship their configs/*.yaml
+        files as package data, so the .yaml exists in the git checkout but not
+        in the installed package — build_sam2() then raises
+        hydra.errors.MissingConfigException even though the file is real.
+        When that happens, this locates the actual sam2/configs directory on
+        disk (next to the installed sam2 package, which pip *does* leave
+        alongside the package even when it's not registered as package data)
+        and points Hydra at it directly via initialize_config_dir(), then
+        retries with just the config's basename.
+        """
+        try:
+            return build_sam2(model_cfg, str(checkpoint_path), device=device)
+        except Exception as exc:
+            if "MissingConfigException" not in type(exc).__name__:
+                raise
+
+        import sam2
+        from hydra import initialize_config_dir
+        from hydra.core.global_hydra import GlobalHydra
+
+        sam2_package_dir = Path(sam2.__file__).resolve().parent
+        config_basename = Path(model_cfg).name
+        candidate_dirs = [
+            sam2_package_dir / "configs",
+            sam2_package_dir.parent / "configs",
+            sam2_package_dir.parent / "sam2" / "configs",
+        ]
+        config_dir = next((d for d in candidate_dirs if (d / config_basename).exists()), None)
+        if config_dir is None:
+            searched = ", ".join(str(d) for d in candidate_dirs)
+            raise FileNotFoundError(
+                f"Could not locate '{config_basename}' on disk near the installed sam2 "
+                f"package to work around Hydra's MissingConfigException. Searched: {searched}. "
+                "The package may need to be reinstalled from source (pip install -e .) "
+                "instead of a plain pip install."
+            )
+
+        if GlobalHydra.instance().is_initialized():
+            GlobalHydra.instance().clear()
+        with initialize_config_dir(config_dir=str(config_dir), version_base=None):
+            return build_sam2(config_basename, str(checkpoint_path), device=device)
 
     def predict_from_points(
         self,
