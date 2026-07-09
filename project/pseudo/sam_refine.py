@@ -196,19 +196,37 @@ class SAMPredictor:
 
         sam2_package_dir = Path(sam2.__file__).resolve().parent
         config_basename = Path(model_cfg).name
-        candidate_dirs = [
-            sam2_package_dir / "configs",
-            sam2_package_dir.parent / "configs",
-            sam2_package_dir.parent / "sam2" / "configs",
-        ]
-        config_dir = next((d for d in candidate_dirs if (d / config_basename).exists()), None)
+
+        # Some forks (observed with bowang-lab/MedSAM2 installed via plain
+        # `pip install git+...`) never ship configs/*.yaml as package data at
+        # all — include_package_data=True with no matching MANIFEST.in entry
+        # silently drops them from the wheel/sdist. In that case the file
+        # doesn't exist anywhere under the installed package, so a fixed list
+        # of candidate directories can't find it either. Search the whole
+        # site-packages tree the `sam2` package lives in (covers configs
+        # nested at any depth, e.g. sam2/configs/ or sam2/sam2/configs/)
+        # before giving up.
+        site_packages_root = sam2_package_dir.parent
+        config_dir = None
+        for candidate in (sam2_package_dir / "configs", site_packages_root / "configs"):
+            if (candidate / config_basename).exists():
+                config_dir = candidate
+                break
         if config_dir is None:
-            searched = ", ".join(str(d) for d in candidate_dirs)
+            match = next(site_packages_root.rglob(config_basename), None)
+            if match is not None:
+                config_dir = match.parent
+
+        if config_dir is None:
             raise FileNotFoundError(
-                f"Could not locate '{config_basename}' on disk near the installed sam2 "
-                f"package to work around Hydra's MissingConfigException. Searched: {searched}. "
-                "The package may need to be reinstalled from source (pip install -e .) "
-                "instead of a plain pip install."
+                f"Could not locate '{config_basename}' anywhere under {site_packages_root} "
+                "to work around Hydra's MissingConfigException — the installed sam2/MedSAM2 "
+                "package appears to not ship its configs/*.yaml files as package data at all "
+                "(a known packaging gap in some forks installed via plain `pip install git+...`). "
+                "Fix: reinstall from a local git checkout in editable mode, e.g.:\n"
+                "  git clone https://github.com/bowang-lab/MedSAM2.git\n"
+                "  pip install -e MedSAM2/\n"
+                "so the configs/ directory stays on disk next to the installed package."
             )
 
         if GlobalHydra.instance().is_initialized():
