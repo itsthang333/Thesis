@@ -570,12 +570,7 @@ def build_tumor_guidance(
     tumor_likelihood = _normalise_percentile(tumor_likelihood, low=1.0, high=99.0)
 
     seed_threshold = float(np.percentile(tumor_likelihood, seed_percentile))
-    support_threshold = float(
-        min(
-            np.percentile(tumor_likelihood, support_percentile),
-            np.percentile(tumor_likelihood, 55.0),
-        )
-    )
+    support_threshold = float(np.percentile(tumor_likelihood, support_percentile))
     cam_gate = cam >= float(np.percentile(cam, 60.0))
     relaxed_cam_gate = cam >= float(np.percentile(cam, 30.0))
     strong_anomaly_evidence = (

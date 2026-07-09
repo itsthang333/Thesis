@@ -180,8 +180,22 @@ def main() -> None:
         target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
     morphology = get_morphology_module(args.dataset)
+    # BTXRD's default support_percentile was 55.0, but tumor_morphology.py's
+    # build_tumor_guidance() used to hard-cap the support threshold at
+    # percentile-55 regardless of the value passed in, so this default was
+    # silently equal to that cap and looked "correct" while actually keeping
+    # ~45% of the image as support -- far wider than a real lesion (0.1-2.5%
+    # of image area in this project's own oracle diagnostics). Now that the
+    # cap is removed, support_percentile must stay <= seed_percentile
+    # (morphological_reconstruction grows seed=likelihood>=seed_percentile
+    # inside support=likelihood>=support_percentile; if support were
+    # narrower than seed, seed & support would shrink below either one and
+    # the grow step would barely expand). 78.0 keeps roughly the top 22% of
+    # tumor_likelihood as the region seeds can grow into -- much closer to
+    # plausible lesion size than the old ~45%, while still a superset of the
+    # 82.0 seed threshold.
     default_seed_percentile, default_support_percentile = (
-        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 55.0)
+        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 78.0)
     )
     bone_seed_percentile = (
         args.bone_seed_percentile if args.bone_seed_percentile is not None else default_seed_percentile
