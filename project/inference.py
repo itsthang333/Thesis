@@ -124,6 +124,13 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     classifier, target_columns, classifier_task = load_classifier(args.classifier_checkpoint, device)
+    # target_columns=["tumor_type"] names the classification head, not the 10
+    # real classes -- target_columns[cls_i] would IndexError for cls_i >= 1.
+    if target_columns == ["tumor_type"]:
+        from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
+        class_names = list(TUMOR_TYPE_CLASS_NAMES)
+    else:
+        class_names = target_columns
     segmentation_model = load_segmentation_model(args.segmentation_checkpoint, device)
     layercam = LayerCAM(classifier, device=device)
     sam_predictor = SAMPredictor(
@@ -163,7 +170,7 @@ def main() -> None:
             save_overlay(
                 image_pil_denorm,
                 per_class_cams[local_i],
-                args.output_dir / f"{stem}_{target_columns[cls_i]}_cam.png",
+                args.output_dir / f"{stem}_{class_names[cls_i]}_cam.png",
             )
         save_overlay(image_pil_denorm, fused_cam,
                      args.output_dir / f"{stem}_fused_layercam.png")

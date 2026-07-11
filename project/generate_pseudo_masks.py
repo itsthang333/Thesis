@@ -213,6 +213,19 @@ def main() -> None:
     else:
         target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
+    # class_names is what active_indices/cls_i actually index into when
+    # saving debug overlays: for the binary/multi-label "tumor" task, that's
+    # target_columns itself (1 element == 1 class). For "tumor_type" (single-
+    # label multi-class), target_columns is just ["tumor_type"] (1 element,
+    # naming the classification head, not the classes), while the model has
+    # 10 real classes -- target_columns[cls_i] would IndexError for any
+    # cls_i >= 1. Use the real 10-class names in that case instead.
+    if target_columns == ["tumor_type"]:
+        from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
+        class_names = list(TUMOR_TYPE_CLASS_NAMES)
+    else:
+        class_names = target_columns
+
     morphology = get_morphology_module(args.dataset)
     # NOTE: tumor_morphology.py's build_tumor_guidance() used to hard-cap the
     # support threshold at percentile-55 regardless of the support_percentile
@@ -380,7 +393,7 @@ def main() -> None:
                 image_rgb = tensor_to_rgb_numpy(image_tensor[0])
                 if save_visuals:
                     for local_i, cls_i in enumerate(active_indices):
-                        cls_name = target_columns[cls_i]
+                        cls_name = class_names[cls_i]
                         save_overlay(
                             image_pil,
                             per_class_cams[local_i],

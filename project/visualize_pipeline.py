@@ -227,6 +227,14 @@ def main() -> None:
     # num_classes must come from the checkpoint, not len(target_columns) --
     # target_columns=["tumor_type"] (1 element) maps to a 10-class model.
     num_classes = clf_ckpt.get("num_classes", len(target_columns))
+    # Same reasoning for display names: target_columns=["tumor_type"] names
+    # the classification head, not the 10 real classes -- target_columns[i]
+    # would IndexError for i >= 1 when picking active-class labels below.
+    if target_columns == ["tumor_type"]:
+        from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
+        class_names = list(TUMOR_TYPE_CLASS_NAMES)
+    else:
+        class_names = target_columns
     classifier = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     classifier.load_state_dict(clf_ckpt["model_state_dict"], strict=True)
     classifier = classifier.to(device).eval()
@@ -264,7 +272,7 @@ def main() -> None:
             logits = classifier(image_tensor)
             class_weights = classifier_class_weights(logits, classifier_task)
 
-        active_labels = [target_columns[i] for i, w in enumerate(class_weights) if w >= args.confidence_threshold]
+        active_labels = [class_names[i] for i, w in enumerate(class_weights) if w >= args.confidence_threshold]
         print(f"Classifier task: {classifier_task}")
         print(f"Active classes: {active_labels} (scores: {class_weights.round(3)})")
 
