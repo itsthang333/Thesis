@@ -122,7 +122,7 @@ def parse_args() -> argparse.Namespace:
                         choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
                         help="Optional X-ray preprocessing before classifier/CAM")
     parser.add_argument("--selection-method", type=str, default="bone_hybrid",
-                        choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"],
+                        choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid", "simple_hybrid"],
                         help="CAM-guided mask scoring method")
     parser.add_argument("--fusion-topk", type=int, default=3,
                         help="0=OR all above-thresh, 1=top-1 only, k>1=union top-k, k<0=intersect top-|k|. "
@@ -346,28 +346,35 @@ def main() -> None:
                 if not args.disable_bone_morphology:
                     if args.morphology_fusion_mode == "components":
                         active_weights = [float(class_weights[i]) for i in active_indices]
-                        # Precomputed low-CAM negative points are BTXRD-only for now
-                        # (see tumor_morphology.TumorComponent.negative_points);
-                        # bone_morphology.build_class_conditioned_components doesn't
-                        # accept this kwarg, so only pass it for that dataset.
-                        extra_component_kwargs = (
-                            {"negative_points_per_component": args.negative_points_per_component}
-                            if args.dataset == "btxrd"
-                            else {}
-                        )
-                        bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
-                            image_rgb,
-                            per_class_cams,
-                            active_weights,
-                            seed_percentile=bone_seed_percentile,
-                            support_percentile=bone_support_percentile,
-                            min_component_area=max(20, args.min_component_area // 2),
-                            max_components=args.max_bone_components,
-                            points_per_component=args.points_per_component,
-                            bbox_padding_ratio=args.bbox_padding_ratio,
-                            debug_dir=debug_dir,
-                            **extra_component_kwargs,
-                        )
+                        if args.dataset == "btxrd":
+                            # tumor_morphology.build_class_conditioned_components is the
+                            # single-CAM-threshold + largest-component implementation;
+                            # bone_morphology's is a different (RAM-H1200-specific) signature.
+                            bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
+                                image_rgb,
+                                per_class_cams,
+                                active_weights,
+                                cam_percentile=args.cam_percentile,
+                                min_component_area=max(20, args.min_component_area // 2),
+                                max_components=args.max_bone_components,
+                                points_per_component=args.points_per_component,
+                                bbox_padding_ratio=args.bbox_padding_ratio,
+                                negative_points_per_component=args.negative_points_per_component,
+                                debug_dir=debug_dir,
+                            )
+                        else:
+                            bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
+                                image_rgb,
+                                per_class_cams,
+                                active_weights,
+                                seed_percentile=bone_seed_percentile,
+                                support_percentile=bone_support_percentile,
+                                min_component_area=max(20, args.min_component_area // 2),
+                                max_components=args.max_bone_components,
+                                points_per_component=args.points_per_component,
+                                bbox_padding_ratio=args.bbox_padding_ratio,
+                                debug_dir=debug_dir,
+                            )
                     else:
                         bone_likelihood, bone_support = morphology.build_bone_guidance(
                             image_rgb,
@@ -377,11 +384,11 @@ def main() -> None:
                             min_component_area=max(20, args.min_component_area // 2),
                             debug_dir=debug_dir,
                         )
-                    prompt_map = morphology.fuse_cam_with_bone_guidance(
-                        fused_cam,
-                        bone_likelihood,
-                        bone_support,
-                    )
+                        prompt_map = morphology.fuse_cam_with_bone_guidance(
+                            fused_cam,
+                            bone_likelihood,
+                            bone_support,
+                        )
 
                 # ── 4. SAM candidate masks ────────────────────────────────────
                 component_ids = None

@@ -13,7 +13,7 @@ sclerotic/bright) instead of assuming the target region is always radiopaque.
 """
 
 from collections import deque
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -337,76 +337,11 @@ def _structured_component_points(
     return tuple((row, col) for _, row, col in peaks)
 
 
-def select_tumor_components(
-    tumor_support: np.ndarray,
-    fused_cam: np.ndarray,
-    tumor_likelihood: np.ndarray,
-    min_component_area: int = 40,
-    max_components: int = 6,
-    points_per_component: int = 3,
-    bbox_padding_ratio: float = 0.05,
-    negative_points_per_component: int = 4,
-) -> list[TumorComponent]:
-    """Rank full morphology components using CAM, without trimming their shape."""
-    cam = _normalise_percentile(fused_cam, low=0.0, high=100.0)
-    cam_seed = cam >= float(np.percentile(cam, 85.0))
-    ranked: list[tuple[float, np.ndarray]] = []
-
-    for component in _connected_components(tumor_support):
-        area = int(component.sum())
-        if area < min_component_area:
-            continue
-        region = component.astype(bool)
-        intersection = float((region & cam_seed).sum())
-        cam_recall = intersection / max(1.0, float(cam_seed.sum()))
-        cam_precision = intersection / float(area)
-        cam_energy = float(cam[region].mean())
-        tumor_energy = float(tumor_likelihood[region].mean())
-        score = 0.40 * cam_recall + 0.20 * cam_precision + 0.25 * cam_energy + 0.15 * tumor_energy
-        if intersection > 0 or cam_energy >= 0.08:
-            ranked.append((score, component))
-
-    if not ranked:
-        fallback = _connected_components(tumor_support)
-        ranked = [
-            (float(tumor_likelihood[c.astype(bool)].mean()), c)
-            for c in fallback
-            if int(c.sum()) >= min_component_area
-        ]
-
-    ranked.sort(key=lambda item: item[0], reverse=True)
-    components: list[TumorComponent] = []
-    for component_id, (score, component) in enumerate(ranked[:max_components]):
-        positive_points = _structured_component_points(
-            component,
-            tumor_likelihood=tumor_likelihood,
-            cam=cam,
-            max_points=points_per_component,
-        )
-        components.append(
-            TumorComponent(
-                component_id=component_id,
-                mask=component.astype(np.uint8),
-                score=float(score),
-                bbox=_component_bbox(component, padding_ratio=bbox_padding_ratio),
-                positive_points=positive_points,
-                negative_points=_select_negative_points(
-                    component,
-                    cam=cam,
-                    positive_points=positive_points,
-                    max_points=negative_points_per_component,
-                ),
-            )
-        )
-    return components
-
-
 def build_class_conditioned_components(
     image_rgb: np.ndarray,
     per_class_cams: list[np.ndarray],
     class_weights: list[float] | np.ndarray,
-    seed_percentile: float = 82.0,
-    support_percentile: float = 55.0,
+    cam_percentile: float = 85.0,
     min_component_area: int = 40,
     max_components: int = 6,
     points_per_component: int = 3,
@@ -414,11 +349,42 @@ def build_class_conditioned_components(
     negative_points_per_component: int = 4,
     debug_dir: str | Path | None = None,
 ) -> tuple[np.ndarray, np.ndarray, list[TumorComponent]]:
-    """Build candidates per active class CAM, then merge non-duplicates.
+    """Build tumor prompt components from a single CAM threshold.
 
-    Signature matches pseudo.bone_morphology.build_class_conditioned_components
-    so generate_pseudo_masks.py/inference.py/visualize_pipeline.py can select
-    between bone- and tumor-morphology purely via --dataset.
+    An earlier version of this function ran a much more elaborate morphology
+    stage (seed+support percentile pair, morphological_reconstruction,
+    lytic/sclerotic anomaly + edge response fusion, CAM-recall-weighted
+    multi-component ranking) under the assumption that CAM alone was too
+    weak/noisy a signal to threshold directly. This project's own oracle
+    diagnostics (support_loss_dice ~ 0 on average, meaning the reconstructed
+    support mask essentially never changed Dice once SAM candidates were
+    clipped to it) showed that safety net rarely did anything useful on
+    BTXRD, so it was removed in favor of this: threshold the fused CAM at a
+    single percentile, keep only the largest connected component as the
+    single seed region, and build TumorComponent prompts from that.
+
+    A single connected component is deliberately kept (not top-N by area)
+    since BTXRD lesions are typically one contiguous region, and this
+    project saw repeatedly, across both SAM mask-selection and CAM-
+    refinement debugging, that keeping/scoring multiple small components let
+    spurious high-activation noise blobs compete with the real lesion.
+
+    Args:
+        image_rgb:      [H, W, 3] uint8, unused directly here but kept for
+                         signature parity with bone_morphology.py's function
+                         of the same name (--dataset dispatch relies on it).
+        per_class_cams: list of [H, W] float32 CAMs, one per active class.
+        class_weights:  classifier confidence per active class.
+        cam_percentile: Single threshold on the (weighted-max-fused) CAM
+                         defining the seed/support region.
+        min_component_area, max_components, points_per_component,
+        bbox_padding_ratio, negative_points_per_component: same meaning as
+                         before.
+
+    Returns:
+        (likelihood, support, components): likelihood is the fused CAM
+        itself (float32 [H, W]), support is the largest-component binary
+        mask, components is a list with at most one TumorComponent.
     """
     if not per_class_cams:
         h, w = image_rgb.shape[:2]
@@ -433,80 +399,50 @@ def build_class_conditioned_components(
         weights = np.ones(len(per_class_cams), dtype=np.float32)
     weights = weights / (weights.max() + 1e-8)
 
-    combined_likelihood = np.zeros_like(per_class_cams[0], dtype=np.float32)
-    combined_support = np.zeros_like(per_class_cams[0], dtype=np.uint8)
-    ranked_components: list[TumorComponent] = []
+    fused_cam = np.zeros_like(per_class_cams[0], dtype=np.float32)
+    for cam, weight in zip(per_class_cams, weights):
+        fused_cam = np.maximum(fused_cam, _normalise_percentile(cam, low=0.0, high=100.0) * float(weight))
 
-    for class_index, (cam, class_weight) in enumerate(zip(per_class_cams, weights)):
-        class_debug_dir = Path(debug_dir) / f"class_{class_index}" if debug_dir is not None else None
-        likelihood, support = build_tumor_guidance(
-            image_rgb,
-            cam,
-            seed_percentile=seed_percentile,
-            support_percentile=support_percentile,
-            min_component_area=min_component_area,
-            max_components=max_components,
-            debug_dir=class_debug_dir,
-        )
-        components = select_tumor_components(
-            support,
-            cam,
-            likelihood,
-            min_component_area=min_component_area,
-            max_components=max_components,
-            points_per_component=points_per_component,
-            bbox_padding_ratio=bbox_padding_ratio,
-            negative_points_per_component=negative_points_per_component,
-        )
-        combined_likelihood = np.maximum(combined_likelihood, likelihood * float(class_weight))
-        combined_support |= support
-        ranked_components.extend(
-            replace(component, score=component.score * float(class_weight))
-            for component in components
-        )
+    threshold = float(np.percentile(fused_cam, cam_percentile))
+    support = (fused_cam >= threshold).astype(np.uint8)
 
-    ranked_components.sort(key=lambda component: component.score, reverse=True)
-    selected: list[TumorComponent] = []
-    for candidate in ranked_components:
-        candidate_mask = candidate.mask.astype(bool)
-        duplicate = False
-        for existing in selected:
-            existing_mask = existing.mask.astype(bool)
-            intersection = float((candidate_mask & existing_mask).sum())
-            union = float((candidate_mask | existing_mask).sum())
-            if intersection / max(1.0, union) >= 0.65:
-                duplicate = True
-                break
-        if not duplicate:
-            selected.append(candidate)
-        if len(selected) >= max_components:
-            break
+    components_raw = [c for c in _connected_components(support) if int(c.sum()) >= min_component_area]
+    if not components_raw:
+        # Nothing survives the area filter -- fall back to whatever CAM
+        # produced, same spirit as build_tumor_guidance's empty-support fallback.
+        support = (fused_cam >= np.percentile(fused_cam, 85.0)).astype(np.uint8)
+        components_raw = _connected_components(support)
 
-    selected = [
-        replace(component, component_id=index)
-        for index, component in enumerate(selected)
-    ]
-    selected_support = np.zeros_like(combined_support, dtype=np.uint8)
-    for component in selected:
-        selected_support |= component.mask
-    if selected_support.any():
-        combined_support = selected_support
+    components: list[TumorComponent] = []
+    if components_raw:
+        largest = max(components_raw, key=lambda c: int(c.sum()))
+        support = largest.astype(np.uint8)
+        positive_points = _structured_component_points(
+            largest, tumor_likelihood=fused_cam, cam=fused_cam, max_points=points_per_component
+        )
+        components.append(
+            TumorComponent(
+                component_id=0,
+                mask=largest,
+                score=float(fused_cam[largest.astype(bool)].mean()),
+                bbox=_component_bbox(largest, padding_ratio=bbox_padding_ratio),
+                positive_points=positive_points,
+                negative_points=_select_negative_points(
+                    largest, cam=fused_cam, positive_points=positive_points,
+                    max_points=negative_points_per_component,
+                ),
+            )
+        )
 
     if debug_dir is not None:
         debug_path = Path(debug_dir)
         debug_path.mkdir(parents=True, exist_ok=True)
-        Image.fromarray((combined_likelihood * 255).astype(np.uint8), mode="L").save(
-            debug_path / "class_conditioned_tumor_likelihood.png"
+        Image.fromarray((fused_cam * 255).astype(np.uint8), mode="L").save(
+            debug_path / "simple_tumor_likelihood.png"
         )
-        Image.fromarray(combined_support * 255, mode="L").save(
-            debug_path / "class_conditioned_tumor_support.png"
-        )
-        for component in selected:
-            Image.fromarray(component.mask * 255, mode="L").save(
-                debug_path / f"selected_tumor_component_{component.component_id}.png"
-            )
+        Image.fromarray(support * 255, mode="L").save(debug_path / "simple_tumor_support.png")
 
-    return combined_likelihood, combined_support, selected
+    return fused_cam, support, components[:max_components]
 
 
 def _select_cam_supported_components(

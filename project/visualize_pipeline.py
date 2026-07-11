@@ -66,7 +66,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-component-area", type=int, default=100)
     parser.add_argument("--mask-score-threshold", type=float, default=0.4)
     parser.add_argument("--selection-method", type=str, default="bone_hybrid",
-                        choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"])
+                        choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid", "simple_hybrid"])
     parser.add_argument("--fusion-topk", type=int, default=3,
                         help="0=OR all above-thresh, k>1=union top-k, k<0=intersect top-|k|")
     parser.add_argument("--closing-kernel", type=int, default=0)
@@ -281,18 +281,31 @@ def main() -> None:
         if not args.disable_bone_morphology:
             if args.morphology_fusion_mode == "components":
                 active_weights = [float(class_weights[i]) for i in active_indices]
-                bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
-                    image_rgb,
-                    per_class_cams,
-                    active_weights,
-                    seed_percentile=bone_seed_percentile,
-                    support_percentile=bone_support_percentile,
-                    min_component_area=max(20, args.min_component_area // 2),
-                    max_components=args.max_bone_components,
-                    points_per_component=args.points_per_component,
-                    bbox_padding_ratio=args.bbox_padding_ratio,
-                    debug_dir=debug_dir,
-                )
+                if args.dataset == "btxrd":
+                    bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
+                        image_rgb,
+                        per_class_cams,
+                        active_weights,
+                        cam_percentile=args.cam_percentile,
+                        min_component_area=max(20, args.min_component_area // 2),
+                        max_components=args.max_bone_components,
+                        points_per_component=args.points_per_component,
+                        bbox_padding_ratio=args.bbox_padding_ratio,
+                        debug_dir=debug_dir,
+                    )
+                else:
+                    bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
+                        image_rgb,
+                        per_class_cams,
+                        active_weights,
+                        seed_percentile=bone_seed_percentile,
+                        support_percentile=bone_support_percentile,
+                        min_component_area=max(20, args.min_component_area // 2),
+                        max_components=args.max_bone_components,
+                        points_per_component=args.points_per_component,
+                        bbox_padding_ratio=args.bbox_padding_ratio,
+                        debug_dir=debug_dir,
+                    )
             else:
                 bone_likelihood, bone_support = morphology.build_bone_guidance(
                     image_rgb,
@@ -302,7 +315,7 @@ def main() -> None:
                     min_component_area=max(20, args.min_component_area // 2),
                     debug_dir=debug_dir,
                 )
-            prompt_map = morphology.fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
+                prompt_map = morphology.fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
         point_prompts = [
             point
             for component in bone_components

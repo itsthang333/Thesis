@@ -10,12 +10,20 @@ except ImportError:  # pragma: no cover - optional dependency
     cv2 = None
 
 # Supported scoring methods:
-#   "mean"      : score = mean(cam inside mask)
-#   "sum"       : score = sum(cam inside mask)                    — favors large masks
-#   "mean_area" : score = mean(cam) * sqrt(area)                  — balanced size+quality
-#   "coverage"  : score = fraction of mask pixels where cam > 0.5 — rewards full coverage
-#   "hybrid"    : score = 0.7*mean(cam) + 0.3*log1p(area)/log1p(H*W) — mean + area bonus
-SELECTION_METHODS = ("mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid")
+#   "mean"        : score = mean(cam inside mask)
+#   "sum"         : score = sum(cam inside mask)                    — favors large masks
+#   "mean_area"   : score = mean(cam) * sqrt(area)                  — balanced size+quality
+#   "coverage"    : score = fraction of mask pixels where cam > 0.5 — rewards full coverage
+#   "hybrid"      : score = 0.7*mean(cam) + 0.3*log1p(area)/log1p(H*W) — mean + area bonus
+#   "simple_hybrid": score = 0.6*mean(cam) + 0.3*sam_quality + 0.1*log1p(area)/log1p(H*W)
+#                   — a deliberately minimal alternative to bone_hybrid's ~10-term
+#                   formula, added after this project's own experiments repeatedly
+#                   retuning bone_hybrid's support-based terms (support_precision,
+#                   outside_support_ratio, soft_tissue_penalty) produced only
+#                   marginal Dice changes -- worth comparing against a much
+#                   simpler CAM+SAM-confidence+area score before assuming more
+#                   terms are needed.
+SELECTION_METHODS = ("mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid", "simple_hybrid")
 
 
 def _binary_dilation(mask: np.ndarray, kernel_size: int = 9) -> np.ndarray:
@@ -83,6 +91,11 @@ def score_masks(
             total_pixels = float(bone_cam.size)
             area_bonus = float(np.log1p(area) / np.log1p(total_pixels))
             scores[i] = 0.7 * float(cam_vals.mean()) + 0.3 * area_bonus
+        elif method == "simple_hybrid":
+            total_pixels = float(bone_cam.size)
+            area_bonus = float(np.log1p(area) / np.log1p(total_pixels))
+            sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
+            scores[i] = 0.6 * float(cam_vals.mean()) + 0.3 * sam_quality + 0.1 * area_bonus
         elif method == "bone_hybrid":
             if bone_likelihood is None:
                 scores[i] = float(cam_vals.mean())
