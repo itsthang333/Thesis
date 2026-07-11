@@ -25,6 +25,24 @@ DEFAULT_IMAGES_DIR = "images"
 DEFAULT_SPLIT_RATIOS = (0.8, 0.1, 0.1)  # train, val, test
 DEFAULT_SPLIT_SEED = 42
 
+# 9 mutually-exclusive tumor-type columns in dataset.csv, plus "normal" (no
+# tumor) as class 0. Order fixed here so class indices are stable across
+# training runs and checkpoints. Verified against a real dataset.csv sample:
+# sum of these 9 columns (1868) matches the tumor==1 count (1867) to within 1
+# image, i.e. each tumor image has exactly one of these columns set to 1.
+TUMOR_TYPE_COLUMNS = (
+    "osteochondroma",
+    "multiple osteochondromas",
+    "simple bone cyst",
+    "giant cell tumor",
+    "osteofibroma",
+    "synovial osteochondroma",
+    "other bt",
+    "osteosarcoma",
+    "other mt",
+)
+TUMOR_TYPE_CLASS_NAMES = ("normal",) + TUMOR_TYPE_COLUMNS
+
 
 def resolve_btxrd_root(root: str | Path) -> Path:
     """Return the directory that directly contains images/, Annotations/, dataset.csv|xlsx."""
@@ -78,6 +96,20 @@ def _row_flag(row: dict[str, object], column: str) -> int:
         return 0
 
 
+def _row_tumor_type_index(row: dict[str, object]) -> int:
+    """Return the 10-class tumor-type index: 0=normal, 1..9=TUMOR_TYPE_COLUMNS.
+
+    If a tumor image has more than one tumor-type column set to 1 (a data
+    quality edge case -- observed once in a real dataset.csv sample, where the
+    9 tumor-type columns summed to 1868 vs. tumor==1 count of 1867), the
+    first matching column in TUMOR_TYPE_COLUMNS order wins, deterministically.
+    """
+    for i, column in enumerate(TUMOR_TYPE_COLUMNS):
+        if _row_flag(row, column):
+            return i + 1
+    return 0
+
+
 def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
     """Return one record per image with the fields this project cares about."""
     btxrd_root = resolve_btxrd_root(btxrd_root)
@@ -93,6 +125,7 @@ def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
                 "tumor": _row_flag(row, "tumor"),
                 "benign": _row_flag(row, "benign"),
                 "malignant": _row_flag(row, "malignant"),
+                "tumor_type": _row_tumor_type_index(row),
             }
         )
     return records
@@ -104,24 +137,25 @@ def split_btxrd_records(
     ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
     seed: int = DEFAULT_SPLIT_SEED,
 ) -> list[dict[str, object]]:
-    """Deterministic stratified 80/10/10 split by (normal / benign / malignant).
+    """Deterministic stratified 80/10/10 split by the 10-class tumor_type label.
 
     BTXRD ships with no predefined train/val/test split, so this project derives
-    one locally. Stratifying on the normal/benign/malignant label keeps the rare
-    malignant class (342/3746 images) represented in every split instead of
-    risking an uneven draw from a purely random split.
+    one locally. Stratifying on the full 10-class label (normal + 9 tumor
+    types, see TUMOR_TYPE_CLASS_NAMES) keeps even the rarest classes (44-51
+    images, e.g. osteofibroma/other_mt/synovial_osteochondroma) represented in
+    every split -- verified this never rounds a class down to 0 images in any
+    split for the real BTXRD class distribution (smallest split count is 4).
+    A coarser normal/benign/malignant split was used before tumor_type
+    existed; this supersedes it since tumor_type strictly refines that
+    grouping (every benign/malignant image maps to exactly one tumor_type).
     """
     if split not in {"train", "val", "test"}:
         raise ValueError(f"Unknown split '{split}'. Choose from: train, val, test.")
 
-    def stratum_key(record: dict[str, object]) -> str:
-        if record["malignant"]:
-            return "malignant"
-        if record["benign"]:
-            return "benign"
-        return "normal"
+    def stratum_key(record: dict[str, object]) -> int:
+        return int(record["tumor_type"])
 
-    groups: dict[str, list[dict[str, object]]] = {"normal": [], "benign": [], "malignant": []}
+    groups: dict[int, list[dict[str, object]]] = {i: [] for i in range(len(TUMOR_TYPE_CLASS_NAMES))}
     for record in records:
         groups[stratum_key(record)].append(record)
 
@@ -263,10 +297,15 @@ class BTXRDSegmentationDataset(Dataset):
 class BTXRDClassificationDataset(Dataset):
     """Image-only BTXRD dataset for classifier training and Stage 2 pseudo-mask generation.
 
-    The image-level label is binary tumor presence (`tumor` column), matching
-    the WSSS convention used for RAM-H1200's "hand" label: the classifier is
-    trained only on a whole-image label, and LayerCAM/SAM localize the tumor
-    from that weak signal without ever consuming the polygon/bbox annotations.
+    Two supported label modes, selected via target_columns:
+      - ["tumor"]: binary tumor-vs-normal image-level label for WSSS (the
+        original mode -- classifier trained only on this weak label, LayerCAM/
+        SAM localize the tumor without ever consuming polygon/bbox annotations).
+      - ["tumor_type"]: 10-class single-label classification (normal + 9
+        mutually-exclusive tumor types, see TUMOR_TYPE_CLASS_NAMES). Still WSSS
+        in spirit -- the segmentation pipeline never sees polygon/bbox
+        annotations either way -- but the classifier/LayerCAM class-conditioning
+        signal is now the specific tumor type instead of just tumor-vs-normal.
     """
 
     def __init__(
@@ -283,11 +322,13 @@ class BTXRDClassificationDataset(Dataset):
         self.btxrd_root = resolve_btxrd_root(root)
         self.images_dir = self.btxrd_root / DEFAULT_IMAGES_DIR
         self.target_columns = list(target_columns)
-        if self.target_columns != ["tumor"]:
+        if self.target_columns not in (["tumor"], ["tumor_type"]):
             raise ValueError(
-                "BTXRDClassificationDataset currently only supports target_columns=['tumor'] "
-                "(binary tumor-vs-normal image-level label for WSSS)."
+                "BTXRDClassificationDataset supports target_columns=['tumor'] (binary "
+                "tumor-vs-normal WSSS label) or ['tumor_type'] (10-class single-label: "
+                f"{list(TUMOR_TYPE_CLASS_NAMES)})."
             )
+        self.is_tumor_type = self.target_columns == ["tumor_type"]
         self.use_clahe = use_clahe
         self.preprocessing_mode = "clahe" if use_clahe and preprocessing_mode == "none" else preprocessing_mode
 
@@ -324,5 +365,11 @@ class BTXRDClassificationDataset(Dataset):
         image = Image.open(image_path).convert("RGB")
         if self.use_clahe and self.preprocessing_mode != "clahe":
             image = apply_clahe(image)
-        target = torch.tensor([float(sample["tumor"])], dtype=torch.float32)
+        if self.is_tumor_type:
+            # Long scalar class index for nn.CrossEntropyLoss, not a
+            # multi-hot float vector -- this is single-label multi-class,
+            # not multi-label like the ["tumor"] binary mode.
+            target = torch.tensor(int(sample["tumor_type"]), dtype=torch.long)
+        else:
+            target = torch.tensor([float(sample["tumor"])], dtype=torch.float32)
         return self.image_transform(image), target, str(sample["image_id"])

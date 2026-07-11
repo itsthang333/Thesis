@@ -102,6 +102,49 @@ def metrics_from_confusion(counts: dict[str, int]) -> dict[str, float]:
     return {"acc": accuracy, "precision": precision, "recall": recall, "f1": f1}
 
 
+def multiclass_confusion_matrix(logits: torch.Tensor, targets: torch.Tensor, num_classes: int) -> torch.Tensor:
+    """[num_classes, num_classes] confusion matrix, rows=true class, cols=predicted class."""
+    preds = logits.argmax(dim=1)
+    matrix = torch.zeros(num_classes, num_classes, dtype=torch.long)
+    for t, p in zip(targets.view(-1).tolist(), preds.view(-1).tolist()):
+        matrix[t, p] += 1
+    return matrix
+
+
+def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
+    """Accuracy + macro-averaged precision/recall/F1 across all classes.
+
+    Macro averaging (not micro/weighted) matters here specifically because
+    BTXRD's tumor_type classes are extremely imbalanced (44-1879 images per
+    class) -- a micro/weighted average would be dominated by the majority
+    classes (normal, osteochondroma) and could look good even if the rarest
+    classes (osteofibroma, other_mt, synovial_osteochondroma) are never
+    predicted correctly at all.
+    """
+    num_classes = matrix.shape[0]
+    total = matrix.sum().item()
+    accuracy = matrix.diag().sum().item() / max(1, total)
+
+    precisions, recalls, f1s = [], [], []
+    for c in range(num_classes):
+        tp = matrix[c, c].item()
+        fp = matrix[:, c].sum().item() - tp
+        fn = matrix[c, :].sum().item() - tp
+        precision = tp / max(1, tp + fp)
+        recall = tp / max(1, tp + fn)
+        f1 = 2 * precision * recall / max(1e-8, precision + recall)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+
+    return {
+        "acc": accuracy,
+        "precision": sum(precisions) / num_classes,
+        "recall": sum(recalls) / num_classes,
+        "f1": sum(f1s) / num_classes,
+    }
+
+
 def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) -> tuple[float, dict[str, float], dict[str, int]]:
     total_loss = 0.0
     counts = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
@@ -139,6 +182,43 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
     return total_loss / batches, metrics_from_confusion(counts), counts
 
 
+def run_epoch_multiclass(
+    model, loader, criterion, optimizer, scaler, device, num_classes: int, train: bool
+) -> tuple[float, dict[str, float], torch.Tensor]:
+    """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot)."""
+    total_loss = 0.0
+    confusion = torch.zeros(num_classes, num_classes, dtype=torch.long)
+    batches = 0
+    model.train(train)
+
+    progress = tqdm(loader, desc="train" if train else "val", leave=False)
+    for images, targets, _ in progress:
+        images = images.to(device)
+        targets = targets.to(device)  # [B], long class indices -- do NOT unsqueeze
+
+        with torch.set_grad_enabled(train):
+            with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+                logits = model(images)
+                loss = criterion(logits, targets)
+
+            if train:
+                optimizer.zero_grad(set_to_none=True)
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+
+        batch_confusion = multiclass_confusion_matrix(logits.detach().cpu(), targets.detach().cpu(), num_classes)
+        confusion += batch_confusion
+        total_loss += loss.item()
+        batches += 1
+        batch_metrics = metrics_from_multiclass_confusion(batch_confusion)
+        progress.set_postfix(loss=loss.item(), macro_f1=batch_metrics["f1"])
+
+    if batches == 0:
+        return 0.0, metrics_from_multiclass_confusion(confusion), confusion
+    return total_loss / batches, metrics_from_multiclass_confusion(confusion), confusion
+
+
 def save_checkpoint(
     path: Path,
     model: nn.Module,
@@ -147,6 +227,8 @@ def save_checkpoint(
     best_metric: float,
     target_columns: list[str],
     dataset: str,
+    task: str = "multi-label",
+    num_classes: int | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -156,15 +238,23 @@ def save_checkpoint(
             "optimizer_state_dict": optimizer.state_dict(),
             "best_metric": best_metric,
             "target_columns": target_columns,
-            "task": "multi-label",
+            "task": task,
             "dataset": dataset,
+            # Consumers (generate_pseudo_masks.py/inference.py/
+            # visualize_pipeline.py) must read num_classes from here, not
+            # infer it from len(target_columns) -- that breaks for
+            # target_columns=["tumor_type"] (1 element) mapping to a
+            # 10-class model. Falls back to len(target_columns) for old
+            # checkpoints saved before this field existed.
+            "num_classes": num_classes if num_classes is not None else len(target_columns),
         },
         path,
     )
 
 
 def select_cam_preview_indices(val_dataset, count: int) -> list[int]:
-    """Pick a fixed set of positive-class validation samples for CAM snapshots.
+    """Pick a fixed set of positive-class (or, for tumor_type, any non-normal-class)
+    validation samples for CAM snapshots.
 
     Fixed indices (not re-sampled per epoch) so the same images are compared
     across epochs, isolating changes in CAM quality from changes in which
@@ -173,7 +263,10 @@ def select_cam_preview_indices(val_dataset, count: int) -> list[int]:
     indices: list[int] = []
     for index in range(len(val_dataset)):
         _, target, _ = val_dataset[index]
-        if float(target[0]) == 1.0:
+        # tumor_type: target is a scalar long class index (0=normal); binary
+        # tumor: target is a 1-element float multi-hot vector.
+        is_positive = int(target.item()) != 0 if target.ndim == 0 else float(target[0]) == 1.0
+        if is_positive:
             indices.append(index)
         if len(indices) >= count:
             break
@@ -187,6 +280,7 @@ def save_cam_preview(
     epoch: int,
     output_dir: Path,
     device: torch.device,
+    is_multiclass: bool = False,
 ) -> None:
     """Save a LayerCAM overlay for each fixed preview image at this epoch.
 
@@ -205,7 +299,15 @@ def save_cam_preview(
 
             with torch.no_grad():
                 logits = model(image_tensor)
-                class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
+                if is_multiclass:
+                    # Softmax (mutually exclusive classes), not sigmoid --
+                    # class_weights here just needs to pick out the single
+                    # predicted class for generate_fused_cam's confidence
+                    # gate, same as classifier_class_weights() in
+                    # generate_pseudo_masks.py does for a "single-label" task.
+                    class_weights = torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
+                else:
+                    class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
 
             fused_cam, _, _ = generate_fused_cam(
                 layercam, image_tensor, class_weights=class_weights, confidence_threshold=0.0,
@@ -260,8 +362,36 @@ def main() -> None:
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = DenseNet121AnatomyClassifier(num_classes=len(target_columns), pretrained=not args.no_pretrained).to(device)
-    criterion = nn.BCEWithLogitsLoss()
+
+    # target_columns=["tumor_type"] is single-label multi-class (10 mutually
+    # exclusive BTXRD classes: normal + 9 tumor types), not the usual
+    # multi-label setup where num_classes == len(target_columns). Detect it
+    # explicitly rather than inferring from len(target_columns), since that
+    # would otherwise (wrongly) build a 1-output model for a 10-class problem.
+    is_multiclass = target_columns == ["tumor_type"]
+    if is_multiclass:
+        from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
+        num_classes = len(TUMOR_TYPE_CLASS_NAMES)
+    else:
+        num_classes = len(target_columns)
+
+    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=not args.no_pretrained).to(device)
+
+    if is_multiclass:
+        # Inverse-frequency class weights: BTXRD's tumor_type classes range
+        # from 44 to 1879 images (>40x imbalance) -- without weighting, the
+        # loss is dominated by the majority classes and the rarest tumor
+        # types (osteofibroma, other_mt, synovial_osteochondroma) are likely
+        # to never be predicted at all.
+        class_counts = torch.zeros(num_classes)
+        for sample in train_dataset.samples:
+            class_counts[int(sample["tumor_type"])] += 1
+        class_weights_tensor = (class_counts.sum() / (num_classes * class_counts.clamp(min=1))).to(device)
+        print(f"tumor_type class counts (train split): {class_counts.tolist()}")
+        print(f"tumor_type class weights (inverse frequency): {class_weights_tensor.tolist()}")
+        criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
+    else:
+        criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
 
@@ -276,69 +406,113 @@ def main() -> None:
     history_path = args.output_dir / "training_log.csv"
     best_val_f1 = -1.0
     epochs_without_improvement = 0
+    # "single-label" must match exactly what generate_pseudo_masks.py/
+    # inference.py/visualize_pipeline.py's classifier_class_weights() checks
+    # for (it applies softmax instead of sigmoid for this task string).
+    checkpoint_task = "single-label" if is_multiclass else "multi-label"
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with history_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow([
-            "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1",
-            "train_tp", "train_fp", "train_fn", "train_tn",
-            "val_loss", "val_acc", "val_precision", "val_recall", "val_f1",
-            "val_tp", "val_fp", "val_fn", "val_tn",
-        ])
+        if is_multiclass:
+            # No fixed TP/FP/FN/TN here -- with 10 classes the full confusion
+            # matrix (10x10) is printed to stdout each epoch instead of being
+            # flattened into the CSV; macro precision/recall/f1 summarize it.
+            writer.writerow([
+                "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1",
+                "val_loss", "val_acc", "val_precision", "val_recall", "val_f1",
+            ])
+        else:
+            writer.writerow([
+                "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1",
+                "train_tp", "train_fp", "train_fn", "train_tn",
+                "val_loss", "val_acc", "val_precision", "val_recall", "val_f1",
+                "val_tp", "val_fp", "val_fn", "val_tn",
+            ])
 
     for epoch in range(1, args.epochs + 1):
-        train_loss, train_metrics, train_counts = run_epoch(model, train_loader, criterion, optimizer, scaler, device, train=True)
-        val_loss, val_metrics, val_counts = run_epoch(model, val_loader, criterion, optimizer, scaler, device, train=False)
+        if is_multiclass:
+            train_loss, train_metrics, _train_confusion = run_epoch_multiclass(
+                model, train_loader, criterion, optimizer, scaler, device, num_classes, train=True
+            )
+            val_loss, val_metrics, val_confusion = run_epoch_multiclass(
+                model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False
+            )
+        else:
+            train_loss, train_metrics, train_counts = run_epoch(model, train_loader, criterion, optimizer, scaler, device, train=True)
+            val_loss, val_metrics, val_counts = run_epoch(model, val_loader, criterion, optimizer, scaler, device, train=False)
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
-            writer.writerow(
-                [
-                    epoch,
-                    train_loss,
-                    train_metrics["acc"],
-                    train_metrics["precision"],
-                    train_metrics["recall"],
-                    train_metrics["f1"],
-                    train_counts["tp"],
-                    train_counts["fp"],
-                    train_counts["fn"],
-                    train_counts["tn"],
-                    val_loss,
-                    val_metrics["acc"],
-                    val_metrics["precision"],
-                    val_metrics["recall"],
-                    val_metrics["f1"],
-                    val_counts["tp"],
-                    val_counts["fp"],
-                    val_counts["fn"],
-                    val_counts["tn"],
-                ]
-            )
+            if is_multiclass:
+                writer.writerow([
+                    epoch, train_loss, train_metrics["acc"], train_metrics["precision"],
+                    train_metrics["recall"], train_metrics["f1"],
+                    val_loss, val_metrics["acc"], val_metrics["precision"],
+                    val_metrics["recall"], val_metrics["f1"],
+                ])
+            else:
+                writer.writerow(
+                    [
+                        epoch,
+                        train_loss,
+                        train_metrics["acc"],
+                        train_metrics["precision"],
+                        train_metrics["recall"],
+                        train_metrics["f1"],
+                        train_counts["tp"],
+                        train_counts["fp"],
+                        train_counts["fn"],
+                        train_counts["tn"],
+                        val_loss,
+                        val_metrics["acc"],
+                        val_metrics["precision"],
+                        val_metrics["recall"],
+                        val_metrics["f1"],
+                        val_counts["tp"],
+                        val_counts["fp"],
+                        val_counts["fn"],
+                        val_counts["tn"],
+                    ]
+                )
 
-        positive_label = target_columns[0]
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
-            f"train_f1={train_metrics['f1']:.4f} | val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
-            f"val_f1={val_metrics['f1']:.4f}"
+            f"train_{'macro_f1' if is_multiclass else 'f1'}={train_metrics['f1']:.4f} | "
+            f"val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
+            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}"
         )
-        print(
-            f"  val confusion matrix (positive={positive_label}): "
-            f"TP={val_counts['tp']} FP={val_counts['fp']} FN={val_counts['fn']} TN={val_counts['tn']} "
-            f"| precision={val_metrics['precision']:.4f} recall={val_metrics['recall']:.4f}"
-        )
+        if is_multiclass:
+            from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
+            print(f"  val macro precision={val_metrics['precision']:.4f} recall={val_metrics['recall']:.4f}")
+            print("  val confusion matrix (rows=true, cols=predicted):")
+            print("   " + " ".join(f"{name[:6]:>7}" for name in TUMOR_TYPE_CLASS_NAMES))
+            for i, name in enumerate(TUMOR_TYPE_CLASS_NAMES):
+                print(f"  {name[:10]:<10}" + " ".join(f"{int(val_confusion[i, j]):>7}" for j in range(num_classes)))
+        else:
+            positive_label = target_columns[0]
+            print(
+                f"  val confusion matrix (positive={positive_label}): "
+                f"TP={val_counts['tp']} FP={val_counts['fp']} FN={val_counts['fn']} TN={val_counts['tn']} "
+                f"| precision={val_metrics['precision']:.4f} recall={val_metrics['recall']:.4f}"
+            )
 
-        save_checkpoint(args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_f1, target_columns, args.dataset)
+        save_checkpoint(
+            args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_f1,
+            target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
+        )
         if val_metrics["f1"] > best_val_f1:
             best_val_f1 = val_metrics["f1"]
             epochs_without_improvement = 0
-            save_checkpoint(args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_f1, target_columns, args.dataset)
+            save_checkpoint(
+                args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_f1,
+                target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
+            )
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:
             epochs_without_improvement += 1
 
         if epoch in cam_epochs and cam_preview_indices:
-            save_cam_preview(model, val_dataset, cam_preview_indices, epoch, cam_output_dir, device)
+            save_cam_preview(model, val_dataset, cam_preview_indices, epoch, cam_output_dir, device, is_multiclass=is_multiclass)
             print(f"  --> Saved CAM preview for epoch {epoch} to {cam_output_dir}")
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:

@@ -85,7 +85,10 @@ def parse_args() -> argparse.Namespace:
 def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121AnatomyClassifier, list[str], str]:
     checkpoint = torch.load(path, map_location="cpu")
     target_columns = checkpoint.get("target_columns", list(DEFAULT_ANATOMY_COLUMNS))
-    model = DenseNet121AnatomyClassifier(num_classes=len(target_columns), pretrained=False)
+    # num_classes must come from the checkpoint, not len(target_columns) --
+    # target_columns=["tumor_type"] (1 element) maps to a 10-class model.
+    num_classes = checkpoint.get("num_classes", len(target_columns))
+    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     return model.to(device).eval(), list(target_columns), checkpoint.get("task", "multi-label")
 

@@ -153,6 +153,18 @@ def parse_args() -> argparse.Namespace:
                         help="Percentile defining refinement targets for --cam-refine")
     parser.add_argument("--cam-refine-strength", type=float, default=0.6,
                         help="Blend strength (0=no change, 1=fully replaced) for --cam-refine")
+    parser.add_argument("--cam-target-class", type=str, default="predicted",
+                        choices=["predicted", "ground_truth"],
+                        help="Which class LayerCAM is conditioned on. 'predicted' (default) uses the "
+                        "classifier's own argmax/top-confidence class, matching real inference where "
+                        "the true label is unknown. 'ground_truth' instead conditions LayerCAM on the "
+                        "dataset's true image-level label (still just the image-level class -- never "
+                        "polygon/bbox annotations, so this stays within WSSS) when generating pseudo "
+                        "masks for a labeled split. Only affects --target-columns tumor_type (single-"
+                        "label multi-class); for the binary tumor/normal task this is a no-op since "
+                        "'not tumor' vs '10 possible tumor types' isn't a single ground-truth CAM target "
+                        "the same way. Only meaningful when the split actually has GT labels (i.e. not "
+                        "at real deployment time on unlabeled images).")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
     parser.add_argument("--evaluate-prompt-quality", action="store_true",
@@ -165,11 +177,17 @@ def parse_args() -> argparse.Namespace:
 
 def load_classifier(
     checkpoint_path: Path,
-    num_classes: int,
+    fallback_num_classes: int,
     device: torch.device,
 ) -> tuple[DenseNet121AnatomyClassifier, str]:
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     state = torch.load(checkpoint_path, map_location="cpu")
+    # num_classes must come from the checkpoint, not be inferred from
+    # len(target_columns) at the call site -- a checkpoint trained with
+    # target_columns=["tumor_type"] has 1 target column but a 10-class model
+    # (see train_classifier.py's save_checkpoint). fallback_num_classes only
+    # covers checkpoints saved before this field existed.
+    num_classes = state.get("num_classes", fallback_num_classes)
+    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device)
     model.eval()
@@ -232,6 +250,18 @@ def main() -> None:
         num_workers=args.num_workers,
     )
 
+    # Maps image_name -> human-readable tumor_type class name, for the
+    # per-tumor-type oracle breakdown in prompt_quality.csv (only meaningful
+    # for --dataset btxrd; empty dict elsewhere, and empty for
+    # target_columns=["tumor"] samples since load_btxrd_records always
+    # populates "tumor_type" on every record regardless of which head is
+    # trained, so this works even if this run's classifier is a binary one).
+    tumor_type_by_name: dict[str, str] = {}
+    if args.dataset == "btxrd":
+        from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
+        for sample in dataset.samples:
+            tumor_type_by_name[str(sample["image_id"])] = TUMOR_TYPE_CLASS_NAMES[int(sample["tumor_type"])]
+
     gt_masks_by_name: dict[str, np.ndarray] = {}
     if args.evaluate_prompt_quality:
         seg_dataset = build_segmentation_dataset(
@@ -271,8 +301,11 @@ def main() -> None:
     processed = 0
     visualized = 0
     process_limit = None if args.process_all or args.max_images <= 0 else args.max_images
+    use_ground_truth_class = (
+        args.cam_target_class == "ground_truth" and target_columns == ["tumor_type"]
+    )
     try:
-        for images, _, image_names in tqdm(loader, desc="pseudo-masks"):
+        for images, targets, image_names in tqdm(loader, desc="pseudo-masks"):
             images = images.to(device)
 
             for idx, image_name in enumerate(image_names):
@@ -285,11 +318,37 @@ def main() -> None:
                 # ── 1. Classifier forward ─────────────────────────────────────
                 with torch.no_grad():
                     logits = classifier(image_tensor)
-                    class_weights = classifier_class_weights(logits, classifier_task)
+                    if use_ground_truth_class:
+                        # One-hot the true tumor_type class instead of the
+                        # classifier's own prediction -- LayerCAM/generate_
+                        # fused_cam's confidence-filtering path always fires
+                        # for exactly this one class (weight 1.0 >= any
+                        # confidence_threshold <= 1.0), so this always
+                        # conditions CAM on the GT class, never the
+                        # prediction. Still an image-level label only (no
+                        # polygon/bbox), so this stays within WSSS.
+                        gt_class = int(targets[idx].item())
+                        class_weights = np.zeros(logits.shape[1], dtype=np.float32)
+                        class_weights[gt_class] = 1.0
+                    else:
+                        class_weights = classifier_class_weights(logits, classifier_task)
 
                 # For multi-label checkpoints, low confidence can mean no reliable anatomy class.
                 # For single-label checkpoints, LayerCAM will fall back to the top softmax class.
-                if classifier_task != "single-label" and float(class_weights.max()) < args.confidence_threshold:
+                # For ground_truth-conditioned CAM, gt_class==0 means "normal" (no tumor at all,
+                # see TUMOR_TYPE_CLASS_NAMES[0]) -- there is no lesion class to condition LayerCAM
+                # on, so this must still skip exactly like the low-confidence path does, or a
+                # normal image would get a CAM/pseudo-mask generated for the "normal" class as if
+                # it were a lesion type.
+                should_skip = (
+                    (use_ground_truth_class and gt_class == 0)
+                    or (
+                        not use_ground_truth_class
+                        and classifier_task != "single-label"
+                        and float(class_weights.max()) < args.confidence_threshold
+                    )
+                )
+                if should_skip:
                     save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
                     skipped += 1
                     skipped_image_names.append(str(image_name))
@@ -451,6 +510,7 @@ def main() -> None:
                     hit_metrics = point_prompt_hit_rate(all_points, gt_mask)
                     prompt_quality_entry = [
                         image_name,
+                        tumor_type_by_name.get(str(image_name), ""),
                         fg_metrics["iou"],
                         fg_metrics["recall"],
                         fg_metrics["precision"],
@@ -532,7 +592,7 @@ def main() -> None:
         with quality_csv.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
             writer.writerow([
-                "image_name", "foreground_iou", "foreground_recall", "foreground_precision",
+                "image_name", "tumor_type", "foreground_iou", "foreground_recall", "foreground_precision",
                 "point_hit_rate", "num_points", "num_hits",
                 "oracle_best_single_dice", "oracle_best_single_dice_clipped", "selected_dice",
                 "oracle_gap_dice", "support_loss_dice", "selection_loss_dice",
@@ -545,20 +605,30 @@ def main() -> None:
 
         print(
             f"Prompt quality ({len(prompt_quality_rows)} images with GT): "
-            f"mean foreground_iou={_mean(1):.4f} mean foreground_recall={_mean(2):.4f} "
-            f"mean foreground_precision={_mean(3):.4f} mean point_hit_rate={_mean(4):.4f}"
+            f"mean foreground_iou={_mean(2):.4f} mean foreground_recall={_mean(3):.4f} "
+            f"mean foreground_precision={_mean(4):.4f} mean point_hit_rate={_mean(5):.4f}"
         )
         print(
             f"SAM-vs-selection oracle diagnostic (total gap decomposed into support-clip loss "
             f"vs. mask-selection loss): "
-            f"mean oracle_best_single_dice={_mean(7):.4f} "
-            f"mean oracle_best_single_dice_clipped={_mean(8):.4f} "
-            f"mean selected_dice={_mean(9):.4f} mean total_gap={_mean(10):.4f} "
-            f"mean support_loss={_mean(11):.4f} mean selection_loss={_mean(12):.4f} "
+            f"mean oracle_best_single_dice={_mean(8):.4f} "
+            f"mean oracle_best_single_dice_clipped={_mean(9):.4f} "
+            f"mean selected_dice={_mean(10):.4f} mean total_gap={_mean(11):.4f} "
+            f"mean support_loss={_mean(12):.4f} mean selection_loss={_mean(13):.4f} "
             "(large support_loss => bone_support under-covers the lesion, fix morphology "
             "seed/support percentiles, not mask_selection.py; large selection_loss => "
             "bone_hybrid scoring is discarding a good clipped candidate, fix mask_selection.py)"
         )
+        if any(row[1] for row in prompt_quality_rows):
+            print("\nOracle Dice by tumor_type (breaks down where CAM localization fails):")
+            by_type: dict[str, list[float]] = {}
+            for row in prompt_quality_rows:
+                tumor_type_name = row[1]
+                oracle_dice = row[8]
+                if tumor_type_name and oracle_dice == oracle_dice:  # skip empty/NaN
+                    by_type.setdefault(tumor_type_name, []).append(oracle_dice)
+            for tumor_type_name, values in sorted(by_type.items(), key=lambda item: -len(item[1])):
+                print(f"  {tumor_type_name:<28} n={len(values):>4}  mean_oracle_dice={sum(values)/len(values):.4f}")
         print(f"Saved per-image prompt-quality metrics to {quality_csv}")
 
 

@@ -224,7 +224,10 @@ def main() -> None:
     clf_ckpt = torch.load(args.classifier_checkpoint, map_location="cpu")
     target_columns = clf_ckpt.get("target_columns", list(DEFAULT_ANATOMY_COLUMNS))
     classifier_task = clf_ckpt.get("task", "multi-label")
-    classifier = DenseNet121AnatomyClassifier(num_classes=len(target_columns), pretrained=False)
+    # num_classes must come from the checkpoint, not len(target_columns) --
+    # target_columns=["tumor_type"] (1 element) maps to a 10-class model.
+    num_classes = clf_ckpt.get("num_classes", len(target_columns))
+    classifier = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     classifier.load_state_dict(clf_ckpt["model_state_dict"], strict=True)
     classifier = classifier.to(device).eval()
 
