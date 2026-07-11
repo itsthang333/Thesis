@@ -118,8 +118,8 @@ def refine_cam_with_feature_affinity(
     high_conf_percentile: float = 90.0,
     low_conf_percentile: float = 40.0,
     propagation_strength: float = 0.6,
-    strong_similarity: float = 0.95,
-    weak_similarity: float = 0.30,
+    strong_similarity_percentile: float = 90.0,
+    weak_similarity_percentile: float = 40.0,
 ) -> np.ndarray:
     """Propagate high-confidence CAM activation to feature-similar pixels.
 
@@ -138,12 +138,17 @@ def refine_cam_with_feature_affinity(
        debugging) -- weighting by area as well favors the larger, more
        spatially coherent blob as the seed.
     2. Propagation strength is adaptive per-pixel based on cosine similarity
-       to the seed feature, not a single fixed blend weight: pixels with
-       similarity >= strong_similarity are pulled most of the way toward the
-       seed value, pixels with similarity <= weak_similarity are left
-       essentially unchanged, and pixels in between are blended linearly.
-       This keeps refinement local to genuinely lesion-like regions instead
-       of uniformly "leaking" into anything mildly similar.
+       to the seed feature, not a single fixed blend weight or fixed absolute
+       similarity thresholds: on real DenseNet121 features the observed
+       cosine similarity to a seed rarely approaches 1.0 (empirically closer
+       to a 0.0-0.75 range for a real BTXRD image, not the near-1.0 values a
+       synthetic feature space can produce), so fixed thresholds like 0.95
+       could end up never triggering meaningful propagation strength at all.
+       strong_similarity_percentile/weak_similarity_percentile instead define
+       the "top X%" and "bottom Y%" of THIS image's own similarity
+       distribution as the saturation points, so propagation always has a
+       meaningful dynamic range regardless of the absolute similarity scale
+       a given image/feature space happens to produce.
 
     Args:
         cam:                  [H, W] float32 in [0, 1] (the raw fused LayerCAM,
@@ -155,11 +160,14 @@ def refine_cam_with_feature_affinity(
         low_conf_percentile:  Percentile threshold defining refinement targets.
         propagation_strength: Overall cap on how much of the similarity-
                                weighted seed value to blend in (0=no change,
-                               1=fully replace at strong_similarity).
-        strong_similarity:    Cosine similarity at/above which propagation
-                               strength saturates at propagation_strength.
-        weak_similarity:      Cosine similarity at/below which propagation
-                               strength is zero (pixel left unchanged).
+                               1=fully replace at the strong-similarity point).
+        strong_similarity_percentile: Percentile of this image's own
+                               similarity-to-seed distribution at/above which
+                               propagation strength saturates at
+                               propagation_strength.
+        weak_similarity_percentile: Percentile of this image's own
+                               similarity-to-seed distribution at/below which
+                               propagation strength is zero.
 
     Returns:
         refined_cam: [H, W] float32 in [0, 1].
@@ -202,13 +210,24 @@ def refine_cam_with_feature_affinity(
     similarity = (features_norm @ seed_feature.T).squeeze(1)  # [h*w], in [-1, 1]
     similarity = similarity.clamp(min=0.0)  # only positive similarity can pull the CAM up
 
+    refine_target = cam_flat < low_thresh
+
+    # Derive the strong/weak similarity saturation points from this image's
+    # own distribution, restricted to refine_target pixels (excludes the seed
+    # itself, which trivially has similarity ~1.0 with its own mean feature
+    # and would otherwise skew the percentiles upward).
+    if refine_target.any():
+        similarity_targets = similarity[refine_target]
+        strong_similarity = float(torch.quantile(similarity_targets, strong_similarity_percentile / 100.0))
+        weak_similarity = float(torch.quantile(similarity_targets, weak_similarity_percentile / 100.0))
+    else:
+        strong_similarity, weak_similarity = 1.0, 0.0
+
     # Adaptive strength: ramp linearly from 0 at weak_similarity to
     # propagation_strength at strong_similarity, flat outside that range.
     denom = max(1e-6, strong_similarity - weak_similarity)
     ramp = ((similarity - weak_similarity) / denom).clamp(min=0.0, max=1.0)
     adaptive_strength = ramp * propagation_strength
-
-    refine_target = cam_flat < low_thresh
     propagated_value = similarity * seed_value
 
     refined_flat = cam_flat.clone()
