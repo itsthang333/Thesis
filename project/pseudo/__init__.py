@@ -1,4 +1,5 @@
 from .generate_layercam import generate_fused_cam
+from .cam_refine import extract_feature_map, refine_cam_with_feature_affinity
 from .extract_prompts import extract_point_prompts
 from .sam_refine import SAMPredictor
 from .mask_selection import select_and_fuse_masks, constrain_to_bone_support

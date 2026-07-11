@@ -31,6 +31,7 @@ from datasets.factory import build_classification_dataset, build_segmentation_da
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from pseudo.generate_layercam import generate_fused_cam
+from pseudo.cam_refine import extract_feature_map, refine_cam_with_feature_affinity
 from pseudo.extract_prompts import extract_point_prompts
 from pseudo.morphology_factory import get_morphology_module
 from pseudo.prompt_metrics import (
@@ -137,6 +138,21 @@ def parse_args() -> argparse.Namespace:
                         "fusion_topk ever could -- this flag isolates that effect for A/B testing.")
     parser.add_argument("--support-clip-kernel", type=int, default=5,
                         help="Clip fused SAM masks to dilated bone support; 0/1 means no dilation, -1 disables")
+    parser.add_argument("--cam-refine", action="store_true",
+                        help="Refine the fused LayerCAM via feature-similarity propagation "
+                        "(pseudo/cam_refine.py) before morphology/SAM. Disabled by default so the "
+                        "existing CAM path is unchanged unless explicitly enabled -- lets refined vs. "
+                        "raw CAM be A/B tested through the same prompt_quality.csv/oracle diagnostics "
+                        "already used elsewhere in this project.")
+    parser.add_argument("--cam-refine-layer", type=str, default="denseblock3",
+                        choices=["denseblock2", "denseblock3", "denseblock4"],
+                        help="DenseNet121 layer to source features from for --cam-refine")
+    parser.add_argument("--cam-refine-high-percentile", type=float, default=90.0,
+                        help="Percentile defining seed pixels for --cam-refine")
+    parser.add_argument("--cam-refine-low-percentile", type=float, default=40.0,
+                        help="Percentile defining refinement targets for --cam-refine")
+    parser.add_argument("--cam-refine-strength", type=float, default=0.6,
+                        help="Blend strength (0=no change, 1=fully replaced) for --cam-refine")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
     parser.add_argument("--evaluate-prompt-quality", action="store_true",
@@ -180,22 +196,18 @@ def main() -> None:
         target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
     morphology = get_morphology_module(args.dataset)
-    # BTXRD's default support_percentile was 55.0, but tumor_morphology.py's
-    # build_tumor_guidance() used to hard-cap the support threshold at
-    # percentile-55 regardless of the value passed in, so this default was
-    # silently equal to that cap and looked "correct" while actually keeping
-    # ~45% of the image as support -- far wider than a real lesion (0.1-2.5%
-    # of image area in this project's own oracle diagnostics). Now that the
-    # cap is removed, support_percentile must stay <= seed_percentile
-    # (morphological_reconstruction grows seed=likelihood>=seed_percentile
-    # inside support=likelihood>=support_percentile; if support were
-    # narrower than seed, seed & support would shrink below either one and
-    # the grow step would barely expand). 78.0 keeps roughly the top 22% of
-    # tumor_likelihood as the region seeds can grow into -- much closer to
-    # plausible lesion size than the old ~45%, while still a superset of the
-    # 82.0 seed threshold.
+    # NOTE: tumor_morphology.py's build_tumor_guidance() used to hard-cap the
+    # support threshold at percentile-55 regardless of the support_percentile
+    # value passed in (that cap has been removed -- see tumor_morphology.py).
+    # BTXRD's default here is kept at 55.0 (matching the old, always-applied
+    # cap) while a better value is investigated: raising it to 78.0 was tried
+    # and tested worse overall (higher selection_loss_dice on this project's
+    # own oracle diagnostic) and caused overcorrection (support cutting into
+    # good candidates) on some images, so a single fixed percentile is not
+    # yet a clear improvement -- an adaptive per-image threshold may be
+    # needed instead. Revisit before changing this default again.
     default_seed_percentile, default_support_percentile = (
-        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 78.0)
+        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 55.0)
     )
     bone_seed_percentile = (
         args.bone_seed_percentile if args.bone_seed_percentile is not None else default_seed_percentile
@@ -291,6 +303,19 @@ def main() -> None:
                     class_weights=class_weights,
                     confidence_threshold=args.confidence_threshold,
                 )
+
+                # ── 2b. Optional feature-guided CAM refinement ─────────────────
+                if args.cam_refine:
+                    feature_map = extract_feature_map(
+                        classifier, image_tensor, layer_name=args.cam_refine_layer
+                    )
+                    fused_cam = refine_cam_with_feature_affinity(
+                        fused_cam,
+                        feature_map,
+                        high_conf_percentile=args.cam_refine_high_percentile,
+                        low_conf_percentile=args.cam_refine_low_percentile,
+                        propagation_strength=args.cam_refine_strength,
+                    )
 
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
                 image_rgb = tensor_to_rgb_numpy(image_tensor[0])
