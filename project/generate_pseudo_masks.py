@@ -179,7 +179,7 @@ def load_classifier(
     checkpoint_path: Path,
     fallback_num_classes: int,
     device: torch.device,
-) -> tuple[DenseNet121AnatomyClassifier, str]:
+) -> tuple[DenseNet121AnatomyClassifier, str, str]:
     state = torch.load(checkpoint_path, map_location="cpu")
     # num_classes must come from the checkpoint, not be inferred from
     # len(target_columns) at the call site -- a checkpoint trained with
@@ -191,7 +191,7 @@ def load_classifier(
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device)
     model.eval()
-    return model, state.get("task", "multi-label")
+    return model, state.get("task", "multi-label"), state.get("normalization", "imagenet")
 
 
 def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
@@ -200,9 +200,9 @@ def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
     return torch.sigmoid(logits)[0].detach().cpu().numpy()
 
 
-def tensor_to_rgb_numpy(image_tensor: torch.Tensor) -> np.ndarray:
+def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagenet") -> np.ndarray:
     """Convert a [3,H,W] normalised tensor to [H,W,3] uint8 RGB numpy for SAM."""
-    pil = tensor_to_pil(image_tensor.detach().cpu())
+    pil = tensor_to_pil(image_tensor.detach().cpu(), normalization=normalization)
     return np.array(pil, dtype=np.uint8)
 
 
@@ -247,6 +247,12 @@ def main() -> None:
         args.bone_support_percentile if args.bone_support_percentile is not None else default_support_percentile
     )
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    classifier, classifier_task, classifier_normalization = load_classifier(
+        args.classifier_checkpoint, len(target_columns), device
+    )
+    print(f"Loaded classifier checkpoint task={classifier_task} normalization={classifier_normalization}")
+
     dataset = build_classification_dataset(
         args.dataset,
         root=args.ram_root,
@@ -255,6 +261,7 @@ def main() -> None:
         image_size=args.image_size,
         use_clahe=args.use_clahe,
         preprocessing_mode=args.preprocessing_mode,
+        normalization=classifier_normalization,
     )
     loader = DataLoader(
         dataset,
@@ -289,9 +296,6 @@ def main() -> None:
             gt_masks_by_name[str(image_name)] = (mask_tensor[0].numpy() > 0.5)
         print(f"Loaded {len(gt_masks_by_name)} ground-truth masks for prompt-quality evaluation")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    classifier, classifier_task = load_classifier(args.classifier_checkpoint, len(target_columns), device)
-    print(f"Loaded classifier checkpoint task={classifier_task}")
     layercam = LayerCAM(classifier, device=device)
 
     sam_predictor = SAMPredictor(
@@ -389,8 +393,8 @@ def main() -> None:
                         propagation_strength=args.cam_refine_strength,
                     )
 
-                image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
-                image_rgb = tensor_to_rgb_numpy(image_tensor[0])
+                image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
+                image_rgb = tensor_to_rgb_numpy(image_tensor[0], normalization=classifier_normalization)
                 if save_visuals:
                     for local_i, cls_i in enumerate(active_indices):
                         cls_name = class_names[cls_i]

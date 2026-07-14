@@ -82,7 +82,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121AnatomyClassifier, list[str], str]:
+def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121AnatomyClassifier, list[str], str, str]:
     checkpoint = torch.load(path, map_location="cpu")
     target_columns = checkpoint.get("target_columns", list(DEFAULT_ANATOMY_COLUMNS))
     # num_classes must come from the checkpoint, not len(target_columns) --
@@ -90,7 +90,8 @@ def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121Anatom
     num_classes = checkpoint.get("num_classes", len(target_columns))
     model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
-    return model.to(device).eval(), list(target_columns), checkpoint.get("task", "multi-label")
+    normalization = checkpoint.get("normalization", "imagenet")
+    return model.to(device).eval(), list(target_columns), checkpoint.get("task", "multi-label"), normalization
 
 
 def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
@@ -123,7 +124,7 @@ def main() -> None:
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    classifier, target_columns, classifier_task = load_classifier(args.classifier_checkpoint, device)
+    classifier, target_columns, classifier_task, classifier_normalization = load_classifier(args.classifier_checkpoint, device)
     # target_columns=["tumor_type"] names the classification head, not the 10
     # real classes -- target_columns[cls_i] would IndexError for cls_i >= 1.
     if target_columns == ["tumor_type"]:
@@ -147,6 +148,7 @@ def main() -> None:
             args.image_size,
             augment=False,
             preprocessing_mode=args.preprocessing_mode,
+            normalization=classifier_normalization,
         )
         image_pil = Image.open(args.image_path).convert("RGB")
         image_tensor = transform(image_pil).unsqueeze(0).to(device)  # [1,3,H,W]
@@ -165,7 +167,7 @@ def main() -> None:
         )
 
         # save per-class overlays
-        image_pil_denorm = tensor_to_pil(image_tensor[0].detach().cpu())
+        image_pil_denorm = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
         for local_i, cls_i in enumerate(active_indices):
             save_overlay(
                 image_pil_denorm,

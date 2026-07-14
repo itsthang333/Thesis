@@ -30,6 +30,7 @@ def build_classification_dataset(
     image_size: int,
     use_clahe: bool = False,
     preprocessing_mode: str = "none",
+    normalization: str = "imagenet",
 ):
     dataset = _check_dataset_name(dataset)
     if dataset == "ramh1200":
@@ -40,6 +41,7 @@ def build_classification_dataset(
             image_size=image_size,
             use_clahe=use_clahe,
             preprocessing_mode=preprocessing_mode,
+            normalization=normalization,
         )
     return BTXRDClassificationDataset(
         root=root,
@@ -48,6 +50,7 @@ def build_classification_dataset(
         image_size=image_size,
         use_clahe=use_clahe,
         preprocessing_mode=preprocessing_mode,
+        normalization=normalization,
     )
 
 

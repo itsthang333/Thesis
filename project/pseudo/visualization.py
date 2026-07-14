@@ -14,13 +14,29 @@ def _to_uint8(array: np.ndarray) -> np.ndarray:
     return (array * 255.0).astype(np.uint8)
 
 
-def tensor_to_pil(tensor: torch.Tensor, mean: tuple[float, float, float] = IMAGENET_MEAN, std: tuple[float, float, float] = IMAGENET_STD) -> Image.Image:
+def tensor_to_pil(
+    tensor: torch.Tensor,
+    mean: tuple[float, float, float] = IMAGENET_MEAN,
+    std: tuple[float, float, float] = IMAGENET_STD,
+    normalization: str = "imagenet",
+) -> Image.Image:
+    """Undo make_classification_transform's normalization for display.
+
+    normalization="radimagenet" inverts datasets.common.RadImageNetNormalize
+    (BGR order, (x-127.5)*2/255) instead of the ImageNet mean/std affine
+    transform -- must match whatever normalization the tensor was actually
+    produced with, or the displayed image will have wrong colors/values.
+    """
     image = tensor.detach().cpu().float().clone()
     if image.ndim == 4:
         image = image[0]
-    mean_tensor = torch.tensor(mean).view(3, 1, 1)
-    std_tensor = torch.tensor(std).view(3, 1, 1)
-    image = image * std_tensor + mean_tensor
+    if normalization == "radimagenet":
+        image = (image * 255.0 / 2 + 127.5) / 255.0
+        image = image[[2, 1, 0], :, :]  # BGR -> RGB
+    else:
+        mean_tensor = torch.tensor(mean).view(3, 1, 1)
+        std_tensor = torch.tensor(std).view(3, 1, 1)
+        image = image * std_tensor + mean_tensor
     image = image.clamp(0.0, 1.0).permute(1, 2, 0).numpy()
     return Image.fromarray(_to_uint8(image))
 

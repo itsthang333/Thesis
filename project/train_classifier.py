@@ -233,6 +233,7 @@ def save_checkpoint(
     dataset: str,
     task: str = "multi-label",
     num_classes: int | None = None,
+    normalization: str = "imagenet",
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -251,6 +252,10 @@ def save_checkpoint(
             # 10-class model. Falls back to len(target_columns) for old
             # checkpoints saved before this field existed.
             "num_classes": num_classes if num_classes is not None else len(target_columns),
+            # Which input preprocessing this checkpoint's backbone expects --
+            # "imagenet" (RGB, ImageNet mean/std) or "radimagenet" (BGR,
+            # (x-127.5)*2/255, no mean/std). Must match at inference/CAM time.
+            "normalization": normalization,
         },
         path,
     )
@@ -285,6 +290,7 @@ def save_cam_preview(
     output_dir: Path,
     device: torch.device,
     is_multiclass: bool = False,
+    normalization: str = "imagenet",
 ) -> None:
     """Save a LayerCAM overlay for each fixed preview image at this epoch.
 
@@ -316,7 +322,7 @@ def save_cam_preview(
             fused_cam, _, _ = generate_fused_cam(
                 layercam, image_tensor, class_weights=class_weights, confidence_threshold=0.0,
             )
-            image_pil = tensor_to_pil(image_tensor[0].detach().cpu())
+            image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=normalization)
             stem = Path(str(image_name)).stem
             save_overlay(
                 image_pil,
@@ -343,6 +349,12 @@ def main() -> None:
             "Only change this if you intentionally prepared extra labels for this dataset."
         )
 
+    # RadImageNet's BatchNorm statistics were empirically confirmed (see
+    # datasets/common.py's RadImageNetNormalize docstring) to match the
+    # official BGR+[-1,1] preprocessing, not ImageNet mean/std -- tied
+    # automatically to --radimagenet-checkpoint so the two can't drift out of sync.
+    normalization = "radimagenet" if args.radimagenet_checkpoint else "imagenet"
+
     train_dataset = build_classification_dataset(
         args.dataset,
         root=args.ram_root,
@@ -351,6 +363,7 @@ def main() -> None:
         image_size=args.image_size,
         use_clahe=args.use_clahe,
         preprocessing_mode=args.preprocessing_mode,
+        normalization=normalization,
     )
     val_dataset = build_classification_dataset(
         args.dataset,
@@ -360,6 +373,7 @@ def main() -> None:
         image_size=args.image_size,
         use_clahe=args.use_clahe,
         preprocessing_mode=args.preprocessing_mode,
+        normalization=normalization,
     )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
@@ -507,6 +521,7 @@ def main() -> None:
         save_checkpoint(
             args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_f1,
             target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
+            normalization=normalization,
         )
         if val_metrics["f1"] > best_val_f1:
             best_val_f1 = val_metrics["f1"]
@@ -514,13 +529,14 @@ def main() -> None:
             save_checkpoint(
                 args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_f1,
                 target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
+                normalization=normalization,
             )
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:
             epochs_without_improvement += 1
 
         if epoch in cam_epochs and cam_preview_indices:
-            save_cam_preview(model, val_dataset, cam_preview_indices, epoch, cam_output_dir, device, is_multiclass=is_multiclass)
+            save_cam_preview(model, val_dataset, cam_preview_indices, epoch, cam_output_dir, device, is_multiclass=is_multiclass, normalization=normalization)
             print(f"  --> Saved CAM preview for epoch {epoch} to {cam_output_dir}")
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:

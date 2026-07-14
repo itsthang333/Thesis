@@ -226,6 +226,7 @@ class RAMH1200ClassificationDataset(Dataset):
         image_size: int = 512,
         use_clahe: bool = False,
         preprocessing_mode: str = "none",
+        normalization: str = "imagenet",
     ) -> None:
         self.segmentation_root = resolve_ramh1200_segmentation_root(root)
         self.split, self.split_dir = _resolve_split_dir(self.segmentation_root, split)
@@ -247,6 +248,7 @@ class RAMH1200ClassificationDataset(Dataset):
             image_size,
             augment=False,
             preprocessing_mode=self.preprocessing_mode,
+            normalization=normalization,
         )
         self.target = torch.tensor(
             [1.0 if column.lower() == "hand" else 0.0 for column in self.target_columns],

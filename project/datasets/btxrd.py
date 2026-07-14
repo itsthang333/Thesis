@@ -316,6 +316,7 @@ class BTXRDClassificationDataset(Dataset):
         image_size: int = 512,
         use_clahe: bool = False,
         preprocessing_mode: str = "none",
+        normalization: str = "imagenet",
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
         split_seed: int = DEFAULT_SPLIT_SEED,
     ) -> None:
@@ -354,6 +355,7 @@ class BTXRDClassificationDataset(Dataset):
             image_size,
             augment=False,
             preprocessing_mode=self.preprocessing_mode,
+            normalization=normalization,
         )
 
     def __len__(self) -> int:

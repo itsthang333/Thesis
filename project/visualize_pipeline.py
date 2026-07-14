@@ -227,6 +227,7 @@ def main() -> None:
     # num_classes must come from the checkpoint, not len(target_columns) --
     # target_columns=["tumor_type"] (1 element) maps to a 10-class model.
     num_classes = clf_ckpt.get("num_classes", len(target_columns))
+    classifier_normalization = clf_ckpt.get("normalization", "imagenet")
     # Same reasoning for display names: target_columns=["tumor_type"] names
     # the classification head, not the 10 real classes -- target_columns[i]
     # would IndexError for i >= 1 when picking active-class labels below.
@@ -261,10 +262,11 @@ def main() -> None:
             args.image_size,
             augment=False,
             preprocessing_mode=args.preprocessing_mode,
+            normalization=classifier_normalization,
         )
         image_pil = Image.open(args.image_path).convert("RGB")
         image_tensor = transform(image_pil).unsqueeze(0).to(device)
-        image_pil_denorm = tensor_to_pil(image_tensor[0].detach().cpu())
+        image_pil_denorm = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
         image_rgb = np.array(image_pil_denorm, dtype=np.uint8)
 
         # ── Stage 1: classifier ──────────────────────────────────────────────
