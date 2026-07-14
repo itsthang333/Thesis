@@ -170,6 +170,8 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
             if train:
                 optimizer.zero_grad(set_to_none=True)
                 scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 scaler.step(optimizer)
                 scaler.update()
 
@@ -208,6 +210,16 @@ def run_epoch_multiclass(
             if train:
                 optimizer.zero_grad(set_to_none=True)
                 scaler.scale(loss).backward()
+                # Unscale before clipping so the norm is computed on true
+                # (not loss-scaled) gradients -- without this, a handful of
+                # early batches with unusually large gradients (e.g. a
+                # freshly-initialized classifier head paired with a
+                # differently-scaled pretrained backbone) can push weights
+                # into a regime where logits blow up to the tens of
+                # thousands and never recover, since nothing bounds the
+                # update step size.
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 scaler.step(optimizer)
                 scaler.update()
 
