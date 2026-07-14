@@ -165,7 +165,17 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
+                # See run_epoch_multiclass's matching comment: a rare
+                # pathological input can still produce a finite-but-extreme
+                # logit even with forward_features forced to fp32; clamp so
+                # it can't distort the displayed loss average or BCE's
+                # internal sigmoid/log terms.
+                logits = torch.clamp(logits, -30.0, 30.0)
                 loss = criterion(logits, targets)
+
+            if torch.isnan(loss) or torch.isinf(loss):
+                print(f"  [WARNING] Skipping batch with non-finite loss (pathological input)")
+                continue
 
             if train:
                 optimizer.zero_grad(set_to_none=True)
@@ -205,6 +215,16 @@ def run_epoch_multiclass(
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
+                # forward_features now forces fp32 through the backbone, so
+                # logits are always finite -- but a pathological input (see
+                # the skip-batch warning below) can still produce a finite
+                # but extreme logit (hundreds+), which blows up val_loss's
+                # displayed average without ever triggering the isnan/isinf
+                # skip. Clamp to a range that can't meaningfully change which
+                # class wins (correct-class logits for real predictions stay
+                # under ~1 early in training, per this project's own debug
+                # runs) while keeping CrossEntropyLoss's internal exp() finite.
+                logits = torch.clamp(logits, -30.0, 30.0)
                 loss = criterion(logits, targets)
 
             if torch.isnan(loss) or torch.isinf(loss):
