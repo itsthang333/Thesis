@@ -18,6 +18,7 @@ from config import ClassifierConfig, DATASET_TARGET_COLUMNS, DEFAULT_DATASET, SU
 from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
+from models.puzzle_cam import puzzle_alpha as puzzle_alpha_schedule, puzzle_cam_consistency_loss
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.visualization import save_overlay, tensor_to_pil
 
@@ -45,6 +46,11 @@ def parse_args() -> argparse.Namespace:
                         help="Path to a RadImageNet DenseNet121.pt checkpoint to use as the "
                         "backbone's pretrained weights instead of ImageNet. Overrides "
                         "--no-pretrained when set.")
+    parser.add_argument("--puzzle-alpha-max", type=float, default=0.0,
+                        help="Max weight for PuzzleCAM's consistency loss (see models/puzzle_cam.py). "
+                        "0 (default) disables it entirely -- pure CrossEntropy, unchanged behavior. "
+                        "Only applies to the single-label ('tumor_type') task. Linearly ramps from 0 "
+                        "to this value over the first half of --epochs, per the paper's warmup schedule.")
     parser.add_argument("--use-clahe", action="store_true")
     parser.add_argument("--preprocessing-mode", type=str, default="none",
                         choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
@@ -199,9 +205,25 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
 
 
 def run_epoch_multiclass(
-    model, loader, criterion, optimizer, scaler, device, num_classes: int, train: bool
+    model, loader, criterion, optimizer, scaler, device, num_classes: int, train: bool,
+    puzzle_alpha: float = 0.0,
 ) -> tuple[float, dict[str, float], torch.Tensor]:
-    """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot)."""
+    """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot).
+
+    puzzle_alpha > 0 adds PuzzleCAM's consistency loss (Jo & Yu, ICIP 2021,
+    adapted for single-label CrossEntropy -- see models/puzzle_cam.py): an
+    extra forward pass on the image split into a 2x2 tile grid, comparing
+    the CAM reconstructed from the 4 tiles against the full-image CAM for
+    each sample's target class, and penalizing their L1 difference. This
+    directly targets the diffuse/non-discriminative CAM problem this
+    project's own debug_cam_by_tumor_type.py measured (cam_area_ratio pinned
+    at ~15% of the image regardless of content) by forcing the model's
+    spatial evidence to agree whether it sees the whole image or 4 separate
+    quadrants -- something a model that just "looks at everything" can't do
+    consistently, but one that's actually localizing the lesion can. Only
+    applied during training (train=True); val loss stays pure CrossEntropy
+    for a clean, comparable val_f1/early-stopping signal.
+    """
     total_loss = 0.0
     confusion = torch.zeros(num_classes, num_classes, dtype=torch.long)
     batches = 0
@@ -225,7 +247,27 @@ def run_epoch_multiclass(
                 # under ~1 early in training, per this project's own debug
                 # runs) while keeping CrossEntropyLoss's internal exp() finite.
                 logits = torch.clamp(logits, -30.0, 30.0)
-                loss = criterion(logits, targets)
+                # cls_loss is logged separately from the combined `loss` used
+                # for backward(), so train_loss/val_loss in the CSV stay
+                # directly comparable to runs without PuzzleCAM (pure
+                # CrossEntropy) -- `loss` (with the puzzle term folded in)
+                # only drives the actual gradient step.
+                cls_loss = criterion(logits, targets)
+                loss = cls_loss
+
+                re_loss_value = 0.0
+                p_cls_loss_value = 0.0
+                if train and puzzle_alpha > 0:
+                    # Full PuzzleCAM objective: L_cls + L_p-cls + alpha*L_re
+                    # (Jo & Yu, ICIP 2021, Eq. 7). L_p-cls has weight 1.0 (not
+                    # scaled by alpha/warmup) since it's an ordinary
+                    # classification loss on the tiled reconstruction, not a
+                    # consistency regularizer -- only L_re gets the warmup
+                    # treatment, matching the paper.
+                    _, _, re_loss, p_cls_loss = puzzle_cam_consistency_loss(model, images, targets)
+                    loss = cls_loss + p_cls_loss + puzzle_alpha * re_loss
+                    re_loss_value = re_loss.item()
+                    p_cls_loss_value = p_cls_loss.item()
 
             if torch.isnan(loss) or torch.isinf(loss):
                 print(f"  [WARNING] Skipping batch with non-finite loss (a rare pathological "
@@ -254,10 +296,11 @@ def run_epoch_multiclass(
 
         batch_confusion = multiclass_confusion_matrix(logits.detach().cpu(), targets.detach().cpu(), num_classes)
         confusion += batch_confusion
-        total_loss += loss.item()
+        total_loss += cls_loss.item()
         batches += 1
         batch_metrics = metrics_from_multiclass_confusion(batch_confusion)
-        progress.set_postfix(loss=loss.item(), macro_f1=batch_metrics["f1"])
+        progress.set_postfix(loss=cls_loss.item(), macro_f1=batch_metrics["f1"],
+                              re_loss=re_loss_value, p_cls_loss=p_cls_loss_value)
 
     if batches == 0:
         return 0.0, metrics_from_multiclass_confusion(confusion), confusion
@@ -494,8 +537,13 @@ def main() -> None:
 
     for epoch in range(1, args.epochs + 1):
         if is_multiclass:
+            current_puzzle_alpha = (
+                puzzle_alpha_schedule(epoch, args.epochs, alpha_max=args.puzzle_alpha_max)
+                if args.puzzle_alpha_max > 0 else 0.0
+            )
             train_loss, train_metrics, _train_confusion = run_epoch_multiclass(
-                model, train_loader, criterion, optimizer, scaler, device, num_classes, train=True
+                model, train_loader, criterion, optimizer, scaler, device, num_classes, train=True,
+                puzzle_alpha=current_puzzle_alpha,
             )
             val_loss, val_metrics, val_confusion = run_epoch_multiclass(
                 model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False
@@ -538,11 +586,12 @@ def main() -> None:
                     ]
                 )
 
+        puzzle_suffix = f" puzzle_alpha={current_puzzle_alpha:.3f}" if is_multiclass and args.puzzle_alpha_max > 0 else ""
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
             f"train_{'macro_f1' if is_multiclass else 'f1'}={train_metrics['f1']:.4f} | "
             f"val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
-            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}"
+            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}{puzzle_suffix}"
         )
         if is_multiclass:
             from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
