@@ -207,6 +207,15 @@ def run_epoch_multiclass(
                 logits = model(images)
                 loss = criterion(logits, targets)
 
+            if torch.isnan(loss) or torch.isinf(loss):
+                print(f"  [WARNING] Skipping batch with non-finite loss (a rare pathological "
+                      f"input -- found empirically: a converted-from-grayscale X-ray with all "
+                      f"3 channels identical pushes this RadImageNet-pretrained backbone's "
+                      f"internal features to ~2.6e5, overflowing fp16's 65504 max mid-forward-"
+                      f"pass, before logits/loss are ever computed -- clamping logits afterward "
+                      f"can't fix this since inf/nan has already propagated by then)")
+                continue
+
             if train:
                 optimizer.zero_grad(set_to_none=True)
                 scaler.scale(loss).backward()

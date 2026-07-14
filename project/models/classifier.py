@@ -68,8 +68,19 @@ class DenseNet121AnatomyClassifier(nn.Module):
         self.classifier = nn.Linear(self.classifier_input_features, num_classes)
 
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.features(x)
-        x = torch.relu(x)
+        # Force fp32 through the backbone regardless of an enclosing
+        # autocast context. Found empirically: a RadImageNet-pretrained
+        # backbone can push intermediate activations for a rare pathological
+        # input (e.g. a converted-from-grayscale X-ray with all 3 channels
+        # identical) past fp16's ~65504 max mid-forward-pass through the
+        # dense blocks, well before the final feature map -- clamping the
+        # output afterward is too late once inf/nan has already propagated
+        # through later dense layers. fp32 has enough headroom (this
+        # backbone's worst observed activation was ~2.6e5, still far under
+        # fp32's ~3.4e38 max) that the same input never overflows here.
+        with torch.cuda.amp.autocast(enabled=False):
+            x = self.features(x.float())
+            x = torch.relu(x)
         return x
 
     def forward(self, x: torch.Tensor, return_features: bool = False):
