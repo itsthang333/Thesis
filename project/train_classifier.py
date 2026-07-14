@@ -41,6 +41,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "classifier")
     parser.add_argument("--no-pretrained", action="store_true")
+    parser.add_argument("--radimagenet-checkpoint", type=Path, default=None,
+                        help="Path to a RadImageNet DenseNet121.pt checkpoint to use as the "
+                        "backbone's pretrained weights instead of ImageNet. Overrides "
+                        "--no-pretrained when set.")
     parser.add_argument("--use-clahe", action="store_true")
     parser.add_argument("--preprocessing-mode", type=str, default="none",
                         choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
@@ -375,7 +379,11 @@ def main() -> None:
     else:
         num_classes = len(target_columns)
 
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=not args.no_pretrained).to(device)
+    model = DenseNet121AnatomyClassifier(
+        num_classes=num_classes,
+        pretrained=not args.no_pretrained,
+        radimagenet_checkpoint=args.radimagenet_checkpoint,
+    ).to(device)
 
     if is_multiclass:
         # Inverse-frequency class weights: BTXRD's tumor_type classes range
