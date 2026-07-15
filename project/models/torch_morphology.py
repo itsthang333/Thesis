@@ -104,6 +104,15 @@ def cam_to_soft_attention_target(
         cam = cam.unsqueeze(1)
 
     with torch.no_grad():
+        # torch.quantile (used below) hard-requires float32/float64 input --
+        # raises "quantile() input tensor must be either float or double
+        # dtype" on fp16, a separate crash risk from autocast's own
+        # BCE-specific block (torch.quantile isn't on any documented
+        # autocast safelist/blocklist -- it just inherits whatever dtype it
+        # receives). Force fp32 explicitly here rather than relying on the
+        # caller's autocast(enabled=False) to have already produced an fp32
+        # tensor by construction.
+        cam = cam.float()
         batch_size = cam.shape[0]
         flat = cam.view(batch_size, -1)
         mn = flat.min(dim=1).values.view(batch_size, 1, 1, 1)

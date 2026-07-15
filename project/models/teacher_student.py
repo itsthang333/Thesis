@@ -174,32 +174,46 @@ def attention_distillation_loss(
     # at 384 is well under 1px at 12x12). morph/blur kernel_size=3 (default)
     # is a meaningful fraction of a 12x12 grid, unlike the 384-resolution
     # default of 5.
-    student_spatial_size = student_features.shape[-2:]
-    soft_target, valid_mask = teacher.compute_soft_attention_target(
-        images, target_class, percentile=percentile, output_size=student_spatial_size,
-    )
-    soft_target = soft_target.detach()
-    soft_target = soft_target.squeeze(1)  # [B, H, W]
+    # Forced outside fp16 autocast entirely: on real GPU training (unlike
+    # the CPU-only synthetic tests this was first verified with, where
+    # GradScaler(enabled=False) never actually exercises autocast's runtime
+    # checks), PyTorch hard-blocks F.binary_cross_entropy inside an
+    # autocast(enabled=True) region -- it raises
+    # "binary_cross_entropy and BCELoss are unsafe to autocast" rather than
+    # silently miscomputing, because BCE's log() near 0/1 can produce -inf
+    # in fp16. student_features (computed by the caller under the outer
+    # autocast) is cast back to fp32 here for the same reason classic_cam's
+    # einsum needed it in puzzle_cam.py.
+    with torch.cuda.amp.autocast(enabled=False):
+        student_spatial_size = student_features.shape[-2:]
+        soft_target, valid_mask = teacher.compute_soft_attention_target(
+            images, target_class, percentile=percentile, output_size=student_spatial_size,
+        )
+        soft_target = soft_target.detach()
+        soft_target = soft_target.squeeze(1)  # [B, H, W]
 
-    student_cam = student_cam_for_attention_loss(student_model, student_features, target_class)
+        student_cam = student_cam_for_attention_loss(
+            student_model, student_features.float(), target_class
+        )
 
-    # Degenerate samples (teacher's CAM too flat to threshold meaningfully --
-    # confirmed empirically on a random-init classifier: this can be the
-    # WHOLE batch right after warmup, before the teacher has learned any
-    # real localization signal) must be excluded from the loss entirely, not
-    # trained against an all-zero "no lesion anywhere" target -- that target
-    # is wrong (not "no signal"), and BCE against it was found to produce
-    # ~200x the gradient magnitude of a normal CrossEntropy step, since it
-    # penalizes every positive activation in the student's CAM as if it were
-    # a false positive across the whole spatial grid.
-    if not valid_mask.any():
-        # Must stay part of student_cam's graph (not a bare constant) --
-        # train_classifier.py does loss.backward() on the combined total
-        # loss unconditionally, so this needs a valid (if zero-valued)
-        # grad_fn rather than crashing with "does not require grad".
-        return student_cam.sum() * 0.0
+        # Degenerate samples (teacher's CAM too flat to threshold
+        # meaningfully -- confirmed empirically on a random-init classifier:
+        # this can be the WHOLE batch right after warmup, before the teacher
+        # has learned any real localization signal) must be excluded from
+        # the loss entirely, not trained against an all-zero "no lesion
+        # anywhere" target -- that target is wrong (not "no signal"), and
+        # BCE against it was found to produce ~200x the gradient magnitude
+        # of a normal CrossEntropy step, since it penalizes every positive
+        # activation in the student's CAM as if it were a false positive
+        # across the whole spatial grid.
+        if not valid_mask.any():
+            # Must stay part of student_cam's graph (not a bare constant) --
+            # train_classifier.py does loss.backward() on the combined total
+            # loss unconditionally, so this needs a valid (if zero-valued)
+            # grad_fn rather than crashing with "does not require grad".
+            return student_cam.sum() * 0.0
 
-    per_sample_bce = F.binary_cross_entropy(
-        student_cam.clamp(1e-6, 1 - 1e-6), soft_target, reduction="none"
-    ).mean(dim=(1, 2))
+        per_sample_bce = F.binary_cross_entropy(
+            student_cam.clamp(1e-6, 1 - 1e-6), soft_target, reduction="none"
+        ).mean(dim=(1, 2))
     return per_sample_bce[valid_mask].mean()
