@@ -19,6 +19,7 @@ from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from models.puzzle_cam import puzzle_alpha as puzzle_alpha_schedule, puzzle_cam_consistency_loss
+from models.teacher_student import EMATeacher, attention_distillation_loss
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.visualization import save_overlay, tensor_to_pil
 
@@ -51,6 +52,33 @@ def parse_args() -> argparse.Namespace:
                         "0 (default) disables it entirely -- pure CrossEntropy, unchanged behavior. "
                         "Only applies to the single-label ('tumor_type') task. Linearly ramps from 0 "
                         "to this value over the first half of --epochs, per the paper's warmup schedule.")
+    parser.add_argument("--attention-alpha-max", type=float, default=0.0,
+                        help="Max weight for the Teacher-Student attention distillation loss (see "
+                        "models/teacher_student.py). 0 (default) disables it entirely. Only applies "
+                        "to the single-label ('tumor_type') task. Requires --teacher-warmup-epochs. "
+                        "Ramps linearly from 0 to this value over the epochs following warmup (same "
+                        "schedule shape as --puzzle-alpha-max), since this loss's per-pixel BCE "
+                        "gradient was found to be ~100-150x larger in magnitude than the per-sample "
+                        "CrossEntropy loss on real DenseNet121 -- an unscaled alpha=1.0 would let "
+                        "attention distillation dominate and destabilize classification learning "
+                        "from the moment the teacher activates. A small max (e.g. 0.01-0.05) plus "
+                        "warmup keeps CE in control while still letting the signal grow in.")
+    parser.add_argument("--teacher-warmup-epochs", type=int, default=3,
+                        help="Number of initial epochs to train the student on CE (+ PuzzleCAM if "
+                        "enabled) alone, with the teacher frozen at its starting checkpoint, before "
+                        "EMA updates and the attention loss begin. Needed because at epoch 0 the "
+                        "teacher is an exact copy of the student -- there's nothing yet for it to "
+                        "teach that the student doesn't already know.")
+    parser.add_argument("--teacher-ema-decay", type=float, default=0.999,
+                        help="EMA decay rate for the teacher's weights once warmup ends.")
+    parser.add_argument("--teacher-cam-percentile", type=float, default=96.0,
+                        help="Percentile threshold applied to the teacher's LayerCAM before Torch "
+                        "morphology + Gaussian blur, when building the student's soft attention "
+                        "target. This project's own measurements found LayerCAM's thresholded area "
+                        "pinned at ~15% of the image (percentile 85) regardless of content, while "
+                        "actual lesions average ~2.6% -- a much higher percentile here (keeping only "
+                        "the CAM's brightest ~4%) forces the target to start from the CAM's most "
+                        "confident region rather than refining the full diffuse blob.")
     parser.add_argument("--use-clahe", action="store_true")
     parser.add_argument("--preprocessing-mode", type=str, default="none",
                         choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
@@ -207,6 +235,9 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
 def run_epoch_multiclass(
     model, loader, criterion, optimizer, scaler, device, num_classes: int, train: bool,
     puzzle_alpha: float = 0.0,
+    teacher=None,
+    attention_alpha: float = 0.0,
+    teacher_percentile: float = 96.0,
 ) -> tuple[float, dict[str, float], torch.Tensor]:
     """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot).
 
@@ -236,7 +267,11 @@ def run_epoch_multiclass(
 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
-                logits = model(images)
+                need_features = train and teacher is not None and attention_alpha > 0
+                if need_features:
+                    logits, student_features = model(images, return_features=True)
+                else:
+                    logits = model(images)
                 # forward_features now forces fp32 through the backbone, so
                 # logits are always finite -- but a pathological input (see
                 # the skip-batch warning below) can still produce a finite
@@ -269,6 +304,27 @@ def run_epoch_multiclass(
                     re_loss_value = re_loss.item()
                     p_cls_loss_value = p_cls_loss.item()
 
+                att_loss_value = 0.0
+                if need_features:
+                    # L_attention: student's own CAM vs. the teacher's refined
+                    # soft target (frozen EMA teacher -> LayerCAM -> percentile
+                    # threshold -> Torch morphology -> Gaussian blur). Unlike
+                    # PuzzleCAM's L_re (CAM(full) ~= CAM(tiles), which a model
+                    # can satisfy by being uniformly diffuse in both views --
+                    # confirmed empirically: PuzzleCAM raised val_f1 sharply
+                    # but left cam_area_ratio pinned at ~0.15, unchanged from
+                    # the plain baseline), this directly supervises the
+                    # student's CAM shape against a sharpened target that's
+                    # already been pushed toward the lesion's actual (~2.6%
+                    # of image area) footprint by the percentile+morphology
+                    # pipeline -- "CAM ~= lesion-shaped-region", not just
+                    # "CAM ~= CAM".
+                    att_loss = attention_distillation_loss(
+                        teacher, model, student_features, images, targets, percentile=teacher_percentile
+                    )
+                    loss = loss + attention_alpha * att_loss
+                    att_loss_value = att_loss.item()
+
             if torch.isnan(loss) or torch.isinf(loss):
                 print(f"  [WARNING] Skipping batch with non-finite loss (a rare pathological "
                       f"input -- found empirically: a converted-from-grayscale X-ray with all "
@@ -300,7 +356,10 @@ def run_epoch_multiclass(
         batches += 1
         batch_metrics = metrics_from_multiclass_confusion(batch_confusion)
         progress.set_postfix(loss=cls_loss.item(), macro_f1=batch_metrics["f1"],
-                              re_loss=re_loss_value, p_cls_loss=p_cls_loss_value)
+                              re_loss=re_loss_value, p_cls_loss=p_cls_loss_value, att_loss=att_loss_value)
+
+        if train and teacher is not None:
+            teacher.update(model)
 
     if batches == 0:
         return 0.0, metrics_from_multiclass_confusion(confusion), confusion
@@ -535,15 +594,44 @@ def main() -> None:
                 "val_tp", "val_fp", "val_fn", "val_tn",
             ])
 
+    teacher = None  # created once warmup ends; stays None (attention loss disabled) until then
+
     for epoch in range(1, args.epochs + 1):
         if is_multiclass:
             current_puzzle_alpha = (
                 puzzle_alpha_schedule(epoch, args.epochs, alpha_max=args.puzzle_alpha_max)
                 if args.puzzle_alpha_max > 0 else 0.0
             )
+
+            current_attention_alpha = 0.0
+            if args.attention_alpha_max > 0 and epoch > args.teacher_warmup_epochs:
+                if teacher is None:
+                    # Snapshot the student as it is right after warmup -- this
+                    # is the "phá đối xứng" (symmetry-breaking) point: the
+                    # student has now trained on CE (+PuzzleCAM) alone for
+                    # teacher_warmup_epochs, so it's no longer identical to a
+                    # freshly-loaded checkpoint, giving EMA updates something
+                    # real to average over from here on.
+                    teacher = EMATeacher(model, decay=args.teacher_ema_decay)
+                    print(f"  --> Teacher initialized at epoch {epoch} (post-warmup snapshot)")
+                # Ramp over the epochs remaining after warmup, same linear
+                # shape as puzzle_alpha_schedule -- needed because this loss's
+                # per-pixel BCE gradient was measured at ~100-150x a
+                # per-sample CrossEntropy step's magnitude on real
+                # DenseNet121; an unscaled alpha from the moment the teacher
+                # activates would let it dominate and destabilize
+                # classification learning before CE has a chance to adapt.
+                epochs_since_warmup = epoch - args.teacher_warmup_epochs
+                remaining_epochs = args.epochs - args.teacher_warmup_epochs
+                current_attention_alpha = puzzle_alpha_schedule(
+                    epochs_since_warmup, remaining_epochs, alpha_max=args.attention_alpha_max
+                )
+
             train_loss, train_metrics, _train_confusion = run_epoch_multiclass(
                 model, train_loader, criterion, optimizer, scaler, device, num_classes, train=True,
                 puzzle_alpha=current_puzzle_alpha,
+                teacher=teacher, attention_alpha=current_attention_alpha,
+                teacher_percentile=args.teacher_cam_percentile,
             )
             val_loss, val_metrics, val_confusion = run_epoch_multiclass(
                 model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False
@@ -587,11 +675,17 @@ def main() -> None:
                 )
 
         puzzle_suffix = f" puzzle_alpha={current_puzzle_alpha:.3f}" if is_multiclass and args.puzzle_alpha_max > 0 else ""
+        teacher_suffix = ""
+        if is_multiclass and args.attention_alpha_max > 0:
+            teacher_suffix = (
+                f" attention_alpha={current_attention_alpha:.4f}"
+                f" teacher={'active' if teacher is not None else 'warmup'}"
+            )
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
             f"train_{'macro_f1' if is_multiclass else 'f1'}={train_metrics['f1']:.4f} | "
             f"val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
-            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}{puzzle_suffix}"
+            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}{puzzle_suffix}{teacher_suffix}"
         )
         if is_multiclass:
             from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES

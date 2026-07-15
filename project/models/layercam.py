@@ -105,7 +105,7 @@ class LayerCAM:
         cam = F.interpolate(cam, size=input_size, mode="bilinear", align_corners=False)
         return cam  # [B, 1, H_in, W_in]
 
-    def _compute_cam(self, input_tensor: torch.Tensor, class_index: int) -> LayerCAMOutput:
+    def _compute_cam(self, input_tensor: torch.Tensor, class_index: int | torch.Tensor) -> LayerCAMOutput:
         self.model.zero_grad(set_to_none=True)
         for state in self._states:
             state.activations = None
@@ -116,7 +116,21 @@ class LayerCAM:
         if logits.ndim == 1:
             logits = logits.unsqueeze(0)
 
-        score = logits[:, class_index].sum()
+        if isinstance(class_index, torch.Tensor):
+            # Per-sample target class (one class per batch item, e.g. each
+            # sample's own ground-truth tumor_type) -- gradient for each
+            # sample's activations is isolated to that sample's own class,
+            # since summing independent per-sample scalar terms and calling
+            # backward() once produces exactly the same per-sample gradients
+            # as backward()-ing each one separately (verified: the sum trick
+            # gives each row a clean one-hot gradient at its own class index,
+            # with zero cross-contamination between batch items). This lets
+            # a full batch with differing target classes share ONE forward+
+            # backward pass instead of one per sample.
+            batch_indices = torch.arange(logits.shape[0], device=logits.device)
+            score = logits[batch_indices, class_index].sum()
+        else:
+            score = logits[:, class_index].sum()
         score.backward()
 
         input_size = input_tensor.shape[-2:]
@@ -143,7 +157,9 @@ class LayerCAM:
     # public API
     # ------------------------------------------------------------------
 
-    def cam_for_class(self, input_tensor: torch.Tensor, class_index: int) -> LayerCAMOutput:
+    def cam_for_class(self, input_tensor: torch.Tensor, class_index: int | torch.Tensor) -> LayerCAMOutput:
+        """class_index: a single int (same class for every sample in the
+        batch) or a [B] long tensor (one class per sample)."""
         return self._compute_cam(input_tensor, class_index=class_index)
 
     def cams_for_active_classes(
