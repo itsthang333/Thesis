@@ -305,24 +305,29 @@ def run_epoch_multiclass(
                     p_cls_loss_value = p_cls_loss.item()
 
                 att_loss_value = 0.0
+                teacher_conf_value = 0.0
                 if need_features:
                     # L_attention: student's own CAM vs. the teacher's refined
                     # soft target (frozen EMA teacher -> LayerCAM -> percentile
-                    # threshold -> Torch morphology -> Gaussian blur). Unlike
-                    # PuzzleCAM's L_re (CAM(full) ~= CAM(tiles), which a model
-                    # can satisfy by being uniformly diffuse in both views --
-                    # confirmed empirically: PuzzleCAM raised val_f1 sharply
-                    # but left cam_area_ratio pinned at ~0.15, unchanged from
-                    # the plain baseline), this directly supervises the
-                    # student's CAM shape against a sharpened target that's
-                    # already been pushed toward the lesion's actual (~2.6%
-                    # of image area) footprint by the percentile+morphology
-                    # pipeline -- "CAM ~= lesion-shaped-region", not just
-                    # "CAM ~= CAM".
-                    att_loss = attention_distillation_loss(
+                    # threshold -> Torch morphology -> Gaussian blur), weighted
+                    # by the teacher's own confidence in the ground-truth
+                    # class (squared) to guard against confirmation bias --
+                    # an unsure teacher shouldn't teach as if it were certain.
+                    # Unlike PuzzleCAM's L_re (CAM(full) ~= CAM(tiles), which
+                    # a model can satisfy by being uniformly diffuse in both
+                    # views -- confirmed empirically: PuzzleCAM raised val_f1
+                    # sharply but left cam_area_ratio pinned at ~0.15,
+                    # unchanged from the plain baseline), this directly
+                    # supervises the student's CAM shape against a sharpened
+                    # target that's already been pushed toward the lesion's
+                    # actual (~2.6% of image area) footprint by the
+                    # percentile+morphology pipeline -- "CAM ~= lesion-shaped-
+                    # region", not just "CAM ~= CAM".
+                    att_loss, teacher_conf = attention_distillation_loss(
                         teacher, model, student_features, images, targets, percentile=teacher_percentile
                     )
                     loss = loss + attention_alpha * att_loss
+                    teacher_conf_value = teacher_conf.item()
                     att_loss_value = att_loss.item()
 
             if torch.isnan(loss) or torch.isinf(loss):
@@ -356,7 +361,8 @@ def run_epoch_multiclass(
         batches += 1
         batch_metrics = metrics_from_multiclass_confusion(batch_confusion)
         progress.set_postfix(loss=cls_loss.item(), macro_f1=batch_metrics["f1"],
-                              re_loss=re_loss_value, p_cls_loss=p_cls_loss_value, att_loss=att_loss_value)
+                              re_loss=re_loss_value, p_cls_loss=p_cls_loss_value, att_loss=att_loss_value,
+                              teacher_conf=teacher_conf_value)
 
         if train and teacher is not None:
             teacher.update(model)

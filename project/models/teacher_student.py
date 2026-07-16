@@ -56,7 +56,7 @@ class EMATeacher:
         percentile: float = 96.0,
         output_size: tuple[int, int] | None = None,
         blur_kernel_size: int = 3,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Teacher CAM (LayerCAM, ground-truth-class-conditioned) -> soft
         percentile-centered gate -> Gaussian blur -> soft target in [0, 1].
         No gradient ever flows through this (teacher is frozen, LayerCAM's
@@ -91,6 +91,18 @@ class EMATeacher:
             out = self.layercam.cam_for_class(images.float(), class_index=target_class)
             teacher_cam = out.cam  # [B, H, W], upsampled to input image size by LayerCAM
 
+            # Teacher's own confidence in the ground-truth class, from the
+            # SAME forward pass that produced the CAM (no extra compute).
+            # Used by the caller to weight the attention loss per-sample:
+            # a teacher that's unsure about the class it's localizing for
+            # is also unlikely to have localized it correctly (classic
+            # confidence-weighting pattern from FixMatch/Mean Teacher/
+            # SoftTeacher/Unbiased Teacher/DenseTeacher-style pseudo-label
+            # methods, guarding against confirmation bias -- an EMA teacher
+            # naively teaching a diffuse CAM as if it were ground truth).
+            batch_indices = torch.arange(out.logits.shape[0], device=out.logits.device)
+            teacher_conf = F.softmax(out.logits, dim=1)[batch_indices, target_class]
+
             if output_size is not None:
                 # Downsample the CAM to the comparison resolution BEFORE
                 # morphology, not after -- morphology's kernels are sized in
@@ -105,9 +117,10 @@ class EMATeacher:
                     teacher_cam.unsqueeze(1), size=output_size, mode="bilinear", align_corners=False
                 ).squeeze(1)
 
-            return cam_to_soft_attention_target(
+            soft_target, valid_mask = cam_to_soft_attention_target(
                 teacher_cam, percentile=percentile, blur_kernel_size=blur_kernel_size,
             )
+            return soft_target, valid_mask, teacher_conf.detach()
 
 
 def student_cam_for_attention_loss(
@@ -145,10 +158,11 @@ def attention_distillation_loss(
     images: torch.Tensor,
     target_class: torch.Tensor,
     percentile: float = 96.0,
-) -> torch.Tensor:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """L_attention: BCE between the student's own CAM and the teacher's
     refined soft attention target (Teacher LayerCAM -> percentile ->
-    morphology -> blur, see EMATeacher.compute_soft_attention_target).
+    morphology -> blur, see EMATeacher.compute_soft_attention_target),
+    weighted by the teacher's own confidence in the ground-truth class.
 
     BCE (not L1/MSE) is used since the teacher's soft target, after the
     percentile+morphology+blur pipeline, is a smoothly-varying [0,1] map
@@ -157,6 +171,13 @@ def attention_distillation_loss(
     target, and its steeper gradient near 0/1 helps pull the student's CAM
     toward the teacher's sharp, denoised region rather than just averaging
     toward it (as L1 would).
+
+    Returns: (weighted_loss, mean_teacher_conf) -- the second value is for
+    logging only (train_classifier.py tracks it per-epoch to later check
+    whether teacher confidence correlates with actual CAM quality, per this
+    project's own methodology discussion: a teacher can be confident about
+    *classification* while still localizing the lesion incorrectly, so this
+    correlation needs to be checked empirically, not assumed).
     """
     # NOT wrapped in torch.no_grad(): LayerCAM's _compute_cam() needs an
     # active graph to run its own internal score.backward() against the
@@ -186,7 +207,7 @@ def attention_distillation_loss(
     # einsum needed it in puzzle_cam.py.
     with torch.cuda.amp.autocast(enabled=False):
         student_spatial_size = student_features.shape[-2:]
-        soft_target, valid_mask = teacher.compute_soft_attention_target(
+        soft_target, valid_mask, teacher_conf = teacher.compute_soft_attention_target(
             images, target_class, percentile=percentile, output_size=student_spatial_size,
         )
         soft_target = soft_target.detach()
@@ -211,9 +232,36 @@ def attention_distillation_loss(
             # train_classifier.py does loss.backward() on the combined total
             # loss unconditionally, so this needs a valid (if zero-valued)
             # grad_fn rather than crashing with "does not require grad".
-            return student_cam.sum() * 0.0
+            return student_cam.sum() * 0.0, teacher_conf.mean()
 
         per_sample_bce = F.binary_cross_entropy(
             student_cam.clamp(1e-6, 1 - 1e-6), soft_target, reduction="none"
         ).mean(dim=(1, 2))
-    return per_sample_bce[valid_mask].mean()
+
+        # Confidence-weighted (squared) attention loss: guards against
+        # confirmation bias, where an EMA teacher that isn't actually sure
+        # about the ground-truth class teaches the student a wrong/diffuse
+        # CAM as if it were reliable ground truth. Squaring (rather than a
+        # hard confidence threshold, which would discard most of a small
+        # dataset like BTXRD early in training when the teacher is still
+        # weak) steeply discounts low-confidence samples (0.5 -> 0.25,
+        # 0.3 -> 0.09) while barely touching high-confidence ones
+        # (0.99 -> 0.98) -- same pattern used by FixMatch/SoftTeacher/
+        # Unbiased Teacher/DenseTeacher-style pseudo-label weighting.
+        #
+        # IMPORTANT: averaging by weight.sum() (a weighted MEAN) would
+        # silently defeat this -- found in review before ever training on
+        # it: if every sample in a batch shares roughly the same low
+        # confidence (e.g. all 0.1, weight~0.01), the weight cancels between
+        # numerator and denominator and the result equals the UNWEIGHTED
+        # mean, exactly the outcome this weighting is meant to prevent
+        # (teaching from an entirely-unsure-teacher batch as if it were
+        # normal). Averaging by the fixed number of valid samples instead
+        # (a weighted SUM over a constant denominator) means a
+        # uniformly-low-confidence batch genuinely produces a small loss.
+        weight = teacher_conf.pow(2)
+        weighted_bce = per_sample_bce * weight
+
+    num_valid = valid_mask.sum().clamp(min=1)
+    loss = weighted_bce[valid_mask].sum() / num_valid
+    return loss, teacher_conf[valid_mask].mean()
