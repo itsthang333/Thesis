@@ -81,3 +81,15 @@ def save_mask(mask: np.ndarray, output_path: str | Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     mask_uint8 = (mask.astype(np.uint8) * 255)
     Image.fromarray(mask_uint8, mode="L").save(output_path)
+
+
+def save_confidence_map(confidence: np.ndarray, output_path: str | Path) -> None:
+    """Save a pseudo/mask_selection.py's compute_confidence_map() output as a
+    grayscale PNG with raw label values 0-3 (see its CONFIDENCE_* constants)
+    -- NOT scaled to 0-255 like save_mask's binary mask, since these are
+    small integer class labels, not a 0/1 mask meant to look white when
+    viewed directly. Load with the same CONFIDENCE_* constants to interpret.
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(confidence.astype(np.uint8), mode="L").save(output_path)

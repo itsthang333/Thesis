@@ -42,6 +42,54 @@ def bce_dice_loss(
     return bce_weight * bce + (1.0 - bce_weight) * dice
 
 
+def weighted_bce_dice_loss(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    pixel_weight: torch.Tensor,
+    bce_weight: float = 0.5,
+    pos_weight: torch.Tensor | float | None = None,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """bce_dice_loss variant where pixel_weight (same shape as logits/targets,
+    values in [0, 1]) additionally scales each pixel's contribution to BOTH
+    terms -- used by train_segmentation.py's --boundary-ignore-loss (weight=0
+    on boundary-uncertain pixels, see pseudo/mask_selection.py's CONFIDENCE_*
+    labels) and --confidence-weighted-loss (weight<1 on foreground-uncertain
+    pixels). A weight of 0 everywhere pixel_weight is 0 is exact exclusion,
+    not just down-weighting -- those pixels contribute nothing to either loss
+    term, matching what "ignore this pixel" should mean.
+
+    Unlike bce_dice_loss, this does not use
+    F.binary_cross_entropy_with_logits' pos_weight-only reduction path: BCE is
+    computed per-pixel (reduction="none") so pixel_weight can be applied
+    before averaging, then Dice is computed on pixel_weight-masked
+    probabilities/targets so weighted-out pixels contribute zero intersection
+    AND zero denominator mass (not simply zero numerator, which would still
+    let boundary pixels drag Dice's denominator around).
+    """
+    pos_weight_tensor = (
+        torch.as_tensor(pos_weight, device=logits.device, dtype=logits.dtype)
+        if pos_weight is not None else None
+    )
+    per_pixel_bce = F.binary_cross_entropy_with_logits(
+        logits, targets, pos_weight=pos_weight_tensor, reduction="none"
+    )
+    weighted_bce_sum = (per_pixel_bce * pixel_weight).sum()
+    weight_sum = pixel_weight.sum().clamp(min=eps)
+    bce = weighted_bce_sum / weight_sum
+
+    probs = torch.sigmoid(logits) * pixel_weight
+    weighted_targets = targets * pixel_weight
+    probs_flat = probs.flatten(start_dim=1)
+    targets_flat = weighted_targets.flatten(start_dim=1)
+    intersection = (probs_flat * targets_flat).sum(dim=1)
+    denominator = probs_flat.sum(dim=1) + targets_flat.sum(dim=1)
+    dice = (2.0 * intersection + eps) / (denominator + eps)
+    dice_loss = 1.0 - dice.mean()
+
+    return bce_weight * bce + (1.0 - bce_weight) * dice_loss
+
+
 def dice_coefficient(logits: torch.Tensor, targets: torch.Tensor, threshold: float = 0.5, eps: float = 1e-6) -> torch.Tensor:
     probs = torch.sigmoid(logits)
     preds = (probs >= threshold).float()

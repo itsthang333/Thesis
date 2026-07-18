@@ -254,6 +254,7 @@ class BTXRDSegmentationDataset(Dataset):
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
         split_seed: int = DEFAULT_SPLIT_SEED,
         pred_mask_dir: str | Path | None = None,
+        pred_confidence_dir: str | Path | None = None,
     ) -> None:
         """pred_mask_dir: optional directory of pseudo-mask PNGs (one file per
         image, matching generate_pseudo_masks.py's ``masks/`` output naming,
@@ -268,6 +269,22 @@ class BTXRDSegmentationDataset(Dataset):
         entirely for images excluded by --max-images/--image-list -- both
         cases are handled identically here, matching how generate_pseudo_masks.py treats
         them.
+
+        pred_confidence_dir: optional directory of confidence-map PNGs
+        (generate_pseudo_masks.py's --save-confidence-map ``confidence/``
+        output, raw uint8 labels 0-3, see pseudo/mask_selection.py's
+        CONFIDENCE_* constants), matching pred_mask_dir's file naming. Only
+        meaningful together with pred_mask_dir (raises if set alone -- a
+        confidence map without the pseudo-mask it was computed for train's
+        against is meaningless). When set, __getitem__'s mask tensor gains a
+        second channel (shape [2, H, W] instead of [1, H, W]): channel 0 is
+        the usual binary 0/1 mask (unchanged), channel 1 is the raw 0-3
+        confidence label (NOT normalized to [0,1] -- train_segmentation.py's
+        loss/metric code must read it as a label, not a probability).
+        Missing confidence PNGs (e.g. an image generate_pseudo_masks.py
+        skipped, which writes an all-background confidence map) fall back to
+        an all-CONFIDENCE_BACKGROUND channel, matching pred_mask_dir's own
+        missing-PNG fallback to an all-zero mask.
         """
         self.btxrd_root = resolve_btxrd_root(root)
         self.images_dir = self.btxrd_root / DEFAULT_IMAGES_DIR
@@ -276,6 +293,9 @@ class BTXRDSegmentationDataset(Dataset):
         self.augment = augment
         self.use_clahe = use_clahe
         self.pred_mask_dir = Path(pred_mask_dir) if pred_mask_dir is not None else None
+        self.pred_confidence_dir = Path(pred_confidence_dir) if pred_confidence_dir is not None else None
+        if self.pred_confidence_dir is not None and self.pred_mask_dir is None:
+            raise ValueError("pred_confidence_dir requires pred_mask_dir to also be set")
 
         records = load_btxrd_records(self.btxrd_root)
         self.samples = split_btxrd_records(records, split=split, ratios=split_ratios, seed=split_seed)
@@ -308,6 +328,25 @@ class BTXRDSegmentationDataset(Dataset):
         assert self.pred_mask_dir is not None
         return self.pred_mask_dir / f"{Path(image_id).stem}.png"
 
+    def _pred_confidence_path(self, image_id: str) -> Path:
+        assert self.pred_confidence_dir is not None
+        return self.pred_confidence_dir / f"{Path(image_id).stem}.png"
+
+    def _build_confidence(self, sample: dict[str, object]) -> Image.Image:
+        """Loaded at its native resolution (whatever generate_pseudo_masks.py's
+        --image-size produced) -- __getitem__ resizes it to self.image_size
+        with NEAREST in one final step, same as it does for image/mask, so
+        the integer labels only ever pass through one resize.
+        """
+        confidence_path = self._pred_confidence_path(str(sample["image_id"]))
+        if confidence_path.exists():
+            return Image.open(confidence_path).convert("L")
+        from pseudo.mask_selection import CONFIDENCE_BACKGROUND
+        # Native resolution doesn't matter for a uniform fill -- 1x1 is
+        # upsampled by the NEAREST resize in __getitem__ to a uniform
+        # self.image_size x self.image_size map either way.
+        return Image.fromarray(np.full((1, 1), CONFIDENCE_BACKGROUND, dtype=np.uint8), mode="L")
+
     def _build_mask(self, sample: dict[str, object], image_size: tuple[int, int]) -> Image.Image:
         width, height = image_size
         if self.pred_mask_dir is not None:
@@ -334,17 +373,33 @@ class BTXRDSegmentationDataset(Dataset):
         image_path = self.images_dir / str(sample["image_id"])
         image = Image.open(image_path).convert("RGB")
         mask = self._build_mask(sample, image.size)
+        confidence = (
+            self._build_confidence(sample)
+            if self.pred_confidence_dir is not None
+            else None
+        )
 
         if self.use_clahe:
             image = apply_clahe(image)
 
-        if self.augment and random.random() < 0.5:
+        flip = self.augment and random.random() < 0.5
+        if flip:
             image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             mask = mask.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            if confidence is not None:
+                confidence = confidence.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
 
         image_tensor = self.image_transform(image)
         mask_tensor = self.mask_transform(mask)
         mask_tensor = (mask_tensor > 0.5).float()
+        if confidence is not None:
+            # Raw 0-3 labels via direct array conversion, NOT
+            # self.mask_transform -- that pipeline normalizes to [0,1] float
+            # and this project's mask_transform is only correct for a binary
+            # mask (it feeds straight into the >0.5 threshold above).
+            confidence_resized = confidence.resize((self.image_size, self.image_size), Image.NEAREST)
+            confidence_tensor = torch.from_numpy(np.array(confidence_resized, dtype=np.float32)).unsqueeze(0)
+            mask_tensor = torch.cat([mask_tensor, confidence_tensor], dim=0)
         return image_tensor, mask_tensor, str(sample["image_id"])
 
 

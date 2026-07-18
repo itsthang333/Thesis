@@ -132,3 +132,29 @@ class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
 
 BTXRD_HYBRID_PIPELINE = BtxrdHybridPipelineConfig()
 
+# btxrd_anatomy: anatomy-matched contrastive learning profile. Adds a region
+# classification head, a region-conditioned tumor head, and an anatomy-
+# matched contrastive loss on top of btxrd_hybrid's classifier recipe (same
+# epochs/puzzle/attention settings), plus anatomy-conditioned CAM downstream.
+# Loss weights below are the fixed values from this project's own anatomy-
+# aware design doc (L = L_type + 0.2*L_anatomy + 0.1*L_region-tumor +
+# 0.05*L_contrast, 3-epoch contrastive warmup) -- CLI flags with the same
+# names still exist for A/B ablation, but this profile is what pins them to
+# those exact values instead of leaving them at the CLI's off-by-default 0.0.
+@dataclass(frozen=True)
+class BtxrdAnatomyPipelineConfig(BtxrdHybridPipelineConfig):
+    name: str = "btxrd_anatomy"
+    classifier_anatomy_region_alpha: float = 0.2
+    classifier_anatomy_region_tumor_alpha: float = 0.1
+    classifier_anatomy_contrastive_alpha: float = 0.05
+    classifier_anatomy_contrastive_warmup_epochs: int = 3
+    cam_anatomy_beta: float = 0.5
+    cam_anatomy_weight: float = 1.0
+    anatomy_consistency_weight: float = 0.2
+    unet_consistency_weight: float = 0.1
+    unet_confidence_boundary_width: int = 3
+    unet_consistency_confidence_threshold: float = 0.80
+
+
+BTXRD_ANATOMY_PIPELINE = BtxrdAnatomyPipelineConfig()
+

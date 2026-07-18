@@ -127,13 +127,36 @@ def score_masks(
     prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
     prompt_area_target: float = 2.0,
     prompt_area_log_sigma: float = 1.0,
+    anatomy_cam: np.ndarray | None = None,
+    anatomy_consistency_weight: float = 0.0,
 ) -> np.ndarray:
     """Score each SAM mask by CAM activation inside the mask.
 
     Args:
         masks:    [N, H, W] bool or uint8.
-        bone_cam: [H, W] float32 in [0, 1].
+        bone_cam: [H, W] float32 in [0, 1]. The global (or already-selected-
+                  aggregation) CAM every scoring method above is computed
+                  from.
         method:   One of "mean", "sum", "mean_area", "coverage", "hybrid".
+        anatomy_cam: Optional [H, W] float32 in [0, 1], the region-conditioned
+                  CAM from generate_pseudo_masks.py's --cam-anatomy-conditioned
+                  (models/layercam.py's cam_for_anatomy_conditioned_score).
+                  When given (together with anatomy_consistency_weight > 0),
+                  each candidate's score above is nudged by how much its mean
+                  CAM activation agrees between bone_cam and anatomy_cam --
+                  this rewards masks that BOTH the global tumor-type evidence
+                  AND the region-conditioned "distinguishable from a same-
+                  region normal" evidence support, without ever letting
+                  anatomy_cam alone drive the score (a candidate that only
+                  anatomy_cam likes, but bone_cam does not, gets no bonus).
+                  None (default, matching every other call site unaware of
+                  anatomy-conditioned CAM) disables this entirely -- scores
+                  are then identical to before this parameter existed.
+        anatomy_consistency_weight: How much of each candidate's own
+                  bone_cam-only score to hold back and replace with the
+                  agreement-based term above (0 disables it even if
+                  anatomy_cam is given; typical range 0.1-0.3 so the primary
+                  scoring method above still dominates).
 
     Returns:
         scores: [N] float32 array.
@@ -343,6 +366,27 @@ def score_masks(
                 - 0.40 * large_mask_penalty
                 - 0.20 * border_touch_penalty
             )
+
+    if anatomy_cam is not None and anatomy_consistency_weight > 0:
+        if anatomy_cam.shape != bone_cam.shape:
+            raise ValueError(
+                f"anatomy_cam shape {anatomy_cam.shape} must match bone_cam shape {bone_cam.shape}"
+            )
+        weight = min(float(anatomy_consistency_weight), 1.0)
+        agreement = np.zeros(n, dtype=np.float32)
+        for i in range(n):
+            m = masks[i].astype(bool)
+            if not m.any():
+                continue
+            # Geometric mean (not arithmetic) of the two CAMs' mean
+            # activation inside the candidate -- this is 0 whenever EITHER
+            # CAM has ~0 mean activation there, so a candidate anatomy_cam
+            # likes but bone_cam does not (or vice versa) gets no bonus;
+            # only candidates BOTH signals independently support are boosted.
+            bone_agreement = float(bone_cam[m].mean())
+            anatomy_agreement = float(anatomy_cam[m].mean())
+            agreement[i] = float(np.sqrt(max(bone_agreement, 0.0) * max(anatomy_agreement, 0.0)))
+        scores = (1.0 - weight) * scores + weight * agreement
     return scores
 
 
@@ -394,6 +438,8 @@ def select_and_fuse_masks(
     best_per_component: bool = False,
     component_topk: int = 0,
     support_clip_kernel: int = 5,
+    anatomy_cam: np.ndarray | None = None,
+    anatomy_consistency_weight: float = 0.0,
 ) -> np.ndarray:
     """Select and fuse masks using CAM and bone morphology evidence.
 
@@ -442,6 +488,8 @@ def select_and_fuse_masks(
         prompt_hybrid_weights=prompt_hybrid_weights,
         prompt_area_target=prompt_area_target,
         prompt_area_log_sigma=prompt_area_log_sigma,
+        anatomy_cam=anatomy_cam,
+        anatomy_consistency_weight=anatomy_consistency_weight,
     )
 
     if best_per_component and component_ids is not None and component_ids.size == masks.shape[0]:
@@ -497,3 +545,77 @@ def select_and_fuse_masks(
             fused = fused & masks[i].astype(bool)
         fused = fused.astype(np.uint8)
     return _clip(fused)
+
+
+# Confidence map pixel labels (see compute_confidence_map).
+CONFIDENCE_BACKGROUND = 0
+CONFIDENCE_FOREGROUND_CONFIDENT = 1
+CONFIDENCE_FOREGROUND_UNCERTAIN = 2
+CONFIDENCE_BOUNDARY_UNCERTAIN = 3
+
+
+def compute_confidence_map(
+    final_mask: np.ndarray,
+    fused_cam: np.ndarray,
+    cam_confident_percentile: float = 90.0,
+    boundary_width_px: int = 3,
+) -> np.ndarray:
+    """Per-pixel confidence label for a pseudo-mask, alongside the binary mask.
+
+    Four labels (see the CONFIDENCE_* constants above):
+      0 background:            outside final_mask AND outside CAM's
+                                confident-activation region -- both signals
+                                agree this is not the lesion.
+      1 foreground confident:  inside final_mask AND inside CAM's confident
+                                region -- SAM's selected mask and the CAM
+                                evidence that drove it agree.
+      2 foreground uncertain:  inside final_mask XOR inside CAM's confident
+                                region (exactly one signal supports it) --
+                                e.g. SAM extended the mask beyond the CAM's
+                                strongest activation, or a CAM-confident pixel
+                                was not covered by the selected SAM mask.
+      3 boundary uncertain:    within boundary_width_px of final_mask's edge
+                                (dilation minus erosion) -- SAM's mask
+                                boundary itself is typically the least
+                                reliable region (see this project's own
+                                oracle diagnostics), overriding whichever of
+                                the above three labels a boundary pixel would
+                                otherwise get.
+
+    Args:
+        final_mask:   [H, W] bool/uint8, the selected/fused pseudo-mask
+                      (select_and_fuse_masks's output).
+        fused_cam:    [H, W] float32 in [0, 1], the same CAM select_and_fuse_
+                      masks scored candidates against.
+        cam_confident_percentile: Percentile of fused_cam (over the whole
+                      image) above which a pixel counts as "CAM-confident".
+        boundary_width_px: How many pixels out from final_mask's boundary
+                      (via dilation/erosion) count as "boundary uncertain".
+
+    Returns:
+        confidence: [H, W] uint8, one of the CONFIDENCE_* labels above.
+    """
+    mask_bool = final_mask.astype(bool)
+    if fused_cam.shape != mask_bool.shape:
+        raise ValueError(f"fused_cam shape {fused_cam.shape} must match final_mask shape {mask_bool.shape}")
+
+    cam_threshold = float(np.percentile(fused_cam, cam_confident_percentile))
+    cam_confident = fused_cam >= cam_threshold
+
+    confidence = np.where(
+        mask_bool & cam_confident,
+        CONFIDENCE_FOREGROUND_CONFIDENT,
+        np.where(
+            mask_bool ^ cam_confident,
+            CONFIDENCE_FOREGROUND_UNCERTAIN,
+            CONFIDENCE_BACKGROUND,
+        ),
+    ).astype(np.uint8)
+
+    if boundary_width_px > 0 and mask_bool.any():
+        dilated = _binary_dilation(mask_bool, kernel_size=2 * boundary_width_px + 1).astype(bool)
+        eroded = ~_binary_dilation(~mask_bool, kernel_size=2 * boundary_width_px + 1).astype(bool)
+        boundary = dilated & ~eroded
+        confidence[boundary] = CONFIDENCE_BOUNDARY_UNCERTAIN
+
+    return confidence

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -17,8 +18,26 @@ if str(ROOT) not in sys.path:
 
 from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
 from datasets.factory import build_segmentation_dataset
-from models.losses import bce_dice_loss, dice_coefficient, iou_score
+from models.losses import bce_dice_loss, dice_coefficient, iou_score, weighted_bce_dice_loss
 from models.unet import UNet
+from pseudo.mask_selection import (
+    CONFIDENCE_BOUNDARY_UNCERTAIN,
+    CONFIDENCE_FOREGROUND_UNCERTAIN,
+)
+
+
+def split_mask_confidence(masks: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor | None]:
+    """masks is [B, 1, H, W] (no confidence map available/requested) or
+    [B, 2, H, W] (BTXRDSegmentationDataset's pred_confidence_dir channel-1
+    stacking, see datasets/btxrd.py). Returns (binary_mask, confidence_or_None)
+    with binary_mask always [B, 1, H, W], confidence [B, 1, H, W] float labels
+    0-3 (see pseudo/mask_selection.py's CONFIDENCE_* constants) or None.
+    """
+    if masks.shape[1] == 1:
+        return masks, None
+    if masks.shape[1] == 2:
+        return masks[:, 0:1], masks[:, 1:2]
+    raise ValueError(f"Expected mask tensor with 1 or 2 channels, got shape {tuple(masks.shape)}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,8 +64,27 @@ def parse_args() -> argparse.Namespace:
                         "GPU visible. Checkpoints are always saved without the DataParallel "
                         "'module.' prefix, so they load identically with or without this flag.")
     parser.add_argument("--early-stop-patience", type=int, default=0,
-                        help="Stop training if val_dice does not improve for this many consecutive "
-                        "epochs. 0 disables early stopping (always run the full --epochs).")
+                        help="Stop training if val_dice does not improve by at least --min-delta for "
+                        "this many consecutive epochs. 0 disables early stopping (always run the full "
+                        "--epochs). This project's own anatomy-aware design doc fixes this at 6 when "
+                        "training a WSSS pipeline off pseudo-mask val Dice -- pass "
+                        "--early-stop-patience 6 --min-delta 0.002 explicitly to match it (there is no "
+                        "--pipeline-profile mechanism in this script yet).")
+    parser.add_argument("--min-delta", type=float, default=0.0,
+                        help="Minimum val_dice improvement over the current best to count as progress, "
+                        "for both --early-stop-patience and --lr-scheduler-plateau. 0 (default) means "
+                        "any improvement, however tiny, resets the patience counter -- matching this "
+                        "script's original behavior before --min-delta existed.")
+    parser.add_argument("--lr-scheduler-plateau", action="store_true",
+                        help="Enable torch.optim.lr_scheduler.ReduceLROnPlateau on val_dice (mode="
+                        "'max'), reducing LR by --lr-scheduler-factor after --lr-scheduler-patience "
+                        "epochs without a >= --min-delta improvement. Off by default (matching prior "
+                        "behavior: a constant LR for the whole run) -- opt in for the anatomy-aware "
+                        "design doc's config (patience=2, factor=0.5, min_delta=0.002).")
+    parser.add_argument("--lr-scheduler-patience", type=int, default=2,
+                        help="Epochs without improvement before --lr-scheduler-plateau reduces LR.")
+    parser.add_argument("--lr-scheduler-factor", type=float, default=0.5,
+                        help="Multiplicative LR reduction factor for --lr-scheduler-plateau.")
     parser.add_argument("--train-pred-mask-root", type=Path, default=None,
                         help="btxrd only. Directory of pseudo-mask PNGs (generate_pseudo_masks.py's "
                         "masks/ output) for --train-split, one file per image named "
@@ -76,6 +114,47 @@ def parse_args() -> argparse.Namespace:
                         "built-in resume: without it, re-running after an interrupted session (e.g. "
                         "a disconnected Colab runtime) silently restarts from a fresh model AND "
                         "overwrites training_log.csv, discarding all prior epochs.")
+    parser.add_argument("--train-pred-confidence-root", type=Path, default=None,
+                        help="btxrd only. Directory of confidence-map PNGs (generate_pseudo_masks.py's "
+                        "--save-confidence-map confidence/ output, raw uint8 labels 0-3, see "
+                        "pseudo/mask_selection.py's CONFIDENCE_* constants) for --train-split, one "
+                        "file per image, matching --train-pred-mask-root's naming. Requires "
+                        "--train-pred-mask-root to also be set. Enables --boundary-ignore-loss and/or "
+                        "--confidence-weighted-loss.")
+    parser.add_argument("--val-pred-confidence-root", type=Path, default=None,
+                        help="Same as --train-pred-confidence-root but for --val-split.")
+    parser.add_argument("--boundary-ignore-loss", action="store_true",
+                        help="Exclude pixels labeled boundary-uncertain (CONFIDENCE_BOUNDARY_UNCERTAIN, "
+                        "see pseudo/mask_selection.py) from the BCE+Dice loss entirely -- SAM's own "
+                        "mask boundary is typically its least reliable region (this project's own "
+                        "oracle diagnostics), so training against it as if it were as trustworthy as "
+                        "the mask interior can teach the wrong edge location. Requires "
+                        "--train-pred-confidence-root.")
+    parser.add_argument("--confidence-weighted-loss", action="store_true",
+                        help="Down-weight foreground-uncertain pixels (CONFIDENCE_FOREGROUND_UNCERTAIN) "
+                        "in the BCE term by --confidence-uncertain-weight, instead of trusting every "
+                        "non-boundary pseudo-mask pixel equally. Requires --train-pred-confidence-root.")
+    parser.add_argument("--confidence-uncertain-weight", type=float, default=0.5,
+                        help="BCE weight multiplier for foreground-uncertain pixels when "
+                        "--confidence-weighted-loss is set (0=ignore them like boundary pixels, "
+                        "1=treat them as fully trusted, same as foreground-confident pixels).")
+    parser.add_argument("--consistency-weight", type=float, default=0.0,
+                        help="Weight for a weak/strong-augmentation consistency loss: two views of "
+                        "the same training image (weak=--augment's existing flip, strong=added "
+                        "photometric jitter) must agree on high-confidence pixels (see "
+                        "--consistency-confidence-threshold). 0 (default) disables it entirely -- "
+                        "no extra forward pass, unchanged behavior. Only meaningful during training "
+                        "(never applied to validation). This project's own anatomy-aware design doc "
+                        "(config.py's BTXRD_ANATOMY_PIPELINE) fixes this at 0.1 when training on "
+                        "anatomy-conditioned pseudo-masks -- pass --consistency-weight 0.1 explicitly "
+                        "to match it (there is no --pipeline-profile mechanism in this script yet, "
+                        "unlike train_classifier.py/generate_pseudo_masks.py).")
+    parser.add_argument("--consistency-confidence-threshold", type=float, default=0.80,
+                        help="Only penalize prediction disagreement between the weak/strong views on "
+                        "pixels where the weak view's predicted probability is >= this threshold or "
+                        "<= 1-this threshold (i.e. the model itself is already confident) -- "
+                        "penalizing disagreement on genuinely ambiguous pixels would inject noise "
+                        "rather than a useful regularizer.")
     return parser.parse_args()
 
 
@@ -92,6 +171,34 @@ def seed_everything(seed: int) -> None:
 def build_datasets(args: argparse.Namespace):
     if (args.train_pred_mask_root is not None or args.val_pred_mask_root is not None) and args.dataset != "btxrd":
         raise ValueError("--train-pred-mask-root/--val-pred-mask-root are only supported for --dataset btxrd")
+    if args.train_pred_confidence_root is not None and args.train_pred_mask_root is None:
+        raise ValueError("--train-pred-confidence-root requires --train-pred-mask-root")
+    if args.val_pred_confidence_root is not None and args.val_pred_mask_root is None:
+        raise ValueError("--val-pred-confidence-root requires --val-pred-mask-root")
+    if (args.boundary_ignore_loss or args.confidence_weighted_loss) and args.train_pred_confidence_root is None:
+        raise ValueError(
+            "--boundary-ignore-loss/--confidence-weighted-loss require --train-pred-confidence-root"
+        )
+    if args.train_pred_mask_root is not None and args.val_pred_mask_root is None:
+        # This project's own anatomy-aware WSSS design doc requires
+        # checkpoint selection/early-stopping/LR-plateau to be driven ONLY
+        # by pseudo-mask val Dice, never ground-truth polygon Dice -- but
+        # without --val-pred-mask-root, val_dataset falls back to rasterizing
+        # the GT polygon (see BTXRDSegmentationDataset's docstring), and
+        # best_val_dice/early-stopping/--lr-scheduler-plateau below are ALL
+        # keyed on that GT Dice. This is not rejected outright (GT Dice
+        # during training is still a legitimate thing to WATCH, e.g. for a
+        # supervised-oracle run), but silently doing this in a WSSS run
+        # would violate the design doc's separation between pipeline-
+        # internal validation and the final GT evaluation stage -- so it's
+        # surfaced loudly here instead.
+        print(
+            "WARNING: --train-pred-mask-root is set (training on pseudo-masks) but "
+            "--val-pred-mask-root is NOT set -- best_unet.pt/early-stopping/--lr-scheduler-plateau "
+            "will be selected using GROUND-TRUTH POLYGON val Dice, not pseudo-mask val Dice. If this "
+            "is a WSSS run, pass --val-pred-mask-root pointing at the same generate_pseudo_masks.py "
+            "output used for --val-split, or checkpoint selection is silently peeking at GT."
+        )
     train_dataset = build_segmentation_dataset(
         args.dataset,
         root=args.ram_root,
@@ -101,6 +208,7 @@ def build_datasets(args: argparse.Namespace):
         use_clahe=args.use_clahe,
         annotation_name=args.annotation_name,
         pred_mask_dir=args.train_pred_mask_root,
+        pred_confidence_dir=args.train_pred_confidence_root,
     )
     val_dataset = build_segmentation_dataset(
         args.dataset,
@@ -111,6 +219,7 @@ def build_datasets(args: argparse.Namespace):
         use_clahe=args.use_clahe,
         annotation_name=args.annotation_name,
         pred_mask_dir=args.val_pred_mask_root,
+        pred_confidence_dir=args.val_pred_confidence_root,
     )
     print(
         f"Loaded {args.dataset}: {len(train_dataset)} train images from {args.train_split}, "
@@ -147,8 +256,9 @@ def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32
     total_pixels = 0
     foreground_pixels = 0
     for batch_idx, (_, masks, _) in enumerate(loader):
-        total_pixels += masks.numel()
-        foreground_pixels += float((masks > 0.5).sum().item())
+        binary_mask, _ = split_mask_confidence(masks)
+        total_pixels += binary_mask.numel()
+        foreground_pixels += float((binary_mask > 0.5).sum().item())
         if batch_idx % 10 == 0:
             print(f"  pos_weight scan: batch {batch_idx}/{len(loader)}", flush=True)
     background_pixels = total_pixels - foreground_pixels
@@ -160,24 +270,118 @@ def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32
     return background_pixels / foreground_pixels
 
 
+_STRONG_PHOTOMETRIC_AUGMENT = None
+
+
+def _strong_photometric_augment():
+    """Lazily built torchvision ColorJitter+blur for --consistency-weight's
+    strong view -- kept photometric-only (no geometric change) so the SAME
+    pixel location in the weak and strong views should get the SAME
+    prediction; a geometric augmentation here would require warping one
+    prediction back before comparing them.
+    """
+    global _STRONG_PHOTOMETRIC_AUGMENT
+    if _STRONG_PHOTOMETRIC_AUGMENT is None:
+        from torchvision import transforms as tv_transforms
+        _STRONG_PHOTOMETRIC_AUGMENT = tv_transforms.Compose([
+            tv_transforms.ColorJitter(brightness=0.3, contrast=0.3),
+            tv_transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.5)),
+        ])
+    return _STRONG_PHOTOMETRIC_AUGMENT
+
+
+def consistency_loss(
+    logits_weak: torch.Tensor, logits_strong: torch.Tensor, confidence_threshold: float = 0.80
+) -> torch.Tensor:
+    """MSE between the strong view's predicted probabilities and the weak
+    view's (detached) predicted probabilities, restricted to pixels where the
+    weak view is already confident (prob >= threshold or <= 1-threshold).
+    Detaching the weak-view target means only the strong-view forward pass
+    receives a gradient from this term -- the weak view acts as a pseudo-
+    label source, not something this loss pulls toward the strong view.
+    Returns a differentiable 0.0 (safe to add into a total loss) if no pixel
+    in the batch meets the confidence threshold, rather than NaN from an
+    empty-tensor mean.
+    """
+    probs_weak = torch.sigmoid(logits_weak).detach()
+    probs_strong = torch.sigmoid(logits_strong)
+    confident_mask = (probs_weak >= confidence_threshold) | (probs_weak <= 1.0 - confidence_threshold)
+    if not confident_mask.any():
+        return logits_strong.sum() * 0.0
+    return F.mse_loss(probs_strong[confident_mask], probs_weak[confident_mask])
+
+
 def run_epoch(
-    model, loader, scaler, device, train: bool, optimizer=None, pos_weight: float | None = None
+    model, loader, scaler, device, train: bool, optimizer=None, pos_weight: float | None = None,
+    boundary_ignore_loss: bool = False,
+    confidence_weighted_loss: bool = False,
+    confidence_uncertain_weight: float = 0.5,
+    consistency_weight: float = 0.0,
+    consistency_confidence_threshold: float = 0.80,
 ) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
     total_dice = 0.0
     total_iou = 0.0
+    total_consistency = 0.0
     batches = 0
     model.train(train)
+    use_confidence_pixel_weight = boundary_ignore_loss or confidence_weighted_loss
+    use_consistency = train and consistency_weight > 0
 
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
     for images, masks, _ in progress:
         images = images.to(device)
         masks = masks.to(device)
+        binary_mask, confidence = split_mask_confidence(masks)
+
+        pixel_weight = None
+        if use_confidence_pixel_weight:
+            if confidence is None:
+                raise ValueError(
+                    "--boundary-ignore-loss/--confidence-weighted-loss require a confidence map "
+                    "(pass --train-pred-confidence-root/--val-pred-confidence-root); this batch's "
+                    "mask tensor has no second channel."
+                )
+            pixel_weight = torch.ones_like(binary_mask)
+            if boundary_ignore_loss:
+                pixel_weight[confidence == CONFIDENCE_BOUNDARY_UNCERTAIN] = 0.0
+            if confidence_weighted_loss:
+                # A boundary pixel that also happens to be foreground-uncertain
+                # keeps weight 0 from the line above -- boundary_ignore_loss's
+                # exclusion always wins over confidence_weighted_loss's partial
+                # down-weighting, since 0 is already the strictest possible weight.
+                uncertain_mask = confidence == CONFIDENCE_FOREGROUND_UNCERTAIN
+                pixel_weight[uncertain_mask] = torch.minimum(
+                    pixel_weight[uncertain_mask],
+                    torch.full_like(pixel_weight[uncertain_mask], confidence_uncertain_weight),
+                )
 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
-                loss = bce_dice_loss(logits, masks, pos_weight=pos_weight)
+                if pixel_weight is not None:
+                    loss = weighted_bce_dice_loss(logits, binary_mask, pixel_weight, pos_weight=pos_weight)
+                else:
+                    loss = bce_dice_loss(logits, binary_mask, pos_weight=pos_weight)
+
+                consistency_value = 0.0
+                if use_consistency:
+                    with torch.no_grad():
+                        strong_images = _strong_photometric_augment()(images)
+                    # A SECOND, fully independent forward pass through model
+                    # (no activation sharing with the `logits = model(images)`
+                    # forward above) -- --consistency-weight > 0 roughly
+                    # doubles this batch's compute/memory, not just adds a
+                    # cheap extra loss term. consistency_loss() detaches the
+                    # weak view's (logits, from the first pass) probabilities
+                    # internally, so only THIS second pass receives a
+                    # gradient from the consistency term.
+                    logits_strong = model(strong_images)
+                    consistency = consistency_loss(
+                        logits, logits_strong, confidence_threshold=consistency_confidence_threshold
+                    )
+                    loss = loss + consistency_weight * consistency
+                    consistency_value = consistency.item()
 
             if train:
                 optimizer.zero_grad(set_to_none=True)
@@ -185,17 +389,22 @@ def run_epoch(
                 scaler.step(optimizer)
                 scaler.update()
 
-        dice = dice_coefficient(logits.detach(), masks.detach())
-        iou = iou_score(logits.detach(), masks.detach())
+        dice = dice_coefficient(logits.detach(), binary_mask.detach())
+        iou = iou_score(logits.detach(), binary_mask.detach())
         total_loss += loss.item()
         total_dice += dice.item()
         total_iou += iou.item()
+        total_consistency += consistency_value
         batches += 1
-        progress.set_postfix(loss=loss.item(), dice=dice.item(), iou=iou.item())
+        progress.set_postfix(loss=loss.item(), dice=dice.item(), iou=iou.item(), consistency=consistency_value)
 
     if batches == 0:
-        return 0.0, {"dice": 0.0, "iou": 0.0}
-    return total_loss / batches, {"dice": total_dice / batches, "iou": total_iou / batches}
+        return 0.0, {"dice": 0.0, "iou": 0.0, "consistency": 0.0}
+    return total_loss / batches, {
+        "dice": total_dice / batches,
+        "iou": total_iou / batches,
+        "consistency": total_consistency / batches,
+    }
 
 
 def save_checkpoint(
@@ -240,6 +449,19 @@ def main() -> None:
     model = UNet(in_channels=3, out_channels=1, base_channels=64).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
+    # Not saved/restored across --resume-from: its internal "best"/
+    # "num_bad_epochs" state always restarts fresh on resume, so a resumed
+    # run may reduce LR earlier/later than an uninterrupted one would have.
+    # Only the trained weights/optimizer momentum matter for correctness;
+    # this only affects the LR schedule's timing, not correctness.
+    lr_scheduler = (
+        torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="max", factor=args.lr_scheduler_factor,
+            patience=args.lr_scheduler_patience, threshold=max(args.min_delta, 1e-8),
+            threshold_mode="abs",
+        )
+        if args.lr_scheduler_plateau else None
+    )
 
     num_gpus = torch.cuda.device_count()
     use_multi_gpu = args.multi_gpu and device.type == "cuda" and num_gpus > 1
@@ -306,13 +528,37 @@ def main() -> None:
     if args.resume_from is None or not history_path.exists():
         with history_path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
-            writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
+            writer.writerow([
+                "epoch", "train_loss", "train_dice", "train_iou", "train_consistency",
+                "val_loss", "val_dice", "val_iou",
+            ])
 
     for epoch in range(start_epoch, args.epochs + 1):
         train_loss, train_metrics = run_epoch(
-            model, train_loader, scaler, device, train=True, optimizer=optimizer, pos_weight=pos_weight
+            model, train_loader, scaler, device, train=True, optimizer=optimizer, pos_weight=pos_weight,
+            boundary_ignore_loss=args.boundary_ignore_loss,
+            confidence_weighted_loss=args.confidence_weighted_loss,
+            confidence_uncertain_weight=args.confidence_uncertain_weight,
+            consistency_weight=args.consistency_weight,
+            consistency_confidence_threshold=args.consistency_confidence_threshold,
         )
+        # Validation always uses the plain, unweighted loss/Dice/IoU against
+        # the FULL pseudo-mask -- --boundary-ignore-loss/--confidence-
+        # weighted-loss only change what the optimizer is trained against,
+        # not how "good" a checkpoint looks. Consistency is also train-only
+        # (see use_consistency's `train and ...` gate in run_epoch): applying
+        # a stochastic strong-augmentation pass to validation would make
+        # val_loss non-deterministic across epochs for no benefit, since
+        # early-stopping/best-checkpoint selection here is keyed on val_dice,
+        # not val_loss.
         val_loss, val_metrics = run_epoch(model, val_loader, scaler, device, train=False, pos_weight=pos_weight)
+
+        if lr_scheduler is not None:
+            previous_lr = optimizer.param_groups[0]["lr"]
+            lr_scheduler.step(val_metrics["dice"])
+            new_lr = optimizer.param_groups[0]["lr"]
+            if new_lr < previous_lr:
+                print(f"  --> LR reduced: {previous_lr:.2e} -> {new_lr:.2e} (val_dice plateaued)")
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -322,15 +568,19 @@ def main() -> None:
                     train_loss,
                     train_metrics["dice"],
                     train_metrics["iou"],
+                    train_metrics["consistency"],
                     val_loss,
                     val_metrics["dice"],
                     val_metrics["iou"],
                 ]
             )
 
+        consistency_suffix = (
+            f" train_consistency={train_metrics['consistency']:.4f}" if args.consistency_weight > 0 else ""
+        )
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_dice={train_metrics['dice']:.4f} "
-            f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f}"
+            f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f}{consistency_suffix}"
         )
 
         # Update best_val_dice for THIS epoch before saving last_unet.pt, so its
@@ -338,20 +588,31 @@ def main() -> None:
         # rather than lagging one epoch behind -- otherwise resuming from
         # last_unet.pt reads a stale best_metric and can let a worse later
         # epoch overwrite best_unet.pt.
-        if val_metrics["dice"] > best_val_dice:
+        #
+        # min_delta gates whether this epoch resets the early-stopping
+        # patience counter (a tiny, noise-level uptick no longer counts as
+        # "progress"), but best_unet.pt/best_val_dice still track the true
+        # best-ever value regardless of min_delta -- min_delta changes when
+        # to STOP, never which checkpoint is "best" so far.
+        is_new_best = val_metrics["dice"] > best_val_dice
+        is_meaningful_improvement = val_metrics["dice"] > best_val_dice + args.min_delta
+        if is_new_best:
             best_val_dice = val_metrics["dice"]
-            epochs_without_improvement = 0
             save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
             save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
             print(f"--> Saved new best model with Dice = {best_val_dice:.4f}")
         else:
-            epochs_without_improvement += 1
             save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
+        if is_meaningful_improvement:
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
             print(
-                f"Early stopping: val_dice did not improve for {epochs_without_improvement} epochs "
-                f"(patience={args.early_stop_patience}). Best val_dice={best_val_dice:.4f}."
+                f"Early stopping: val_dice did not improve by >= min_delta={args.min_delta} for "
+                f"{epochs_without_improvement} epochs (patience={args.early_stop_patience}). "
+                f"Best val_dice={best_val_dice:.4f}."
             )
             break
 

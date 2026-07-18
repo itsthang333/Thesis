@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config import (
+    BTXRD_ANATOMY_PIPELINE,
     BTXRD_BEST_PIPELINE,
     BTXRD_HYBRID_PIPELINE,
     ClassifierConfig,
@@ -25,6 +26,7 @@ from config import (
     SUPPORTED_DATASETS,
 )
 from datasets.factory import build_classification_dataset
+from models.anatomy_contrastive import RegionMatchedBatchSampler, anatomy_contrastive_loss
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from models.puzzle_cam import puzzle_alpha as puzzle_alpha_schedule, puzzle_cam_consistency_loss
@@ -41,7 +43,7 @@ def parse_args() -> argparse.Namespace:
         "--pipeline-profile",
         type=str,
         default="default",
-        choices=["default", "btxrd_best", "btxrd_hybrid"],
+        choices=["default", "btxrd_best", "btxrd_hybrid", "btxrd_anatomy"],
         help=(
             "btxrd_best freezes the classifier setup paired with the selected "
             "WSSS pipeline: 10-class tumor_type CE at 320 px, batch 4, 6 epochs, "
@@ -50,7 +52,11 @@ def parse_args() -> argparse.Namespace:
             "stopping and PuzzleCAM + Teacher-Student attention distillation "
             "enabled, combining btxrd_best's downstream CAM/SAM/selection "
             "recipe (higher oracle_dice) with the other pipeline's classifier "
-            "training recipe (higher val_f1)."
+            "training recipe (higher val_f1). btxrd_anatomy extends btxrd_hybrid "
+            "with the anatomy-region head, region-conditioned tumor head, and "
+            "anatomy-matched contrastive loss at their fixed design-doc weights "
+            "(0.2/0.1/0.05, 3-epoch contrastive warmup) -- see config.py's "
+            "BtxrdAnatomyPipelineConfig."
         ),
     )
     parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
@@ -123,6 +129,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_f1 does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
+    parser.add_argument("--anatomy-contrastive-alpha", type=float, default=0.0,
+                        help="Max weight for the anatomy-matched contrastive loss (see "
+                        "models/anatomy_contrastive.py). 0 (default) disables it entirely: no "
+                        "region head, no RegionMatchedBatchSampler, plain shuffled DataLoader, "
+                        "unchanged behavior. Only applies to the single-label ('tumor_type') task "
+                        "and requires --dataset btxrd (anatomy_region is only populated by "
+                        "datasets/btxrd.py's loader). Held at 0 for the first "
+                        "--anatomy-contrastive-warmup-epochs epochs (classifier trains on CE + "
+                        "region losses alone), then ramps linearly up to this value over the "
+                        "remaining epochs -- an untrained backbone's embedding space is not yet "
+                        "meaningful, so pulling/pushing pairs in it from epoch 1 risks distorting "
+                        "early representation learning before the tumor_type head has anything "
+                        "useful to build on.")
+    parser.add_argument("--anatomy-contrastive-warmup-epochs", type=int, default=3,
+                        help="Number of initial epochs to train with the anatomy contrastive loss "
+                        "held at 0 (see --anatomy-contrastive-alpha), before it ramps in. Only "
+                        "meaningful when --anatomy-contrastive-alpha > 0.")
+    parser.add_argument("--anatomy-region-alpha", type=float, default=0.0,
+                        help="Weight for the auxiliary region-classification CE loss (predicting "
+                        "upper limb/lower limb/pelvis from pooled features, see "
+                        "models/classifier.py's region_classifier head). 0 (default) disables it "
+                        "and the head is never constructed. Requires --dataset btxrd.")
+    parser.add_argument("--anatomy-region-tumor-alpha", type=float, default=0.0,
+                        help="Weight for the region-conditioned tumor-vs-normal BCE loss: one "
+                        "binary head per anatomy region (models/classifier.py's "
+                        "region_tumor_classifiers), each supervised only by samples from its own "
+                        "region, so 'normal' means 'normal for this specific region' rather than "
+                        "one global normal concept spanning upper limb/lower limb/pelvis. 0 "
+                        "(default) disables it and the heads are never constructed. Requires "
+                        "--dataset btxrd and target_columns=['tumor_type'].")
     args = parser.parse_args()
     args._explicit_options = {
         token.split("=", 1)[0]
@@ -146,7 +182,11 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if args.dataset != "btxrd":
         raise ValueError(f"--pipeline-profile {args.pipeline_profile} requires --dataset btxrd")
 
-    profile = BTXRD_HYBRID_PIPELINE if args.pipeline_profile == "btxrd_hybrid" else BTXRD_BEST_PIPELINE
+    profile = (
+        BTXRD_ANATOMY_PIPELINE if args.pipeline_profile == "btxrd_anatomy"
+        else BTXRD_HYBRID_PIPELINE if args.pipeline_profile == "btxrd_hybrid"
+        else BTXRD_BEST_PIPELINE
+    )
     name = args.pipeline_profile
     explicit = getattr(args, "_explicit_options", set())
 
@@ -180,16 +220,50 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         raise ValueError(f"--pipeline-profile {name} fixes CLAHE off")
     if "--radimagenet-checkpoint" in explicit and args.radimagenet_checkpoint is not None:
         raise ValueError(f"--pipeline-profile {name} fixes ImageNet normalization/pretraining")
-    if name == "btxrd_hybrid":
+    if name in ("btxrd_hybrid", "btxrd_anatomy"):
         # btxrd_hybrid deliberately trains longer with early stopping enabled
         # (see config.py's BtxrdHybridPipelineConfig) instead of btxrd_best's
-        # fixed 6-epoch / no-early-stop recipe.
+        # fixed 6-epoch / no-early-stop recipe. btxrd_anatomy inherits this
+        # (BtxrdAnatomyPipelineConfig extends BtxrdHybridPipelineConfig).
         require_or_set("--early-stop-patience", "early_stop_patience", profile.classifier_early_stop_patience)
         require_or_set("--teacher-warmup-epochs", "teacher_warmup_epochs", profile.teacher_warmup_epochs)
         require_or_set("--teacher-ema-decay", "teacher_ema_decay", profile.teacher_ema_decay)
         require_or_set("--teacher-cam-percentile", "teacher_cam_percentile", profile.teacher_cam_percentile)
-    elif "--early-stop-patience" in explicit and args.early_stop_patience != 0:
-        raise ValueError(f"--pipeline-profile {name} fixes early stopping off")
+    else:
+        if "--early-stop-patience" in explicit and args.early_stop_patience != 0:
+            raise ValueError(f"--pipeline-profile {name} fixes early stopping off")
+    if name == "btxrd_anatomy":
+        # Fixed weights from this project's own anatomy-aware design doc (see
+        # config.py's BtxrdAnatomyPipelineConfig) -- the CLI flags stay
+        # available for A/B ablation outside this profile (their own
+        # defaults are 0.0/off), but selecting this profile pins them to the
+        # exact values the design doc specifies rather than leaving anatomy
+        # losses disabled by the CLI's off-by-default 0.0.
+        require_or_set(
+            "--anatomy-region-alpha", "anatomy_region_alpha", profile.classifier_anatomy_region_alpha
+        )
+        require_or_set(
+            "--anatomy-region-tumor-alpha", "anatomy_region_tumor_alpha",
+            profile.classifier_anatomy_region_tumor_alpha,
+        )
+        require_or_set(
+            "--anatomy-contrastive-alpha", "anatomy_contrastive_alpha",
+            profile.classifier_anatomy_contrastive_alpha,
+        )
+        require_or_set(
+            "--anatomy-contrastive-warmup-epochs", "anatomy_contrastive_warmup_epochs",
+            profile.classifier_anatomy_contrastive_warmup_epochs,
+        )
+    elif (
+        ("--anatomy-region-alpha" in explicit and args.anatomy_region_alpha != 0.0)
+        or ("--anatomy-region-tumor-alpha" in explicit and args.anatomy_region_tumor_alpha != 0.0)
+        or ("--anatomy-contrastive-alpha" in explicit and args.anatomy_contrastive_alpha != 0.0)
+    ):
+        raise ValueError(
+            f"--pipeline-profile {name} fixes anatomy losses off (use --pipeline-profile "
+            "btxrd_anatomy, or --pipeline-profile default with these flags set explicitly, "
+            "to enable them)"
+        )
     args.augment = False
     args.random_erasing = False
     if "--output-dir" not in explicit:
@@ -339,6 +413,10 @@ def run_epoch_multiclass(
     teacher=None,
     attention_alpha: float = 0.0,
     teacher_percentile: float = 96.0,
+    anatomy_region_by_image_id: dict[str, int] | None = None,
+    anatomy_contrastive_alpha: float = 0.0,
+    anatomy_region_alpha: float = 0.0,
+    anatomy_region_tumor_alpha: float = 0.0,
 ) -> tuple[float, dict[str, float], torch.Tensor]:
     """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot).
 
@@ -361,16 +439,27 @@ def run_epoch_multiclass(
     batches = 0
     model.train(train)
 
+    use_anatomy_losses = train and (
+        anatomy_contrastive_alpha > 0 or anatomy_region_alpha > 0 or anatomy_region_tumor_alpha > 0
+    )
+
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
-    for images, targets, _ in progress:
+    for images, targets, image_ids in progress:
         images = images.to(device)
         targets = targets.to(device)  # [B], long class indices -- do NOT unsqueeze
 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 need_features = train and teacher is not None and attention_alpha > 0
-                if need_features:
+                need_embedding = use_anatomy_losses
+                if need_features and need_embedding:
+                    logits, student_features, pooled_embedding = model(
+                        images, return_features=True, return_embedding=True
+                    )
+                elif need_features:
                     logits, student_features = model(images, return_features=True)
+                elif need_embedding:
+                    logits, pooled_embedding = model(images, return_embedding=True)
                 else:
                     logits = model(images)
                 # forward_features now forces fp32 through the backbone, so
@@ -407,6 +496,9 @@ def run_epoch_multiclass(
 
                 att_loss_value = 0.0
                 teacher_conf_value = 0.0
+                anatomy_contrastive_value = 0.0
+                anatomy_region_value = 0.0
+                anatomy_region_tumor_value = 0.0
                 if need_features:
                     # L_attention: student's own CAM vs. the teacher's refined
                     # soft target (frozen EMA teacher -> LayerCAM -> percentile
@@ -430,6 +522,47 @@ def run_epoch_multiclass(
                     loss = loss + attention_alpha * att_loss
                     teacher_conf_value = teacher_conf.item()
                     att_loss_value = att_loss.item()
+
+                if use_anatomy_losses:
+                    anatomy_region_batch = torch.tensor(
+                        [anatomy_region_by_image_id[image_id] for image_id in image_ids],
+                        dtype=torch.long, device=device,
+                    )
+                    if anatomy_contrastive_alpha > 0:
+                        contrastive_loss = anatomy_contrastive_loss(
+                            pooled_embedding, targets, anatomy_region_batch
+                        )
+                        loss = loss + anatomy_contrastive_alpha * contrastive_loss
+                        anatomy_contrastive_value = contrastive_loss.item()
+                    if anatomy_region_alpha > 0:
+                        # Only samples with a known region (see
+                        # datasets/btxrd.py's _row_anatomy_region_index) can
+                        # supervise this head -- -1 has no valid CE target.
+                        known_mask = anatomy_region_batch != -1
+                        if known_mask.any():
+                            region_logits = model.forward_region_logits(pooled_embedding[known_mask])
+                            region_loss = torch.nn.functional.cross_entropy(
+                                region_logits, anatomy_region_batch[known_mask]
+                            )
+                            loss = loss + anatomy_region_alpha * region_loss
+                            anatomy_region_value = region_loss.item()
+                    if anatomy_region_tumor_alpha > 0:
+                        # Region-conditioned tumor-vs-normal BCE: class 0 in
+                        # the tumor_type head is "normal" for every region,
+                        # so tumor_binary_target = (tumor_type != 0) is the
+                        # right binary target regardless of which region a
+                        # sample belongs to.
+                        known_mask = anatomy_region_batch != -1
+                        if known_mask.any():
+                            region_tumor_logits = model.forward_region_tumor_logits(
+                                pooled_embedding[known_mask], anatomy_region_batch[known_mask]
+                            )
+                            tumor_binary_target = (targets[known_mask] != 0).float()
+                            region_tumor_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                                region_tumor_logits, tumor_binary_target
+                            )
+                            loss = loss + anatomy_region_tumor_alpha * region_tumor_loss
+                            anatomy_region_tumor_value = region_tumor_loss.item()
 
             if torch.isnan(loss) or torch.isinf(loss):
                 print(f"  [WARNING] Skipping batch with non-finite loss (a rare pathological "
@@ -463,7 +596,8 @@ def run_epoch_multiclass(
         batch_metrics = metrics_from_multiclass_confusion(batch_confusion)
         progress.set_postfix(loss=cls_loss.item(), macro_f1=batch_metrics["f1"],
                               re_loss=re_loss_value, p_cls_loss=p_cls_loss_value, att_loss=att_loss_value,
-                              teacher_conf=teacher_conf_value)
+                              teacher_conf=teacher_conf_value, anat_con=anatomy_contrastive_value,
+                              anat_reg=anatomy_region_value, anat_reg_tum=anatomy_region_tumor_value)
 
         if train and teacher is not None:
             teacher.update(model)
@@ -486,6 +620,8 @@ def save_checkpoint(
     normalization: str = "imagenet",
     train_augment: bool = False,
     pipeline_profile: str = "default",
+    num_anatomy_regions: int | None = None,
+    region_conditioned_tumor_head: bool = False,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -510,6 +646,15 @@ def save_checkpoint(
             "normalization": normalization,
             "train_augment": bool(train_augment),
             "pipeline_profile": pipeline_profile,
+            # Consumers must read these to know whether model_state_dict
+            # contains region_classifier.*/region_tumor_classifiers.*
+            # weights before re-constructing DenseNet121AnatomyClassifier
+            # with matching num_anatomy_regions/region_conditioned_tumor_head
+            # -- constructing without them and load_state_dict(strict=True)
+            # would fail with unexpected/missing keys. None/False (defaults)
+            # match every checkpoint saved before these heads existed.
+            "num_anatomy_regions": num_anatomy_regions,
+            "region_conditioned_tumor_head": bool(region_conditioned_tumor_head),
         },
         path,
     )
@@ -642,7 +787,40 @@ def main() -> None:
         normalization=normalization,
     )
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
+    use_anatomy_contrastive = args.anatomy_contrastive_alpha > 0
+    use_anatomy_region_tumor_head = args.anatomy_region_tumor_alpha > 0
+    # NOTE: anatomy_contrastive_loss() only needs each sample's raw
+    # anatomy_region integer (a dataset field, via anatomy_region_by_image_id
+    # below) and pooled_features -- it does NOT read the region_classifier
+    # head's output, so use_anatomy_contrastive alone must NOT force this
+    # head into existence. Constructing it anyway would produce a checkpoint
+    # with a region_classifier that's never supervised by anatomy_region_alpha
+    # (still random-initialized at the end of training) and no downstream
+    # code even calls forward_region_logits() in that case -- pure waste and
+    # a misleading checkpoint if anyone later assumes a present head =
+    # a trained head.
+    use_anatomy_region_head = args.anatomy_region_alpha > 0
+    any_anatomy_flag = use_anatomy_contrastive or args.anatomy_region_alpha > 0 or use_anatomy_region_tumor_head
+    if any_anatomy_flag and args.dataset != "btxrd":
+        raise ValueError(
+            "--anatomy-contrastive-alpha/--anatomy-region-alpha/--anatomy-region-tumor-alpha "
+            "require --dataset btxrd"
+        )
+    if any_anatomy_flag and target_columns != ["tumor_type"]:
+        raise ValueError(
+            "--anatomy-contrastive-alpha/--anatomy-region-alpha/--anatomy-region-tumor-alpha require "
+            "target_columns=['tumor_type'] (run_epoch, the multi-label/binary-tumor path, does not "
+            "implement these losses)"
+        )
+
+    if use_anatomy_contrastive:
+        # RegionMatchedBatchSampler guarantees every batch has region-matched
+        # tumor/normal pairs, which the contrastive loss depends on -- a plain
+        # shuffled batch would frequently have zero valid anchors for it.
+        train_batch_sampler = RegionMatchedBatchSampler(train_dataset.samples, batch_size=args.batch_size)
+        train_loader = DataLoader(train_dataset, batch_sampler=train_batch_sampler, num_workers=args.num_workers, pin_memory=True)
+    else:
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -659,10 +837,14 @@ def main() -> None:
     else:
         num_classes = len(target_columns)
 
+    from datasets.btxrd import ANATOMY_REGION_COLUMNS
+
     model = DenseNet121AnatomyClassifier(
         num_classes=num_classes,
         pretrained=not args.no_pretrained,
         radimagenet_checkpoint=args.radimagenet_checkpoint,
+        num_anatomy_regions=len(ANATOMY_REGION_COLUMNS) if use_anatomy_region_head else None,
+        region_conditioned_tumor_head=args.anatomy_region_tumor_alpha > 0,
     ).to(device)
 
     if is_multiclass:
@@ -717,6 +899,10 @@ def main() -> None:
                 "random_erasing": args.random_erasing,
                 "puzzle_alpha_max": args.puzzle_alpha_max,
                 "attention_alpha_max": args.attention_alpha_max,
+                "anatomy_contrastive_alpha": args.anatomy_contrastive_alpha,
+                "anatomy_contrastive_warmup_epochs": args.anatomy_contrastive_warmup_epochs,
+                "anatomy_region_alpha": args.anatomy_region_alpha,
+                "anatomy_region_tumor_alpha": args.anatomy_region_tumor_alpha,
                 "preprocessing_mode": args.preprocessing_mode,
                 "normalization": normalization,
             },
@@ -743,9 +929,20 @@ def main() -> None:
                 "val_tp", "val_fp", "val_fn", "val_tn",
             ])
 
+    anatomy_region_by_image_id: dict[str, int] | None = None
+    if any_anatomy_flag:
+        anatomy_region_by_image_id = {
+            str(sample["image_id"]): int(sample["anatomy_region"]) for sample in train_dataset.samples
+        }
+        anatomy_region_by_image_id.update(
+            {str(sample["image_id"]): int(sample["anatomy_region"]) for sample in val_dataset.samples}
+        )
+
     teacher = None  # created once warmup ends; stays None (attention loss disabled) until then
 
     for epoch in range(1, args.epochs + 1):
+        if use_anatomy_contrastive:
+            train_batch_sampler.set_epoch(epoch)
         if is_multiclass:
             current_puzzle_alpha = (
                 puzzle_alpha_schedule(epoch, args.epochs, alpha_max=args.puzzle_alpha_max)
@@ -776,11 +973,29 @@ def main() -> None:
                     epochs_since_warmup, remaining_epochs, alpha_max=args.attention_alpha_max
                 )
 
+            current_anatomy_contrastive_alpha = 0.0
+            if use_anatomy_contrastive and epoch > args.anatomy_contrastive_warmup_epochs:
+                # Held at 0 through warmup (see --anatomy-contrastive-alpha's
+                # help text): the backbone's embedding space is untrained
+                # noise for the first few epochs, and pulling/pushing pairs
+                # in it before the tumor_type head has learned anything
+                # useful risks distorting early representation learning.
+                epochs_since_contrastive_warmup = epoch - args.anatomy_contrastive_warmup_epochs
+                remaining_contrastive_epochs = args.epochs - args.anatomy_contrastive_warmup_epochs
+                current_anatomy_contrastive_alpha = puzzle_alpha_schedule(
+                    epochs_since_contrastive_warmup, remaining_contrastive_epochs,
+                    alpha_max=args.anatomy_contrastive_alpha,
+                )
+
             train_loss, train_metrics, _train_confusion = run_epoch_multiclass(
                 model, train_loader, criterion, optimizer, scaler, device, num_classes, train=True,
                 puzzle_alpha=current_puzzle_alpha,
                 teacher=teacher, attention_alpha=current_attention_alpha,
                 teacher_percentile=args.teacher_cam_percentile,
+                anatomy_region_by_image_id=anatomy_region_by_image_id,
+                anatomy_contrastive_alpha=current_anatomy_contrastive_alpha,
+                anatomy_region_alpha=args.anatomy_region_alpha,
+                anatomy_region_tumor_alpha=args.anatomy_region_tumor_alpha,
             )
             val_loss, val_metrics, val_confusion = run_epoch_multiclass(
                 model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False
@@ -830,11 +1045,14 @@ def main() -> None:
                 f" attention_alpha={current_attention_alpha:.4f}"
                 f" teacher={'active' if teacher is not None else 'warmup'}"
             )
+        anatomy_suffix = ""
+        if is_multiclass and use_anatomy_contrastive:
+            anatomy_suffix = f" anatomy_contrastive_alpha={current_anatomy_contrastive_alpha:.4f}"
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
             f"train_{'macro_f1' if is_multiclass else 'f1'}={train_metrics['f1']:.4f} | "
             f"val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
-            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}{puzzle_suffix}{teacher_suffix}"
+            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}{puzzle_suffix}{teacher_suffix}{anatomy_suffix}"
         )
         if is_multiclass:
             from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
@@ -857,6 +1075,8 @@ def main() -> None:
             normalization=normalization,
             train_augment=args.augment,
             pipeline_profile=args.pipeline_profile,
+            num_anatomy_regions=len(ANATOMY_REGION_COLUMNS) if use_anatomy_region_head else None,
+            region_conditioned_tumor_head=use_anatomy_region_tumor_head,
         )
         if val_metrics["f1"] > best_val_f1:
             best_val_f1 = val_metrics["f1"]
@@ -867,6 +1087,8 @@ def main() -> None:
                 normalization=normalization,
                 train_augment=args.augment,
                 pipeline_profile=args.pipeline_profile,
+                num_anatomy_regions=len(ANATOMY_REGION_COLUMNS) if use_anatomy_region_head else None,
+                region_conditioned_tumor_head=use_anatomy_region_tumor_head,
             )
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:

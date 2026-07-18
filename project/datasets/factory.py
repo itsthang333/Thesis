@@ -66,11 +66,14 @@ def build_segmentation_dataset(
     use_clahe: bool = False,
     annotation_name: str = "_annotations_bone_rle.coco.json",
     pred_mask_dir: str | Path | None = None,
+    pred_confidence_dir: str | Path | None = None,
 ):
     dataset = _check_dataset_name(dataset)
     if dataset == "ramh1200":
         if pred_mask_dir is not None:
             raise ValueError("pred_mask_dir is only supported for dataset='btxrd'")
+        if pred_confidence_dir is not None:
+            raise ValueError("pred_confidence_dir is only supported for dataset='btxrd'")
         return RAMH1200SegmentationDataset(
             root=root,
             split=split,
@@ -86,4 +89,5 @@ def build_segmentation_dataset(
         augment=augment,
         use_clahe=use_clahe,
         pred_mask_dir=pred_mask_dir,
+        pred_confidence_dir=pred_confidence_dir,
     )

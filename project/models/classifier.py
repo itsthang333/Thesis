@@ -46,8 +46,33 @@ class DenseNet121AnatomyClassifier(nn.Module):
         pretrained: bool = True,
         dropout: float = 0.2,
         radimagenet_checkpoint: str | Path | None = None,
+        num_anatomy_regions: int | None = None,
+        region_conditioned_tumor_head: bool = False,
     ) -> None:
+        """num_anatomy_regions: when set, adds a second linear head
+        (self.region_classifier) predicting the coarse anatomy region
+        (upper limb / lower limb / pelvis, see datasets/btxrd.py's
+        ANATOMY_REGION_COLUMNS) from the same pooled backbone features as
+        the main tumor_type head. This auxiliary head has no effect on the
+        main classifier (self.classifier, self.features) that LayerCAM and
+        PuzzleCAM/Teacher-Student hook into directly by attribute name --
+        it is purely additive. None (default) disables it entirely,
+        matching prior behavior exactly.
+
+        region_conditioned_tumor_head: when True (requires
+        num_anatomy_regions to also be set), adds one binary
+        tumor-vs-normal linear head PER anatomy region
+        (self.region_tumor_classifiers[r]), instead of a single global
+        normal class. This lets a sample's loss and CAM evidence be
+        anchored to "normal for its own region" rather than one shared
+        normal concept spanning upper limb/lower limb/pelvis anatomy --
+        see anatomy_conditioned_cam_score() in models/layercam.py for how
+        this feeds anatomy-conditioned CAM. False (default) disables it
+        entirely, matching prior behavior exactly.
+        """
         super().__init__()
+        if region_conditioned_tumor_head and num_anatomy_regions is None:
+            raise ValueError("region_conditioned_tumor_head=True requires num_anatomy_regions to be set")
         if radimagenet_checkpoint is not None:
             backbone = densenet121(weights=None)
             state_dict = load_radimagenet_densenet121_state_dict(radimagenet_checkpoint)
@@ -66,6 +91,18 @@ class DenseNet121AnatomyClassifier(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(p=dropout)
         self.classifier = nn.Linear(self.classifier_input_features, num_classes)
+        self.region_classifier = (
+            nn.Linear(self.classifier_input_features, num_anatomy_regions)
+            if num_anatomy_regions is not None
+            else None
+        )
+        self.region_tumor_classifiers = (
+            nn.ModuleList(
+                [nn.Linear(self.classifier_input_features, 1) for _ in range(num_anatomy_regions)]
+            )
+            if region_conditioned_tumor_head
+            else None
+        )
 
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         # Force fp32 through the backbone regardless of an enclosing
@@ -83,10 +120,55 @@ class DenseNet121AnatomyClassifier(nn.Module):
             x = torch.relu(x)
         return x
 
-    def forward(self, x: torch.Tensor, return_features: bool = False):
+    def forward(self, x: torch.Tensor, return_features: bool = False, return_embedding: bool = False):
         features = self.forward_features(x)
         pooled = self.avgpool(features).flatten(1)
         logits = self.classifier(self.dropout(pooled))
+        outputs: tuple = (logits,)
         if return_features:
-            return logits, features
+            outputs = outputs + (features,)
+        if return_embedding:
+            # Undropped pooled features, for anatomy-matched contrastive loss
+            # (models/anatomy_contrastive.py) -- dropout is a training-time
+            # regularizer for the classification head, not something that
+            # should perturb the embedding space two samples are compared in.
+            outputs = outputs + (pooled,)
+        return outputs[0] if len(outputs) == 1 else outputs
+
+    def forward_region_logits(self, pooled_features: torch.Tensor) -> torch.Tensor:
+        """Auxiliary region-classification logits from pooled backbone
+        features already computed by forward(..., return_embedding=True).
+        Raises if num_anatomy_regions was not set at construction time.
+        """
+        if self.region_classifier is None:
+            raise RuntimeError(
+                "forward_region_logits() called but this model was constructed with "
+                "num_anatomy_regions=None -- no region_classifier head exists."
+            )
+        return self.region_classifier(self.dropout(pooled_features))
+
+    def forward_region_tumor_logits(
+        self, pooled_features: torch.Tensor, anatomy_region: torch.Tensor
+    ) -> torch.Tensor:
+        """Per-sample binary tumor-vs-normal logit, using each sample's OWN
+        region's binary head (see region_conditioned_tumor_head in __init__).
+
+        anatomy_region: [B] long tensor, index into ANATOMY_REGION_COLUMNS
+        (datasets/btxrd.py). Every entry must be >= 0 (a known region) --
+        callers should filter out anatomy_region == -1 samples first, same
+        as forward_region_logits's caller does for the region CE loss.
+
+        Returns: [B] logits (one per sample, from that sample's region head).
+        """
+        if self.region_tumor_classifiers is None:
+            raise RuntimeError(
+                "forward_region_tumor_logits() called but this model was constructed with "
+                "region_conditioned_tumor_head=False -- no region_tumor_classifiers exist."
+            )
+        dropped = self.dropout(pooled_features)
+        logits = torch.zeros(pooled_features.shape[0], device=pooled_features.device, dtype=pooled_features.dtype)
+        for region_index, head in enumerate(self.region_tumor_classifiers):
+            mask = anatomy_region == region_index
+            if mask.any():
+                logits[mask] = head(dropped[mask]).squeeze(-1)
         return logits

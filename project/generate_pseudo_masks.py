@@ -52,9 +52,9 @@ from pseudo.prompt_metrics import (
 )
 from pseudo.oracle_diagnostics import binary_overlap_metrics, oracle_vs_selected_metrics
 from pseudo.sam_refine import SAMPredictor
-from pseudo.mask_selection import select_and_fuse_masks
+from pseudo.mask_selection import compute_confidence_map, select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
-from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
+from pseudo.visualization import save_confidence_map, save_mask, save_overlay, tensor_to_pil
 
 
 def parse_args() -> argparse.Namespace:
@@ -281,6 +281,47 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force-non-normal-cam", action="store_true",
                         help="Predicted-protocol A/B: if argmax is normal, condition CAM on the strongest "
                              "non-normal class instead of skipping. Default keeps normal images empty.")
+    parser.add_argument("--cam-anatomy-conditioned", action="store_true",
+                        help="Blend in an anatomy-conditioned CAM term (see "
+                        "models/layercam.py's cam_for_anatomy_conditioned_score): "
+                        "S = (logit[class]-logit[normal]) + beta*region_tumor_logit, using the "
+                        "checkpoint's region-conditioned tumor head (region_tumor_classifiers). "
+                        "Requires --dataset btxrd, target_columns=tumor_type, --cam-aggregation "
+                        "class, and a checkpoint trained with --anatomy-region-tumor-alpha > 0 "
+                        "(otherwise the checkpoint has no region_tumor_classifiers to call and this "
+                        "raises). Down-weights CAM evidence shared with a normal image of the SAME "
+                        "anatomical region (e.g. bare bone shape), which the plain class-contrast "
+                        "CAM cannot distinguish from real lesion evidence.")
+    parser.add_argument("--cam-anatomy-beta", type=float, default=0.5,
+                        help="Weight for the region-conditioned tumor logit term in "
+                        "--cam-anatomy-conditioned's score (see cam_for_anatomy_conditioned_score's "
+                        "docstring for why this is not unit-comparable to the base class-contrast "
+                        "score -- tune empirically).")
+    parser.add_argument("--cam-anatomy-weight", type=float, default=1.0,
+                        help="Blend weight for --cam-anatomy-conditioned's CAM into fused_cam "
+                        "(0=ignore it entirely, 1=use it in place of the class-contrast CAM). "
+                        "Same blend convention as --cam-contrast-weight.")
+    parser.add_argument("--save-confidence-map", action="store_true",
+                        help="Additionally save a per-pixel confidence map (0=background, "
+                        "1=foreground confident, 2=foreground uncertain, 3=boundary uncertain; "
+                        "see pseudo/mask_selection.py's compute_confidence_map/CONFIDENCE_* "
+                        "constants) alongside each binary pseudo-mask, under "
+                        "<output-dir>/confidence/. Downstream U-Net training can use this to "
+                        "down-weight or ignore low-confidence pixels instead of trusting every "
+                        "pseudo-mask pixel equally.")
+    parser.add_argument("--confidence-cam-percentile", type=float, default=90.0,
+                        help="Percentile of fused_cam above which a pixel counts as CAM-confident "
+                        "for --save-confidence-map (see compute_confidence_map).")
+    parser.add_argument("--confidence-boundary-width", type=int, default=3,
+                        help="Pixels out from the pseudo-mask boundary labeled boundary-uncertain "
+                        "for --save-confidence-map (see compute_confidence_map).")
+    parser.add_argument("--anatomy-consistency-weight", type=float, default=0.0,
+                        help="Requires --cam-anatomy-conditioned. Weight (0-1) for a mask-selection "
+                        "bonus that rewards SAM candidates BOTH fused_cam and the raw anatomy-"
+                        "conditioned CAM support (see pseudo/mask_selection.py's score_masks "
+                        "anatomy_cam/anatomy_consistency_weight params) -- a candidate only one of "
+                        "the two CAMs likes gets no bonus. 0 (default) disables it: scores are "
+                        "identical to the selection_method alone.")
     args = parser.parse_args()
     # Keep raw option names so the canonical profile can distinguish allowed
     # run/hardware inputs from recipe changes and reject the latter explicitly.
@@ -459,7 +500,20 @@ def load_classifier(
     # (see train_classifier.py's save_checkpoint). fallback_num_classes only
     # covers checkpoints saved before this field existed.
     num_classes = checkpoint_num_classes
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+    # These default to None/False for any checkpoint saved before
+    # train_classifier.py's anatomy heads existed, reconstructing the exact
+    # same plain model as before -- only checkpoints trained with
+    # --anatomy-region-alpha/--anatomy-region-tumor-alpha > 0 set them,
+    # and load_state_dict(strict=True) below would otherwise fail with
+    # missing/unexpected keys for those checkpoints if the heads were left out.
+    num_anatomy_regions = state.get("num_anatomy_regions")
+    region_conditioned_tumor_head = state.get("region_conditioned_tumor_head", False)
+    model = DenseNet121AnatomyClassifier(
+        num_classes=num_classes,
+        pretrained=False,
+        num_anatomy_regions=num_anatomy_regions,
+        region_conditioned_tumor_head=region_conditioned_tumor_head,
+    )
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device)
     model.eval()
@@ -637,6 +691,37 @@ def main() -> None:
     )
     print(f"Loaded classifier checkpoint task={classifier_task} normalization={classifier_normalization}")
 
+    if args.cam_anatomy_conditioned:
+        if args.dataset != "btxrd" or target_columns != ["tumor_type"] or args.cam_aggregation != "class":
+            raise ValueError(
+                "--cam-anatomy-conditioned requires --dataset btxrd, target_columns=tumor_type, "
+                "and --cam-aggregation class"
+            )
+        if classifier.region_tumor_classifiers is None:
+            raise ValueError(
+                f"--cam-anatomy-conditioned requires a checkpoint trained with "
+                f"--anatomy-region-tumor-alpha > 0 (region_tumor_classifiers heads) -- "
+                f"{args.classifier_checkpoint} has none."
+            )
+        # --cam-multiscale-sizes/--cam-tta-flip ARE supported together with
+        # --cam-anatomy-conditioned (checked here, before dataset/SAM setup
+        # below, so an incompatible flag combo still fails fast): the main
+        # loop's anatomy branch calls cam_for_anatomy_conditioned_score for
+        # every scale/flip view via a shared helper, so the region-
+        # conditioned signal survives the ensemble instead of silently
+        # falling back to the plain class-contrast CAM.
+        if args.cam_contrast_normal:
+            raise ValueError(
+                "--cam-contrast-normal and --cam-anatomy-conditioned cannot both be set -- both "
+                "blend a class-contrast CAM into fused_cam using --cam-contrast-weight/"
+                "--cam-anatomy-weight independently, so stacking them silently changes the "
+                "effective blend ratio away from what either weight alone documents. Pick one."
+            )
+    elif args.anatomy_consistency_weight > 0:
+        raise ValueError("--anatomy-consistency-weight requires --cam-anatomy-conditioned")
+    if not 0.0 <= args.anatomy_consistency_weight <= 1.0:
+        raise ValueError("--anatomy-consistency-weight must be in [0, 1]")
+
     write_or_validate_run_metadata(
         args.output_dir,
         {
@@ -646,6 +731,13 @@ def main() -> None:
             "target_columns": target_columns,
             "cam_target_class": args.cam_target_class,
             "force_non_normal_cam": args.force_non_normal_cam,
+            "cam_anatomy_conditioned": args.cam_anatomy_conditioned,
+            "cam_anatomy_beta": args.cam_anatomy_beta,
+            "cam_anatomy_weight": args.cam_anatomy_weight,
+            "anatomy_consistency_weight": args.anatomy_consistency_weight,
+            "save_confidence_map": args.save_confidence_map,
+            "confidence_cam_percentile": args.confidence_cam_percentile,
+            "confidence_boundary_width": args.confidence_boundary_width,
             "classifier_task": classifier_task,
             "classifier_checkpoint": str(args.classifier_checkpoint.resolve()),
             "auxiliary_binary_checkpoint": (
@@ -748,6 +840,17 @@ def main() -> None:
         for sample in dataset.samples:
             tumor_type_by_name[str(sample["image_id"])] = TUMOR_TYPE_CLASS_NAMES[int(sample["tumor_type"])]
 
+    # Maps image_name -> anatomy_region index (see datasets/btxrd.py's
+    # ANATOMY_REGION_COLUMNS/_row_anatomy_region_index), only needed for
+    # --cam-anatomy-conditioned. -1 for records with zero/multiple region
+    # columns set (an unexpected data-quality case, not the common case --
+    # see check_anatomy_region_labels.py, which found 0 such records on the
+    # real BTXRD dataset).
+    anatomy_region_by_name: dict[str, int] = {}
+    if args.dataset == "btxrd" and args.cam_anatomy_conditioned:
+        for sample in dataset.samples:
+            anatomy_region_by_name[str(sample["image_id"])] = int(sample["anatomy_region"])
+
     gt_masks_by_name: dict[str, np.ndarray] = {}
     if args.evaluate_prompt_quality:
         seg_dataset = build_segmentation_dataset(
@@ -797,8 +900,11 @@ def main() -> None:
 
     mask_dir = args.output_dir / "masks"
     overlay_dir = args.output_dir / "overlays"
+    confidence_dir = args.output_dir / "confidence"
     mask_dir.mkdir(parents=True, exist_ok=True)
     overlay_dir.mkdir(parents=True, exist_ok=True)
+    if args.save_confidence_map:
+        confidence_dir.mkdir(parents=True, exist_ok=True)
 
     prompt_quality_rows: list[list[object]] = []
     skipped_image_names: list[str] = []
@@ -806,6 +912,8 @@ def main() -> None:
     skipped = 0
     processed = 0
     visualized = 0
+    anatomy_conditioned_applied = 0
+    anatomy_region_unknown_fallback = 0
     process_limit = None if args.process_all or args.max_images <= 0 else args.max_images
     use_ground_truth_class = (
         args.cam_target_class == "ground_truth" and target_columns == ["tumor_type"]
@@ -862,6 +970,15 @@ def main() -> None:
                 )
                 if should_skip:
                     save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
+                    if args.save_confidence_map:
+                        # All-background confidence for a skipped (predicted-
+                        # normal/low-confidence) image -- no CAM/SAM evidence
+                        # was ever computed for it, so every pixel is exactly
+                        # as confidently background as the binary mask itself.
+                        save_confidence_map(
+                            np.zeros((args.image_size, args.image_size), dtype=np.uint8),
+                            confidence_dir / f"{Path(image_name).stem}.png",
+                        )
                     skipped += 1
                     skipped_image_names.append(str(image_name))
                     processed += 1
@@ -950,7 +1067,96 @@ def main() -> None:
                         )
                         per_class_cams = [fused_cam]
                         active_indices = [selected_class]
-                if cam_multiscale_sizes:
+                # Kept separate from fused_cam (which mask_selection's regular
+                # scoring methods read) so mask_selection can additionally
+                # compare a candidate against this RAW anatomy-conditioned CAM
+                # for its cross-CAM agreement bonus (see --anatomy-consistency-
+                # weight below) -- blending it into fused_cam already lost the
+                # ability to tell "supported by both signals" from "supported
+                # by the blend", which is exactly what that bonus needs.
+                anatomy_cam_for_selection = None
+
+                def _anatomy_conditioned_cam(tensor: torch.Tensor, selected_class: int, region_index: int) -> np.ndarray:
+                    """Single-view anatomy-conditioned CAM, min-max normalized.
+                    Shared by the plain single-view path below and the multi-
+                    view (scale/flip) ensemble, so both call the exact same
+                    LayerCAM method rather than the multiscale/flip branches
+                    silently falling back to the plain class-contrast CAM."""
+                    output = layercam.cam_for_anatomy_conditioned_score(
+                        tensor,
+                        selected_class,
+                        torch.tensor([region_index], device=device, dtype=torch.long),
+                        beta=args.cam_anatomy_beta,
+                        reference_index=0,
+                    )
+                    cam = output.cam[0].detach().cpu().numpy()
+                    return (cam - float(cam.min())) / (float(cam.max()) - float(cam.min()) + 1e-8)
+
+                if args.cam_anatomy_conditioned:
+                    # Region must be known for this sample to condition the
+                    # region-tumor head -- unknown region (-1, an unexpected
+                    # data-quality case, see ANATOMY_REGION_COLUMNS' docstring)
+                    # falls back to the plain class-contrast CAM already
+                    # computed above, since there is no region-scoped normal
+                    # baseline to contrast against for it.
+                    region_index = anatomy_region_by_name.get(str(image_name), -1)
+                    selected_class = (
+                        int(gt_class)
+                        if use_ground_truth_class and gt_class is not None
+                        else int(np.argmax(class_weights))
+                    )
+                    if selected_class != 0 and region_index == -1:
+                        anatomy_region_unknown_fallback += 1
+                    if selected_class != 0 and region_index != -1:
+                        anatomy_conditioned_applied += 1
+                        # Multi-view ensemble (multi-scale + horizontal flip)
+                        # of the anatomy-conditioned CAM itself, not the plain
+                        # class-contrast CAM -- every view below calls
+                        # cam_for_anatomy_conditioned_score via the shared
+                        # helper above, so the region-conditioned signal
+                        # survives the ensemble instead of being replaced by
+                        # a plain-CAM multiscale/flip pass.
+                        anatomy_views: list[np.ndarray] = [
+                            _anatomy_conditioned_cam(image_tensor, selected_class, region_index)
+                        ]
+                        if cam_multiscale_sizes:
+                            if target_columns != ["tumor_type"] or args.cam_aggregation != "class":
+                                raise ValueError(
+                                    "--cam-multiscale-sizes currently requires target_columns=tumor_type "
+                                    "and --cam-aggregation class"
+                                )
+                            for scale in cam_multiscale_sizes:
+                                scaled_tensor = F.interpolate(
+                                    image_tensor, size=(scale, scale), mode="bilinear", align_corners=False
+                                )
+                                scaled_cam = _anatomy_conditioned_cam(scaled_tensor, selected_class, region_index)
+                                scaled_cam_tensor = F.interpolate(
+                                    torch.from_numpy(scaled_cam)[None, None],
+                                    size=(args.image_size, args.image_size),
+                                    mode="bilinear", align_corners=False,
+                                )[0, 0].numpy()
+                                anatomy_views.append(scaled_cam_tensor.astype(np.float32))
+                        if args.cam_tta_flip:
+                            flipped_tensor = torch.flip(image_tensor, dims=[3])
+                            flipped_cam = _anatomy_conditioned_cam(flipped_tensor, selected_class, region_index)
+                            anatomy_views.append(np.fliplr(flipped_cam).astype(np.float32))
+
+                        anatomy_cam_for_selection = np.mean(np.stack(anatomy_views, axis=0), axis=0).astype(np.float32)
+                        anatomy_cam_for_selection = (
+                            anatomy_cam_for_selection - float(anatomy_cam_for_selection.min())
+                        ) / (
+                            float(anatomy_cam_for_selection.max()) - float(anatomy_cam_for_selection.min()) + 1e-8
+                        )
+                        anatomy_weight = float(args.cam_anatomy_weight)
+                        fused_cam = (
+                            (1.0 - anatomy_weight) * fused_cam + anatomy_weight * anatomy_cam_for_selection
+                        ).astype(np.float32, copy=False)
+                        fused_cam = (fused_cam - float(fused_cam.min())) / (
+                            float(fused_cam.max()) - float(fused_cam.min()) + 1e-8
+                        )
+                        per_class_cams = [fused_cam]
+                        active_indices = [selected_class]
+                elif cam_multiscale_sizes:
                     if target_columns != ["tumor_type"] or args.cam_aggregation != "class":
                         raise ValueError(
                             "--cam-multiscale-sizes currently requires target_columns=tumor_type and "
@@ -1004,7 +1210,12 @@ def main() -> None:
                         (cam - float(cam.min())) / (float(cam.max()) - float(cam.min()) + 1e-8)
                         for cam in per_class_cams
                     ]
-                if args.cam_tta_flip:
+                # When --cam-anatomy-conditioned is set, flip TTA was already
+                # folded into anatomy_views inside that branch above (via
+                # _anatomy_conditioned_cam on the flipped tensor) -- skip this
+                # plain-CAM flip pass entirely so it doesn't run a second,
+                # unrelated flip fusion on top of the anatomy-conditioned blend.
+                if args.cam_tta_flip and not args.cam_anatomy_conditioned:
                     flipped_tensor = torch.flip(image_tensor, dims=[3])
                     if args.cam_aggregation in {
                         "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max"
@@ -1418,6 +1629,8 @@ def main() -> None:
                     best_per_component=component_ids is not None and not args.disable_best_per_component,
                     component_topk=args.component_topk,
                     support_clip_kernel=args.support_clip_kernel,
+                    anatomy_cam=anatomy_cam_for_selection,
+                    anatomy_consistency_weight=args.anatomy_consistency_weight,
                 )
 
                 # ── 5b. SAM-vs-selection oracle diagnostic (optional) ───────────
@@ -1462,6 +1675,14 @@ def main() -> None:
 
                 # ── 7. Save ───────────────────────────────────────────────────
                 save_mask(final_mask, mask_path)
+                if args.save_confidence_map:
+                    confidence_map = compute_confidence_map(
+                        final_mask,
+                        fused_cam,
+                        cam_confident_percentile=args.confidence_cam_percentile,
+                        boundary_width_px=args.confidence_boundary_width,
+                    )
+                    save_confidence_map(confidence_map, confidence_dir / f"{Path(image_name).stem}.png")
                 processed += 1
             if process_limit is not None and processed >= process_limit:
                 break
@@ -1472,6 +1693,38 @@ def main() -> None:
 
     mode = "full dataset" if args.process_all else f"preview ({processed} images)"
     print(f"\nDone: {mode}. Masks saved to {mask_dir} (skipped {skipped} normal/low-confidence images)")
+    if args.cam_anatomy_conditioned:
+        print(
+            f"Anatomy-conditioned CAM: applied to {anatomy_conditioned_applied} images; "
+            f"fell back to the plain class-contrast CAM for {anatomy_region_unknown_fallback} "
+            f"non-normal images with unknown anatomy_region (-1)."
+        )
+        if anatomy_region_unknown_fallback > 0:
+            (args.output_dir / "anatomy_region_unknown_fallback_count.txt").write_text(
+                f"{anatomy_region_unknown_fallback}\n", encoding="utf-8"
+            )
+        anatomy_eligible_total = anatomy_conditioned_applied + anatomy_region_unknown_fallback
+        if anatomy_eligible_total > 0:
+            fallback_fraction = anatomy_region_unknown_fallback / anatomy_eligible_total
+            if fallback_fraction > 0.5:
+                # More than half of the non-normal images that SHOULD have
+                # used the anatomy-conditioned CAM instead silently fell back
+                # to the plain class-contrast CAM -- this usually means
+                # --ram-root points at a dataset.csv without the anatomy
+                # region columns populated (see datasets/btxrd.py's
+                # _row_anatomy_region_index), not a few odd data-quality
+                # cases. run_metadata.json would otherwise still claim
+                # cam_anatomy_conditioned=true for a run that mostly never
+                # used it -- raise loudly instead of letting that stand.
+                raise RuntimeError(
+                    f"--cam-anatomy-conditioned fell back to the plain class-contrast CAM for "
+                    f"{anatomy_region_unknown_fallback}/{anatomy_eligible_total} "
+                    f"({fallback_fraction:.1%}) eligible (non-normal) images -- anatomy_region is "
+                    f"unknown (-1) for most of this split. Check that --ram-root's dataset.csv has "
+                    f"the upper limb/lower limb/pelvis columns populated (see "
+                    f"tools/check_anatomy_region_labels.py) before trusting this run's masks/ output "
+                    f"or run_metadata.json's cam_anatomy_conditioned=true."
+                )
 
     skipped_path = args.output_dir / "skipped_low_confidence.txt"
     if skipped_image_names:

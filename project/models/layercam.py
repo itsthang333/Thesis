@@ -252,6 +252,91 @@ class LayerCAM:
         score.backward()
         return self._finish_cam(logits, input_tensor.shape[-2:])
 
+    def cam_for_anatomy_conditioned_score(
+        self,
+        input_tensor: torch.Tensor,
+        class_index: int | torch.Tensor,
+        anatomy_region: torch.Tensor,
+        beta: float = 0.5,
+        reference_index: int = 0,
+    ) -> LayerCAMOutput:
+        """LayerCAM for the anatomy-conditioned tumor score:
+
+            S = (logit[class_index] - logit[reference_index])
+                + beta * region_tumor_logit
+
+        where region_tumor_logit is model.forward_region_tumor_logits()'s
+        per-sample output for that sample's OWN anatomy_region (a binary
+        tumor-vs-normal logit scoped to just that region's images, trained
+        with BCEWithLogitsLoss against tumor_binary_target). Under that
+        training objective sigmoid(region_tumor_logit) approximates
+        P(tumor | x, r), so the raw logit itself IS, by the standard
+        logistic/log-odds identity, an estimate of
+        log P(tumor|x,r) - log P(normal|x,r) -- there is no separate
+        "region_normal_logit" term to additionally subtract; the head's
+        single scalar output already represents that log-odds difference.
+        (Caution: this is only as good as that identity holds in practice --
+        BCEWithLogitsLoss does not force the logit to exactly 0 at the
+        decision boundary or calibrate its scale against the main
+        tumor_type head's logits, so beta trades off two logit scales that
+        are not guaranteed to be commensurate. Tune beta empirically rather
+        than assuming it is unit-comparable to the base score.)
+        This makes S answer "what evidence supports this tumor type AND
+        separates this image from a normal image of the SAME anatomical
+        region" rather than "what evidence supports this tumor type" alone
+        -- the latter can be satisfied by gross anatomical shape (e.g. bone
+        outline) that a same-region normal image would share, while the
+        anatomy-conditioned term specifically down-weights that shared
+        evidence.
+
+        Requires the model to have been constructed with
+        num_anatomy_regions set and region_conditioned_tumor_head=True (see
+        models/classifier.py). anatomy_region entries must all be >= 0
+        (known region) -- filter unknown-region samples out before calling.
+
+        class_index: single int or [B] long tensor (per-sample target
+        class), same convention as cam_for_class_contrast.
+        """
+        self.model.zero_grad(set_to_none=True)
+        for state in self._states:
+            state.activations = None
+            state.gradients = None
+
+        if not torch.is_tensor(anatomy_region):
+            raise TypeError("anatomy_region must be a [B] long tensor")
+        if (anatomy_region < 0).any():
+            raise ValueError(
+                "cam_for_anatomy_conditioned_score requires every sample to have a known "
+                "anatomy_region (>= 0) -- filter unknown-region (-1) samples out first"
+            )
+
+        outputs = self.model(input_tensor, return_embedding=True)
+        if not isinstance(outputs, (tuple, list)) or len(outputs) != 2:
+            raise RuntimeError(
+                "cam_for_anatomy_conditioned_score requires forward(..., return_embedding=True) "
+                "to return (logits, pooled_features)"
+            )
+        logits, pooled = outputs
+        if logits.ndim == 1:
+            logits = logits.unsqueeze(0)
+        if logits.shape[1] < 2:
+            raise ValueError(
+                "cam_for_anatomy_conditioned_score requires a multi-class head with a normal "
+                "class at index 0"
+            )
+
+        region_tumor_logits = self.model.forward_region_tumor_logits(pooled, anatomy_region)
+
+        if isinstance(class_index, torch.Tensor):
+            batch_indices = torch.arange(logits.shape[0], device=logits.device)
+            base_score = logits[batch_indices, class_index] - logits[batch_indices, reference_index]
+        else:
+            base_score = logits[:, class_index] - logits[:, reference_index]
+
+        score = (base_score + beta * region_tumor_logits).sum()
+        score.backward()
+        return self._finish_cam(logits, input_tensor.shape[-2:])
+
     def cams_for_active_classes(
         self,
         input_tensor: torch.Tensor,
