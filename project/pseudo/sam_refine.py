@@ -103,6 +103,18 @@ class SAMPredictor:
                 checkpoint_url=_MEDSAM2_CHECKPOINT_URL,
                 label="MedSAM2",
             )
+        # Keep a strong reference so Python cannot recycle the ndarray id
+        # between images.  generate_pseudo_masks evaluates several prompt
+        # modes against the exact same image object; SAM's expensive image
+        # encoder only needs to run once for that ensemble.
+        self._prepared_image: np.ndarray | None = None
+
+    def _prepare_image(self, image_rgb: np.ndarray) -> None:
+        """Encode ``image_rgb`` unless this exact array is already prepared."""
+        if self._prepared_image is image_rgb:
+            return
+        self._predictor.set_image(image_rgb)
+        self._prepared_image = image_rgb
 
     def _init_v1(self, checkpoint_path, auto_download, device, sam_model_type: str = "auto") -> None:
         try:
@@ -275,7 +287,7 @@ class SAMPredictor:
             h, w = image_rgb.shape[:2]
             return np.zeros((0, h, w), dtype=bool), np.zeros(0, dtype=np.float32)
 
-        self._predictor.set_image(image_rgb)
+        self._prepare_image(image_rgb)
 
         all_masks: list[np.ndarray] = []
         all_scores: list[np.ndarray] = []
@@ -339,7 +351,7 @@ class SAMPredictor:
                 np.zeros(0, dtype=np.int32),
             )
 
-        self._predictor.set_image(image_rgb)
+        self._prepare_image(image_rgb)
         all_masks: list[np.ndarray] = []
         all_scores: list[np.ndarray] = []
         component_ids: list[int] = []

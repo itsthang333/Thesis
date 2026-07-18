@@ -32,6 +32,9 @@ except ImportError:  # pragma: no cover - optional dependency
 SELECTION_METHODS = (
     "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid",
     "simple_hybrid", "prompt_hybrid", "consistency_hybrid",
+    "prompt_consensus", "consensus_medoid", "consensus_sam", "consensus_cam", "consensus_vote",
+    "cam_soft_dice", "cam_tversky", "cam_tversky_sam", "cam_boundary", "size_aware_hybrid",
+    "seed_extent_hybrid",
 )
 
 DEFAULT_PROMPT_HYBRID_WEIGHTS = (0.30, 0.20, 0.15, 0.15, 0.20)
@@ -113,6 +116,142 @@ def _point_consistency(
     return float(sum(terms) / len(terms)) if terms else 0.0
 
 
+def _consensus_features(
+    masks: np.ndarray,
+    component_ids: np.ndarray | None,
+    prompt_modes: np.ndarray | None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Estimate candidate stability across independently generated prompts.
+
+    IoU is computed on a small nearest-neighbour grid for speed.  The masks
+    themselves, CAM, and final output remain at full resolution.
+    """
+    n, height, width = masks.shape
+    stride = max(1, min(height, width) // 48)
+    small = masks[:, ::stride, ::stride].reshape(n, -1).astype(np.float32)
+    areas = small.sum(axis=1)
+    intersections = small @ small.T
+    unions = areas[:, None] + areas[None, :] - intersections
+    pairwise_iou = intersections / np.maximum(unions, 1.0)
+    np.fill_diagonal(pairwise_iou, 0.0)
+    ids = (
+        np.asarray(component_ids, dtype=np.int32)
+        if component_ids is not None and len(component_ids) == n
+        else np.zeros(n, dtype=np.int32)
+    )
+    modes = (
+        np.asarray(prompt_modes).astype(str)
+        if prompt_modes is not None and len(prompt_modes) == n
+        else np.full(n, "unknown", dtype="U16")
+    )
+    prompt_agreement = np.zeros(n, dtype=np.float32)
+    component_agreement = np.zeros(n, dtype=np.float32)
+    medoid_agreement = np.zeros(n, dtype=np.float32)
+    unique_modes = np.unique(modes)
+    unique_components = np.unique(ids)
+    for index in range(n):
+        prompt_terms = []
+        for mode in unique_modes:
+            if mode == modes[index]:
+                continue
+            candidates = np.where((ids == ids[index]) & (modes == mode))[0]
+            if candidates.size:
+                prompt_terms.append(float(pairwise_iou[index, candidates].max()))
+        prompt_agreement[index] = float(np.mean(prompt_terms)) if prompt_terms else 0.0
+
+        component_terms = []
+        for component_id in unique_components:
+            if component_id == ids[index]:
+                continue
+            candidates = np.where(ids == component_id)[0]
+            if candidates.size:
+                component_terms.append(float(pairwise_iou[index, candidates].max()))
+        if component_terms:
+            component_agreement[index] = float(np.mean(sorted(component_terms, reverse=True)[:2]))
+
+        independent = np.where((ids != ids[index]) | (modes != modes[index]))[0]
+        if independent.size:
+            values = np.sort(pairwise_iou[index, independent])[::-1]
+            medoid_agreement[index] = float(values[: min(5, len(values))].mean())
+    return prompt_agreement, component_agreement, medoid_agreement
+
+
+def _consensus_vote_selection(
+    masks: np.ndarray,
+    bone_cam: np.ndarray,
+    sam_scores: np.ndarray | None,
+    component_ids: np.ndarray,
+    prompt_modes: np.ndarray,
+) -> np.ndarray:
+    """Fuse independently prompted masks by per-component majority vote."""
+    n = len(masks)
+    scores = (
+        np.asarray(sam_scores, dtype=np.float32)
+        if sam_scores is not None and len(sam_scores) == n
+        else np.zeros(n, dtype=np.float32)
+    )
+    ids = np.asarray(component_ids, dtype=np.int32)
+    modes = np.asarray(prompt_modes).astype(str)
+    best_component_score = -np.inf
+    best_vote: np.ndarray | None = None
+    cam_total = max(float(bone_cam.sum()), 1e-8)
+
+    for component_id in np.unique(ids):
+        indices = np.where(ids == component_id)[0]
+        if indices.size == 0:
+            continue
+        local_masks = masks[indices].astype(bool)
+        height, width = local_masks.shape[-2:]
+        stride = max(1, min(height, width) // 48)
+        small = local_masks[:, ::stride, ::stride].reshape(len(indices), -1).astype(np.float32)
+        areas = small.sum(axis=1)
+        intersections = small @ small.T
+        unions = areas[:, None] + areas[None, :] - intersections
+        iou = intersections / np.maximum(unions, 1.0)
+        local_modes = modes[indices]
+        chosen: list[int] = []
+        for mode in np.unique(local_modes):
+            mode_local = np.where(local_modes == mode)[0]
+            other_local = np.where(local_modes != mode)[0]
+            best_local_score = -np.inf
+            best_local_index = int(mode_local[0])
+            mode_sam = scores[indices[mode_local]]
+            mode_sam_rank = _within_group_percentile_ranks(
+                mode_sam, np.zeros(len(mode_sam), dtype=np.int32), len(mode_sam)
+            )
+            for position, local_index in enumerate(mode_local):
+                agreement = float(iou[local_index, other_local].max()) if other_local.size else 0.0
+                local_score = 0.85 * agreement + 0.15 * float(mode_sam_rank[position])
+                if local_score > best_local_score:
+                    best_local_score = local_score
+                    best_local_index = int(local_index)
+            chosen.append(best_local_index)
+
+        chosen_masks = local_masks[chosen]
+        if len(chosen_masks) == 1:
+            vote = chosen_masks[0]
+            agreement = 0.0
+        else:
+            required = len(chosen_masks) // 2 + 1
+            vote = chosen_masks.sum(axis=0) >= required
+            chosen_iou = iou[np.ix_(chosen, chosen)]
+            upper = chosen_iou[np.triu_indices(len(chosen), k=1)]
+            agreement = float(upper.mean()) if upper.size else 0.0
+        if not vote.any():
+            vote = chosen_masks[np.argmax([mask.sum() for mask in chosen_masks])]
+        cam_vals = bone_cam[vote]
+        cam_mean = float(cam_vals.mean()) if cam_vals.size else 0.0
+        cam_mass = float(cam_vals.sum()) / cam_total if cam_vals.size else 0.0
+        component_score = 0.50 * agreement + 0.30 * cam_mean + 0.20 * min(cam_mass, 1.0)
+        if component_score > best_component_score:
+            best_component_score = component_score
+            best_vote = vote
+
+    if best_vote is None:
+        return masks[0].astype(np.uint8)
+    return best_vote.astype(np.uint8)
+
+
 def score_masks(
     masks: np.ndarray,
     bone_cam: np.ndarray,
@@ -122,6 +261,7 @@ def score_masks(
     sam_scores: np.ndarray | None = None,
     component_ids: np.ndarray | None = None,
     component_masks: np.ndarray | None = None,
+    prompt_modes: np.ndarray | None = None,
     positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
@@ -144,6 +284,11 @@ def score_masks(
     n = masks.shape[0]
     scores = np.zeros(n, dtype=np.float32)
     sam_ranks = _within_group_percentile_ranks(sam_scores, component_ids, n)
+    consensus_methods = {"prompt_consensus", "consensus_medoid", "consensus_sam", "consensus_cam"}
+    if method in consensus_methods:
+        prompt_agreement, component_agreement, medoid_agreement = _consensus_features(
+            masks, component_ids, prompt_modes
+        )
 
     component_mask_by_id: dict[int, np.ndarray] = {}
     if component_masks is not None and len(component_masks) > 0:
@@ -166,6 +311,13 @@ def score_masks(
     weights = weights / weights.sum()
     area_target = max(float(prompt_area_target), 1e-6)
     area_sigma = max(float(prompt_area_log_sigma), 1e-6)
+    positive_cam = bone_cam[bone_cam > 0]
+    if positive_cam.size:
+        high_seed = bone_cam >= float(np.percentile(positive_cam, 85.0))
+        low_extent = bone_cam >= float(np.percentile(positive_cam, 45.0))
+    else:
+        high_seed = np.zeros_like(bone_cam, dtype=bool)
+        low_extent = np.zeros_like(bone_cam, dtype=bool)
 
     for i in range(n):
         m = masks[i].astype(bool)
@@ -210,6 +362,64 @@ def score_masks(
             area_bonus = float(np.log1p(area) / np.log1p(total_pixels))
             sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
             scores[i] = 0.6 * float(cam_vals.mean()) + 0.3 * sam_quality + 0.1 * area_bonus
+        elif method == "seed_extent_hybrid":
+            # Dual-threshold CAM/SAM matching: confident CAM pixels are
+            # precision-oriented lesion seeds that a candidate should cover;
+            # the lower threshold is a recall-oriented plausible extent that
+            # discourages SAM masks spilling onto unrelated anatomy.
+            seed_recall = (
+                float((m & high_seed).sum()) / max(float(high_seed.sum()), 1.0)
+            )
+            extent_precision = (
+                float((m & low_extent).sum()) / max(area, 1.0)
+            )
+            mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
+            scores[i] = (
+                0.35 * seed_recall
+                + 0.30 * extent_precision
+                + 0.20 * min(mass_coverage, 1.0)
+                + 0.15 * float(sam_ranks[i])
+            )
+        elif method in {
+            "cam_soft_dice", "cam_tversky", "cam_tversky_sam", "cam_boundary", "size_aware_hybrid"
+        }:
+            cam_inside = float(cam_vals.sum())
+            cam_total = max(float(bone_cam.sum()), 1e-8)
+            false_positive = max(area - cam_inside, 0.0)
+            false_negative = max(cam_total - cam_inside, 0.0)
+            soft_dice = (2.0 * cam_inside) / max(area + cam_total, 1e-8)
+            tversky = cam_inside / max(cam_inside + 0.30 * false_positive + 0.70 * false_negative, 1e-8)
+            if method == "cam_soft_dice":
+                scores[i] = soft_dice
+            elif method == "cam_tversky":
+                scores[i] = tversky
+            elif method == "cam_tversky_sam":
+                scores[i] = 0.85 * tversky + 0.15 * float(sam_ranks[i])
+            elif method == "cam_boundary":
+                outer = _binary_dilation(m.astype(np.uint8), kernel_size=11).astype(bool) & ~m
+                ring_mean = float(bone_cam[outer].mean()) if outer.any() else 0.0
+                boundary_contrast = float(np.clip(float(cam_vals.mean()) - ring_mean, 0.0, 1.0))
+                scores[i] = (
+                    0.65 * tversky
+                    + 0.20 * boundary_contrast
+                    + 0.15 * float(sam_ranks[i])
+                )
+            else:
+                area_fraction = area / float(bone_cam.size)
+                log_distance = np.log(max(area_fraction, 1e-8) / 0.03) / 0.85
+                absolute_area_prior = float(np.exp(-0.5 * log_distance * log_distance))
+                border_touch = (
+                    int(m[0, :].any()) + int(m[-1, :].any())
+                    + int(m[:, 0].any()) + int(m[:, -1].any())
+                ) / 4.0
+                sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
+                scores[i] = (
+                    0.35 * tversky
+                    + 0.25 * float(cam_vals.mean())
+                    + 0.20 * sam_quality
+                    + 0.20 * absolute_area_prior
+                    - 0.10 * border_touch
+                )
         elif method in {"prompt_hybrid", "consistency_hybrid"}:
             component_id = (
                 int(component_ids[i])
@@ -343,6 +553,42 @@ def score_masks(
                 - 0.40 * large_mask_penalty
                 - 0.20 * border_touch_penalty
             )
+        elif method in consensus_methods:
+            cam_mean = float(cam_vals.mean())
+            cam_mass = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
+            sam_rank = float(sam_ranks[i])
+            if method == "prompt_consensus":
+                scores[i] = (
+                    0.50 * prompt_agreement[i]
+                    + 0.20 * component_agreement[i]
+                    + 0.15 * medoid_agreement[i]
+                    + 0.10 * cam_mean
+                    + 0.05 * sam_rank
+                )
+            elif method == "consensus_medoid":
+                scores[i] = (
+                    0.45 * medoid_agreement[i]
+                    + 0.25 * prompt_agreement[i]
+                    + 0.15 * component_agreement[i]
+                    + 0.10 * cam_mean
+                    + 0.05 * sam_rank
+                )
+            elif method == "consensus_sam":
+                scores[i] = (
+                    0.35 * prompt_agreement[i]
+                    + 0.25 * medoid_agreement[i]
+                    + 0.15 * component_agreement[i]
+                    + 0.15 * sam_rank
+                    + 0.10 * cam_mean
+                )
+            else:
+                scores[i] = (
+                    0.35 * prompt_agreement[i]
+                    + 0.25 * medoid_agreement[i]
+                    + 0.15 * component_agreement[i]
+                    + 0.20 * cam_mean
+                    + 0.05 * min(cam_mass, 1.0)
+                )
     return scores
 
 
@@ -386,6 +632,7 @@ def select_and_fuse_masks(
     sam_scores: np.ndarray | None = None,
     component_ids: np.ndarray | None = None,
     component_masks: np.ndarray | None = None,
+    prompt_modes: np.ndarray | None = None,
     positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
@@ -425,6 +672,17 @@ def select_and_fuse_masks(
         h, w = bone_cam.shape
         return np.zeros((h, w), dtype=np.uint8)
 
+    if (
+        selection_method == "consensus_vote"
+        and component_ids is not None
+        and len(component_ids) == len(masks)
+        and prompt_modes is not None
+        and len(prompt_modes) == len(masks)
+    ):
+        return _consensus_vote_selection(
+            masks, bone_cam, sam_scores, component_ids, prompt_modes
+        )
+
     def _clip(fused_mask: np.ndarray) -> np.ndarray:
         return constrain_to_bone_support(fused_mask, bone_support, selection_method, support_clip_kernel)
 
@@ -437,6 +695,7 @@ def select_and_fuse_masks(
         sam_scores=sam_scores,
         component_ids=component_ids,
         component_masks=component_masks,
+        prompt_modes=prompt_modes,
         positive_points_by_component=positive_points_by_component,
         negative_points_by_component=negative_points_by_component,
         prompt_hybrid_weights=prompt_hybrid_weights,

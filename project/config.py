@@ -92,7 +92,7 @@ class BtxrdBestPipelineConfig:
     negative_points_per_component: int = 4
     prompt_border_margin: int = 2
     max_box_area_ratio: float = 0.35
-    selection_method: str = "coverage_mass_sam"
+    selection_method: str = "simple_hybrid"
     best_per_component: bool = True
     fusion_topk: int = 3
     support_clip_kernel: int = 5

@@ -30,6 +30,7 @@ from models.puzzle_cam import puzzle_alpha as puzzle_alpha_schedule, puzzle_cam_
 from models.teacher_student import EMATeacher, attention_distillation_loss
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.visualization import save_overlay, tensor_to_pil
+from runtime_devices import prepare_data_parallel, resolve_gpu_count, unwrap_model
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,6 +48,10 @@ def parse_args() -> argparse.Namespace:
             "and PuzzleCAM/attention losses disabled."
         ),
     )
+    parser.add_argument(
+        "--research-overrides", action="store_true",
+        help="With btxrd_best, retain defaults but allow explicit WSSS research ablations.",
+    )
     parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
                         help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
     parser.add_argument("--train-split", type=str, default="train")
@@ -60,6 +65,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=ClassifierConfig.epochs)
     parser.add_argument("--seed", type=int, default=ClassifierConfig.seed)
     parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument(
+        "--num-gpus", type=int, choices=(0, 1, 2), default=0,
+        help="0=auto-detect up to two GPUs; 1=single GPU; 2=DataParallel on two GPUs.",
+    )
     parser.add_argument("--augment", action="store_true",
                         help="Apply the dataset's training-only horizontal flip augmentation; validation remains deterministic.")
     parser.add_argument("--random-erasing", action="store_true",
@@ -117,6 +126,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_f1 does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
+    parser.add_argument("--early-stop-min-delta", type=float, default=0.0,
+                        help="Minimum val macro-F1 gain required to reset early-stop patience.")
+    parser.add_argument("--lr-plateau-patience", type=int, default=0,
+                        help="Reduce LR after this many flat val epochs; 0 disables the scheduler.")
+    parser.add_argument("--lr-plateau-factor", type=float, default=0.5)
+    parser.add_argument("--min-lr", type=float, default=1e-7)
     args = parser.parse_args()
     args._explicit_options = {
         token.split("=", 1)[0]
@@ -142,8 +157,11 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
 
     profile = BTXRD_BEST_PIPELINE
     explicit = getattr(args, "_explicit_options", set())
+    research = bool(args.research_overrides)
 
     def require_or_set(option: str, attribute: str, expected: object) -> None:
+        if research and option in explicit:
+            return
         if option in explicit and getattr(args, attribute) != expected:
             raise ValueError(
                 f"--pipeline-profile btxrd_best fixes {option}={expected!r}; "
@@ -163,20 +181,22 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--puzzle-alpha-max", "puzzle_alpha_max", profile.classifier_puzzle_alpha_max)
     require_or_set("--attention-alpha-max", "attention_alpha_max", profile.classifier_attention_alpha_max)
     require_or_set("--preprocessing-mode", "preprocessing_mode", "none")
-    if "--augment" in explicit and args.augment:
+    if "--augment" in explicit and args.augment and not research:
         raise ValueError("--pipeline-profile btxrd_best fixes training augmentation off")
-    if "--random-erasing" in explicit and args.random_erasing:
+    if "--random-erasing" in explicit and args.random_erasing and not research:
         raise ValueError("--pipeline-profile btxrd_best fixes random erasing off")
-    if "--no-pretrained" in explicit and args.no_pretrained:
+    if "--no-pretrained" in explicit and args.no_pretrained and not research:
         raise ValueError("--pipeline-profile btxrd_best fixes ImageNet-pretrained initialization")
-    if "--use-clahe" in explicit and args.use_clahe:
+    if "--use-clahe" in explicit and args.use_clahe and not research:
         raise ValueError("--pipeline-profile btxrd_best fixes CLAHE off")
-    if "--radimagenet-checkpoint" in explicit and args.radimagenet_checkpoint is not None:
+    if "--radimagenet-checkpoint" in explicit and args.radimagenet_checkpoint is not None and not research:
         raise ValueError("--pipeline-profile btxrd_best fixes ImageNet normalization/pretraining")
-    if "--early-stop-patience" in explicit and args.early_stop_patience != 0:
+    if "--early-stop-patience" in explicit and args.early_stop_patience != 0 and not research:
         raise ValueError("--pipeline-profile btxrd_best fixes early stopping off")
-    args.augment = False
-    args.random_erasing = False
+    if not (research and "--augment" in explicit):
+        args.augment = False
+    if not (research and "--random-erasing" in explicit):
+        args.random_erasing = False
     if "--output-dir" not in explicit:
         args.output_dir = ROOT / "outputs" / "btxrd_classifier"
     return args
@@ -385,7 +405,11 @@ def run_epoch_multiclass(
                     # classification loss on the tiled reconstruction, not a
                     # consistency regularizer -- only L_re gets the warmup
                     # treatment, matching the paper.
-                    _, _, re_loss, p_cls_loss = puzzle_cam_consistency_loss(model, images, targets)
+                    # PuzzleCAM calls custom backbone methods directly; use
+                    # the underlying module when DataParallel is active.
+                    _, _, re_loss, p_cls_loss = puzzle_cam_consistency_loss(
+                        unwrap_model(model), images, targets
+                    )
                     loss = cls_loss + p_cls_loss + puzzle_alpha * re_loss
                     re_loss_value = re_loss.item()
                     p_cls_loss_value = p_cls_loss.item()
@@ -451,7 +475,7 @@ def run_epoch_multiclass(
                               teacher_conf=teacher_conf_value)
 
         if train and teacher is not None:
-            teacher.update(model)
+            teacher.update(unwrap_model(model))
 
     if batches == 0:
         return 0.0, metrics_from_multiclass_confusion(confusion), confusion
@@ -476,7 +500,9 @@ def save_checkpoint(
     torch.save(
         {
             "epoch": epoch,
-            "model_state_dict": model.state_dict(),
+            # Always save an unwrapped state dict so checkpoints produced on
+            # two GPUs load unchanged on one GPU/CPU and vice versa.
+            "model_state_dict": unwrap_model(model).state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "best_metric": best_metric,
             "target_columns": target_columns,
@@ -575,6 +601,10 @@ def save_cam_preview(
 
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
+    if args.early_stop_min_delta < 0 or args.lr_plateau_patience < 0:
+        raise ValueError("Early-stop min_delta and LR plateau patience must be >= 0")
+    if not 0.0 < args.lr_plateau_factor < 1.0 or args.min_lr < 0:
+        raise ValueError("Require 0 < lr_plateau_factor < 1 and min_lr >= 0")
     seed_everything(args.seed)
 
     default_columns = DATASET_TARGET_COLUMNS[args.dataset]
@@ -630,7 +660,7 @@ def main() -> None:
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    num_gpus = resolve_gpu_count(args.num_gpus)
 
     # target_columns=["tumor_type"] is single-label multi-class (10 mutually
     # exclusive BTXRD classes: normal + 9 tumor types), not the usual
@@ -648,7 +678,9 @@ def main() -> None:
         num_classes=num_classes,
         pretrained=not args.no_pretrained,
         radimagenet_checkpoint=args.radimagenet_checkpoint,
-    ).to(device)
+    )
+    model, device = prepare_data_parallel(model, num_gpus)
+    print(f"training_device={device} num_gpus={num_gpus} data_parallel={num_gpus > 1}")
 
     if is_multiclass:
         # Inverse-frequency class weights: BTXRD's tumor_type classes range
@@ -666,6 +698,13 @@ def main() -> None:
     else:
         criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    lr_scheduler = (
+        torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="max", factor=args.lr_plateau_factor,
+            patience=args.lr_plateau_patience, min_lr=args.min_lr,
+        )
+        if args.lr_plateau_patience > 0 else None
+    )
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
 
     cam_epochs = {int(value.strip()) for value in args.save_cam_epochs.split(",") if value.strip()}
@@ -688,16 +727,23 @@ def main() -> None:
         json.dumps(
             {
                 "pipeline_profile": args.pipeline_profile,
+                "research_overrides": args.research_overrides,
                 "dataset": args.dataset,
                 "train_split": args.train_split,
                 "val_split": args.val_split,
                 "target_columns": target_columns,
                 "image_size": args.image_size,
                 "batch_size": args.batch_size,
+                "num_gpus": num_gpus,
                 "epochs": args.epochs,
                 "seed": args.seed,
                 "lr": args.lr,
                 "weight_decay": args.weight_decay,
+                "early_stop_patience": args.early_stop_patience,
+                "early_stop_min_delta": args.early_stop_min_delta,
+                "lr_plateau_patience": args.lr_plateau_patience,
+                "lr_plateau_factor": args.lr_plateau_factor,
+                "min_lr": args.min_lr,
                 "augment": args.augment,
                 "random_erasing": args.random_erasing,
                 "puzzle_alpha_max": args.puzzle_alpha_max,
@@ -746,7 +792,7 @@ def main() -> None:
                     # teacher_warmup_epochs, so it's no longer identical to a
                     # freshly-loaded checkpoint, giving EMA updates something
                     # real to average over from here on.
-                    teacher = EMATeacher(model, decay=args.teacher_ema_decay)
+                    teacher = EMATeacher(unwrap_model(model), decay=args.teacher_ema_decay)
                     print(f"  --> Teacher initialized at epoch {epoch} (post-warmup snapshot)")
                 # Ramp over the epochs remaining after warmup, same linear
                 # shape as puzzle_alpha_schedule -- needed because this loss's
@@ -815,11 +861,13 @@ def main() -> None:
                 f" attention_alpha={current_attention_alpha:.4f}"
                 f" teacher={'active' if teacher is not None else 'warmup'}"
             )
+        current_lr = float(optimizer.param_groups[0]["lr"])
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
             f"train_{'macro_f1' if is_multiclass else 'f1'}={train_metrics['f1']:.4f} | "
             f"val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
-            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}{puzzle_suffix}{teacher_suffix}"
+            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f} "
+            f"lr={current_lr:.3e}{puzzle_suffix}{teacher_suffix}"
         )
         if is_multiclass:
             from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
@@ -843,7 +891,7 @@ def main() -> None:
             train_augment=args.augment,
             pipeline_profile=args.pipeline_profile,
         )
-        if val_metrics["f1"] > best_val_f1:
+        if val_metrics["f1"] > best_val_f1 + args.early_stop_min_delta:
             best_val_f1 = val_metrics["f1"]
             epochs_without_improvement = 0
             save_checkpoint(
@@ -857,8 +905,21 @@ def main() -> None:
         else:
             epochs_without_improvement += 1
 
+        print(
+            f"  convergence: best_val_f1={best_val_f1:.4f} "
+            f"no_improvement={epochs_without_improvement}/{args.early_stop_patience or 'off'} "
+            f"min_delta={args.early_stop_min_delta:.4f}"
+        )
+
+        if lr_scheduler is not None:
+            previous_lr = float(optimizer.param_groups[0]["lr"])
+            lr_scheduler.step(val_metrics["f1"])
+            updated_lr = float(optimizer.param_groups[0]["lr"])
+            if updated_lr < previous_lr:
+                print(f"  --> ReduceLROnPlateau: lr {previous_lr:.3e} -> {updated_lr:.3e}")
+
         if epoch in cam_epochs and cam_preview_indices:
-            save_cam_preview(model, val_dataset, cam_preview_indices, epoch, cam_output_dir, device, is_multiclass=is_multiclass, normalization=normalization)
+            save_cam_preview(unwrap_model(model), val_dataset, cam_preview_indices, epoch, cam_output_dir, device, is_multiclass=is_multiclass, normalization=normalization)
             print(f"  --> Saved CAM preview for epoch {epoch} to {cam_output_dir}")
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:

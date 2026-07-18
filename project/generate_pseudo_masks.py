@@ -52,7 +52,7 @@ from pseudo.prompt_metrics import (
 )
 from pseudo.oracle_diagnostics import binary_overlap_metrics, oracle_vs_selected_metrics
 from pseudo.sam_refine import SAMPredictor
-from pseudo.mask_selection import select_and_fuse_masks
+from pseudo.mask_selection import SELECTION_METHODS, select_and_fuse_masks
 from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
@@ -71,6 +71,10 @@ def parse_args() -> argparse.Namespace:
             "percentile ensemble, prompt ensemble and coverage_mass_sam). It never "
             "enables polygon/bbox inputs."
         ),
+    )
+    parser.add_argument(
+        "--research-overrides", action="store_true",
+        help="With btxrd_best, keep profile defaults but allow explicitly supplied research ablations.",
     )
     parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
                         help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
@@ -116,6 +120,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "pseudo_masks")
     parser.add_argument("--image-list", type=Path, default=None,
                         help="Optional text file of image names to process (one per line), for deterministic stratified validation smoke tests.")
+    parser.add_argument("--num-shards", type=int, default=1, help=argparse.SUPPRESS)
+    parser.add_argument("--shard-index", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--max-images", type=int, default=0,
                         help="Preview mode limit; 0 processes all images (the notebook preview passes 10)")
     parser.add_argument("--process-all", action="store_true",
@@ -191,8 +197,16 @@ def parse_args() -> argparse.Namespace:
                         choices=["positive", "absolute"],
                         help="LayerCAM gradient evidence: standard positive ReLU or absolute-gradient ablation.")
     parser.add_argument("--selection-method", type=str, default="bone_hybrid",
-                        choices=["mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid", "simple_hybrid", "prompt_hybrid", "consistency_hybrid"],
+                        choices=SELECTION_METHODS,
                         help="CAM-guided mask scoring method")
+    parser.add_argument(
+        "--selection-ablation-methods",
+        type=str,
+        default="",
+        help="Comma-separated extra selection methods evaluated on the exact same SAM candidate pool. "
+             "Their masks are saved under ablation_masks/<method>/ and diagnostics under "
+             "selection_ablation.csv; this does not change the primary pipeline output.",
+    )
     parser.add_argument(
         "--prompt-score-weights",
         type=str,
@@ -260,19 +274,31 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cam-refine-strength", type=float, default=0.6,
                         help="Blend strength (0=no change, 1=fully replaced) for --cam-refine")
     parser.add_argument("--cam-target-class", type=str, default="predicted",
-                        choices=["predicted", "ground_truth"],
+                        choices=["predicted", "image_label", "ground_truth"],
                         help="Which class LayerCAM is conditioned on. 'predicted' (default) uses the "
                         "classifier's own argmax/top-confidence class, matching real inference where "
-                        "the true label is unknown. 'ground_truth' instead conditions LayerCAM on the "
+                        "the true label is unknown. 'image_label' instead conditions LayerCAM on the "
                         "dataset's true image-level label (still just the image-level class -- never "
                         "polygon/bbox annotations, so this stays within WSSS) when generating pseudo "
                         "masks for a labeled split. Only affects --target-columns tumor_type (single-"
                         "label multi-class); for the binary tumor/normal task this is a no-op since "
                         "'not tumor' vs '10 possible tumor types' isn't a single ground-truth CAM target "
                         "the same way. Only meaningful when the split actually has GT labels (i.e. not "
-                        "at real deployment time on unlabeled images).")
+                        "at real deployment time on unlabeled images). 'ground_truth' remains a "
+                        "backward-compatible alias for 'image_label'.")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
+    parser.add_argument(
+        "--candidate-cache-dir",
+        type=Path,
+        default=None,
+        help="Optional diagnostics-only directory for compact per-image CAM/SAM candidate pools. "
+             "The cache contains no ground-truth masks and never affects pseudo-mask generation.",
+    )
+    parser.add_argument(
+        "--skip-existing-candidate-cache", action="store_true",
+        help="Resume full generation by skipping tumor images whose candidate NPZ already exists.",
+    )
     parser.add_argument("--evaluate-prompt-quality", action="store_true",
         help="Log CAM localization and point-prompt hit-rate against ground-truth "
                         "masks to prompt_quality.csv. Isolates CAM/prompt failure from SAM/mask-"
@@ -308,6 +334,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         raise ValueError("--pipeline-profile btxrd_best requires --dataset btxrd")
 
     explicit = getattr(args, "_explicit_options", set())
+    research = bool(args.research_overrides)
 
     # A checkpoint is deliberately required for the frozen profile.  The
     # checkpoint is the artifact produced by the separate training run, so
@@ -326,6 +353,8 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     profile = BTXRD_BEST_PIPELINE
 
     def require_or_set(option: str, attribute: str, expected: object) -> None:
+        if research and option in explicit:
+            return
         if option in explicit and getattr(args, attribute) != expected:
             raise ValueError(
                 f"--pipeline-profile btxrd_best fixes {option}={expected!r}; "
@@ -388,6 +417,8 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--cam-contrast-normal": "cam_contrast_normal",
     }
     for option, attribute in locked_true.items():
+        if research and (option in explicit or f"--disable-{option[2:]}" in explicit):
+            continue
         if option in explicit and not getattr(args, attribute):
             raise ValueError(f"--pipeline-profile btxrd_best requires {option}")
         setattr(args, attribute, True)
@@ -399,7 +430,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--disable-cam-contrast-normal",
     }
     for option in forbidden_disable_flags:
-        if option in explicit:
+        if option in explicit and not research:
             raise ValueError(f"--pipeline-profile btxrd_best rejects {option}")
 
     locked_false = {
@@ -414,11 +445,13 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--use-clahe": "use_clahe",
     }
     for option, attribute in locked_false.items():
+        if research and option in explicit:
+            continue
         if option in explicit and getattr(args, attribute):
             raise ValueError(f"--pipeline-profile btxrd_best fixes {option} off")
         setattr(args, attribute, False)
 
-    if "--auxiliary-binary-checkpoint" in explicit:
+    if "--auxiliary-binary-checkpoint" in explicit and not research:
         raise ValueError("--pipeline-profile btxrd_best does not use an auxiliary binary checkpoint")
 
     # These fields are metadata only; keep them out of the downstream API so
@@ -572,6 +605,15 @@ def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagen
 
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
+    ablation_methods = tuple(dict.fromkeys(
+        method.strip() for method in args.selection_ablation_methods.split(",") if method.strip()
+    ))
+    unknown_ablation_methods = sorted(set(ablation_methods) - set(SELECTION_METHODS))
+    if unknown_ablation_methods:
+        raise ValueError(
+            f"Unknown --selection-ablation-methods {unknown_ablation_methods}; "
+            f"choose from {list(SELECTION_METHODS)}"
+        )
     prompt_score_weights = parse_prompt_score_weights(args.prompt_score_weights)
     layercam_weights = parse_layercam_weights(args.layercam_weights)
     cam_percentile_values = parse_cam_percentile_values(args.cam_percentile_values)
@@ -641,6 +683,7 @@ def main() -> None:
         args.output_dir,
         {
             "pipeline_profile": args.pipeline_profile,
+            "research_overrides": args.research_overrides,
             "dataset": args.dataset,
             "split": args.split,
             "target_columns": target_columns,
@@ -691,6 +734,7 @@ def main() -> None:
             "negative_points_per_component": args.negative_points_per_component,
             "max_box_area_ratio": args.max_box_area_ratio,
             "selection_method": args.selection_method,
+            "selection_ablation_methods": list(ablation_methods),
             "mask_score_threshold": args.mask_score_threshold,
             "fusion_topk": args.fusion_topk,
             "best_per_component": not args.disable_best_per_component,
@@ -729,6 +773,18 @@ def main() -> None:
         if not dataset.samples:
             raise ValueError(f"--image-list {args.image_list} matched no images in split '{args.split}'")
         print(f"Image-list filter: {len(dataset.samples)}/{original_count} samples")
+    if args.num_shards < 1 or not 0 <= args.shard_index < args.num_shards:
+        raise ValueError("Require num_shards >= 1 and 0 <= shard_index < num_shards")
+    if args.num_shards > 1:
+        unsharded_count = len(dataset.samples)
+        dataset.samples = [
+            sample for index, sample in enumerate(dataset.samples)
+            if index % args.num_shards == args.shard_index
+        ]
+        print(
+            f"Shard {args.shard_index + 1}/{args.num_shards}: "
+            f"{len(dataset.samples)}/{unsharded_count} samples"
+        )
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -799,8 +855,15 @@ def main() -> None:
     overlay_dir = args.output_dir / "overlays"
     mask_dir.mkdir(parents=True, exist_ok=True)
     overlay_dir.mkdir(parents=True, exist_ok=True)
+    ablation_mask_dirs = {
+        method: args.output_dir / "ablation_masks" / method
+        for method in ablation_methods
+    }
+    for directory in ablation_mask_dirs.values():
+        directory.mkdir(parents=True, exist_ok=True)
 
     prompt_quality_rows: list[list[object]] = []
+    ablation_rows: list[list[object]] = []
     skipped_image_names: list[str] = []
 
     skipped = 0
@@ -808,7 +871,8 @@ def main() -> None:
     visualized = 0
     process_limit = None if args.process_all or args.max_images <= 0 else args.max_images
     use_ground_truth_class = (
-        args.cam_target_class == "ground_truth" and target_columns == ["tumor_type"]
+        args.cam_target_class in {"image_label", "ground_truth"}
+        and target_columns == ["tumor_type"]
     )
     try:
         for images, targets, image_names in tqdm(loader, desc="pseudo-masks"):
@@ -820,6 +884,14 @@ def main() -> None:
                 image_tensor = images[idx : idx + 1]  # [1,3,H,W]
                 mask_path = mask_dir / f"{Path(image_name).stem}.png"
                 save_visuals = visualized < max(0, args.save_visuals_limit)
+                if (
+                    args.skip_existing_candidate_cache
+                    and args.candidate_cache_dir is not None
+                    and int(targets[idx].item()) != 0
+                    and (args.candidate_cache_dir / f"{Path(image_name).stem}.npz").exists()
+                ):
+                    processed += 1
+                    continue
 
                 # ── 1. Classifier forward ─────────────────────────────────────
                 gt_class: int | None = None
@@ -861,7 +933,10 @@ def main() -> None:
                     )
                 )
                 if should_skip:
-                    save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
+                    empty_mask = np.zeros((args.image_size, args.image_size), dtype=np.uint8)
+                    save_mask(empty_mask, mask_path)
+                    for directory in ablation_mask_dirs.values():
+                        save_mask(empty_mask, directory / mask_path.name)
                     skipped += 1
                     skipped_image_names.append(str(image_name))
                     processed += 1
@@ -1320,6 +1395,39 @@ def main() -> None:
                         ),
                         prompt_modes=np.asarray(candidate_prompt_modes, dtype="U16"),
                     )
+                if args.candidate_cache_dir is not None:
+                    args.candidate_cache_dir.mkdir(parents=True, exist_ok=True)
+                    np.savez_compressed(
+                        args.candidate_cache_dir / f"{Path(image_name).stem}.npz",
+                        masks=sam_masks.astype(np.uint8),
+                        sam_scores=np.asarray(sam_scores, dtype=np.float32),
+                        component_ids=np.asarray(
+                            component_ids
+                            if component_ids is not None
+                            else np.zeros(len(sam_masks), dtype=np.int32),
+                            dtype=np.int32,
+                        ),
+                        fused_cam=fused_cam.astype(np.float32),
+                        bone_support=(
+                            bone_support.astype(np.uint8)
+                            if bone_support is not None
+                            else np.zeros_like(fused_cam, dtype=np.uint8)
+                        ),
+                        bone_likelihood=(
+                            bone_likelihood.astype(np.float32)
+                            if bone_likelihood is not None
+                            else np.zeros_like(fused_cam, dtype=np.float32)
+                        ),
+                        component_masks=(
+                            np.stack([component.mask for component in bone_components]).astype(np.uint8)
+                            if bone_components
+                            else np.zeros((0, args.image_size, args.image_size), dtype=np.uint8)
+                        ),
+                        component_ids_ordered=np.asarray(
+                            [int(component.component_id) for component in bone_components], dtype=np.int32
+                        ),
+                        prompt_modes=np.asarray(candidate_prompt_modes, dtype="U16"),
+                    )
 
                 # ── 4b. Prompt-quality metrics (optional, pre-SAM diagnostics) ──
                 gt_mask = gt_masks_by_name.get(str(image_name)) if args.evaluate_prompt_quality else None
@@ -1384,41 +1492,53 @@ def main() -> None:
                     ]
 
                 # ── 5. CAM-guided mask selection ──────────────────────────────
-                refined = select_and_fuse_masks(
-                    sam_masks,
-                    fused_cam,
-                    mask_score_threshold=args.mask_score_threshold,
-                    selection_method=args.selection_method,
-                    fusion_topk=args.fusion_topk,
-                    bone_likelihood=bone_likelihood,
-                    bone_support=bone_support,
-                    sam_scores=sam_scores,
-                    component_ids=component_ids,
-                    component_masks=(
-                        np.stack([component.mask for component in bone_components])
-                        if bone_components else None
-                    ),
-                    positive_points_by_component=(
-                        {
-                            int(component.component_id): tuple(component.positive_points)
-                            for component in bone_components
-                        }
-                        if bone_components else None
-                    ),
-                    negative_points_by_component=(
-                        {
-                            int(component.component_id): tuple(getattr(component, "negative_points", ()))
-                            for component in bone_components
-                        }
-                        if bone_components else None
-                    ),
-                    prompt_hybrid_weights=prompt_score_weights,
-                    prompt_area_target=args.prompt_area_target,
-                    prompt_area_log_sigma=args.prompt_area_log_sigma,
-                    best_per_component=component_ids is not None and not args.disable_best_per_component,
-                    component_topk=args.component_topk,
-                    support_clip_kernel=args.support_clip_kernel,
+                component_masks_for_selection = (
+                    np.stack([component.mask for component in bone_components])
+                    if bone_components else None
                 )
+                positive_points_for_selection = (
+                    {
+                        int(component.component_id): tuple(component.positive_points)
+                        for component in bone_components
+                    }
+                    if bone_components else None
+                )
+                negative_points_for_selection = (
+                    {
+                        int(component.component_id): tuple(getattr(component, "negative_points", ()))
+                        for component in bone_components
+                    }
+                    if bone_components else None
+                )
+
+                def _select(selection_method: str) -> np.ndarray:
+                    return select_and_fuse_masks(
+                        sam_masks,
+                        fused_cam,
+                        mask_score_threshold=args.mask_score_threshold,
+                        selection_method=selection_method,
+                        fusion_topk=args.fusion_topk,
+                        bone_likelihood=bone_likelihood,
+                        bone_support=bone_support,
+                        sam_scores=sam_scores,
+                        component_ids=component_ids,
+                        component_masks=component_masks_for_selection,
+                        prompt_modes=np.asarray(candidate_prompt_modes, dtype="U16"),
+                        positive_points_by_component=positive_points_for_selection,
+                        negative_points_by_component=negative_points_for_selection,
+                        prompt_hybrid_weights=prompt_score_weights,
+                        prompt_area_target=args.prompt_area_target,
+                        prompt_area_log_sigma=args.prompt_area_log_sigma,
+                        best_per_component=component_ids is not None and not args.disable_best_per_component,
+                        component_topk=args.component_topk,
+                        support_clip_kernel=args.support_clip_kernel,
+                    )
+
+                refined = _select(args.selection_method)
+                ablation_refined = {
+                    method: _select(method)
+                    for method in ablation_methods
+                }
 
                 # ── 5b. SAM-vs-selection oracle diagnostic (optional) ───────────
                 if prompt_quality_entry is not None:
@@ -1449,6 +1569,43 @@ def main() -> None:
                     guidance_threshold=args.guidance_threshold,
                     max_hole_area=args.max_hole_area,
                 )
+                ablation_final_masks = {
+                    method: morphological_refinement(
+                        candidate_mask,
+                        closing_kernel=args.closing_kernel,
+                        opening_kernel=args.opening_kernel,
+                        min_size=args.min_size,
+                        guidance_map=bone_likelihood,
+                        guidance_threshold=args.guidance_threshold,
+                        max_hole_area=args.max_hole_area,
+                    )
+                    for method, candidate_mask in ablation_refined.items()
+                }
+
+                if gt_mask is not None:
+                    for method, candidate_mask in ablation_refined.items():
+                        metrics = oracle_vs_selected_metrics(
+                            sam_masks,
+                            candidate_mask,
+                            gt_mask,
+                            bone_support=bone_support,
+                            selection_method=method,
+                            support_clip_kernel=args.support_clip_kernel,
+                        )
+                        final_metrics_for_method = binary_overlap_metrics(
+                            ablation_final_masks[method], gt_mask
+                        )
+                        ablation_rows.append([
+                            image_name,
+                            tumor_type_by_name.get(str(image_name), ""),
+                            method,
+                            metrics["best_single_dice"],
+                            metrics["best_single_dice_clipped"],
+                            metrics["selected_dice"],
+                            metrics["support_loss_dice"],
+                            metrics["selection_loss_dice"],
+                            final_metrics_for_method["dice"],
+                        ])
 
                 if prompt_quality_entry is not None:
                     final_metrics = binary_overlap_metrics(final_mask, gt_mask)
@@ -1462,6 +1619,8 @@ def main() -> None:
 
                 # ── 7. Save ───────────────────────────────────────────────────
                 save_mask(final_mask, mask_path)
+                for method, candidate_mask in ablation_final_masks.items():
+                    save_mask(candidate_mask, ablation_mask_dirs[method] / mask_path.name)
                 processed += 1
             if process_limit is not None and processed >= process_limit:
                 break
@@ -1532,6 +1691,29 @@ def main() -> None:
             for tumor_type_name, values in sorted(by_type.items(), key=lambda item: -len(item[1])):
                 print(f"  {tumor_type_name:<28} n={len(values):>4}  mean_oracle_dice={sum(values)/len(values):.4f}")
         print(f"Saved per-image prompt-quality metrics to {quality_csv}")
+
+    if ablation_methods:
+        import csv
+
+        ablation_csv = args.output_dir / "selection_ablation.csv"
+        with ablation_csv.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "image_name", "tumor_type", "selection_method",
+                "oracle_best_single_dice", "oracle_best_single_dice_clipped",
+                "selected_dice", "support_loss_dice", "selection_loss_dice", "final_dice",
+            ])
+            writer.writerows(ablation_rows)
+        print("Selection ablation on the shared candidate pool:")
+        for method in ablation_methods:
+            rows = [row for row in ablation_rows if row[2] == method and row[5] == row[5]]
+            mean = lambda index: sum(float(row[index]) for row in rows) / len(rows) if rows else float("nan")
+            print(
+                f"  {method}: n={len(rows)} oracle_clipped={mean(4):.4f} "
+                f"selected_dice={mean(5):.4f} selection_loss={mean(7):.4f} "
+                f"final_dice={mean(8):.4f}"
+            )
+        print(f"Saved selection ablation metrics to {ablation_csv}")
 
 
 if __name__ == "__main__":

@@ -225,6 +225,8 @@ class BTXRDSegmentationDataset(Dataset):
         image_size: int = 512,
         augment: bool = False,
         use_clahe: bool = False,
+        pseudo_mask_root: str | Path | None = None,
+        require_all_pseudo_masks: bool = True,
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
         split_seed: int = DEFAULT_SPLIT_SEED,
     ) -> None:
@@ -234,10 +236,28 @@ class BTXRDSegmentationDataset(Dataset):
         self.image_size = image_size
         self.augment = augment
         self.use_clahe = use_clahe
+        self.pseudo_mask_root = Path(pseudo_mask_root) if pseudo_mask_root is not None else None
 
         records = load_btxrd_records(self.btxrd_root)
         self.samples = split_btxrd_records(records, split=split, ratios=split_ratios, seed=split_seed)
         self.split = split
+
+        if self.pseudo_mask_root is not None:
+            missing_pseudo = [
+                sample["image_id"] for sample in self.samples
+                if not (self.pseudo_mask_root / f"{Path(str(sample['image_id'])).stem}.png").exists()
+            ]
+            if missing_pseudo and require_all_pseudo_masks:
+                raise FileNotFoundError(
+                    f"Missing {len(missing_pseudo)} pseudo masks under {self.pseudo_mask_root}, "
+                    f"e.g. {missing_pseudo[:5]}"
+                )
+            if missing_pseudo:
+                missing_stems = {Path(str(name)).stem for name in missing_pseudo}
+                self.samples = [
+                    sample for sample in self.samples
+                    if Path(str(sample["image_id"])).stem not in missing_stems
+                ]
 
         if not self.samples:
             raise FileNotFoundError(
@@ -263,6 +283,12 @@ class BTXRDSegmentationDataset(Dataset):
         return self.annotations_dir / f"{Path(image_id).stem}.json"
 
     def _build_mask(self, sample: dict[str, object], image_size: tuple[int, int]) -> Image.Image:
+        if self.pseudo_mask_root is not None:
+            pseudo_path = self.pseudo_mask_root / f"{Path(str(sample['image_id'])).stem}.png"
+            # Crucially, this branch never opens annotations_dir. It is the
+            # training path for weak supervision; LabelMe GT remains confined
+            # to the fully-supervised/evaluation branch below.
+            return Image.open(pseudo_path).convert("L")
         width, height = image_size
         if not sample["tumor"]:
             mask = np.zeros((height, width), dtype=bool)

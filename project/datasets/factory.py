@@ -65,6 +65,8 @@ def build_segmentation_dataset(
     augment: bool = False,
     use_clahe: bool = False,
     annotation_name: str = "_annotations_bone_rle.coco.json",
+    pseudo_mask_root: str | Path | None = None,
+    require_all_pseudo_masks: bool = True,
 ):
     dataset = _check_dataset_name(dataset)
     if dataset == "ramh1200":
@@ -82,4 +84,6 @@ def build_segmentation_dataset(
         image_size=image_size,
         augment=augment,
         use_clahe=use_clahe,
+        pseudo_mask_root=pseudo_mask_root,
+        require_all_pseudo_masks=require_all_pseudo_masks,
     )

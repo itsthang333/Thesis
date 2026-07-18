@@ -77,7 +77,11 @@ def main() -> None:
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet(in_channels=3, out_channels=1, base_channels=64)
+    model = UNet(
+        in_channels=3,
+        out_channels=1,
+        base_channels=int(checkpoint.get("base_channels", 64)),
+    )
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     model.to(device).eval()
 
