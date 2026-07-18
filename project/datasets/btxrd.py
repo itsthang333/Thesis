@@ -227,13 +227,29 @@ class BTXRDSegmentationDataset(Dataset):
         use_clahe: bool = False,
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
         split_seed: int = DEFAULT_SPLIT_SEED,
+        pred_mask_dir: str | Path | None = None,
     ) -> None:
+        """pred_mask_dir: optional directory of pseudo-mask PNGs (one file per
+        image, matching generate_pseudo_masks.py's ``masks/`` output naming,
+        e.g. ``IMG000002.png`` for ``IMG000002.jpeg``). When set, masks are
+        read from this WSSS-generated pipeline output instead of rasterizing
+        the LabelMe ground-truth polygon -- this is how train_segmentation.py
+        trains U-Net on the pipeline's own pseudo-masks rather than on GT
+        (which stays reserved for evaluation/oracle baselines). Images the
+        pipeline skipped as low-confidence/normal fall back to an all-zero
+        mask: generate_pseudo_masks.py usually still writes an all-zero PNG
+        for these (read normally, same result), and only omits the PNG
+        entirely for images excluded by --max-images/--image-list -- both
+        cases are handled identically here, matching how generate_pseudo_masks.py treats
+        them.
+        """
         self.btxrd_root = resolve_btxrd_root(root)
         self.images_dir = self.btxrd_root / DEFAULT_IMAGES_DIR
         self.annotations_dir = self.btxrd_root / DEFAULT_ANNOTATIONS_DIR
         self.image_size = image_size
         self.augment = augment
         self.use_clahe = use_clahe
+        self.pred_mask_dir = Path(pred_mask_dir) if pred_mask_dir is not None else None
 
         records = load_btxrd_records(self.btxrd_root)
         self.samples = split_btxrd_records(records, split=split, ratios=split_ratios, seed=split_seed)
@@ -262,9 +278,21 @@ class BTXRDSegmentationDataset(Dataset):
     def _annotation_path(self, image_id: str) -> Path:
         return self.annotations_dir / f"{Path(image_id).stem}.json"
 
+    def _pred_mask_path(self, image_id: str) -> Path:
+        assert self.pred_mask_dir is not None
+        return self.pred_mask_dir / f"{Path(image_id).stem}.png"
+
     def _build_mask(self, sample: dict[str, object], image_size: tuple[int, int]) -> Image.Image:
         width, height = image_size
-        if not sample["tumor"]:
+        if self.pred_mask_dir is not None:
+            pred_mask_path = self._pred_mask_path(str(sample["image_id"]))
+            if pred_mask_path.exists():
+                return Image.open(pred_mask_path).convert("L").resize((width, height), Image.NEAREST)
+            # generate_pseudo_masks.py skips normal/low-confidence images and
+            # writes no PNG for them -- an all-zero mask matches that pipeline's
+            # own treatment of such images (see its skipped_low_confidence.txt).
+            mask = np.zeros((height, width), dtype=bool)
+        elif not sample["tumor"]:
             mask = np.zeros((height, width), dtype=bool)
         else:
             annotation_path = self._annotation_path(str(sample["image_id"]))

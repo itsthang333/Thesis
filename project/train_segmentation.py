@@ -5,6 +5,7 @@ import csv
 import sys
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -38,9 +39,43 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "segmentation")
     parser.add_argument("--use-clahe", action="store_true")
+    parser.add_argument("--multi-gpu", action="store_true",
+                        help="Wrap the model in nn.DataParallel to use all visible CUDA devices "
+                        "(e.g. Kaggle's T4x2) -- splits each batch across GPUs. No-op with 0 or 1 "
+                        "GPU visible. Checkpoints are always saved without the DataParallel "
+                        "'module.' prefix, so they load identically with or without this flag.")
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_dice does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
+    parser.add_argument("--train-pred-mask-root", type=Path, default=None,
+                        help="btxrd only. Directory of pseudo-mask PNGs (generate_pseudo_masks.py's "
+                        "masks/ output) for --train-split, one file per image named "
+                        "<image_stem>.png. When set, U-Net trains on these WSSS-generated masks "
+                        "instead of ground-truth polygons -- this is how to measure the pipeline's "
+                        "actual end-to-end segmentation quality rather than a supervised oracle.")
+    parser.add_argument("--val-pred-mask-root", type=Path, default=None,
+                        help="Same as --train-pred-mask-root but for --val-split. Ground-truth "
+                        "polygons are still used for the printed val_dice/val_iou metrics unless "
+                        "this is also set; set both consistently unless deliberately measuring "
+                        "against GT while training on pseudo-masks.")
+    parser.add_argument("--pos-weight-mode", type=str, default="auto", choices=["auto", "none", "manual"],
+                        help="How to weight foreground (lesion) pixels in BCE, countering the "
+                        "collapse-to-all-background failure found empirically on BTXRD (lesions "
+                        "average ~2.6%% of image area, so plain BCE can drive loss low by predicting "
+                        "'no lesion anywhere' before learning anything -- observed as val_dice frozen "
+                        "at exactly the dataset's normal-image fraction for several epochs). "
+                        "'auto' (default) computes background/foreground pixel ratio from the actual "
+                        "train-set masks. 'none' disables weighting (original behavior). 'manual' uses "
+                        "--pos-weight-value directly.")
+    parser.add_argument("--pos-weight-value", type=float, default=None,
+                        help="Fixed pos_weight to use when --pos-weight-mode=manual.")
+    parser.add_argument("--resume-from", type=Path, default=None,
+                        help="Path to a checkpoint (e.g. last_unet.pt) to resume training from -- "
+                        "restores model/optimizer state and continues epoch numbering and the "
+                        "training log instead of starting over. Needed since this script has no "
+                        "built-in resume: without it, re-running after an interrupted session (e.g. "
+                        "a disconnected Colab runtime) silently restarts from a fresh model AND "
+                        "overwrites training_log.csv, discarding all prior epochs.")
     return parser.parse_args()
 
 
@@ -55,6 +90,8 @@ def seed_everything(seed: int) -> None:
 
 
 def build_datasets(args: argparse.Namespace):
+    if (args.train_pred_mask_root is not None or args.val_pred_mask_root is not None) and args.dataset != "btxrd":
+        raise ValueError("--train-pred-mask-root/--val-pred-mask-root are only supported for --dataset btxrd")
     train_dataset = build_segmentation_dataset(
         args.dataset,
         root=args.ram_root,
@@ -63,6 +100,7 @@ def build_datasets(args: argparse.Namespace):
         augment=True,
         use_clahe=args.use_clahe,
         annotation_name=args.annotation_name,
+        pred_mask_dir=args.train_pred_mask_root,
     )
     val_dataset = build_segmentation_dataset(
         args.dataset,
@@ -72,6 +110,7 @@ def build_datasets(args: argparse.Namespace):
         augment=False,
         use_clahe=args.use_clahe,
         annotation_name=args.annotation_name,
+        pred_mask_dir=args.val_pred_mask_root,
     )
     print(
         f"Loaded {args.dataset}: {len(train_dataset)} train images from {args.train_split}, "
@@ -80,7 +119,50 @@ def build_datasets(args: argparse.Namespace):
     return train_dataset, val_dataset
 
 
-def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tuple[float, dict[str, float]]:
+def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32) -> float:
+    """background_pixels / foreground_pixels across the actual train-set
+    masks -- used to weight BCE so missing a lesion pixel costs as much as
+    a false positive on background, countering the collapse-to-empty-mask
+    failure mode found empirically on BTXRD (see bce_dice_loss's docstring).
+    Iterates the raw mask tensors already produced by the dataset's own
+    transform, so this matches exactly what the model is trained against --
+    including pseudo-masks when --train-pred-mask-root is set, since the
+    ratio must reflect whatever target the model actually sees, not the
+    ground-truth polygon distribution.
+
+    num_workers defaults to 0 (single-process, no DataLoader worker
+    subprocesses) rather than the main training loop's --num-workers value.
+    An earlier version of this function defaulted to num_workers>0 here and
+    was observed to hang indefinitely (30+ minutes, no progress) on Colab --
+    a known failure mode of PyTorch DataLoader worker subprocesses combined
+    with a Google-Drive-backed FUSE mount (fork() inside a notebook kernel
+    plus network-filesystem I/O in each worker is a common deadlock
+    trigger). This one-time startup pass is small enough (~3000 images) that
+    single-process iteration is an acceptable, safe default; only raise
+    num_workers here if you've confirmed it doesn't hang in your environment.
+    """
+    loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+    )
+    total_pixels = 0
+    foreground_pixels = 0
+    for batch_idx, (_, masks, _) in enumerate(loader):
+        total_pixels += masks.numel()
+        foreground_pixels += float((masks > 0.5).sum().item())
+        if batch_idx % 10 == 0:
+            print(f"  pos_weight scan: batch {batch_idx}/{len(loader)}", flush=True)
+    background_pixels = total_pixels - foreground_pixels
+    if foreground_pixels <= 0:
+        raise ValueError(
+            "No foreground (lesion) pixels found in the entire train set -- pos_weight is "
+            "undefined. Check that annotations/pseudo-masks are loading correctly before training."
+        )
+    return background_pixels / foreground_pixels
+
+
+def run_epoch(
+    model, loader, scaler, device, train: bool, optimizer=None, pos_weight: float | None = None
+) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
     total_dice = 0.0
     total_iou = 0.0
@@ -95,7 +177,7 @@ def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tup
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
-                loss = bce_dice_loss(logits, masks)
+                loss = bce_dice_loss(logits, masks, pos_weight=pos_weight)
 
             if train:
                 optimizer.zero_grad(set_to_none=True)
@@ -123,15 +205,24 @@ def save_checkpoint(
     epoch: int,
     best_metric: float,
     dataset: str,
+    pos_weight: float | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    # Unwrap nn.DataParallel before saving: DataParallel prefixes every state_dict
+    # key with "module." (model.module.inc.block.0.weight instead of
+    # model.inc.block.0.weight), so a checkpoint saved from a DataParallel-wrapped
+    # model would fail to load into a plain UNet() with strict=True (used by
+    # evaluate_unet.py and --resume-from) -- saving the unwrapped state_dict here
+    # keeps checkpoints identical whether or not multi-GPU was used to train.
+    model_to_save = model.module if isinstance(model, nn.DataParallel) else model
     torch.save(
         {
             "epoch": epoch,
-            "model_state_dict": model.state_dict(),
+            "model_state_dict": model_to_save.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "best_metric": best_metric,
             "dataset": dataset,
+            "pos_weight": pos_weight,
         },
         path,
     )
@@ -150,18 +241,78 @@ def main() -> None:
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
 
+    num_gpus = torch.cuda.device_count()
+    use_multi_gpu = args.multi_gpu and device.type == "cuda" and num_gpus > 1
+    if args.multi_gpu and not use_multi_gpu:
+        print(f"--multi-gpu requested but only {num_gpus} CUDA device(s) visible; running single-device.")
+
+    if args.pos_weight_mode == "none":
+        pos_weight = None
+    elif args.pos_weight_mode == "manual":
+        if args.pos_weight_value is None:
+            raise ValueError("--pos-weight-mode=manual requires --pos-weight-value.")
+        pos_weight = args.pos_weight_value
+    else:  # "auto"
+        print("Computing pos_weight from train-set masks (background/foreground pixel ratio)...")
+        pos_weight = compute_pos_weight(train_dataset)
+    print(f"pos_weight_mode={args.pos_weight_mode} -> pos_weight={pos_weight}")
+
     history_path = args.output_dir / "training_log.csv"
     best_val_dice = 0.0
     epochs_without_improvement = 0
+    start_epoch = 1
+
+    if args.resume_from is not None:
+        print(f"Resuming from checkpoint: {args.resume_from}")
+        checkpoint = torch.load(args.resume_from, map_location=device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        best_val_dice = checkpoint.get("best_metric", 0.0)
+        start_epoch = checkpoint.get("epoch", 0) + 1
+        print(f"Resumed at epoch {start_epoch} (best_val_dice so far: {best_val_dice:.4f})")
+        # pos_weight is recomputed above from the CURRENT train_dataset (so it
+        # always reflects --train-pred-mask-root as currently set), not
+        # restored from the checkpoint. If that changed since the run being
+        # resumed (e.g. --train-pred-mask-root now points at a different
+        # pseudo-mask directory), the loss weighting shifts mid-training --
+        # warn loudly rather than silently changing the optimization target.
+        checkpoint_pos_weight = checkpoint.get("pos_weight")
+        if (
+            checkpoint_pos_weight is not None
+            and pos_weight is not None
+            and abs(checkpoint_pos_weight - pos_weight) > 0.05 * max(checkpoint_pos_weight, 1e-6)
+        ):
+            print(
+                f"WARNING: resumed checkpoint was trained with pos_weight={checkpoint_pos_weight:.4f}, "
+                f"but the current run computed pos_weight={pos_weight:.4f} (>5% difference) -- "
+                "this usually means --train-pred-mask-root points at different masks than the "
+                "resumed run used. Loss weighting will change starting this epoch."
+            )
+
+    # Wrap in DataParallel AFTER loading any --resume-from checkpoint (which
+    # was saved from a plain, unwrapped model -- see save_checkpoint) so
+    # load_state_dict above always sees keys without the "module." prefix
+    # DataParallel would otherwise require.
+    if use_multi_gpu:
+        print(f"Using nn.DataParallel across {num_gpus} GPUs (effective batch size = "
+              f"{args.batch_size} x {num_gpus} = {args.batch_size * num_gpus} per step).")
+        model = nn.DataParallel(model)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    with history_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
+    # Only (re)write the header when starting fresh -- resuming must append to
+    # the existing training_log.csv, not overwrite it (the file was opened
+    # with mode "w" unconditionally before this fix, which silently discarded
+    # every prior epoch's row on any re-run, resume or not).
+    if args.resume_from is None or not history_path.exists():
+        with history_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
 
-    for epoch in range(1, args.epochs + 1):
-        train_loss, train_metrics = run_epoch(model, train_loader, scaler, device, train=True, optimizer=optimizer)
-        val_loss, val_metrics = run_epoch(model, val_loader, scaler, device, train=False)
+    for epoch in range(start_epoch, args.epochs + 1):
+        train_loss, train_metrics = run_epoch(
+            model, train_loader, scaler, device, train=True, optimizer=optimizer, pos_weight=pos_weight
+        )
+        val_loss, val_metrics = run_epoch(model, val_loader, scaler, device, train=False, pos_weight=pos_weight)
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -182,14 +333,20 @@ def main() -> None:
             f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f}"
         )
 
-        save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset)
+        # Update best_val_dice for THIS epoch before saving last_unet.pt, so its
+        # best_metric field reflects the true best-so-far (including this epoch)
+        # rather than lagging one epoch behind -- otherwise resuming from
+        # last_unet.pt reads a stale best_metric and can let a worse later
+        # epoch overwrite best_unet.pt.
         if val_metrics["dice"] > best_val_dice:
             best_val_dice = val_metrics["dice"]
             epochs_without_improvement = 0
-            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset)
+            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
+            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
             print(f"--> Saved new best model with Dice = {best_val_dice:.4f}")
         else:
             epochs_without_improvement += 1
+            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
             print(
