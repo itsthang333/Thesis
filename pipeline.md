@@ -44,7 +44,7 @@ The profile is image-level only; polygon masks are constructed only by the
 optional `--evaluate-prompt-quality` diagnostics path.
 The matching classifier is trained with
 `project/train_classifier.py --pipeline-profile btxrd_best`; this fixes
-`tumor_type` CrossEntropy training at 320 px, batch size 4, six epochs, seed
+`tumor_type` CrossEntropy training at 320 px, batch size 4, 25 epochs, seed
 42, and disables PuzzleCAM/teacher-attention losses for this selected run.
 
 See `btxrd_kaggle.ipynb` for the BTXRD equivalent of the walkthrough below.

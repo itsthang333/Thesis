@@ -269,7 +269,7 @@ show_gt_case(False)
 cells.append(markdown("""## 4. SAM checkpoint and canonical classifier training
 
 The next cells train the paired image-level classifier using `--pipeline-profile btxrd_best`. The profile fixes
-`tumor_type`, 320 px, batch 4, six epochs, seed 42, inverse-frequency CE, and disables PuzzleCAM/teacher-attention
+`tumor_type`, 320 px, batch 4, 25 epochs, seed 42, inverse-frequency CE, and disables PuzzleCAM/teacher-attention
 losses for the selected CE/320 model.
 """))
 
@@ -286,7 +286,7 @@ CLASSIFIER_CHECKPOINT = CLASSIFIER_OUTPUT / "best_classifier.pt"
 classifier_cmd = [
     sys.executable, "train_classifier.py", "--dataset", "btxrd", "--pipeline-profile", "btxrd_best",
     "--ram-root", str(BTXRD_ROOT), "--num-workers", str(NUM_WORKERS),
-    "--save-cam-epochs", "1,3,6", "--cam-preview-count", "4", "--output-dir", str(CLASSIFIER_OUTPUT),
+    "--save-cam-epochs", "1,5,10,15,20,25", "--cam-preview-count", "4", "--output-dir", str(CLASSIFIER_OUTPUT),
 ]
 if RUN_TRAIN_CLASSIFIER:
     run_streaming(classifier_cmd)

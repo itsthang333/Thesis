@@ -59,7 +59,7 @@ class BtxrdBestPipelineConfig:
     target_columns: tuple[str, ...] = ("tumor_type",)
     classifier_image_size: int = 320
     classifier_batch_size: int = 4
-    classifier_epochs: int = 6
+    classifier_epochs: int = 25
     classifier_lr: float = 1e-4
     classifier_weight_decay: float = 1e-4
     classifier_seed: int = 42

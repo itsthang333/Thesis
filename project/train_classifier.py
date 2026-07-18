@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
         choices=["default", "btxrd_best"],
         help=(
             "btxrd_best freezes the classifier setup paired with the selected "
-            "WSSS pipeline: 10-class tumor_type CE at 320 px, batch 4, 6 epochs, "
+            "WSSS pipeline: 10-class tumor_type CE at 320 px, batch 4, 25 epochs, "
             "and PuzzleCAM/attention losses disabled."
         ),
     )
