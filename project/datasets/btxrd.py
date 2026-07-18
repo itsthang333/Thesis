@@ -43,6 +43,21 @@ TUMOR_TYPE_COLUMNS = (
 )
 TUMOR_TYPE_CLASS_NAMES = ("normal",) + TUMOR_TYPE_COLUMNS
 
+# Coarse anatomical region columns in dataset.csv, mutually exclusive (every
+# image belongs to exactly one). Unlike the specific-bone columns (tibia,
+# femur, humerus, hand, ulna, radius, foot, fibula, hip bone, and the
+# *-joint columns), which are only ever set to 1 for tumor images in this
+# dataset (verified: e.g. tibia=630/0, femur=592/0, humerus=235/0 for
+# tumor/normal respectively) -- using those as a classifier input or
+# auxiliary label would leak the tumor label itself ("has a tibia/femur/
+# humerus annotation" => tumor, regardless of any real lesion feature).
+# The three region columns below do not have this problem: both tumor and
+# normal images are labeled with one of them (see ANATOMY_REGION_COLUMNS'
+# docstring in the loader), so they are safe to use for anatomy-matched
+# region-conditioned analysis (pairing a tumor image with normal images from
+# the SAME region) without leaking tumor/normal status.
+ANATOMY_REGION_COLUMNS = ("upper limb", "lower limb", "pelvis")
+
 
 def resolve_btxrd_root(root: str | Path) -> Path:
     """Return the directory that directly contains images/, Annotations/, dataset.csv|xlsx."""
@@ -110,6 +125,16 @@ def _row_tumor_type_index(row: dict[str, object]) -> int:
     return 0
 
 
+def _row_anatomy_region_index(row: dict[str, object]) -> int:
+    """Return the anatomy-region index into ANATOMY_REGION_COLUMNS, or -1 if
+    none/more than one column is set (an unexpected data-quality case for
+    this otherwise mutually-exclusive triple -- callers should treat -1 as
+    "region unknown", not silently default to region 0).
+    """
+    matches = [i for i, column in enumerate(ANATOMY_REGION_COLUMNS) if _row_flag(row, column)]
+    return matches[0] if len(matches) == 1 else -1
+
+
 def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
     """Return one record per image with the fields this project cares about."""
     btxrd_root = resolve_btxrd_root(btxrd_root)
@@ -126,6 +151,7 @@ def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
                 "benign": _row_flag(row, "benign"),
                 "malignant": _row_flag(row, "malignant"),
                 "tumor_type": _row_tumor_type_index(row),
+                "anatomy_region": _row_anatomy_region_index(row),
             }
         )
     return records
