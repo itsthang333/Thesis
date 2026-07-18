@@ -14,8 +14,30 @@ def dice_loss_from_logits(logits: torch.Tensor, targets: torch.Tensor, eps: floa
     return 1.0 - dice.mean()
 
 
-def bce_dice_loss(logits: torch.Tensor, targets: torch.Tensor, bce_weight: float = 0.5) -> torch.Tensor:
-    bce = F.binary_cross_entropy_with_logits(logits, targets)
+def bce_dice_loss(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    bce_weight: float = 0.5,
+    pos_weight: torch.Tensor | float | None = None,
+) -> torch.Tensor:
+    """Combine Dice loss with optionally foreground-weighted BCE.
+
+    BTXRD tumor pixels occupy only a small fraction of an image. Plain BCE can
+    therefore reward an all-background prediction before the model learns the
+    lesion. ``pos_weight`` increases the contribution of positive pixels; the
+    fully supervised trainer can estimate it as background/foreground pixels
+    from the actual training masks.
+    """
+    pos_weight_tensor = (
+        torch.as_tensor(pos_weight, device=logits.device, dtype=logits.dtype)
+        if pos_weight is not None
+        else None
+    )
+    bce = F.binary_cross_entropy_with_logits(
+        logits,
+        targets,
+        pos_weight=pos_weight_tensor,
+    )
     dice = dice_loss_from_logits(logits, targets)
     return bce_weight * bce + (1.0 - bce_weight) * dice
 

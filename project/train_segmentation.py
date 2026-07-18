@@ -41,6 +41,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_dice does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
+    parser.add_argument(
+        "--pos-weight-mode",
+        choices=("auto", "none", "manual"),
+        default="auto",
+        help=(
+            "Foreground weighting for BCE. 'auto' estimates background/foreground pixel ratio "
+            "from train masks; 'none' keeps the original unweighted BCE; 'manual' uses "
+            "--pos-weight-value."
+        ),
+    )
+    parser.add_argument(
+        "--pos-weight-value",
+        type=float,
+        default=None,
+        help="Fixed positive-class weight; required with --pos-weight-mode manual.",
+    )
     return parser.parse_args()
 
 
@@ -80,7 +96,45 @@ def build_datasets(args: argparse.Namespace):
     return train_dataset, val_dataset
 
 
-def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tuple[float, dict[str, float]]:
+def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32) -> float:
+    """Estimate background/foreground pixel ratio from transformed train masks.
+
+    The one-time scan intentionally defaults to ``num_workers=0``. Worker
+    subprocesses can hang on Colab/Drive or notebook-backed filesystems, while
+    this batched single-process pass is deterministic and runs only once.
+    """
+    loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+    )
+    total_pixels = 0
+    foreground_pixels = 0
+    for batch_index, (_, masks, _) in enumerate(loader):
+        total_pixels += masks.numel()
+        foreground_pixels += int((masks > 0.5).sum().item())
+        if batch_index % 10 == 0:
+            print(f"  pos_weight scan: batch {batch_index}/{len(loader)}", flush=True)
+
+    if foreground_pixels <= 0:
+        raise ValueError(
+            "No foreground pixels were found in the training masks. "
+            "Check BTXRD annotations before training."
+        )
+    background_pixels = total_pixels - foreground_pixels
+    return float(background_pixels / foreground_pixels)
+
+
+def run_epoch(
+    model,
+    loader,
+    scaler,
+    device,
+    train: bool,
+    optimizer=None,
+    pos_weight: float | None = None,
+) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
     total_dice = 0.0
     total_iou = 0.0
@@ -95,7 +149,7 @@ def run_epoch(model, loader, scaler, device, train: bool, optimizer=None) -> tup
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
-                loss = bce_dice_loss(logits, masks)
+                loss = bce_dice_loss(logits, masks, pos_weight=pos_weight)
 
             if train:
                 optimizer.zero_grad(set_to_none=True)
@@ -145,6 +199,19 @@ def main() -> None:
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
+    if args.pos_weight_mode == "none":
+        pos_weight = None
+    elif args.pos_weight_mode == "manual":
+        if args.pos_weight_value is None:
+            raise ValueError("--pos-weight-mode manual requires --pos-weight-value")
+        if args.pos_weight_value <= 0:
+            raise ValueError("--pos-weight-value must be positive")
+        pos_weight = float(args.pos_weight_value)
+    else:
+        print("Computing pos_weight from train masks (background/foreground)...")
+        pos_weight = compute_pos_weight(train_dataset)
+    print(f"pos_weight_mode={args.pos_weight_mode} -> pos_weight={pos_weight}")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet(in_channels=3, out_channels=1, base_channels=64).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -160,8 +227,23 @@ def main() -> None:
         writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
 
     for epoch in range(1, args.epochs + 1):
-        train_loss, train_metrics = run_epoch(model, train_loader, scaler, device, train=True, optimizer=optimizer)
-        val_loss, val_metrics = run_epoch(model, val_loader, scaler, device, train=False)
+        train_loss, train_metrics = run_epoch(
+            model,
+            train_loader,
+            scaler,
+            device,
+            train=True,
+            optimizer=optimizer,
+            pos_weight=pos_weight,
+        )
+        val_loss, val_metrics = run_epoch(
+            model,
+            val_loader,
+            scaler,
+            device,
+            train=False,
+            pos_weight=pos_weight,
+        )
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
