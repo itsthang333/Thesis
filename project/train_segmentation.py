@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -18,7 +19,15 @@ if str(ROOT) not in sys.path:
 
 from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
 from datasets.factory import build_segmentation_dataset
-from models.losses import bce_dice_loss, dice_coefficient, iou_score
+from models.losses import (
+    bce_dice_loss,
+    binary_segmentation_metric_sums,
+    dice_coefficient,
+    finalize_binary_segmentation_metrics,
+    grouped_pseudo_segmentation_loss,
+    iou_score,
+    soft_boundary_weight_map,
+)
 from models.unet import UNet
 from runtime_devices import prepare_data_parallel, resolve_gpu_count, unwrap_model
 
@@ -46,7 +55,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-channels", type=int, default=64)
     parser.add_argument(
         "--pseudo-boundary-ignore-px", type=int, default=0,
-        help="WSSS only: exclude this many pixels around pseudo-mask boundaries from supervised loss.",
+        help="Legacy WSSS option: hard-ignore this boundary band. Prefer --pseudo-boundary-soft-px.",
+    )
+    parser.add_argument(
+        "--pseudo-boundary-soft-px", type=int, default=0,
+        help="WSSS only: down-weight (but never delete) this pseudo-mask boundary band.",
+    )
+    parser.add_argument(
+        "--pseudo-boundary-weight", type=float, default=0.25,
+        help="Supervision weight inside --pseudo-boundary-soft-px (0..1).",
+    )
+    parser.add_argument(
+        "--pseudo-bce-weight", type=float, default=0.5,
+        help="WSSS loss mix: BCE weight; the remainder is tumor-only soft Dice.",
     )
     parser.add_argument(
         "--consistency-weight", type=float, default=0.0,
@@ -55,6 +76,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--consistency-confidence", type=float, default=0.8,
         help="Use weak predictions >=c or <=1-c as consistency targets.",
+    )
+    parser.add_argument(
+        "--consistency-rampup-epochs", type=int, default=0,
+        help="Linearly ramp WSSS consistency from zero over this many epochs.",
+    )
+    parser.add_argument(
+        "--val-thresholds", type=str,
+        default="0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95",
+        help="WSSS pseudo-validation thresholds. Selection uses tumor-Dice/normal-specificity harmonic mean.",
     )
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "segmentation")
     parser.add_argument("--use-clahe", action="store_true")
@@ -81,10 +111,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-lr", type=float, default=1e-7)
     parser.add_argument(
         "--pos-weight-mode",
-        choices=("auto", "none", "manual"),
+        choices=("auto", "sqrt_auto", "none", "manual"),
         default="auto",
         help=(
-            "Foreground weighting for BCE. 'auto' estimates background/foreground pixel ratio "
+            "Foreground weighting for BCE. 'auto' uses the background/foreground ratio, "
+            "'sqrt_auto' (recommended for noisy pseudo masks) uses its square root, "
             "from train masks; 'none' keeps the original unweighted BCE; 'manual' uses "
             "--pos-weight-value."
         ),
@@ -175,6 +206,27 @@ def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32
     return float(background_pixels / foreground_pixels)
 
 
+def parse_thresholds(value: str) -> tuple[float, ...]:
+    thresholds = sorted({float(item.strip()) for item in value.split(",") if item.strip()})
+    if not thresholds or any(not 0.0 < item < 1.0 for item in thresholds):
+        raise ValueError("--val-thresholds must contain comma-separated values strictly between 0 and 1")
+    return tuple(thresholds)
+
+
+def btxrd_tumor_status_by_name(dataset) -> dict[str, bool]:
+    if not hasattr(dataset, "samples"):
+        raise ValueError("BTXRD pseudo supervision requires dataset.samples metadata")
+    return {
+        str(sample["image_id"]): int(sample["tumor_type"]) != 0
+        for sample in dataset.samples
+    }
+
+
+def add_metric_sums(total: dict[str, float], update: dict[str, float]) -> None:
+    for key, value in update.items():
+        total[key] = total.get(key, 0.0) + float(value)
+
+
 def run_epoch(
     model,
     loader,
@@ -183,39 +235,62 @@ def run_epoch(
     train: bool,
     optimizer=None,
     pos_weight: float | None = None,
+    pseudo_supervision: bool = False,
+    group_explicit_metrics: bool = False,
+    tumor_status_by_name: dict[str, bool] | None = None,
     pseudo_boundary_ignore_px: int = 0,
+    pseudo_boundary_soft_px: int = 0,
+    pseudo_boundary_weight: float = 0.25,
+    pseudo_bce_weight: float = 0.5,
     consistency_weight: float = 0.0,
     consistency_confidence: float = 0.8,
+    metric_thresholds: tuple[float, ...] = (0.5,),
 ) -> tuple[float, dict[str, float]]:
     total_loss = 0.0
     total_dice = 0.0
     total_iou = 0.0
-    batches = 0
+    total_images = 0
+    metric_totals = {threshold: {} for threshold in metric_thresholds}
     model.train(train)
 
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
-    for images, masks, _ in progress:
+    for images, masks, image_names in progress:
         images = images.to(device)
         masks = masks.to(device)
+        batch_size = images.shape[0]
+        status = None
+        if pseudo_supervision or group_explicit_metrics:
+            if tumor_status_by_name is None:
+                raise ValueError("tumor_status_by_name is required for group-explicit BTXRD metrics")
+            status = torch.tensor(
+                [tumor_status_by_name[str(name)] for name in image_names],
+                device=device,
+                dtype=torch.bool,
+            )
 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
-                if pseudo_boundary_ignore_px > 0:
-                    k = 2 * pseudo_boundary_ignore_px + 1
-                    dilated = F.max_pool2d(masks, kernel_size=k, stride=1, padding=pseudo_boundary_ignore_px)
-                    eroded = -F.max_pool2d(-masks, kernel_size=k, stride=1, padding=pseudo_boundary_ignore_px)
-                    valid = (dilated == eroded).float()
-                    pixel_bce = F.binary_cross_entropy_with_logits(
-                        logits, masks,
-                        pos_weight=(torch.as_tensor(pos_weight, device=device) if pos_weight is not None else None),
-                        reduction="none",
+                if group_explicit_metrics:
+                    if pseudo_supervision and pseudo_boundary_ignore_px > 0:
+                        k = 2 * pseudo_boundary_ignore_px + 1
+                        dilated = F.max_pool2d(masks, kernel_size=k, stride=1, padding=pseudo_boundary_ignore_px)
+                        eroded = -F.max_pool2d(-masks, kernel_size=k, stride=1, padding=pseudo_boundary_ignore_px)
+                        pixel_weights = dilated.eq(eroded).float()
+                    elif pseudo_supervision and pseudo_boundary_soft_px > 0:
+                        pixel_weights = soft_boundary_weight_map(
+                            masks, pseudo_boundary_soft_px, pseudo_boundary_weight
+                        )
+                    else:
+                        pixel_weights = None
+                    supervised, _ = grouped_pseudo_segmentation_loss(
+                        logits,
+                        masks,
+                        status,
+                        pos_weight=pos_weight,
+                        pixel_weights=pixel_weights,
+                        bce_weight=pseudo_bce_weight,
                     )
-                    supervised = (pixel_bce * valid).sum() / valid.sum().clamp_min(1.0)
-                    probs = torch.sigmoid(logits)
-                    intersection = (probs * masks * valid).sum(dim=(1, 2, 3))
-                    denominator = ((probs + masks) * valid).sum(dim=(1, 2, 3))
-                    supervised = 0.5 * supervised + 0.5 * (1.0 - ((2 * intersection + 1e-6) / (denominator + 1e-6)).mean())
                 else:
                     supervised = bce_dice_loss(logits, masks, pos_weight=pos_weight)
                 loss = supervised
@@ -243,17 +318,57 @@ def run_epoch(
                 scaler.step(optimizer)
                 scaler.update()
 
-        dice = dice_coefficient(logits.detach(), masks.detach())
-        iou = iou_score(logits.detach(), masks.detach())
-        total_loss += loss.item()
-        total_dice += dice.item()
-        total_iou += iou.item()
-        batches += 1
-        progress.set_postfix(loss=loss.item(), dice=dice.item(), iou=iou.item())
+        if group_explicit_metrics:
+            probabilities = torch.sigmoid(logits.detach())
+            for threshold in metric_thresholds:
+                add_metric_sums(
+                    metric_totals[threshold],
+                    binary_segmentation_metric_sums(
+                        probabilities, masks.detach(), status, threshold
+                    ),
+                )
+            display = finalize_binary_segmentation_metrics(metric_totals[metric_thresholds[0]])
+            dice_value, iou_value = display["tumor_dice"], display["tumor_iou"]
+        else:
+            dice_value = float(dice_coefficient(logits.detach(), masks.detach()).item())
+            iou_value = float(iou_score(logits.detach(), masks.detach()).item())
+            total_dice += dice_value * batch_size
+            total_iou += iou_value * batch_size
+        total_loss += float(loss.item()) * batch_size
+        total_images += batch_size
+        progress.set_postfix(loss=loss.item(), dice=dice_value, iou=iou_value)
 
-    if batches == 0:
+    if total_images == 0:
         return 0.0, {"dice": 0.0, "iou": 0.0}
-    return total_loss / batches, {"dice": total_dice / batches, "iou": total_iou / batches}
+    if not group_explicit_metrics:
+        return total_loss / total_images, {
+            "dice": total_dice / total_images,
+            "iou": total_iou / total_images,
+            "checkpoint_score": total_dice / total_images,
+            "threshold": 0.5,
+        }
+
+    threshold_metrics = {
+        threshold: finalize_binary_segmentation_metrics(metric_totals[threshold])
+        for threshold in metric_thresholds
+    }
+    best_threshold = max(
+        metric_thresholds,
+        key=lambda item: (
+            threshold_metrics[item]["hmean"],
+            threshold_metrics[item]["tumor_dice"],
+            -abs(item - 0.5),
+        ),
+    )
+    result = dict(threshold_metrics[best_threshold])
+    result.update({
+        "dice": result["tumor_dice"],
+        "iou": result["tumor_iou"],
+        "checkpoint_score": result["hmean"],
+        "threshold": float(best_threshold),
+        "threshold_metrics": threshold_metrics,
+    })
+    return total_loss / total_images, result
 
 
 def save_checkpoint(
@@ -266,9 +381,10 @@ def save_checkpoint(
     image_size: int,
     supervision: str,
     base_channels: int,
-    pseudo_boundary_ignore_px: int,
-    consistency_weight: float,
-    consistency_confidence: float,
+    decision_threshold: float,
+    checkpoint_metric: str,
+    checkpoint_metrics: dict[str, float],
+    training_config: dict[str, object],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -281,9 +397,10 @@ def save_checkpoint(
             "image_size": image_size,
             "supervision": supervision,
             "base_channels": base_channels,
-            "pseudo_boundary_ignore_px": pseudo_boundary_ignore_px,
-            "consistency_weight": consistency_weight,
-            "consistency_confidence": consistency_confidence,
+            "decision_threshold": decision_threshold,
+            "checkpoint_metric": checkpoint_metric,
+            "checkpoint_metrics": checkpoint_metrics,
+            "training_config": training_config,
         },
         path,
     )
@@ -297,19 +414,33 @@ def main() -> None:
         raise ValueError("Require 0 < lr_plateau_factor < 1 and min_lr >= 0")
     if args.pseudo_boundary_ignore_px < 0:
         raise ValueError("--pseudo-boundary-ignore-px must be >= 0")
-    if args.consistency_weight < 0:
-        raise ValueError("--consistency-weight must be >= 0")
+    if args.pseudo_boundary_soft_px < 0:
+        raise ValueError("--pseudo-boundary-soft-px must be >= 0")
+    if args.pseudo_boundary_ignore_px > 0 and args.pseudo_boundary_soft_px > 0:
+        raise ValueError("Choose either hard boundary ignore or soft boundary weighting, not both")
+    if not 0.0 <= args.pseudo_boundary_weight <= 1.0:
+        raise ValueError("--pseudo-boundary-weight must be in [0, 1]")
+    if not 0.0 <= args.pseudo_bce_weight <= 1.0:
+        raise ValueError("--pseudo-bce-weight must be in [0, 1]")
+    if args.consistency_weight < 0 or args.consistency_rampup_epochs < 0:
+        raise ValueError("Consistency weight and ramp-up epochs must be >= 0")
     if not 0.5 < args.consistency_confidence < 1.0:
         raise ValueError("--consistency-confidence must be in (0.5, 1.0)")
     if args.train_pseudo_mask_root is None and (
-        args.pseudo_boundary_ignore_px > 0 or args.consistency_weight > 0
+        args.pseudo_boundary_ignore_px > 0
+        or args.pseudo_boundary_soft_px > 0
+        or args.consistency_weight > 0
     ):
         raise ValueError("Pseudo robustness flags require --train-pseudo-mask-root/--val-pseudo-mask-root")
+    val_thresholds = parse_thresholds(args.val_thresholds)
     seed_everything(args.seed)
 
     train_dataset, val_dataset = build_datasets(args)
     supervision = "pseudo_masks" if args.train_pseudo_mask_root is not None else "ground_truth"
     print(f"segmentation_supervision={supervision}")
+    group_explicit_metrics = args.dataset == "btxrd"
+    train_status = btxrd_tumor_status_by_name(train_dataset) if group_explicit_metrics else None
+    val_status = btxrd_tumor_status_by_name(val_dataset) if group_explicit_metrics else None
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
@@ -323,7 +454,9 @@ def main() -> None:
         pos_weight = float(args.pos_weight_value)
     else:
         print("Computing pos_weight from train masks (background/foreground)...")
-        pos_weight = compute_pos_weight(train_dataset)
+        raw_pos_weight = compute_pos_weight(train_dataset)
+        pos_weight = math.sqrt(raw_pos_weight) if args.pos_weight_mode == "sqrt_auto" else raw_pos_weight
+        print(f"raw_background_foreground_ratio={raw_pos_weight:.6f}")
     print(f"pos_weight_mode={args.pos_weight_mode} -> pos_weight={pos_weight}")
 
     num_gpus = resolve_gpu_count(args.num_gpus)
@@ -343,8 +476,26 @@ def main() -> None:
     history_path = args.output_dir / "training_log.csv"
     # Ensure epoch 1 is checkpointed even if a very noisy pseudo-label run
     # initially produces Dice=0.  Subsequent improvements still obey min_delta.
-    best_val_dice = -1.0
+    best_val_score = -1.0
     epochs_without_improvement = 0
+
+    training_config = {
+        "batch_size": args.batch_size,
+        "lr": args.lr,
+        "weight_decay": args.weight_decay,
+        "epochs": args.epochs,
+        "seed": args.seed,
+        "pos_weight_mode": args.pos_weight_mode,
+        "pos_weight": pos_weight,
+        "pseudo_boundary_ignore_px": args.pseudo_boundary_ignore_px,
+        "pseudo_boundary_soft_px": args.pseudo_boundary_soft_px,
+        "pseudo_boundary_weight": args.pseudo_boundary_weight,
+        "pseudo_bce_weight": args.pseudo_bce_weight,
+        "consistency_weight": args.consistency_weight,
+        "consistency_confidence": args.consistency_confidence,
+        "consistency_rampup_epochs": args.consistency_rampup_epochs,
+        "val_thresholds": list(val_thresholds),
+    }
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "training_metadata.json").write_text(
@@ -361,16 +512,23 @@ def main() -> None:
             "lr_plateau_patience": args.lr_plateau_patience,
             "lr_plateau_factor": args.lr_plateau_factor,
             "min_lr": args.min_lr,
-            "pseudo_boundary_ignore_px": args.pseudo_boundary_ignore_px,
-            "consistency_weight": args.consistency_weight,
-            "consistency_confidence": args.consistency_confidence,
+            **training_config,
         }, indent=2) + "\n", encoding="utf-8",
     )
     with history_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
+        writer.writerow([
+            "epoch", "train_loss", "train_tumor_dice", "train_tumor_iou",
+            "train_normal_specificity", "train_normal_fp_pixel_rate", "train_hmean",
+            "val_loss", "val_tumor_dice", "val_tumor_iou", "val_tumor_precision",
+            "val_tumor_recall", "val_normal_specificity", "val_normal_fp_pixel_rate",
+            "val_hmean", "val_threshold", "blank_tumor_val_images", "lr",
+        ])
 
     for epoch in range(1, args.epochs + 1):
+        current_consistency_weight = args.consistency_weight
+        if args.consistency_rampup_epochs > 0:
+            current_consistency_weight *= min(1.0, epoch / args.consistency_rampup_epochs)
         train_loss, train_metrics = run_epoch(
             model,
             train_loader,
@@ -379,9 +537,16 @@ def main() -> None:
             train=True,
             optimizer=optimizer,
             pos_weight=pos_weight,
+            pseudo_supervision=supervision == "pseudo_masks",
+            group_explicit_metrics=group_explicit_metrics,
+            tumor_status_by_name=train_status,
             pseudo_boundary_ignore_px=(args.pseudo_boundary_ignore_px if supervision == "pseudo_masks" else 0),
-            consistency_weight=(args.consistency_weight if supervision == "pseudo_masks" else 0.0),
+            pseudo_boundary_soft_px=(args.pseudo_boundary_soft_px if supervision == "pseudo_masks" else 0),
+            pseudo_boundary_weight=args.pseudo_boundary_weight,
+            pseudo_bce_weight=args.pseudo_bce_weight,
+            consistency_weight=(current_consistency_weight if supervision == "pseudo_masks" else 0.0),
             consistency_confidence=args.consistency_confidence,
+            metric_thresholds=(0.5,),
         )
         val_loss, val_metrics = run_epoch(
             model,
@@ -390,9 +555,15 @@ def main() -> None:
             device,
             train=False,
             pos_weight=pos_weight,
-            pseudo_boundary_ignore_px=0,
+            pseudo_supervision=supervision == "pseudo_masks",
+            group_explicit_metrics=group_explicit_metrics,
+            tumor_status_by_name=val_status,
+            pseudo_boundary_soft_px=(args.pseudo_boundary_soft_px if supervision == "pseudo_masks" else 0),
+            pseudo_boundary_weight=args.pseudo_boundary_weight,
+            pseudo_bce_weight=args.pseudo_bce_weight,
             consistency_weight=0.0,
             consistency_confidence=args.consistency_confidence,
+            metric_thresholds=(val_thresholds if group_explicit_metrics else (0.5,)),
         )
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
@@ -403,52 +574,77 @@ def main() -> None:
                     train_loss,
                     train_metrics["dice"],
                     train_metrics["iou"],
+                    train_metrics.get("normal_specificity", ""),
+                    train_metrics.get("normal_fp_pixel_rate", ""),
+                    train_metrics.get("hmean", train_metrics["dice"]),
                     val_loss,
                     val_metrics["dice"],
                     val_metrics["iou"],
+                    val_metrics.get("tumor_precision", ""),
+                    val_metrics.get("tumor_recall", ""),
+                    val_metrics.get("normal_specificity", ""),
+                    val_metrics.get("normal_fp_pixel_rate", ""),
+                    val_metrics.get("hmean", val_metrics["dice"]),
+                    val_metrics["threshold"],
+                    val_metrics.get("blank_tumor_images", ""),
+                    float(optimizer.param_groups[0]["lr"]),
                 ]
             )
 
         current_lr = float(optimizer.param_groups[0]["lr"])
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_dice={train_metrics['dice']:.4f} "
-            f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f} lr={current_lr:.3e}"
+            f"val_loss={val_loss:.4f} val_tumor_dice={val_metrics['dice']:.4f} "
+            f"val_normal_specificity={val_metrics.get('normal_specificity', float('nan')):.4f} "
+            f"val_score={val_metrics['checkpoint_score']:.4f} threshold={val_metrics['threshold']:.2f} "
+            f"lr={current_lr:.3e}"
         )
 
         save_checkpoint(
-            args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice,
+            args.output_dir / "last_unet.pt", model, optimizer, epoch,
+            max(best_val_score, val_metrics["checkpoint_score"]),
             args.dataset, args.image_size, supervision, args.base_channels,
-            args.pseudo_boundary_ignore_px, args.consistency_weight, args.consistency_confidence,
+            val_metrics["threshold"],
+            (f"{supervision}_tumor_dice_normal_specificity_hmean" if group_explicit_metrics else "dice"),
+            {key: value for key, value in val_metrics.items() if isinstance(value, (int, float))},
+            training_config,
         )
-        if val_metrics["dice"] > best_val_dice + args.early_stop_min_delta:
-            best_val_dice = val_metrics["dice"]
+        if val_metrics["checkpoint_score"] > best_val_score + args.early_stop_min_delta:
+            best_val_score = val_metrics["checkpoint_score"]
             epochs_without_improvement = 0
             save_checkpoint(
-                args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice,
+                args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_score,
                 args.dataset, args.image_size, supervision, args.base_channels,
-                args.pseudo_boundary_ignore_px, args.consistency_weight, args.consistency_confidence,
+                val_metrics["threshold"],
+                (f"{supervision}_tumor_dice_normal_specificity_hmean" if group_explicit_metrics else "dice"),
+                {key: value for key, value in val_metrics.items() if isinstance(value, (int, float))},
+                training_config,
             )
-            print(f"--> Saved new best model with Dice = {best_val_dice:.4f}")
+            print(
+                f"--> Saved new best model: score={best_val_score:.4f}, "
+                f"tumor_dice={val_metrics['dice']:.4f}, threshold={val_metrics['threshold']:.2f}"
+            )
         else:
             epochs_without_improvement += 1
 
         print(
-            f"convergence: best_val_dice={best_val_dice:.4f} "
+            f"convergence: best_val_score={best_val_score:.4f} "
             f"no_improvement={epochs_without_improvement}/{args.early_stop_patience or 'off'} "
             f"min_delta={args.early_stop_min_delta:.4f}"
         )
 
         if lr_scheduler is not None:
             previous_lr = float(optimizer.param_groups[0]["lr"])
-            lr_scheduler.step(val_metrics["dice"])
+            lr_scheduler.step(val_metrics["checkpoint_score"])
             updated_lr = float(optimizer.param_groups[0]["lr"])
             if updated_lr < previous_lr:
                 print(f"--> ReduceLROnPlateau: lr {previous_lr:.3e} -> {updated_lr:.3e}")
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
             print(
-                f"Early stopping: val_dice did not improve for {epochs_without_improvement} epochs "
-                f"(patience={args.early_stop_patience}). Best val_dice={best_val_dice:.4f}."
+                f"Early stopping: validation checkpoint score did not improve for "
+                f"{epochs_without_improvement} epochs (patience={args.early_stop_patience}). "
+                f"Best score={best_val_score:.4f}."
             )
             break
 
