@@ -2,19 +2,27 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
 from pathlib import Path
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
+from torchvision import transforms as tv_transforms
 from tqdm import tqdm
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import ClassifierConfig, DATASET_TARGET_COLUMNS, DEFAULT_DATASET, SUPPORTED_DATASETS
+from config import (
+    BTXRD_BEST_PIPELINE,
+    ClassifierConfig,
+    DATASET_TARGET_COLUMNS,
+    DEFAULT_DATASET,
+    SUPPORTED_DATASETS,
+)
 from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
@@ -28,6 +36,17 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train a hand/tumor classifier for LayerCAM feature extraction")
     parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS,
                         help="Which dataset to train on: ramh1200 (hand-only) or btxrd (tumor-vs-normal)")
+    parser.add_argument(
+        "--pipeline-profile",
+        type=str,
+        default="default",
+        choices=["default", "btxrd_best"],
+        help=(
+            "btxrd_best freezes the classifier setup paired with the selected "
+            "WSSS pipeline: 10-class tumor_type CE at 320 px, batch 4, 6 epochs, "
+            "and PuzzleCAM/attention losses disabled."
+        ),
+    )
     parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
                         help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
     parser.add_argument("--train-split", type=str, default="train")
@@ -41,6 +60,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=ClassifierConfig.epochs)
     parser.add_argument("--seed", type=int, default=ClassifierConfig.seed)
     parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--augment", action="store_true",
+                        help="Apply the dataset's training-only horizontal flip augmentation; validation remains deterministic.")
+    parser.add_argument("--random-erasing", action="store_true",
+                        help="After standard normalization, randomly erase small image patches during training "
+                             "to reduce shortcuts from radiographic letters/markers; validation is unchanged.")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "classifier")
     parser.add_argument("--no-pretrained", action="store_true")
     parser.add_argument("--radimagenet-checkpoint", type=Path, default=None,
@@ -75,9 +99,9 @@ def parse_args() -> argparse.Namespace:
                         help="Percentile threshold applied to the teacher's LayerCAM before Torch "
                         "morphology + Gaussian blur, when building the student's soft attention "
                         "target. This project's own measurements found LayerCAM's thresholded area "
-                        "pinned at ~15% of the image (percentile 85) regardless of content, while "
-                        "actual lesions average ~2.6% -- a much higher percentile here (keeping only "
-                        "the CAM's brightest ~4%) forces the target to start from the CAM's most "
+                        "pinned at ~15%% of the image (percentile 85) regardless of content, while "
+                        "actual lesions average ~2.6%% -- a much higher percentile here (keeping only "
+                        "the CAM's brightest ~4%%) forces the target to start from the CAM's most "
                         "confident region rather than refining the full diffuse blob.")
     parser.add_argument("--use-clahe", action="store_true")
     parser.add_argument("--preprocessing-mode", type=str, default="none",
@@ -93,7 +117,69 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_f1 does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
-    return parser.parse_args()
+    args = parser.parse_args()
+    args._explicit_options = {
+        token.split("=", 1)[0]
+        for token in sys.argv[1:]
+        if token.startswith("--")
+    }
+    return args
+
+
+def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
+    """Freeze the classifier recipe paired with ``btxrd_best``.
+
+    This profile contains no segmentation supervision.  It only selects the
+    image-level classification head and training hyperparameters that feed
+    LayerCAM.  Explicit changes to recipe-critical options are rejected rather
+    than silently producing a checkpoint that no longer matches the frozen
+    downstream pipeline.
+    """
+    if args.pipeline_profile == "default":
+        return args
+    if args.dataset != "btxrd":
+        raise ValueError("--pipeline-profile btxrd_best requires --dataset btxrd")
+
+    profile = BTXRD_BEST_PIPELINE
+    explicit = getattr(args, "_explicit_options", set())
+
+    def require_or_set(option: str, attribute: str, expected: object) -> None:
+        if option in explicit and getattr(args, attribute) != expected:
+            raise ValueError(
+                f"--pipeline-profile btxrd_best fixes {option}={expected!r}; "
+                f"received {getattr(args, attribute)!r}"
+            )
+        setattr(args, attribute, expected)
+
+    require_or_set("--target-columns", "target_columns", ",".join(profile.target_columns))
+    require_or_set("--train-split", "train_split", "train")
+    require_or_set("--val-split", "val_split", "val")
+    require_or_set("--image-size", "image_size", profile.classifier_image_size)
+    require_or_set("--batch-size", "batch_size", profile.classifier_batch_size)
+    require_or_set("--epochs", "epochs", profile.classifier_epochs)
+    require_or_set("--lr", "lr", profile.classifier_lr)
+    require_or_set("--weight-decay", "weight_decay", profile.classifier_weight_decay)
+    require_or_set("--seed", "seed", profile.classifier_seed)
+    require_or_set("--puzzle-alpha-max", "puzzle_alpha_max", profile.classifier_puzzle_alpha_max)
+    require_or_set("--attention-alpha-max", "attention_alpha_max", profile.classifier_attention_alpha_max)
+    require_or_set("--preprocessing-mode", "preprocessing_mode", "none")
+    if "--augment" in explicit and args.augment:
+        raise ValueError("--pipeline-profile btxrd_best fixes training augmentation off")
+    if "--random-erasing" in explicit and args.random_erasing:
+        raise ValueError("--pipeline-profile btxrd_best fixes random erasing off")
+    if "--no-pretrained" in explicit and args.no_pretrained:
+        raise ValueError("--pipeline-profile btxrd_best fixes ImageNet-pretrained initialization")
+    if "--use-clahe" in explicit and args.use_clahe:
+        raise ValueError("--pipeline-profile btxrd_best fixes CLAHE off")
+    if "--radimagenet-checkpoint" in explicit and args.radimagenet_checkpoint is not None:
+        raise ValueError("--pipeline-profile btxrd_best fixes ImageNet normalization/pretraining")
+    if "--early-stop-patience" in explicit and args.early_stop_patience != 0:
+        raise ValueError("--pipeline-profile btxrd_best fixes early stopping off")
+    args.augment = False
+    args.random_erasing = False
+    if "--output-dir" not in explicit:
+        args.output_dir = ROOT / "outputs" / "btxrd_classifier"
+    return args
 
 
 def seed_everything(seed: int) -> None:
@@ -383,6 +469,8 @@ def save_checkpoint(
     task: str = "multi-label",
     num_classes: int | None = None,
     normalization: str = "imagenet",
+    train_augment: bool = False,
+    pipeline_profile: str = "default",
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -405,6 +493,8 @@ def save_checkpoint(
             # "imagenet" (RGB, ImageNet mean/std) or "radimagenet" (BGR,
             # (x-127.5)*2/255, no mean/std). Must match at inference/CAM time.
             "normalization": normalization,
+            "train_augment": bool(train_augment),
+            "pipeline_profile": pipeline_profile,
         },
         path,
     )
@@ -484,7 +574,7 @@ def save_cam_preview(
 
 
 def main() -> None:
-    args = parse_args()
+    args = apply_pipeline_profile(parse_args())
     seed_everything(args.seed)
 
     default_columns = DATASET_TARGET_COLUMNS[args.dataset]
@@ -492,7 +582,8 @@ def main() -> None:
         target_columns = list(default_columns)
     else:
         target_columns = [column.strip() for column in args.target_columns.split(",") if column.strip()]
-    if tuple(target_columns) != default_columns:
+    is_canonical_btxrd_type = args.dataset == "btxrd" and target_columns == ["tumor_type"]
+    if tuple(target_columns) != default_columns and not is_canonical_btxrd_type:
         print(
             f"[WARNING] '{args.dataset}' expects target-columns={list(default_columns)}. "
             "Only change this if you intentionally prepared extra labels for this dataset."
@@ -511,9 +602,19 @@ def main() -> None:
         target_columns=target_columns,
         image_size=args.image_size,
         use_clahe=args.use_clahe,
+        augment=args.augment,
         preprocessing_mode=args.preprocessing_mode,
         normalization=normalization,
     )
+    if args.random_erasing:
+        # RandomErasing operates on the tensor after resize/normalization and
+        # is attached only to the training dataset.  It uses no segmentation
+        # annotations and therefore remains a weak image-level augmentation.
+        train_dataset.image_transform.transforms.append(
+            tv_transforms.RandomErasing(
+                p=0.50, scale=(0.02, 0.12), ratio=(0.5, 2.0), value=0.0
+            )
+        )
     val_dataset = build_classification_dataset(
         args.dataset,
         root=args.ram_root,
@@ -521,6 +622,7 @@ def main() -> None:
         target_columns=target_columns,
         image_size=args.image_size,
         use_clahe=args.use_clahe,
+        augment=False,
         preprocessing_mode=args.preprocessing_mode,
         normalization=normalization,
     )
@@ -582,6 +684,32 @@ def main() -> None:
     # for (it applies softmax instead of sigmoid for this task string).
     checkpoint_task = "single-label" if is_multiclass else "multi-label"
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    (args.output_dir / "training_metadata.json").write_text(
+        json.dumps(
+            {
+                "pipeline_profile": args.pipeline_profile,
+                "dataset": args.dataset,
+                "train_split": args.train_split,
+                "val_split": args.val_split,
+                "target_columns": target_columns,
+                "image_size": args.image_size,
+                "batch_size": args.batch_size,
+                "epochs": args.epochs,
+                "seed": args.seed,
+                "lr": args.lr,
+                "weight_decay": args.weight_decay,
+                "augment": args.augment,
+                "random_erasing": args.random_erasing,
+                "puzzle_alpha_max": args.puzzle_alpha_max,
+                "attention_alpha_max": args.attention_alpha_max,
+                "preprocessing_mode": args.preprocessing_mode,
+                "normalization": normalization,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     with history_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         if is_multiclass:
@@ -712,6 +840,8 @@ def main() -> None:
             args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_f1,
             target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
             normalization=normalization,
+            train_augment=args.augment,
+            pipeline_profile=args.pipeline_profile,
         )
         if val_metrics["f1"] > best_val_f1:
             best_val_f1 = val_metrics["f1"]
@@ -720,6 +850,8 @@ def main() -> None:
                 args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_f1,
                 target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
                 normalization=normalization,
+                train_augment=args.augment,
+                pipeline_profile=args.pipeline_profile,
             )
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:

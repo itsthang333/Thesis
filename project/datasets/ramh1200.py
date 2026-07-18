@@ -225,6 +225,7 @@ class RAMH1200ClassificationDataset(Dataset):
         target_columns: Sequence[str] = DEFAULT_ANATOMY_COLUMNS,
         image_size: int = 512,
         use_clahe: bool = False,
+        augment: bool = False,
         preprocessing_mode: str = "none",
         normalization: str = "imagenet",
     ) -> None:
@@ -232,6 +233,7 @@ class RAMH1200ClassificationDataset(Dataset):
         self.split, self.split_dir = _resolve_split_dir(self.segmentation_root, split)
         self.target_columns = list(target_columns)
         self.use_clahe = use_clahe
+        self.augment = augment
         self.preprocessing_mode = "clahe" if use_clahe and preprocessing_mode == "none" else preprocessing_mode
         if not self.split_dir.exists():
             raise FileNotFoundError(f"RAM-H1200 split directory not found: {self.split_dir}")
@@ -246,7 +248,7 @@ class RAMH1200ClassificationDataset(Dataset):
 
         self.image_transform = make_classification_transform(
             image_size,
-            augment=False,
+            augment=augment,
             preprocessing_mode=self.preprocessing_mode,
             normalization=normalization,
         )

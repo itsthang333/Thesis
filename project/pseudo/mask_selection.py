@@ -23,7 +23,18 @@ except ImportError:  # pragma: no cover - optional dependency
 #                   marginal Dice changes -- worth comparing against a much
 #                   simpler CAM+SAM-confidence+area score before assuming more
 #                   terms are needed.
-SELECTION_METHODS = ("mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid", "simple_hybrid")
+#   "prompt_hybrid": combines CAM-mass coverage, CAM density, within-prompt
+#                    SAM-quality rank, a support-relative area prior, and
+#                    positive/negative prompt consistency. Unlike
+#                    simple_hybrid, it does not treat raw SAM predicted IoU
+#                    as calibrated across images and does not let mean CAM
+#                    alone reward an arbitrarily tiny mask around the peak.
+SELECTION_METHODS = (
+    "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid",
+    "simple_hybrid", "prompt_hybrid", "consistency_hybrid",
+)
+
+DEFAULT_PROMPT_HYBRID_WEIGHTS = (0.30, 0.20, 0.15, 0.15, 0.20)
 
 
 def _binary_dilation(mask: np.ndarray, kernel_size: int = 9) -> np.ndarray:
@@ -48,6 +59,60 @@ def _binary_dilation(mask: np.ndarray, kernel_size: int = 9) -> np.ndarray:
     return output.astype(np.uint8)
 
 
+def _within_group_percentile_ranks(
+    values: np.ndarray | None,
+    group_ids: np.ndarray | None,
+    size: int,
+) -> np.ndarray:
+    """Convert SAM scores to ordinal ranks within each prompt/component.
+
+    SAM's predicted IoU is useful for ordering candidates from the same
+    prompt, but it is not assumed to be calibrated on X-rays or comparable
+    across images. Percentile ranks preserve only that within-prompt order.
+    """
+    ranks = np.zeros(size, dtype=np.float32)
+    if values is None or len(values) != size:
+        return ranks
+    values = np.asarray(values, dtype=np.float32)
+    groups = (
+        np.asarray(group_ids, dtype=np.int32)
+        if group_ids is not None and len(group_ids) == size
+        else np.zeros(size, dtype=np.int32)
+    )
+    for group_id in np.unique(groups):
+        indices = np.where(groups == group_id)[0]
+        if indices.size == 1:
+            ranks[indices[0]] = 1.0
+            continue
+        group_values = values[indices]
+        denominator = float(indices.size - 1)
+        for local_index, value in enumerate(group_values):
+            lower = float((group_values < value).sum())
+            equal = float((group_values == value).sum())
+            ranks[indices[local_index]] = (lower + 0.5 * (equal - 1.0)) / denominator
+    return ranks
+
+
+def _point_consistency(
+    mask: np.ndarray,
+    positive_points: list[tuple[int, int]] | tuple[tuple[int, int], ...],
+    negative_points: list[tuple[int, int]] | tuple[tuple[int, int], ...],
+) -> float:
+    """Fraction of positive prompts included and negative prompts excluded."""
+    h, w = mask.shape
+
+    def _inside(point: tuple[int, int]) -> bool:
+        row, col = point
+        return 0 <= row < h and 0 <= col < w and bool(mask[row, col])
+
+    terms: list[float] = []
+    if positive_points:
+        terms.append(sum(_inside(point) for point in positive_points) / len(positive_points))
+    if negative_points:
+        terms.append(sum(not _inside(point) for point in negative_points) / len(negative_points))
+    return float(sum(terms) / len(terms)) if terms else 0.0
+
+
 def score_masks(
     masks: np.ndarray,
     bone_cam: np.ndarray,
@@ -55,6 +120,13 @@ def score_masks(
     bone_likelihood: np.ndarray | None = None,
     bone_support: np.ndarray | None = None,
     sam_scores: np.ndarray | None = None,
+    component_ids: np.ndarray | None = None,
+    component_masks: np.ndarray | None = None,
+    positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
+    negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
+    prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
+    prompt_area_target: float = 2.0,
+    prompt_area_log_sigma: float = 1.0,
 ) -> np.ndarray:
     """Score each SAM mask by CAM activation inside the mask.
 
@@ -71,6 +143,30 @@ def score_masks(
 
     n = masks.shape[0]
     scores = np.zeros(n, dtype=np.float32)
+    sam_ranks = _within_group_percentile_ranks(sam_scores, component_ids, n)
+
+    component_mask_by_id: dict[int, np.ndarray] = {}
+    if component_masks is not None and len(component_masks) > 0:
+        if component_ids is not None and len(component_ids) == n:
+            unique_ids = list(np.unique(component_ids))
+            component_mask_by_id = {
+                int(component_id): component_masks[position].astype(bool)
+                for position, component_id in enumerate(unique_ids)
+                if position < len(component_masks)
+            }
+        elif len(component_masks) == 1:
+            component_mask_by_id[0] = component_masks[0].astype(bool)
+
+    weights = np.asarray(prompt_hybrid_weights, dtype=np.float32)
+    if weights.shape != (5,) or np.any(weights < 0) or float(weights.sum()) <= 0:
+        raise ValueError(
+            "prompt_hybrid_weights must contain five non-negative values with a positive sum "
+            "(cam_coverage, cam_density, sam_rank, area, prompt_consistency)."
+        )
+    weights = weights / weights.sum()
+    area_target = max(float(prompt_area_target), 1e-6)
+    area_sigma = max(float(prompt_area_log_sigma), 1e-6)
+
     for i in range(n):
         m = masks[i].astype(bool)
         if not m.any():
@@ -86,6 +182,24 @@ def score_masks(
         elif method == "coverage":
             # fraction of mask pixels that are "activated" (cam > 0.5)
             scores[i] = float((cam_vals > 0.5).sum()) / area
+        elif method == "coverage_mass":
+            # Retain the interpretable binary coverage term but break its
+            # frequent 1.0 ties with the fraction of total CAM mass captured.
+            # This remains image-only and is less biased toward tiny masks
+            # than raw meanCAM.
+            binary_coverage = float((cam_vals > 0.5).sum()) / area
+            mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
+            scores[i] = 0.70 * binary_coverage + 0.30 * mass_coverage
+        elif method == "coverage_mass_sam":
+            binary_coverage = float((cam_vals > 0.5).sum()) / area
+            mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
+            # SAM score is used only as a within-component rank, never as a
+            # calibrated cross-image IoU probability.
+            scores[i] = (
+                0.60 * binary_coverage
+                + 0.25 * mass_coverage
+                + 0.15 * float(sam_ranks[i])
+            )
         elif method == "hybrid":
             # mean CAM quality + log-normalised area bonus
             total_pixels = float(bone_cam.size)
@@ -96,6 +210,88 @@ def score_masks(
             area_bonus = float(np.log1p(area) / np.log1p(total_pixels))
             sam_quality = float(sam_scores[i]) if sam_scores is not None else 0.0
             scores[i] = 0.6 * float(cam_vals.mean()) + 0.3 * sam_quality + 0.1 * area_bonus
+        elif method in {"prompt_hybrid", "consistency_hybrid"}:
+            component_id = (
+                int(component_ids[i])
+                if component_ids is not None and len(component_ids) == n
+                else 0
+            )
+            support = component_mask_by_id.get(component_id)
+            if support is None:
+                support = bone_support.astype(bool) if bone_support is not None else None
+
+            # Coverage measures how much of the prompt component's CAM mass
+            # the candidate captures. Density measures how concentrated CAM
+            # evidence remains inside the candidate. Their combination avoids
+            # both extremes: tiny peak-only masks and huge high-recall masks.
+            if support is not None and support.any():
+                support_mass = float(bone_cam[support].sum())
+                captured_mass = float(bone_cam[m & support].sum())
+                cam_coverage = captured_mass / max(support_mass, 1e-8)
+                reference_area = float(support.sum())
+            else:
+                total_mass = float(bone_cam.sum())
+                cam_coverage = float(cam_vals.sum()) / max(total_mass, 1e-8)
+                reference_area = max(1.0, 0.02 * float(bone_cam.size))
+            cam_density = float(cam_vals.mean())
+
+            expansion = max(area / max(reference_area, 1.0), 1e-8)
+            log_distance = np.log(expansion / area_target) / area_sigma
+            area_score = float(np.exp(-0.5 * log_distance * log_distance))
+
+            positive_points = (
+                positive_points_by_component.get(component_id, ())
+                if positive_points_by_component is not None else ()
+            )
+            negative_points = (
+                negative_points_by_component.get(component_id, ())
+                if negative_points_by_component is not None else ()
+            )
+            prompt_consistency = _point_consistency(m, positive_points, negative_points)
+            if not positive_points and not negative_points:
+                # Component coverage is the closest available prompt
+                # consistency signal for older call sites that do not expose
+                # the actual points.
+                prompt_consistency = cam_coverage
+
+            if method == "consistency_hybrid":
+                # Image-only stability across independent CAM components.
+                # Do not compare candidates from the same component: those
+                # are alternate SAM outputs for one prompt and can tie
+                # trivially.  The best cross-component IoU rewards a mask
+                # reproduced by more than one CAM proposal.
+                stability = 0.0
+                for other_index in range(n):
+                    if other_index == i:
+                        continue
+                    if component_ids is not None and len(component_ids) == n:
+                        if int(component_ids[other_index]) == int(component_ids[i]):
+                            continue
+                    other = masks[other_index].astype(bool)
+                    union = float(np.logical_or(m, other).sum())
+                    if union > 0:
+                        stability = max(
+                            stability,
+                            float(np.logical_and(m, other).sum()) / union,
+                        )
+                # Use soft CAM mass rather than the binary CAM>0.5 fraction;
+                # the latter saturates at 1.0 for many candidates and was
+                # observed to select tiny masks under component_topk=1.
+                soft_mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
+                prompt_consistency = 0.5 * prompt_consistency + 0.5 * stability
+                terms = np.asarray(
+                    [soft_mass_coverage, cam_density, sam_ranks[i], area_score, prompt_consistency],
+                    dtype=np.float32,
+                )
+                scores[i] = float(np.dot(
+                    np.asarray([0.25, 0.15, 0.15, 0.15, 0.30], dtype=np.float32), terms
+                ))
+            else:
+                terms = np.asarray(
+                    [cam_coverage, cam_density, sam_ranks[i], area_score, prompt_consistency],
+                    dtype=np.float32,
+                )
+                scores[i] = float(np.dot(weights, terms))
         elif method == "bone_hybrid":
             if bone_likelihood is None:
                 scores[i] = float(cam_vals.mean())
@@ -190,7 +386,13 @@ def select_and_fuse_masks(
     sam_scores: np.ndarray | None = None,
     component_ids: np.ndarray | None = None,
     component_masks: np.ndarray | None = None,
+    positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
+    negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
+    prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
+    prompt_area_target: float = 2.0,
+    prompt_area_log_sigma: float = 1.0,
     best_per_component: bool = False,
+    component_topk: int = 0,
     support_clip_kernel: int = 5,
 ) -> np.ndarray:
     """Select and fuse masks using CAM and bone morphology evidence.
@@ -204,11 +406,10 @@ def select_and_fuse_masks(
     morphology proposal is selected before union. Otherwise the original
     global top-k behavior is preserved for ablation.
 
-    component_masks is accepted for call-site backward compatibility but is
-    unused: bone_hybrid's support_area_ratio/expected_area/large_mask_penalty
-    terms are only meaningful relative to the whole-image bone_support map, so
-    per-component re-scoring must not substitute a single component's mask
-    for it.
+    component_masks and the per-component point dictionaries are used only by
+    prompt_hybrid. Existing scoring methods preserve their prior behavior;
+    in particular, bone_hybrid continues to use the whole-image bone_support
+    rather than substituting a single component mask.
 
     Args:
         masks:               [N, H, W] bool/uint8 from SAM.
@@ -234,10 +435,17 @@ def select_and_fuse_masks(
         bone_likelihood=bone_likelihood,
         bone_support=bone_support,
         sam_scores=sam_scores,
+        component_ids=component_ids,
+        component_masks=component_masks,
+        positive_points_by_component=positive_points_by_component,
+        negative_points_by_component=negative_points_by_component,
+        prompt_hybrid_weights=prompt_hybrid_weights,
+        prompt_area_target=prompt_area_target,
+        prompt_area_log_sigma=prompt_area_log_sigma,
     )
 
     if best_per_component and component_ids is not None and component_ids.size == masks.shape[0]:
-        selected_indices: list[int] = []
+        selected_components: list[tuple[float, int]] = []
         for component_id in np.unique(component_ids):
             candidates = np.where(component_ids == component_id)[0]
             if candidates.size == 0:
@@ -251,7 +459,11 @@ def select_and_fuse_masks(
             best_local = int(np.argmax(component_scores))
             best_index = int(candidates[best_local])
             if float(component_scores[best_local]) >= mask_score_threshold:
-                selected_indices.append(best_index)
+                selected_components.append((float(component_scores[best_local]), best_index))
+        if component_topk > 0 and len(selected_components) > component_topk:
+            selected_components.sort(key=lambda item: item[0], reverse=True)
+            selected_components = selected_components[:component_topk]
+        selected_indices = [index for _, index in selected_components]
         if selected_indices:
             return _clip(masks[selected_indices].any(axis=0))
 

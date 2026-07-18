@@ -315,6 +315,7 @@ class BTXRDClassificationDataset(Dataset):
         target_columns: Sequence[str] = ("tumor",),
         image_size: int = 512,
         use_clahe: bool = False,
+        augment: bool = False,
         preprocessing_mode: str = "none",
         normalization: str = "imagenet",
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
@@ -331,6 +332,7 @@ class BTXRDClassificationDataset(Dataset):
             )
         self.is_tumor_type = self.target_columns == ["tumor_type"]
         self.use_clahe = use_clahe
+        self.augment = augment
         self.preprocessing_mode = "clahe" if use_clahe and preprocessing_mode == "none" else preprocessing_mode
 
         records = load_btxrd_records(self.btxrd_root)
@@ -353,7 +355,7 @@ class BTXRDClassificationDataset(Dataset):
 
         self.image_transform = make_classification_transform(
             image_size,
-            augment=False,
+            augment=augment,
             preprocessing_mode=self.preprocessing_mode,
             normalization=normalization,
         )

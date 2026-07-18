@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -30,6 +31,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--output-csv", type=Path, default=ROOT / "outputs" / "eval.csv")
+    parser.add_argument("--image-list", type=Path, default=None,
+                        help="Optional text file of image names to evaluate (one per line).")
     parser.add_argument("--skipped-list", type=Path, default=None,
                         help="Path to skipped_low_confidence.txt from generate_pseudo_masks.py "
                         "(defaults to <pred-mask-root>/../skipped_low_confidence.txt if present). "
@@ -44,6 +47,14 @@ def load_skipped_names(path: Path | None, pred_mask_root: Path) -> set[str]:
     if not candidate.exists():
         return set()
     return {Path(line.strip()).stem for line in candidate.read_text(encoding="utf-8").splitlines() if line.strip()}
+
+
+def load_run_protocol(pred_mask_root: Path) -> str:
+    metadata_path = pred_mask_root.parent / "run_metadata.json"
+    if not metadata_path.exists():
+        return "unknown"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    return str(metadata.get("cam_target_class", "unknown"))
 
 
 def resolve_pred_mask(mask_root: Path, image_name: str) -> Path | None:
@@ -88,10 +99,24 @@ def main() -> None:
         augment=False,
         annotation_name=args.annotation_name,
     )
+    if args.image_list is not None:
+        requested_names = {
+            line.strip() for line in args.image_list.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+        original_count = len(dataset.samples)
+        dataset.samples = [
+            sample for sample in dataset.samples if str(sample["image_id"]) in requested_names
+        ]
+        if not dataset.samples:
+            raise ValueError(f"--image-list {args.image_list} matched no images in split '{args.split}'")
+        print(f"Image-list filter: {len(dataset.samples)}/{original_count} samples")
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
     skipped_names = load_skipped_names(args.skipped_list, args.pred_mask_root)
+    run_protocol = load_run_protocol(args.pred_mask_root)
+    print(f"Pseudo-mask protocol: {run_protocol}")
     if skipped_names:
         print(f"Loaded {len(skipped_names)} low-confidence-skipped image names")
 
@@ -107,6 +132,8 @@ def main() -> None:
     # images that actually ran the full pipeline reflect CAM/SAM quality.
     tumor_dice: list[float] = []
     tumor_iou: list[float] = []
+    end_to_end_tumor_dice: list[float] = []
+    end_to_end_tumor_iou: list[float] = []
     tumor_skipped_count = 0
     normal_specificity: list[float] = []  # 1.0 if predicted mask is also empty, else 0.0
     normal_false_positive_pixels = 0
@@ -136,6 +163,13 @@ def main() -> None:
             group = "tumor" if is_tumor else "normal"
             rows.append([image_name, "ok", group, was_skipped, dice, iou])
             if is_tumor:
+                # End-to-end metrics include detection/classification
+                # failures. If predicted protocol maps a tumor image to the
+                # normal class, generation deliberately writes an empty mask;
+                # that Dice/IoU belongs in the end-to-end result even though
+                # it is excluded from the conditional CAM/SAM-only metric.
+                end_to_end_tumor_dice.append(dice)
+                end_to_end_tumor_iou.append(iou)
                 if was_skipped:
                     tumor_skipped_count += 1
                 else:
@@ -149,6 +183,8 @@ def main() -> None:
 
     mean_tumor_dice = sum(tumor_dice) / max(1, len(tumor_dice))
     mean_tumor_iou = sum(tumor_iou) / max(1, len(tumor_iou))
+    mean_end_to_end_tumor_dice = sum(end_to_end_tumor_dice) / max(1, len(end_to_end_tumor_dice))
+    mean_end_to_end_tumor_iou = sum(end_to_end_tumor_iou) / max(1, len(end_to_end_tumor_iou))
     specificity = sum(normal_specificity) / max(1, len(normal_specificity))
     false_positive_rate = 1.0 - specificity
 
@@ -159,8 +195,12 @@ def main() -> None:
         writer.writerow([])
         writer.writerow(["tumor_images_evaluated", len(tumor_dice), "", "", "", ""])
         writer.writerow(["tumor_images_skipped_low_confidence", tumor_skipped_count, "", "", "", ""])
-        writer.writerow(["mean_tumor_dice", "", "", "", mean_tumor_dice, ""])
-        writer.writerow(["mean_tumor_iou", "", "", "", "", mean_tumor_iou])
+        writer.writerow(["cam_sam_conditional_mean_tumor_dice", "", "", "", mean_tumor_dice, ""])
+        writer.writerow(["cam_sam_conditional_mean_tumor_iou", "", "", "", "", mean_tumor_iou])
+        writer.writerow(["end_to_end_tumor_images", len(end_to_end_tumor_dice), "", "", "", ""])
+        writer.writerow(["end_to_end_mean_tumor_dice", "", "", "", mean_end_to_end_tumor_dice, ""])
+        writer.writerow(["end_to_end_mean_tumor_iou", "", "", "", "", mean_end_to_end_tumor_iou])
+        writer.writerow(["cam_target_class_protocol", run_protocol, "", "", "", ""])
         writer.writerow(["normal_images", len(normal_specificity), "", "", "", ""])
         writer.writerow(["specificity_empty_mask_rate", "", "", "", specificity, ""])
         writer.writerow(["false_positive_rate", "", "", "", false_positive_rate, ""])
@@ -170,7 +210,8 @@ def main() -> None:
     print(
         f"{args.dataset} {args.split}: "
         f"tumor images evaluated={len(tumor_dice)} (skipped for low confidence={tumor_skipped_count}) "
-        f"Dice={mean_tumor_dice:.4f} IoU={mean_tumor_iou:.4f} | "
+        f"conditional Dice={mean_tumor_dice:.4f} IoU={mean_tumor_iou:.4f} | "
+        f"end-to-end Dice={mean_end_to_end_tumor_dice:.4f} IoU={mean_end_to_end_tumor_iou:.4f} | "
         f"normal images={len(normal_specificity)} specificity={specificity:.4f} "
         f"false_positive_rate={false_positive_rate:.4f} | missing={missing}"
     )

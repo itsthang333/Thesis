@@ -32,9 +32,26 @@ class LayerCAM:
 
     LAYER_WEIGHTS = (0.2, 0.3, 0.5)
 
-    def __init__(self, model: torch.nn.Module, device: torch.device | None = None) -> None:
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        device: torch.device | None = None,
+        layer_weights: Sequence[float] | None = None,
+        gradient_mode: str = "positive",
+    ) -> None:
         self.model = model
         self.device = device or next(model.parameters()).device
+        if gradient_mode not in {"positive", "absolute"}:
+            raise ValueError("gradient_mode must be 'positive' or 'absolute'")
+        self.gradient_mode = gradient_mode
+        if layer_weights is None:
+            self.layer_weights = tuple(float(value) for value in self.LAYER_WEIGHTS)
+        else:
+            values = tuple(float(value) for value in layer_weights)
+            if len(values) != 3 or any(value < 0 for value in values) or sum(values) <= 0:
+                raise ValueError("layer_weights must contain three non-negative values with positive sum")
+            total = sum(values)
+            self.layer_weights = tuple(value / total for value in values)
 
         target_layers = [
             model.features.denseblock2,
@@ -90,8 +107,11 @@ class LayerCAM:
         A = state.activations          # [B, C, H, W]
         G = state.gradients            # [B, C, H, W]
 
-        # LayerCAM: element-wise product with relu(gradients)
-        cam = (A * F.relu(G)).sum(dim=1, keepdim=True)  # [B, 1, H, W]
+        # Standard LayerCAM keeps positive class evidence only.  The optional
+        # absolute mode is a controlled ablation for low-confidence target
+        # classes whose useful spatial signal can appear in negative gradients.
+        gradient_evidence = F.relu(G) if self.gradient_mode == "positive" else G.abs()
+        cam = (A * gradient_evidence).sum(dim=1, keepdim=True)  # [B, 1, H, W]
         cam = F.relu(cam)
 
         # per-sample min-max normalise at this layer
@@ -104,6 +124,22 @@ class LayerCAM:
         # upsample to input image size
         cam = F.interpolate(cam, size=input_size, mode="bilinear", align_corners=False)
         return cam  # [B, 1, H_in, W_in]
+
+    def _finish_cam(self, logits: torch.Tensor, input_size: tuple[int, int]) -> LayerCAMOutput:
+        fused = None
+        for state, w in zip(self._states, self.layer_weights):
+            if state.activations is None or state.gradients is None:
+                continue
+            layer_cam = self._compute_layer_cam(state, input_size)
+            fused = layer_cam * w if fused is None else fused + layer_cam * w
+        if fused is None:
+            raise RuntimeError("LayerCAM hooks did not capture any activations.")
+        B = fused.shape[0]
+        fused_flat = fused.view(B, -1)
+        mn = fused_flat.min(dim=1).values.view(B, 1, 1, 1)
+        mx = fused_flat.max(dim=1).values.view(B, 1, 1, 1)
+        fused = (fused - mn) / (mx - mn + 1e-8)
+        return LayerCAMOutput(logits=logits, cam=fused.squeeze(1))
 
     def _compute_cam(self, input_tensor: torch.Tensor, class_index: int | torch.Tensor) -> LayerCAMOutput:
         self.model.zero_grad(set_to_none=True)
@@ -133,25 +169,50 @@ class LayerCAM:
             score = logits[:, class_index].sum()
         score.backward()
 
-        input_size = input_tensor.shape[-2:]
-        fused = None
-        for state, w in zip(self._states, self.LAYER_WEIGHTS):
-            if state.activations is None or state.gradients is None:
-                continue
-            layer_cam = self._compute_layer_cam(state, input_size)  # [B,1,H,W]
-            fused = layer_cam * w if fused is None else fused + layer_cam * w
+        return self._finish_cam(logits, input_tensor.shape[-2:])
 
-        if fused is None:
-            raise RuntimeError("LayerCAM hooks did not capture any activations.")
+    def cam_for_tumor_union(self, input_tensor: torch.Tensor) -> LayerCAMOutput:
+        """LayerCAM for aggregate non-normal evidence in a 10-class BTXRD head.
 
-        # final normalise across fused map
-        B = fused.shape[0]
-        fused_flat = fused.view(B, -1)
-        mn = fused_flat.min(dim=1).values.view(B, 1, 1, 1)
-        mx = fused_flat.max(dim=1).values.view(B, 1, 1, 1)
-        fused = (fused - mn) / (mx - mn + 1e-8)
+        This is an opt-in localization ablation: it uses one backward pass for
+        the sum of tumor logits (classes 1..C-1), while leaving image-level
+        normal/tumor detection and all downstream prompts unchanged.
+        """
+        self.model.zero_grad(set_to_none=True)
+        for state in self._states:
+            state.activations = None
+            state.gradients = None
+        outputs = self.model(input_tensor)
+        logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
+        if logits.ndim == 1:
+            logits = logits.unsqueeze(0)
+        if logits.shape[1] < 2:
+            raise ValueError("cam_for_tumor_union requires a multi-class head with a normal class at index 0")
+        logits[:, 1:].sum().backward()
+        return self._finish_cam(logits, input_tensor.shape[-2:])
 
-        return LayerCAMOutput(logits=logits, cam=fused.squeeze(1))  # [B, H, W]
+    def cam_for_tumor_union_contrast(self, input_tensor: torch.Tensor) -> LayerCAMOutput:
+        """LayerCAM for non-normal evidence contrasted against the normal logit.
+
+        The aggregate tumor score is ``sum(logits[:, 1:]) - logits[:, 0]``.
+        This keeps the class-agnostic localization of :meth:`cam_for_tumor_union`
+        while suppressing features that also explain the normal class.  It is
+        an image-level-only ablation and never consumes a segmentation label.
+        """
+        self.model.zero_grad(set_to_none=True)
+        for state in self._states:
+            state.activations = None
+            state.gradients = None
+        outputs = self.model(input_tensor)
+        logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
+        if logits.ndim == 1:
+            logits = logits.unsqueeze(0)
+        if logits.shape[1] < 2:
+            raise ValueError(
+                "cam_for_tumor_union_contrast requires a multi-class head with a normal class at index 0"
+            )
+        (logits[:, 1:].sum(dim=1) - logits[:, 0]).sum().backward()
+        return self._finish_cam(logits, input_tensor.shape[-2:])
 
     # ------------------------------------------------------------------
     # public API
@@ -161,6 +222,35 @@ class LayerCAM:
         """class_index: a single int (same class for every sample in the
         batch) or a [B] long tensor (one class per sample)."""
         return self._compute_cam(input_tensor, class_index=class_index)
+
+    def cam_for_class_contrast(
+        self,
+        input_tensor: torch.Tensor,
+        class_index: int | torch.Tensor,
+        reference_index: int = 0,
+    ) -> LayerCAMOutput:
+        """LayerCAM for ``logit[class_index] - logit[reference_index]``.
+
+        BTXRD's class 0 is normal.  This opt-in diagnostic suppresses spatial
+        evidence shared by the normal class while preserving the image-level
+        target class; no polygon or segmentation label is involved.
+        """
+        self.model.zero_grad(set_to_none=True)
+        for state in self._states:
+            state.activations = None
+            state.gradients = None
+
+        outputs = self.model(input_tensor)
+        logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
+        if logits.ndim == 1:
+            logits = logits.unsqueeze(0)
+        if isinstance(class_index, torch.Tensor):
+            batch_indices = torch.arange(logits.shape[0], device=logits.device)
+            score = (logits[batch_indices, class_index] - logits[batch_indices, reference_index]).sum()
+        else:
+            score = (logits[:, class_index] - logits[:, reference_index]).sum()
+        score.backward()
+        return self._finish_cam(logits, input_tensor.shape[-2:])
 
     def cams_for_active_classes(
         self,

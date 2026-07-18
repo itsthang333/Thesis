@@ -42,6 +42,11 @@ def _iou(pred: np.ndarray, target: np.ndarray, eps: float = 1e-6) -> float:
     return (intersection + eps) / (union + eps)
 
 
+def binary_overlap_metrics(pred: np.ndarray, target: np.ndarray) -> dict[str, float]:
+    """Public Dice/IoU helper for diagnostics-only stage comparisons."""
+    return {"dice": _dice(pred, target), "iou": _iou(pred, target)}
+
+
 def oracle_vs_selected_metrics(
     sam_masks: np.ndarray,
     selected_mask: np.ndarray,

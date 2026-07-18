@@ -109,3 +109,63 @@ def point_prompt_hit_rate(
         "num_points": len(points),
         "num_hits": hits,
     }
+
+
+def negative_point_rejection_rate(
+    points: list[tuple[int, int]],
+    gt_mask: np.ndarray,
+) -> dict[str, float]:
+    """Fraction of negative prompts that correctly fall outside the GT lesion.
+
+    This is diagnostics only. GT is never used to move or replace a prompt.
+    A low value means the prompt generator is explicitly telling SAM that
+    true lesion pixels are background.
+    """
+    gt_bool = gt_mask.astype(bool)
+    if not points:
+        return {"negative_rejection_rate": float("nan"), "num_negative_points": 0, "num_false_negatives": 0}
+    height, width = gt_bool.shape
+    false_negatives = 0
+    valid = 0
+    for row, col in points:
+        if 0 <= row < height and 0 <= col < width:
+            valid += 1
+            false_negatives += int(gt_bool[row, col])
+    if valid == 0:
+        return {
+            "negative_rejection_rate": float("nan"),
+            "num_negative_points": 0,
+            "num_false_negatives": 0,
+        }
+    return {
+        "negative_rejection_rate": 1.0 - false_negatives / valid,
+        "num_negative_points": valid,
+        "num_false_negatives": false_negatives,
+    }
+
+
+def box_prompt_localization_metrics(
+    boxes: list[tuple[int, int, int, int]],
+    gt_mask: np.ndarray,
+) -> dict[str, float]:
+    """GT recall and precision of the union of the actual prompt boxes.
+
+    Boxes use SAM's ``(x0, y0, x1, y1)`` convention. This metric separates a
+    point that hits the lesion from a box that truncates it. It never changes
+    a box and is only called from the opt-in diagnostics path.
+    """
+    gt_bool = gt_mask.astype(bool)
+    if not gt_bool.any() or not boxes:
+        return {"box_recall": float("nan"), "box_precision": float("nan")}
+    h, w = gt_bool.shape
+    box_mask = np.zeros((h, w), dtype=bool)
+    for x0, y0, x1, y1 in boxes:
+        left, right = max(0, int(x0)), min(w - 1, int(x1))
+        top, bottom = max(0, int(y0)), min(h - 1, int(y1))
+        if right >= left and bottom >= top:
+            box_mask[top : bottom + 1, left : right + 1] = True
+    intersection = float((box_mask & gt_bool).sum())
+    return {
+        "box_recall": intersection / float(gt_bool.sum()),
+        "box_precision": intersection / float(box_mask.sum()) if box_mask.any() else 0.0,
+    }

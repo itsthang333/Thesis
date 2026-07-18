@@ -360,8 +360,8 @@ def build_class_conditioned_components(
     support mask essentially never changed Dice once SAM candidates were
     clipped to it) showed that safety net rarely did anything useful on
     BTXRD, so it was removed in favor of this: threshold the fused CAM at a
-    single percentile, keep only the largest connected component as the
-    single seed region, and build TumorComponent prompts from that.
+    single percentile, keep the largest connected component by default, and
+    optionally retain a deterministic top-N set for ablation.
 
     A single connected component is deliberately kept (not top-N by area)
     since BTXRD lesions are typically one contiguous region, and this
@@ -383,8 +383,8 @@ def build_class_conditioned_components(
 
     Returns:
         (likelihood, support, components): likelihood is the fused CAM
-        itself (float32 [H, W]), support is the largest-component binary
-        mask, components is a list with at most one TumorComponent.
+        itself (float32 [H, W]), support is the selected component union,
+        components is a list of at most ``max_components`` TumorComponents.
     """
     if not per_class_cams:
         h, w = image_rgb.shape[:2]
@@ -415,24 +415,30 @@ def build_class_conditioned_components(
 
     components: list[TumorComponent] = []
     if components_raw:
-        largest = max(components_raw, key=lambda c: int(c.sum()))
-        support = largest.astype(np.uint8)
-        positive_points = _structured_component_points(
-            largest, tumor_likelihood=fused_cam, cam=fused_cam, max_points=points_per_component
-        )
-        components.append(
-            TumorComponent(
-                component_id=0,
-                mask=largest,
-                score=float(fused_cam[largest.astype(bool)].mean()),
-                bbox=_component_bbox(largest, padding_ratio=bbox_padding_ratio),
-                positive_points=positive_points,
-                negative_points=_select_negative_points(
-                    largest, cam=fused_cam, positive_points=positive_points,
-                    max_points=negative_points_per_component,
-                ),
+        # Keep the historical largest-component behavior when max_components=1,
+        # but expose a deterministic top-N ablation for cases where CAM breaks
+        # a single lesion into several disconnected high-activation islands.
+        ranked_components = sorted(components_raw, key=lambda c: int(c.sum()), reverse=True)
+        selected_components = ranked_components[: max(1, int(max_components))]
+        support = np.zeros_like(support, dtype=np.uint8)
+        for component_id, component in enumerate(selected_components):
+            support |= component.astype(np.uint8)
+            positive_points = _structured_component_points(
+                component, tumor_likelihood=fused_cam, cam=fused_cam, max_points=points_per_component
             )
-        )
+            components.append(
+                TumorComponent(
+                    component_id=component_id,
+                    mask=component,
+                    score=float(fused_cam[component.astype(bool)].mean()),
+                    bbox=_component_bbox(component, padding_ratio=bbox_padding_ratio),
+                    positive_points=positive_points,
+                    negative_points=_select_negative_points(
+                        component, cam=fused_cam, positive_points=positive_points,
+                        max_points=negative_points_per_component,
+                    ),
+                )
+            )
 
     if debug_dir is not None:
         debug_path = Path(debug_dir)

@@ -176,6 +176,45 @@ For a full guided run on BTXRD (environment setup, dataset resolution,
 training, pseudo-mask generation, evaluation, visualization), see
 `btxrd_kaggle.ipynb`.
 
+### Reproducible BTXRD WSSS profile
+
+The currently selected BTXRD configuration is exposed as an opt-in profile
+in `generate_pseudo_masks.py`. It uses the CE DenseNet checkpoint trained at
+320 px, LayerCAM contrast against the normal logit, CAM thresholds 85/90/95,
+up to three CAM components, SAM ViT-B at 512 px, box+point/point/box prompt
+ensemble, and `coverage_mass_sam` selection. Polygon annotations are loaded
+only when `--evaluate-prompt-quality` is explicitly requested for diagnostics.
+
+Train the paired classifier on the new machine first:
+
+```bash
+python project/train_classifier.py \
+  --dataset btxrd \
+  --pipeline-profile btxrd_best \
+  --ram-root D:/thesis/BTXRD \
+  --output-dir project/outputs/btxrd_classifier
+```
+
+```bash
+python project/generate_pseudo_masks.py \
+  --dataset btxrd \
+  --pipeline-profile btxrd_best \
+  --ram-root D:/thesis/BTXRD \
+  --split val \
+  --classifier-checkpoint project/outputs/btxrd_classifier/best_classifier.pt \
+  --sam-checkpoint D:/thesis/sam_vit_b_01ec64.pth \
+  --process-all \
+  --output-dir project/outputs/btxrd_best
+```
+
+The profile requires an explicit classifier checkpoint so a stale local model
+cannot be selected accidentally. It follows the available accelerator for
+DenseNet and SAM; pass `--sam-device cpu` if GPU memory is insufficient. The
+profile defaults to the predicted-class protocol. For the separate
+image-level localization protocol, add `--cam-target-class ground_truth` and
+report it separately; this still never supplies a polygon or bounding box to
+CAM, prompts, candidate selection, or post-processing.
+
 ## Source Structure
 
 ```text

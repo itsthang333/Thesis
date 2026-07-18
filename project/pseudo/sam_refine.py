@@ -77,14 +77,16 @@ class SAMPredictor:
         device: str = "cuda",
         sam_version: str = "v1",
         sam2_model_cfg: str | None = None,
+        sam_model_type: str = "auto",
     ) -> None:
         if sam_version not in {"v1", "v2", "medsam2"}:
             raise ValueError(f"Unknown sam_version '{sam_version}'. Choose from: v1, v2, medsam2.")
         self._sam_version = sam_version
         self._device = device
+        self._sam_model_type = sam_model_type
 
         if sam_version == "v1":
-            self._init_v1(checkpoint_path, auto_download, device)
+            self._init_v1(checkpoint_path, auto_download, device, sam_model_type)
         elif sam_version == "v2":
             self._init_v2(
                 checkpoint_path, auto_download, device,
@@ -102,7 +104,7 @@ class SAMPredictor:
                 label="MedSAM2",
             )
 
-    def _init_v1(self, checkpoint_path, auto_download, device) -> None:
+    def _init_v1(self, checkpoint_path, auto_download, device, sam_model_type: str = "auto") -> None:
         try:
             from segment_anything import SamPredictor, sam_model_registry
         except ImportError as exc:
@@ -124,7 +126,19 @@ class SAMPredictor:
                     "Pass auto_download=True or provide the correct path."
                 )
 
-        sam = sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
+        if sam_model_type not in {"auto", "vit_b", "vit_l", "vit_h"}:
+            raise ValueError("sam_model_type must be one of auto, vit_b, vit_l, vit_h")
+        if sam_model_type == "auto":
+            # Official checkpoints are named sam_vit_{b,l,h}.pth.  Keep the
+            # historical ViT-B default for arbitrary filenames/checkpoints.
+            stem = checkpoint_path.stem.lower()
+            sam_model_type = next(
+                (candidate for candidate in ("vit_h", "vit_l", "vit_b") if candidate in stem),
+                "vit_b",
+            )
+        if sam_model_type not in sam_model_registry:
+            raise KeyError(f"segment_anything does not provide model type {sam_model_type!r}")
+        sam = sam_model_registry[sam_model_type](checkpoint=str(checkpoint_path))
         sam.to(device=device)
         self._predictor = SamPredictor(sam)
 

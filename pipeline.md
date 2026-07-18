@@ -7,6 +7,11 @@ This document describes the pipeline as implemented for **RAM-H1200**
 also runs on **BTXRD** (bone tumor segmentation) via `--dataset btxrd`, with
 two deliberate differences:
 
+The canonical `btxrd_best` profile uses the 10-class `tumor_type`
+image-level head. The older `tumor` binary head remains available only for
+legacy/default runs; neither branch passes polygon or bounding-box GT into
+the WSSS stages.
+
 - **Classifier target**: RAM-H1200 uses `hand` (whole-hand presence); BTXRD
   uses `tumor` (tumor vs normal). Both are still single binary image-level
   labels — the WSSS setup (SAM/morphology never see ground-truth
@@ -28,6 +33,19 @@ unchanged between the two datasets.
 BTXRD also differs in one structural way: it ships with no predefined
 train/val/test split, so `project/datasets/btxrd.py` derives an 80/10/10
 split stratified by normal/benign/malignant with a fixed seed (42).
+
+The selected reproducible BTXRD implementation is available with
+`project/generate_pseudo_masks.py --pipeline-profile btxrd_best`. This profile
+uses the current best validation configuration: 320 px CE classifier/CAM,
+normal-logit contrast, 85/90/95 CAM percentile ensemble, up to three CAM
+components, 512 px SAM ViT-B, box+point/point/box prompt ensemble, and
+`coverage_mass_sam` candidate selection with one component proposal retained.
+The profile is image-level only; polygon masks are constructed only by the
+optional `--evaluate-prompt-quality` diagnostics path.
+The matching classifier is trained with
+`project/train_classifier.py --pipeline-profile btxrd_best`; this fixes
+`tumor_type` CrossEntropy training at 320 px, batch size 4, six epochs, seed
+42, and disables PuzzleCAM/teacher-attention losses for this selected run.
 
 See `btxrd_kaggle.ipynb` for the BTXRD equivalent of the walkthrough below.
 

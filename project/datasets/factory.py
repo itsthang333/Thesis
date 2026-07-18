@@ -29,6 +29,7 @@ def build_classification_dataset(
     target_columns: Sequence[str],
     image_size: int,
     use_clahe: bool = False,
+    augment: bool = False,
     preprocessing_mode: str = "none",
     normalization: str = "imagenet",
 ):
@@ -40,6 +41,7 @@ def build_classification_dataset(
             target_columns=target_columns,
             image_size=image_size,
             use_clahe=use_clahe,
+            augment=augment,
             preprocessing_mode=preprocessing_mode,
             normalization=normalization,
         )
@@ -49,6 +51,7 @@ def build_classification_dataset(
         target_columns=target_columns,
         image_size=image_size,
         use_clahe=use_clahe,
+        augment=augment,
         preprocessing_mode=preprocessing_mode,
         normalization=normalization,
     )
