@@ -8,6 +8,7 @@ from pathlib import Path
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import transforms as tv_transforms
 from tqdm import tqdm
@@ -24,6 +25,7 @@ from config import (
     SUPPORTED_DATASETS,
 )
 from datasets.factory import build_classification_dataset
+from datasets.anatomy_sampler import AnatomyMatchedBatchSampler
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from models.puzzle_cam import puzzle_alpha as puzzle_alpha_schedule, puzzle_cam_consistency_loss
@@ -132,6 +134,13 @@ def parse_args() -> argparse.Namespace:
                         help="Reduce LR after this many flat val epochs; 0 disables the scheduler.")
     parser.add_argument("--lr-plateau-factor", type=float, default=0.5)
     parser.add_argument("--min-lr", type=float, default=1e-7)
+    parser.add_argument("--anatomy-aware", action="store_true",
+                        help="BTXRD: add coarse-region and region-conditioned tumor heads.")
+    parser.add_argument("--anatomy-alpha", type=float, default=0.2)
+    parser.add_argument("--region-tumor-alpha", type=float, default=0.1)
+    parser.add_argument("--region-contrast-alpha", type=float, default=0.05)
+    parser.add_argument("--region-contrast-margin", type=float, default=0.2)
+    parser.add_argument("--region-contrast-warmup-epochs", type=int, default=3)
     args = parser.parse_args()
     args._explicit_options = {
         token.split("=", 1)[0]
@@ -255,6 +264,28 @@ def multiclass_confusion_matrix(logits: torch.Tensor, targets: torch.Tensor, num
     return matrix
 
 
+def anatomy_matched_contrastive_loss(
+    feature_maps: torch.Tensor,
+    regions: torch.Tensor,
+    tumor_types: torch.Tensor,
+    margin: float = 0.2,
+) -> torch.Tensor:
+    """Push tumor and normal feature prototypes apart within each region."""
+    embeddings = F.normalize(feature_maps.mean(dim=(-2, -1)), dim=1)
+    tumor_status = tumor_types.ne(0)
+    losses: list[torch.Tensor] = []
+    for region in range(3):
+        normal_mask = regions.eq(region) & ~tumor_status
+        tumor_mask = regions.eq(region) & tumor_status
+        if normal_mask.any() and tumor_mask.any():
+            normal_proto = F.normalize(embeddings[normal_mask].mean(dim=0), dim=0)
+            tumor_proto = F.normalize(embeddings[tumor_mask].mean(dim=0), dim=0)
+            losses.append(F.relu(torch.sum(normal_proto * tumor_proto) - margin))
+    if not losses:
+        return embeddings.sum() * 0.0
+    return torch.stack(losses).mean()
+
+
 def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
     """Accuracy + macro-averaged precision/recall/F1 across all classes.
 
@@ -344,6 +375,11 @@ def run_epoch_multiclass(
     teacher=None,
     attention_alpha: float = 0.0,
     teacher_percentile: float = 96.0,
+    anatomy_aware: bool = False,
+    anatomy_alpha: float = 0.0,
+    region_tumor_alpha: float = 0.0,
+    region_contrast_alpha: float = 0.0,
+    region_contrast_margin: float = 0.2,
 ) -> tuple[float, dict[str, float], torch.Tensor]:
     """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot).
 
@@ -367,14 +403,24 @@ def run_epoch_multiclass(
     model.train(train)
 
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
-    for images, targets, _ in progress:
+    for batch in progress:
+        if anatomy_aware:
+            images, targets, regions, _ = batch
+            regions = regions.to(device)
+        else:
+            images, targets, _ = batch
+            regions = None
         images = images.to(device)
         targets = targets.to(device)  # [B], long class indices -- do NOT unsqueeze
 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 need_features = train and teacher is not None and attention_alpha > 0
-                if need_features:
+                if anatomy_aware:
+                    logits, anatomy_logits, region_tumor_logits, student_features = model(
+                        images, return_anatomy=True
+                    )
+                elif need_features:
                     logits, student_features = model(images, return_features=True)
                 else:
                     logits = model(images)
@@ -395,6 +441,28 @@ def run_epoch_multiclass(
                 # only drives the actual gradient step.
                 cls_loss = criterion(logits, targets)
                 loss = cls_loss
+
+                anatomy_loss_value = 0.0
+                region_tumor_loss_value = 0.0
+                region_contrast_loss_value = 0.0
+                if train and anatomy_aware:
+                    anatomy_loss = F.cross_entropy(anatomy_logits, regions)
+                    batch_indices = torch.arange(regions.shape[0], device=device)
+                    selected_region_logits = region_tumor_logits[batch_indices, regions]
+                    tumor_status = targets.ne(0).long()
+                    region_tumor_loss = F.cross_entropy(selected_region_logits, tumor_status)
+                    region_contrast_loss = anatomy_matched_contrastive_loss(
+                        student_features, regions, targets, margin=region_contrast_margin
+                    )
+                    loss = (
+                        loss
+                        + anatomy_alpha * anatomy_loss
+                        + region_tumor_alpha * region_tumor_loss
+                        + region_contrast_alpha * region_contrast_loss
+                    )
+                    anatomy_loss_value = anatomy_loss.item()
+                    region_tumor_loss_value = region_tumor_loss.item()
+                    region_contrast_loss_value = region_contrast_loss.item()
 
                 re_loss_value = 0.0
                 p_cls_loss_value = 0.0
@@ -472,7 +540,9 @@ def run_epoch_multiclass(
         batch_metrics = metrics_from_multiclass_confusion(batch_confusion)
         progress.set_postfix(loss=cls_loss.item(), macro_f1=batch_metrics["f1"],
                               re_loss=re_loss_value, p_cls_loss=p_cls_loss_value, att_loss=att_loss_value,
-                              teacher_conf=teacher_conf_value)
+                              teacher_conf=teacher_conf_value, anatomy=anatomy_loss_value,
+                              region_tumor=region_tumor_loss_value,
+                              region_contrast=region_contrast_loss_value)
 
         if train and teacher is not None:
             teacher.update(unwrap_model(model))
@@ -495,6 +565,7 @@ def save_checkpoint(
     normalization: str = "imagenet",
     train_augment: bool = False,
     pipeline_profile: str = "default",
+    anatomy_aware: bool = False,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -521,6 +592,8 @@ def save_checkpoint(
             "normalization": normalization,
             "train_augment": bool(train_augment),
             "pipeline_profile": pipeline_profile,
+            "anatomy_aware": bool(anatomy_aware),
+            "anatomy_num_classes": 3 if anatomy_aware else 0,
         },
         path,
     )
@@ -536,7 +609,8 @@ def select_cam_preview_indices(val_dataset, count: int) -> list[int]:
     """
     indices: list[int] = []
     for index in range(len(val_dataset)):
-        _, target, _ = val_dataset[index]
+        sample = val_dataset[index]
+        target = sample[1]
         # tumor_type: target is a scalar long class index (0=normal); binary
         # tumor: target is a 1-element float multi-hot vector.
         is_positive = int(target.item()) != 0 if target.ndim == 0 else float(target[0]) == 1.0
@@ -556,6 +630,7 @@ def save_cam_preview(
     device: torch.device,
     is_multiclass: bool = False,
     normalization: str = "imagenet",
+    anatomy_aware: bool = False,
 ) -> None:
     """Save a LayerCAM overlay for each fixed preview image at this epoch.
 
@@ -569,7 +644,12 @@ def save_cam_preview(
     layercam = LayerCAM(model, device=device)
     try:
         for sample_index in indices:
-            image_tensor, target, image_name = val_dataset[sample_index]
+            sample = val_dataset[sample_index]
+            if anatomy_aware:
+                image_tensor, target, region, image_name = sample
+            else:
+                image_tensor, target, image_name = sample
+                region = None
             image_tensor = image_tensor.unsqueeze(0).to(device)
 
             with torch.no_grad():
@@ -584,9 +664,19 @@ def save_cam_preview(
                 else:
                     class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
 
-            fused_cam, _, _ = generate_fused_cam(
-                layercam, image_tensor, class_weights=class_weights, confidence_threshold=0.0,
-            )
+            if anatomy_aware and int(target.item()) != 0:
+                anatomy_output = layercam.cam_for_region_conditioned_class_contrast(
+                    image_tensor,
+                    int(target.item()),
+                    int(region.item()),
+                    region_weight=0.5,
+                    reference_index=0,
+                )
+                fused_cam = anatomy_output.cam[0].detach().cpu().numpy()
+            else:
+                fused_cam, _, _ = generate_fused_cam(
+                    layercam, image_tensor, class_weights=class_weights, confidence_threshold=0.0,
+                )
             image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=normalization)
             stem = Path(str(image_name)).stem
             save_overlay(
@@ -605,6 +695,17 @@ def main() -> None:
         raise ValueError("Early-stop min_delta and LR plateau patience must be >= 0")
     if not 0.0 < args.lr_plateau_factor < 1.0 or args.min_lr < 0:
         raise ValueError("Require 0 < lr_plateau_factor < 1 and min_lr >= 0")
+    if args.anatomy_aware:
+        if args.dataset != "btxrd":
+            raise ValueError("--anatomy-aware requires --dataset btxrd")
+        if args.batch_size < 6:
+            raise ValueError("--anatomy-aware requires --batch-size >= 6 for six matched cells")
+        if min(args.anatomy_alpha, args.region_tumor_alpha, args.region_contrast_alpha) < 0:
+            raise ValueError("Anatomy loss weights must be >= 0")
+        if not -1.0 <= args.region_contrast_margin <= 1.0:
+            raise ValueError("--region-contrast-margin must be in [-1,1]")
+        if args.region_contrast_warmup_epochs < 0:
+            raise ValueError("--region-contrast-warmup-epochs must be >= 0")
     seed_everything(args.seed)
 
     default_columns = DATASET_TARGET_COLUMNS[args.dataset]
@@ -612,6 +713,8 @@ def main() -> None:
         target_columns = list(default_columns)
     else:
         target_columns = [column.strip() for column in args.target_columns.split(",") if column.strip()]
+    if args.anatomy_aware and target_columns != ["tumor_type"]:
+        raise ValueError("--anatomy-aware requires --target-columns tumor_type")
     is_canonical_btxrd_type = args.dataset == "btxrd" and target_columns == ["tumor_type"]
     if tuple(target_columns) != default_columns and not is_canonical_btxrd_type:
         print(
@@ -635,6 +738,7 @@ def main() -> None:
         augment=args.augment,
         preprocessing_mode=args.preprocessing_mode,
         normalization=normalization,
+        include_anatomy_target=args.anatomy_aware,
     )
     if args.random_erasing:
         # RandomErasing operates on the tensor after resize/normalization and
@@ -655,9 +759,20 @@ def main() -> None:
         augment=False,
         preprocessing_mode=args.preprocessing_mode,
         normalization=normalization,
+        include_anatomy_target=args.anatomy_aware,
     )
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
+    if args.anatomy_aware:
+        anatomy_batch_sampler = AnatomyMatchedBatchSampler(
+            train_dataset.samples, batch_size=args.batch_size, seed=args.seed
+        )
+        train_loader = DataLoader(
+            train_dataset, batch_sampler=anatomy_batch_sampler,
+            num_workers=args.num_workers, pin_memory=True,
+        )
+    else:
+        anatomy_batch_sampler = None
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     num_gpus = resolve_gpu_count(args.num_gpus)
@@ -678,6 +793,7 @@ def main() -> None:
         num_classes=num_classes,
         pretrained=not args.no_pretrained,
         radimagenet_checkpoint=args.radimagenet_checkpoint,
+        anatomy_num_classes=3 if args.anatomy_aware else 0,
     )
     model, device = prepare_data_parallel(model, num_gpus)
     print(f"training_device={device} num_gpus={num_gpus} data_parallel={num_gpus > 1}")
@@ -744,6 +860,12 @@ def main() -> None:
                 "lr_plateau_patience": args.lr_plateau_patience,
                 "lr_plateau_factor": args.lr_plateau_factor,
                 "min_lr": args.min_lr,
+                "anatomy_aware": args.anatomy_aware,
+                "anatomy_alpha": args.anatomy_alpha,
+                "region_tumor_alpha": args.region_tumor_alpha,
+                "region_contrast_alpha": args.region_contrast_alpha,
+                "region_contrast_margin": args.region_contrast_margin,
+                "region_contrast_warmup_epochs": args.region_contrast_warmup_epochs,
                 "augment": args.augment,
                 "random_erasing": args.random_erasing,
                 "puzzle_alpha_max": args.puzzle_alpha_max,
@@ -777,6 +899,8 @@ def main() -> None:
     teacher = None  # created once warmup ends; stays None (attention loss disabled) until then
 
     for epoch in range(1, args.epochs + 1):
+        if anatomy_batch_sampler is not None:
+            anatomy_batch_sampler.set_epoch(epoch)
         if is_multiclass:
             current_puzzle_alpha = (
                 puzzle_alpha_schedule(epoch, args.epochs, alpha_max=args.puzzle_alpha_max)
@@ -784,6 +908,11 @@ def main() -> None:
             )
 
             current_attention_alpha = 0.0
+            current_region_contrast_alpha = (
+                args.region_contrast_alpha
+                if args.anatomy_aware and epoch > args.region_contrast_warmup_epochs
+                else 0.0
+            )
             if args.attention_alpha_max > 0 and epoch > args.teacher_warmup_epochs:
                 if teacher is None:
                     # Snapshot the student as it is right after warmup -- this
@@ -812,9 +941,15 @@ def main() -> None:
                 puzzle_alpha=current_puzzle_alpha,
                 teacher=teacher, attention_alpha=current_attention_alpha,
                 teacher_percentile=args.teacher_cam_percentile,
+                anatomy_aware=args.anatomy_aware,
+                anatomy_alpha=args.anatomy_alpha,
+                region_tumor_alpha=args.region_tumor_alpha,
+                region_contrast_alpha=current_region_contrast_alpha,
+                region_contrast_margin=args.region_contrast_margin,
             )
             val_loss, val_metrics, val_confusion = run_epoch_multiclass(
-                model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False
+                model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False,
+                anatomy_aware=args.anatomy_aware,
             )
         else:
             train_loss, train_metrics, train_counts = run_epoch(model, train_loader, criterion, optimizer, scaler, device, train=True)
@@ -861,13 +996,17 @@ def main() -> None:
                 f" attention_alpha={current_attention_alpha:.4f}"
                 f" teacher={'active' if teacher is not None else 'warmup'}"
             )
+        anatomy_suffix = (
+            f" region_contrast_alpha={current_region_contrast_alpha:.3f}"
+            if is_multiclass and args.anatomy_aware else ""
+        )
         current_lr = float(optimizer.param_groups[0]["lr"])
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
             f"train_{'macro_f1' if is_multiclass else 'f1'}={train_metrics['f1']:.4f} | "
             f"val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
             f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f} "
-            f"lr={current_lr:.3e}{puzzle_suffix}{teacher_suffix}"
+            f"lr={current_lr:.3e}{puzzle_suffix}{teacher_suffix}{anatomy_suffix}"
         )
         if is_multiclass:
             from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
@@ -890,6 +1029,7 @@ def main() -> None:
             normalization=normalization,
             train_augment=args.augment,
             pipeline_profile=args.pipeline_profile,
+            anatomy_aware=args.anatomy_aware,
         )
         if val_metrics["f1"] > best_val_f1 + args.early_stop_min_delta:
             best_val_f1 = val_metrics["f1"]
@@ -900,6 +1040,7 @@ def main() -> None:
                 normalization=normalization,
                 train_augment=args.augment,
                 pipeline_profile=args.pipeline_profile,
+                anatomy_aware=args.anatomy_aware,
             )
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:
@@ -919,7 +1060,11 @@ def main() -> None:
                 print(f"  --> ReduceLROnPlateau: lr {previous_lr:.3e} -> {updated_lr:.3e}")
 
         if epoch in cam_epochs and cam_preview_indices:
-            save_cam_preview(unwrap_model(model), val_dataset, cam_preview_indices, epoch, cam_output_dir, device, is_multiclass=is_multiclass, normalization=normalization)
+            save_cam_preview(
+                unwrap_model(model), val_dataset, cam_preview_indices, epoch, cam_output_dir,
+                device, is_multiclass=is_multiclass, normalization=normalization,
+                anatomy_aware=args.anatomy_aware,
+            )
             print(f"  --> Saved CAM preview for epoch {epoch} to {cam_output_dir}")
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:

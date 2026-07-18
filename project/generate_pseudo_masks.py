@@ -264,6 +264,10 @@ def parse_args() -> argparse.Namespace:
                         help="A/B override for the default profile; rejected by btxrd_best.")
     parser.add_argument("--cam-contrast-weight", type=float, default=1.0,
                         help="Blend weight for contrastive CAM when --cam-contrast-normal is enabled (0=original, 1=contrastive).")
+    parser.add_argument("--anatomy-aware-cam", action="store_true",
+                        help="Use tumor-vs-normal evidence from the matching coarse anatomy head.")
+    parser.add_argument("--anatomy-region-weight", type=float, default=0.5,
+                        help="Weight of matched-region tumor-vs-normal evidence in LayerCAM score.")
     parser.add_argument("--cam-refine-layer", type=str, default="denseblock3",
                         choices=["denseblock2", "denseblock3", "denseblock4"],
                         help="DenseNet121 layer to source features from for --cam-refine")
@@ -492,7 +496,12 @@ def load_classifier(
     # (see train_classifier.py's save_checkpoint). fallback_num_classes only
     # covers checkpoints saved before this field existed.
     num_classes = checkpoint_num_classes
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+    anatomy_num_classes = int(state.get("anatomy_num_classes", 0))
+    model = DenseNet121AnatomyClassifier(
+        num_classes=num_classes,
+        pretrained=False,
+        anatomy_num_classes=anatomy_num_classes,
+    )
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device)
     model.eval()
@@ -677,6 +686,20 @@ def main() -> None:
         expected_task="single-label" if expected_profile_columns is not None else None,
         expected_num_classes=10 if expected_profile_columns is not None else None,
     )
+    if args.anatomy_aware_cam and getattr(classifier, "anatomy_num_classes", 0) != 3:
+        raise ValueError(
+            "--anatomy-aware-cam requires a classifier checkpoint trained with --anatomy-aware"
+        )
+    if args.anatomy_aware_cam and (
+        target_columns != ["tumor_type"]
+        or args.cam_aggregation != "class"
+        or not args.cam_contrast_normal
+    ):
+        raise ValueError(
+            "--anatomy-aware-cam requires tumor_type, class aggregation and contrast-normal CAM"
+        )
+    if args.anatomy_region_weight < 0:
+        raise ValueError("--anatomy-region-weight must be >= 0")
     print(f"Loaded classifier checkpoint task={classifier_task} normalization={classifier_normalization}")
 
     write_or_validate_run_metadata(
@@ -721,6 +744,8 @@ def main() -> None:
             "cam_aggregation": args.cam_aggregation,
             "cam_contrast_normal": args.cam_contrast_normal,
             "cam_contrast_weight": args.cam_contrast_weight,
+            "anatomy_aware_cam": args.anatomy_aware_cam,
+            "anatomy_region_weight": args.anatomy_region_weight,
             "cam_refine_layer": args.cam_refine_layer,
             "cam_refine_high_percentile": args.cam_refine_high_percentile,
             "cam_refine_low_percentile": args.cam_refine_low_percentile,
@@ -799,10 +824,12 @@ def main() -> None:
     # populates "tumor_type" on every record regardless of which head is
     # trained, so this works even if this run's classifier is a binary one).
     tumor_type_by_name: dict[str, str] = {}
+    anatomy_region_by_name: dict[str, int] = {}
     if args.dataset == "btxrd":
         from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
         for sample in dataset.samples:
             tumor_type_by_name[str(sample["image_id"])] = TUMOR_TYPE_CLASS_NAMES[int(sample["tumor_type"])]
+            anatomy_region_by_name[str(sample["image_id"])] = int(sample["anatomy_region"])
 
     gt_masks_by_name: dict[str, np.ndarray] = {}
     if args.evaluate_prompt_quality:
@@ -882,6 +909,9 @@ def main() -> None:
                 if process_limit is not None and processed >= process_limit:
                     break
                 image_tensor = images[idx : idx + 1]  # [1,3,H,W]
+                anatomy_region = anatomy_region_by_name.get(str(image_name))
+                if args.anatomy_aware_cam and anatomy_region is None:
+                    raise RuntimeError(f"Missing coarse anatomy region for {image_name}")
                 mask_path = mask_dir / f"{Path(image_name).stem}.png"
                 save_visuals = visualized < max(0, args.save_visuals_limit)
                 if (
@@ -1011,8 +1041,18 @@ def main() -> None:
                         else int(np.argmax(class_weights))
                     )
                     if selected_class != 0:
-                        contrast_output = layercam.cam_for_class_contrast(
-                            image_tensor, selected_class, reference_index=0
+                        contrast_output = (
+                            layercam.cam_for_region_conditioned_class_contrast(
+                                image_tensor,
+                                selected_class,
+                                int(anatomy_region),
+                                region_weight=args.anatomy_region_weight,
+                                reference_index=0,
+                            )
+                            if args.anatomy_aware_cam
+                            else layercam.cam_for_class_contrast(
+                                image_tensor, selected_class, reference_index=0
+                            )
                         )
                         contrast_cam = contrast_output.cam[0].detach().cpu().numpy()
                         contrast_weight = float(args.cam_contrast_weight)
@@ -1044,8 +1084,18 @@ def main() -> None:
                                 scaled_tensor = F.interpolate(
                                     image_tensor, size=(scale, scale), mode="bilinear", align_corners=False
                                 )
-                            scaled_output = layercam.cam_for_class_contrast(
-                                scaled_tensor, selected_class, reference_index=0
+                            scaled_output = (
+                                layercam.cam_for_region_conditioned_class_contrast(
+                                    scaled_tensor,
+                                    selected_class,
+                                    int(anatomy_region),
+                                    region_weight=args.anatomy_region_weight,
+                                    reference_index=0,
+                                )
+                                if args.anatomy_aware_cam
+                                else layercam.cam_for_class_contrast(
+                                    scaled_tensor, selected_class, reference_index=0
+                                )
                             )
                             scaled_cam = scaled_output.cam[0]
                             scaled_cam = F.interpolate(
@@ -1081,7 +1131,23 @@ def main() -> None:
                     ]
                 if args.cam_tta_flip:
                     flipped_tensor = torch.flip(image_tensor, dims=[3])
-                    if args.cam_aggregation in {
+                    if args.anatomy_aware_cam and args.cam_aggregation == "class":
+                        selected_class = (
+                            int(gt_class)
+                            if use_ground_truth_class and gt_class is not None
+                            else int(np.argmax(class_weights))
+                        )
+                        flipped_output = layercam.cam_for_region_conditioned_class_contrast(
+                            flipped_tensor,
+                            selected_class,
+                            int(anatomy_region),
+                            region_weight=args.anatomy_region_weight,
+                            reference_index=0,
+                        )
+                        flipped_cam = flipped_output.cam[0].detach().cpu().numpy()
+                        flipped_class_cams = [flipped_cam]
+                        flipped_indices = [selected_class]
+                    elif args.cam_aggregation in {
                         "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max"
                     } and target_columns == ["tumor_type"]:
                         flipped_output = (

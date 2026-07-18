@@ -236,7 +236,10 @@ def main() -> None:
         class_names = list(TUMOR_TYPE_CLASS_NAMES)
     else:
         class_names = target_columns
-    classifier = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+    classifier = DenseNet121AnatomyClassifier(
+        num_classes=num_classes, pretrained=False,
+        anatomy_num_classes=int(clf_ckpt.get("anatomy_num_classes", 0)),
+    )
     classifier.load_state_dict(clf_ckpt["model_state_dict"], strict=True)
     classifier = classifier.to(device).eval()
 

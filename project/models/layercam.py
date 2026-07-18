@@ -252,6 +252,38 @@ class LayerCAM:
         score.backward()
         return self._finish_cam(logits, input_tensor.shape[-2:])
 
+    def cam_for_region_conditioned_class_contrast(
+        self,
+        input_tensor: torch.Tensor,
+        class_index: int | torch.Tensor,
+        region_index: int | torch.Tensor,
+        region_weight: float = 0.5,
+        reference_index: int = 0,
+    ) -> LayerCAMOutput:
+        """Class-vs-normal CAM plus tumor-vs-normal evidence in the same region."""
+        self.model.zero_grad(set_to_none=True)
+        for state in self._states:
+            state.activations = None
+            state.gradients = None
+
+        logits, _anatomy_logits, region_logits, _features = self.model(
+            input_tensor, return_anatomy=True
+        )
+        if logits.ndim == 1:
+            logits = logits.unsqueeze(0)
+        batch_indices = torch.arange(logits.shape[0], device=logits.device)
+        if not isinstance(class_index, torch.Tensor):
+            class_index = torch.full_like(batch_indices, int(class_index))
+        if not isinstance(region_index, torch.Tensor):
+            region_index = torch.full_like(batch_indices, int(region_index))
+        global_contrast = logits[batch_indices, class_index] - logits[batch_indices, reference_index]
+        matched_region_contrast = (
+            region_logits[batch_indices, region_index, 1]
+            - region_logits[batch_indices, region_index, 0]
+        )
+        (global_contrast + float(region_weight) * matched_region_contrast).sum().backward()
+        return self._finish_cam(logits, input_tensor.shape[-2:])
+
     def cams_for_active_classes(
         self,
         input_tensor: torch.Tensor,

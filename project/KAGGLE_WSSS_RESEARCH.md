@@ -2,12 +2,18 @@
 
 The single supported research pipeline is:
 
-1. DenseNet121 10-class `tumor_type` classifier trained with image-level labels.
-2. Class-vs-normal LayerCAM with scales 256/320 plus horizontal-flip TTA.
-3. SAM ViT-B prompt ensemble.
-4. `simple_hybrid` candidate selector.
+1. DenseNet121 with a 10-class `tumor_type` head, a 3-class coarse anatomy
+   head, and three region-specific tumor-vs-normal heads.
+2. Anatomy-matched batches containing normal/tumor examples from `upper limb`,
+   `lower limb`, and `pelvis`, plus a same-region contrastive feature loss.
+3. Region-conditioned class-vs-normal LayerCAM with scales 256/320 and flip TTA.
+4. SAM ViT-B prompt ensemble and the `simple_hybrid` candidate selector.
 5. U-Net trained only from complete train/val pseudo masks, with a 3-pixel
    boundary ignore band and confidence-masked weak/strong consistency.
+
+No fine-grained bone column is used because those columns are populated only
+for tumor rows and would leak tumor status. Only the three coarse regions,
+which exist for both tumor and normal images, enter the anatomy branch.
 
 No LabelMe polygon, decoded segmentation mask or GT-derived statistic enters
 steps 1–5. `--cam-target-class image_label` means the allowed image-level
@@ -52,6 +58,7 @@ after masks were frozen:
 | Multi-view + affinity | 0.4963 |
 | Symmetric contrast multi-view | 0.4502 |
 
-The five-image sample is too small for a performance claim, but it is enough to
-reject affinity and symmetric fusion from the final default. The full validation
-audit and independent Dice target remain `>= 0.4` on Kaggle.
+These measurements predate the anatomy-aware classifier and only justify the
+retained multi-view/SAM/selector components. Anatomy-aware performance remains
+unproven until its new checkpoint is trained and its frozen outputs receive the
+full validation audit. The independent Dice target remains `>= 0.4` on Kaggle.

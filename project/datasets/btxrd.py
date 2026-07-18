@@ -42,6 +42,8 @@ TUMOR_TYPE_COLUMNS = (
     "other mt",
 )
 TUMOR_TYPE_CLASS_NAMES = ("normal",) + TUMOR_TYPE_COLUMNS
+ANATOMY_REGION_COLUMNS = ("upper limb", "lower limb", "pelvis")
+ANATOMY_REGION_NAMES = ANATOMY_REGION_COLUMNS
 
 
 def resolve_btxrd_root(root: str | Path) -> Path:
@@ -110,6 +112,22 @@ def _row_tumor_type_index(row: dict[str, object]) -> int:
     return 0
 
 
+def _row_anatomy_region_index(row: dict[str, object]) -> int:
+    """Return the one coarse region available for both tumor and normal rows.
+
+    Fine-grained bone columns are excluded because BTXRD populates them only
+    for tumor images, which would leak the target label.
+    """
+    active = [i for i, column in enumerate(ANATOMY_REGION_COLUMNS) if _row_flag(row, column)]
+    if len(active) != 1:
+        image_id = str(row.get("image_id", "<unknown>"))
+        raise ValueError(
+            f"BTXRD image {image_id} must have exactly one coarse anatomy region; "
+            f"found {[ANATOMY_REGION_COLUMNS[i] for i in active]}"
+        )
+    return active[0]
+
+
 def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
     """Return one record per image with the fields this project cares about."""
     btxrd_root = resolve_btxrd_root(btxrd_root)
@@ -126,6 +144,7 @@ def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
                 "benign": _row_flag(row, "benign"),
                 "malignant": _row_flag(row, "malignant"),
                 "tumor_type": _row_tumor_type_index(row),
+                "anatomy_region": _row_anatomy_region_index(row),
             }
         )
     return records
@@ -344,6 +363,7 @@ class BTXRDClassificationDataset(Dataset):
         augment: bool = False,
         preprocessing_mode: str = "none",
         normalization: str = "imagenet",
+        include_anatomy_target: bool = False,
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
         split_seed: int = DEFAULT_SPLIT_SEED,
     ) -> None:
@@ -357,6 +377,9 @@ class BTXRDClassificationDataset(Dataset):
                 f"{list(TUMOR_TYPE_CLASS_NAMES)})."
             )
         self.is_tumor_type = self.target_columns == ["tumor_type"]
+        self.include_anatomy_target = bool(include_anatomy_target)
+        if self.include_anatomy_target and not self.is_tumor_type:
+            raise ValueError("include_anatomy_target requires target_columns=['tumor_type']")
         self.use_clahe = use_clahe
         self.augment = augment
         self.preprocessing_mode = "clahe" if use_clahe and preprocessing_mode == "none" else preprocessing_mode
@@ -402,4 +425,8 @@ class BTXRDClassificationDataset(Dataset):
             target = torch.tensor(int(sample["tumor_type"]), dtype=torch.long)
         else:
             target = torch.tensor([float(sample["tumor"])], dtype=torch.float32)
-        return self.image_transform(image), target, str(sample["image_id"])
+        transformed = self.image_transform(image)
+        if self.include_anatomy_target:
+            region = torch.tensor(int(sample["anatomy_region"]), dtype=torch.long)
+            return transformed, target, region, str(sample["image_id"])
+        return transformed, target, str(sample["image_id"])

@@ -88,7 +88,11 @@ def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121Anatom
     # num_classes must come from the checkpoint, not len(target_columns) --
     # target_columns=["tumor_type"] (1 element) maps to a 10-class model.
     num_classes = checkpoint.get("num_classes", len(target_columns))
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+    model = DenseNet121AnatomyClassifier(
+        num_classes=num_classes,
+        pretrained=False,
+        anatomy_num_classes=int(checkpoint.get("anatomy_num_classes", 0)),
+    )
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     normalization = checkpoint.get("normalization", "imagenet")
     return model.to(device).eval(), list(target_columns), checkpoint.get("task", "multi-label"), normalization

@@ -111,14 +111,20 @@ def main() -> None:
         raise ValueError("--tile-grid must be between 0 and 4")
     state = torch.load(args.checkpoint, map_location="cpu")
     num_classes = int(state.get("num_classes", 10))
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+    model = DenseNet121AnatomyClassifier(
+        num_classes=num_classes, pretrained=False,
+        anatomy_num_classes=int(state.get("anatomy_num_classes", 0)),
+    )
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device).eval()
     binary_model = None
     binary_layercam = None
     if args.binary_checkpoint is not None:
         binary_state = torch.load(args.binary_checkpoint, map_location="cpu")
-        binary_model = DenseNet121AnatomyClassifier(num_classes=1, pretrained=False)
+        binary_model = DenseNet121AnatomyClassifier(
+            num_classes=1, pretrained=False,
+            anatomy_num_classes=int(binary_state.get("anatomy_num_classes", 0)),
+        )
         binary_model.load_state_dict(binary_state["model_state_dict"], strict=True)
         binary_model.to(device).eval()
     ensemble_model = None
@@ -128,7 +134,10 @@ def main() -> None:
         ensemble_num_classes = int(ensemble_state.get("num_classes", num_classes))
         if ensemble_num_classes != num_classes:
             raise ValueError("--ensemble-checkpoint must have the same class count as --checkpoint")
-        ensemble_model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+        ensemble_model = DenseNet121AnatomyClassifier(
+            num_classes=num_classes, pretrained=False,
+            anatomy_num_classes=int(ensemble_state.get("anatomy_num_classes", 0)),
+        )
         ensemble_model.load_state_dict(ensemble_state["model_state_dict"], strict=True)
         ensemble_model.to(device).eval()
 

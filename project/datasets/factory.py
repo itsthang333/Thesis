@@ -32,9 +32,12 @@ def build_classification_dataset(
     augment: bool = False,
     preprocessing_mode: str = "none",
     normalization: str = "imagenet",
+    include_anatomy_target: bool = False,
 ):
     dataset = _check_dataset_name(dataset)
     if dataset == "ramh1200":
+        if include_anatomy_target:
+            raise ValueError("Anatomy-aware targets are supported only for BTXRD")
         return RAMH1200ClassificationDataset(
             root=root,
             split=split,
@@ -54,6 +57,7 @@ def build_classification_dataset(
         augment=augment,
         preprocessing_mode=preprocessing_mode,
         normalization=normalization,
+        include_anatomy_target=include_anatomy_target,
     )
 
 

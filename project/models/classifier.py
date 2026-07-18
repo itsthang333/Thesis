@@ -46,6 +46,7 @@ class DenseNet121AnatomyClassifier(nn.Module):
         pretrained: bool = True,
         dropout: float = 0.2,
         radimagenet_checkpoint: str | Path | None = None,
+        anatomy_num_classes: int = 0,
     ) -> None:
         super().__init__()
         if radimagenet_checkpoint is not None:
@@ -66,6 +67,15 @@ class DenseNet121AnatomyClassifier(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(p=dropout)
         self.classifier = nn.Linear(self.classifier_input_features, num_classes)
+        self.anatomy_num_classes = int(anatomy_num_classes)
+        self.anatomy_classifier = (
+            nn.Linear(self.classifier_input_features, self.anatomy_num_classes)
+            if self.anatomy_num_classes > 0 else None
+        )
+        self.region_tumor_classifier = (
+            nn.Linear(self.classifier_input_features, self.anatomy_num_classes * 2)
+            if self.anatomy_num_classes > 0 else None
+        )
 
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         # Force fp32 through the backbone regardless of an enclosing
@@ -83,10 +93,24 @@ class DenseNet121AnatomyClassifier(nn.Module):
             x = torch.relu(x)
         return x
 
-    def forward(self, x: torch.Tensor, return_features: bool = False):
+    def forward(
+        self,
+        x: torch.Tensor,
+        return_features: bool = False,
+        return_anatomy: bool = False,
+    ):
         features = self.forward_features(x)
         pooled = self.avgpool(features).flatten(1)
-        logits = self.classifier(self.dropout(pooled))
+        dropped = self.dropout(pooled)
+        logits = self.classifier(dropped)
+        if return_anatomy:
+            if self.anatomy_classifier is None or self.region_tumor_classifier is None:
+                raise RuntimeError("This model has no anatomy-aware heads")
+            anatomy_logits = self.anatomy_classifier(dropped)
+            region_tumor_logits = self.region_tumor_classifier(dropped).view(
+                -1, self.anatomy_num_classes, 2
+            )
+            return logits, anatomy_logits, region_tumor_logits, features
         if return_features:
             return logits, features
         return logits

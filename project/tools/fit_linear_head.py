@@ -64,7 +64,10 @@ def main() -> None:
     device = torch.device(args.device)
     state = torch.load(args.checkpoint, map_location="cpu")
     source_num_classes = int(state.get("num_classes", 10))
-    model = DenseNet121AnatomyClassifier(num_classes=source_num_classes, pretrained=False)
+    model = DenseNet121AnatomyClassifier(
+        num_classes=source_num_classes, pretrained=False,
+        anatomy_num_classes=int(state.get("anatomy_num_classes", 0)),
+    )
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device).eval()
 
