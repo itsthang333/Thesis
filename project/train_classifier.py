@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from config import (
     BTXRD_BEST_PIPELINE,
+    BTXRD_HYBRID_PIPELINE,
     ClassifierConfig,
     DATASET_TARGET_COLUMNS,
     DEFAULT_DATASET,
@@ -40,11 +41,16 @@ def parse_args() -> argparse.Namespace:
         "--pipeline-profile",
         type=str,
         default="default",
-        choices=["default", "btxrd_best"],
+        choices=["default", "btxrd_best", "btxrd_hybrid"],
         help=(
             "btxrd_best freezes the classifier setup paired with the selected "
             "WSSS pipeline: 10-class tumor_type CE at 320 px, batch 4, 6 epochs, "
-            "and PuzzleCAM/attention losses disabled."
+            "and PuzzleCAM/attention losses disabled. btxrd_hybrid keeps that "
+            "same 320px/tumor_type recipe but trains for 25 epochs with early "
+            "stopping and PuzzleCAM + Teacher-Student attention distillation "
+            "enabled, combining btxrd_best's downstream CAM/SAM/selection "
+            "recipe (higher oracle_dice) with the other pipeline's classifier "
+            "training recipe (higher val_f1)."
         ),
     )
     parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
@@ -127,7 +133,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
-    """Freeze the classifier recipe paired with ``btxrd_best``.
+    """Freeze the classifier recipe paired with ``btxrd_best``/``btxrd_hybrid``.
 
     This profile contains no segmentation supervision.  It only selects the
     image-level classification head and training hyperparameters that feed
@@ -138,15 +144,16 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if args.pipeline_profile == "default":
         return args
     if args.dataset != "btxrd":
-        raise ValueError("--pipeline-profile btxrd_best requires --dataset btxrd")
+        raise ValueError(f"--pipeline-profile {args.pipeline_profile} requires --dataset btxrd")
 
-    profile = BTXRD_BEST_PIPELINE
+    profile = BTXRD_HYBRID_PIPELINE if args.pipeline_profile == "btxrd_hybrid" else BTXRD_BEST_PIPELINE
+    name = args.pipeline_profile
     explicit = getattr(args, "_explicit_options", set())
 
     def require_or_set(option: str, attribute: str, expected: object) -> None:
         if option in explicit and getattr(args, attribute) != expected:
             raise ValueError(
-                f"--pipeline-profile btxrd_best fixes {option}={expected!r}; "
+                f"--pipeline-profile {name} fixes {option}={expected!r}; "
                 f"received {getattr(args, attribute)!r}"
             )
         setattr(args, attribute, expected)
@@ -164,21 +171,29 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--attention-alpha-max", "attention_alpha_max", profile.classifier_attention_alpha_max)
     require_or_set("--preprocessing-mode", "preprocessing_mode", "none")
     if "--augment" in explicit and args.augment:
-        raise ValueError("--pipeline-profile btxrd_best fixes training augmentation off")
+        raise ValueError(f"--pipeline-profile {name} fixes training augmentation off")
     if "--random-erasing" in explicit and args.random_erasing:
-        raise ValueError("--pipeline-profile btxrd_best fixes random erasing off")
+        raise ValueError(f"--pipeline-profile {name} fixes random erasing off")
     if "--no-pretrained" in explicit and args.no_pretrained:
-        raise ValueError("--pipeline-profile btxrd_best fixes ImageNet-pretrained initialization")
+        raise ValueError(f"--pipeline-profile {name} fixes ImageNet-pretrained initialization")
     if "--use-clahe" in explicit and args.use_clahe:
-        raise ValueError("--pipeline-profile btxrd_best fixes CLAHE off")
+        raise ValueError(f"--pipeline-profile {name} fixes CLAHE off")
     if "--radimagenet-checkpoint" in explicit and args.radimagenet_checkpoint is not None:
-        raise ValueError("--pipeline-profile btxrd_best fixes ImageNet normalization/pretraining")
-    if "--early-stop-patience" in explicit and args.early_stop_patience != 0:
-        raise ValueError("--pipeline-profile btxrd_best fixes early stopping off")
+        raise ValueError(f"--pipeline-profile {name} fixes ImageNet normalization/pretraining")
+    if name == "btxrd_hybrid":
+        # btxrd_hybrid deliberately trains longer with early stopping enabled
+        # (see config.py's BtxrdHybridPipelineConfig) instead of btxrd_best's
+        # fixed 6-epoch / no-early-stop recipe.
+        require_or_set("--early-stop-patience", "early_stop_patience", profile.classifier_early_stop_patience)
+        require_or_set("--teacher-warmup-epochs", "teacher_warmup_epochs", profile.teacher_warmup_epochs)
+        require_or_set("--teacher-ema-decay", "teacher_ema_decay", profile.teacher_ema_decay)
+        require_or_set("--teacher-cam-percentile", "teacher_cam_percentile", profile.teacher_cam_percentile)
+    elif "--early-stop-patience" in explicit and args.early_stop_patience != 0:
+        raise ValueError(f"--pipeline-profile {name} fixes early stopping off")
     args.augment = False
     args.random_erasing = False
     if "--output-dir" not in explicit:
-        args.output_dir = ROOT / "outputs" / "btxrd_classifier"
+        args.output_dir = ROOT / "outputs" / f"btxrd_classifier_{name}"
     return args
 
 

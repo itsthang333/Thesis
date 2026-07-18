@@ -105,3 +105,30 @@ class BtxrdBestPipelineConfig:
 
 BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 
+# btxrd_hybrid: same CAM/SAM/mask-selection recipe as btxrd_best (validated to
+# give the higher oracle_dice of the two independent pipelines -- contrastive
+# CAM, percentile ensemble, multi-component, SAM prompt ensemble at 512px),
+# combined with the classifier training recipe validated on the other
+# pipeline (25 epochs with early stopping, PuzzleCAM + Teacher-Student
+# attention distillation) instead of btxrd_best's 6-epoch pure-CE classifier
+# (val_f1=0.4251, visibly still improving at epoch 6 on the confusion
+# matrix). btxrd_best's classifier CAM/SAM stages produced a much higher
+# oracle_best_single_dice (0.52 vs 0.34) than the other pipeline's, but its
+# own classifier was undertrained relative to the other pipeline's
+# (val_f1=0.6774) -- this profile keeps the winning downstream recipe and
+# swaps in the winning training recipe, to be evaluated on its own oracle
+# diagnostics rather than assumed additive.
+@dataclass(frozen=True)
+class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
+    name: str = "btxrd_hybrid"
+    classifier_epochs: int = 25
+    classifier_early_stop_patience: int = 7
+    classifier_puzzle_alpha_max: float = 4.0
+    classifier_attention_alpha_max: float = 0.01
+    teacher_warmup_epochs: int = 3
+    teacher_ema_decay: float = 0.999
+    teacher_cam_percentile: float = 96.0
+
+
+BTXRD_HYBRID_PIPELINE = BtxrdHybridPipelineConfig()
+
