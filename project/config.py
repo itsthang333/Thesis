@@ -121,7 +121,13 @@ BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 @dataclass(frozen=True)
 class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
     name: str = "btxrd_hybrid"
-    classifier_epochs: int = 25
+    # SMOKE-TEST BRANCH ONLY (pipeline-smoke-test): classifier_epochs=2 here,
+    # not 25 -- this branch exists purely to run thesis_smoke_test.ipynb's
+    # full cell-by-cell flow quickly on Kaggle T4x2 to catch crashes before
+    # committing to the real multi-hour run on the `pipeline` branch, where
+    # this value is 25. Do not merge this file's changes back into
+    # `pipeline` -- branch pipeline-smoke-test is disposable/delete-after-use.
+    classifier_epochs: int = 2
     classifier_early_stop_patience: int = 7
     classifier_puzzle_alpha_max: float = 4.0
     classifier_attention_alpha_max: float = 0.01
