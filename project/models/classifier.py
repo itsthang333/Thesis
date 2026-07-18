@@ -170,5 +170,14 @@ class DenseNet121AnatomyClassifier(nn.Module):
         for region_index, head in enumerate(self.region_tumor_classifiers):
             mask = anatomy_region == region_index
             if mask.any():
-                logits[mask] = head(dropped[mask]).squeeze(-1)
+                # Under an enclosing torch.cuda.amp.autocast (as in
+                # train_classifier.py's run_epoch_multiclass), nn.Linear
+                # casts its output to fp16 even though pooled_features (and
+                # therefore this method's zero-initialized `logits`) is fp32
+                # -- forward_features forces fp32 through the backbone, see
+                # its own docstring. Index-assigning a fp16 tensor into a
+                # fp32 tensor raises "Index put requires the source and
+                # destination dtypes match" -- cast the head's output back
+                # to logits' dtype before assigning.
+                logits[mask] = head(dropped[mask]).squeeze(-1).to(dtype=logits.dtype)
         return logits
