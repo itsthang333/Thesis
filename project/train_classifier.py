@@ -300,12 +300,6 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(images)
-                # See run_epoch_multiclass's matching comment: a rare
-                # pathological input can still produce a finite-but-extreme
-                # logit even with forward_features forced to fp32; clamp so
-                # it can't distort the displayed loss average or BCE's
-                # internal sigmoid/log terms.
-                logits = torch.clamp(logits, -30.0, 30.0)
                 loss = criterion(logits, targets)
 
             if torch.isnan(loss) or torch.isinf(loss):
@@ -339,7 +333,7 @@ def run_epoch_multiclass(
     teacher=None,
     attention_alpha: float = 0.0,
     teacher_percentile: float = 96.0,
-) -> tuple[float, dict[str, float], torch.Tensor]:
+) -> tuple[float, dict[str, float], torch.Tensor, dict[str, float]]:
     """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot).
 
     puzzle_alpha > 0 adds PuzzleCAM's consistency loss (Jo & Yu, ICIP 2021,
@@ -356,9 +350,15 @@ def run_epoch_multiclass(
     applied during training (train=True); val loss stays pure CrossEntropy
     for a clean, comparable val_f1/early-stopping signal.
     """
-    total_loss = 0.0
+    total_cls_loss = 0.0
+    total_optimization_loss = 0.0
+    total_puzzle_cls_loss = 0.0
+    total_reconstruction_loss = 0.0
+    total_attention_loss = 0.0
+    total_teacher_confidence = 0.0
+    total_valid_teacher_fraction = 0.0
     confusion = torch.zeros(num_classes, num_classes, dtype=torch.long)
-    batches = 0
+    samples = 0
     model.train(train)
 
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
@@ -373,16 +373,6 @@ def run_epoch_multiclass(
                     logits, student_features = model(images, return_features=True)
                 else:
                     logits = model(images)
-                # forward_features now forces fp32 through the backbone, so
-                # logits are always finite -- but a pathological input (see
-                # the skip-batch warning below) can still produce a finite
-                # but extreme logit (hundreds+), which blows up val_loss's
-                # displayed average without ever triggering the isnan/isinf
-                # skip. Clamp to a range that can't meaningfully change which
-                # class wins (correct-class logits for real predictions stay
-                # under ~1 early in training, per this project's own debug
-                # runs) while keeping CrossEntropyLoss's internal exp() finite.
-                logits = torch.clamp(logits, -30.0, 30.0)
                 # cls_loss is logged separately from the combined `loss` used
                 # for backward(), so train_loss/val_loss in the CSV stay
                 # directly comparable to runs without PuzzleCAM (pure
@@ -407,6 +397,7 @@ def run_epoch_multiclass(
 
                 att_loss_value = 0.0
                 teacher_conf_value = 0.0
+                valid_teacher_fraction_value = 0.0
                 if need_features:
                     # L_attention: student's own CAM vs. the teacher's refined
                     # soft target (frozen EMA teacher -> LayerCAM -> percentile
@@ -424,12 +415,13 @@ def run_epoch_multiclass(
                     # actual (~2.6% of image area) footprint by the
                     # percentile+morphology pipeline -- "CAM ~= lesion-shaped-
                     # region", not just "CAM ~= CAM".
-                    att_loss, teacher_conf = attention_distillation_loss(
+                    att_loss, teacher_conf, valid_teacher_fraction = attention_distillation_loss(
                         teacher, model, student_features, images, targets, percentile=teacher_percentile
                     )
                     loss = loss + attention_alpha * att_loss
                     teacher_conf_value = teacher_conf.item()
                     att_loss_value = att_loss.item()
+                    valid_teacher_fraction_value = valid_teacher_fraction.item()
 
             if torch.isnan(loss) or torch.isinf(loss):
                 print(f"  [WARNING] Skipping batch with non-finite loss (a rare pathological "
@@ -458,8 +450,15 @@ def run_epoch_multiclass(
 
         batch_confusion = multiclass_confusion_matrix(logits.detach().cpu(), targets.detach().cpu(), num_classes)
         confusion += batch_confusion
-        total_loss += cls_loss.item()
-        batches += 1
+        batch_size = int(images.shape[0])
+        total_cls_loss += cls_loss.item() * batch_size
+        total_optimization_loss += loss.item() * batch_size
+        total_puzzle_cls_loss += p_cls_loss_value * batch_size
+        total_reconstruction_loss += re_loss_value * batch_size
+        total_attention_loss += att_loss_value * batch_size
+        total_teacher_confidence += teacher_conf_value * batch_size
+        total_valid_teacher_fraction += valid_teacher_fraction_value * batch_size
+        samples += batch_size
         batch_metrics = metrics_from_multiclass_confusion(batch_confusion)
         progress.set_postfix(loss=cls_loss.item(), macro_f1=batch_metrics["f1"],
                               re_loss=re_loss_value, p_cls_loss=p_cls_loss_value, att_loss=att_loss_value,
@@ -468,9 +467,16 @@ def run_epoch_multiclass(
         if train and teacher is not None:
             teacher.update(model)
 
-    if batches == 0:
-        return 0.0, metrics_from_multiclass_confusion(confusion), confusion
-    return total_loss / batches, metrics_from_multiclass_confusion(confusion), confusion
+    diagnostics = {
+        "classification_loss": total_cls_loss / samples if samples else 0.0,
+        "optimization_loss": total_optimization_loss / samples if samples else 0.0,
+        "puzzle_classification_loss": total_puzzle_cls_loss / samples if samples else 0.0,
+        "reconstruction_loss": total_reconstruction_loss / samples if samples else 0.0,
+        "attention_loss": total_attention_loss / samples if samples else 0.0,
+        "teacher_confidence": total_teacher_confidence / samples if samples else 0.0,
+        "valid_teacher_fraction": total_valid_teacher_fraction / samples if samples else 0.0,
+    }
+    return diagnostics["classification_loss"], metrics_from_multiclass_confusion(confusion), confusion, diagnostics
 
 
 def save_checkpoint(
@@ -733,6 +739,9 @@ def main() -> None:
             # flattened into the CSV; macro precision/recall/f1 summarize it.
             writer.writerow([
                 "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1",
+                "train_puzzle_cls_loss", "train_reconstruction_loss", "train_attention_loss",
+                "puzzle_alpha", "attention_alpha", "teacher_confidence", "valid_teacher_fraction",
+                "total_optimization_loss",
                 "val_loss", "val_acc", "val_precision", "val_recall", "val_f1",
             ])
         else:
@@ -776,13 +785,13 @@ def main() -> None:
                     epochs_since_warmup, remaining_epochs, alpha_max=args.attention_alpha_max
                 )
 
-            train_loss, train_metrics, _train_confusion = run_epoch_multiclass(
+            train_loss, train_metrics, _train_confusion, train_diagnostics = run_epoch_multiclass(
                 model, train_loader, criterion, optimizer, scaler, device, num_classes, train=True,
                 puzzle_alpha=current_puzzle_alpha,
                 teacher=teacher, attention_alpha=current_attention_alpha,
                 teacher_percentile=args.teacher_cam_percentile,
             )
-            val_loss, val_metrics, val_confusion = run_epoch_multiclass(
+            val_loss, val_metrics, val_confusion, _val_diagnostics = run_epoch_multiclass(
                 model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False
             )
         else:
@@ -795,6 +804,14 @@ def main() -> None:
                 writer.writerow([
                     epoch, train_loss, train_metrics["acc"], train_metrics["precision"],
                     train_metrics["recall"], train_metrics["f1"],
+                    train_diagnostics["puzzle_classification_loss"],
+                    train_diagnostics["reconstruction_loss"],
+                    train_diagnostics["attention_loss"],
+                    current_puzzle_alpha,
+                    current_attention_alpha,
+                    train_diagnostics["teacher_confidence"],
+                    train_diagnostics["valid_teacher_fraction"],
+                    train_diagnostics["optimization_loss"],
                     val_loss, val_metrics["acc"], val_metrics["precision"],
                     val_metrics["recall"], val_metrics["f1"],
                 ])

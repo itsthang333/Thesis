@@ -403,6 +403,14 @@ def build_class_conditioned_components(
     for cam, weight in zip(per_class_cams, weights):
         fused_cam = np.maximum(fused_cam, _normalise_percentile(cam, low=0.0, high=100.0) * float(weight))
 
+    if (
+        not np.isfinite(fused_cam).all()
+        or float(np.ptp(fused_cam)) <= 1e-6
+        or float(fused_cam.max()) <= 1e-6
+    ):
+        h, w = fused_cam.shape
+        return np.zeros((h, w), dtype=np.float32), np.zeros((h, w), dtype=np.uint8), []
+
     threshold = float(np.percentile(fused_cam, cam_percentile))
     support = (fused_cam >= threshold).astype(np.uint8)
 

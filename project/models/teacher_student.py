@@ -158,7 +158,7 @@ def attention_distillation_loss(
     images: torch.Tensor,
     target_class: torch.Tensor,
     percentile: float = 96.0,
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """L_attention: BCE between the student's own CAM and the teacher's
     refined soft attention target (Teacher LayerCAM -> percentile ->
     morphology -> blur, see EMATeacher.compute_soft_attention_target),
@@ -172,8 +172,8 @@ def attention_distillation_loss(
     toward the teacher's sharp, denoised region rather than just averaging
     toward it (as L1 would).
 
-    Returns: (weighted_loss, mean_teacher_conf) -- the second value is for
-    logging only (train_classifier.py tracks it per-epoch to later check
+    Returns: (weighted_loss, mean_teacher_conf, valid_fraction) -- the latter
+    two values are for logging only (train_classifier.py tracks them to check
     whether teacher confidence correlates with actual CAM quality, per this
     project's own methodology discussion: a teacher can be confident about
     *classification* while still localizing the lesion incorrectly, so this
@@ -232,7 +232,7 @@ def attention_distillation_loss(
             # train_classifier.py does loss.backward() on the combined total
             # loss unconditionally, so this needs a valid (if zero-valued)
             # grad_fn rather than crashing with "does not require grad".
-            return student_cam.sum() * 0.0, teacher_conf.mean()
+            return student_cam.sum() * 0.0, teacher_conf.mean(), valid_mask.float().mean()
 
         per_sample_bce = F.binary_cross_entropy(
             student_cam.clamp(1e-6, 1 - 1e-6), soft_target, reduction="none"
@@ -264,4 +264,4 @@ def attention_distillation_loss(
 
     num_valid = valid_mask.sum().clamp(min=1)
     loss = weighted_bce[valid_mask].sum() / num_valid
-    return loss, teacher_conf[valid_mask].mean()
+    return loss, teacher_conf[valid_mask].mean(), valid_mask.float().mean()

@@ -84,7 +84,8 @@ def main() -> None:
     rows: list[dict[str, object]] = []
     tumor_dice: list[float] = []
     tumor_iou: list[float] = []
-    tumor_detected: list[float] = []
+    tumor_non_empty: list[float] = []
+    tumor_overlap: list[float] = []
     normal_empty: list[float] = []
 
     with torch.no_grad():
@@ -108,7 +109,8 @@ def main() -> None:
                 if is_tumor:
                     tumor_dice.append(dice)
                     tumor_iou.append(iou)
-                    tumor_detected.append(float(predicted_positive))
+                    tumor_non_empty.append(float(predicted_positive))
+                    tumor_overlap.append(float(bool((pred * target).sum().item() > 0)))
                 else:
                     normal_empty.append(float(not predicted_positive))
 
@@ -123,7 +125,8 @@ def main() -> None:
         "normal_images": len(normal_empty),
         "mean_tumor_dice": mean(tumor_dice),
         "mean_tumor_iou": mean(tumor_iou),
-        "tumor_detection_sensitivity": mean(tumor_detected),
+        "tumor_non_empty_prediction_rate": mean(tumor_non_empty),
+        "tumor_overlap_detection_rate": mean(tumor_overlap),
         "normal_specificity": mean(normal_empty),
         "normal_false_positive_rate": 1.0 - mean(normal_empty),
     }

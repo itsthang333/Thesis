@@ -171,8 +171,10 @@ python project/train_segmentation.py \
   --output-dir project/outputs/btxrd_unet_ground_truth
 ```
 
-`evaluate_unet.py` evaluates the best checkpoint on a locked ground-truth
-split and reports tumor-only Dice/IoU separately from normal specificity.
+`evaluate_unet.py` reports tumor-only Dice/IoU separately from normal
+specificity. Use `val` only for development and checkpoint/threshold selection;
+after the pipeline is frozen, report the final result once on the held-out
+`test` split.
 The expanded walkthrough is in `btxrd_kaggle_vi_debug.ipynb`.
 
 Run inference on one image:

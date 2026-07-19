@@ -183,20 +183,20 @@ def score_masks(
             # fraction of mask pixels that are "activated" (cam > 0.5)
             scores[i] = float((cam_vals > 0.5).sum()) / area
         elif method == "coverage_mass":
-            # Retain the interpretable binary coverage term but break its
+            # Retain the interpretable high-CAM density term but break its
             # frequent 1.0 ties with the fraction of total CAM mass captured.
             # This remains image-only and is less biased toward tiny masks
             # than raw meanCAM.
-            binary_coverage = float((cam_vals > 0.5).sum()) / area
+            cam_density = float((cam_vals > 0.5).sum()) / area
             mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
-            scores[i] = 0.70 * binary_coverage + 0.30 * mass_coverage
+            scores[i] = 0.70 * cam_density + 0.30 * mass_coverage
         elif method == "coverage_mass_sam":
-            binary_coverage = float((cam_vals > 0.5).sum()) / area
+            cam_density = float((cam_vals > 0.5).sum()) / area
             mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
             # SAM score is used only as a within-component rank, never as a
             # calibrated cross-image IoU probability.
             scores[i] = (
-                0.60 * binary_coverage
+                0.60 * cam_density
                 + 0.25 * mass_coverage
                 + 0.15 * float(sam_ranks[i])
             )
@@ -360,7 +360,7 @@ def constrain_to_bone_support(
     """
     fused_mask = fused_mask.astype(np.uint8)
     if (
-        selection_method != "bone_hybrid"
+        selection_method not in {"bone_hybrid", "coverage_mass_sam"}
         or bone_support is None
         or not bone_support.any()
         or support_clip_kernel < 0
@@ -394,11 +394,13 @@ def select_and_fuse_masks(
     best_per_component: bool = False,
     component_topk: int = 0,
     support_clip_kernel: int = 5,
+    low_score_policy: str = "empty",
 ) -> np.ndarray:
     """Select and fuse masks using CAM and bone morphology evidence.
 
     fusion_topk controls how the top-scored masks are combined:
-      0 or 1 : logical-OR of all above-threshold masks (original behaviour)
+      0       : logical-OR of all above-threshold masks
+      1       : keep only the highest-scoring above-threshold mask
       k > 1  : union (logical-OR) of the top-k above-threshold masks
       k < 0  : intersection (logical-AND) of the top-|k| above-threshold masks
 
@@ -417,6 +419,8 @@ def select_and_fuse_masks(
         mask_score_threshold: Masks below this are discarded.
         selection_method:    "mean" | "sum" | "mean_area" (see SELECTION_METHODS).
         fusion_topk:         Fusion mode (0=default OR, k>1=top-k union, k<0=top-|k| intersection).
+        low_score_policy:    "empty" rejects all candidates below the threshold;
+                             "keep-best" retains the best candidate for debug ablations.
 
     Returns:
         pseudo_mask: [H, W] uint8 binary mask (0 / 1).
@@ -424,6 +428,8 @@ def select_and_fuse_masks(
     if masks.shape[0] == 0:
         h, w = bone_cam.shape
         return np.zeros((h, w), dtype=np.uint8)
+    if low_score_policy not in {"empty", "keep-best"}:
+        raise ValueError("low_score_policy must be 'empty' or 'keep-best'")
 
     def _clip(fused_mask: np.ndarray) -> np.ndarray:
         return constrain_to_bone_support(fused_mask, bone_support, selection_method, support_clip_kernel)
@@ -470,8 +476,9 @@ def select_and_fuse_masks(
     order = np.argsort(scores)[::-1]
     above = [i for i in order if scores[i] >= mask_score_threshold]
 
-    # fallback: keep best mask if nothing passes threshold
     if not above:
+        if low_score_policy == "empty":
+            return np.zeros_like(bone_cam, dtype=np.uint8)
         above = [int(order[0])]
 
     if fusion_topk == 1:

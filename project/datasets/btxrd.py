@@ -87,27 +87,35 @@ def _load_dataset_table(btxrd_root: Path) -> list[dict[str, object]]:
 
 
 def _row_flag(row: dict[str, object], column: str) -> int:
-    value = row.get(column, 0)
+    if column not in row:
+        raise ValueError(f"BTXRD metadata is missing required column {column!r}")
+    value = row[column]
     if value is None or value == "":
-        return 0
+        raise ValueError(f"BTXRD metadata column {column!r} contains an empty value")
     try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return 0
+        numeric = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"BTXRD metadata column {column!r} must contain 0 or 1, got {value!r}"
+        ) from exc
+    if not np.isfinite(numeric) or numeric not in (0.0, 1.0):
+        raise ValueError(
+            f"BTXRD metadata column {column!r} must contain 0 or 1, got {value!r}"
+        )
+    return int(numeric)
 
 
 def _row_tumor_type_index(row: dict[str, object]) -> int:
     """Return the 10-class tumor-type index: 0=normal, 1..9=TUMOR_TYPE_COLUMNS.
 
-    If a tumor image has more than one tumor-type column set to 1 (a data
-    quality edge case -- observed once in a real dataset.csv sample, where the
-    9 tumor-type columns summed to 1868 vs. tumor==1 count of 1867), the
-    first matching column in TUMOR_TYPE_COLUMNS order wins, deterministically.
+    Invalid or ambiguous rows are rejected instead of silently choosing the
+    first matching tumor type.
     """
-    for i, column in enumerate(TUMOR_TYPE_COLUMNS):
-        if _row_flag(row, column):
-            return i + 1
-    return 0
+    matches = [i + 1 for i, column in enumerate(TUMOR_TYPE_COLUMNS) if _row_flag(row, column)]
+    if len(matches) > 1:
+        names = [TUMOR_TYPE_COLUMNS[index - 1] for index in matches]
+        raise ValueError(f"BTXRD row has multiple tumor types set: {names}")
+    return matches[0] if matches else 0
 
 
 def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
@@ -115,17 +123,38 @@ def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
     btxrd_root = resolve_btxrd_root(btxrd_root)
     rows = _load_dataset_table(btxrd_root)
     records: list[dict[str, object]] = []
-    for row in rows:
+    seen_image_ids: set[str] = set()
+    for row_number, row in enumerate(rows, start=2):
         image_id = str(row.get("image_id", "")).strip()
         if not image_id:
-            continue
+            raise ValueError(f"BTXRD metadata row {row_number} has no image_id")
+        if image_id in seen_image_ids:
+            raise ValueError(f"BTXRD metadata contains duplicate image_id {image_id!r}")
+        seen_image_ids.add(image_id)
+        try:
+            tumor = _row_flag(row, "tumor")
+            benign = _row_flag(row, "benign")
+            malignant = _row_flag(row, "malignant")
+            tumor_type = _row_tumor_type_index(row)
+        except ValueError as exc:
+            raise ValueError(f"Invalid BTXRD metadata row {row_number} ({image_id}): {exc}") from exc
+        if bool(tumor_type) != bool(tumor):
+            raise ValueError(
+                f"Invalid BTXRD metadata row {row_number} ({image_id}): tumor={tumor} "
+                f"but tumor-type count is {int(bool(tumor_type))}"
+            )
+        if benign + malignant != tumor:
+            raise ValueError(
+                f"Invalid BTXRD metadata row {row_number} ({image_id}): "
+                f"benign + malignant must equal tumor, got {benign} + {malignant} != {tumor}"
+            )
         records.append(
             {
                 "image_id": image_id,
-                "tumor": _row_flag(row, "tumor"),
-                "benign": _row_flag(row, "benign"),
-                "malignant": _row_flag(row, "malignant"),
-                "tumor_type": _row_tumor_type_index(row),
+                "tumor": tumor,
+                "benign": benign,
+                "malignant": malignant,
+                "tumor_type": tumor_type,
             }
         )
     return records
@@ -236,12 +265,9 @@ class BTXRDSegmentationDataset(Dataset):
         the LabelMe ground-truth polygon -- this is how train_segmentation.py
         trains U-Net on the pipeline's own pseudo-masks rather than on GT
         (which stays reserved for evaluation/oracle baselines). Images the
-        pipeline skipped as low-confidence/normal fall back to an all-zero
-        mask: generate_pseudo_masks.py usually still writes an all-zero PNG
-        for these (read normally, same result), and only omits the PNG
-        entirely for images excluded by --max-images/--image-list -- both
-        cases are handled identically here, matching how generate_pseudo_masks.py treats
-        them.
+        pipeline skipped as low-confidence/normal still have an explicit
+        all-zero PNG. Missing files are treated as an incomplete or mismatched
+        generation run and fail fast rather than becoming negative targets.
         """
         self.btxrd_root = resolve_btxrd_root(root)
         self.images_dir = self.btxrd_root / DEFAULT_IMAGES_DIR
@@ -269,6 +295,22 @@ class BTXRDSegmentationDataset(Dataset):
                 f"{self.images_dir}, e.g. {missing_images[:5]}"
             )
 
+        if self.pred_mask_dir is not None:
+            if not self.pred_mask_dir.is_dir():
+                raise FileNotFoundError(f"Pseudo-mask directory does not exist: {self.pred_mask_dir}")
+            missing_masks = [
+                str(sample["image_id"])
+                for sample in self.samples
+                if not self._pred_mask_path(str(sample["image_id"])).is_file()
+            ]
+            if missing_masks:
+                raise FileNotFoundError(
+                    f"{len(missing_masks)} pseudo-masks are missing for BTXRD split {split!r} under "
+                    f"{self.pred_mask_dir}. A complete generation run must write one PNG per image, "
+                    f"including explicit all-zero masks for skipped normal/low-confidence images; "
+                    f"e.g. {missing_masks[:5]}"
+                )
+
         self.image_transform = make_segmentation_image_transform(image_size)
         self.mask_transform = make_segmentation_mask_transform(image_size)
 
@@ -286,12 +328,9 @@ class BTXRDSegmentationDataset(Dataset):
         width, height = image_size
         if self.pred_mask_dir is not None:
             pred_mask_path = self._pred_mask_path(str(sample["image_id"]))
-            if pred_mask_path.exists():
-                return Image.open(pred_mask_path).convert("L").resize((width, height), Image.NEAREST)
-            # generate_pseudo_masks.py skips normal/low-confidence images and
-            # writes no PNG for them -- an all-zero mask matches that pipeline's
-            # own treatment of such images (see its skipped_low_confidence.txt).
-            mask = np.zeros((height, width), dtype=bool)
+            if not pred_mask_path.is_file():
+                raise FileNotFoundError(f"Pseudo-mask disappeared after dataset validation: {pred_mask_path}")
+            return Image.open(pred_mask_path).convert("L").resize((width, height), Image.NEAREST)
         elif not sample["tumor"]:
             mask = np.zeros((height, width), dtype=bool)
         else:

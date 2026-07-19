@@ -94,7 +94,9 @@ class BtxrdBestPipelineConfig:
     max_box_area_ratio: float = 0.35
     selection_method: str = "coverage_mass_sam"
     best_per_component: bool = True
-    fusion_topk: int = 3
+    # Match the production single-component path if best_per_component is
+    # disabled for an ablation; top-3 fusion was otherwise inactive here.
+    fusion_topk: int = 1
     support_clip_kernel: int = 5
     closing_kernel: int = 0
     opening_kernel: int = 0

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import random
 import sys
 from pathlib import Path
 
@@ -45,7 +46,7 @@ def parse_args() -> argparse.Namespace:
                         "GPU visible. Checkpoints are always saved without the DataParallel "
                         "'module.' prefix, so they load identically with or without this flag.")
     parser.add_argument("--early-stop-patience", type=int, default=0,
-                        help="Stop training if val_dice does not improve for this many consecutive "
+                        help="Stop training if val_positive_dice does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
     parser.add_argument("--train-pred-mask-root", type=Path, default=None,
                         help="btxrd only. Directory of pseudo-mask PNGs (generate_pseudo_masks.py's "
@@ -82,9 +83,6 @@ def parse_args() -> argparse.Namespace:
 def seed_everything(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    import random
-    import numpy as np
-
     random.seed(seed)
     np.random.seed(seed)
 
@@ -166,7 +164,11 @@ def run_epoch(
     total_loss = 0.0
     total_dice = 0.0
     total_iou = 0.0
-    batches = 0
+    positive_target_dice = 0.0
+    positive_target_count = 0
+    empty_target_correct = 0
+    empty_target_count = 0
+    samples = 0
     model.train(train)
 
     progress = tqdm(loader, desc="train" if train else "val", leave=False)
@@ -187,15 +189,34 @@ def run_epoch(
 
         dice = dice_coefficient(logits.detach(), masks.detach())
         iou = iou_score(logits.detach(), masks.detach())
-        total_loss += loss.item()
-        total_dice += dice.item()
-        total_iou += iou.item()
-        batches += 1
+        batch_size = int(images.shape[0])
+        total_loss += loss.item() * batch_size
+        total_dice += dice.item() * batch_size
+        total_iou += iou.item() * batch_size
+        samples += batch_size
+
+        predictions = (torch.sigmoid(logits.detach()) >= 0.5).float()
+        pred_flat = predictions.flatten(1)
+        target_flat = masks.detach().flatten(1)
+        intersection = (pred_flat * target_flat).sum(dim=1)
+        denominator = pred_flat.sum(dim=1) + target_flat.sum(dim=1)
+        sample_dice = (2.0 * intersection + 1e-6) / (denominator + 1e-6)
+        positive_targets = target_flat.sum(dim=1) > 0
+        empty_targets = ~positive_targets
+        positive_target_dice += float(sample_dice[positive_targets].sum().item())
+        positive_target_count += int(positive_targets.sum().item())
+        empty_target_correct += int((pred_flat[empty_targets].sum(dim=1) == 0).sum().item())
+        empty_target_count += int(empty_targets.sum().item())
         progress.set_postfix(loss=loss.item(), dice=dice.item(), iou=iou.item())
 
-    if batches == 0:
-        return 0.0, {"dice": 0.0, "iou": 0.0}
-    return total_loss / batches, {"dice": total_dice / batches, "iou": total_iou / batches}
+    if samples == 0:
+        return 0.0, {"dice": 0.0, "iou": 0.0, "positive_dice": 0.0, "empty_specificity": 0.0}
+    return total_loss / samples, {
+        "dice": total_dice / samples,
+        "iou": total_iou / samples,
+        "positive_dice": positive_target_dice / positive_target_count if positive_target_count else 0.0,
+        "empty_specificity": empty_target_correct / empty_target_count if empty_target_count else 0.0,
+    }
 
 
 def save_checkpoint(
@@ -206,6 +227,9 @@ def save_checkpoint(
     best_metric: float,
     dataset: str,
     pos_weight: float | None = None,
+    scaler=None,
+    run_config: argparse.Namespace | None = None,
+    epochs_without_improvement: int = 0,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     # Unwrap nn.DataParallel before saving: DataParallel prefixes every state_dict
@@ -215,17 +239,66 @@ def save_checkpoint(
     # evaluate_unet.py and --resume-from) -- saving the unwrapped state_dict here
     # keeps checkpoints identical whether or not multi-GPU was used to train.
     model_to_save = model.module if isinstance(model, nn.DataParallel) else model
-    torch.save(
-        {
-            "epoch": epoch,
-            "model_state_dict": model_to_save.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "best_metric": best_metric,
-            "dataset": dataset,
-            "pos_weight": pos_weight,
-        },
-        path,
-    )
+    state = {
+        "epoch": epoch,
+        "model_state_dict": model_to_save.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "best_metric": best_metric,
+        "best_metric_name": "val_positive_dice",
+        "dataset": dataset,
+        "pos_weight": pos_weight,
+        "epochs_without_improvement": epochs_without_improvement,
+        "torch_rng_state": torch.get_rng_state(),
+        "numpy_rng_state": np.random.get_state(),
+        "python_rng_state": random.getstate(),
+    }
+    if torch.cuda.is_available():
+        state["cuda_rng_state_all"] = torch.cuda.get_rng_state_all()
+    if scaler is not None:
+        state["scaler_state_dict"] = scaler.state_dict()
+    if run_config is not None:
+        state.update(
+            {
+                "image_size": run_config.image_size,
+                "architecture": {"name": "UNet", "in_channels": 3, "out_channels": 1, "base_channels": 64},
+                "train_split": run_config.train_split,
+                "val_split": run_config.val_split,
+                "train_pred_mask_root": str(run_config.train_pred_mask_root) if run_config.train_pred_mask_root else None,
+                "val_pred_mask_root": str(run_config.val_pred_mask_root) if run_config.val_pred_mask_root else None,
+                "decision_threshold": 0.5,
+                "seed": run_config.seed,
+                "use_clahe": run_config.use_clahe,
+            }
+        )
+    torch.save(state, path)
+
+
+HISTORY_FIELDS = [
+    "epoch", "train_loss", "train_dice", "train_iou", "train_positive_dice",
+    "train_empty_specificity", "val_loss", "val_dice", "val_iou",
+    "val_positive_dice", "val_empty_specificity",
+]
+
+
+def ensure_history_schema(path: Path, start_fresh: bool) -> None:
+    """Create or upgrade training_log.csv without losing resumed epochs."""
+    if start_fresh or not path.exists():
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            csv.DictWriter(handle, fieldnames=HISTORY_FIELDS).writeheader()
+        return
+    with path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        old_fields = reader.fieldnames or []
+        rows = list(reader)
+    if old_fields == HISTORY_FIELDS:
+        return
+    unknown_fields = [field for field in old_fields if field not in HISTORY_FIELDS]
+    if unknown_fields:
+        raise ValueError(f"Cannot resume from training log with unknown columns: {unknown_fields}")
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=HISTORY_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def main() -> None:
@@ -258,7 +331,7 @@ def main() -> None:
     print(f"pos_weight_mode={args.pos_weight_mode} -> pos_weight={pos_weight}")
 
     history_path = args.output_dir / "training_log.csv"
-    best_val_dice = 0.0
+    best_val_positive_dice = -1.0
     epochs_without_improvement = 0
     start_epoch = 1
 
@@ -267,9 +340,31 @@ def main() -> None:
         checkpoint = torch.load(args.resume_from, map_location=device)
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        best_val_dice = checkpoint.get("best_metric", 0.0)
+        if checkpoint.get("best_metric_name") == "val_positive_dice":
+            best_val_positive_dice = checkpoint.get("best_metric", -1.0)
+            epochs_without_improvement = int(checkpoint.get("epochs_without_improvement", 0))
+        else:
+            print(
+                "WARNING: resumed checkpoint used the legacy all-image val_dice criterion; "
+                "resetting best/early-stop state for the new val_positive_dice criterion."
+            )
+            best_val_positive_dice = -1.0
+            epochs_without_improvement = 0
         start_epoch = checkpoint.get("epoch", 0) + 1
-        print(f"Resumed at epoch {start_epoch} (best_val_dice so far: {best_val_dice:.4f})")
+        if "scaler_state_dict" in checkpoint:
+            scaler.load_state_dict(checkpoint["scaler_state_dict"])
+        if "torch_rng_state" in checkpoint:
+            torch.set_rng_state(checkpoint["torch_rng_state"].cpu())
+        if "cuda_rng_state_all" in checkpoint and torch.cuda.is_available():
+            torch.cuda.set_rng_state_all([state.cpu() for state in checkpoint["cuda_rng_state_all"]])
+        if "numpy_rng_state" in checkpoint:
+            np.random.set_state(checkpoint["numpy_rng_state"])
+        if "python_rng_state" in checkpoint:
+            random.setstate(checkpoint["python_rng_state"])
+        print(
+            f"Resumed at epoch {start_epoch} "
+            f"(best_val_positive_dice so far: {best_val_positive_dice:.4f})"
+        )
         # pos_weight is recomputed above from the CURRENT train_dataset (so it
         # always reflects --train-pred-mask-root as currently set), not
         # restored from the checkpoint. If that changed since the run being
@@ -294,8 +389,10 @@ def main() -> None:
     # load_state_dict above always sees keys without the "module." prefix
     # DataParallel would otherwise require.
     if use_multi_gpu:
-        print(f"Using nn.DataParallel across {num_gpus} GPUs (effective batch size = "
-              f"{args.batch_size} x {num_gpus} = {args.batch_size * num_gpus} per step).")
+        print(
+            f"Using nn.DataParallel across {num_gpus} GPUs "
+            f"(global batch size = {args.batch_size}; split across devices per step)."
+        )
         model = nn.DataParallel(model)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -303,10 +400,7 @@ def main() -> None:
     # the existing training_log.csv, not overwrite it (the file was opened
     # with mode "w" unconditionally before this fix, which silently discarded
     # every prior epoch's row on any re-run, resume or not).
-    if args.resume_from is None or not history_path.exists():
-        with history_path.open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.writer(handle)
-            writer.writerow(["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou"])
+    ensure_history_schema(history_path, start_fresh=args.resume_from is None)
 
     for epoch in range(start_epoch, args.epochs + 1):
         train_loss, train_metrics = run_epoch(
@@ -315,43 +409,46 @@ def main() -> None:
         val_loss, val_metrics = run_epoch(model, val_loader, scaler, device, train=False, pos_weight=pos_weight)
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
-            writer = csv.writer(handle)
-            writer.writerow(
-                [
-                    epoch,
-                    train_loss,
-                    train_metrics["dice"],
-                    train_metrics["iou"],
-                    val_loss,
-                    val_metrics["dice"],
-                    val_metrics["iou"],
-                ]
-            )
+            writer = csv.DictWriter(handle, fieldnames=HISTORY_FIELDS)
+            writer.writerow({
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "train_dice": train_metrics["dice"],
+                "train_iou": train_metrics["iou"],
+                "train_positive_dice": train_metrics["positive_dice"],
+                "train_empty_specificity": train_metrics["empty_specificity"],
+                "val_loss": val_loss,
+                "val_dice": val_metrics["dice"],
+                "val_iou": val_metrics["iou"],
+                "val_positive_dice": val_metrics["positive_dice"],
+                "val_empty_specificity": val_metrics["empty_specificity"],
+            })
 
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_dice={train_metrics['dice']:.4f} "
-            f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f}"
+            f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f} "
+            f"val_positive_dice={val_metrics['positive_dice']:.4f}"
         )
 
-        # Update best_val_dice for THIS epoch before saving last_unet.pt, so its
+        # Update best metric for THIS epoch before saving last_unet.pt, so its
         # best_metric field reflects the true best-so-far (including this epoch)
         # rather than lagging one epoch behind -- otherwise resuming from
         # last_unet.pt reads a stale best_metric and can let a worse later
         # epoch overwrite best_unet.pt.
-        if val_metrics["dice"] > best_val_dice:
-            best_val_dice = val_metrics["dice"]
+        if val_metrics["positive_dice"] > best_val_positive_dice:
+            best_val_positive_dice = val_metrics["positive_dice"]
             epochs_without_improvement = 0
-            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
-            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
-            print(f"--> Saved new best model with Dice = {best_val_dice:.4f}")
+            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice, args.dataset, pos_weight, scaler, args, epochs_without_improvement)
+            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_positive_dice, args.dataset, pos_weight, scaler, args, epochs_without_improvement)
+            print(f"--> Saved new best model with positive-target Dice = {best_val_positive_dice:.4f}")
         else:
             epochs_without_improvement += 1
-            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_dice, args.dataset, pos_weight)
+            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice, args.dataset, pos_weight, scaler, args, epochs_without_improvement)
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
             print(
-                f"Early stopping: val_dice did not improve for {epochs_without_improvement} epochs "
-                f"(patience={args.early_stop_patience}). Best val_dice={best_val_dice:.4f}."
+                f"Early stopping: val_positive_dice did not improve for {epochs_without_improvement} epochs "
+                f"(patience={args.early_stop_patience}). Best val_positive_dice={best_val_positive_dice:.4f}."
             )
             break
 

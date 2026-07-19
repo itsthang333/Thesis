@@ -281,6 +281,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force-non-normal-cam", action="store_true",
                         help="Predicted-protocol A/B: if argmax is normal, condition CAM on the strongest "
                              "non-normal class instead of skipping. Default keeps normal images empty.")
+    parser.add_argument(
+        "--low-score-policy",
+        choices=["empty", "keep-best"],
+        default="empty",
+        help="What to do when every SAM candidate scores below --mask-score-threshold. "
+        "Use 'empty' for production; 'keep-best' is retained only for debug ablations.",
+    )
     args = parser.parse_args()
     # Keep raw option names so the canonical profile can distinguish allowed
     # run/hardware inputs from recipe changes and reject the latter explicitly.
@@ -358,6 +365,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--max-points", "max_points", profile.max_points)
     require_or_set("--min-component-area", "min_component_area", profile.min_component_area)
     require_or_set("--mask-score-threshold", "mask_score_threshold", profile.mask_score_threshold)
+    require_or_set("--low-score-policy", "low_score_policy", "empty")
     require_or_set("--morphology-fusion-mode", "morphology_fusion_mode", profile.morphology_fusion_mode)
     require_or_set("--layercam-gradient-mode", "layercam_gradient_mode", profile.layercam_gradient_mode)
     require_or_set("--cam-aggregation", "cam_aggregation", profile.cam_aggregation)
@@ -646,6 +654,7 @@ def main() -> None:
             "target_columns": target_columns,
             "cam_target_class": args.cam_target_class,
             "force_non_normal_cam": args.force_non_normal_cam,
+            "low_score_policy": args.low_score_policy,
             "classifier_task": classifier_task,
             "classifier_checkpoint": str(args.classifier_checkpoint.resolve()),
             "auxiliary_binary_checkpoint": (
@@ -1418,6 +1427,7 @@ def main() -> None:
                     best_per_component=component_ids is not None and not args.disable_best_per_component,
                     component_topk=args.component_topk,
                     support_clip_kernel=args.support_clip_kernel,
+                    low_score_policy=args.low_score_policy,
                 )
 
                 # ── 5b. SAM-vs-selection oracle diagnostic (optional) ───────────
