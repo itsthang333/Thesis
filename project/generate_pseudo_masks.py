@@ -409,7 +409,18 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--max-hole-area", "max_hole_area", profile.max_hole_area)
     require_or_set("--guidance-threshold", "guidance_threshold", profile.guidance_threshold)
     require_or_set("--preprocessing-mode", "preprocessing_mode", "none")
-    require_or_set("--cam-multiscale-sizes", "cam_multiscale_sizes", "")
+    # --cam-multiscale-sizes is normally locked to "" under this profile (the
+    # validated btxrd_best CAM recipe has no multiscale ensemble) -- but when
+    # --cam-anatomy-conditioned is set, --cam-multiscale-sizes drives a
+    # SEPARATE multi-view ensemble of the anatomy-conditioned CAM (see the
+    # generation loop's `if args.cam_anatomy_conditioned:` branch), not the
+    # plain-CAM multiscale path this profile is protecting. Locking it to ""
+    # in that case would make --cam-anatomy-conditioned's own multi-scale
+    # ensemble impossible to enable together with --pipeline-profile
+    # btxrd_best, which is otherwise required to freeze the non-anatomy
+    # CAM/SAM/selection recipe underneath it.
+    if not args.cam_anatomy_conditioned:
+        require_or_set("--cam-multiscale-sizes", "cam_multiscale_sizes", "")
     require_or_set(
         "--layercam-weights",
         "layercam_weights",
@@ -426,19 +437,41 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--cam-percentile-ensemble": "cam_percentile_ensemble",
         "--sam-prompt-ensemble": "sam_prompt_ensemble",
         "--all-cam-components": "all_cam_components",
-        "--cam-contrast-normal": "cam_contrast_normal",
     }
     for option, attribute in locked_true.items():
         if option in explicit and not getattr(args, attribute):
             raise ValueError(f"--pipeline-profile btxrd_best requires {option}")
         setattr(args, attribute, True)
 
+    # --cam-contrast-normal is normally locked to True under this profile (the
+    # validated btxrd_best CAM recipe always blends in the class-contrast
+    # CAM) -- but --cam-anatomy-conditioned's own blend (--cam-anatomy-weight)
+    # is mutually exclusive with it (see the generation loop's explicit
+    # ValueError check for this exact combination): stacking both would
+    # silently change the effective blend ratio away from what either weight
+    # alone documents. When --cam-anatomy-conditioned is set, leave
+    # --cam-contrast-normal as the CLI provided it (default False) instead of
+    # forcing it True, so the anatomy-conditioned path can be selected at all
+    # together with --pipeline-profile btxrd_best (otherwise required to
+    # freeze the non-anatomy CAM/SAM/selection recipe underneath it).
+    if args.cam_anatomy_conditioned:
+        if "--disable-cam-contrast-normal" in explicit:
+            raise ValueError(
+                "--disable-cam-contrast-normal is redundant with --cam-anatomy-conditioned "
+                "(which already leaves --cam-contrast-normal off under this profile) -- omit it"
+            )
+    else:
+        if "--cam-contrast-normal" in explicit and not args.cam_contrast_normal:
+            raise ValueError("--pipeline-profile btxrd_best requires --cam-contrast-normal")
+        args.cam_contrast_normal = True
+
     forbidden_disable_flags = {
         "--disable-cam-percentile-ensemble",
         "--disable-sam-prompt-ensemble",
         "--disable-all-cam-components",
-        "--disable-cam-contrast-normal",
     }
+    if not args.cam_anatomy_conditioned:
+        forbidden_disable_flags.add("--disable-cam-contrast-normal")
     for option in forbidden_disable_flags:
         if option in explicit:
             raise ValueError(f"--pipeline-profile btxrd_best rejects {option}")
@@ -449,7 +482,6 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--include-cam-candidate": "include_cam_candidate",
         "--disable-bone-morphology": "disable_bone_morphology",
         "--cam-refine": "cam_refine",
-        "--cam-tta-flip": "cam_tta_flip",
         "--disable-best-per-component": "disable_best_per_component",
         "--force-non-normal-cam": "force_non_normal_cam",
         "--use-clahe": "use_clahe",
@@ -458,6 +490,22 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         if option in explicit and getattr(args, attribute):
             raise ValueError(f"--pipeline-profile btxrd_best fixes {option} off")
         setattr(args, attribute, False)
+
+    # --cam-tta-flip is normally locked to False under this profile (the
+    # validated btxrd_best CAM recipe has no flip TTA) -- but when
+    # --cam-anatomy-conditioned is set, --cam-tta-flip drives the SAME
+    # multi-view ensemble as --cam-multiscale-sizes above (folding a flipped
+    # view of the anatomy-conditioned CAM into the ensemble, see the
+    # generation loop's `if args.cam_anatomy_conditioned:` branch), not the
+    # plain-CAM flip path this profile is protecting. Forcing it False in
+    # that case would make --cam-anatomy-conditioned's own flip ensemble
+    # impossible to enable together with --pipeline-profile btxrd_best.
+    if args.cam_anatomy_conditioned:
+        pass  # leave args.cam_tta_flip as the CLI provided it (default False)
+    else:
+        if "--cam-tta-flip" in explicit and args.cam_tta_flip:
+            raise ValueError("--pipeline-profile btxrd_best fixes --cam-tta-flip off")
+        args.cam_tta_flip = False
 
     if "--auxiliary-binary-checkpoint" in explicit:
         raise ValueError("--pipeline-profile btxrd_best does not use an auxiliary binary checkpoint")
