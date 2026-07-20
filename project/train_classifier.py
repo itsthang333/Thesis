@@ -44,9 +44,9 @@ def parse_args() -> argparse.Namespace:
         choices=["default", "btxrd_best", "btxrd_hybrid"],
         help=(
             "btxrd_best freezes the classifier setup paired with the selected "
-            "WSSS pipeline: 10-class tumor_type CE at 320 px, batch 4, 6 epochs, "
+            "WSSS pipeline: 10-class tumor_type CE at 320 px, batch 4, up to 30 epochs, "
             "and PuzzleCAM/attention losses disabled. btxrd_hybrid keeps that "
-            "same 320px/tumor_type recipe but trains for 25 epochs with early "
+            "same 320px/tumor_type recipe but trains for up to 30 epochs with early "
             "stopping and PuzzleCAM + Teacher-Student attention distillation "
             "enabled, combining btxrd_best's downstream CAM/SAM/selection "
             "recipe (higher oracle_dice) with the other pipeline's classifier "
@@ -173,6 +173,11 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--lr", "lr", profile.classifier_lr)
     require_or_set("--weight-decay", "weight_decay", profile.classifier_weight_decay)
     require_or_set("--seed", "seed", profile.classifier_seed)
+    require_or_set(
+        "--early-stop-patience",
+        "early_stop_patience",
+        profile.classifier_early_stop_patience,
+    )
     require_or_set("--puzzle-alpha-max", "puzzle_alpha_max", profile.classifier_puzzle_alpha_max)
     require_or_set("--attention-alpha-max", "attention_alpha_max", profile.classifier_attention_alpha_max)
     require_or_set("--preprocessing-mode", "preprocessing_mode", "none")
@@ -187,15 +192,11 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if "--radimagenet-checkpoint" in explicit and args.radimagenet_checkpoint is not None:
         raise ValueError(f"--pipeline-profile {name} fixes ImageNet normalization/pretraining")
     if name == "btxrd_hybrid":
-        # btxrd_hybrid deliberately trains longer with early stopping enabled
-        # (see config.py's BtxrdHybridPipelineConfig) instead of btxrd_best's
-        # fixed 6-epoch / no-early-stop recipe.
-        require_or_set("--early-stop-patience", "early_stop_patience", profile.classifier_early_stop_patience)
+        # btxrd_hybrid additionally enables its teacher/PuzzleCAM settings;
+        # both canonical profiles use the same 30-epoch early-stopped budget.
         require_or_set("--teacher-warmup-epochs", "teacher_warmup_epochs", profile.teacher_warmup_epochs)
         require_or_set("--teacher-ema-decay", "teacher_ema_decay", profile.teacher_ema_decay)
         require_or_set("--teacher-cam-percentile", "teacher_cam_percentile", profile.teacher_cam_percentile)
-    elif "--early-stop-patience" in explicit and args.early_stop_patience != 0:
-        raise ValueError(f"--pipeline-profile {name} fixes early stopping off")
     args.augment = False
     args.random_erasing = False
     if "--output-dir" not in explicit:
@@ -667,6 +668,16 @@ def classifier_epoch_budget_audit(records: list[dict[str, float | int]], request
 
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
+    print("Resolved classifier configuration:")
+    print(f"  Profile: {args.pipeline_profile}")
+    print(f"  Epochs: {args.epochs}")
+    print(f"  Early stopping patience: {args.early_stop_patience}")
+    print("  Early stopping minimum delta: 0.0")
+    print(f"  Image size: {args.image_size}")
+    print(f"  Batch size: {args.batch_size}")
+    print(f"  Learning rate: {args.lr}")
+    print(f"  Puzzle alpha: {args.puzzle_alpha_max}")
+    print(f"  Attention alpha: {args.attention_alpha_max}")
     seed_everything(args.seed)
 
     default_columns = DATASET_TARGET_COLUMNS[args.dataset]

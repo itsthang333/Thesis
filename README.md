@@ -30,26 +30,24 @@ not enter pseudo-label generation. Held-out validation polygons are explicitly
 used for U-Net checkpoint/model selection, so they are development labels even
 though the U-Net training targets remain weak pseudo-masks.
 
-## Immutable inputs
+## Kaggle bootstrap
 
-Attach these to Kaggle with Internet disabled:
+Enable Kaggle Internet and attach the BTXRD dataset containing `images/`,
+`Annotations/`, and its metadata spreadsheet/CSV. The first notebook cell then:
 
-- the repository at one committed revision of branch `pipeline`;
-- the BTXRD dataset containing `images/`, `Annotations/`, and its metadata
-  spreadsheet/CSV;
-- the audited `split_manifest.csv`;
-- official `sam_vit_b_01ec64.pth`;
-- a local installation artifact for the pinned Segment Anything commit.
+- clones the public `pipeline` branch and records its exact commit;
+- installs [project/requirements.txt](project/requirements.txt);
+- downloads official `sam_vit_b_01ec64.pth`;
+- uses a dataset-provided `split_manifest.csv` or deterministically creates the
+  group-aware audited manifest under `/kaggle/working`.
 
-Set `BTXRD_GIT_COMMIT`, `BTXRD_SPLIT_MANIFEST`, and `SAM_CHECKPOINT`.
-Optionally set `BTXRD_ROOT`, `BTXRD_RUN_ID`, `BTXRD_OUTPUT`, and
-`BTXRD_NUM_WORKERS`. The output directory must be new.
-
-Install the locked environment from
-[project/requirements.txt](project/requirements.txt), then run the notebook
-top-to-bottom. The preflight cell checks dependency versions, repository
-revision, dataset/manifest integrity, checkpoint presence, and output
-isolation before creating a run.
+The default dataset path is
+`/kaggle/input/datasets/wanwin/data-btxrd/BTXRD`. `BTXRD_ROOT`,
+`BTXRD_SPLIT_MANIFEST`, and `SAM_CHECKPOINT` remain optional overrides.
+`BTXRD_RUN_ID`, `BTXRD_OUTPUT`, and `BTXRD_NUM_WORKERS` can also be overridden;
+the output directory must be new. After bootstrap, the preflight verifies exact
+dependency versions, repository revision, manifest integrity, SAM presence,
+and output isolation before training begins.
 
 ## Command-line entrypoints
 

@@ -59,7 +59,8 @@ class BtxrdBestPipelineConfig:
     target_columns: tuple[str, ...] = ("tumor_type",)
     classifier_image_size: int = 320
     classifier_batch_size: int = 4
-    classifier_epochs: int = 6
+    classifier_epochs: int = 30
+    classifier_early_stop_patience: int = 7
     classifier_lr: float = 1e-4
     classifier_weight_decay: float = 1e-4
     classifier_seed: int = 42
@@ -112,8 +113,8 @@ BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 # recipe as btxrd_best (previous experiments reported higher oracle Dice -- contrastive
 # CAM, percentile ensemble, multi-component, SAM prompt ensemble at 512px),
 # combined with the classifier training recipe validated on the other
-# pipeline (25 epochs with early stopping, PuzzleCAM + Teacher-Student
-# attention distillation) instead of btxrd_best's 6-epoch pure-CE classifier
+# pipeline (30-epoch budget with early stopping, PuzzleCAM + Teacher-Student
+# attention distillation) instead of btxrd_best's pure-CE classifier
 # (val_f1=0.4251, visibly still improving at epoch 6 on the confusion
 # matrix). btxrd_best's classifier CAM/SAM stages produced a much higher
 # oracle_best_single_dice (0.52 vs 0.34) than the other pipeline's, but its
@@ -125,7 +126,7 @@ BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 @dataclass(frozen=True)
 class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
     name: str = "btxrd_hybrid"
-    classifier_epochs: int = 25
+    classifier_epochs: int = 30
     classifier_early_stop_patience: int = 7
     classifier_puzzle_alpha_max: float = 4.0
     classifier_attention_alpha_max: float = 0.01

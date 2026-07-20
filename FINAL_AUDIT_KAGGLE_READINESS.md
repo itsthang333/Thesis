@@ -151,7 +151,7 @@ Khoảng cách WSSS–fully-supervised chỉ được diễn giải là **observ
 - PuzzleCAM hybrid: `L = L_cls(full) + L_cls(reconstructed tiles) + α(t) ||CAM_full-CAM_tiles||_1`; `α` ramp tuyến tính trong nửa đầu epoch rồi giữ cố định. CAM phẳng được normalize thành zero, không khuếch đại floating-point noise. Cấu trúc full/partial consistency phù hợp mục tiêu của [Puzzle-CAM](https://arxiv.org/abs/2101.11253).
 - EMA teacher: `θ_T ← d θ_T + (1-d) θ_S`; attention loss là per-sample BCE giữa student CAM và teacher soft target, nhân `confidence²`, tổng trên sample hợp lệ rồi chia số sample hợp lệ. CAM teacher degenerate bị loại, không được học như target all-background.
 
-`btxrd_best` là candidate pure-CE 6 epochs. `btxrd_hybrid` là candidate 25 epochs với PuzzleCAM + EMA attention. Chưa profile nào được coi là final winner sau audited split.
+`btxrd_best` là candidate pure-CE với budget tối đa 30 epochs và early stopping. `btxrd_hybrid` dùng cùng budget 30 epochs/early stopping với PuzzleCAM + EMA attention. Chưa profile nào được coi là final winner sau audited split.
 
 ### Mask selection
 
@@ -190,11 +190,11 @@ Việc dùng nhiều metric theo failure mode thay vì chỉ Dice phù hợp v�
 
 ### Những phần đã sẵn sàng ở mức code
 
-- Notebook không clone repo, không `pip install`, không download SAM khi chạy.
+- Notebook bootstrap trên Kaggle clone đúng branch `pipeline`, ghi commit vừa clone, cài requirements đã pin và tải SAM chính thức trước preflight; Kaggle phải bật Internet.
 - Bắt branch `pipeline`, exact commit, clean tree, split hash, fresh output directory, CUDA và tối thiểu 25 GiB free disk.
 - Generator/pseudo diagnostic bắt buộc local SAM checkpoint.
 - Requirements pin exact versions và pin official Segment Anything tại commit [`6fdee8f...`](https://github.com/facebookresearch/segment-anything/commit/6fdee8f2727f4506cfbbe553e23b895e27956588).
-- Official SAM usage cũng yêu cầu checkpoint path khi khởi tạo predictor; notebook đã chuyển checkpoint thành immutable attached input theo [SAM README](https://github.com/facebookresearch/segment-anything/blob/main/README.md).
+- Official SAM checkpoint được Cell 0 tải một lần vào `/kaggle/working/checkpoints`, sau đó path và SHA-256 được ghi vào provenance/frozen artifacts theo [SAM README](https://github.com/facebookresearch/segment-anything/blob/main/README.md).
 - Mỗi stage có output riêng, checksum/provenance và resume guard.
 
 ### Readiness probe hiện tại
@@ -443,7 +443,7 @@ Final package phải có tối thiểu:
 - [x] Tumor-only main metrics; normal metrics riêng; CI/subgroup artifacts riêng.
 - [x] Resume/config/checkpoint provenance guards được triển khai.
 - [x] Final inference mặc định U-Net-only.
-- [x] Runtime SAM download bị cấm trên canonical paths.
+- [x] Runtime SAM download chỉ xảy ra trong bootstrap trước preflight; các stage CAM/SAM phía sau chỉ nhận checkpoint path đã cố định.
 
 ### Bắt buộc trước `CONDITIONAL GO`
 
