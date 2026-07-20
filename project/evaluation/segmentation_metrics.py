@@ -36,9 +36,15 @@ def _surface_distances(pred: np.ndarray, target: np.ndarray) -> tuple[float, flo
     return float(np.percentile(distances, 95)), float(np.mean(distances))
 
 
-def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> tuple[int, int, int, int]:
+def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> dict[str, int]:
     if ndimage is None:
-        return 0, 0, 0, 0
+        return {
+            "gt_lesions": 0,
+            "detected_lesions_any_overlap": 0,
+            "predicted_lesions": 0,
+            "matched_predicted_lesions_any_overlap": 0,
+            "lesion_tp_one_to_one_iou10": 0,
+        }
     structure = ndimage.generate_binary_structure(2, 2)
     target_labels, target_count = ndimage.label(target, structure=structure)
     pred_labels, pred_count = ndimage.label(pred, structure=structure)
@@ -46,7 +52,41 @@ def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> tuple[int, int, i
     matched_predictions = sum(
         bool((target & (pred_labels == label)).any()) for label in range(1, pred_count + 1)
     )
-    return int(target_count), int(detected), int(pred_count), int(matched_predictions)
+
+    # Maximum-cardinality one-to-one matching at component IoU >= 0.10.
+    # This prevents one merged prediction from receiving credit for multiple
+    # GT lesions (and vice versa), unlike the any-overlap diagnostic above.
+    adjacency: list[list[int]] = []
+    for gt_label in range(1, target_count + 1):
+        gt_component = target_labels == gt_label
+        neighbours: list[int] = []
+        for pred_label in range(1, pred_count + 1):
+            pred_component = pred_labels == pred_label
+            intersection = int(np.logical_and(gt_component, pred_component).sum())
+            union = int(np.logical_or(gt_component, pred_component).sum())
+            if union and intersection / union >= 0.10:
+                neighbours.append(pred_label - 1)
+        adjacency.append(neighbours)
+    matched_gt_for_pred = [-1] * pred_count
+
+    def augment(gt_index: int, seen: set[int]) -> bool:
+        for pred_index in adjacency[gt_index]:
+            if pred_index in seen:
+                continue
+            seen.add(pred_index)
+            if matched_gt_for_pred[pred_index] < 0 or augment(matched_gt_for_pred[pred_index], seen):
+                matched_gt_for_pred[pred_index] = gt_index
+                return True
+        return False
+
+    one_to_one_matches = sum(augment(gt_index, set()) for gt_index in range(target_count))
+    return {
+        "gt_lesions": int(target_count),
+        "detected_lesions_any_overlap": int(detected),
+        "predicted_lesions": int(pred_count),
+        "matched_predicted_lesions_any_overlap": int(matched_predictions),
+        "lesion_tp_one_to_one_iou10": int(one_to_one_matches),
+    }
 
 
 def segmentation_metrics(pred: np.ndarray, target: np.ndarray) -> dict[str, float | int | bool]:
@@ -67,7 +107,7 @@ def segmentation_metrics(pred: np.ndarray, target: np.ndarray) -> dict[str, floa
     recall = _safe_ratio(tp, tp + fn, empty_value=1.0)
     specificity = _safe_ratio(tn, tn + fp, empty_value=1.0)
     hd95_px, assd_px = _surface_distances(pred, target)
-    gt_lesions, detected_lesions, pred_lesions, matched_pred_lesions = _lesion_detection(pred, target)
+    lesion_metrics = _lesion_detection(pred, target)
     return {
         "tp_pixels": tp,
         "fp_pixels": fp,
@@ -86,10 +126,7 @@ def segmentation_metrics(pred: np.ndarray, target: np.ndarray) -> dict[str, floa
         "pred_area_ratio": pred_sum / float(pred.size),
         "predicted_positive": pred_sum > 0,
         "gt_positive": target_sum > 0,
-        "gt_lesions": gt_lesions,
-        "detected_lesions": detected_lesions,
-        "predicted_lesions": pred_lesions,
-        "matched_predicted_lesions": matched_pred_lesions,
+        **lesion_metrics,
     }
 
 
@@ -110,9 +147,21 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
     fn = sum(int(row.get("fn_pixels", 0)) for row in rows)
     tn = sum(int(row.get("tn_pixels", 0)) for row in rows)
     gt_lesions = sum(int(row.get("gt_lesions", 0)) for row in tumor)
-    detected = sum(int(row.get("detected_lesions", 0)) for row in tumor)
+    detected = sum(int(row.get("detected_lesions_any_overlap", 0)) for row in tumor)
     predicted_lesions = sum(int(row.get("predicted_lesions", 0)) for row in rows)
-    matched_predictions = sum(int(row.get("matched_predicted_lesions", 0)) for row in rows)
+    matched_predictions = sum(int(row.get("matched_predicted_lesions_any_overlap", 0)) for row in rows)
+    one_to_one_tp = sum(int(row.get("lesion_tp_one_to_one_iou10", 0)) for row in rows)
+    boundary_eligible = sum(
+        isinstance(row.get("hd95_px"), (int, float))
+        and math.isfinite(float(row.get("hd95_px", float("nan"))))
+        for row in tumor
+    )
+    complete_misses = sum(not bool(row.get("predicted_positive")) for row in tumor)
+    multifocal_images = sum(int(row.get("gt_lesions", 0)) > 1 for row in tumor)
+    component_histogram: dict[str, int] = {}
+    for row in tumor:
+        key = str(int(row.get("gt_lesions", 0)))
+        component_histogram[key] = component_histogram.get(key, 0) + 1
     normal_empty = sum(not bool(row.get("predicted_positive")) for row in normal)
     return {
         "images": len(rows),
@@ -123,24 +172,35 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "mean_tumor_iou": _finite_mean(tumor, "iou"),
         "mean_tumor_precision": _finite_mean(tumor, "precision"),
         "mean_tumor_recall": _finite_mean(tumor, "recall"),
-        "mean_tumor_hd95_px": _finite_mean(tumor, "hd95_px"),
-        "mean_tumor_assd_px": _finite_mean(tumor, "assd_px"),
-        "tumor_boundary_metric_failures": sum(
-            not isinstance(row.get("hd95_px"), (int, float))
-            or not math.isfinite(float(row.get("hd95_px", float("nan"))))
-            for row in tumor
+        "mean_tumor_hd95_px_conditional_defined": _finite_mean(tumor, "hd95_px"),
+        "mean_tumor_assd_px_conditional_defined": _finite_mean(tumor, "assd_px"),
+        "boundary_metric_definition": (
+            "conditional mean over tumor images with both GT and prediction non-empty; "
+            "complete misses are excluded and counted separately"
         ),
+        "boundary_metric_eligible_tumor_images": boundary_eligible,
+        "boundary_metric_excluded_tumor_images": len(tumor) - boundary_eligible,
+        "boundary_metric_complete_misses": complete_misses,
         "tumor_non_empty_prediction_rate": _safe_ratio(
             sum(bool(row.get("predicted_positive")) for row in tumor), len(tumor)
         ),
         "tumor_overlap_detection_rate": _safe_ratio(
             sum(int(row.get("tp_pixels", 0)) > 0 for row in tumor), len(tumor)
         ),
-        "lesion_detection_recall": _safe_ratio(detected, gt_lesions),
-        "lesion_detection_precision": _safe_ratio(matched_predictions, predicted_lesions),
+        "lesion_any_overlap_recall": _safe_ratio(detected, gt_lesions),
+        "lesion_any_overlap_precision": _safe_ratio(matched_predictions, predicted_lesions),
+        "lesion_one_to_one_iou10_recall": _safe_ratio(one_to_one_tp, gt_lesions),
+        "lesion_one_to_one_iou10_precision": _safe_ratio(one_to_one_tp, predicted_lesions),
+        "lesion_one_to_one_iou10_f1": _safe_ratio(
+            2 * one_to_one_tp, gt_lesions + predicted_lesions
+        ),
         "gt_lesions": gt_lesions,
-        "detected_lesions": detected,
+        "detected_lesions_any_overlap": detected,
         "predicted_lesions": predicted_lesions,
+        "lesion_tp_one_to_one_iou10": one_to_one_tp,
+        "multifocal_tumor_images": multifocal_images,
+        "multifocal_tumor_image_rate": _safe_ratio(multifocal_images, len(tumor)),
+        "gt_component_count_histogram": component_histogram,
         "normal_empty_prediction_rate": _safe_ratio(normal_empty, len(normal), empty_value=float("nan")),
         "normal_false_positive_case_rate": _safe_ratio(
             len(normal) - normal_empty, len(normal), empty_value=float("nan")
@@ -205,9 +265,10 @@ def bootstrap_group_confidence_intervals(
         "mean_tumor_iou",
         "mean_tumor_precision",
         "mean_tumor_recall",
-        "mean_tumor_hd95_px",
-        "mean_tumor_assd_px",
-        "lesion_detection_recall",
+        "mean_tumor_hd95_px_conditional_defined",
+        "mean_tumor_assd_px_conditional_defined",
+        "lesion_one_to_one_iou10_recall",
+        "lesion_one_to_one_iou10_precision",
         "normal_empty_prediction_rate",
         "normal_false_positive_case_rate",
     )

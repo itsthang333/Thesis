@@ -394,7 +394,8 @@ def select_and_fuse_masks(
     component_topk: int = 0,
     support_clip_kernel: int = 5,
     low_score_policy: str = "empty",
-) -> np.ndarray:
+    return_details: bool = False,
+) -> np.ndarray | tuple[np.ndarray, dict[str, int]]:
     """Select and fuse masks using CAM and bone morphology evidence.
 
     fusion_topk controls how the top-scored masks are combined:
@@ -424,9 +425,20 @@ def select_and_fuse_masks(
     Returns:
         pseudo_mask: [H, W] uint8 binary mask (0 / 1).
     """
+    def result(mask: np.ndarray, selected_indices: list[int], above_count: int):
+        selected_component_count = 0
+        if component_ids is not None and component_ids.size == masks.shape[0] and selected_indices:
+            selected_component_count = int(len(np.unique(component_ids[selected_indices])))
+        details = {
+            "above_threshold_candidates": int(above_count),
+            "selected_candidates": int(len(selected_indices)),
+            "selected_components": selected_component_count,
+        }
+        return (mask, details) if return_details else mask
+
     if masks.shape[0] == 0:
         h, w = bone_cam.shape
-        return np.zeros((h, w), dtype=np.uint8)
+        return result(np.zeros((h, w), dtype=np.uint8), [], 0)
     if low_score_policy not in {"empty", "keep-best"}:
         raise ValueError("low_score_policy must be 'empty' or 'keep-best'")
 
@@ -448,6 +460,7 @@ def select_and_fuse_masks(
         prompt_area_target=prompt_area_target,
         prompt_area_log_sigma=prompt_area_log_sigma,
     )
+    above_threshold_count = int(np.count_nonzero(scores >= mask_score_threshold))
 
     if best_per_component and component_ids is not None and component_ids.size == masks.shape[0]:
         selected_components: list[tuple[float, int]] = []
@@ -470,23 +483,29 @@ def select_and_fuse_masks(
             selected_components = selected_components[:component_topk]
         selected_indices = [index for _, index in selected_components]
         if selected_indices:
-            return _clip(masks[selected_indices].any(axis=0))
+            return result(
+                _clip(masks[selected_indices].any(axis=0)),
+                selected_indices,
+                above_threshold_count,
+            )
 
     order = np.argsort(scores)[::-1]
     above = [i for i in order if scores[i] >= mask_score_threshold]
 
     if not above:
         if low_score_policy == "empty":
-            return np.zeros_like(bone_cam, dtype=np.uint8)
+            return result(np.zeros_like(bone_cam, dtype=np.uint8), [], above_threshold_count)
         above = [int(order[0])]
 
     if fusion_topk == 1:
         # top-1 only — return the single best-scoring mask
         fused = masks[above[0]].copy().astype(np.uint8)
+        selected_indices = above[:1]
     elif fusion_topk == 0:
         # default: logical-OR of all above-threshold masks
         selected = masks[above]
         fused = selected.any(axis=0).astype(np.uint8)
+        selected_indices = above
     elif fusion_topk > 1:
         # union of top-k
         topk = above[:fusion_topk]
@@ -494,6 +513,7 @@ def select_and_fuse_masks(
         for i in topk[1:]:
             fused = fused | masks[i].astype(bool)
         fused = fused.astype(np.uint8)
+        selected_indices = topk
     else:
         # fusion_topk < 0 → intersection of top-|k|
         k = abs(fusion_topk)
@@ -502,4 +522,5 @@ def select_and_fuse_masks(
         for i in topk[1:]:
             fused = fused & masks[i].astype(bool)
         fused = fused.astype(np.uint8)
-    return _clip(fused)
+        selected_indices = topk
+    return result(_clip(fused), selected_indices, above_threshold_count)

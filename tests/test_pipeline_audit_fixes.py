@@ -33,6 +33,10 @@ segmentation_metrics = load_module(
 classification_metrics = load_module(
     "classification_metrics_under_test", PROJECT_ROOT / "evaluation" / "classification_metrics.py"
 )
+frozen_test_guard = load_module(
+    "frozen_test_guard_under_test", PROJECT_ROOT / "evaluation" / "frozen_test_guard.py"
+)
+sam_refine = load_module("sam_refine_under_test", PROJECT_ROOT / "pseudo" / "sam_refine.py")
 select_and_fuse_masks = mask_selection.select_and_fuse_masks
 build_class_conditioned_components = tumor_morphology.build_class_conditioned_components
 
@@ -143,6 +147,62 @@ class MaskSelectionTests(unittest.TestCase):
 
         self.assertFalse(result.any())
 
+    def test_selection_details_distinguish_threshold_candidates_and_components(self) -> None:
+        masks = np.zeros((3, 4, 4), dtype=np.uint8)
+        masks[0, :2, :2] = 1
+        masks[1, :2, :2] = 1
+        masks[2, 2:, 2:] = 1
+        cam = masks.any(axis=0).astype(np.float32)
+        _, details = select_and_fuse_masks(
+            masks,
+            cam,
+            mask_score_threshold=0.0,
+            component_ids=np.array([0, 0, 1]),
+            best_per_component=True,
+            component_topk=2,
+            return_details=True,
+        )
+        self.assertEqual(details["above_threshold_candidates"], 3)
+        self.assertEqual(details["selected_candidates"], 2)
+        self.assertEqual(details["selected_components"], 2)
+
+
+class SAMPromptTests(unittest.TestCase):
+    def test_pure_box_ignores_negative_points_and_passes_no_point_arrays(self) -> None:
+        class FakePredictor:
+            def set_image(self, image):
+                self.shape = image.shape[:2]
+
+            def predict(self, *, point_coords, point_labels, box, multimask_output):
+                self.point_coords = point_coords
+                self.point_labels = point_labels
+                self.box = box
+                return (
+                    np.zeros((1, *self.shape), dtype=bool),
+                    np.array([0.9], dtype=np.float32),
+                    None,
+                )
+
+        wrapper = sam_refine.SAMPredictor.__new__(sam_refine.SAMPredictor)
+        wrapper._predictor = FakePredictor()
+        component = types.SimpleNamespace(
+            component_id=7,
+            bbox=(1, 1, 5, 5),
+            mask=np.ones((8, 8), dtype=np.uint8),
+            positive_points=((3, 3),),
+            negative_points=((1, 1), (5, 5)),
+        )
+        wrapper.predict_from_components(
+            np.zeros((8, 8, 3), dtype=np.uint8),
+            [component],
+            prompt_mode="box",
+            negative_points_per_component=2,
+        )
+        self.assertIsNone(wrapper._predictor.point_coords)
+        self.assertIsNone(wrapper._predictor.point_labels)
+        self.assertIsNotNone(wrapper._predictor.box)
+        self.assertEqual(wrapper.last_prompt_stats["unique_negative_prompt_points"], 0)
+
 
 class TumorMorphologyTests(unittest.TestCase):
     def test_negative_points_are_outside_positive_component(self) -> None:
@@ -226,6 +286,62 @@ class ReportingMetricTests(unittest.TestCase):
         self.assertEqual(summary["mean_tumor_dice"], 0.0)
         self.assertEqual(summary["normal_empty_prediction_rate"], 1.0)
 
+    def test_boundary_means_are_explicitly_conditional_and_misses_are_counted(self) -> None:
+        if segmentation_metrics.ndimage is None:
+            self.skipTest("SciPy is not installed in the lightweight audit environment")
+        hit = segmentation_metrics.segmentation_metrics(
+            np.array([[1, 0], [0, 0]], dtype=np.uint8),
+            np.array([[1, 0], [0, 0]], dtype=np.uint8),
+        )
+        miss = segmentation_metrics.segmentation_metrics(
+            np.zeros((2, 2), dtype=np.uint8),
+            np.array([[1, 0], [0, 0]], dtype=np.uint8),
+        )
+        summary = segmentation_metrics.summarize_segmentation_rows([hit, miss])
+        self.assertIn("conditional", summary["boundary_metric_definition"])
+        self.assertEqual(summary["boundary_metric_eligible_tumor_images"], 1)
+        self.assertEqual(summary["boundary_metric_complete_misses"], 1)
+        self.assertNotIn("mean_tumor_hd95_px", summary)
+
+    def test_one_to_one_lesion_matching_does_not_double_credit_merged_prediction(self) -> None:
+        if segmentation_metrics.ndimage is None:
+            self.skipTest("SciPy is not installed in the lightweight audit environment")
+        target = np.zeros((7, 7), dtype=np.uint8)
+        target[1:3, 1:3] = 1
+        target[1:3, 4:6] = 1
+        prediction = np.zeros_like(target)
+        prediction[1:3, 1:6] = 1
+        metrics = segmentation_metrics.segmentation_metrics(prediction, target)
+        self.assertEqual(metrics["detected_lesions_any_overlap"], 2)
+        self.assertEqual(metrics["lesion_tp_one_to_one_iou10"], 1)
+
+    def test_classifier_group_bootstrap_reports_required_intervals(self) -> None:
+        rows = [
+            {"group_id": "a", "true_class": 0, "predicted_class": 0, "true_tumor": 0,
+             "predicted_tumor": 0, "tumor_probability": 0.1},
+            {"group_id": "b", "true_class": 1, "predicted_class": 1, "true_tumor": 1,
+             "predicted_tumor": 1, "tumor_probability": 0.9},
+            {"group_id": "c", "true_class": 1, "predicted_class": 0, "true_tumor": 1,
+             "predicted_tumor": 0, "tumor_probability": 0.4},
+        ]
+        result = classification_metrics.classifier_group_bootstrap_confidence_intervals(
+            rows, num_classes=2, iterations=20, seed=3
+        )
+        self.assertEqual(
+            set(result["intervals"]),
+            {"macro_f1", "tumor_gate_auroc", "tumor_gate_auprc",
+             "tumor_gate_sensitivity", "tumor_gate_specificity"},
+        )
+
+
+class FrozenTestGuardTests(unittest.TestCase):
+    def test_test_split_requires_frozen_config_before_access(self) -> None:
+        with self.assertRaisesRegex(ValueError, "frozen-config"):
+            frozen_test_guard.verify_frozen_test_config(None, split="test")
+
+    def test_validation_split_does_not_require_frozen_config(self) -> None:
+        self.assertIsNone(frozen_test_guard.verify_frozen_test_config(None, split="val"))
+
 
 class PseudoManifestTests(unittest.TestCase):
     def test_manifest_detects_mask_tampering(self) -> None:
@@ -236,7 +352,11 @@ class PseudoManifestTests(unittest.TestCase):
             Image.new("L", (8, 8), 0).save(output / "masks" / "sample.png")
             mask_manifest.write_pseudo_mask_manifest(
                 output,
-                [{"image_name": "sample.jpeg", "true_tumor": 0, "status": "empty_by_image_gate"}],
+                [{
+                    "image_name": "sample.jpeg", "true_tumor": 0, "status": "empty_by_image_gate",
+                    "above_threshold_candidates": 0, "selected_candidates": 0,
+                    "selected_components": 0, "sam_prompt_calls": 0, "unique_prompt_points": 0,
+                }],
                 expected_image_names=["sample.jpeg"],
                 split="train",
                 image_size=8,

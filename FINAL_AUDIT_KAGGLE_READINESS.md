@@ -54,7 +54,7 @@ Repository phải được review, commit, push, rồi notebook phải khóa ch�
 | P0 | U-Net có thể train với pseudo-mask thiếu/sai split/sai nội dung | Đã bắt buộc completeness, shape, binary values và SHA-256 từng mask | `btxrd.py`, `pseudo/manifest.py` |
 | P0 | Resume U-Net trước đây không đủ state/provenance và có thể tiếp tục sai config | Đã lưu/khôi phục model, best model, optimizer, scaler, RNG, epoch/global step; fail khi split/config/pseudo hash/`pos_weight` lệch | `train_segmentation.py`; integration test phụ thuộc PyTorch |
 | P0 | Normal images có thể làm phồng Dice trung bình | Main result nay là tumor-only; normal empty-rate/FPR báo riêng | `evaluation/segmentation_metrics.py`, hai evaluator |
-| P0 | Test có nguy cơ được chạy/tuning trước freeze | Notebook mặc định khóa test; final test cần `BTXRD_RUN_LOCKED_TEST=1` và final checksum freeze | `thesis_final.ipynb`, `freeze_pipeline_config.py` |
+| P0 | Test có nguy cơ được chạy/tuning trước freeze | Mọi test CLI bắt buộc frozen-config schema v2 được kiểm checksum/commit/artifact hashes trước dataset construction | `thesis_final.ipynb`, `evaluation/frozen_test_guard.py`, `freeze_pipeline_config.py` |
 | P1 | CAM phẳng/NaN tạo prompt giả ở góc `(0,0)` | Fail-closed: không support, không prompt | `extract_prompts.py`, `tumor_morphology.py`; unit tests |
 | P1 | Negative prompt có thể nằm trong component dương hoặc bị fallback trở lại | Đã loại và test negative point ngoài component; bỏ fallback prompt biên | `tumor_morphology.py`, `sam_refine.py` |
 | P1 | Candidate dưới threshold hoặc ngoài support có thể được giữ lại ngầm | Production mặc định empty; `keep-best` chỉ debug opt-in; support clip rỗng giữ empty | `mask_selection.py`; unit tests |
@@ -357,11 +357,12 @@ python project/evaluate_unet.py \
 
 # 9. Freeze final sau khi chọn recipe bằng validation và tree vẫn clean.
 python project/tools/freeze_pipeline_config.py \
-  --profile btxrd_hybrid --status final \
+  --profile btxrd_best --status final \
   --split-manifest <AUDIT_DIR>/split_manifest.csv \
-  --classifier-checkpoint <NEW_RUN_ROOT>/classifier_btxrd_hybrid/best_classifier.pt \
+  --classifier-checkpoint <NEW_RUN_ROOT>/classifier_btxrd_best/best_classifier.pt \
   --sam-checkpoint <SAM_VIT_B_CHECKPOINT> \
   --unet-checkpoint <NEW_RUN_ROOT>/unet_from_pseudo/best_unet.pt \
+  --supervised-unet-checkpoint <NEW_RUN_ROOT>/unet_supervised_oracle/best_unet.pt \
   --output <NEW_RUN_ROOT>/final_frozen_config.json
 
 python project/tools/freeze_pipeline_config.py \
@@ -371,6 +372,7 @@ python project/tools/freeze_pipeline_config.py \
 python project/evaluate_unet.py \
   --data-root <BTXRD_ROOT> --split test \
   --split-manifest <AUDIT_DIR>/split_manifest.csv \
+  --frozen-config <NEW_RUN_ROOT>/final_frozen_config.json \
   --checkpoint <NEW_RUN_ROOT>/unet_from_pseudo/best_unet.pt \
   --image-size 320 \
   --output-csv <NEW_RUN_ROOT>/evaluations/unet_wsss_test.csv \
@@ -379,6 +381,7 @@ python project/evaluate_unet.py \
 python project/evaluate_unet.py \
   --data-root <BTXRD_ROOT> --split test \
   --split-manifest <AUDIT_DIR>/split_manifest.csv \
+  --frozen-config <NEW_RUN_ROOT>/final_frozen_config.json \
   --checkpoint <NEW_RUN_ROOT>/unet_supervised_oracle/best_unet.pt \
   --image-size 320 \
   --output-csv <NEW_RUN_ROOT>/evaluations/unet_supervised_test.csv \
@@ -386,7 +389,6 @@ python project/evaluate_unet.py \
 
 # 11. Final deployment smoke: U-Net only.
 python project/inference.py \
-  --mode unet \
   --image-path <ONE_UNSEEN_XRAY> \
   --segmentation-checkpoint <NEW_RUN_ROOT>/unet_from_pseudo/best_unet.pt \
   --output-dir <NEW_RUN_ROOT>/deployment_smoke
@@ -464,5 +466,4 @@ Final package phải có tối thiểu:
 - [ ] Final verdict được audit lại; chỉ khi không còn blocker mới đổi thành `GO`.
 
 **Kết luận cuối tại thời điểm báo cáo: NO-GO.**
-
 

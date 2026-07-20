@@ -40,6 +40,7 @@ from config import (
 from datasets.factory import build_classification_dataset, build_segmentation_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
+from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
 from pseudo import tumor_morphology as morphology
@@ -75,6 +76,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--data-root", type=Path, required=True, help="BTXRD dataset root")
     parser.add_argument("--split", type=str, default="val")
+    parser.add_argument("--frozen-config", type=Path, default=None)
     parser.add_argument(
         "--split-manifest",
         type=Path,
@@ -591,6 +593,20 @@ def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagen
 
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
+    if args.pipeline_profile == "btxrd_best" and args.split == "train" and args.evaluate_prompt_quality:
+        raise ValueError(
+            "Canonical train pseudo-mask generation cannot read polygon diagnostics. "
+            "Run a separate non-canonical diagnostic output on val instead."
+        )
+    verify_frozen_test_config(
+        args.frozen_config,
+        split=args.split,
+        split_manifest=args.split_manifest,
+        requested_artifacts={
+            "classifier_checkpoint": args.classifier_checkpoint,
+            "sam_checkpoint": args.sam_checkpoint,
+        },
+    )
     prompt_score_weights = parse_prompt_score_weights(args.prompt_score_weights)
     layercam_weights = parse_layercam_weights(args.layercam_weights)
     cam_percentile_values = parse_cam_percentile_values(args.cam_percentile_values)
@@ -930,15 +946,19 @@ def main() -> None:
                             "cam_mean": "",
                             "cam_std": "",
                             "cam_nonzero_ratio": "",
-                            "component_count": 0,
-                            "positive_prompt_count": 0,
-                            "negative_prompt_count": 0,
-                            "box_prompt_count": 0,
+                            "morphology_components": 0,
+                            "sam_prompt_calls": 0,
+                            "unique_positive_prompt_points": 0,
+                            "unique_negative_prompt_points": 0,
+                            "unique_prompt_points": 0,
+                            "box_prompt_calls": 0,
                             "sam_candidate_count": 0,
                             "selection_score_min": "",
                             "selection_score_max": "",
                             "selection_score_mean": "",
-                            "accepted_candidate_count": 0,
+                            "above_threshold_candidates": 0,
+                            "selected_candidates": 0,
+                            "selected_components": 0,
                             "support_area_ratio": 0.0,
                             "selected_area_ratio": 0.0,
                             "final_area_ratio": 0.0,
@@ -1213,6 +1233,13 @@ def main() -> None:
                 sam_components = bone_components
                 point_prompts: list[tuple[int, int]] = []
                 candidate_prompt_modes: list[str] = []
+                prompt_stats = {
+                    "sam_prompt_calls": 0,
+                    "unique_positive_prompt_points": 0,
+                    "unique_negative_prompt_points": 0,
+                    "unique_prompt_points": 0,
+                    "box_prompt_calls": 0,
+                }
                 sam_scale = float(args.sam_image_size) / float(args.image_size) if args.sam_image_size > 0 else 1.0
                 sam_scale_x = sam_scale
                 sam_scale_y = sam_scale
@@ -1305,6 +1332,15 @@ def main() -> None:
                         score_batches.append(mode_scores)
                         component_batches.append(mode_components)
                         candidate_prompt_modes.extend([prompt_mode] * len(mode_scores))
+                        mode_stats = sam_predictor.last_prompt_stats
+                        prompt_stats["sam_prompt_calls"] += int(mode_stats["sam_prompt_calls"])
+                        prompt_stats["box_prompt_calls"] += int(mode_stats["box_prompt_calls"])
+                        for key in (
+                            "unique_positive_prompt_points",
+                            "unique_negative_prompt_points",
+                            "unique_prompt_points",
+                        ):
+                            prompt_stats[key] = max(prompt_stats[key], int(mode_stats[key]))
                     sam_masks = np.concatenate(mask_batches, axis=0) if mask_batches else np.zeros((0, *sam_image_rgb.shape[:2]), dtype=bool)
                     sam_scores = np.concatenate(score_batches, axis=0) if score_batches else np.zeros(0, dtype=np.float32)
                     component_ids = np.concatenate(component_batches, axis=0) if component_batches else np.zeros(0, dtype=np.int32)
@@ -1331,6 +1367,9 @@ def main() -> None:
                         debug_dir=debug_dir,
                         image_pil=sam_image_pil,
                     )
+                    prompt_stats.update(sam_predictor.last_prompt_stats)
+
+                sam_candidate_count = int(len(sam_masks))
 
                 if sam_masks.shape[-2:] != (args.image_size, args.image_size):
                     sam_masks = F.interpolate(
@@ -1473,7 +1512,7 @@ def main() -> None:
                     prompt_area_target=args.prompt_area_target,
                     prompt_area_log_sigma=args.prompt_area_log_sigma,
                 )
-                refined = select_and_fuse_masks(
+                refined, selection_details = select_and_fuse_masks(
                     sam_masks,
                     fused_cam,
                     mask_score_threshold=args.mask_score_threshold,
@@ -1493,6 +1532,7 @@ def main() -> None:
                     component_topk=args.component_topk,
                     support_clip_kernel=args.support_clip_kernel,
                     low_score_policy=args.low_score_policy,
+                    return_details=True,
                 )
 
                 # ── 5b. SAM-vs-selection oracle diagnostic (optional) ───────────
@@ -1537,14 +1577,6 @@ def main() -> None:
 
                 # ── 7. Save ───────────────────────────────────────────────────
                 save_mask(final_mask, mask_path)
-                accepted_candidate_count = int((selection_scores >= args.mask_score_threshold).sum())
-                positive_prompt_count = sum(len(component.positive_points) for component in bone_components)
-                negative_prompt_count = sum(
-                    len(getattr(component, "negative_points", ())) for component in bone_components
-                )
-                box_prompt_count = len(bone_components) if args.sam_prompt_mode in {"box", "box_point"} else 0
-                if not bone_components:
-                    positive_prompt_count = len(point_prompts)
                 pseudo_manifest_rows.append(
                     {
                         "image_name": str(image_name),
@@ -1561,15 +1593,13 @@ def main() -> None:
                         "cam_mean": float(np.mean(fused_cam)),
                         "cam_std": float(np.std(fused_cam)),
                         "cam_nonzero_ratio": float(np.count_nonzero(fused_cam) / fused_cam.size),
-                        "component_count": len(bone_components),
-                        "positive_prompt_count": positive_prompt_count,
-                        "negative_prompt_count": negative_prompt_count,
-                        "box_prompt_count": box_prompt_count,
-                        "sam_candidate_count": int(len(sam_masks)),
+                        "morphology_components": len(bone_components),
+                        **prompt_stats,
+                        "sam_candidate_count": sam_candidate_count,
                         "selection_score_min": float(selection_scores.min()) if len(selection_scores) else "",
                         "selection_score_max": float(selection_scores.max()) if len(selection_scores) else "",
                         "selection_score_mean": float(selection_scores.mean()) if len(selection_scores) else "",
-                        "accepted_candidate_count": accepted_candidate_count,
+                        **selection_details,
                         "support_area_ratio": (
                             float(np.count_nonzero(bone_support) / bone_support.size)
                             if bone_support is not None else 0.0

@@ -27,9 +27,11 @@ from evaluation.classification_metrics import (
     binary_average_precision,
     binary_auroc,
     binary_metrics,
+    classifier_group_bootstrap_confidence_intervals,
     confusion_from_predictions,
     multiclass_summary,
 )
+from evaluation.frozen_test_guard import verify_frozen_test_config
 from models.classifier import DenseNet121AnatomyClassifier
 
 
@@ -38,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.set_defaults(dataset="btxrd")
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--split", default="val")
+    parser.add_argument("--frozen-config", type=Path, default=None)
     parser.add_argument("--split-manifest", type=Path, default=None)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--image-size", type=int, default=None)
@@ -51,6 +54,8 @@ def parse_args() -> argparse.Namespace:
         help="argmax matches generate_pseudo_masks.py for the 10-class classifier.",
     )
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--bootstrap-iterations", type=int, default=2000)
+    parser.add_argument("--bootstrap-seed", type=int, default=42)
     return parser.parse_args()
 
 
@@ -68,6 +73,12 @@ def _json_safe(value):
 
 def main() -> None:
     args = parse_args()
+    verify_frozen_test_config(
+        args.frozen_config,
+        split=args.split,
+        split_manifest=args.split_manifest,
+        requested_artifacts={"classifier_checkpoint": args.checkpoint},
+    )
     if not 0.0 <= args.gate_threshold <= 1.0:
         raise ValueError("--gate-threshold must be in [0,1]")
     checkpoint = torch.load(args.checkpoint, map_location="cpu")
@@ -153,9 +164,14 @@ def main() -> None:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     rows = []
+    sample_metadata = {str(sample["image_id"]): sample for sample in dataset.samples}
     for index, image_name in enumerate(image_names):
+        metadata = sample_metadata.get(image_name, {})
         row = {
             "image_name": image_name,
+            "group_id": str(metadata.get("group_id", image_name)),
+            "group_source": str(metadata.get("group_source", "image_fallback")),
+            "group_confidence": str(metadata.get("group_confidence", "unknown")),
             "true_class": int(true_class[index]),
             "predicted_class": int(pred_class[index]),
             "true_tumor": int(gate_target[index]),
@@ -183,6 +199,12 @@ def main() -> None:
         "image_size": image_size,
         "gate_tumor_vs_normal": gate_summary,
         "multiclass": class_summary,
+        "confidence_intervals": classifier_group_bootstrap_confidence_intervals(
+            rows,
+            num_classes=confusion_size,
+            iterations=args.bootstrap_iterations,
+            seed=args.bootstrap_seed,
+        ),
     }
     (args.output_dir / "summary.json").write_text(
         json.dumps(_json_safe(summary), indent=2) + "\n", encoding="utf-8"

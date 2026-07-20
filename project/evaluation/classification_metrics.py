@@ -3,6 +3,7 @@ from __future__ import annotations
 """Dependency-light classifier metrics with explicit edge-case conventions."""
 
 import numpy as np
+from collections import defaultdict
 
 
 def confusion_from_predictions(target: np.ndarray, prediction: np.ndarray) -> dict[str, int]:
@@ -128,4 +129,90 @@ def multiclass_summary(
         "macro_f1": float(np.mean(f1s)),
         "weighted_f1": float(np.average(f1s, weights=supports)) if supports.sum() else float("nan"),
         "per_class": per_class,
+    }
+
+
+def classifier_group_bootstrap_confidence_intervals(
+    rows: list[dict[str, object]],
+    *,
+    num_classes: int,
+    group_key: str = "group_id",
+    iterations: int = 2000,
+    seed: int = 42,
+) -> dict[str, object]:
+    """Percentile CIs from complete heuristic-group resampling.
+
+    Metrics are recomputed after sampling groups with replacement; images in a
+    sampled group remain together. Undefined AUROC/AP replicates are omitted
+    and their valid replicate counts are reported explicitly.
+    """
+    if iterations < 1:
+        raise ValueError("bootstrap iterations must be positive")
+    grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for index, row in enumerate(rows):
+        group = str(row.get(group_key, "") or f"image:{index}")
+        grouped[group].append(row)
+    group_ids = sorted(grouped)
+    if not group_ids:
+        raise ValueError("cannot bootstrap an empty classifier result set")
+
+    metric_names = (
+        "macro_f1",
+        "tumor_gate_auroc",
+        "tumor_gate_auprc",
+        "tumor_gate_sensitivity",
+        "tumor_gate_specificity",
+    )
+
+    def summarize(sample: list[dict[str, object]]) -> dict[str, float]:
+        true_class = np.asarray([int(row["true_class"]) for row in sample], dtype=np.int64)
+        pred_class = np.asarray([int(row["predicted_class"]) for row in sample], dtype=np.int64)
+        true_tumor = np.asarray([int(row["true_tumor"]) for row in sample], dtype=np.int64)
+        pred_tumor = np.asarray([int(row["predicted_tumor"]) for row in sample], dtype=np.int64)
+        tumor_score = np.asarray([float(row["tumor_probability"]) for row in sample], dtype=np.float64)
+        confusion = np.zeros((num_classes, num_classes), dtype=np.int64)
+        for target, prediction in zip(true_class, pred_class):
+            confusion[target, prediction] += 1
+        gate_counts = confusion_from_predictions(true_tumor, pred_tumor)
+        gate = binary_metrics(gate_counts)
+        return {
+            "macro_f1": float(multiclass_summary(confusion)["macro_f1"]),
+            "tumor_gate_auroc": binary_auroc(true_tumor, tumor_score),
+            "tumor_gate_auprc": binary_average_precision(true_tumor, tumor_score),
+            "tumor_gate_sensitivity": (
+                float(gate["sensitivity"])
+                if gate_counts["tp"] + gate_counts["fn"] else float("nan")
+            ),
+            "tumor_gate_specificity": (
+                float(gate["specificity"])
+                if gate_counts["tn"] + gate_counts["fp"] else float("nan")
+            ),
+        }
+
+    point = summarize(rows)
+    samples = {metric: [] for metric in metric_names}
+    rng = np.random.default_rng(seed)
+    for _ in range(iterations):
+        chosen = rng.choice(group_ids, size=len(group_ids), replace=True)
+        sampled_rows = [row for group in chosen for row in grouped[str(group)]]
+        values = summarize(sampled_rows)
+        for metric, value in values.items():
+            if np.isfinite(value):
+                samples[metric].append(float(value))
+    intervals = {
+        metric: {
+            "point_estimate": float(point[metric]) if np.isfinite(point[metric]) else None,
+            "ci95_low": float(np.percentile(values, 2.5)) if values else None,
+            "ci95_high": float(np.percentile(values, 97.5)) if values else None,
+            "valid_iterations": len(values),
+        }
+        for metric, values in samples.items()
+    }
+    return {
+        "method": "nonparametric percentile bootstrap of complete heuristic groups",
+        "group_key": group_key,
+        "groups": len(group_ids),
+        "iterations": iterations,
+        "seed": seed,
+        "intervals": intervals,
     }

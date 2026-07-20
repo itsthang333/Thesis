@@ -37,6 +37,7 @@ class SAMPredictor:
         sam = sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
         sam.to(device=device)
         self._predictor = SamPredictor(sam)
+        self.last_prompt_stats: dict[str, int] = {}
 
     def predict_from_points(
         self,
@@ -63,6 +64,7 @@ class SAMPredictor:
         """
         if not point_prompts:
             h, w = image_rgb.shape[:2]
+            self.last_prompt_stats = self._empty_prompt_stats()
             return np.zeros((0, h, w), dtype=bool), np.zeros(0, dtype=np.float32)
 
         self._predictor.set_image(image_rgb)
@@ -84,6 +86,14 @@ class SAMPredictor:
 
         combined_masks = np.concatenate(all_masks, axis=0)
         combined_scores = np.concatenate(all_scores, axis=0)
+        unique_points = len(set(point_prompts))
+        self.last_prompt_stats = {
+            "sam_prompt_calls": len(point_prompts),
+            "unique_positive_prompt_points": unique_points,
+            "unique_negative_prompt_points": 0,
+            "unique_prompt_points": unique_points,
+            "box_prompt_calls": 0,
+        }
 
         if debug_dir is not None:
             self._save_debug(debug_dir, image_rgb, image_pil, combined_masks, combined_scores)
@@ -123,6 +133,7 @@ class SAMPredictor:
             raise ValueError(f"Unknown prompt_mode '{prompt_mode}'. Choose from {sorted(valid_modes)}.")
         if not components:
             h, w = image_rgb.shape[:2]
+            self.last_prompt_stats = self._empty_prompt_stats()
             return (
                 np.zeros((0, h, w), dtype=bool),
                 np.zeros(0, dtype=np.float32),
@@ -133,6 +144,10 @@ class SAMPredictor:
         all_masks: list[np.ndarray] = []
         all_scores: list[np.ndarray] = []
         component_ids: list[int] = []
+        used_positive_points: set[tuple[int, int]] = set()
+        used_negative_points: set[tuple[int, int]] = set()
+        sam_prompt_calls = 0
+        box_prompt_calls = 0
 
         h, w = image_rgb.shape[:2]
 
@@ -148,9 +163,12 @@ class SAMPredictor:
 
             point_coords = None
             point_labels = None
-            if prompt_mode in {"point", "joint_points", "box_point"} and points:
+            # Pure box mode must pass both point arrays as None. Configured
+            # negative points are intentionally ignored in this mode.
+            if prompt_mode != "box" and points:
                 point_coords = np.asarray([(col, row) for row, col in points], dtype=np.float32)
                 point_labels = np.ones(len(points), dtype=np.int32)
+                used_positive_points.update(points)
                 if negative_points_per_component > 0:
                     # Prefer negative points precomputed from low-CAM pixels
                     # inside the component (see TumorComponent.negative_points)
@@ -165,6 +183,7 @@ class SAMPredictor:
                             count=negative_points_per_component,
                         )
                     if negative_points:
+                        used_negative_points.update(negative_points)
                         negative_coords = np.asarray(
                             [(col, row) for row, col in negative_points],
                             dtype=np.float32,
@@ -192,6 +211,8 @@ class SAMPredictor:
                 continue
             if prompt_mode in {"point", "joint_points", "box_point"} and point_coords is None and box is None:
                 continue
+            if (point_coords is None) != (point_labels is None):
+                raise RuntimeError("SAM point_coords and point_labels must both be set or both be None")
 
             masks, scores, _ = self._predictor.predict(
                 point_coords=point_coords,
@@ -202,8 +223,11 @@ class SAMPredictor:
             all_masks.append(masks)
             all_scores.append(scores)
             component_ids.extend([component.component_id] * masks.shape[0])
+            sam_prompt_calls += 1
+            box_prompt_calls += int(box is not None)
 
         if not all_masks:
+            self.last_prompt_stats = self._empty_prompt_stats()
             return (
                 np.zeros((0, h, w), dtype=bool),
                 np.zeros(0, dtype=np.float32),
@@ -212,6 +236,13 @@ class SAMPredictor:
         combined_masks = np.concatenate(all_masks, axis=0)
         combined_scores = np.concatenate(all_scores, axis=0)
         component_id_array = np.asarray(component_ids, dtype=np.int32)
+        self.last_prompt_stats = {
+            "sam_prompt_calls": sam_prompt_calls,
+            "unique_positive_prompt_points": len(used_positive_points),
+            "unique_negative_prompt_points": len(used_negative_points),
+            "unique_prompt_points": len(used_positive_points | used_negative_points),
+            "box_prompt_calls": box_prompt_calls,
+        }
         if debug_dir is not None:
             self._save_debug(
                 debug_dir,
@@ -222,6 +253,16 @@ class SAMPredictor:
                 component_ids=component_id_array,
             )
         return combined_masks, combined_scores, component_id_array
+
+    @staticmethod
+    def _empty_prompt_stats() -> dict[str, int]:
+        return {
+            "sam_prompt_calls": 0,
+            "unique_positive_prompt_points": 0,
+            "unique_negative_prompt_points": 0,
+            "unique_prompt_points": 0,
+            "box_prompt_calls": 0,
+        }
 
     @staticmethod
     def _filter_border_points(

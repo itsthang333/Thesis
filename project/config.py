@@ -84,7 +84,10 @@ class BtxrdBestPipelineConfig:
     sam_single_mask: bool = False
     max_bone_components: int = 3
     all_cam_components: bool = True
-    component_topk: int = 1
+    # Retain up to one proposal per CAM component so multifocal images are not
+    # forced into a single-lesion assumption. Evaluation reports the observed
+    # GT component distribution and one-to-one lesion matching separately.
+    component_topk: int = 3
     points_per_component: int = 5
     bbox_padding_ratio: float = 0.02
     negative_points_per_component: int = 4

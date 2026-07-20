@@ -114,9 +114,9 @@ attached local artifacts before preflight; no mid-run upgrades are allowed.
 
 - `python -m compileall -q project tests`: **PASS**
 - `python -m unittest discover -s tests -v`: **PASS**
-  - 25 discovered
-  - 19 passed
-  - 6 explicitly skipped because PyTorch is absent
+  - 32 discovered after the final P0/P1 regression additions
+  - 24 passed locally
+  - 8 explicitly skipped because PyTorch or SciPy is absent
   - 0 failed
 - Notebook JSON parse and all code-cell compilation: **PASS**
 - Notebook inventory: exactly one notebook and zero outputs: **PASS**
@@ -193,3 +193,26 @@ thesis full run, Kaggle must produce all of the following at one exact commit:
 Until those runtime checks pass, the correct release verdict remains
 **CONDITIONAL PASS**.
 
+## M. Post-cleanup P0/P1 corrections (2026-07-21)
+
+- Pure-box SAM calls explicitly ignore negative points and enforce the
+  point-coordinates/point-labels invariant; regression tested with a fake SAM
+  predictor.
+- All test-split entrypoints require frozen-config schema v2. Verification now
+  precedes dataset construction and checks checksum, Git commit, split
+  manifest, SAM, classifier, WSSS U-Net, and supervised U-Net hashes.
+- The notebook no longer inspects test split distributions and performs only
+  validation evaluation until the final freeze is created and verified.
+- HD95/ASSD means are explicitly conditional on defined boundary pairs and
+  report excluded cases and complete misses.
+- Canonical train pseudo-mask generation rejects polygon prompt diagnostics;
+  diagnostics remain separate validation runs.
+- Canonical `component_topk` is 3. Reports include GT component histograms,
+  multifocal rate, any-overlap diagnostics, and one-to-one IoU>=0.10 lesion
+  precision/recall/F1.
+- Classifier reports heuristic-group bootstrap CIs for macro-F1 and tumor-gate
+  AUROC/AUPRC/sensitivity/specificity.
+- U-Net emits deterministic mask statistics and a pos-weight audit; canonical
+  uses clamped auto weight, with optional raw/fixed-10 controlled ablations.
+- Pseudo-mask manifest schema v2 uses unambiguous counters for thresholded and
+  selected candidates/components, SAM calls, and unique prompt points.

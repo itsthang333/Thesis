@@ -111,7 +111,23 @@ intervals.
   architecture/dataset compatibility, returns original-resolution outputs,
   and records the checkpoint SHA-256.
 - Test-set execution is gated by `BTXRD_RUN_LOCKED_TEST=1` after the final
-  configuration is frozen.
+  configuration is frozen. Every test-split CLI now requires `--frozen-config`;
+  its checksum, Git commit, split manifest, SAM, classifier, and both U-Net
+  checkpoint hashes are verified before dataset construction.
+- HD95/ASSD are reported only as `*_conditional_defined`, with the eligible,
+  excluded, and complete-miss counts beside them. They are not presented as
+  unconditional end-to-end means.
+- Lesion detection includes maximum one-to-one component matching at IoU >=
+  0.10, alongside explicitly named any-overlap diagnostics and the GT
+  component-count/multifocal distribution.
+- Classifier macro-F1 and tumor-gate AUROC, AUPRC, sensitivity, and specificity
+  include percentile CIs from complete heuristic-group bootstrap resampling.
+- U-Net training writes `pos_weight_audit.json` containing foreground ratio,
+  empty-mask rate, raw/clamped/fixed candidate weights, and the selected mode.
+  Set `BTXRD_RUN_POS_WEIGHT_ABLATION=1` to run raw and fixed-10 comparisons
+  against the canonical clamped run.
+- Pseudo-mask manifest schema v2 distinguishes above-threshold candidates,
+  selected candidates/components, SAM calls, and unique prompt points.
 
 ## Tests
 

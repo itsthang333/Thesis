@@ -28,12 +28,14 @@ from evaluation.segmentation_metrics import (
     subgroup_summaries,
     summarize_segmentation_rows,
 )
+from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.manifest import validate_pseudo_mask_manifest
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate BTXRD pseudo masks against polygon ground truth")
     parser.set_defaults(dataset="btxrd")
     parser.add_argument("--data-root", type=Path, required=True, help="BTXRD dataset root")
     parser.add_argument("--split", type=str, default="val")
+    parser.add_argument("--frozen-config", type=Path, default=None)
     parser.add_argument(
         "--split-manifest",
         type=Path,
@@ -124,6 +126,7 @@ def binary_metrics(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-6) 
 
 def main() -> None:
     args = parse_args()
+    verify_frozen_test_config(args.frozen_config, split=args.split, split_manifest=args.split_manifest)
     dataset = build_segmentation_dataset(
         root=args.data_root,
         split=args.split,

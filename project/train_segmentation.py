@@ -65,17 +65,29 @@ def parse_args() -> argparse.Namespace:
                         "polygons are still used for the printed val_dice/val_iou metrics unless "
                         "this is also set; set both consistently unless deliberately measuring "
                         "against GT while training on pseudo-masks.")
-    parser.add_argument("--pos-weight-mode", type=str, default="auto", choices=["auto", "none", "manual"],
+    parser.add_argument(
+        "--pos-weight-mode",
+        type=str,
+        default="auto-clamped",
+        choices=["auto-clamped", "auto-raw", "none", "manual", "auto"],
                         help="How to weight foreground (lesion) pixels in BCE, countering the "
                         "collapse-to-all-background failure found empirically on BTXRD (lesions "
                         "average ~2.6%% of image area, so plain BCE can drive loss low by predicting "
                         "'no lesion anywhere' before learning anything -- observed as val_dice frozen "
                         "at exactly the dataset's normal-image fraction for several epochs). "
-                        "'auto' (default) computes background/foreground pixel ratio from the actual "
-                        "train-set masks. 'none' disables weighting (original behavior). 'manual' uses "
-                        "--pos-weight-value directly.")
+                        "'auto-clamped' computes background/foreground ratio and clamps it; "
+                        "'auto-raw' uses the raw ratio; deprecated 'auto' aliases auto-clamped; "
+                        "'none' disables weighting; 'manual' uses --pos-weight-value.")
     parser.add_argument("--pos-weight-value", type=float, default=None,
                         help="Fixed pos_weight to use when --pos-weight-mode=manual.")
+    parser.add_argument("--pos-weight-clamp-min", type=float, default=1.0)
+    parser.add_argument("--pos-weight-clamp-max", type=float, default=20.0)
+    parser.add_argument(
+        "--pos-weight-fixed-reference",
+        type=float,
+        default=10.0,
+        help="Fixed reference recorded beside raw/clamped weights for ablation planning.",
+    )
     parser.add_argument("--resume-from", type=Path, default=None,
                         help="Path to a checkpoint (e.g. last_unet.pt) to resume training from -- "
                         "restores model/optimizer state and continues epoch numbering and the "
@@ -154,7 +166,7 @@ def build_datasets(args: argparse.Namespace):
     return train_dataset, val_dataset
 
 
-def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32) -> float:
+def scan_mask_statistics(train_dataset, num_workers: int = 0, batch_size: int = 32) -> dict[str, float | int]:
     """background_pixels / foreground_pixels across the actual train-set
     masks -- used to weight BCE so missing a lesion pixel costs as much as
     a false positive on background, countering the collapse-to-empty-mask
@@ -181,9 +193,14 @@ def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32
     )
     total_pixels = 0
     foreground_pixels = 0
+    image_count = 0
+    empty_mask_count = 0
     for batch_idx, (_, masks, _) in enumerate(loader):
         total_pixels += masks.numel()
         foreground_pixels += float((masks > 0.5).sum().item())
+        foreground_by_image = (masks > 0.5).flatten(1).sum(dim=1)
+        image_count += int(masks.shape[0])
+        empty_mask_count += int((foreground_by_image == 0).sum().item())
         if batch_idx % 10 == 0:
             print(f"  pos_weight scan: batch {batch_idx}/{len(loader)}", flush=True)
     background_pixels = total_pixels - foreground_pixels
@@ -192,7 +209,16 @@ def compute_pos_weight(train_dataset, num_workers: int = 0, batch_size: int = 32
             "No foreground (lesion) pixels found in the entire train set -- pos_weight is "
             "undefined. Check that annotations/pseudo-masks are loading correctly before training."
         )
-    return background_pixels / foreground_pixels
+    return {
+        "images": image_count,
+        "total_pixels": int(total_pixels),
+        "foreground_pixels": int(foreground_pixels),
+        "background_pixels": int(background_pixels),
+        "foreground_ratio": foreground_pixels / total_pixels,
+        "empty_mask_count": empty_mask_count,
+        "empty_mask_rate": empty_mask_count / image_count,
+        "raw_pos_weight": background_pixels / foreground_pixels,
+    }
 
 
 def run_epoch(
@@ -290,6 +316,7 @@ def save_checkpoint(
         "best_metric_name": "val_positive_dice",
         "dataset": dataset,
         "pos_weight": pos_weight,
+        "pos_weight_audit": getattr(run_config, "_pos_weight_audit", None) if run_config else None,
         "epochs_without_improvement": epochs_without_improvement,
         "torch_rng_state": torch.get_rng_state(),
         "numpy_rng_state": np.random.get_state(),
@@ -343,6 +370,8 @@ def save_checkpoint(
                 "git_dirty": git_dirty,
             }
         )
+    if image_count <= 0 or total_pixels <= 0:
+        raise ValueError("Cannot compute mask statistics from an empty train dataset")
     if best_model_state_dict is not None:
         state["best_model_state_dict"] = {
             key: value.detach().cpu().clone() for key, value in best_model_state_dict.items()
@@ -461,16 +490,58 @@ def main() -> None:
     if args.multi_gpu and not use_multi_gpu:
         print(f"--multi-gpu requested but only {num_gpus} CUDA device(s) visible; running single-device.")
 
-    if args.pos_weight_mode == "none":
+    print("Scanning deterministic, non-augmented train masks for foreground ratio and empty-mask rate...")
+    mask_audit_dataset = build_segmentation_dataset(
+        root=args.data_root,
+        split=args.train_split,
+        image_size=args.image_size,
+        augment=False,
+        use_clahe=args.use_clahe,
+        pred_mask_dir=args.train_pred_mask_root,
+        split_manifest=args.split_manifest,
+    )
+    mask_stats = scan_mask_statistics(mask_audit_dataset)
+    raw_pos_weight = float(mask_stats["raw_pos_weight"])
+    if args.pos_weight_clamp_min <= 0 or args.pos_weight_clamp_max < args.pos_weight_clamp_min:
+        raise ValueError("Invalid pos_weight clamp bounds")
+    clamped_pos_weight = float(np.clip(raw_pos_weight, args.pos_weight_clamp_min, args.pos_weight_clamp_max))
+    resolved_mode = "auto-clamped" if args.pos_weight_mode == "auto" else args.pos_weight_mode
+    if resolved_mode == "none":
         pos_weight = None
-    elif args.pos_weight_mode == "manual":
+    elif resolved_mode == "manual":
         if args.pos_weight_value is None:
             raise ValueError("--pos-weight-mode=manual requires --pos-weight-value.")
+        if args.pos_weight_value <= 0:
+            raise ValueError("--pos-weight-value must be positive")
         pos_weight = args.pos_weight_value
-    else:  # "auto"
-        print("Computing pos_weight from train-set masks (background/foreground pixel ratio)...")
-        pos_weight = compute_pos_weight(train_dataset)
-    print(f"pos_weight_mode={args.pos_weight_mode} -> pos_weight={pos_weight}")
+    elif resolved_mode == "auto-raw":
+        pos_weight = raw_pos_weight
+    else:
+        pos_weight = clamped_pos_weight
+    pos_weight_audit = {
+        **mask_stats,
+        "requested_mode": args.pos_weight_mode,
+        "resolved_mode": resolved_mode,
+        "candidate_weights": {
+            "raw": raw_pos_weight,
+            "clamped": clamped_pos_weight,
+            "fixed_reference": args.pos_weight_fixed_reference,
+            "none": None,
+        },
+        "selected_pos_weight": pos_weight,
+        "clamp_min": args.pos_weight_clamp_min,
+        "clamp_max": args.pos_weight_clamp_max,
+        "ablation_note": (
+            "Compare separate otherwise-identical runs using auto-raw, auto-clamped, "
+            "and manual --pos-weight-value equal to fixed_reference."
+        ),
+    }
+    args._pos_weight_audit = pos_weight_audit
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    (args.output_dir / "pos_weight_audit.json").write_text(
+        json.dumps(pos_weight_audit, indent=2) + "\n", encoding="utf-8"
+    )
+    print(json.dumps(pos_weight_audit, indent=2))
 
     history_path = args.output_dir / "training_log.csv"
     best_val_positive_dice = -1.0

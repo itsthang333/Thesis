@@ -29,6 +29,7 @@ from evaluation.segmentation_metrics import (
     subgroup_summaries,
     summarize_segmentation_rows,
 )
+from evaluation.frozen_test_guard import verify_frozen_test_config
 from models.unet import UNet
 
 
@@ -37,6 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.set_defaults(dataset="btxrd")
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--split", default="val")
+    parser.add_argument("--frozen-config", type=Path, default=None)
     parser.add_argument(
         "--split-manifest",
         type=Path,
@@ -79,6 +81,13 @@ def mean(values: list[float]) -> float:
 
 def main() -> None:
     args = parse_args()
+    verify_frozen_test_config(
+        args.frozen_config,
+        split=args.split,
+        split_manifest=args.split_manifest,
+        requested_checkpoint=args.checkpoint,
+        checkpoint_any_of=("unet_checkpoint", "supervised_unet_checkpoint"),
+    )
     checkpoint = torch.load(args.checkpoint, map_location="cpu")
     checkpoint_dataset = checkpoint.get("dataset")
     if checkpoint_dataset and checkpoint_dataset != args.dataset:

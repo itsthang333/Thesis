@@ -107,7 +107,7 @@ def write_pseudo_mask_manifest(
         status = str(row.get("status", "unknown"))
         statuses[status] = statuses.get(status, 0) + 1
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "complete": True,
         "split": split,
         "expected_images": len(expected_stems),
@@ -142,6 +142,11 @@ def validate_pseudo_mask_manifest(
     with manifest_path.open("r", newline="", encoding="utf-8-sig") as handle:
         rows = list(csv.DictReader(handle))
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if int(summary.get("schema_version", -1)) != 2:
+        raise ValueError(
+            "Pseudo-mask manifest schema is not the unambiguous counter schema v2; "
+            "regenerate pseudo masks with the current pipeline"
+        )
     if not summary.get("complete"):
         raise ValueError(f"Pseudo-mask summary is not marked complete: {summary_path}")
     if str(summary.get("split")) != split:
@@ -159,6 +164,16 @@ def validate_pseudo_mask_manifest(
     expected = {Path(str(sample["image_id"])).stem: sample for sample in samples}
     indexed: dict[str, dict[str, str]] = {}
     for row in rows:
+        required_counters = {
+            "above_threshold_candidates",
+            "selected_candidates",
+            "selected_components",
+            "sam_prompt_calls",
+            "unique_prompt_points",
+        }
+        missing_counters = required_counters - set(row)
+        if missing_counters:
+            raise ValueError(f"Pseudo-mask manifest is missing counters: {sorted(missing_counters)}")
         stem = Path(row.get("image_name", "")).stem
         if not stem or stem in indexed:
             raise ValueError(f"Pseudo-mask manifest contains duplicate/empty image id: {stem!r}")
