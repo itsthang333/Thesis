@@ -1,6 +1,14 @@
 from __future__ import annotations
 
+"""Final deployment inference for the trained BTXRD U-Net.
+
+CAM, morphology, and SAM are training-time pseudo-label components and are
+intentionally absent from this deployment entrypoint.
+"""
+
 import argparse
+import hashlib
+import json
 import sys
 from pathlib import Path
 
@@ -12,295 +20,141 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import DEFAULT_ANATOMY_COLUMNS, DEFAULT_DATASET, SUPPORTED_DATASETS
-from datasets.common import make_classification_transform
-from models.classifier import DenseNet121AnatomyClassifier
-from models.layercam import LayerCAM
+from datasets.common import apply_clahe, make_segmentation_image_transform
 from models.unet import UNet
-from pseudo.generate_layercam import generate_fused_cam
-from pseudo.extract_prompts import extract_point_prompts
-from pseudo.morphology_factory import get_morphology_module
-from pseudo.sam_refine import SAMPredictor
-from pseudo.mask_selection import select_and_fuse_masks
-from pseudo.morphology import morphological_refinement
-from pseudo.visualization import overlay_heatmap, save_mask, save_overlay, tensor_to_pil
+from pseudo.visualization import overlay_heatmap, save_mask
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run full WSSS inference pipeline")
-    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS,
-                        help="Which morphology/prior to use: ramh1200 (bone) or btxrd (tumor)")
+    parser = argparse.ArgumentParser(description="Run final BTXRD U-Net deployment inference")
     parser.add_argument("--image-path", type=Path, required=True)
-    parser.add_argument("--classifier-checkpoint", type=Path,
-                        default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
-    parser.add_argument("--segmentation-checkpoint", type=Path,
-                        default=ROOT / "outputs" / "segmentation" / "best_unet.pt")
-    parser.add_argument("--sam-checkpoint", type=Path, default=None)
-    parser.add_argument("--sam-version", type=str, default="v1", choices=["v1", "v2", "medsam2"])
-    parser.add_argument("--sam2-model-cfg", type=str, default=None,
-                        help="Overrides the default config for --sam-version v2/medsam2 "
-                        "(v2 default: configs/sam2.1/sam2.1_hiera_t.yaml; "
-                        "medsam2 default: configs/sam2.1_hiera_t512.yaml)")
+    parser.add_argument(
+        "--segmentation-checkpoint",
+        type=Path,
+        default=ROOT / "outputs" / "segmentation" / "best_unet.pt",
+    )
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "inference")
-    parser.add_argument("--image-size", type=int, default=512)
-    parser.add_argument("--confidence-threshold", type=float, default=0.5)
-    parser.add_argument("--cam-percentile", type=float, default=85.0)
-    parser.add_argument("--max-points", type=int, default=5)
-    parser.add_argument("--min-component-area", type=int, default=100)
-    parser.add_argument("--mask-score-threshold", type=float, default=0.4)
-    parser.add_argument("--closing-kernel", type=int, default=0)
-    parser.add_argument("--opening-kernel", type=int, default=0)
-    parser.add_argument("--min-size", type=int, default=40)
-    parser.add_argument("--max-hole-area", type=int, default=0)
-    parser.add_argument("--guidance-threshold", type=float, default=0.40)
-    parser.add_argument("--bone-seed-percentile", type=float, default=None,
-                        help="Defaults to 88.0 for ramh1200 or 82.0 for btxrd")
-    parser.add_argument("--bone-support-percentile", type=float, default=None,
-                        help="Defaults to 68.0 for ramh1200 or 55.0 for btxrd")
-    parser.add_argument("--morphology-fusion-mode", type=str, default="components",
-                        choices=["components", "weighted"])
-    parser.add_argument("--sam-prompt-mode", type=str, default="joint_points",
-                        choices=["point", "joint_points", "box", "box_point"])
-    parser.add_argument("--max-bone-components", type=int, default=12)
-    parser.add_argument("--points-per-component", type=int, default=3)
-    parser.add_argument("--bbox-padding-ratio", type=float, default=0.01)
-    parser.add_argument("--negative-points-per-component", type=int, default=4)
-    parser.add_argument("--prompt-border-margin", type=int, default=2)
-    parser.add_argument("--max-box-area-ratio", type=float, default=0.35)
-    parser.add_argument("--sam-single-mask", action="store_true")
-    parser.add_argument("--disable-bone-morphology", action="store_true")
-    parser.add_argument("--preprocessing-mode", type=str, default="none",
-                        choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
-                        help="Optional X-ray preprocessing before classifier/CAM")
-    parser.add_argument("--selection-method", type=str, default="bone_hybrid",
-                        choices=["mean", "sum", "mean_area", "coverage", "hybrid", "bone_hybrid"],
-                        help="CAM-guided mask scoring method")
-    parser.add_argument("--fusion-topk", type=int, default=3)
-    parser.add_argument("--support-clip-kernel", type=int, default=5)
-    parser.add_argument("--debug", action="store_true",
-                        help="Save SAM candidate masks and prompt overlays for debugging")
+    parser.add_argument(
+        "--image-size",
+        type=int,
+        default=None,
+        help="Explicit override; otherwise restored from the checkpoint.",
+    )
+    parser.add_argument(
+        "--segmentation-threshold",
+        type=float,
+        default=None,
+        help="Explicit override; otherwise restored from the checkpoint.",
+    )
     return parser.parse_args()
 
 
-def load_classifier(path: Path, device: torch.device) -> tuple[DenseNet121AnatomyClassifier, list[str], str, str]:
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_segmentation_model(path: Path, device: torch.device) -> tuple[UNet, dict[str, object]]:
+    if not path.is_file():
+        raise FileNotFoundError(path)
     checkpoint = torch.load(path, map_location="cpu")
-    target_columns = checkpoint.get("target_columns", list(DEFAULT_ANATOMY_COLUMNS))
-    # num_classes must come from the checkpoint, not len(target_columns) --
-    # target_columns=["tumor_type"] (1 element) maps to a 10-class model.
-    num_classes = checkpoint.get("num_classes", len(target_columns))
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
-    model.load_state_dict(checkpoint["model_state_dict"], strict=True)
-    normalization = checkpoint.get("normalization", "imagenet")
-    return model.to(device).eval(), list(target_columns), checkpoint.get("task", "multi-label"), normalization
-
-
-def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
-    if task == "single-label":
-        return torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
-    return torch.sigmoid(logits)[0].detach().cpu().numpy()
-
-
-def load_segmentation_model(path: Path, device: torch.device) -> UNet:
-    checkpoint = torch.load(path, map_location="cpu")
+    expected_architecture = {
+        "name": "UNet",
+        "in_channels": 3,
+        "out_channels": 1,
+        "base_channels": 64,
+    }
+    architecture = checkpoint.get("architecture", expected_architecture)
+    if architecture != expected_architecture:
+        raise ValueError(
+            f"Unsupported checkpoint architecture: {architecture!r}; "
+            f"expected {expected_architecture!r}"
+        )
+    dataset = checkpoint.get("dataset")
+    if dataset not in (None, "btxrd"):
+        raise ValueError(f"Expected a BTXRD checkpoint, got dataset={dataset!r}")
     model = UNet(in_channels=3, out_channels=1, base_channels=64)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
-    return model.to(device).eval()
+    return model.to(device).eval(), checkpoint
+
+
+def run_inference(
+    image_path: Path,
+    output_dir: Path,
+    model: UNet,
+    checkpoint: dict[str, object],
+    checkpoint_path: Path,
+    device: torch.device,
+    image_size_override: int | None,
+    threshold_override: float | None,
+) -> None:
+    image_size = image_size_override or int(checkpoint.get("image_size", 320))
+    if image_size <= 0:
+        raise ValueError(f"image_size must be positive, got {image_size}")
+    threshold = (
+        float(threshold_override)
+        if threshold_override is not None
+        else float(checkpoint.get("decision_threshold", 0.5))
+    )
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError(f"segmentation threshold must be in [0,1], got {threshold}")
+
+    use_clahe = bool(checkpoint.get("use_clahe", False))
+    source_image = Image.open(image_path).convert("RGB")
+    original_size = source_image.size
+    model_image = apply_clahe(source_image) if use_clahe else source_image
+    tensor = make_segmentation_image_transform(image_size)(model_image).unsqueeze(0).to(device)
+    with torch.no_grad():
+        probability = torch.sigmoid(model(tensor))[0, 0].cpu().numpy()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    probability_original = np.asarray(
+        Image.fromarray(probability.astype(np.float32), mode="F").resize(
+            original_size, Image.Resampling.BILINEAR
+        ),
+        dtype=np.float32,
+    )
+    mask = probability_original >= threshold
+    save_mask(mask, output_dir / f"{image_path.stem}_segmentation_mask.png")
+    Image.fromarray(overlay_heatmap(source_image, probability_original, alpha=0.35)).save(
+        output_dir / f"{image_path.stem}_final_overlay.png"
+    )
+    metadata = {
+        "mode": "unet",
+        "dataset": "btxrd",
+        "source_image": str(image_path.resolve()),
+        "checkpoint": str(checkpoint_path.resolve()),
+        "checkpoint_sha256": sha256_file(checkpoint_path),
+        "image_size": image_size,
+        "decision_threshold": threshold,
+        "use_clahe": use_clahe,
+        "original_size": list(original_size),
+        "device": str(device),
+    }
+    (output_dir / f"{image_path.stem}_inference_metadata.json").write_text(
+        json.dumps(metadata, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def main() -> None:
     args = parse_args()
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    stem = args.image_path.stem
-
-    morphology = get_morphology_module(args.dataset)
-    default_seed_percentile, default_support_percentile = (
-        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 55.0)
-    )
-    bone_seed_percentile = (
-        args.bone_seed_percentile if args.bone_seed_percentile is not None else default_seed_percentile
-    )
-    bone_support_percentile = (
-        args.bone_support_percentile if args.bone_support_percentile is not None else default_support_percentile
-    )
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    classifier, target_columns, classifier_task, classifier_normalization = load_classifier(args.classifier_checkpoint, device)
-    # target_columns=["tumor_type"] names the classification head, not the 10
-    # real classes -- target_columns[cls_i] would IndexError for cls_i >= 1.
-    if target_columns == ["tumor_type"]:
-        from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
-        class_names = list(TUMOR_TYPE_CLASS_NAMES)
-    else:
-        class_names = target_columns
-    segmentation_model = load_segmentation_model(args.segmentation_checkpoint, device)
-    layercam = LayerCAM(classifier, device=device)
-    sam_predictor = SAMPredictor(
-        checkpoint_path=args.sam_checkpoint,
-        auto_download=(args.sam_checkpoint is None),
-        device=str(device),
-        sam_version=args.sam_version,
-        sam2_model_cfg=args.sam2_model_cfg,
+    model, checkpoint = load_segmentation_model(args.segmentation_checkpoint, device)
+    run_inference(
+        args.image_path,
+        args.output_dir,
+        model,
+        checkpoint,
+        args.segmentation_checkpoint,
+        device,
+        args.image_size,
+        args.segmentation_threshold,
     )
-
-    try:
-        # ── Load image ──────────────────────────────────────────────────────
-        transform = make_classification_transform(
-            args.image_size,
-            augment=False,
-            preprocessing_mode=args.preprocessing_mode,
-            normalization=classifier_normalization,
-        )
-        image_pil = Image.open(args.image_path).convert("RGB")
-        image_tensor = transform(image_pil).unsqueeze(0).to(device)  # [1,3,H,W]
-
-        # ── Stage 1: classifier → class weights ─────────────────────────────
-        with torch.no_grad():
-            logits = classifier(image_tensor)
-            class_weights = classifier_class_weights(logits, classifier_task)
-
-        # ── Stage 2: LayerCAM → fused CAM ───────────────────────────────────
-        fused_cam, per_class_cams, active_indices = generate_fused_cam(
-            layercam,
-            image_tensor,
-            class_weights=class_weights,
-            confidence_threshold=args.confidence_threshold,
-        )
-
-        # save per-class overlays
-        image_pil_denorm = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
-        for local_i, cls_i in enumerate(active_indices):
-            save_overlay(
-                image_pil_denorm,
-                per_class_cams[local_i],
-                args.output_dir / f"{stem}_{class_names[cls_i]}_cam.png",
-            )
-        save_overlay(image_pil_denorm, fused_cam,
-                     args.output_dir / f"{stem}_fused_layercam.png")
-
-        # ── Stage 3: prompt extraction ───────────────────────────────────────
-        debug_dir = args.output_dir / "debug" / stem if args.debug else None
-        image_rgb = np.array(image_pil_denorm, dtype=np.uint8)
-        bone_likelihood = None
-        bone_support = None
-        bone_components = []
-        prompt_map = fused_cam
-        if not args.disable_bone_morphology:
-            if args.morphology_fusion_mode == "components":
-                active_weights = [float(class_weights[i]) for i in active_indices]
-                if args.dataset == "btxrd":
-                    bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
-                        image_rgb,
-                        per_class_cams,
-                        active_weights,
-                        cam_percentile=args.cam_percentile,
-                        min_component_area=max(20, args.min_component_area // 2),
-                        max_components=args.max_bone_components,
-                        points_per_component=args.points_per_component,
-                        bbox_padding_ratio=args.bbox_padding_ratio,
-                        debug_dir=debug_dir,
-                    )
-                else:
-                    bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
-                        image_rgb,
-                        per_class_cams,
-                        active_weights,
-                        seed_percentile=bone_seed_percentile,
-                        support_percentile=bone_support_percentile,
-                        min_component_area=max(20, args.min_component_area // 2),
-                        max_components=args.max_bone_components,
-                        points_per_component=args.points_per_component,
-                        bbox_padding_ratio=args.bbox_padding_ratio,
-                        debug_dir=debug_dir,
-                    )
-            else:
-                bone_likelihood, bone_support = morphology.build_bone_guidance(
-                    image_rgb,
-                    fused_cam,
-                    seed_percentile=bone_seed_percentile,
-                    support_percentile=bone_support_percentile,
-                    min_component_area=max(20, args.min_component_area // 2),
-                    debug_dir=debug_dir,
-                )
-                prompt_map = morphology.fuse_cam_with_bone_guidance(fused_cam, bone_likelihood, bone_support)
-
-        # ── Stage 4: SAM ────────────────────────────────────────────────────
-        component_ids = None
-        if bone_components:
-            sam_masks, sam_scores, component_ids = sam_predictor.predict_from_components(
-                image_rgb,
-                bone_components,
-                prompt_mode=args.sam_prompt_mode,
-                multimask_output=not args.sam_single_mask,
-                negative_points_per_component=args.negative_points_per_component,
-                prompt_border_margin=args.prompt_border_margin,
-                max_box_area_ratio=(
-                    args.max_box_area_ratio
-                    if args.max_box_area_ratio and args.max_box_area_ratio > 0
-                    else None
-                ),
-                debug_dir=debug_dir,
-                image_pil=image_pil_denorm,
-            )
-        else:
-            point_prompts = extract_point_prompts(
-                prompt_map,
-                cam_percentile=args.cam_percentile,
-                max_points=args.max_points,
-                min_component_area=args.min_component_area,
-                support_mask=bone_support,
-                debug_dir=debug_dir,
-                image_pil=image_pil_denorm,
-            )
-            sam_masks, sam_scores = sam_predictor.predict_from_points(
-                image_rgb, point_prompts,
-                debug_dir=debug_dir,
-                image_pil=image_pil_denorm,
-            )
-
-        # ── Stage 5: CAM-guided mask selection ──────────────────────────────
-        refined = select_and_fuse_masks(
-            sam_masks, fused_cam,
-            mask_score_threshold=args.mask_score_threshold,
-            selection_method=args.selection_method,
-            fusion_topk=args.fusion_topk,
-            bone_likelihood=bone_likelihood,
-            bone_support=bone_support,
-            sam_scores=sam_scores,
-            component_ids=component_ids,
-            component_masks=(
-                np.stack([component.mask for component in bone_components])
-                if bone_components else None
-            ),
-            best_per_component=component_ids is not None,
-            support_clip_kernel=args.support_clip_kernel,
-        )
-
-        # ── Stage 6: morphological refinement ───────────────────────────────
-        pseudo_mask = morphological_refinement(
-            refined,
-            closing_kernel=args.closing_kernel,
-            opening_kernel=args.opening_kernel,
-            min_size=args.min_size,
-            guidance_map=bone_likelihood,
-            guidance_threshold=args.guidance_threshold,
-            max_hole_area=args.max_hole_area,
-        )
-        save_mask(pseudo_mask, args.output_dir / f"{stem}_pseudo_mask.png")
-
-        # ── Stage 7: U-Net segmentation ─────────────────────────────────────
-        with torch.no_grad():
-            seg_logits = segmentation_model(image_tensor)
-            seg_prob = torch.sigmoid(seg_logits)[0, 0].detach().cpu().numpy()
-            seg_mask = (seg_prob >= 0.5).astype(np.uint8)
-
-        save_mask(seg_mask, args.output_dir / f"{stem}_segmentation_mask.png")
-
-        final_overlay = overlay_heatmap(image_pil_denorm, seg_prob, alpha=0.35)
-        Image.fromarray(final_overlay).save(args.output_dir / f"{stem}_final_overlay.png")
-    finally:
-        layercam.close()
-
-    print(f"Outputs saved to {args.output_dir}")
+    print(f"U-Net deployment outputs saved to {args.output_dir}")
 
 
 if __name__ == "__main__":

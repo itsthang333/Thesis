@@ -1,0 +1,103 @@
+{
+  "ready": false,
+  "failures": [
+    "Working tree is dirty; a final Kaggle run must use a committed snapshot",
+    "Dependency torch: expected 2.5.1, installed None",
+    "Dependency torchvision: expected 0.20.1, installed None",
+    "Dependency numpy: expected 2.1.3, installed 2.3.5",
+    "Dependency pillow: expected 11.0.0, installed 12.2.0",
+    "Dependency tqdm: expected 4.67.1, installed None",
+    "Dependency pycocotools: expected 2.0.10, installed None",
+    "Dependency opencv-python-headless: expected 4.10.0.84, installed None",
+    "Dependency scipy: expected 1.14.1, installed None",
+    "Dependency pandas: expected 2.2.3, installed 3.0.1",
+    "segment-anything is not installed from the pinned local/offline source",
+    "PyTorch/CUDA probe failed: No module named 'torch'",
+    "CUDA GPU is not available; the full classifier+SAM+U-Net run is not feasible"
+  ],
+  "warnings": [],
+  "details": {
+    "git": {
+      "branch": "pipeline",
+      "commit": "411ecc4ee649df9e9c592f4a1e04ac8043566789",
+      "dirty": true,
+      "dirty_files": [
+        " M project/config.py",
+        " M project/datasets/btxrd.py",
+        " M project/datasets/factory.py",
+        " M project/evaluate_ramh1200_masks.py",
+        " M project/evaluate_unet.py",
+        " M project/generate_pseudo_masks.py",
+        " M project/inference.py",
+        " M project/pseudo/extract_prompts.py",
+        " M project/pseudo/mask_selection.py",
+        " M project/pseudo/morphology.py",
+        " M project/pseudo/sam_refine.py",
+        " M project/pseudo/tumor_morphology.py",
+        " M project/requirements.txt",
+        " M project/train_classifier.py",
+        " M project/train_segmentation.py",
+        " M tests/test_pipeline_audit_fixes.py",
+        " M thesis_final.ipynb",
+        "?? FINAL_AUDIT_KAGGLE_READINESS.md",
+        "?? audit/",
+        "?? project/evaluate_classifier.py",
+        "?? project/evaluation/",
+        "?? project/pseudo/manifest.py",
+        "?? project/tools/build_btxrd_split_manifest.py",
+        "?? project/tools/freeze_pipeline_config.py",
+        "?? project/tools/validate_kaggle_readiness.py",
+        "?? tests/test_torch_math_and_resume.py"
+      ]
+    },
+    "dependencies": {
+      "expected": {
+        "torch": "2.5.1",
+        "torchvision": "0.20.1",
+        "numpy": "2.1.3",
+        "pillow": "11.0.0",
+        "tqdm": "4.67.1",
+        "pycocotools": "2.0.10",
+        "opencv-python-headless": "4.10.0.84",
+        "scipy": "1.14.1",
+        "pandas": "2.2.3",
+        "openpyxl": "3.1.5"
+      },
+      "installed": {
+        "torch": null,
+        "torchvision": null,
+        "numpy": "2.3.5",
+        "pillow": "12.2.0",
+        "tqdm": null,
+        "pycocotools": null,
+        "opencv-python-headless": null,
+        "scipy": null,
+        "pandas": "3.0.1",
+        "openpyxl": "3.1.5"
+      },
+      "segment_anything": null
+    },
+    "dataset": {
+      "root": "C:\\Users\\quang\\OneDrive\\Desktop\\BTXRD",
+      "split_manifest_sha256": "15e675ff11ab1525de5d49aca408cfb644aa69d3a003a7b4575b206af94a92f0"
+    },
+    "checkpoints": {
+      "classifier": null,
+      "sam": null,
+      "unet": null
+    },
+    "storage": {
+      "output_root": "C:\\Users\\quang\\OneDrive\\Desktop\\Thesis\\outputs\\audit_readiness_probe",
+      "free_gb": 274.3659782409668,
+      "minimum_free_gb": 25.0
+    },
+    "runtime": {
+      "python": "3.12.13 (main, Mar  3 2026, 15:01:35) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "torch": null,
+      "torch_cuda": null,
+      "cuda_available": false,
+      "gpus": []
+    }
+  }
+}

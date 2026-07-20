@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -35,8 +36,7 @@ from pseudo.visualization import save_overlay, tensor_to_pil
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train a hand/tumor classifier for LayerCAM feature extraction")
-    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS,
-                        help="Which dataset to train on: ramh1200 (hand-only) or btxrd (tumor-vs-normal)")
+    parser.set_defaults(dataset="btxrd")
     parser.add_argument(
         "--pipeline-profile",
         type=str,
@@ -53,12 +53,18 @@ def parse_args() -> argparse.Namespace:
             "training recipe (higher val_f1)."
         ),
     )
-    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
-                        help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
+    parser.add_argument("--data-root", type=Path, required=True, help="BTXRD dataset root")
     parser.add_argument("--train-split", type=str, default="train")
     parser.add_argument("--val-split", type=str, default="val")
+    parser.add_argument(
+        "--split-manifest",
+        type=Path,
+        default=None,
+        help="Immutable derived split manifest. Required for BTXRD group-aware evaluation; "
+        "when supplied, its train/val/test assignments are authoritative.",
+    )
     parser.add_argument("--target-columns", type=str, default=None,
-                        help="Defaults to 'hand' for ramh1200 or 'tumor' for btxrd")
+                        help="BTXRD target column; defaults to 'tumor_type'")
     parser.add_argument("--image-size", type=int, default=ClassifierConfig.image_size)
     parser.add_argument("--batch-size", type=int, default=ClassifierConfig.batch_size)
     parser.add_argument("--lr", type=float, default=ClassifierConfig.lr)
@@ -144,7 +150,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if args.pipeline_profile == "default":
         return args
     if args.dataset != "btxrd":
-        raise ValueError(f"--pipeline-profile {args.pipeline_profile} requires --dataset btxrd")
+        raise ValueError(f"--pipeline-profile {args.pipeline_profile} requires BTXRD")
 
     profile = BTXRD_HYBRID_PIPELINE if args.pipeline_profile == "btxrd_hybrid" else BTXRD_BEST_PIPELINE
     name = args.pipeline_profile
@@ -205,6 +211,9 @@ def seed_everything(seed: int) -> None:
 
     random.seed(seed)
     np.random.seed(seed)
+    if torch.backends.cudnn.is_available():
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 
 def confusion_counts(logits: torch.Tensor, targets: torch.Tensor) -> dict[str, int]:
@@ -237,8 +246,16 @@ def metrics_from_confusion(counts: dict[str, int]) -> dict[str, float]:
     accuracy = (tp + tn) / max(1, total)
     precision = tp / max(1, tp + fp)
     recall = tp / max(1, tp + fn)
+    specificity = tn / max(1, tn + fp)
     f1 = 2 * precision * recall / max(1e-8, precision + recall)
-    return {"acc": accuracy, "precision": precision, "recall": recall, "f1": f1}
+    return {
+        "acc": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "sensitivity": recall,
+        "specificity": specificity,
+        "f1": f1,
+    }
 
 
 def multiclass_confusion_matrix(logits: torch.Tensor, targets: torch.Tensor, num_classes: int) -> torch.Tensor:
@@ -264,7 +281,7 @@ def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
     total = matrix.sum().item()
     accuracy = matrix.diag().sum().item() / max(1, total)
 
-    precisions, recalls, f1s = [], [], []
+    precisions, recalls, f1s, supports = [], [], [], []
     for c in range(num_classes):
         tp = matrix[c, c].item()
         fp = matrix[:, c].sum().item() - tp
@@ -275,12 +292,16 @@ def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
         precisions.append(precision)
         recalls.append(recall)
         f1s.append(f1)
+        supports.append(matrix[c, :].sum().item())
 
     return {
         "acc": accuracy,
         "precision": sum(precisions) / num_classes,
         "recall": sum(recalls) / num_classes,
         "f1": sum(f1s) / num_classes,
+        "weighted_f1": (
+            sum(score * support for score, support in zip(f1s, supports)) / max(1, sum(supports))
+        ),
     }
 
 
@@ -492,6 +513,9 @@ def save_checkpoint(
     normalization: str = "imagenet",
     train_augment: bool = False,
     pipeline_profile: str = "default",
+    split_manifest: Path | None = None,
+    image_size: int | None = None,
+    seed: int | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -504,7 +528,7 @@ def save_checkpoint(
             "task": task,
             "dataset": dataset,
             # Consumers (generate_pseudo_masks.py/inference.py/
-            # visualize_pipeline.py) must read num_classes from here, not
+            # downstream consumers must read num_classes from here, not
             # infer it from len(target_columns) -- that breaks for
             # target_columns=["tumor_type"] (1 element) mapping to a
             # 10-class model. Falls back to len(target_columns) for old
@@ -516,6 +540,14 @@ def save_checkpoint(
             "normalization": normalization,
             "train_augment": bool(train_augment),
             "pipeline_profile": pipeline_profile,
+            "image_size": image_size,
+            "seed": seed,
+            "split_manifest": str(split_manifest.resolve()) if split_manifest else None,
+            "split_manifest_sha256": (
+                hashlib.sha256(split_manifest.resolve().read_bytes()).hexdigest()
+                if split_manifest is not None and split_manifest.is_file()
+                else None
+            ),
         },
         path,
     )
@@ -617,8 +649,7 @@ def main() -> None:
     normalization = "radimagenet" if args.radimagenet_checkpoint else "imagenet"
 
     train_dataset = build_classification_dataset(
-        args.dataset,
-        root=args.ram_root,
+        root=args.data_root,
         split=args.train_split,
         target_columns=target_columns,
         image_size=args.image_size,
@@ -626,6 +657,7 @@ def main() -> None:
         augment=args.augment,
         preprocessing_mode=args.preprocessing_mode,
         normalization=normalization,
+        split_manifest=args.split_manifest,
     )
     if args.random_erasing:
         # RandomErasing operates on the tensor after resize/normalization and
@@ -637,8 +669,7 @@ def main() -> None:
             )
         )
     val_dataset = build_classification_dataset(
-        args.dataset,
-        root=args.ram_root,
+        root=args.data_root,
         split=args.val_split,
         target_columns=target_columns,
         image_size=args.image_size,
@@ -646,6 +677,7 @@ def main() -> None:
         augment=False,
         preprocessing_mode=args.preprocessing_mode,
         normalization=normalization,
+        split_manifest=args.split_manifest,
     )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
@@ -701,7 +733,7 @@ def main() -> None:
     best_val_f1 = -1.0
     epochs_without_improvement = 0
     # "single-label" must match exactly what generate_pseudo_masks.py/
-    # inference.py/visualize_pipeline.py's classifier_class_weights() checks
+    # Downstream CAM consumers inspect the task stored in the checkpoint.
     # for (it applies softmax instead of sigmoid for this task string).
     checkpoint_task = "single-label" if is_multiclass else "multi-label"
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -712,6 +744,12 @@ def main() -> None:
                 "dataset": args.dataset,
                 "train_split": args.train_split,
                 "val_split": args.val_split,
+                "split_manifest": str(args.split_manifest) if args.split_manifest else None,
+                "split_manifest_sha256": (
+                    hashlib.sha256(args.split_manifest.resolve().read_bytes()).hexdigest()
+                    if args.split_manifest is not None and args.split_manifest.is_file()
+                    else None
+                ),
                 "target_columns": target_columns,
                 "image_size": args.image_size,
                 "batch_size": args.batch_size,
@@ -738,11 +776,11 @@ def main() -> None:
             # matrix (10x10) is printed to stdout each epoch instead of being
             # flattened into the CSV; macro precision/recall/f1 summarize it.
             writer.writerow([
-                "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1",
+                "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1", "train_weighted_f1",
                 "train_puzzle_cls_loss", "train_reconstruction_loss", "train_attention_loss",
                 "puzzle_alpha", "attention_alpha", "teacher_confidence", "valid_teacher_fraction",
                 "total_optimization_loss",
-                "val_loss", "val_acc", "val_precision", "val_recall", "val_f1",
+                "val_loss", "val_acc", "val_precision", "val_recall", "val_f1", "val_weighted_f1",
             ])
         else:
             writer.writerow([
@@ -803,7 +841,7 @@ def main() -> None:
             if is_multiclass:
                 writer.writerow([
                     epoch, train_loss, train_metrics["acc"], train_metrics["precision"],
-                    train_metrics["recall"], train_metrics["f1"],
+                    train_metrics["recall"], train_metrics["f1"], train_metrics["weighted_f1"],
                     train_diagnostics["puzzle_classification_loss"],
                     train_diagnostics["reconstruction_loss"],
                     train_diagnostics["attention_loss"],
@@ -813,7 +851,7 @@ def main() -> None:
                     train_diagnostics["valid_teacher_fraction"],
                     train_diagnostics["optimization_loss"],
                     val_loss, val_metrics["acc"], val_metrics["precision"],
-                    val_metrics["recall"], val_metrics["f1"],
+                    val_metrics["recall"], val_metrics["f1"], val_metrics["weighted_f1"],
                 ])
             else:
                 writer.writerow(
@@ -868,13 +906,6 @@ def main() -> None:
                 f"| precision={val_metrics['precision']:.4f} recall={val_metrics['recall']:.4f}"
             )
 
-        save_checkpoint(
-            args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_f1,
-            target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
-            normalization=normalization,
-            train_augment=args.augment,
-            pipeline_profile=args.pipeline_profile,
-        )
         if val_metrics["f1"] > best_val_f1:
             best_val_f1 = val_metrics["f1"]
             epochs_without_improvement = 0
@@ -884,10 +915,24 @@ def main() -> None:
                 normalization=normalization,
                 train_augment=args.augment,
                 pipeline_profile=args.pipeline_profile,
+                split_manifest=args.split_manifest,
+                image_size=args.image_size,
+                seed=args.seed,
             )
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:
             epochs_without_improvement += 1
+
+        save_checkpoint(
+            args.output_dir / "last_classifier.pt", model, optimizer, epoch, best_val_f1,
+            target_columns, args.dataset, task=checkpoint_task, num_classes=num_classes,
+            normalization=normalization,
+            train_augment=args.augment,
+            pipeline_profile=args.pipeline_profile,
+            split_manifest=args.split_manifest,
+            image_size=args.image_size,
+            seed=args.seed,
+        )
 
         if epoch in cam_epochs and cam_preview_indices:
             save_cam_preview(model, val_dataset, cam_preview_indices, epoch, cam_output_dir, device, is_multiclass=is_multiclass, normalization=normalization)

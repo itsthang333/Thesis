@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import hashlib
 import json
 import random
 from pathlib import Path
@@ -118,9 +120,157 @@ def _row_tumor_type_index(row: dict[str, object]) -> int:
     return matches[0] if matches else 0
 
 
-def load_btxrd_records(btxrd_root: str | Path) -> list[dict[str, object]]:
-    """Return one record per image with the fields this project cares about."""
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _manifest_flag(row: dict[str, str], column: str, image_id: str) -> int:
+    value = row.get(column, "")
+    if value not in {"0", "1"}:
+        raise ValueError(f"Split manifest row {image_id}: {column!r} must be 0 or 1, got {value!r}")
+    return int(value)
+
+
+def _load_split_manifest_records(
+    btxrd_root: Path,
+    split_manifest: str | Path,
+) -> list[dict[str, object]]:
+    """Load an immutable derived split manifest and preserve its group metadata.
+
+    The manifest is intentionally a separate input from the source XLSX.  It
+    can repair a documented source-label inconsistency (using the matching
+    LabelMe class label) and exclude exact duplicate images without modifying
+    BTXRD.  A manifest is accepted only when its dataset-table hash still
+    matches the current source file.
+    """
+    manifest_path = Path(split_manifest).expanduser().resolve()
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"BTXRD split manifest does not exist: {manifest_path}")
+    with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    if not rows:
+        raise ValueError(f"BTXRD split manifest is empty: {manifest_path}")
+
+    required = {
+        "image_id", "group_id", "split", "eligible", "tumor", "benign",
+        "malignant", "tumor_type", "image_sha256", "dataset_table",
+        "dataset_table_sha256",
+    }
+    missing = sorted(required - set(rows[0]))
+    if missing:
+        raise ValueError(f"BTXRD split manifest is missing required columns: {missing}")
+
+    metadata_name = str(rows[0]["dataset_table"])
+    metadata_path = btxrd_root / metadata_name
+    if metadata_path.is_file() and rows[0]["dataset_table_sha256"]:
+        actual_hash = _sha256_file(metadata_path)
+        if actual_hash != rows[0]["dataset_table_sha256"]:
+            raise ValueError(
+                f"BTXRD source metadata hash does not match split manifest: "
+                f"expected {rows[0]['dataset_table_sha256']}, got {actual_hash}"
+            )
+
+    records: list[dict[str, object]] = []
+    seen_ids: set[str] = set()
+    group_splits: dict[str, set[str]] = {}
+    image_hashes: dict[str, str] = {}
+    images_dir = btxrd_root / DEFAULT_IMAGES_DIR
+    annotations_dir = btxrd_root / DEFAULT_ANNOTATIONS_DIR
+    for row in rows:
+        image_id = str(row["image_id"]).strip()
+        split = str(row["split"]).strip()
+        if not image_id or image_id in seen_ids:
+            raise ValueError(f"BTXRD split manifest contains duplicate/empty image_id: {image_id!r}")
+        seen_ids.add(image_id)
+        if split not in {"train", "val", "test", "excluded"}:
+            raise ValueError(f"BTXRD split manifest has unknown split {split!r} for {image_id}")
+        if _manifest_flag(row, "eligible", image_id) == 0:
+            continue
+        if split == "excluded":
+            raise ValueError(f"Eligible image {image_id} cannot have split='excluded'")
+        image_path = images_dir / image_id
+        if not image_path.is_file():
+            raise FileNotFoundError(f"Split manifest references missing BTXRD image: {image_path}")
+        tumor = _manifest_flag(row, "tumor", image_id)
+        benign = _manifest_flag(row, "benign", image_id)
+        malignant = _manifest_flag(row, "malignant", image_id)
+        tumor_type = int(row["tumor_type"])
+        if not 0 <= tumor_type < len(TUMOR_TYPE_CLASS_NAMES):
+            raise ValueError(f"Invalid tumor_type {tumor_type} for {image_id}")
+        if bool(tumor_type) != bool(tumor) or benign + malignant != tumor:
+            raise ValueError(f"Inconsistent class flags in split manifest for {image_id}")
+        group_id = str(row["group_id"]).strip()
+        if not group_id:
+            raise ValueError(f"Missing group_id in split manifest for {image_id}")
+        group_splits.setdefault(group_id, set()).add(split)
+        image_hash = str(row["image_sha256"]).strip()
+        if image_hash:
+            actual_image_hash = _sha256_file(image_path)
+            if actual_image_hash != image_hash:
+                raise ValueError(
+                    f"BTXRD image hash does not match split manifest for {image_id}: "
+                    f"expected {image_hash}, got {actual_image_hash}"
+                )
+            image_hashes.setdefault(image_hash, image_id)
+            if image_hashes[image_hash] != image_id:
+                raise ValueError(
+                    f"Exact duplicate image hash appears in eligible manifest: "
+                    f"{image_hashes[image_hash]} and {image_id}"
+                )
+        annotation_hash = str(row.get("annotation_sha256", "")).strip()
+        if annotation_hash:
+            annotation_path = annotations_dir / f"{Path(image_id).stem}.json"
+            if not annotation_path.is_file():
+                raise FileNotFoundError(
+                    f"Split manifest references missing annotation for {image_id}: {annotation_path}"
+                )
+            actual_annotation_hash = _sha256_file(annotation_path)
+            if actual_annotation_hash != annotation_hash:
+                raise ValueError(
+                    f"BTXRD annotation hash does not match split manifest for {image_id}: "
+                    f"expected {annotation_hash}, got {actual_annotation_hash}"
+                )
+        records.append(
+            {
+                "image_id": image_id,
+                "tumor": tumor,
+                "benign": benign,
+                "malignant": malignant,
+                "tumor_type": tumor_type,
+                "split": split,
+                "group_id": group_id,
+                "group_source": str(row.get("group_source", "")),
+                "group_confidence": str(row.get("group_confidence", "")),
+                "center": row.get("center", ""),
+                "age": row.get("age", ""),
+                "gender": row.get("gender", ""),
+                "anatomy": row.get("anatomy", ""),
+                "view": row.get("view", ""),
+                "image_sha256": image_hash,
+                "annotation_sha256": annotation_hash,
+                "split_manifest": str(manifest_path),
+            }
+        )
+    leaking_groups = {group: sorted(splits) for group, splits in group_splits.items() if len(splits) > 1}
+    if leaking_groups:
+        raise ValueError(f"Split manifest has group overlap: {list(leaking_groups.items())[:5]}")
+    if not records:
+        raise ValueError(f"BTXRD split manifest has no eligible records: {manifest_path}")
+    return sorted(records, key=lambda record: str(record["image_id"]))
+
+
+def load_btxrd_records(
+    btxrd_root: str | Path,
+    split_manifest: str | Path | None = None,
+) -> list[dict[str, object]]:
+    """Return one record per image, optionally from a validated split manifest."""
     btxrd_root = resolve_btxrd_root(btxrd_root)
+    if split_manifest is not None:
+        return _load_split_manifest_records(btxrd_root, split_manifest)
     rows = _load_dataset_table(btxrd_root)
     records: list[dict[str, object]] = []
     seen_image_ids: set[str] = set()
@@ -180,6 +330,16 @@ def split_btxrd_records(
     """
     if split not in {"train", "val", "test"}:
         raise ValueError(f"Unknown split '{split}'. Choose from: train, val, test.")
+
+    # A derived split manifest is authoritative.  Do not reshuffle records
+    # after loading it, otherwise every downstream stage can silently disagree
+    # about which images belong to train/validation/test.
+    if records and "split" in records[0]:
+        if any(str(record.get("split")) not in {"train", "val", "test"} for record in records):
+            raise ValueError("BTXRD records contain an invalid manifest split")
+        selected = [record for record in records if str(record["split"]) == split]
+        selected.sort(key=lambda item: str(item["image_id"]))
+        return selected
 
     def stratum_key(record: dict[str, object]) -> int:
         return int(record["tumor_type"])
@@ -257,6 +417,7 @@ class BTXRDSegmentationDataset(Dataset):
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
         split_seed: int = DEFAULT_SPLIT_SEED,
         pred_mask_dir: str | Path | None = None,
+        split_manifest: str | Path | None = None,
     ) -> None:
         """pred_mask_dir: optional directory of pseudo-mask PNGs (one file per
         image, matching generate_pseudo_masks.py's ``masks/`` output naming,
@@ -276,8 +437,9 @@ class BTXRDSegmentationDataset(Dataset):
         self.augment = augment
         self.use_clahe = use_clahe
         self.pred_mask_dir = Path(pred_mask_dir) if pred_mask_dir is not None else None
+        self.pseudo_manifest_info: dict[str, object] | None = None
 
-        records = load_btxrd_records(self.btxrd_root)
+        records = load_btxrd_records(self.btxrd_root, split_manifest=split_manifest)
         self.samples = split_btxrd_records(records, split=split, ratios=split_ratios, seed=split_seed)
         self.split = split
 
@@ -310,6 +472,14 @@ class BTXRDSegmentationDataset(Dataset):
                     f"including explicit all-zero masks for skipped normal/low-confidence images; "
                     f"e.g. {missing_masks[:5]}"
                 )
+            from pseudo.manifest import validate_pseudo_mask_manifest
+
+            self.pseudo_manifest_info = validate_pseudo_mask_manifest(
+                self.pred_mask_dir,
+                self.samples,
+                split=split,
+                image_size=image_size,
+            )
 
         self.image_transform = make_segmentation_image_transform(image_size)
         self.mask_transform = make_segmentation_mask_transform(image_size)
@@ -387,6 +557,7 @@ class BTXRDClassificationDataset(Dataset):
         normalization: str = "imagenet",
         split_ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
         split_seed: int = DEFAULT_SPLIT_SEED,
+        split_manifest: str | Path | None = None,
     ) -> None:
         self.btxrd_root = resolve_btxrd_root(root)
         self.images_dir = self.btxrd_root / DEFAULT_IMAGES_DIR
@@ -402,7 +573,7 @@ class BTXRDClassificationDataset(Dataset):
         self.augment = augment
         self.preprocessing_mode = "clahe" if use_clahe and preprocessing_mode == "none" else preprocessing_mode
 
-        records = load_btxrd_records(self.btxrd_root)
+        records = load_btxrd_records(self.btxrd_root, split_manifest=split_manifest)
         self.samples = split_btxrd_records(records, split=split, ratios=split_ratios, seed=split_seed)
         self.split = split
 

@@ -14,6 +14,7 @@ Pipeline per pipeline.md:
 """
 
 import argparse
+import hashlib
 import json
 import sys
 from dataclasses import replace
@@ -40,9 +41,8 @@ from datasets.factory import build_classification_dataset, build_segmentation_da
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
 from pseudo.generate_layercam import generate_fused_cam
-from pseudo.cam_refine import extract_feature_map, refine_cam_with_feature_affinity
 from pseudo.extract_prompts import extract_point_prompts
-from pseudo.morphology_factory import get_morphology_module
+from pseudo import tumor_morphology as morphology
 from pseudo.prompt_metrics import (
     binary_mask_localization_metrics,
     box_prompt_localization_metrics,
@@ -52,14 +52,15 @@ from pseudo.prompt_metrics import (
 )
 from pseudo.oracle_diagnostics import binary_overlap_metrics, oracle_vs_selected_metrics
 from pseudo.sam_refine import SAMPredictor
-from pseudo.mask_selection import select_and_fuse_masks
+from pseudo.mask_selection import score_masks, select_and_fuse_masks
+from pseudo.manifest import sha256_file as manifest_sha256_file, write_pseudo_mask_manifest
 from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate RAM-H1200/BTXRD pseudo masks via LayerCAM + SAM")
-    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS)
+    parser = argparse.ArgumentParser(description="Generate BTXRD pseudo masks via LayerCAM + SAM")
+    parser.set_defaults(dataset="btxrd")
     parser.add_argument(
         "--pipeline-profile",
         type=str,
@@ -72,37 +73,29 @@ def parse_args() -> argparse.Namespace:
             "enables polygon/bbox inputs."
         ),
     )
-    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
-                        help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
+    parser.add_argument("--data-root", type=Path, required=True, help="BTXRD dataset root")
     parser.add_argument("--split", type=str, default="val")
+    parser.add_argument(
+        "--split-manifest",
+        type=Path,
+        default=None,
+        help="Immutable derived split manifest. Its assignments are authoritative for BTXRD.",
+    )
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
     parser.add_argument("--auxiliary-binary-checkpoint", type=Path, default=None,
                         help="Optional one-logit tumor checkpoint whose CAM is blended with the main CAM.")
     parser.add_argument("--auxiliary-binary-weight", type=float, default=0.35,
                         help="Blend weight for --auxiliary-binary-checkpoint CAM (0..1).")
-    parser.add_argument("--sam-checkpoint", type=Path, default=None,
-                        help="Path to sam_vit_b_01ec64.pth (v1) or sam2.1_hiera_tiny.pt (v2); "
-                        "auto-downloaded if absent")
-    parser.add_argument("--sam-version", type=str, default="v1", choices=["v1", "v2", "medsam2"],
-                        help="v1=original SAM (ViT-B, SamPredictor API); "
-                        "v2=SAM2 (Hiera-tiny by default, SAM2ImagePredictor — same "
-                        "point/box prompt API, different checkpoint/package); "
-                        "medsam2=SAM2 fine-tuned on medical imagery (bowang-lab/MedSAM2), "
-                        "same API, its own vendored sam2 package/checkpoint/config")
-    parser.add_argument("--sam-model-type", type=str, default="auto",
-                        choices=["auto", "vit_b", "vit_l", "vit_h"],
-                        help="SAM v1 backbone. 'auto' infers vit_b/vit_l/vit_h from the checkpoint filename.")
+    parser.add_argument("--sam-checkpoint", type=Path, required=True,
+                        help="Path to an attached local SAM checkpoint. Runtime downloads are disabled "
+                        "so that the run is reproducible and works with Kaggle Internet off.")
     parser.add_argument("--sam-device", type=str, default="auto", choices=["auto", "cpu", "cuda"],
                         help="Device for SAM. 'auto' follows the classifier; use 'cpu' on 4GB GPUs so DenseNet and SAM do not compete for VRAM.")
     parser.add_argument("--classifier-device", type=str, default="auto", choices=["auto", "cpu", "cuda"],
                         help="Device for DenseNet/LayerCAM. Set cpu when SAM must use the GPU on a 4GB card.")
-    parser.add_argument("--sam2-model-cfg", type=str, default=None,
-                        help="Overrides the default config for --sam-version v2/medsam2 "
-                        "(v2 default: configs/sam2.1/sam2.1_hiera_t.yaml; "
-                        "medsam2 default: configs/sam2.1_hiera_t512.yaml)")
     parser.add_argument("--target-columns", type=str, default=None,
-                        help="Defaults to 'hand' for ramh1200 or 'tumor' for btxrd")
+                        help="BTXRD target column; defaults to 'tumor'")
     parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--sam-image-size", type=int, default=0,
                         help="Square input resolution for SAM, loaded from the original image. "
@@ -114,6 +107,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "pseudo_masks")
+    parser.add_argument(
+        "--overwrite-existing",
+        action="store_true",
+        help="Explicitly allow replacing masks already present in --output-dir. Default is fail-safe.",
+    )
     parser.add_argument("--image-list", type=Path, default=None,
                         help="Optional text file of image names to process (one per line), for deterministic stratified validation smoke tests.")
     parser.add_argument("--max-images", type=int, default=0,
@@ -147,10 +145,10 @@ def parse_args() -> argparse.Namespace:
                         help="Only fill enclosed holes up to this area; preserves gaps between bones")
     parser.add_argument("--guidance-threshold", type=float, default=0.40,
                         help="Minimum mean bone-likelihood for keeping a final mask component")
-    parser.add_argument("--bone-seed-percentile", type=float, default=None,
-                        help="Defaults to 88.0 for ramh1200 or 82.0 for btxrd")
-    parser.add_argument("--bone-support-percentile", type=float, default=None,
-                        help="Defaults to 68.0 for ramh1200 or 55.0 for btxrd")
+    parser.add_argument("--seed-percentile", type=float, default=None,
+                        help="BTXRD default: 82.0")
+    parser.add_argument("--support-percentile", type=float, default=None,
+                        help="BTXRD default: 55.0")
     parser.add_argument("--morphology-fusion-mode", type=str, default="components",
                         choices=["components", "weighted"])
     parser.add_argument("--sam-prompt-mode", type=str, default="box_point",
@@ -159,9 +157,9 @@ def parse_args() -> argparse.Namespace:
                         help="A/B: generate candidates from box_point, point, and box prompts for each CAM component.")
     parser.add_argument("--disable-sam-prompt-ensemble", action="store_true",
                         help="A/B override for the default profile; rejected by btxrd_best.")
-    parser.add_argument("--max-bone-components", type=int, default=12)
+    parser.add_argument("--max-components", type=int, default=12)
     parser.add_argument("--all-cam-components", action="store_true",
-                        help="A/B option for BTXRD: keep up to --max-bone-components CAM components instead of largest-only.")
+                        help="A/B option for BTXRD: keep up to --max-components CAM components instead of largest-only.")
     parser.add_argument("--disable-all-cam-components", action="store_true",
                         help="A/B override for the default profile; rejected by btxrd_best.")
     parser.add_argument("--points-per-component", type=int, default=3)
@@ -175,7 +173,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include-cam-candidate", action="store_true",
                         help="A/B: append each image-level CAM component itself as a fallback candidate "
                              "alongside SAM masks; no segmentation annotation is used.")
-    parser.add_argument("--disable-bone-morphology", action="store_true",
+    parser.add_argument("--disable-morphology", action="store_true",
                         help="Run the original CAM-only baseline without pre-SAM bone morphology")
     parser.add_argument("--use-clahe", action="store_true")
     parser.add_argument("--preprocessing-mode", type=str, default="none",
@@ -219,7 +217,7 @@ def parse_args() -> argparse.Namespace:
                         "over fusion_topk in select_and_fuse_masks and returns before fusion_topk's branch runs.")
     parser.add_argument("--disable-best-per-component", action="store_true",
                         help="Disable per-component best-candidate selection (which unions the single best "
-                        "SAM candidate from every kept morphology component, up to --max-bone-components) "
+                        "SAM candidate from every kept morphology component, up to --max-components) "
                         "and fall back to fusion_topk's global top-k selection across all candidates instead. "
                         "Per-component selection can union in a non-lesion component's mask alongside the "
                         "real lesion's, which is invisible to fusion_topk and can dilute Dice more than "
@@ -228,12 +226,6 @@ def parse_args() -> argparse.Namespace:
                         help="When best-per-component is enabled, keep only the top K component proposals by image-only score; 0 keeps all.")
     parser.add_argument("--support-clip-kernel", type=int, default=5,
                         help="Clip fused SAM masks to dilated bone support; 0/1 means no dilation, -1 disables")
-    parser.add_argument("--cam-refine", action="store_true",
-                        help="Refine the fused LayerCAM via feature-similarity propagation "
-                        "(pseudo/cam_refine.py) before morphology/SAM. Disabled by default so the "
-                        "existing CAM path is unchanged unless explicitly enabled -- lets refined vs. "
-                        "raw CAM be A/B tested through the same prompt_quality.csv/oracle diagnostics "
-                        "already used elsewhere in this project.")
     parser.add_argument("--cam-tta-flip", action="store_true",
                         help="Average LayerCAM from the original and horizontally flipped image (inference-only consistency A/B test).")
     parser.add_argument("--cam-multiscale-sizes", type=str, default="",
@@ -250,15 +242,6 @@ def parse_args() -> argparse.Namespace:
                         help="A/B override for the default profile; rejected by btxrd_best.")
     parser.add_argument("--cam-contrast-weight", type=float, default=1.0,
                         help="Blend weight for contrastive CAM when --cam-contrast-normal is enabled (0=original, 1=contrastive).")
-    parser.add_argument("--cam-refine-layer", type=str, default="denseblock3",
-                        choices=["denseblock2", "denseblock3", "denseblock4"],
-                        help="DenseNet121 layer to source features from for --cam-refine")
-    parser.add_argument("--cam-refine-high-percentile", type=float, default=90.0,
-                        help="Percentile defining seed pixels for --cam-refine")
-    parser.add_argument("--cam-refine-low-percentile", type=float, default=40.0,
-                        help="Percentile defining refinement targets for --cam-refine")
-    parser.add_argument("--cam-refine-strength", type=float, default=0.6,
-                        help="Blend strength (0=no change, 1=fully replaced) for --cam-refine")
     parser.add_argument("--cam-target-class", type=str, default="predicted",
                         choices=["predicted", "ground_truth"],
                         help="Which class LayerCAM is conditioned on. 'predicted' (default) uses the "
@@ -266,10 +249,9 @@ def parse_args() -> argparse.Namespace:
                         "the true label is unknown. 'ground_truth' instead conditions LayerCAM on the "
                         "dataset's true image-level label (still just the image-level class -- never "
                         "polygon/bbox annotations, so this stays within WSSS) when generating pseudo "
-                        "masks for a labeled split. Only affects --target-columns tumor_type (single-"
-                        "label multi-class); for the binary tumor/normal task this is a no-op since "
-                        "'not tumor' vs '10 possible tumor types' isn't a single ground-truth CAM target "
-                        "the same way. Only meaningful when the split actually has GT labels (i.e. not "
+                        "masks for a labeled split. For --target-columns tumor_type it selects the "
+                        "known 10-class target; for --target-columns tumor it selects the known positive "
+                        "tumor logit and emits an empty mask for normal images. Only meaningful when the split actually has GT labels (i.e. not "
                         "at real deployment time on unlabeled images).")
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
@@ -302,8 +284,8 @@ def parse_args() -> argparse.Namespace:
 def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     """Resolve the tested pipeline configuration without using segmentation GT.
 
-    The profile is deliberately opt-in.  RAM-H1200 keeps its historical
-    defaults, while ``--pipeline-profile btxrd_best`` makes the exact BTXRD
+    The default CLI remains available for diagnostics, while
+    ``--pipeline-profile btxrd_best`` makes the exact BTXRD
     configuration used in the best validation run reproducible.  Recipe-
     critical CLI changes are rejected under this profile; only dataset paths,
     protocol selection, output paths, checkpoint paths, and device placement
@@ -312,7 +294,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if args.pipeline_profile == "default":
         return args
     if args.dataset != "btxrd":
-        raise ValueError("--pipeline-profile btxrd_best requires --dataset btxrd")
+        raise ValueError("--pipeline-profile btxrd_best requires BTXRD")
 
     explicit = getattr(args, "_explicit_options", set())
 
@@ -343,15 +325,13 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--target-columns", "target_columns", ",".join(profile.target_columns))
     require_or_set("--image-size", "image_size", profile.classifier_image_size)
     require_or_set("--sam-image-size", "sam_image_size", profile.sam_image_size)
-    require_or_set("--sam-version", "sam_version", profile.sam_version)
-    require_or_set("--sam-model-type", "sam_model_type", profile.sam_model_type)
     require_or_set("--cam-percentile", "cam_percentile", profile.cam_percentile)
     require_or_set(
         "--cam-percentile-values",
         "cam_percentile_values",
         ",".join(str(int(value)) for value in profile.cam_percentile_values),
     )
-    require_or_set("--max-bone-components", "max_bone_components", profile.max_bone_components)
+    require_or_set("--max-components", "max_components", profile.max_bone_components)
     require_or_set("--component-topk", "component_topk", profile.component_topk)
     require_or_set("--points-per-component", "points_per_component", profile.points_per_component)
     require_or_set("--bbox-padding-ratio", "bbox_padding_ratio", profile.bbox_padding_ratio)
@@ -414,8 +394,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--sam-preserve-aspect": "sam_preserve_aspect",
         "--sam-single-mask": "sam_single_mask",
         "--include-cam-candidate": "include_cam_candidate",
-        "--disable-bone-morphology": "disable_bone_morphology",
-        "--cam-refine": "cam_refine",
+        "--disable-morphology": "disable_morphology",
         "--cam-tta-flip": "cam_tta_flip",
         "--disable-best-per-component": "disable_best_per_component",
         "--force-non-normal-cam": "force_non_normal_cam",
@@ -441,6 +420,7 @@ def load_classifier(
     expected_target_columns: list[str] | None = None,
     expected_task: str | None = None,
     expected_num_classes: int | None = None,
+    expected_split_manifest: Path | None = None,
 ) -> tuple[DenseNet121AnatomyClassifier, str, str]:
     state = torch.load(checkpoint_path, map_location="cpu")
     checkpoint_target_columns = state.get("target_columns")
@@ -461,6 +441,17 @@ def load_classifier(
             f"Checkpoint {checkpoint_path} has num_classes={checkpoint_num_classes!r}; "
             f"the selected pipeline requires {expected_num_classes}."
         )
+    if expected_split_manifest is not None:
+        manifest_path = expected_split_manifest.resolve()
+        if not manifest_path.is_file():
+            raise FileNotFoundError(f"Split manifest does not exist: {manifest_path}")
+        expected_hash = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        checkpoint_hash = state.get("split_manifest_sha256")
+        if checkpoint_hash != expected_hash:
+            raise ValueError(
+                f"Classifier checkpoint {checkpoint_path} split manifest hash does not match "
+                "the requested manifest"
+            )
     # num_classes must come from the checkpoint, not be inferred from
     # len(target_columns) at the call site -- a checkpoint trained with
     # target_columns=["tumor_type"] has 1 target column but a 10-class model
@@ -542,12 +533,22 @@ def should_skip_tumor_type(
     return selected_class == 0
 
 
-def write_or_validate_run_metadata(output_dir: Path, metadata: dict[str, object]) -> None:
+def write_or_validate_run_metadata(
+    output_dir: Path,
+    metadata: dict[str, object],
+    *,
+    allow_existing: bool = False,
+) -> None:
     """Prevent predicted/ground-truth protocol outputs from sharing a mask directory."""
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata_path = output_dir / "run_metadata.json"
     mask_dir = output_dir / "masks"
     has_existing_masks = mask_dir.exists() and any(mask_dir.glob("*.png"))
+    if has_existing_masks and not allow_existing:
+        raise FileExistsError(
+            f"Refusing to overwrite existing pseudo masks under {mask_dir}. "
+            "Use a fresh --output-dir, or pass --overwrite-existing deliberately."
+        )
     if has_existing_masks and not metadata_path.exists():
         raise RuntimeError(
             f"Refusing to reuse {output_dir}: it already contains masks with unknown protocol "
@@ -570,6 +571,16 @@ def write_or_validate_run_metadata(output_dir: Path, metadata: dict[str, object]
                 f"{output_dir}. Use a fresh --output-dir. Differences: {details}"
             )
     metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def sha256_file(path: Path | None) -> str | None:
+    if path is None or not path.is_file():
+        return None
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagenet") -> np.ndarray:
@@ -602,7 +613,6 @@ def main() -> None:
     else:
         class_names = target_columns
 
-    morphology = get_morphology_module(args.dataset)
     # NOTE: tumor_morphology.py's build_tumor_guidance() used to hard-cap the
     # support threshold at percentile-55 regardless of the support_percentile
     # value passed in (that cap has been removed -- see tumor_morphology.py).
@@ -613,14 +623,12 @@ def main() -> None:
     # good candidates) on some images, so a single fixed percentile is not
     # yet a clear improvement -- an adaptive per-image threshold may be
     # needed instead. Revisit before changing this default again.
-    default_seed_percentile, default_support_percentile = (
-        (88.0, 68.0) if args.dataset == "ramh1200" else (82.0, 55.0)
+    default_seed_percentile, default_support_percentile = (82.0, 55.0)
+    seed_percentile = (
+        args.seed_percentile if args.seed_percentile is not None else default_seed_percentile
     )
-    bone_seed_percentile = (
-        args.bone_seed_percentile if args.bone_seed_percentile is not None else default_seed_percentile
-    )
-    bone_support_percentile = (
-        args.bone_support_percentile if args.bone_support_percentile is not None else default_support_percentile
+    support_percentile = (
+        args.support_percentile if args.support_percentile is not None else default_support_percentile
     )
 
     default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -642,12 +650,11 @@ def main() -> None:
         expected_target_columns=expected_profile_columns,
         expected_task="single-label" if expected_profile_columns is not None else None,
         expected_num_classes=10 if expected_profile_columns is not None else None,
+        expected_split_manifest=args.split_manifest,
     )
     print(f"Loaded classifier checkpoint task={classifier_task} normalization={classifier_normalization}")
 
-    write_or_validate_run_metadata(
-        args.output_dir,
-        {
+    run_metadata = {
             "pipeline_profile": args.pipeline_profile,
             "dataset": args.dataset,
             "split": args.split,
@@ -657,6 +664,7 @@ def main() -> None:
             "low_score_policy": args.low_score_policy,
             "classifier_task": classifier_task,
             "classifier_checkpoint": str(args.classifier_checkpoint.resolve()),
+            "classifier_checkpoint_sha256": sha256_file(args.classifier_checkpoint.resolve()),
             "auxiliary_binary_checkpoint": (
                 str(args.auxiliary_binary_checkpoint.resolve())
                 if args.auxiliary_binary_checkpoint else None
@@ -666,13 +674,15 @@ def main() -> None:
             "sam_image_size": args.sam_image_size,
             "sam_preserve_aspect": args.sam_preserve_aspect,
             "image_list": str(args.image_list.resolve()) if args.image_list else None,
-            "sam_version": args.sam_version,
-            "sam_model_type": args.sam_model_type,
+            "sam_backend": "sam_v1_vit_b",
             "sam_device": str(sam_device),
             "classifier_device": str(device),
             "layercam_weights": list(layercam_weights),
             "layercam_gradient_mode": args.layercam_gradient_mode,
             "sam_checkpoint": str(args.sam_checkpoint.resolve()) if args.sam_checkpoint else None,
+            "sam_checkpoint_sha256": sha256_file(args.sam_checkpoint.resolve()) if args.sam_checkpoint else None,
+            "split_manifest": str(args.split_manifest.resolve()) if args.split_manifest else None,
+            "split_manifest_sha256": sha256_file(args.split_manifest.resolve()) if args.split_manifest else None,
             "sam_prompt_mode": args.sam_prompt_mode,
             "sam_prompt_ensemble": args.sam_prompt_ensemble,
             "sam_single_mask": args.sam_single_mask,
@@ -681,19 +691,14 @@ def main() -> None:
             "cam_percentile_ensemble": args.cam_percentile_ensemble,
             "cam_percentile_values": list(cam_percentile_values),
             "confidence_threshold": args.confidence_threshold,
-            "cam_refine": args.cam_refine,
             "cam_tta_flip": args.cam_tta_flip,
             "cam_multiscale_sizes": list(cam_multiscale_sizes),
             "cam_aggregation": args.cam_aggregation,
             "cam_contrast_normal": args.cam_contrast_normal,
             "cam_contrast_weight": args.cam_contrast_weight,
-            "cam_refine_layer": args.cam_refine_layer,
-            "cam_refine_high_percentile": args.cam_refine_high_percentile,
-            "cam_refine_low_percentile": args.cam_refine_low_percentile,
-            "cam_refine_strength": args.cam_refine_strength,
             "morphology_fusion_mode": args.morphology_fusion_mode,
             "min_component_area": args.min_component_area,
-            "max_bone_components": args.max_bone_components,
+            "max_components": args.max_components,
             "all_cam_components": args.all_cam_components,
             "points_per_component": args.points_per_component,
             "bbox_padding_ratio": args.bbox_padding_ratio,
@@ -713,18 +718,22 @@ def main() -> None:
             "min_size": args.min_size,
             "max_hole_area": args.max_hole_area,
             "guidance_threshold": args.guidance_threshold,
-        },
+        }
+    write_or_validate_run_metadata(
+        args.output_dir,
+        run_metadata,
+        allow_existing=args.overwrite_existing,
     )
 
     dataset = build_classification_dataset(
-        args.dataset,
-        root=args.ram_root,
+        root=args.data_root,
         split=args.split,
         target_columns=target_columns,
         image_size=args.image_size,
         use_clahe=args.use_clahe,
         preprocessing_mode=args.preprocessing_mode,
         normalization=classifier_normalization,
+        split_manifest=args.split_manifest,
     )
     if args.image_list is not None:
         requested_names = {
@@ -747,7 +756,7 @@ def main() -> None:
 
     # Maps image_name -> human-readable tumor_type class name, for the
     # per-tumor-type oracle breakdown in prompt_quality.csv (only meaningful
-    # for --dataset btxrd; empty dict elsewhere, and empty for
+    # Empty for
     # target_columns=["tumor"] samples since load_btxrd_records always
     # populates "tumor_type" on every record regardless of which head is
     # trained, so this works even if this run's classifier is a binary one).
@@ -760,11 +769,11 @@ def main() -> None:
     gt_masks_by_name: dict[str, np.ndarray] = {}
     if args.evaluate_prompt_quality:
         seg_dataset = build_segmentation_dataset(
-            args.dataset,
-            root=args.ram_root,
+            root=args.data_root,
             split=args.split,
             image_size=args.image_size,
             augment=False,
+            split_manifest=args.split_manifest,
         )
         for index in range(len(seg_dataset)):
             _, mask_tensor, image_name = seg_dataset[index]
@@ -783,7 +792,8 @@ def main() -> None:
         if not 0.0 <= args.auxiliary_binary_weight <= 1.0:
             raise ValueError("--auxiliary-binary-weight must be in [0,1]")
         auxiliary_classifier, auxiliary_task, _ = load_classifier(
-            args.auxiliary_binary_checkpoint, 1, device
+            args.auxiliary_binary_checkpoint, 1, device,
+            expected_split_manifest=args.split_manifest,
         )
         if auxiliary_classifier.classifier.out_features != 1:
             raise ValueError("--auxiliary-binary-checkpoint must contain a one-logit classifier")
@@ -797,11 +807,7 @@ def main() -> None:
 
     sam_predictor = SAMPredictor(
         checkpoint_path=args.sam_checkpoint,
-        auto_download=(args.sam_checkpoint is None),
         device=str(sam_device),
-        sam_version=args.sam_version,
-        sam2_model_cfg=args.sam2_model_cfg,
-        sam_model_type=args.sam_model_type,
     )
 
     mask_dir = args.output_dir / "masks"
@@ -810,15 +816,20 @@ def main() -> None:
     overlay_dir.mkdir(parents=True, exist_ok=True)
 
     prompt_quality_rows: list[list[object]] = []
+    pseudo_manifest_rows: list[dict[str, object]] = []
     skipped_image_names: list[str] = []
+    samples_by_name = {str(sample["image_id"]): sample for sample in dataset.samples}
 
     skipped = 0
     processed = 0
     visualized = 0
     process_limit = None if args.process_all or args.max_images <= 0 else args.max_images
-    use_ground_truth_class = (
-        args.cam_target_class == "ground_truth" and target_columns == ["tumor_type"]
-    )
+    use_ground_truth_class = args.cam_target_class == "ground_truth"
+    if use_ground_truth_class and target_columns not in (["tumor_type"], ["tumor"]):
+        raise ValueError(
+            "--cam-target-class ground_truth requires target_columns=['tumor_type'] "
+            "or ['tumor'] so the image-level label has a defined CAM target."
+        )
     try:
         for images, targets, image_names in tqdm(loader, desc="pseudo-masks"):
             images = images.to(device)
@@ -834,7 +845,8 @@ def main() -> None:
                 gt_class: int | None = None
                 with torch.no_grad():
                     logits = classifier(image_tensor)
-                    if use_ground_truth_class:
+                    predicted_class_weights = classifier_class_weights(logits, classifier_task)
+                    if use_ground_truth_class and target_columns == ["tumor_type"]:
                         # One-hot the true tumor_type class instead of the
                         # classifier's own prediction -- LayerCAM/generate_
                         # fused_cam's confidence-filtering path always fires
@@ -846,8 +858,29 @@ def main() -> None:
                         gt_class = int(targets[idx].item())
                         class_weights = np.zeros(logits.shape[1], dtype=np.float32)
                         class_weights[gt_class] = 1.0
+                    elif use_ground_truth_class and target_columns == ["tumor"]:
+                        # Binary WSSS has one positive logit (tumor).  The
+                        # image-level target is enough to decide whether a
+                        # lesion CAM should exist; no polygon/bbox is read.
+                        is_tumor = bool(float(targets[idx].item()) > 0.5)
+                        gt_class = 0
+                        class_weights = np.asarray([1.0 if is_tumor else 0.0], dtype=np.float32)
                     else:
-                        class_weights = classifier_class_weights(logits, classifier_task)
+                        class_weights = predicted_class_weights.copy()
+
+                selected_class = (
+                    int(gt_class)
+                    if use_ground_truth_class and gt_class is not None
+                    else int(np.argmax(class_weights))
+                )
+                classifier_confidence = (
+                    float(predicted_class_weights[selected_class])
+                    if 0 <= selected_class < len(predicted_class_weights)
+                    else float(np.max(predicted_class_weights))
+                )
+                sample_record = samples_by_name[str(image_name)]
+                true_tumor = int(bool(sample_record.get("tumor", 0)))
+                true_tumor_type = int(sample_record.get("tumor_type", true_tumor))
 
                 # For multi-label checkpoints, low confidence can mean no reliable anatomy class.
                 # For single-label checkpoints, LayerCAM will fall back to the top softmax class.
@@ -863,6 +896,11 @@ def main() -> None:
                         and not (args.force_non_normal_cam and not use_ground_truth_class)
                     )
                     or (
+                        use_ground_truth_class
+                        and target_columns == ["tumor"]
+                        and float(class_weights[0]) < 0.5
+                    )
+                    or (
                         not use_ground_truth_class
                         and target_columns != ["tumor_type"]
                         and classifier_task != "single-label"
@@ -871,6 +909,41 @@ def main() -> None:
                 )
                 if should_skip:
                     save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
+                    skip_reason = (
+                        "known_image_label_normal"
+                        if use_ground_truth_class
+                        else "classifier_predicted_normal_or_below_confidence"
+                    )
+                    pseudo_manifest_rows.append(
+                        {
+                            "image_name": str(image_name),
+                            "group_id": str(sample_record.get("group_id", "")),
+                            "true_tumor": true_tumor,
+                            "true_tumor_type": true_tumor_type,
+                            "selected_class": selected_class,
+                            "classifier_confidence": classifier_confidence,
+                            "cam_target_protocol": args.cam_target_class,
+                            "status": "empty_by_image_gate",
+                            "reason": skip_reason,
+                            "cam_min": "",
+                            "cam_max": "",
+                            "cam_mean": "",
+                            "cam_std": "",
+                            "cam_nonzero_ratio": "",
+                            "component_count": 0,
+                            "positive_prompt_count": 0,
+                            "negative_prompt_count": 0,
+                            "box_prompt_count": 0,
+                            "sam_candidate_count": 0,
+                            "selection_score_min": "",
+                            "selection_score_max": "",
+                            "selection_score_mean": "",
+                            "accepted_candidate_count": 0,
+                            "support_area_ratio": 0.0,
+                            "selected_area_ratio": 0.0,
+                            "final_area_ratio": 0.0,
+                        }
+                    )
                     skipped += 1
                     skipped_image_names.append(str(image_name))
                     processed += 1
@@ -890,6 +963,8 @@ def main() -> None:
                     selected = int(np.argmax(non_normal))
                     class_weights = np.zeros_like(class_weights, dtype=np.float32)
                     class_weights[selected] = 1.0
+                    selected_class = selected
+                    classifier_confidence = float(predicted_class_weights[selected])
 
                 # ── 2. LayerCAM fusion ────────────────────────────────────────
                 if args.cam_aggregation in {
@@ -1044,19 +1119,6 @@ def main() -> None:
                         float(fused_cam.max()) - float(fused_cam.min()) + 1e-8
                     )
 
-                # ── 2b. Optional feature-guided CAM refinement ─────────────────
-                if args.cam_refine:
-                    feature_map = extract_feature_map(
-                        classifier, image_tensor, layer_name=args.cam_refine_layer
-                    )
-                    fused_cam = refine_cam_with_feature_affinity(
-                        fused_cam,
-                        feature_map,
-                        high_conf_percentile=args.cam_refine_high_percentile,
-                        low_conf_percentile=args.cam_refine_low_percentile,
-                        propagation_strength=args.cam_refine_strength,
-                    )
-
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
                 image_rgb = tensor_to_rgb_numpy(image_tensor[0], normalization=classifier_normalization)
                 if save_visuals:
@@ -1083,68 +1145,52 @@ def main() -> None:
                 bone_support = None
                 bone_components = []
                 prompt_map = fused_cam
-                if not args.disable_bone_morphology:
+                if not args.disable_morphology:
                     if args.morphology_fusion_mode == "components":
                         active_weights = [float(class_weights[i]) for i in active_indices]
-                        if args.dataset == "btxrd":
-                            # tumor_morphology.build_class_conditioned_components is the
-                            # single-CAM-threshold + largest-component implementation;
-                            # bone_morphology's is a different (RAM-H1200-specific) signature.
-                            prompt_percentiles = (
-                                cam_percentile_values if args.cam_percentile_ensemble else (args.cam_percentile,)
-                            )
-                            bone_likelihood = None
-                            bone_support = None
-                            bone_components = []
-                            for prompt_percentile in prompt_percentiles:
-                                local_likelihood, local_support, local_components = morphology.build_class_conditioned_components(
-                                    image_rgb,
-                                    per_class_cams,
-                                    active_weights,
-                                    cam_percentile=prompt_percentile,
-                                    min_component_area=max(20, args.min_component_area // 2),
-                                    max_components=(args.max_bone_components if args.all_cam_components else 1),
-                                    points_per_component=args.points_per_component,
-                                    bbox_padding_ratio=args.bbox_padding_ratio,
-                                    negative_points_per_component=args.negative_points_per_component,
-                                    debug_dir=debug_dir,
-                                )
-                                if bone_likelihood is None:
-                                    bone_likelihood = local_likelihood
-                                if bone_support is None:
-                                    bone_support = local_support.copy()
-                                else:
-                                    bone_support = np.maximum(bone_support, local_support)
-                                offset = len(bone_components)
-                                bone_components.extend(
-                                    replace(component, component_id=offset + int(component.component_id))
-                                    for component in local_components
-                                )
-                            if args.all_cam_components and len(bone_components) > args.max_bone_components * len(prompt_percentiles):
-                                bone_components = bone_components[: args.max_bone_components * len(prompt_percentiles)]
-                            if bone_likelihood is None:
-                                bone_likelihood = np.zeros_like(fused_cam, dtype=np.float32)
-                            if bone_support is None:
-                                bone_support = np.zeros_like(fused_cam, dtype=np.uint8)
-                        else:
-                            bone_likelihood, bone_support, bone_components = morphology.build_class_conditioned_components(
+                        prompt_percentiles = (
+                            cam_percentile_values if args.cam_percentile_ensemble else (args.cam_percentile,)
+                        )
+                        bone_likelihood = None
+                        bone_support = None
+                        bone_components = []
+                        for prompt_percentile in prompt_percentiles:
+                            local_likelihood, local_support, local_components = morphology.build_class_conditioned_components(
                                 image_rgb,
                                 per_class_cams,
                                 active_weights,
-                                seed_percentile=bone_seed_percentile,
-                                support_percentile=bone_support_percentile,
+                                cam_percentile=prompt_percentile,
                                 min_component_area=max(20, args.min_component_area // 2),
-                                max_components=args.max_bone_components,
+                                max_components=(args.max_components if args.all_cam_components else 1),
                                 points_per_component=args.points_per_component,
                                 bbox_padding_ratio=args.bbox_padding_ratio,
+                                negative_points_per_component=args.negative_points_per_component,
                                 debug_dir=debug_dir,
                             )
+                            if bone_likelihood is None:
+                                bone_likelihood = local_likelihood
+                            if bone_support is None:
+                                bone_support = local_support.copy()
+                            else:
+                                bone_support = np.maximum(bone_support, local_support)
+                            offset = len(bone_components)
+                            bone_components.extend(
+                                replace(component, component_id=offset + int(component.component_id))
+                                for component in local_components
+                            )
+                        max_prompt_components = args.max_components * len(prompt_percentiles)
+                        if args.all_cam_components and len(bone_components) > max_prompt_components:
+                            bone_components = bone_components[:max_prompt_components]
+                        if bone_likelihood is None:
+                            bone_likelihood = np.zeros_like(fused_cam, dtype=np.float32)
+                        if bone_support is None:
+                            bone_support = np.zeros_like(fused_cam, dtype=np.uint8)
                     else:
-                        bone_likelihood, bone_support = morphology.build_bone_guidance(
+                        bone_likelihood, bone_support = morphology.build_tumor_guidance(
                             image_rgb,
                             fused_cam,
-                            seed_percentile=bone_seed_percentile,
-                            support_percentile=bone_support_percentile,
+                            seed_percentile=seed_percentile,
+                            support_percentile=support_percentile,
                             min_component_area=max(20, args.min_component_area // 2),
                             debug_dir=debug_dir,
                         )
@@ -1165,6 +1211,7 @@ def main() -> None:
                 sam_image_rgb = image_rgb
                 sam_image_pil = image_pil
                 sam_components = bone_components
+                point_prompts: list[tuple[int, int]] = []
                 candidate_prompt_modes: list[str] = []
                 sam_scale = float(args.sam_image_size) / float(args.image_size) if args.sam_image_size > 0 else 1.0
                 sam_scale_x = sam_scale
@@ -1393,6 +1440,39 @@ def main() -> None:
                     ]
 
                 # ── 5. CAM-guided mask selection ──────────────────────────────
+                component_mask_array = (
+                    np.stack([component.mask for component in bone_components])
+                    if bone_components else None
+                )
+                positive_points_by_component = (
+                    {
+                        int(component.component_id): tuple(component.positive_points)
+                        for component in bone_components
+                    }
+                    if bone_components else None
+                )
+                negative_points_by_component = (
+                    {
+                        int(component.component_id): tuple(getattr(component, "negative_points", ()))
+                        for component in bone_components
+                    }
+                    if bone_components else None
+                )
+                selection_scores = score_masks(
+                    sam_masks,
+                    fused_cam,
+                    method=args.selection_method,
+                    bone_likelihood=bone_likelihood,
+                    bone_support=bone_support,
+                    sam_scores=sam_scores,
+                    component_ids=component_ids,
+                    component_masks=component_mask_array,
+                    positive_points_by_component=positive_points_by_component,
+                    negative_points_by_component=negative_points_by_component,
+                    prompt_hybrid_weights=prompt_score_weights,
+                    prompt_area_target=args.prompt_area_target,
+                    prompt_area_log_sigma=args.prompt_area_log_sigma,
+                )
                 refined = select_and_fuse_masks(
                     sam_masks,
                     fused_cam,
@@ -1403,24 +1483,9 @@ def main() -> None:
                     bone_support=bone_support,
                     sam_scores=sam_scores,
                     component_ids=component_ids,
-                    component_masks=(
-                        np.stack([component.mask for component in bone_components])
-                        if bone_components else None
-                    ),
-                    positive_points_by_component=(
-                        {
-                            int(component.component_id): tuple(component.positive_points)
-                            for component in bone_components
-                        }
-                        if bone_components else None
-                    ),
-                    negative_points_by_component=(
-                        {
-                            int(component.component_id): tuple(getattr(component, "negative_points", ()))
-                            for component in bone_components
-                        }
-                        if bone_components else None
-                    ),
+                    component_masks=component_mask_array,
+                    positive_points_by_component=positive_points_by_component,
+                    negative_points_by_component=negative_points_by_component,
                     prompt_hybrid_weights=prompt_score_weights,
                     prompt_area_target=args.prompt_area_target,
                     prompt_area_log_sigma=args.prompt_area_log_sigma,
@@ -1472,6 +1537,47 @@ def main() -> None:
 
                 # ── 7. Save ───────────────────────────────────────────────────
                 save_mask(final_mask, mask_path)
+                accepted_candidate_count = int((selection_scores >= args.mask_score_threshold).sum())
+                positive_prompt_count = sum(len(component.positive_points) for component in bone_components)
+                negative_prompt_count = sum(
+                    len(getattr(component, "negative_points", ())) for component in bone_components
+                )
+                box_prompt_count = len(bone_components) if args.sam_prompt_mode in {"box", "box_point"} else 0
+                if not bone_components:
+                    positive_prompt_count = len(point_prompts)
+                pseudo_manifest_rows.append(
+                    {
+                        "image_name": str(image_name),
+                        "group_id": str(sample_record.get("group_id", "")),
+                        "true_tumor": true_tumor,
+                        "true_tumor_type": true_tumor_type,
+                        "selected_class": selected_class,
+                        "classifier_confidence": classifier_confidence,
+                        "cam_target_protocol": args.cam_target_class,
+                        "status": "ok" if final_mask.any() else "empty_after_localization",
+                        "reason": "" if final_mask.any() else "no_candidate_survived_or_postprocess_empty",
+                        "cam_min": float(np.min(fused_cam)),
+                        "cam_max": float(np.max(fused_cam)),
+                        "cam_mean": float(np.mean(fused_cam)),
+                        "cam_std": float(np.std(fused_cam)),
+                        "cam_nonzero_ratio": float(np.count_nonzero(fused_cam) / fused_cam.size),
+                        "component_count": len(bone_components),
+                        "positive_prompt_count": positive_prompt_count,
+                        "negative_prompt_count": negative_prompt_count,
+                        "box_prompt_count": box_prompt_count,
+                        "sam_candidate_count": int(len(sam_masks)),
+                        "selection_score_min": float(selection_scores.min()) if len(selection_scores) else "",
+                        "selection_score_max": float(selection_scores.max()) if len(selection_scores) else "",
+                        "selection_score_mean": float(selection_scores.mean()) if len(selection_scores) else "",
+                        "accepted_candidate_count": accepted_candidate_count,
+                        "support_area_ratio": (
+                            float(np.count_nonzero(bone_support) / bone_support.size)
+                            if bone_support is not None else 0.0
+                        ),
+                        "selected_area_ratio": float(np.count_nonzero(refined) / refined.size),
+                        "final_area_ratio": float(np.count_nonzero(final_mask) / final_mask.size),
+                    }
+                )
                 processed += 1
             if process_limit is not None and processed >= process_limit:
                 break
@@ -1491,6 +1597,24 @@ def main() -> None:
         # Do not let a previous run's predicted-normal/low-confidence list
         # leak into evaluation after a clean rerun in the same output dir.
         skipped_path.unlink()
+
+    expected_names = [str(sample["image_id"]) for sample in dataset.samples]
+    if process_limit is not None:
+        expected_names = expected_names[:process_limit]
+    run_metadata_path = args.output_dir / "run_metadata.json"
+    pseudo_summary = write_pseudo_mask_manifest(
+        args.output_dir,
+        pseudo_manifest_rows,
+        expected_image_names=expected_names,
+        split=args.split,
+        image_size=args.image_size,
+        run_metadata_sha256=manifest_sha256_file(run_metadata_path),
+    )
+    print(
+        f"Pseudo-mask completeness: {pseudo_summary['manifest_rows']}/"
+        f"{pseudo_summary['expected_images']} rows; manifest_sha256="
+        f"{pseudo_summary['manifest_sha256']}"
+    )
 
     if args.evaluate_prompt_quality:
         import csv

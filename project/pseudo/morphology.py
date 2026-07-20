@@ -156,8 +156,10 @@ def morphological_refinement(
             region = component.astype(bool)
             if float(guidance_map[region].mean()) >= guidance_threshold:
                 filtered |= component
-        if filtered.any():
-            mask = filtered
+        # Fail closed when every component violates the configured evidence
+        # threshold.  Falling back to the unfiltered mask here made the
+        # threshold ineffective exactly on the lowest-quality cases.
+        mask = filtered
     return mask
 
 

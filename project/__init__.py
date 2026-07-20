@@ -1,1 +1,1 @@
-"""RAM-H1200 bone segmentation pipeline."""
+"""BTXRD weakly supervised bone-tumor segmentation pipeline."""

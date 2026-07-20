@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import json
 import random
+import subprocess
 import sys
 from pathlib import Path
 
@@ -23,14 +26,17 @@ from models.unet import UNet
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train U-Net on RAM-H1200 bone masks or BTXRD tumor masks")
-    parser.add_argument("--dataset", type=str, default=DEFAULT_DATASET, choices=SUPPORTED_DATASETS)
-    parser.add_argument("--ram-root", type=Path, default=ROOT.parent / "RAM-H1200-v1",
-                        help="Dataset root (RAM-H1200 root or BTXRD root, depending on --dataset)")
+    parser = argparse.ArgumentParser(description="Train U-Net on BTXRD tumor masks")
+    parser.set_defaults(dataset="btxrd")
+    parser.add_argument("--data-root", type=Path, required=True, help="BTXRD dataset root")
     parser.add_argument("--train-split", type=str, default="train")
     parser.add_argument("--val-split", type=str, default="val")
-    parser.add_argument("--annotation-name", type=str, default="_annotations_bone_rle.coco.json",
-                        help="RAM-H1200 only; ignored for --dataset btxrd")
+    parser.add_argument(
+        "--split-manifest",
+        type=Path,
+        default=None,
+        help="Immutable derived split manifest. Its assignments are authoritative for BTXRD.",
+    )
     parser.add_argument("--image-size", type=int, default=SegmentationConfig.image_size)
     parser.add_argument("--batch-size", type=int, default=SegmentationConfig.batch_size)
     parser.add_argument("--lr", type=float, default=SegmentationConfig.lr)
@@ -73,10 +79,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--resume-from", type=Path, default=None,
                         help="Path to a checkpoint (e.g. last_unet.pt) to resume training from -- "
                         "restores model/optimizer state and continues epoch numbering and the "
-                        "training log instead of starting over. Needed since this script has no "
-                        "built-in resume: without it, re-running after an interrupted session (e.g. "
-                        "a disconnected Colab runtime) silently restarts from a fresh model AND "
-                        "overwrites training_log.csv, discarding all prior epochs.")
+                        "training log instead of starting over. Compatibility checks reject changes "
+                        "to the split, resolved training configuration, pseudo-mask manifest, or "
+                        "foreground weighting.")
     return parser.parse_args()
 
 
@@ -85,30 +90,62 @@ def seed_everything(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
     random.seed(seed)
     np.random.seed(seed)
+    if torch.backends.cudnn.is_available():
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+
+def git_provenance() -> tuple[str, bool | None]:
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT.parent, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+        dirty = bool(subprocess.check_output(
+            ["git", "status", "--porcelain"], cwd=ROOT.parent, text=True, stderr=subprocess.DEVNULL
+        ).strip())
+        return commit, dirty
+    except Exception:
+        return "unknown", None
+
+
+def resolved_training_config(args: argparse.Namespace) -> dict[str, object]:
+    excluded = {"output_dir", "resume_from", "epochs", "num_workers", "multi_gpu"}
+    config: dict[str, object] = {}
+    for key, value in vars(args).items():
+        if key.startswith("_") or key in excluded:
+            continue
+        config[key] = str(value.resolve()) if isinstance(value, Path) else value
+    config.update({
+        "architecture": {"name": "UNet", "in_channels": 3, "out_channels": 1, "base_channels": 64},
+        "loss": "0.5 * BCEWithLogits(pos_weight) + 0.5 * soft Dice loss",
+        "decision_threshold": 0.5,
+        "scheduler": None,
+        "gradient_accumulation_steps": 1,
+        "gradient_clip_max_norm": None,
+    })
+    return config
 
 
 def build_datasets(args: argparse.Namespace):
     if (args.train_pred_mask_root is not None or args.val_pred_mask_root is not None) and args.dataset != "btxrd":
-        raise ValueError("--train-pred-mask-root/--val-pred-mask-root are only supported for --dataset btxrd")
+        raise ValueError("Predicted-mask roots are supported only for BTXRD")
     train_dataset = build_segmentation_dataset(
-        args.dataset,
-        root=args.ram_root,
+        root=args.data_root,
         split=args.train_split,
         image_size=args.image_size,
         augment=True,
         use_clahe=args.use_clahe,
-        annotation_name=args.annotation_name,
         pred_mask_dir=args.train_pred_mask_root,
+        split_manifest=args.split_manifest,
     )
     val_dataset = build_segmentation_dataset(
-        args.dataset,
-        root=args.ram_root,
+        root=args.data_root,
         split=args.val_split,
         image_size=args.image_size,
         augment=False,
         use_clahe=args.use_clahe,
-        annotation_name=args.annotation_name,
         pred_mask_dir=args.val_pred_mask_root,
+        split_manifest=args.split_manifest,
     )
     print(
         f"Loaded {args.dataset}: {len(train_dataset)} train images from {args.train_split}, "
@@ -230,6 +267,9 @@ def save_checkpoint(
     scaler=None,
     run_config: argparse.Namespace | None = None,
     epochs_without_improvement: int = 0,
+    best_model_state_dict: dict[str, torch.Tensor] | None = None,
+    best_epoch: int | None = None,
+    global_step: int = 0,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     # Unwrap nn.DataParallel before saving: DataParallel prefixes every state_dict
@@ -243,6 +283,9 @@ def save_checkpoint(
         "epoch": epoch,
         "model_state_dict": model_to_save.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_state_dict": None,
+        "scheduler_name": None,
+        "global_step": int(global_step),
         "best_metric": best_metric,
         "best_metric_name": "val_positive_dice",
         "dataset": dataset,
@@ -257,6 +300,12 @@ def save_checkpoint(
     if scaler is not None:
         state["scaler_state_dict"] = scaler.state_dict()
     if run_config is not None:
+        split_manifest = Path(run_config.split_manifest).resolve() if run_config.split_manifest else None
+        resolved_config = resolved_training_config(run_config)
+        resolved_config_json = json.dumps(resolved_config, sort_keys=True, separators=(",", ":"))
+        git_commit, git_dirty = git_provenance()
+        train_pseudo_info = getattr(run_config, "_train_pseudo_manifest_info", None)
+        val_pseudo_info = getattr(run_config, "_val_pseudo_manifest_info", None)
         state.update(
             {
                 "image_size": run_config.image_size,
@@ -268,8 +317,38 @@ def save_checkpoint(
                 "decision_threshold": 0.5,
                 "seed": run_config.seed,
                 "use_clahe": run_config.use_clahe,
+                "split_manifest": str(split_manifest) if split_manifest else None,
+                "split_manifest_sha256": (
+                    hashlib.sha256(split_manifest.read_bytes()).hexdigest()
+                    if split_manifest is not None and split_manifest.is_file()
+                    else None
+                ),
+                "resolved_config": resolved_config,
+                "resolved_config_sha256": hashlib.sha256(resolved_config_json.encode("utf-8")).hexdigest(),
+                "train_pseudo_mask_manifest": train_pseudo_info,
+                "train_pseudo_mask_manifest_sha256": (
+                    train_pseudo_info.get("manifest_sha256") if train_pseudo_info else None
+                ),
+                "val_pseudo_mask_manifest": val_pseudo_info,
+                "val_pseudo_mask_manifest_sha256": (
+                    val_pseudo_info.get("manifest_sha256") if val_pseudo_info else None
+                ),
+                "dataset_identifier": (
+                    f"{run_config.dataset}:split_manifest_sha256="
+                    f"{hashlib.sha256(split_manifest.read_bytes()).hexdigest()}"
+                    if split_manifest is not None and split_manifest.is_file()
+                    else f"{run_config.dataset}:unmanifested"
+                ),
+                "git_commit": git_commit,
+                "git_dirty": git_dirty,
             }
         )
+    if best_model_state_dict is not None:
+        state["best_model_state_dict"] = {
+            key: value.detach().cpu().clone() for key, value in best_model_state_dict.items()
+        }
+    if best_epoch is not None:
+        state["best_epoch"] = best_epoch
     torch.save(state, path)
 
 
@@ -301,11 +380,74 @@ def ensure_history_schema(path: Path, start_fresh: bool) -> None:
         writer.writerows(rows)
 
 
+def clone_model_state(model: nn.Module) -> dict[str, torch.Tensor]:
+    model_to_save = model.module if isinstance(model, nn.DataParallel) else model
+    return {key: value.detach().cpu().clone() for key, value in model_to_save.state_dict().items()}
+
+
+def restore_best_checkpoint_from_resume(
+    output_path: Path,
+    resume_checkpoint: dict[str, object],
+    best_model_state_dict: dict[str, torch.Tensor],
+) -> None:
+    """Recreate best_unet.pt when resuming into a fresh output directory."""
+    best_state = dict(resume_checkpoint)
+    best_state["model_state_dict"] = best_model_state_dict
+    best_state["best_model_state_dict"] = best_model_state_dict
+    best_state["epoch"] = int(resume_checkpoint.get("best_epoch", resume_checkpoint.get("epoch", 0)))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(best_state, output_path)
+
+
+def validate_resume_compatibility(checkpoint: dict[str, object], args: argparse.Namespace) -> None:
+    expected_architecture = {"name": "UNet", "in_channels": 3, "out_channels": 1, "base_channels": 64}
+    if checkpoint.get("architecture") not in (None, expected_architecture):
+        raise ValueError(f"Resume checkpoint architecture mismatch: {checkpoint.get('architecture')!r}")
+    expected = {
+        "dataset": args.dataset,
+        "image_size": args.image_size,
+        "train_split": args.train_split,
+        "val_split": args.val_split,
+        "seed": args.seed,
+        "use_clahe": args.use_clahe,
+    }
+    for key, value in expected.items():
+        if key in checkpoint and checkpoint[key] != value:
+            raise ValueError(
+                f"Resume checkpoint {key}={checkpoint[key]!r} does not match current run {value!r}"
+            )
+    current_config = resolved_training_config(args)
+    current_hash = hashlib.sha256(
+        json.dumps(current_config, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    checkpoint_config_hash = checkpoint.get("resolved_config_sha256")
+    if checkpoint_config_hash is None:
+        raise ValueError("Resume checkpoint has no resolved_config_sha256")
+    if checkpoint_config_hash != current_hash:
+        raise ValueError("Resume checkpoint resolved training configuration does not match current run")
+    current_train_pseudo = getattr(args, "_train_pseudo_manifest_info", None)
+    expected_pseudo_hash = current_train_pseudo.get("manifest_sha256") if current_train_pseudo else None
+    if checkpoint.get("train_pseudo_mask_manifest_sha256") != expected_pseudo_hash:
+        raise ValueError("Resume checkpoint pseudo-mask manifest hash does not match current training masks")
+    if args.split_manifest:
+        manifest_path = args.split_manifest.resolve()
+        if not manifest_path.is_file():
+            raise FileNotFoundError(f"Current split manifest does not exist: {manifest_path}")
+        expected_hash = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        checkpoint_hash = checkpoint.get("split_manifest_sha256")
+        if checkpoint_hash is None:
+            raise ValueError("Resume checkpoint has no split_manifest_sha256; refusing an unproven split resume")
+        if checkpoint_hash != expected_hash:
+            raise ValueError("Resume checkpoint split manifest hash does not match current manifest")
+
+
 def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
     train_dataset, val_dataset = build_datasets(args)
+    args._train_pseudo_manifest_info = getattr(train_dataset, "pseudo_manifest_info", None)
+    args._val_pseudo_manifest_info = getattr(val_dataset, "pseudo_manifest_info", None)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
@@ -334,23 +476,48 @@ def main() -> None:
     best_val_positive_dice = -1.0
     epochs_without_improvement = 0
     start_epoch = 1
+    best_model_state_dict: dict[str, torch.Tensor] | None = None
+    best_epoch = 0
+    global_step = 0
 
     if args.resume_from is not None:
         print(f"Resuming from checkpoint: {args.resume_from}")
         checkpoint = torch.load(args.resume_from, map_location=device)
+        validate_resume_compatibility(checkpoint, args)
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         if checkpoint.get("best_metric_name") == "val_positive_dice":
             best_val_positive_dice = checkpoint.get("best_metric", -1.0)
             epochs_without_improvement = int(checkpoint.get("epochs_without_improvement", 0))
+            best_epoch = int(checkpoint.get("best_epoch", checkpoint.get("epoch", 0)))
+            raw_best_state = checkpoint.get("best_model_state_dict")
+            if not isinstance(raw_best_state, dict):
+                legacy_best_path = args.resume_from.parent / "best_unet.pt"
+                if legacy_best_path.is_file():
+                    legacy_best = torch.load(legacy_best_path, map_location="cpu")
+                    raw_best_state = legacy_best.get("model_state_dict")
+            if not isinstance(raw_best_state, dict):
+                raise RuntimeError(
+                    "Resume checkpoint does not contain best_model_state_dict and no adjacent "
+                    "best_unet.pt is available; refusing to continue with an unknown best model."
+                )
+            best_model_state_dict = {
+                key: value.detach().cpu().clone() for key, value in raw_best_state.items()
+            }
+            restore_best_checkpoint_from_resume(
+                args.output_dir / "best_unet.pt", checkpoint, best_model_state_dict
+            )
         else:
             print(
                 "WARNING: resumed checkpoint used the legacy all-image val_dice criterion; "
                 "resetting best/early-stop state for the new val_positive_dice criterion."
             )
-            best_val_positive_dice = -1.0
-            epochs_without_improvement = 0
+            raise RuntimeError(
+                "Cannot safely resume a checkpoint selected with a different metric; "
+                "start a fresh run or provide a compatible val_positive_dice checkpoint."
+            )
         start_epoch = checkpoint.get("epoch", 0) + 1
+        global_step = int(checkpoint.get("global_step", 0))
         if "scaler_state_dict" in checkpoint:
             scaler.load_state_dict(checkpoint["scaler_state_dict"])
         if "torch_rng_state" in checkpoint:
@@ -377,11 +544,9 @@ def main() -> None:
             and pos_weight is not None
             and abs(checkpoint_pos_weight - pos_weight) > 0.05 * max(checkpoint_pos_weight, 1e-6)
         ):
-            print(
-                f"WARNING: resumed checkpoint was trained with pos_weight={checkpoint_pos_weight:.4f}, "
-                f"but the current run computed pos_weight={pos_weight:.4f} (>5% difference) -- "
-                "this usually means --train-pred-mask-root points at different masks than the "
-                "resumed run used. Loss weighting will change starting this epoch."
+            raise ValueError(
+                f"Resume pos_weight mismatch: checkpoint={checkpoint_pos_weight:.4f}, "
+                f"current={pos_weight:.4f}. Refusing to change the optimization objective mid-run."
             )
 
     # Wrap in DataParallel AFTER loading any --resume-from checkpoint (which
@@ -407,6 +572,7 @@ def main() -> None:
             model, train_loader, scaler, device, train=True, optimizer=optimizer, pos_weight=pos_weight
         )
         val_loss, val_metrics = run_epoch(model, val_loader, scaler, device, train=False, pos_weight=pos_weight)
+        global_step += len(train_loader)
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=HISTORY_FIELDS)
@@ -437,13 +603,29 @@ def main() -> None:
         # epoch overwrite best_unet.pt.
         if val_metrics["positive_dice"] > best_val_positive_dice:
             best_val_positive_dice = val_metrics["positive_dice"]
+            best_epoch = epoch
+            best_model_state_dict = clone_model_state(model)
             epochs_without_improvement = 0
-            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice, args.dataset, pos_weight, scaler, args, epochs_without_improvement)
-            save_checkpoint(args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_positive_dice, args.dataset, pos_weight, scaler, args, epochs_without_improvement)
+            save_checkpoint(
+                args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice,
+                args.dataset, pos_weight, scaler, args, epochs_without_improvement,
+                best_model_state_dict, best_epoch, global_step,
+            )
+            save_checkpoint(
+                args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_positive_dice,
+                args.dataset, pos_weight, scaler, args, epochs_without_improvement,
+                best_model_state_dict, best_epoch, global_step,
+            )
             print(f"--> Saved new best model with positive-target Dice = {best_val_positive_dice:.4f}")
         else:
             epochs_without_improvement += 1
-            save_checkpoint(args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice, args.dataset, pos_weight, scaler, args, epochs_without_improvement)
+            if best_model_state_dict is None:
+                raise RuntimeError("No best model state is available while saving last_unet.pt")
+            save_checkpoint(
+                args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice,
+                args.dataset, pos_weight, scaler, args, epochs_without_improvement,
+                best_model_state_dict, best_epoch, global_step,
+            )
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
             print(

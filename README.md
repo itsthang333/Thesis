@@ -1,281 +1,125 @@
-# Weakly-Supervised Bone/Tumor Segmentation Pipeline
+# BTXRD Weakly Supervised Bone-Tumor Segmentation
 
-This thesis project supports two datasets through the same DenseNet121 +
-LayerCAM + SAM pipeline, selected via `--dataset`:
+This branch contains one production pipeline for segmenting bone tumors on
+BTXRD radiographs from image-level labels. The canonical executable workflow
+is [thesis_final.ipynb](thesis_final.ipynb); it calls the Python entrypoints
+instead of duplicating model logic inside notebook cells.
 
-- **RAM-H1200** (`--dataset ramh1200`, default): binary visible-bone
-  segmentation on hand X-ray images. RAM-H1200 provides full-hand radiographs
-  and COCO RLE bone instance masks, which this code merges into one binary
-  bone mask per image. The classifier is trained on a `hand` image-level
-  label.
-- **BTXRD** (`--dataset btxrd`): binary bone-**tumor** segmentation on hand,
-  limb, and pelvis X-ray images. BTXRD provides LabelMe polygon annotations
-  for tumor lesions plus a `dataset.csv`/`dataset.xlsx` with a `tumor`
-  image-level label (tumor vs normal), which drives the classifier/LayerCAM
-  stage. BTXRD has no predefined split; this project derives an 80/10/10
-  stratified split (by normal/benign/malignant) with a fixed seed.
-
-Because a hand-only weak label makes CAM behave like a hand-silhouette map,
-but a tumor-vs-normal label makes CAM a much stronger localization cue, the
-two datasets use different morphology priors before SAM prompting:
-`pseudo/bone_morphology.py` (radiopaque-intensity prior) for RAM-H1200 and
-`pseudo/tumor_morphology.py` (CAM-dominant, local-anomaly prior) for BTXRD.
-`pseudo/morphology_factory.py` selects between them based on `--dataset`.
-
-## Dataset Layout — RAM-H1200
-
-Expected local layout:
+## Canonical pipeline
 
 ```text
-D:/thesis/RAM-H1200-v1/
-`-- Segmentation/
-    |-- train/
-    |   |-- *.bmp
-    |   `-- _annotations_bone_rle.coco.json
-    |-- val/              # or validation/
-    |   |-- *.bmp
-    |   `-- _annotations_bone_rle.coco.json
-    `-- test/
-        |-- *.bmp
-        `-- _annotations_bone_rle.coco.json
+audited group split manifest
+  -> DenseNet121 image classifier (tumor_type, btxrd_best)
+  -> multi-layer LayerCAM + class-vs-normal contrast
+  -> tumor morphology + positive/negative point and box prompts
+  -> local SAM v1 ViT-B
+  -> strict coverage_mass_sam selection
+  -> pseudo-mask manifest with hashes/provenance
+  -> U-Net trained on train pseudo-masks
+  -> validation selection and one locked test report
+  -> U-Net-only deployment inference
 ```
 
-The loader also accepts `--split validation` and falls back between `val` and
-`validation` when one of them exists.
+The known image-level class is the canonical WSSS training protocol.
+Predicted-class CAM is reported separately as a deployment-oriented
+diagnostic. Polygon masks are used only for explicit evaluation, the
+fully-supervised oracle baseline, and held-out U-Net validation/test; they do
+not enter pseudo-label generation.
 
-## Dataset Layout — BTXRD
+## Immutable inputs
 
-Download from [kaggle.com/datasets/thanhngan123/btxrd-data](https://www.kaggle.com/datasets/thanhngan123/btxrd-data).
-Expected local layout:
+Attach these to Kaggle with Internet disabled:
 
-```text
-BTXRD/
-|-- images/
-|   `-- IMG######.jpeg
-|-- Annotations/
-|   `-- IMG######.json        # LabelMe format; tumor images only
-`-- dataset.csv                # or dataset.xlsx
-```
+- the repository at one committed revision of branch `pipeline`;
+- the BTXRD dataset containing `images/`, `Annotations/`, and its metadata
+  spreadsheet/CSV;
+- the audited `split_manifest.csv`;
+- official `sam_vit_b_01ec64.pth`;
+- a local installation artifact for the pinned Segment Anything commit.
 
-`dataset.csv`/`dataset.xlsx` has one row per image with a `tumor` column
-(1 = tumor present, 0 = normal) plus benign/malignant/subtype/anatomical-site
-metadata. Images without a tumor have no `Annotations/*.json` file; the
-loader gives them an all-zero ground-truth mask. Reading `dataset.xlsx`
-requires `pandas` + `openpyxl` (`pip install pandas openpyxl`); exporting to
-`dataset.csv` avoids that extra dependency.
+Set `BTXRD_GIT_COMMIT`, `BTXRD_SPLIT_MANIFEST`, and `SAM_CHECKPOINT`.
+Optionally set `BTXRD_ROOT`, `BTXRD_RUN_ID`, `BTXRD_OUTPUT`, and
+`BTXRD_NUM_WORKERS`. The output directory must be new.
 
-BTXRD ships with no train/val/test split. `project/datasets/btxrd.py` derives
-one locally: an 80/10/10 split stratified by normal/benign/malignant, with a
-fixed seed (42) so it's reproducible across runs and machines.
+Install the locked environment from
+[project/requirements.txt](project/requirements.txt), then run the notebook
+top-to-bottom. The preflight cell checks dependency versions, repository
+revision, dataset/manifest integrity, checkpoint presence, and output
+isolation before creating a run.
 
-## Install
+## Command-line entrypoints
+
+Run commands from `project/`. Representative canonical commands are:
 
 ```bash
-pip install -r project/requirements.txt
-```
+python tools/build_btxrd_split_manifest.py \
+  --dataset-root /path/to/btxrd \
+  --output-csv /path/to/split_manifest.csv \
+  --report-json /path/to/split_report.json
 
-SAM is installed from the requirement file. If automatic checkpoint download is
-not desired, provide `--sam-checkpoint /path/to/sam_vit_b_01ec64.pth`.
-
-## Main Commands
-
-All commands default to `--dataset ramh1200`. Pass `--dataset btxrd` (with
-`--ram-root` pointing at the BTXRD folder) to run the same pipeline on BTXRD
-tumor segmentation instead.
-
-Train the DenseNet checkpoint used by LayerCAM:
-
-```bash
-python project/train_classifier.py \
-  --dataset ramh1200 \
-  --ram-root D:/thesis/RAM-H1200-v1 \
-  --target-columns hand \
-  --image-size 384 \
-  --batch-size 4 \
-  --epochs 25 \
-  --output-dir project/outputs/classifier
-
-# BTXRD equivalent:
-python project/train_classifier.py \
-  --dataset btxrd \
-  --ram-root D:/thesis/BTXRD \
-  --target-columns tumor \
-  --image-size 384 \
-  --batch-size 8 \
-  --epochs 25 \
-  --output-dir project/outputs/btxrd_classifier
-```
-
-Generate a quick pseudo-mask preview:
-
-```bash
-python project/generate_pseudo_masks.py \
-  --dataset ramh1200 \
-  --ram-root D:/thesis/RAM-H1200-v1 \
-  --split val \
-  --classifier-checkpoint project/outputs/classifier/best_classifier.pt \
-  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
-  --image-size 384 \
-  --max-images 10 \
-  --output-dir project/outputs/pseudo_masks
-```
-
-Generate pseudo masks for a full split:
-
-```bash
-python project/generate_pseudo_masks.py \
-  --dataset ramh1200 \
-  --ram-root D:/thesis/RAM-H1200-v1 \
-  --split val \
-  --classifier-checkpoint project/outputs/classifier/best_classifier.pt \
-  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
-  --image-size 384 \
-  --process-all \
-  --save-visuals-limit 10 \
-  --output-dir project/outputs/pseudo_masks
-```
-
-Evaluate generated pseudo masks against ground truth:
-
-```bash
-python project/evaluate_ramh1200_masks.py \
-  --dataset ramh1200 \
-  --ram-root D:/thesis/RAM-H1200-v1 \
-  --split val \
-  --pred-mask-root project/outputs/pseudo_masks/masks
-```
-
-Train supervised U-Net on ground-truth masks:
-
-```bash
-python project/train_segmentation.py \
-  --dataset ramh1200 \
-  --ram-root D:/thesis/RAM-H1200-v1 \
-  --train-split train \
-  --val-split val \
-  --image-size 384 \
-  --batch-size 4 \
-  --epochs 25 \
-  --output-dir project/outputs/segmentation
-```
-
-For the independent fully supervised BTXRD comparison branch, run U-Net with
-the LabelMe polygon masks. This does not replace or modify the pseudo-mask
-pipeline:
-
-```bash
-# Fully supervised U-Net trained with BTXRD LabelMe polygon masks
-python project/train_segmentation.py \
-  --dataset btxrd --ram-root D:/thesis/dataset/BTXRD \
-  --train-split train --val-split val \
-  --output-dir project/outputs/btxrd_unet_ground_truth
-```
-
-`evaluate_unet.py` reports tumor-only Dice/IoU separately from normal
-specificity. Use `val` only for development and checkpoint/threshold selection;
-after the pipeline is frozen, report the final result once on the held-out
-`test` split.
-The expanded walkthrough is in `btxrd_kaggle_vi_debug.ipynb`.
-
-Run inference on one image:
-
-```bash
-python project/inference.py \
-  --dataset ramh1200 \
-  --image-path D:/thesis/RAM-H1200-v1/Segmentation/val/example.bmp \
-  --classifier-checkpoint project/outputs/classifier/best_classifier.pt \
-  --segmentation-checkpoint project/outputs/segmentation/best_unet.pt \
-  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
-  --image-size 384 \
-  --output-dir project/outputs/inference
-```
-
-For a full guided run on BTXRD (environment setup, dataset resolution,
-training, pseudo-mask generation, evaluation, visualization), see
-`btxrd_kaggle.ipynb`.
-
-### Reproducible BTXRD WSSS profile
-
-The currently selected BTXRD configuration is exposed as an opt-in profile
-in `generate_pseudo_masks.py`. It uses the CE DenseNet checkpoint trained at
-320 px, LayerCAM contrast against the normal logit, CAM thresholds 85/90/95,
-up to three CAM components, SAM ViT-B at 512 px, box+point/point/box prompt
-ensemble, and `coverage_mass_sam` selection. Polygon annotations are loaded
-only when `--evaluate-prompt-quality` is explicitly requested for diagnostics.
-
-Train the paired classifier on the new machine first:
-
-```bash
-python project/train_classifier.py \
-  --dataset btxrd \
+python train_classifier.py \
   --pipeline-profile btxrd_best \
-  --ram-root D:/thesis/BTXRD \
-  --output-dir project/outputs/btxrd_classifier
+  --data-root /path/to/btxrd \
+  --split-manifest /path/to/split_manifest.csv \
+  --output-dir /path/to/classifier_run
+
+python generate_pseudo_masks.py \
+  --pipeline-profile btxrd_best \
+  --data-root /path/to/btxrd \
+  --split-manifest /path/to/split_manifest.csv \
+  --split train \
+  --classifier-checkpoint /path/to/best_classifier.pt \
+  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
+  --cam-target-class ground_truth \
+  --process-all --output-dir /path/to/pseudo_train
+
+python train_segmentation.py \
+  --data-root /path/to/btxrd \
+  --split-manifest /path/to/split_manifest.csv \
+  --train-pred-mask-root /path/to/pseudo_train/masks \
+  --output-dir /path/to/unet_run
+
+python evaluate_unet.py \
+  --data-root /path/to/btxrd \
+  --split-manifest /path/to/split_manifest.csv \
+  --split val --checkpoint /path/to/best_unet.pt \
+  --output-csv /path/to/unet_val.csv \
+  --output-json /path/to/unet_val.json
+
+python inference.py \
+  --image-path /path/to/radiograph.png \
+  --segmentation-checkpoint /path/to/best_unet.pt \
+  --output-dir /path/to/inference
 ```
+
+Use `evaluate_classifier.py` for the complete classifier and binary
+tumor-vs-normal gate report, and `evaluate_pseudo_masks.py` for pseudo-mask
+Dice/IoU, boundary metrics, normal-case specificity, and bootstrap confidence
+intervals.
+
+## Scientific and reproducibility guards
+
+- The split manifest is authoritative and rejects group overlap or changed
+  image hashes.
+- Degenerate/non-finite CAMs fail closed and cannot create corner prompts.
+- Missing or tampered pseudo-masks fail before U-Net training.
+- Candidate thresholds are strict: no candidate below threshold is silently
+  promoted.
+- Checkpoints store preprocessing, architecture, optimizer/resume state,
+  dataset and manifest provenance.
+- Final inference restores U-Net preprocessing and decision threshold, checks
+  architecture/dataset compatibility, returns original-resolution outputs,
+  and records the checkpoint SHA-256.
+- Test-set execution is gated by `BTXRD_RUN_LOCKED_TEST=1` after the final
+  configuration is frozen.
+
+## Tests
 
 ```bash
-python project/generate_pseudo_masks.py \
-  --dataset btxrd \
-  --pipeline-profile btxrd_best \
-  --ram-root D:/thesis/BTXRD \
-  --split val \
-  --classifier-checkpoint project/outputs/btxrd_classifier/best_classifier.pt \
-  --sam-checkpoint D:/thesis/sam_vit_b_01ec64.pth \
-  --process-all \
-  --output-dir project/outputs/btxrd_best
+python -m compileall -q project tests
+python -m unittest discover -s tests -v
 ```
 
-The profile requires an explicit classifier checkpoint so a stale local model
-cannot be selected accidentally. It follows the available accelerator for
-DenseNet and SAM; pass `--sam-device cpu` if GPU memory is insufficient. The
-profile defaults to the predicted-class protocol. For the separate
-image-level localization protocol, add `--cam-target-class ground_truth` and
-report it separately; this still never supplies a polygon or bounding box to
-CAM, prompts, candidate selection, or post-processing.
-
-## Source Structure
-
-```text
-project/
-|-- datasets/
-|   |-- common.py
-|   |-- factory.py            # picks RAM-H1200/BTXRD loader by --dataset
-|   |-- ramh1200.py
-|   `-- btxrd.py
-|-- models/
-|   |-- classifier.py
-|   |-- layercam.py
-|   |-- losses.py
-|   `-- unet.py
-|-- pseudo/
-|   |-- bone_morphology.py    # RAM-H1200 prior: radiopaque intensity + edges
-|   |-- tumor_morphology.py   # BTXRD prior: CAM-dominant, local anomaly
-|   |-- morphology_factory.py # picks the prior above by --dataset
-|   |-- extract_prompts.py
-|   |-- generate_layercam.py
-|   |-- mask_selection.py
-|   |-- morphology.py
-|   |-- sam_refine.py
-|   `-- visualization.py
-|-- train_classifier.py
-|-- generate_pseudo_masks.py
-|-- evaluate_ramh1200_masks.py
-|-- train_segmentation.py
-|-- inference.py
-`-- visualize_pipeline.py
-```
-
-## Notes
-
-- RAM-H1200 is hand-only for this project, so its classifier target is
-  `hand`; BTXRD's classifier target is `tumor` (tumor vs normal).
-- The classifier is retained only to provide features and gradients for
-  LayerCAM. The final quantitative benchmark should use ground-truth masks
-  via `evaluate_ramh1200_masks.py --dataset {ramh1200,btxrd}`.
-- `pycocotools` is required because the RAM-H1200 masks are stored as COCO
-  RLE. `pandas`/`openpyxl` are required only if BTXRD's `dataset.xlsx` is used
-  instead of a `dataset.csv` export.
-- For BTXRD, SAM and the morphology stage never see the ground-truth
-  polygon/bbox annotations — only the image-level `tumor` label drives
-  localization, keeping this a weakly-supervised setup consistent with the
-  RAM-H1200 branch.
+GPU/PyTorch integration tests must pass in the locked Kaggle environment.
+A lightweight local environment without PyTorch will explicitly skip those
+tests; that is not equivalent to a successful Kaggle smoke run.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Metrics for judging LayerCAM/prompt quality *before* SAM runs.
 
-evaluate_ramh1200_masks.py only measures the final pseudo mask, which has
+evaluate_pseudo_masks.py only measures the final pseudo mask, which has
 already passed through morphology + SAM + mask selection — a low Dice there
 does not say whether the failure came from a bad CAM, a badly placed prompt
 point, or a bad SAM/mask-selection choice. These metrics isolate the CAM and
@@ -54,7 +54,7 @@ def cam_localization_metrics(
     """How well does {cam >= percentile} line up with GT?
 
     Only meaningful when the pipeline's actual foreground is a plain percentile
-    cut on this CAM/prompt_map — i.e. the --disable-bone-morphology or
+    cut on this CAM/prompt_map — i.e. the --disable-morphology or
     morphology-fusion-mode=weighted path, which calls extract_point_prompts
     with this same percentile. In morphology-fusion-mode=components (the
     default), use binary_mask_localization_metrics on bone_support/

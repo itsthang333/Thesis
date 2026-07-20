@@ -1,110 +1,24 @@
 from __future__ import annotations
 
-"""SAM ViT-B wrapper for point-prompted mask generation.
-
-Designed for Google Colab + Google Drive workflow:
-  - Checkpoint path passed explicitly (e.g. from Drive mount)
-  - Falls back to automatic download if checkpoint not found and
-    auto_download=True (useful for first-run on Colab)
-"""
+"""SAM v1 ViT-B wrapper for point-prompted pseudo-mask generation."""
 
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-# Accepts either pseudo.bone_morphology.BoneComponent or
-# pseudo.tumor_morphology.TumorComponent — both share the same fields
-# (mask, bbox, positive_points, component_id), selected via --dataset.
+# Structural type: TumorComponent fields are consumed by predict_from_components.
 Component = Any
 
 
-_SAM_CHECKPOINT_URL = (
-    "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
-)
-_DEFAULT_CHECKPOINT_NAME = "sam_vit_b_01ec64.pth"
-
-_SAM2_CHECKPOINT_URL = (
-    "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_tiny.pt"
-)
-_SAM2_DEFAULT_CHECKPOINT_NAME = "sam2.1_hiera_tiny.pt"
-_SAM2_DEFAULT_MODEL_CFG = "configs/sam2.1/sam2.1_hiera_t.yaml"
-
-# MedSAM2 (bowang-lab/MedSAM2) fine-tunes SAM2's Hiera-tiny backbone on medical
-# imagery and ships its own vendored `sam2/` package + config
-# (configs/sam2.1_hiera_t512.yaml, note: no "sam2.1/" subfolder, unlike the
-# original SAM2 repo's configs/sam2.1/sam2.1_hiera_t.yaml). Its build_sam2()/
-# SAM2ImagePredictor API is identical to original SAM2's (confirmed via
-# MedSAM2's own app.py), so _init_v2 below is reused as-is — only the
-# checkpoint source and config path differ. The two `sam2` packages
-# (facebookresearch/sam2 vs bowang-lab/MedSAM2's vendored copy) occupy the
-# same Python import name and cannot both be installed in one environment;
-# switching sam_version between "v2" and "medsam2" in the same venv requires
-# reinstalling the matching package first.
-_MEDSAM2_CHECKPOINT_URL = "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
-_MEDSAM2_DEFAULT_CHECKPOINT_NAME = "MedSAM2_latest.pt"
-_MEDSAM2_DEFAULT_MODEL_CFG = "configs/sam2.1_hiera_t512.yaml"
-
-
-def _download_checkpoint(url: str, dest: Path, label: str) -> None:
-    import urllib.request
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    print(f"[{label}] Downloading checkpoint to {dest} ...")
-    urllib.request.urlretrieve(url, str(dest))
-    print(f"[{label}] Download complete.")
-
-
-def _download_sam_checkpoint(dest: Path) -> None:
-    _download_checkpoint(_SAM_CHECKPOINT_URL, dest, "SAM")
-
-
 class SAMPredictor:
-    """Thin wrapper around segment_anything.SamPredictor / SAM2's SAM2ImagePredictor.
-
-    Both expose the same predict(point_coords, point_labels, box,
-    multimask_output) -> (masks, scores, logits) signature, so every method
-    below other than __init__ is identical regardless of --sam-version.
-
-    Usage:
-        predictor = SAMPredictor(checkpoint_path="/drive/MyDrive/sam_vit_b_01ec64.pth")
-        masks = predictor.predict_from_points(image_np, point_prompts)
-    """
+    """Thin fail-closed wrapper around the official SAM v1 ViT-B model."""
 
     def __init__(
         self,
-        checkpoint_path: str | Path | None = None,
-        auto_download: bool = True,
+        checkpoint_path: str | Path,
         device: str = "cuda",
-        sam_version: str = "v1",
-        sam2_model_cfg: str | None = None,
-        sam_model_type: str = "auto",
     ) -> None:
-        if sam_version not in {"v1", "v2", "medsam2"}:
-            raise ValueError(f"Unknown sam_version '{sam_version}'. Choose from: v1, v2, medsam2.")
-        self._sam_version = sam_version
-        self._device = device
-        self._sam_model_type = sam_model_type
-
-        if sam_version == "v1":
-            self._init_v1(checkpoint_path, auto_download, device, sam_model_type)
-        elif sam_version == "v2":
-            self._init_v2(
-                checkpoint_path, auto_download, device,
-                sam2_model_cfg or _SAM2_DEFAULT_MODEL_CFG,
-                default_checkpoint_name=_SAM2_DEFAULT_CHECKPOINT_NAME,
-                checkpoint_url=_SAM2_CHECKPOINT_URL,
-                label="SAM2",
-            )
-        else:
-            self._init_v2(
-                checkpoint_path, auto_download, device,
-                sam2_model_cfg or _MEDSAM2_DEFAULT_MODEL_CFG,
-                default_checkpoint_name=_MEDSAM2_DEFAULT_CHECKPOINT_NAME,
-                checkpoint_url=_MEDSAM2_CHECKPOINT_URL,
-                label="MedSAM2",
-            )
-
-    def _init_v1(self, checkpoint_path, auto_download, device, sam_model_type: str = "auto") -> None:
         try:
             from segment_anything import SamPredictor, sam_model_registry
         except ImportError as exc:
@@ -113,140 +27,16 @@ class SAMPredictor:
                 "Run: pip install git+https://github.com/facebookresearch/segment-anything.git"
             ) from exc
 
-        if checkpoint_path is None:
-            checkpoint_path = Path(_DEFAULT_CHECKPOINT_NAME)
         checkpoint_path = Path(checkpoint_path)
-
-        if not checkpoint_path.exists():
-            if auto_download:
-                _download_sam_checkpoint(checkpoint_path)
-            else:
-                raise FileNotFoundError(
-                    f"SAM checkpoint not found at {checkpoint_path}. "
-                    "Pass auto_download=True or provide the correct path."
-                )
-
-        if sam_model_type not in {"auto", "vit_b", "vit_l", "vit_h"}:
-            raise ValueError("sam_model_type must be one of auto, vit_b, vit_l, vit_h")
-        if sam_model_type == "auto":
-            # Official checkpoints are named sam_vit_{b,l,h}.pth.  Keep the
-            # historical ViT-B default for arbitrary filenames/checkpoints.
-            stem = checkpoint_path.stem.lower()
-            sam_model_type = next(
-                (candidate for candidate in ("vit_h", "vit_l", "vit_b") if candidate in stem),
-                "vit_b",
+        if not checkpoint_path.is_file():
+            raise FileNotFoundError(
+                f"SAM ViT-B checkpoint not found at {checkpoint_path}. "
+                "Provide the official sam_vit_b_01ec64.pth file explicitly."
             )
-        if sam_model_type not in sam_model_registry:
-            raise KeyError(f"segment_anything does not provide model type {sam_model_type!r}")
-        sam = sam_model_registry[sam_model_type](checkpoint=str(checkpoint_path))
+
+        sam = sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
         sam.to(device=device)
         self._predictor = SamPredictor(sam)
-
-    def _init_v2(
-        self,
-        checkpoint_path,
-        auto_download,
-        device,
-        model_cfg,
-        default_checkpoint_name,
-        checkpoint_url,
-        label,
-    ) -> None:
-        try:
-            from sam2.build_sam import build_sam2
-            from sam2.sam2_image_predictor import SAM2ImagePredictor
-        except ImportError as exc:
-            install_hint = (
-                "pip install git+https://github.com/bowang-lab/MedSAM2.git"
-                if label == "MedSAM2"
-                else "pip install git+https://github.com/facebookresearch/sam2.git"
-            )
-            raise ImportError(
-                f"sam2 is not installed (needed for --sam-version, {label}). Run: {install_hint}"
-            ) from exc
-
-        if checkpoint_path is None:
-            checkpoint_path = Path(default_checkpoint_name)
-        checkpoint_path = Path(checkpoint_path)
-
-        if not checkpoint_path.exists():
-            if auto_download:
-                _download_checkpoint(checkpoint_url, checkpoint_path, label)
-            else:
-                raise FileNotFoundError(
-                    f"{label} checkpoint not found at {checkpoint_path}. "
-                    "Pass auto_download=True or provide the correct path."
-                )
-
-        sam2_model = self._build_sam2_with_config_fallback(build_sam2, model_cfg, checkpoint_path, device)
-        self._predictor = SAM2ImagePredictor(sam2_model)
-
-    @staticmethod
-    def _build_sam2_with_config_fallback(build_sam2, model_cfg, checkpoint_path, device):
-        """Call build_sam2(), recovering from Hydra not finding the config.
-
-        build_sam2() resolves model_cfg (e.g. "configs/sam2.1_hiera_t512.yaml")
-        through Hydra's search path *inside the installed sam2 package*
-        (pkg://sam2). Some pip-installable forks (observed with
-        bowang-lab/MedSAM2's git+pip install) don't ship their configs/*.yaml
-        files as package data, so the .yaml exists in the git checkout but not
-        in the installed package — build_sam2() then raises
-        hydra.errors.MissingConfigException even though the file is real.
-        When that happens, this locates the actual sam2/configs directory on
-        disk (next to the installed sam2 package, which pip *does* leave
-        alongside the package even when it's not registered as package data)
-        and points Hydra at it directly via initialize_config_dir(), then
-        retries with just the config's basename.
-        """
-        try:
-            return build_sam2(model_cfg, str(checkpoint_path), device=device)
-        except Exception as exc:
-            if "MissingConfigException" not in type(exc).__name__:
-                raise
-
-        import sam2
-        from hydra import initialize_config_dir
-        from hydra.core.global_hydra import GlobalHydra
-
-        sam2_package_dir = Path(sam2.__file__).resolve().parent
-        config_basename = Path(model_cfg).name
-
-        # Some forks (observed with bowang-lab/MedSAM2 installed via plain
-        # `pip install git+...`) never ship configs/*.yaml as package data at
-        # all — include_package_data=True with no matching MANIFEST.in entry
-        # silently drops them from the wheel/sdist. In that case the file
-        # doesn't exist anywhere under the installed package, so a fixed list
-        # of candidate directories can't find it either. Search the whole
-        # site-packages tree the `sam2` package lives in (covers configs
-        # nested at any depth, e.g. sam2/configs/ or sam2/sam2/configs/)
-        # before giving up.
-        site_packages_root = sam2_package_dir.parent
-        config_dir = None
-        for candidate in (sam2_package_dir / "configs", site_packages_root / "configs"):
-            if (candidate / config_basename).exists():
-                config_dir = candidate
-                break
-        if config_dir is None:
-            match = next(site_packages_root.rglob(config_basename), None)
-            if match is not None:
-                config_dir = match.parent
-
-        if config_dir is None:
-            raise FileNotFoundError(
-                f"Could not locate '{config_basename}' anywhere under {site_packages_root} "
-                "to work around Hydra's MissingConfigException — the installed sam2/MedSAM2 "
-                "package appears to not ship its configs/*.yaml files as package data at all "
-                "(a known packaging gap in some forks installed via plain `pip install git+...`). "
-                "Fix: reinstall from a local git checkout in editable mode, e.g.:\n"
-                "  git clone https://github.com/bowang-lab/MedSAM2.git\n"
-                "  pip install -e MedSAM2/\n"
-                "so the configs/ directory stays on disk next to the installed package."
-            )
-
-        if GlobalHydra.instance().is_initialized():
-            GlobalHydra.instance().clear()
-        with initialize_config_dir(config_dir=str(config_dir), version_base=None):
-            return build_sam2(config_basename, str(checkpoint_path), device=device)
 
     def predict_from_points(
         self,
@@ -353,8 +143,6 @@ class SAMPredictor:
                 image_shape=(h, w),
                 margin=prompt_border_margin,
             )
-            if not points:
-                points = original_points[:1]
             if prompt_mode == "point":
                 points = points[:1]
 
@@ -397,6 +185,14 @@ class SAMPredictor:
                 if use_box:
                     box = np.asarray(component.bbox, dtype=np.float32)
 
+            # Reject invalid prompt combinations before calling SAM.  In
+            # particular, a box-only candidate whose oversized box was
+            # dropped must not silently become a promptless predictor call.
+            if prompt_mode == "box" and box is None:
+                continue
+            if prompt_mode in {"point", "joint_points", "box_point"} and point_coords is None and box is None:
+                continue
+
             masks, scores, _ = self._predictor.predict(
                 point_coords=point_coords,
                 point_labels=point_labels,
@@ -407,6 +203,12 @@ class SAMPredictor:
             all_scores.append(scores)
             component_ids.extend([component.component_id] * masks.shape[0])
 
+        if not all_masks:
+            return (
+                np.zeros((0, h, w), dtype=bool),
+                np.zeros(0, dtype=np.float32),
+                np.zeros(0, dtype=np.int32),
+            )
         combined_masks = np.concatenate(all_masks, axis=0)
         combined_scores = np.concatenate(all_scores, axis=0)
         component_id_array = np.asarray(component_ids, dtype=np.int32)

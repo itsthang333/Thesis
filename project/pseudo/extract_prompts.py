@@ -80,9 +80,31 @@ def extract_point_prompts(
     Returns:
         List of (row, col) tuples, sorted by CAM value descending.
     """
+    bone_cam = np.asarray(bone_cam, dtype=np.float32)
+    if bone_cam.ndim != 2:
+        raise ValueError(f"bone_cam must be a 2-D array, got shape={bone_cam.shape}")
+    if not np.isfinite(bone_cam).all():
+        # A NaN/Inf CAM must never be converted into a seemingly valid SAM
+        # prompt.  Returning no prompts lets SAMPredictor fail closed with an
+        # empty candidate set instead of localising arbitrary pixels.
+        return []
+    if max_points <= 0:
+        return []
+    support_is_valid = (
+        support_mask is not None
+        and np.asarray(support_mask).shape == bone_cam.shape
+        and bool(np.asarray(support_mask).astype(bool).any())
+    )
+    cam_range = float(bone_cam.max() - bone_cam.min())
+    if not support_is_valid and (float(bone_cam.max()) <= 0.0 or cam_range <= 1e-6):
+        # Flat/all-zero CAMs contain no spatial evidence.  The previous
+        # fallback used argmax and therefore emitted (0, 0), which could make
+        # SAM return a confident but entirely artificial corner mask.
+        return []
+
     threshold = float(np.percentile(bone_cam, cam_percentile))
     fg = (bone_cam > threshold).astype(np.uint8)
-    if support_mask is not None and support_mask.any():
+    if support_is_valid:
         supported = (fg.astype(bool) & support_mask.astype(bool)).astype(np.uint8)
         if supported.any():
             fg = supported
@@ -125,7 +147,7 @@ def extract_point_prompts(
     # Robust fallback for sparse wrist/finger candidates or aggressive
     # morphology thresholds.
     if not result:
-        candidate = support_mask.astype(bool) if support_mask is not None and support_mask.any() else np.ones_like(bone_cam, dtype=bool)
+        candidate = support_mask.astype(bool) if support_is_valid else np.ones_like(bone_cam, dtype=bool)
         masked_values = np.where(candidate, bone_cam, -np.inf)
         flat_index = int(np.argmax(masked_values))
         r, c = np.unravel_index(flat_index, bone_cam.shape)

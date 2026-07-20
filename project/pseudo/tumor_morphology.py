@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-"""Tumor-specific morphology for BTXRD radiographs.
+"""BTXRD tumor morphology with CAM-dominant local-anomaly guidance.
 
-Unlike RAM-H1200 (hand-only label, so CAM only anchors the whole-hand
-silhouette and the "bone_likelihood" prior in bone_morphology.py leans on
-radiopaque intensity + cortical edges to separate bone from soft tissue),
-BTXRD's classifier is trained directly on a tumor-vs-normal label. Its CAM is
-therefore a much stronger localization signal for *where the lesion is*, so
-this module inverts the weighting used in bone_morphology.py: CAM dominates,
-and the radiographic term looks for local anomalies (both lytic/dark and
-sclerotic/bright) instead of assuming the target region is always radiopaque.
+The radiographic term supports both lytic/dark and sclerotic/bright lesions;
+it does not assume that the target is always the brightest tissue.
 """
 
 from collections import deque
@@ -34,11 +28,9 @@ class TumorComponent:
     score: float
     bbox: tuple[int, int, int, int]  # x0, y0, x1, y1
     positive_points: tuple[tuple[int, int], ...]  # row, col
-    # Chosen from low-CAM pixels inside the component's support region (see
-    # _select_negative_points), not sam_refine.py's bbox-corner heuristic —
-    # a wide support mask (by design, see build_tumor_guidance) can have
-    # corners that are still close to the lesion, while low-CAM interior
-    # points reliably mark "definitely not the lesion" regardless of shape.
+    # Chosen from a low-CAM ring outside the positive component.  Negative
+    # points must not contradict the positive evidence by landing inside the
+    # component itself.
     negative_points: tuple[tuple[int, int], ...] = ()
 
 
@@ -103,8 +95,7 @@ def _local_anomaly_response(gray: np.ndarray, kernel_size: int = 41) -> np.ndarr
 
     Bone tumors can be lytic (locally darker than surrounding bone) or
     sclerotic (locally brighter), so this looks for deviation magnitude in
-    either direction rather than assuming "bright == target" like
-    bone_morphology.py does for plain bone-vs-soft-tissue separation.
+    either direction rather than assuming "bright == target".
     """
     local_mean = _local_mean(gray, kernel_size)
     deviation = np.abs(gray - local_mean)
@@ -264,19 +255,33 @@ def _select_negative_points(
     max_points: int = 4,
     low_percentile: float = 20.0,
 ) -> tuple[tuple[int, int], ...]:
-    """Pick negative SAM prompt points at the component's lowest-CAM pixels.
-
-    sam_refine.py's default negative-point heuristic samples the support
-    bounding box's corners, which can still land close to the lesion when the
-    support region is wide (an intentional tradeoff — see build_tumor_guidance).
-    Sampling low-CAM local minima *inside the component itself* instead marks
-    "definitely not the lesion, even though it's inside the search region we
-    gave SAM" — the exact ambiguity a wide-but-safe support mask creates —
-    using the same non-maximum-suppression as the positive points, just on
-    inverted CAM values so negatives spread out instead of clustering.
-    """
-    rows, cols = np.where(component > 0)
+    """Pick negative SAM prompt points from a low-CAM ring outside a component."""
+    component_mask = component.astype(bool)
+    rows, cols = np.where(component_mask)
     if rows.size == 0 or max_points <= 0:
+        return ()
+
+    # A small outside ring is safer than selecting low-CAM pixels inside the
+    # positive component.  Prefer OpenCV when available, with a NumPy shift
+    # fallback so the geometry is deterministic in the minimal test runtime.
+    radius = max(1, int(round(min(component.shape) * 0.02)))
+    if cv2 is not None:
+        kernel = np.ones((2 * radius + 1, 2 * radius + 1), dtype=np.uint8)
+        dilated = cv2.dilate(component_mask.astype(np.uint8), kernel, iterations=1).astype(bool)
+    else:
+        dilated = component_mask.copy()
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                shifted = np.zeros_like(component_mask)
+                y0, y1 = max(0, dy), min(component.shape[0], component.shape[0] + dy)
+                x0, x1 = max(0, dx), min(component.shape[1], component.shape[1] + dx)
+                sy0, sy1 = max(0, -dy), max(0, -dy) + (y1 - y0)
+                sx0, sx1 = max(0, -dx), max(0, -dx) + (x1 - x0)
+                shifted[y0:y1, x0:x1] = component_mask[sy0:sy1, sx0:sx1]
+                dilated |= shifted
+    ring = dilated & ~component_mask
+    rows, cols = np.where(ring)
+    if rows.size == 0:
         return ()
 
     values = cam[rows, cols]
@@ -291,12 +296,33 @@ def _select_negative_points(
     # picks the lowest-CAM points (local minima) instead of peaks.
     candidates = _find_local_maxima(-low_values, low_rows, low_cols, max_points, min_distance)
 
+    # A nearly flat ring can contain no strict local maxima after the greedy
+    # suppression step.  Keep the negative-prompt contract deterministic by
+    # falling back to the lowest-CAM ring samples; these are still guaranteed
+    # to be outside the positive component.
+    if not candidates:
+        order = np.argsort(low_values)[:max_points]
+        candidates = [
+            (float(-low_values[index]), int(low_rows[index]), int(low_cols[index]))
+            for index in order
+        ]
+
     selected: list[tuple[int, int]] = []
     min_sep_sq = (min_distance * 1.5) ** 2
     for _, row, col in candidates:
         if any((row - pr) ** 2 + (col - pc) ** 2 < min_sep_sq for pr, pc in positive_points):
             continue
         selected.append((row, col))
+    if not selected:
+        # The ring is already disjoint from the component, so when the
+        # positive-point spacing constraint would discard every candidate,
+        # retain the lowest-CAM outside samples rather than silently emitting
+        # a promptless SAM request.
+        selected = [
+            (row, col)
+            for _, row, col in candidates
+            if (row, col) not in positive_points
+        ][:max_points]
     return tuple(selected)
 
 
@@ -370,9 +396,7 @@ def build_class_conditioned_components(
     spurious high-activation noise blobs compete with the real lesion.
 
     Args:
-        image_rgb:      [H, W, 3] uint8, unused directly here but kept for
-                         signature parity with bone_morphology.py's function
-                         of the same name (--dataset dispatch relies on it).
+        image_rgb:      [H, W, 3] uint8 input radiograph.
         per_class_cams: list of [H, W] float32 CAMs, one per active class.
         class_weights:  classifier confidence per active class.
         cam_percentile: Single threshold on the (weighted-max-fused) CAM
@@ -416,10 +440,10 @@ def build_class_conditioned_components(
 
     components_raw = [c for c in _connected_components(support) if int(c.sum()) >= min_component_area]
     if not components_raw:
-        # Nothing survives the area filter -- fall back to whatever CAM
-        # produced, same spirit as build_tumor_guidance's empty-support fallback.
+        # Fallback to p85 only as a second threshold; keep all validation
+        # constraints so a noisy tiny component cannot bypass min_component_area.
         support = (fused_cam >= np.percentile(fused_cam, 85.0)).astype(np.uint8)
-        components_raw = _connected_components(support)
+        components_raw = [c for c in _connected_components(support) if int(c.sum()) >= min_component_area]
 
     components: list[TumorComponent] = []
     if components_raw:
@@ -504,13 +528,22 @@ def build_tumor_guidance(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return continuous tumor likelihood and reconstructed binary support.
 
-    CAM is the dominant cue here (unlike bone_morphology.py's hand-silhouette
-    CAM, BTXRD's classifier is trained directly on tumor presence, so its CAM
-    already localizes the lesion). Local intensity anomaly and edge response
+    BTXRD's classifier is trained directly on tumor presence, so CAM is the
+    dominant cue. Local intensity anomaly and edge response
     refine CAM toward focal abnormal regions rather than assuming radiopaque
     intensity means "target", since lytic lesions are locally darker than
     surrounding bone while sclerotic lesions are locally brighter.
     """
+    fused_cam = np.asarray(fused_cam, dtype=np.float32)
+    if (
+        fused_cam.ndim != 2
+        or not np.isfinite(fused_cam).all()
+        or float(np.ptp(fused_cam)) <= 1e-6
+        or float(fused_cam.max()) <= 1e-6
+    ):
+        shape = image_rgb.shape[:2]
+        return np.zeros(shape, dtype=np.float32), np.zeros(shape, dtype=np.uint8)
+
     gray = _enhance_grayscale(image_rgb, use_clahe=use_clahe)
     edge = _edge_response(gray)
     anomaly = _local_anomaly_response(gray)
@@ -559,11 +592,6 @@ def build_tumor_guidance(
         Image.fromarray(reconstructed * 255, mode="L").save(debug_path / "tumor_support.png")
 
     return tumor_likelihood.astype(np.float32), reconstructed.astype(np.uint8)
-
-
-# Alias matching bone_morphology.py's public name so call sites can import
-# either module under the same local name based on --dataset.
-build_bone_guidance = build_tumor_guidance
 
 
 def fuse_cam_with_bone_guidance(

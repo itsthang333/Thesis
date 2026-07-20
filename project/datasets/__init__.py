@@ -1,6 +1,9 @@
+from .btxrd import BTXRDClassificationDataset, BTXRDSegmentationDataset, resolve_btxrd_root
 from .common import build_image_index
-from .ramh1200 import (
-    RAMH1200ClassificationDataset,
-    RAMH1200SegmentationDataset,
-    resolve_ramh1200_segmentation_root,
-)
+
+__all__ = [
+    "BTXRDClassificationDataset",
+    "BTXRDSegmentationDataset",
+    "build_image_index",
+    "resolve_btxrd_root",
+]

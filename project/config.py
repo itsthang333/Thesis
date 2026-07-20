@@ -14,10 +14,10 @@ DEFAULT_VAL_FRACTION = 0.2
 DEFAULT_SEED = 42
 DEFAULT_ANATOMY_COLUMNS = ("hand",)
 
-SUPPORTED_DATASETS = ("ramh1200", "btxrd")
-DEFAULT_DATASET = "ramh1200"
+DATASET_NAME = "btxrd"
+SUPPORTED_DATASETS = (DATASET_NAME,)
+DEFAULT_DATASET = DATASET_NAME
 DATASET_TARGET_COLUMNS = {
-    "ramh1200": ("hand",),
     "btxrd": ("tumor",),
 }
 
@@ -46,13 +46,13 @@ class SegmentationConfig:
 
 @dataclass(frozen=True)
 class BtxrdBestPipelineConfig:
-    """Frozen, hardware-independent BTXRD WSSS configuration.
+    """Hardware-independent BTXRD WSSS candidate configuration.
 
-    The values are the single pipeline selected after the validation A/B
-    runs.  Device and checkpoint paths are intentionally not part of this
-    object: those are deployment-machine inputs, while the model/prompt/CAM
-    behavior must remain identical when the project is moved to another
-    workstation.
+    The values preserve the earlier validation A/B candidate.  They are not a
+    final scientific freeze after the entity-level split audit: final status
+    requires a clean rerun and a checksum-bearing document produced by
+    tools/freeze_pipeline_config.py. Device/checkpoint paths remain external
+    deployment inputs.
     """
 
     name: str = "btxrd_best"
@@ -77,8 +77,6 @@ class BtxrdBestPipelineConfig:
     min_component_area: int = 100
     mask_score_threshold: float = 0.4
     morphology_fusion_mode: str = "components"
-    sam_version: str = "v1"
-    sam_model_type: str = "vit_b"
     sam_image_size: int = 512
     sam_preserve_aspect: bool = False
     sam_prompt_mode: str = "box_point"
@@ -107,8 +105,8 @@ class BtxrdBestPipelineConfig:
 
 BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 
-# btxrd_hybrid: same CAM/SAM/mask-selection recipe as btxrd_best (validated to
-# give the higher oracle_dice of the two independent pipelines -- contrastive
+# btxrd_hybrid: legacy validation candidate using the same CAM/SAM/mask-selection
+# recipe as btxrd_best (previous experiments reported higher oracle Dice -- contrastive
 # CAM, percentile ensemble, multi-component, SAM prompt ensemble at 512px),
 # combined with the classifier training recipe validated on the other
 # pipeline (25 epochs with early stopping, PuzzleCAM + Teacher-Student
@@ -118,8 +116,9 @@ BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 # oracle_best_single_dice (0.52 vs 0.34) than the other pipeline's, but its
 # own classifier was undertrained relative to the other pipeline's
 # (val_f1=0.6774) -- this profile keeps the winning downstream recipe and
-# swaps in the winning training recipe, to be evaluated on its own oracle
-# diagnostics rather than assumed additive.
+# swaps in the previously stronger training recipe. These figures predate the
+# audited manifest hash 15e675... and cannot be cited as final results; rerun
+# validation and freeze a checksum-bearing configuration before locked test.
 @dataclass(frozen=True)
 class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
     name: str = "btxrd_hybrid"

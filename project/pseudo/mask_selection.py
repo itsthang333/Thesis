@@ -352,11 +352,10 @@ def constrain_to_bone_support(
     selection_method: str = "bone_hybrid",
     support_clip_kernel: int = 5,
 ) -> np.ndarray:
-    """Intersect a candidate/fused mask with the (optionally dilated) bone/tumor
-    support region, falling back to the unclipped mask if the intersection is
-    empty. Shared by select_and_fuse_masks (applied to its final fused mask)
-    and oracle_diagnostics (applied per-candidate, to measure how much Dice
-    the clip step itself costs, independent of mask-selection scoring).
+    """Intersect a candidate/fused mask with the (optionally dilated) tumor
+    support region. An empty intersection stays empty: restoring the original
+    mask would silently bypass the image-derived support constraint. Shared by
+    selection and oracle diagnostics so both measure the same fail-closed rule.
     """
     fused_mask = fused_mask.astype(np.uint8)
     if (
@@ -372,7 +371,7 @@ def constrain_to_bone_support(
         else _binary_dilation(bone_support, kernel_size=support_clip_kernel)
     )
     clipped = fused_mask & support_constraint
-    return clipped.astype(np.uint8) if clipped.any() else fused_mask
+    return clipped.astype(np.uint8)
 
 
 def select_and_fuse_masks(
