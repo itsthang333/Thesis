@@ -626,6 +626,45 @@ def save_cam_preview(
         model.train(was_training)
 
 
+def classifier_epoch_budget_audit(records: list[dict[str, float | int]], requested_epochs: int) -> dict[str, object]:
+    """Diagnose whether the audited validation curve supports the epoch budget."""
+    if not records:
+        raise ValueError("Cannot audit an empty classifier training history")
+    best = max(records, key=lambda row: float(row["val_f1"]))
+    tail = records[-min(3, len(records)):]
+    if len(tail) >= 2:
+        x = np.asarray([float(row["epoch"]) for row in tail], dtype=np.float64)
+        y = np.asarray([float(row["val_f1"]) for row in tail], dtype=np.float64)
+        tail_slope = float(np.polyfit(x, y, 1)[0])
+    else:
+        tail_slope = None
+    last_epoch = int(records[-1]["epoch"])
+    best_epoch = int(best["epoch"])
+    best_at_boundary = best_epoch == last_epoch and last_epoch >= requested_epochs
+    if best_at_boundary:
+        assessment = "budget_boundary_best_requires_longer_ablation"
+    elif last_epoch - best_epoch >= 2 and tail_slope is not None and tail_slope <= 0:
+        assessment = "plateau_or_decline_observed"
+    else:
+        assessment = "inconclusive"
+    return {
+        "metric": "audited-split validation F1",
+        "requested_epochs": int(requested_epochs),
+        "completed_epochs": last_epoch,
+        "best_epoch": best_epoch,
+        "best_val_f1": float(best["val_f1"]),
+        "final_val_f1": float(records[-1]["val_f1"]),
+        "best_at_budget_boundary": best_at_boundary,
+        "tail_window_epochs": [int(row["epoch"]) for row in tail],
+        "tail_val_f1_slope_per_epoch": tail_slope,
+        "assessment": assessment,
+        "decision_rule": (
+            "If the best audited-split validation F1 is at the requested budget boundary, "
+            "run a longer otherwise-identical validation-only budget ablation before test freeze."
+        ),
+    }
+
+
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
     seed_everything(args.seed)
@@ -791,6 +830,7 @@ def main() -> None:
             ])
 
     teacher = None  # created once warmup ends; stays None (attention loss disabled) until then
+    epoch_budget_records: list[dict[str, float | int]] = []
 
     for epoch in range(1, args.epochs + 1):
         if is_multiclass:
@@ -835,6 +875,13 @@ def main() -> None:
         else:
             train_loss, train_metrics, train_counts = run_epoch(model, train_loader, criterion, optimizer, scaler, device, train=True)
             val_loss, val_metrics, val_counts = run_epoch(model, val_loader, criterion, optimizer, scaler, device, train=False)
+
+        epoch_budget_records.append({
+            "epoch": epoch,
+            "val_f1": float(val_metrics["f1"]),
+            "val_weighted_f1": float(val_metrics.get("weighted_f1", val_metrics["f1"])),
+            "val_loss": float(val_loss),
+        })
 
         with history_path.open("a", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
@@ -944,6 +991,21 @@ def main() -> None:
                 f"(patience={args.early_stop_patience}). Best val_f1={best_val_f1:.4f}."
             )
             break
+
+    budget_audit = classifier_epoch_budget_audit(epoch_budget_records, args.epochs)
+    budget_audit.update({
+        "split": args.val_split,
+        "split_manifest": str(args.split_manifest) if args.split_manifest else None,
+        "split_manifest_sha256": (
+            hashlib.sha256(args.split_manifest.resolve().read_bytes()).hexdigest()
+            if args.split_manifest is not None and args.split_manifest.is_file()
+            else None
+        ),
+        "pipeline_profile": args.pipeline_profile,
+    })
+    budget_audit_path = args.output_dir / "classifier_epoch_budget_audit.json"
+    budget_audit_path.write_text(json.dumps(budget_audit, indent=2) + "\n", encoding="utf-8")
+    print(f"Classifier epoch-budget audit: {json.dumps(budget_audit, indent=2)}")
 
 
 if __name__ == "__main__":

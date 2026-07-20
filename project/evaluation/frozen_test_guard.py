@@ -49,8 +49,8 @@ def verify_frozen_test_config(
         raise ValueError("Frozen config checksum mismatch")
     if document.get("status") != "final":
         raise ValueError("Test access requires a frozen config with status='final'")
-    if int(document.get("schema_version", -1)) != 2:
-        raise ValueError("Test access requires frozen-config schema v2")
+    if int(document.get("schema_version", -1)) != 3:
+        raise ValueError("Test access requires frozen-config schema v3")
 
     source = document.get("source") or {}
     expected_commit = str(source.get("git_commit", ""))
@@ -66,6 +66,7 @@ def verify_frozen_test_config(
     for key in (
         "split_manifest",
         "classifier_checkpoint",
+        "classifier_budget_audit",
         "sam_checkpoint",
         "unet_checkpoint",
         "supervised_unet_checkpoint",

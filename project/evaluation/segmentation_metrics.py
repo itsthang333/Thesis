@@ -14,6 +14,13 @@ except ImportError:  # pragma: no cover - environment validation reports this
     ndimage = None
 
 
+LESION_IOU_THRESHOLDS = (0.10, 0.25, 0.50)
+
+
+def _iou_key(threshold: float) -> str:
+    return f"iou{int(round(threshold * 100)):02d}"
+
+
 def _safe_ratio(numerator: float, denominator: float, empty_value: float = 0.0) -> float:
     return float(numerator / denominator) if denominator else float(empty_value)
 
@@ -38,13 +45,14 @@ def _surface_distances(pred: np.ndarray, target: np.ndarray) -> tuple[float, flo
 
 def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> dict[str, int]:
     if ndimage is None:
-        return {
+        empty = {
             "gt_lesions": 0,
             "detected_lesions_any_overlap": 0,
             "predicted_lesions": 0,
             "matched_predicted_lesions_any_overlap": 0,
-            "lesion_tp_one_to_one_iou10": 0,
         }
+        empty.update({f"lesion_tp_one_to_one_{_iou_key(t)}": 0 for t in LESION_IOU_THRESHOLDS})
+        return empty
     structure = ndimage.generate_binary_structure(2, 2)
     target_labels, target_count = ndimage.label(target, structure=structure)
     pred_labels, pred_count = ndimage.label(pred, structure=structure)
@@ -53,39 +61,49 @@ def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> dict[str, int]:
         bool((target & (pred_labels == label)).any()) for label in range(1, pred_count + 1)
     )
 
-    # Maximum-cardinality one-to-one matching at component IoU >= 0.10.
-    # This prevents one merged prediction from receiving credit for multiple
-    # GT lesions (and vice versa), unlike the any-overlap diagnostic above.
-    adjacency: list[list[int]] = []
+    # Maximum-cardinality one-to-one matching at multiple component-IoU
+    # thresholds. This prevents one merged prediction from receiving credit
+    # for multiple GT lesions (and vice versa), unlike any-overlap.
+    pairwise_iou = np.zeros((target_count, pred_count), dtype=np.float64)
     for gt_label in range(1, target_count + 1):
         gt_component = target_labels == gt_label
-        neighbours: list[int] = []
         for pred_label in range(1, pred_count + 1):
             pred_component = pred_labels == pred_label
             intersection = int(np.logical_and(gt_component, pred_component).sum())
             union = int(np.logical_or(gt_component, pred_component).sum())
-            if union and intersection / union >= 0.10:
-                neighbours.append(pred_label - 1)
-        adjacency.append(neighbours)
-    matched_gt_for_pred = [-1] * pred_count
+            pairwise_iou[gt_label - 1, pred_label - 1] = intersection / union if union else 0.0
 
-    def augment(gt_index: int, seen: set[int]) -> bool:
-        for pred_index in adjacency[gt_index]:
-            if pred_index in seen:
-                continue
-            seen.add(pred_index)
-            if matched_gt_for_pred[pred_index] < 0 or augment(matched_gt_for_pred[pred_index], seen):
-                matched_gt_for_pred[pred_index] = gt_index
-                return True
-        return False
+    def maximum_matches(threshold: float) -> int:
+        adjacency = [
+            [pred_index for pred_index in range(pred_count) if pairwise_iou[gt_index, pred_index] >= threshold]
+            for gt_index in range(target_count)
+        ]
+        matched_gt_for_pred = [-1] * pred_count
 
-    one_to_one_matches = sum(augment(gt_index, set()) for gt_index in range(target_count))
+        def augment(gt_index: int, seen: set[int]) -> bool:
+            for pred_index in adjacency[gt_index]:
+                if pred_index in seen:
+                    continue
+                seen.add(pred_index)
+                if matched_gt_for_pred[pred_index] < 0 or augment(matched_gt_for_pred[pred_index], seen):
+                    matched_gt_for_pred[pred_index] = gt_index
+                    return True
+            return False
+
+        return sum(augment(gt_index, set()) for gt_index in range(target_count))
+
+    # Keep counts per threshold so the report exposes sensitivity to the
+    # matching criterion instead of presenting IoU=0.10 as a unique truth.
+    one_to_one = {
+        f"lesion_tp_one_to_one_{_iou_key(threshold)}": int(maximum_matches(threshold))
+        for threshold in LESION_IOU_THRESHOLDS
+    }
     return {
         "gt_lesions": int(target_count),
         "detected_lesions_any_overlap": int(detected),
         "predicted_lesions": int(pred_count),
         "matched_predicted_lesions_any_overlap": int(matched_predictions),
-        "lesion_tp_one_to_one_iou10": int(one_to_one_matches),
+        **one_to_one,
     }
 
 
@@ -150,7 +168,12 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
     detected = sum(int(row.get("detected_lesions_any_overlap", 0)) for row in tumor)
     predicted_lesions = sum(int(row.get("predicted_lesions", 0)) for row in rows)
     matched_predictions = sum(int(row.get("matched_predicted_lesions_any_overlap", 0)) for row in rows)
-    one_to_one_tp = sum(int(row.get("lesion_tp_one_to_one_iou10", 0)) for row in rows)
+    one_to_one_tp = {
+        _iou_key(threshold): sum(
+            int(row.get(f"lesion_tp_one_to_one_{_iou_key(threshold)}", 0)) for row in rows
+        )
+        for threshold in LESION_IOU_THRESHOLDS
+    }
     boundary_eligible = sum(
         isinstance(row.get("hd95_px"), (int, float))
         and math.isfinite(float(row.get("hd95_px", float("nan"))))
@@ -163,7 +186,7 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         key = str(int(row.get("gt_lesions", 0)))
         component_histogram[key] = component_histogram.get(key, 0) + 1
     normal_empty = sum(not bool(row.get("predicted_positive")) for row in normal)
-    return {
+    summary = {
         "images": len(rows),
         "tumor_images": len(tumor),
         "normal_images": len(normal),
@@ -176,6 +199,7 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "mean_tumor_assd_px_conditional_defined": _finite_mean(tumor, "assd_px"),
         "boundary_metric_definition": (
             "conditional mean over tumor images with both GT and prediction non-empty; "
+            "distances are pixels on the resized evaluation grid (not mm); "
             "complete misses are excluded and counted separately"
         ),
         "boundary_metric_eligible_tumor_images": boundary_eligible,
@@ -189,15 +213,9 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         ),
         "lesion_any_overlap_recall": _safe_ratio(detected, gt_lesions),
         "lesion_any_overlap_precision": _safe_ratio(matched_predictions, predicted_lesions),
-        "lesion_one_to_one_iou10_recall": _safe_ratio(one_to_one_tp, gt_lesions),
-        "lesion_one_to_one_iou10_precision": _safe_ratio(one_to_one_tp, predicted_lesions),
-        "lesion_one_to_one_iou10_f1": _safe_ratio(
-            2 * one_to_one_tp, gt_lesions + predicted_lesions
-        ),
         "gt_lesions": gt_lesions,
         "detected_lesions_any_overlap": detected,
         "predicted_lesions": predicted_lesions,
-        "lesion_tp_one_to_one_iou10": one_to_one_tp,
         "multifocal_tumor_images": multifocal_images,
         "multifocal_tumor_image_rate": _safe_ratio(multifocal_images, len(tumor)),
         "gt_component_count_histogram": component_histogram,
@@ -213,6 +231,22 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "fn_pixels": fn,
         "tn_pixels": tn,
     }
+    for threshold in LESION_IOU_THRESHOLDS:
+        key = _iou_key(threshold)
+        tp_at_threshold = one_to_one_tp[key]
+        summary.update({
+            f"lesion_one_to_one_{key}_recall": _safe_ratio(tp_at_threshold, gt_lesions),
+            f"lesion_one_to_one_{key}_precision": _safe_ratio(tp_at_threshold, predicted_lesions),
+            f"lesion_one_to_one_{key}_f1": _safe_ratio(
+                2 * tp_at_threshold, gt_lesions + predicted_lesions
+            ),
+            f"lesion_tp_one_to_one_{key}": tp_at_threshold,
+        })
+    summary["lesion_matching_definition"] = (
+        "maximum-cardinality one-to-one connected-component matching at IoU thresholds "
+        + ", ".join(f"{threshold:.2f}" for threshold in LESION_IOU_THRESHOLDS)
+    )
+    return summary
 
 
 def _lesion_size_bucket(row: dict[str, object]) -> str:
@@ -269,6 +303,10 @@ def bootstrap_group_confidence_intervals(
         "mean_tumor_assd_px_conditional_defined",
         "lesion_one_to_one_iou10_recall",
         "lesion_one_to_one_iou10_precision",
+        "lesion_one_to_one_iou25_recall",
+        "lesion_one_to_one_iou25_precision",
+        "lesion_one_to_one_iou50_recall",
+        "lesion_one_to_one_iou50_precision",
         "normal_empty_prediction_rate",
         "normal_false_positive_case_rate",
     )
@@ -295,6 +333,7 @@ def bootstrap_group_confidence_intervals(
     return {
         "method": "nonparametric bootstrap resampling complete groups with replacement",
         "group_key": group_key,
+        "group_provenance": "heuristic grouping; not verified patient/case identifiers",
         "groups": len(group_ids),
         "iterations": iterations,
         "seed": seed,

@@ -20,11 +20,15 @@ audited group split manifest
   -> U-Net-only deployment inference
 ```
 
+Supervision for classifier/CAM generation is the 10-class image-level
+`tumor_type` label (normal plus nine tumor types), not a binary mask label.
 The known image-level class is the canonical WSSS training protocol.
 Predicted-class CAM is reported separately as a deployment-oriented
 diagnostic. Polygon masks are used only for explicit evaluation, the
 fully-supervised oracle baseline, and held-out U-Net validation/test; they do
-not enter pseudo-label generation.
+not enter pseudo-label generation. Held-out validation polygons are explicitly
+used for U-Net checkpoint/model selection, so they are development labels even
+though the U-Net training targets remain weak pseudo-masks.
 
 ## Immutable inputs
 
@@ -74,6 +78,7 @@ python generate_pseudo_masks.py \
   --process-all --output-dir /path/to/pseudo_train
 
 python train_segmentation.py \
+  --pipeline-profile btxrd_best \
   --data-root /path/to/btxrd \
   --split-manifest /path/to/split_manifest.csv \
   --train-pred-mask-root /path/to/pseudo_train/masks \
@@ -111,23 +116,38 @@ intervals.
   architecture/dataset compatibility, returns original-resolution outputs,
   and records the checkpoint SHA-256.
 - Test-set execution is gated by `BTXRD_RUN_LOCKED_TEST=1` after the final
-  configuration is frozen. Every test-split CLI now requires `--frozen-config`;
+  configuration is frozen. Frozen-config schema v3 also requires a classifier
+  epoch-budget audit showing a plateau/decline on the audited validation split.
+  Every test-split CLI now requires `--frozen-config`;
   its checksum, Git commit, split manifest, SAM, classifier, and both U-Net
   checkpoint hashes are verified before dataset construction.
-- HD95/ASSD are reported only as `*_conditional_defined`, with the eligible,
+- HD95/ASSD are reported only as `*_conditional_defined` in pixels on the
+  resized evaluation grid (not millimetres), with the eligible,
   excluded, and complete-miss counts beside them. They are not presented as
   unconditional end-to-end means.
 - Lesion detection includes maximum one-to-one component matching at IoU >=
-  0.10, alongside explicitly named any-overlap diagnostics and the GT
+  0.10, 0.25, and 0.50, alongside explicitly named any-overlap diagnostics and the GT
   component-count/multifocal distribution.
 - Classifier macro-F1 and tumor-gate AUROC, AUPRC, sensitivity, and specificity
   include percentile CIs from complete heuristic-group bootstrap resampling.
+  These groups are inferred from filenames/stable metadata and are not verified
+  patient identifiers.
 - U-Net training writes `pos_weight_audit.json` containing foreground ratio,
-  empty-mask rate, raw/clamped/fixed candidate weights, and the selected mode.
+  empty-mask rate, raw/clamped/fixed candidate weights, and both raw and
+  effective selected weights. Checkpoint selection keeps positive-lesion Dice
+  primary and uses normal empty-case specificity as a tolerance-based tie-breaker.
   Set `BTXRD_RUN_POS_WEIGHT_ABLATION=1` to run raw and fixed-10 comparisons
   against the canonical clamped run.
 - Pseudo-mask manifest schema v2 distinguishes above-threshold candidates,
   selected candidates/components, SAM calls, and unique prompt points.
+- Any WSSS-versus-fully-supervised performance difference is reported as the
+  observed gap of this complete pipeline (classifier/CAM/SAM selection,
+  pseudo-label noise, optimization, and weak supervision together), not as a
+  causal estimate of the cost of weak labels alone.
+- Before any full pseudo-mask run, the notebook executes a mandatory one-epoch
+  U-Net preflight; its supervised smoke checkpoint is never reported as WSSS.
+  The SAM smoke cell processes five deterministic validation images with the
+  full prompt ensemble and requires CUDA.
 
 ## Tests
 

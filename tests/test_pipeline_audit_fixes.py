@@ -314,6 +314,10 @@ class ReportingMetricTests(unittest.TestCase):
         metrics = segmentation_metrics.segmentation_metrics(prediction, target)
         self.assertEqual(metrics["detected_lesions_any_overlap"], 2)
         self.assertEqual(metrics["lesion_tp_one_to_one_iou10"], 1)
+        self.assertEqual(metrics["lesion_tp_one_to_one_iou25"], 1)
+        self.assertEqual(metrics["lesion_tp_one_to_one_iou50"], 0)
+        summary = segmentation_metrics.summarize_segmentation_rows([metrics])
+        self.assertIn("0.10, 0.25, 0.50", summary["lesion_matching_definition"])
 
     def test_classifier_group_bootstrap_reports_required_intervals(self) -> None:
         rows = [
@@ -332,6 +336,7 @@ class ReportingMetricTests(unittest.TestCase):
             {"macro_f1", "tumor_gate_auroc", "tumor_gate_auprc",
              "tumor_gate_sensitivity", "tumor_gate_specificity"},
         )
+        self.assertIn("not verified patient", result["group_provenance"])
 
 
 class FrozenTestGuardTests(unittest.TestCase):

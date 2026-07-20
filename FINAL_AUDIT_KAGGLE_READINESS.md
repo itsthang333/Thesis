@@ -54,7 +54,7 @@ Repository phải được review, commit, push, rồi notebook phải khóa ch�
 | P0 | U-Net có thể train với pseudo-mask thiếu/sai split/sai nội dung | Đã bắt buộc completeness, shape, binary values và SHA-256 từng mask | `btxrd.py`, `pseudo/manifest.py` |
 | P0 | Resume U-Net trước đây không đủ state/provenance và có thể tiếp tục sai config | Đã lưu/khôi phục model, best model, optimizer, scaler, RNG, epoch/global step; fail khi split/config/pseudo hash/`pos_weight` lệch | `train_segmentation.py`; integration test phụ thuộc PyTorch |
 | P0 | Normal images có thể làm phồng Dice trung bình | Main result nay là tumor-only; normal empty-rate/FPR báo riêng | `evaluation/segmentation_metrics.py`, hai evaluator |
-| P0 | Test có nguy cơ được chạy/tuning trước freeze | Mọi test CLI bắt buộc frozen-config schema v2 được kiểm checksum/commit/artifact hashes trước dataset construction | `thesis_final.ipynb`, `evaluation/frozen_test_guard.py`, `freeze_pipeline_config.py` |
+| P0 | Test có nguy cơ được chạy/tuning trước freeze | Mọi test CLI bắt buộc frozen-config schema v3 được kiểm checksum/commit/artifact hashes và classifier-budget audit trước dataset construction | `thesis_final.ipynb`, `evaluation/frozen_test_guard.py`, `freeze_pipeline_config.py` |
 | P1 | CAM phẳng/NaN tạo prompt giả ở góc `(0,0)` | Fail-closed: không support, không prompt | `extract_prompts.py`, `tumor_morphology.py`; unit tests |
 | P1 | Negative prompt có thể nằm trong component dương hoặc bị fallback trở lại | Đã loại và test negative point ngoài component; bỏ fallback prompt biên | `tumor_morphology.py`, `sam_refine.py` |
 | P1 | Candidate dưới threshold hoặc ngoài support có thể được giữ lại ngầm | Production mặc định empty; `keep-best` chỉ debug opt-in; support clip rỗng giữ empty | `mask_selection.py`; unit tests |
@@ -138,6 +138,8 @@ Hai protocol phải giữ riêng:
 
 Fully-supervised baseline `image → polygon GT → U-Net` dùng cùng split/image size/training budget nhưng phải báo là upper-bound reference, không phải kết quả WSSS.
 
+Khoảng cách WSSS–fully-supervised chỉ được diễn giải là **observed gap của toàn pipeline hiện tại** (classifier, CAM, SAM, selection, pseudo-label noise và optimization), không phải ước lượng nhân quả riêng cho “weak-label cost”.
+
 ## F. Formula and metric verification
 
 ### Classifier và WSSS losses
@@ -167,7 +169,7 @@ Chỉ candidate đạt `score ≥ 0.4` mới được nhận. Production không 
 - Weighted BCEWithLogits dùng `pos_weight = background_pixels / foreground_pixels`, tính trên actual train masks.
 - Soft Dice: `D_soft = (2Σ p_i y_i + ε)/(Σp_i + Σy_i + ε)`.
 - `L_UNet = 0.5·BCE_pos_weight + 0.5·(1-D_soft)`.
-- Best checkpoint được chọn bằng `val_positive_dice`, tức Dice chỉ trên validation images có lesion; normal cases được theo dõi riêng.
+- Best checkpoint dùng `val_positive_dice` làm metric chính; trong tolerance `1e-4`, `val_normal_empty_case_specificity` là tie-breaker để kiểm soát false-positive trên ảnh normal.
 
 ### Reporting metrics
 
@@ -177,7 +179,7 @@ Chỉ candidate đạt `score ≥ 0.4` mới được nhận. Production không 
 - Cả GT và prediction rỗng: per-image Dice/IoU = 1 theo convention; nhưng normal images không được trộn vào main tumor Dice.
 - Chỉ một mask rỗng: Dice/IoU = 0; HD95/ASSD = undefined và được ghi `null` ở JSON, đồng thời đếm failure.
 - HD95 và ASSD đo symmetric surface distance trên grid ảnh đã resize, đơn vị **pixel ở resolution đánh giá**, không phải mm vì dataset không cung cấp pixel spacing đáng tin cậy.
-- Lesion detection hiện dùng 8-connected components và quy tắc “có ít nhất một pixel overlap”. Vì quy tắc này có thể dễ dãi với mask lớn, phải đọc cùng Dice/pixel precision; không diễn giải nó như IoU@0.5 object detection AP.
+- Lesion detection báo cả any-overlap diagnostic và maximum-cardinality one-to-one matching ở component IoU `0.10`, `0.25`, `0.50`; không diễn giải các chỉ số này như object-detection AP.
 - 95% CI dùng nonparametric bootstrap theo toàn bộ `group_id`, không resample từng image. CI vẫn kế thừa giới hạn heuristic group.
 - Subgroups: center, anatomy, view, tumor type và lesion-size buckets `<1%`, `1–5%`, `≥5%` image area.
 - Classifier AP dùng non-interpolated Average Precision theo distinct score thresholds, không phụ thuộc thứ tự khi tie; AUROC dùng average ranks.
@@ -360,6 +362,7 @@ python project/tools/freeze_pipeline_config.py \
   --profile btxrd_best --status final \
   --split-manifest <AUDIT_DIR>/split_manifest.csv \
   --classifier-checkpoint <NEW_RUN_ROOT>/classifier_btxrd_best/best_classifier.pt \
+  --classifier-budget-audit <NEW_RUN_ROOT>/classifier_btxrd_best/classifier_epoch_budget_audit.json \
   --sam-checkpoint <SAM_VIT_B_CHECKPOINT> \
   --unet-checkpoint <NEW_RUN_ROOT>/unet_from_pseudo/best_unet.pt \
   --supervised-unet-checkpoint <NEW_RUN_ROOT>/unet_supervised_oracle/best_unet.pt \
@@ -466,4 +469,3 @@ Final package phải có tối thiểu:
 - [ ] Final verdict được audit lại; chỉ khi không còn blocker mới đổi thành `GO`.
 
 **Kết luận cuối tại thời điểm báo cáo: NO-GO.**
-

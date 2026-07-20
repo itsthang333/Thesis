@@ -66,12 +66,20 @@ def parse_args() -> argparse.Namespace:
         "--pipeline-profile",
         type=str,
         default="default",
-        choices=["default", "btxrd_best"],
+        choices=["default", "btxrd_best", "btxrd_hybrid"],
         help=(
-            "Use a reproducible tested configuration. btxrd_best selects the current "
+            "Use a reproducible tested downstream configuration. btxrd_best and btxrd_hybrid select the same "
             "BTXRD validation configuration (320px CAM, 512px SAM, CAM contrast/"
             "percentile ensemble, prompt ensemble and coverage_mass_sam). It never "
             "enables polygon/bbox inputs."
+        ),
+    )
+    parser.add_argument(
+        "--allow-validation-component-topk-ablation",
+        action="store_true",
+        help=(
+            "Allow an explicit --component-topk override under btxrd_best only on split=val. "
+            "This is a diagnostic ablation and must never be used for canonical train/test artifacts."
         ),
     )
     parser.add_argument("--data-root", type=Path, required=True, help="BTXRD dataset root")
@@ -296,7 +304,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if args.pipeline_profile == "default":
         return args
     if args.dataset != "btxrd":
-        raise ValueError("--pipeline-profile btxrd_best requires BTXRD")
+        raise ValueError(f"--pipeline-profile {args.pipeline_profile} requires BTXRD")
 
     explicit = getattr(args, "_explicit_options", set())
 
@@ -306,7 +314,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     # irreproducible.
     if "--classifier-checkpoint" not in explicit:
         raise ValueError(
-            "--pipeline-profile btxrd_best requires an explicit "
+            f"--pipeline-profile {args.pipeline_profile} requires an explicit "
             "--classifier-checkpoint from the current training run"
         )
 
@@ -317,12 +325,22 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     profile = BTXRD_BEST_PIPELINE
 
     def require_or_set(option: str, attribute: str, expected: object) -> None:
+        if (
+            option == "--component-topk"
+            and args.allow_validation_component_topk_ablation
+            and args.split == "val"
+            and option in explicit
+        ):
+            return
         if option in explicit and getattr(args, attribute) != expected:
             raise ValueError(
-                f"--pipeline-profile btxrd_best fixes {option}={expected!r}; "
+                f"--pipeline-profile {args.pipeline_profile} fixes {option}={expected!r}; "
                 f"received {getattr(args, attribute)!r}"
             )
         setattr(args, attribute, expected)
+
+    if args.allow_validation_component_topk_ablation and args.split != "val":
+        raise ValueError("component_topk ablation is allowed only on the validation split")
 
     require_or_set("--target-columns", "target_columns", ",".join(profile.target_columns))
     require_or_set("--image-size", "image_size", profile.classifier_image_size)
@@ -379,7 +397,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     }
     for option, attribute in locked_true.items():
         if option in explicit and not getattr(args, attribute):
-            raise ValueError(f"--pipeline-profile btxrd_best requires {option}")
+            raise ValueError(f"--pipeline-profile {args.pipeline_profile} requires {option}")
         setattr(args, attribute, True)
 
     forbidden_disable_flags = {
@@ -390,7 +408,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     }
     for option in forbidden_disable_flags:
         if option in explicit:
-            raise ValueError(f"--pipeline-profile btxrd_best rejects {option}")
+            raise ValueError(f"--pipeline-profile {args.pipeline_profile} rejects {option}")
 
     locked_false = {
         "--sam-preserve-aspect": "sam_preserve_aspect",
@@ -404,11 +422,11 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     }
     for option, attribute in locked_false.items():
         if option in explicit and getattr(args, attribute):
-            raise ValueError(f"--pipeline-profile btxrd_best fixes {option} off")
+            raise ValueError(f"--pipeline-profile {args.pipeline_profile} fixes {option} off")
         setattr(args, attribute, False)
 
     if "--auxiliary-binary-checkpoint" in explicit:
-        raise ValueError("--pipeline-profile btxrd_best does not use an auxiliary binary checkpoint")
+        raise ValueError(f"--pipeline-profile {args.pipeline_profile} does not use an auxiliary binary checkpoint")
 
     # These fields are metadata only; keep them out of the downstream API so
     # profile selection cannot accidentally become a data source.

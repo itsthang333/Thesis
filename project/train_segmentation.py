@@ -28,6 +28,12 @@ from models.unet import UNet
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train U-Net on BTXRD tumor masks")
     parser.set_defaults(dataset="btxrd")
+    parser.add_argument(
+        "--pipeline-profile",
+        choices=["btxrd_best", "btxrd_hybrid"],
+        default="btxrd_best",
+        help="Provenance label shared with classifier/CAM/SAM commands; U-Net recipe is common to both.",
+    )
     parser.add_argument("--data-root", type=Path, required=True, help="BTXRD dataset root")
     parser.add_argument("--train-split", type=str, default="train")
     parser.add_argument("--val-split", type=str, default="val")
@@ -54,6 +60,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_positive_dice does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
+    parser.add_argument(
+        "--checkpoint-dice-tolerance",
+        type=float,
+        default=1e-4,
+        help=(
+            "Validation positive-Dice values within this absolute tolerance are treated as tied; "
+            "the checkpoint with higher normal empty-case specificity wins. This keeps lesion "
+            "Dice primary while controlling false-positive masks on normal radiographs."
+        ),
+    )
     parser.add_argument("--train-pred-mask-root", type=Path, default=None,
                         help="btxrd only. Directory of pseudo-mask PNGs (generate_pseudo_masks.py's "
                         "masks/ output) for --train-split, one file per image named "
@@ -209,6 +225,8 @@ def scan_mask_statistics(train_dataset, num_workers: int = 0, batch_size: int = 
             "No foreground (lesion) pixels found in the entire train set -- pos_weight is "
             "undefined. Check that annotations/pseudo-masks are loading correctly before training."
         )
+    if image_count <= 0 or total_pixels <= 0:
+        raise ValueError("Cannot compute mask statistics from an empty train dataset")
     return {
         "images": image_count,
         "total_pixels": int(total_pixels),
@@ -296,6 +314,7 @@ def save_checkpoint(
     best_model_state_dict: dict[str, torch.Tensor] | None = None,
     best_epoch: int | None = None,
     global_step: int = 0,
+    best_tiebreak_metric: float | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     # Unwrap nn.DataParallel before saving: DataParallel prefixes every state_dict
@@ -314,6 +333,12 @@ def save_checkpoint(
         "global_step": int(global_step),
         "best_metric": best_metric,
         "best_metric_name": "val_positive_dice",
+        "best_tiebreak_metric": best_tiebreak_metric,
+        "best_tiebreak_metric_name": "val_normal_empty_case_specificity",
+        "checkpoint_selection_rule": (
+            "maximize val_positive_dice; within checkpoint_dice_tolerance maximize "
+            "val_normal_empty_case_specificity"
+        ),
         "dataset": dataset,
         "pos_weight": pos_weight,
         "pos_weight_audit": getattr(run_config, "_pos_weight_audit", None) if run_config else None,
@@ -370,8 +395,6 @@ def save_checkpoint(
                 "git_dirty": git_dirty,
             }
         )
-    if image_count <= 0 or total_pixels <= 0:
-        raise ValueError("Cannot compute mask statistics from an empty train dataset")
     if best_model_state_dict is not None:
         state["best_model_state_dict"] = {
             key: value.detach().cpu().clone() for key, value in best_model_state_dict.items()
@@ -412,6 +435,31 @@ def ensure_history_schema(path: Path, start_fresh: bool) -> None:
 def clone_model_state(model: nn.Module) -> dict[str, torch.Tensor]:
     model_to_save = model.module if isinstance(model, nn.DataParallel) else model
     return {key: value.detach().cpu().clone() for key, value in model_to_save.state_dict().items()}
+
+
+def is_better_checkpoint(
+    candidate_dice: float,
+    candidate_normal_specificity: float,
+    best_dice: float,
+    best_normal_specificity: float,
+    dice_tolerance: float,
+) -> bool:
+    """Lexicographic selection with a clinically relevant normal-case tie-break.
+
+    Positive-target Dice remains the primary endpoint. Only values that are
+    statistically indistinguishable at the configured numerical tolerance use
+    the normal empty-case rate, preventing an arbitrary earlier checkpoint from
+    winning while producing more false-positive normal masks.
+    """
+    if dice_tolerance < 0:
+        raise ValueError("--checkpoint-dice-tolerance must be non-negative")
+    if candidate_dice > best_dice + dice_tolerance:
+        return True
+    return (
+        candidate_dice >= best_dice
+        and candidate_dice - best_dice <= dice_tolerance
+        and candidate_normal_specificity > best_normal_specificity
+    )
 
 
 def restore_best_checkpoint_from_resume(
@@ -529,6 +577,7 @@ def main() -> None:
             "none": None,
         },
         "selected_pos_weight": pos_weight,
+        "effective_pos_weight": pos_weight,
         "clamp_min": args.pos_weight_clamp_min,
         "clamp_max": args.pos_weight_clamp_max,
         "ablation_note": (
@@ -545,6 +594,7 @@ def main() -> None:
 
     history_path = args.output_dir / "training_log.csv"
     best_val_positive_dice = -1.0
+    best_val_normal_specificity = -1.0
     epochs_without_improvement = 0
     start_epoch = 1
     best_model_state_dict: dict[str, torch.Tensor] | None = None
@@ -559,6 +609,7 @@ def main() -> None:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         if checkpoint.get("best_metric_name") == "val_positive_dice":
             best_val_positive_dice = checkpoint.get("best_metric", -1.0)
+            best_val_normal_specificity = float(checkpoint.get("best_tiebreak_metric", -1.0) or -1.0)
             epochs_without_improvement = int(checkpoint.get("epochs_without_improvement", 0))
             best_epoch = int(checkpoint.get("best_epoch", checkpoint.get("epoch", 0)))
             raw_best_state = checkpoint.get("best_model_state_dict")
@@ -601,7 +652,8 @@ def main() -> None:
             random.setstate(checkpoint["python_rng_state"])
         print(
             f"Resumed at epoch {start_epoch} "
-            f"(best_val_positive_dice so far: {best_val_positive_dice:.4f})"
+            f"(best_val_positive_dice={best_val_positive_dice:.4f}, "
+            f"best_val_normal_specificity={best_val_normal_specificity:.4f})"
         )
         # pos_weight is recomputed above from the CURRENT train_dataset (so it
         # always reflects --train-pred-mask-root as currently set), not
@@ -664,7 +716,8 @@ def main() -> None:
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_dice={train_metrics['dice']:.4f} "
             f"val_loss={val_loss:.4f} val_dice={val_metrics['dice']:.4f} "
-            f"val_positive_dice={val_metrics['positive_dice']:.4f}"
+            f"val_positive_dice={val_metrics['positive_dice']:.4f} "
+            f"val_normal_empty_case_specificity={val_metrics['empty_specificity']:.4f}"
         )
 
         # Update best metric for THIS epoch before saving last_unet.pt, so its
@@ -672,22 +725,33 @@ def main() -> None:
         # rather than lagging one epoch behind -- otherwise resuming from
         # last_unet.pt reads a stale best_metric and can let a worse later
         # epoch overwrite best_unet.pt.
-        if val_metrics["positive_dice"] > best_val_positive_dice:
+        if is_better_checkpoint(
+            val_metrics["positive_dice"],
+            val_metrics["empty_specificity"],
+            best_val_positive_dice,
+            best_val_normal_specificity,
+            args.checkpoint_dice_tolerance,
+        ):
             best_val_positive_dice = val_metrics["positive_dice"]
+            best_val_normal_specificity = val_metrics["empty_specificity"]
             best_epoch = epoch
             best_model_state_dict = clone_model_state(model)
             epochs_without_improvement = 0
             save_checkpoint(
                 args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice,
                 args.dataset, pos_weight, scaler, args, epochs_without_improvement,
-                best_model_state_dict, best_epoch, global_step,
+                best_model_state_dict, best_epoch, global_step, best_val_normal_specificity,
             )
             save_checkpoint(
                 args.output_dir / "best_unet.pt", model, optimizer, epoch, best_val_positive_dice,
                 args.dataset, pos_weight, scaler, args, epochs_without_improvement,
-                best_model_state_dict, best_epoch, global_step,
+                best_model_state_dict, best_epoch, global_step, best_val_normal_specificity,
             )
-            print(f"--> Saved new best model with positive-target Dice = {best_val_positive_dice:.4f}")
+            print(
+                "--> Saved new best model: "
+                f"positive-target Dice={best_val_positive_dice:.4f}, "
+                f"normal empty-case specificity={best_val_normal_specificity:.4f}"
+            )
         else:
             epochs_without_improvement += 1
             if best_model_state_dict is None:
@@ -695,7 +759,7 @@ def main() -> None:
             save_checkpoint(
                 args.output_dir / "last_unet.pt", model, optimizer, epoch, best_val_positive_dice,
                 args.dataset, pos_weight, scaler, args, epochs_without_improvement,
-                best_model_state_dict, best_epoch, global_step,
+                best_model_state_dict, best_epoch, global_step, best_val_normal_specificity,
             )
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:

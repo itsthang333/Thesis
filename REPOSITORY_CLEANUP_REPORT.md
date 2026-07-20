@@ -198,9 +198,10 @@ Until those runtime checks pass, the correct release verdict remains
 - Pure-box SAM calls explicitly ignore negative points and enforce the
   point-coordinates/point-labels invariant; regression tested with a fake SAM
   predictor.
-- All test-split entrypoints require frozen-config schema v2. Verification now
+- All test-split entrypoints require frozen-config schema v3. Verification now
   precedes dataset construction and checks checksum, Git commit, split
-  manifest, SAM, classifier, WSSS U-Net, and supervised U-Net hashes.
+  manifest, classifier epoch-budget audit, SAM, classifier, WSSS U-Net, and
+  supervised U-Net hashes.
 - The notebook no longer inspects test split distributions and performs only
   validation evaluation until the final freeze is created and verified.
 - HD95/ASSD means are explicitly conditional on defined boundary pairs and

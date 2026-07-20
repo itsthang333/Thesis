@@ -211,6 +211,7 @@ def classifier_group_bootstrap_confidence_intervals(
     return {
         "method": "nonparametric percentile bootstrap of complete heuristic groups",
         "group_key": group_key,
+        "group_provenance": "heuristic grouping; not verified patient/case identifiers",
         "groups": len(group_ids),
         "iterations": iterations,
         "seed": seed,

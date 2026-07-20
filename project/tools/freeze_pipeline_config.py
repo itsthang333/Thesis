@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--profile", choices=("btxrd_best", "btxrd_hybrid"), default="btxrd_best")
     parser.add_argument("--split-manifest", type=Path)
     parser.add_argument("--classifier-checkpoint", type=Path)
+    parser.add_argument("--classifier-budget-audit", type=Path)
     parser.add_argument("--sam-checkpoint", type=Path)
     parser.add_argument("--unet-checkpoint", type=Path)
     parser.add_argument("--supervised-unet-checkpoint", type=Path)
@@ -64,14 +65,24 @@ def main() -> None:
         for label, path in (
             ("split manifest", args.split_manifest),
             ("classifier checkpoint", args.classifier_checkpoint),
+            ("classifier epoch-budget audit", args.classifier_budget_audit),
             ("SAM checkpoint", args.sam_checkpoint),
             ("U-Net checkpoint", args.unet_checkpoint),
             ("supervised U-Net checkpoint", args.supervised_unet_checkpoint),
         ):
             if path is None or not path.is_file():
                 raise FileNotFoundError(f"Final freeze requires a local {label}: {path}")
+        budget_audit = json.loads(args.classifier_budget_audit.read_text(encoding="utf-8"))
+        if budget_audit.get("assessment") != "plateau_or_decline_observed":
+            raise ValueError(
+                "Final freeze requires classifier epoch-budget assessment=plateau_or_decline_observed"
+            )
+        if budget_audit.get("pipeline_profile") != args.profile:
+            raise ValueError("Classifier epoch-budget audit profile differs from --profile")
+        if budget_audit.get("split_manifest_sha256") != sha256_file(args.split_manifest):
+            raise ValueError("Classifier epoch-budget audit used a different split manifest")
     document: dict[str, object] = {
-        "schema_version": 2,
+        "schema_version": 3,
         "status": args.status,
         "profile": asdict(profile),
         "source": {"branch": "pipeline", "git_commit": commit, "git_dirty": dirty},
@@ -82,6 +93,10 @@ def main() -> None:
         "classifier_checkpoint": (
             {"path": str(args.classifier_checkpoint.resolve()), "sha256": sha256_file(args.classifier_checkpoint)}
             if args.classifier_checkpoint and args.classifier_checkpoint.is_file() else None
+        ),
+        "classifier_budget_audit": (
+            {"path": str(args.classifier_budget_audit.resolve()), "sha256": sha256_file(args.classifier_budget_audit)}
+            if args.classifier_budget_audit and args.classifier_budget_audit.is_file() else None
         ),
         "sam_checkpoint": (
             {"path": str(args.sam_checkpoint.resolve()), "sha256": sha256_file(args.sam_checkpoint)}
