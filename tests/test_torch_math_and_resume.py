@@ -21,6 +21,26 @@ if str(PROJECT_ROOT) not in sys.path:
 
 @unittest.skipIf(torch is None, "PyTorch is not installed in the lightweight audit environment")
 class TorchMathTests(unittest.TestCase):
+    def test_classifier_budget_audit_runs_after_early_stopping(self) -> None:
+        from train_classifier import classifier_epoch_budget_audit
+
+        records = [
+            {"epoch": 13, "val_f1": 0.38},
+            {"epoch": 14, "val_f1": 0.4096},
+            {"epoch": 15, "val_f1": 0.39},
+            {"epoch": 16, "val_f1": 0.37},
+            {"epoch": 17, "val_f1": 0.36},
+            {"epoch": 18, "val_f1": 0.35},
+            {"epoch": 19, "val_f1": 0.34},
+            {"epoch": 20, "val_f1": 0.33},
+            {"epoch": 21, "val_f1": 0.32},
+        ]
+        audit = classifier_epoch_budget_audit(records, requested_epochs=30)
+
+        self.assertEqual(audit["assessment"], "plateau_or_decline_observed")
+        self.assertEqual(audit["best_epoch"], 14)
+        self.assertAlmostEqual(audit["best_val_f1"], 0.4096)
+
     def test_bce_dice_formula(self) -> None:
         from models.losses import bce_dice_loss, dice_loss_from_logits
 
