@@ -9,7 +9,7 @@ class NotebookBootstrapTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         notebook_path = Path(__file__).resolve().parents[1] / "thesis_final.ipynb"
-        cls.notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+        cls.notebook = json.loads(notebook_path.read_text(encoding="utf-8-sig"))
         cls.code_sources = [
             cell.get("source", "")
             for cell in cls.notebook["cells"]
@@ -38,6 +38,47 @@ class NotebookBootstrapTests(unittest.TestCase):
             "/kaggle/input/datasets/wanwin/data-btxrd/BTXRD",
             self.code_sources[0],
         )
+
+
+class ColabNotebookBootstrapTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        notebook_path = Path(__file__).resolve().parents[1] / "thesis_final_colab.ipynb"
+        cls.notebook = json.loads(notebook_path.read_text(encoding="utf-8-sig"))
+        cls.code_sources = [
+            cell.get("source", "")
+            for cell in cls.notebook["cells"]
+            if cell.get("cell_type") == "code"
+        ]
+
+    def test_colab_gpu_metadata_and_bootstrap_order(self) -> None:
+        self.assertEqual(self.notebook["metadata"]["accelerator"], "GPU")
+        self.assertEqual(self.notebook["metadata"]["colab"]["gpuType"], "T4")
+        self.assertIn("# Cell 0 - Google Colab bootstrap", self.code_sources[0])
+        self.assertIn("# Cell 1 - immutable inputs", self.code_sources[1])
+
+    def test_colab_bootstrap_provisions_external_inputs(self) -> None:
+        source = self.code_sources[0]
+        for required in (
+            'Path("/content")',
+            '"git", "clone"',
+            'DRIVE_DATASET_ROOT = Path("/content/drive/MyDrive/Thesis/BTXRD")',
+            'drive.mount("/content/drive")',
+            'dataset_root / "images"',
+            'dataset_root / "Annotations"',
+            'dataset_root / "dataset.xlsx"',
+            "sam_vit_b_01ec64.pth",
+            "build_btxrd_split_manifest.py",
+            'os.environ.setdefault("BTXRD_DISABLE_TQDM", "1")',
+        ):
+            self.assertIn(required, source)
+        self.assertNotIn("kagglehub.dataset_download", source)
+
+    def test_colab_notebook_has_final_drive_persistence(self) -> None:
+        source = self.code_sources[-1]
+        self.assertIn('drive.mount("/content/drive")', source)
+        self.assertIn("shutil.copytree(OUTPUT_ROOT, drive_destination)", source)
+        self.assertIn("Refusing to overwrite", source)
 
 
 if __name__ == "__main__":

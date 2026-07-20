@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
 from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
 from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
 from datasets.factory import build_segmentation_dataset
+from progress import should_disable_tqdm
 from evaluation.segmentation_metrics import (
     bootstrap_group_confidence_intervals,
     json_safe,
@@ -188,7 +189,9 @@ def main() -> None:
     tumor_skipped_count = 0
     missing = 0
 
-    for _, gt_masks, image_names in tqdm(loader, desc="evaluate"):
+    for _, gt_masks, image_names in tqdm(
+        loader, desc="evaluate", disable=should_disable_tqdm()
+    ):
         pred_masks = []
         valid_names = []
         valid_gt = []

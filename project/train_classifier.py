@@ -28,6 +28,7 @@ from config import (
 from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
+from progress import should_disable_tqdm
 from models.puzzle_cam import puzzle_alpha as puzzle_alpha_schedule, puzzle_cam_consistency_loss
 from models.teacher_student import EMATeacher, attention_distillation_loss
 from pseudo.generate_layercam import generate_fused_cam
@@ -312,7 +313,12 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
     batches = 0
     model.train(train)
 
-    progress = tqdm(loader, desc="train" if train else "val", leave=False)
+    progress = tqdm(
+        loader,
+        desc="train" if train else "val",
+        leave=False,
+        disable=should_disable_tqdm(),
+    )
     for images, targets, _ in progress:
         images = images.to(device)
         targets = targets.to(device)
@@ -383,7 +389,12 @@ def run_epoch_multiclass(
     samples = 0
     model.train(train)
 
-    progress = tqdm(loader, desc="train" if train else "val", leave=False)
+    progress = tqdm(
+        loader,
+        desc="train" if train else "val",
+        leave=False,
+        disable=should_disable_tqdm(),
+    )
     for images, targets, _ in progress:
         images = images.to(device)
         targets = targets.to(device)  # [B], long class indices -- do NOT unsqueeze

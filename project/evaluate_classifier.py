@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
 from config import DEFAULT_DATASET, SUPPORTED_DATASETS
 from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
 from datasets.factory import build_classification_dataset
+from progress import should_disable_tqdm
 from evaluation.classification_metrics import (
     binary_average_precision,
     binary_auroc,
@@ -112,7 +113,11 @@ def main() -> None:
     all_targets: list[np.ndarray] = []
     image_names: list[str] = []
     with torch.no_grad():
-        for images, targets, names in tqdm(loader, desc=f"classifier-{args.split}"):
+        for images, targets, names in tqdm(
+            loader,
+            desc=f"classifier-{args.split}",
+            disable=should_disable_tqdm(),
+        ):
             logits = model(images.to(device))
             probabilities = torch.softmax(logits, dim=1) if task == "single-label" else torch.sigmoid(logits)
             all_probabilities.append(probabilities.cpu().numpy())

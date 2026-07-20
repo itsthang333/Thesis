@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
 
 from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
 from datasets.factory import build_segmentation_dataset
+from progress import should_disable_tqdm
 from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
 from evaluation.segmentation_metrics import (
     bootstrap_group_confidence_intervals,
@@ -140,7 +141,11 @@ def main() -> None:
     rows: list[dict[str, object]] = []
 
     with torch.no_grad():
-        for images, targets, image_names in tqdm(loader, desc=f"evaluate-unet-{args.split}"):
+        for images, targets, image_names in tqdm(
+            loader,
+            desc=f"evaluate-unet-{args.split}",
+            disable=should_disable_tqdm(),
+        ):
             logits = model(images.to(device))
             predictions = (torch.sigmoid(logits).cpu() >= threshold).float()
             for pred, target, image_name in zip(predictions, targets, image_names):

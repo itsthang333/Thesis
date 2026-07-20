@@ -37,6 +37,7 @@ from config import (
     DEFAULT_DATASET,
     SUPPORTED_DATASETS,
 )
+from progress import should_disable_tqdm
 from datasets.factory import build_classification_dataset, build_segmentation_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
@@ -865,7 +866,9 @@ def main() -> None:
             "or ['tumor'] so the image-level label has a defined CAM target."
         )
     try:
-        for images, targets, image_names in tqdm(loader, desc="pseudo-masks"):
+        for images, targets, image_names in tqdm(
+            loader, desc="pseudo-masks", disable=should_disable_tqdm()
+        ):
             images = images.to(device)
 
             for idx, image_name in enumerate(image_names):

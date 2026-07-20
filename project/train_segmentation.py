@@ -23,6 +23,7 @@ from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
 from datasets.factory import build_segmentation_dataset
 from models.losses import bce_dice_loss, dice_coefficient, iou_score
 from models.unet import UNet
+from progress import should_disable_tqdm
 
 
 def parse_args() -> argparse.Namespace:
@@ -252,7 +253,12 @@ def run_epoch(
     samples = 0
     model.train(train)
 
-    progress = tqdm(loader, desc="train" if train else "val", leave=False)
+    progress = tqdm(
+        loader,
+        desc="train" if train else "val",
+        leave=False,
+        disable=should_disable_tqdm(),
+    )
     for images, masks, _ in progress:
         images = images.to(device)
         masks = masks.to(device)
