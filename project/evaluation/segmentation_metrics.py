@@ -61,9 +61,6 @@ def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> dict[str, int]:
         bool((target & (pred_labels == label)).any()) for label in range(1, pred_count + 1)
     )
 
-    # Maximum-cardinality one-to-one matching at multiple component-IoU
-    # thresholds. This prevents one merged prediction from receiving credit
-    # for multiple GT lesions (and vice versa), unlike any-overlap.
     pairwise_iou = np.zeros((target_count, pred_count), dtype=np.float64)
     for gt_label in range(1, target_count + 1):
         gt_component = target_labels == gt_label
@@ -92,8 +89,6 @@ def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> dict[str, int]:
 
         return sum(augment(gt_index, set()) for gt_index in range(target_count))
 
-    # Keep counts per threshold so the report exposes sensitivity to the
-    # matching criterion instead of presenting IoU=0.10 as a unique truth.
     one_to_one = {
         f"lesion_tp_one_to_one_{_iou_key(threshold)}": int(maximum_matches(threshold))
         for threshold in LESION_IOU_THRESHOLDS

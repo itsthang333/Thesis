@@ -27,11 +27,6 @@ DEFAULT_IMAGES_DIR = "images"
 DEFAULT_SPLIT_RATIOS = (0.8, 0.1, 0.1)  # train, val, test
 DEFAULT_SPLIT_SEED = 42
 
-# 9 mutually-exclusive tumor-type columns in dataset.csv, plus "normal" (no
-# tumor) as class 0. Order fixed here so class indices are stable across
-# training runs and checkpoints. Verified against a real dataset.csv sample:
-# sum of these 9 columns (1868) matches the tumor==1 count (1867) to within 1
-# image, i.e. each tumor image has exactly one of these columns set to 1.
 TUMOR_TYPE_COLUMNS = (
     "osteochondroma",
     "multiple osteochondromas",
@@ -47,7 +42,6 @@ TUMOR_TYPE_CLASS_NAMES = ("normal",) + TUMOR_TYPE_COLUMNS
 
 
 def resolve_btxrd_root(root: str | Path) -> Path:
-    """Return the directory that directly contains images/, Annotations/, dataset.csv|xlsx."""
     root = Path(root)
     candidates = [root, root / "BTXRD"]
     for candidate in candidates:
@@ -60,7 +54,6 @@ def resolve_btxrd_root(root: str | Path) -> Path:
 
 
 def _load_dataset_table(btxrd_root: Path) -> list[dict[str, object]]:
-    """Load dataset.csv or dataset.xlsx into a list of row dicts, without requiring pandas."""
     csv_path = btxrd_root / "dataset.csv"
     xlsx_path = btxrd_root / "dataset.xlsx"
 
@@ -108,11 +101,6 @@ def _row_flag(row: dict[str, object], column: str) -> int:
 
 
 def _row_tumor_type_index(row: dict[str, object]) -> int:
-    """Return the 10-class tumor-type index: 0=normal, 1..9=TUMOR_TYPE_COLUMNS.
-
-    Invalid or ambiguous rows are rejected instead of silently choosing the
-    first matching tumor type.
-    """
     matches = [i + 1 for i, column in enumerate(TUMOR_TYPE_COLUMNS) if _row_flag(row, column)]
     if len(matches) > 1:
         names = [TUMOR_TYPE_COLUMNS[index - 1] for index in matches]
@@ -139,14 +127,6 @@ def _load_split_manifest_records(
     btxrd_root: Path,
     split_manifest: str | Path,
 ) -> list[dict[str, object]]:
-    """Load an immutable derived split manifest and preserve its group metadata.
-
-    The manifest is intentionally a separate input from the source XLSX.  It
-    can repair a documented source-label inconsistency (using the matching
-    LabelMe class label) and exclude exact duplicate images without modifying
-    BTXRD.  A manifest is accepted only when its dataset-table hash still
-    matches the current source file.
-    """
     manifest_path = Path(split_manifest).expanduser().resolve()
     if not manifest_path.is_file():
         raise FileNotFoundError(f"BTXRD split manifest does not exist: {manifest_path}")
@@ -267,7 +247,6 @@ def load_btxrd_records(
     btxrd_root: str | Path,
     split_manifest: str | Path | None = None,
 ) -> list[dict[str, object]]:
-    """Return one record per image, optionally from a validated split manifest."""
     btxrd_root = resolve_btxrd_root(btxrd_root)
     if split_manifest is not None:
         return _load_split_manifest_records(btxrd_root, split_manifest)
@@ -316,24 +295,9 @@ def split_btxrd_records(
     ratios: tuple[float, float, float] = DEFAULT_SPLIT_RATIOS,
     seed: int = DEFAULT_SPLIT_SEED,
 ) -> list[dict[str, object]]:
-    """Deterministic stratified 80/10/10 split by the 10-class tumor_type label.
-
-    BTXRD ships with no predefined train/val/test split, so this project derives
-    one locally. Stratifying on the full 10-class label (normal + 9 tumor
-    types, see TUMOR_TYPE_CLASS_NAMES) keeps even the rarest classes (44-51
-    images, e.g. osteofibroma/other_mt/synovial_osteochondroma) represented in
-    every split -- verified this never rounds a class down to 0 images in any
-    split for the real BTXRD class distribution (smallest split count is 4).
-    A coarser normal/benign/malignant split was used before tumor_type
-    existed; this supersedes it since tumor_type strictly refines that
-    grouping (every benign/malignant image maps to exactly one tumor_type).
-    """
     if split not in {"train", "val", "test"}:
         raise ValueError(f"Unknown split '{split}'. Choose from: train, val, test.")
 
-    # A derived split manifest is authoritative.  Do not reshuffle records
-    # after loading it, otherwise every downstream stage can silently disagree
-    # about which images belong to train/validation/test.
     if records and "split" in records[0]:
         if any(str(record.get("split")) not in {"train", "val", "test"} for record in records):
             raise ValueError("BTXRD records contain an invalid manifest split")
@@ -375,14 +339,6 @@ def _decode_labelme_polygon_mask(
     height: int,
     width: int,
 ) -> np.ndarray:
-    """Rasterize every polygon shape in a LabelMe JSON into one binary tumor mask.
-
-    BTXRD stores two shapes per tumor instance (a rectangle bbox and a polygon
-    outline) sharing the same label. Only polygons are rasterized; rectangles
-    are redundant with the polygon's bounding extent and are intentionally
-    ignored here (image-level labels drive the WSSS pipeline; this mask is only
-    used as ground truth for evaluation, not as a shape input).
-    """
     with annotation_path.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
 
@@ -399,14 +355,6 @@ def _decode_labelme_polygon_mask(
 
 
 class BTXRDSegmentationDataset(Dataset):
-    """BTXRD bone-tumor segmentation dataset.
-
-    Ground-truth masks come from LabelMe polygon annotations (tumor lesion
-    outline). Images without a tumor (tumor=0) have no annotation file and get
-    an all-zero mask, which also lets pseudo-mask evaluation penalize false
-    positives on normal images.
-    """
-
     def __init__(
         self,
         root: str | Path,
@@ -419,17 +367,6 @@ class BTXRDSegmentationDataset(Dataset):
         pred_mask_dir: str | Path | None = None,
         split_manifest: str | Path | None = None,
     ) -> None:
-        """pred_mask_dir: optional directory of pseudo-mask PNGs (one file per
-        image, matching generate_pseudo_masks.py's ``masks/`` output naming,
-        e.g. ``IMG000002.png`` for ``IMG000002.jpeg``). When set, masks are
-        read from this WSSS-generated pipeline output instead of rasterizing
-        the LabelMe ground-truth polygon -- this is how train_segmentation.py
-        trains U-Net on the pipeline's own pseudo-masks rather than on GT
-        (which stays reserved for evaluation/oracle baselines). Images the
-        pipeline skipped as low-confidence/normal still have an explicit
-        all-zero PNG. Missing files are treated as an incomplete or mismatched
-        generation run and fail fast rather than becoming negative targets.
-        """
         self.btxrd_root = resolve_btxrd_root(root)
         self.images_dir = self.btxrd_root / DEFAULT_IMAGES_DIR
         self.annotations_dir = self.btxrd_root / DEFAULT_ANNOTATIONS_DIR
@@ -532,19 +469,6 @@ class BTXRDSegmentationDataset(Dataset):
 
 
 class BTXRDClassificationDataset(Dataset):
-    """Image-only BTXRD dataset for classifier training and Stage 2 pseudo-mask generation.
-
-    Two supported label modes, selected via target_columns:
-      - ["tumor"]: binary tumor-vs-normal image-level label for WSSS (the
-        original mode -- classifier trained only on this weak label, LayerCAM/
-        SAM localize the tumor without ever consuming polygon/bbox annotations).
-      - ["tumor_type"]: 10-class single-label classification (normal + 9
-        mutually-exclusive tumor types, see TUMOR_TYPE_CLASS_NAMES). Still WSSS
-        in spirit -- the segmentation pipeline never sees polygon/bbox
-        annotations either way -- but the classifier/LayerCAM class-conditioning
-        signal is now the specific tumor type instead of just tumor-vs-normal.
-    """
-
     def __init__(
         self,
         root: str | Path,

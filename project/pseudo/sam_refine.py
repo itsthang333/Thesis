@@ -46,22 +46,6 @@ class SAMPredictor:
         debug_dir: str | Path | None = None,
         image_pil=None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Run SAM with foreground point prompts.
-
-        SAM's multimask_output=True always returns exactly 3 masks regardless
-        of how many points are provided. We therefore run predict() once per
-        point so that each bone peak generates 3 independent candidate masks.
-
-        Args:
-            image_rgb:     [H, W, 3] uint8 RGB numpy array.
-            point_prompts: list of (row, col) tuples from extract_prompts.
-            debug_dir:     If set, saves mask PNGs, overlay PNGs, and scores.json.
-            image_pil:     PIL Image used for overlays (falls back to image_rgb).
-
-        Returns:
-            masks:  [P*3, H, W] bool array — 3 candidates per prompt point.
-            scores: [P*3] float array — SAM confidence scores per mask.
-        """
         if not point_prompts:
             h, w = image_rgb.shape[:2]
             self.last_prompt_stats = self._empty_prompt_stats()
@@ -112,22 +96,6 @@ class SAMPredictor:
         debug_dir: str | Path | None = None,
         image_pil=None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Prompt SAM once per selected bone component.
-
-        prompt_mode:
-          point        - strongest structured point only
-          joint_points - all structured points in one SAM call
-          box          - component bounding box only
-          box_point    - component box plus all structured points
-
-        prompt_border_margin removes positive points that lie directly on the
-        image border. Those points often make SAM lock onto the hand/wrist
-        silhouette instead of the internal bone support.
-
-        max_box_area_ratio drops the box prompt when a component bbox is too
-        large relative to the image. The positive points are still used, so SAM
-        can refine locally without being encouraged to segment the full hand.
-        """
         valid_modes = {"point", "joint_points", "box", "box_point"}
         if prompt_mode not in valid_modes:
             raise ValueError(f"Unknown prompt_mode '{prompt_mode}'. Choose from {sorted(valid_modes)}.")

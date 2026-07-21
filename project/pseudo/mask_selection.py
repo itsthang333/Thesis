@@ -9,26 +9,6 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     cv2 = None
 
-# Supported scoring methods:
-#   "mean"        : score = mean(cam inside mask)
-#   "sum"         : score = sum(cam inside mask)                    — favors large masks
-#   "mean_area"   : score = mean(cam) * sqrt(area)                  — balanced size+quality
-#   "coverage"    : score = fraction of mask pixels where cam > 0.5 — rewards full coverage
-#   "hybrid"      : score = 0.7*mean(cam) + 0.3*log1p(area)/log1p(H*W) — mean + area bonus
-#   "simple_hybrid": score = 0.6*mean(cam) + 0.3*sam_quality + 0.1*log1p(area)/log1p(H*W)
-#                   — a deliberately minimal alternative to bone_hybrid's ~10-term
-#                   formula, added after this project's own experiments repeatedly
-#                   retuning bone_hybrid's support-based terms (support_precision,
-#                   outside_support_ratio, soft_tissue_penalty) produced only
-#                   marginal Dice changes -- worth comparing against a much
-#                   simpler CAM+SAM-confidence+area score before assuming more
-#                   terms are needed.
-#   "prompt_hybrid": combines CAM-mass coverage, CAM density, within-prompt
-#                    SAM-quality rank, a support-relative area prior, and
-#                    positive/negative prompt consistency. Unlike
-#                    simple_hybrid, it does not treat raw SAM predicted IoU
-#                    as calibrated across images and does not let mean CAM
-#                    alone reward an arbitrarily tiny mask around the peak.
 SELECTION_METHODS = (
     "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid",
     "simple_hybrid", "prompt_hybrid", "consistency_hybrid",
@@ -180,21 +160,14 @@ def score_masks(
         elif method == "mean_area":
             scores[i] = float(cam_vals.mean()) * float(np.sqrt(area))
         elif method == "coverage":
-            # fraction of mask pixels that are "activated" (cam > 0.5)
             scores[i] = float((cam_vals > 0.5).sum()) / area
         elif method == "coverage_mass":
-            # Retain the interpretable high-CAM density term but break its
-            # frequent 1.0 ties with the fraction of total CAM mass captured.
-            # This remains image-only and is less biased toward tiny masks
-            # than raw meanCAM.
             cam_density = float((cam_vals > 0.5).sum()) / area
             mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
             scores[i] = 0.70 * cam_density + 0.30 * mass_coverage
         elif method == "coverage_mass_sam":
             cam_density = float((cam_vals > 0.5).sum()) / area
             mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
-            # SAM score is used only as a within-component rank, never as a
-            # calibrated cross-image IoU probability.
             scores[i] = (
                 0.60 * cam_density
                 + 0.25 * mass_coverage
@@ -220,10 +193,6 @@ def score_masks(
             if support is None:
                 support = bone_support.astype(bool) if bone_support is not None else None
 
-            # Coverage measures how much of the prompt component's CAM mass
-            # the candidate captures. Density measures how concentrated CAM
-            # evidence remains inside the candidate. Their combination avoids
-            # both extremes: tiny peak-only masks and huge high-recall masks.
             if support is not None and support.any():
                 support_mass = float(bone_cam[support].sum())
                 captured_mass = float(bone_cam[m & support].sum())
@@ -249,17 +218,9 @@ def score_masks(
             )
             prompt_consistency = _point_consistency(m, positive_points, negative_points)
             if not positive_points and not negative_points:
-                # Component coverage is the closest available prompt
-                # consistency signal for older call sites that do not expose
-                # the actual points.
                 prompt_consistency = cam_coverage
 
             if method == "consistency_hybrid":
-                # Image-only stability across independent CAM components.
-                # Do not compare candidates from the same component: those
-                # are alternate SAM outputs for one prompt and can tie
-                # trivially.  The best cross-component IoU rewards a mask
-                # reproduced by more than one CAM proposal.
                 stability = 0.0
                 for other_index in range(n):
                     if other_index == i:
@@ -274,9 +235,6 @@ def score_masks(
                             stability,
                             float(np.logical_and(m, other).sum()) / union,
                         )
-                # Use soft CAM mass rather than the binary CAM>0.5 fraction;
-                # the latter saturates at 1.0 for many candidates and was
-                # observed to select tiny masks under component_topk=1.
                 soft_mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
                 prompt_consistency = 0.5 * prompt_consistency + 0.5 * stability
                 terms = np.asarray(
@@ -298,22 +256,6 @@ def score_masks(
                 continue
             bone_mean = float(bone_likelihood[m].mean())
             cam_mean = float(cam_vals.mean())
-            # bone_support is derived from a CAM percentile cut in the pre-SAM
-            # morphology stage, not ground truth -- it typically UNDER-covers
-            # the true lesion (support subset-of lesion), not the other way
-            # around. support_recall (does the candidate contain the support
-            # region?) is therefore a meaningful bonus: a good candidate
-            # should contain the seed region SAM was prompted from. But the
-            # inverse -- support_precision / outside_support_ratio, "does the
-            # candidate stay INSIDE the support region?" -- assumes the
-            # opposite (lesion subset-of support) and heavily penalizes any
-            # candidate that correctly extends beyond a too-narrow support to
-            # cover the rest of the real lesion. That assumption was verified
-            # wrong in practice (support_loss_dice ~ 0 while selection_loss_dice
-            # was the dominant term in this project's own oracle diagnostic),
-            # so precision-vs-support is intentionally dropped here in favor
-            # of weighting CAM/bone_likelihood more heavily as the primary
-            # "is this actually the lesion" signal.
             support_recall = 0.0
             if bone_support is not None and bone_support.any():
                 support_bool = bone_support.astype(bool)
@@ -325,11 +267,6 @@ def score_masks(
                 if bone_support is not None and bone_support.any()
                 else 0.0
             )
-            # expected_area is a soft ceiling on plausible lesion size, not a
-            # hard support-shape constraint -- kept mild (lower weight below)
-            # so it only discourages implausibly large candidates (e.g. the
-            # whole hand) rather than penalizing any candidate larger than a
-            # narrow support region.
             expected_area = max(0.08, min(0.35, support_area_ratio * 2.0 + 0.05))
             large_mask_penalty = max(0.0, area_ratio - expected_area)
             border_touch_count = int(m[0, :].any()) + int(m[-1, :].any()) + int(m[:, 0].any()) + int(m[:, -1].any())
@@ -468,11 +405,6 @@ def select_and_fuse_masks(
             candidates = np.where(component_ids == component_id)[0]
             if candidates.size == 0:
                 continue
-            # Reuse the globally-scored candidates for this component. score_masks
-            # already received the global bone_support above — bone_hybrid's
-            # support_area_ratio/expected_area/large_mask_penalty terms are only
-            # meaningful relative to the whole-image support map, so re-scoring
-            # with a single component's mask here would corrupt those ratios.
             component_scores = scores[candidates]
             best_local = int(np.argmax(component_scores))
             best_index = int(candidates[best_local])

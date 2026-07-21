@@ -283,8 +283,6 @@ def parse_args() -> argparse.Namespace:
         "Use 'empty' for production; 'keep-best' is retained only for debug ablations.",
     )
     args = parser.parse_args()
-    # Keep raw option names so the canonical profile can distinguish allowed
-    # run/hardware inputs from recipe changes and reject the latter explicitly.
     args._explicit_options = {
         token.split("=", 1)[0]
         for token in sys.argv[1:]
@@ -434,8 +432,6 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if "--auxiliary-binary-checkpoint" in explicit:
         raise ValueError(f"--pipeline-profile {args.pipeline_profile} does not use an auxiliary binary checkpoint")
 
-    # These fields are metadata only; keep them out of the downstream API so
-    # profile selection cannot accidentally become a data source.
     return args
 
 
@@ -488,11 +484,6 @@ def load_classifier(
                 f"Classifier checkpoint {checkpoint_path} split manifest hash does not match "
                 "the requested manifest"
             )
-    # num_classes must come from the checkpoint, not be inferred from
-    # len(target_columns) at the call site -- a checkpoint trained with
-    # target_columns=["tumor_type"] has 1 target column but a 10-class model
-    # (see train_classifier.py's save_checkpoint). fallback_num_classes only
-    # covers checkpoints saved before this field existed.
     num_classes = checkpoint_num_classes
     model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
     model.load_state_dict(state["model_state_dict"], strict=True)
@@ -654,29 +645,12 @@ def main() -> None:
     else:
         target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
-    # class_names is what active_indices/cls_i actually index into when
-    # saving debug overlays: for the binary/multi-label "tumor" task, that's
-    # target_columns itself (1 element == 1 class). For "tumor_type" (single-
-    # label multi-class), target_columns is just ["tumor_type"] (1 element,
-    # naming the classification head, not the classes), while the model has
-    # 10 real classes -- target_columns[cls_i] would IndexError for any
-    # cls_i >= 1. Use the real 10-class names in that case instead.
     if target_columns == ["tumor_type"]:
         from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
         class_names = list(TUMOR_TYPE_CLASS_NAMES)
     else:
         class_names = target_columns
 
-    # NOTE: tumor_morphology.py's build_tumor_guidance() used to hard-cap the
-    # support threshold at percentile-55 regardless of the support_percentile
-    # value passed in (that cap has been removed -- see tumor_morphology.py).
-    # BTXRD's default here is kept at 55.0 (matching the old, always-applied
-    # cap) while a better value is investigated: raising it to 78.0 was tried
-    # and tested worse overall (higher selection_loss_dice on this project's
-    # own oracle diagnostic) and caused overcorrection (support cutting into
-    # good candidates) on some images, so a single fixed percentile is not
-    # yet a clear improvement -- an adaptive per-image threshold may be
-    # needed instead. Revisit before changing this default again.
     default_seed_percentile, default_support_percentile = (82.0, 55.0)
     seed_percentile = (
         args.seed_percentile if args.seed_percentile is not None else default_seed_percentile
@@ -813,12 +787,6 @@ def main() -> None:
         num_workers=args.num_workers,
     )
 
-    # Maps image_name -> human-readable tumor_type class name, for the
-    # per-tumor-type oracle breakdown in prompt_quality.csv (only meaningful
-    # Empty for
-    # target_columns=["tumor"] samples since load_btxrd_records always
-    # populates "tumor_type" on every record regardless of which head is
-    # trained, so this works even if this run's classifier is a binary one).
     tumor_type_by_name: dict[str, str] = {}
     if args.dataset == "btxrd":
         from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
@@ -908,21 +876,10 @@ def main() -> None:
                     logits = classifier(image_tensor)
                     predicted_class_weights = classifier_class_weights(logits, classifier_task)
                     if use_ground_truth_class and target_columns == ["tumor_type"]:
-                        # One-hot the true tumor_type class instead of the
-                        # classifier's own prediction -- LayerCAM/generate_
-                        # fused_cam's confidence-filtering path always fires
-                        # for exactly this one class (weight 1.0 >= any
-                        # confidence_threshold <= 1.0), so this always
-                        # conditions CAM on the GT class, never the
-                        # prediction. Still an image-level label only (no
-                        # polygon/bbox), so this stays within WSSS.
                         gt_class = int(targets[idx].item())
                         class_weights = np.zeros(logits.shape[1], dtype=np.float32)
                         class_weights[gt_class] = 1.0
                     elif use_ground_truth_class and target_columns == ["tumor"]:
-                        # Binary WSSS has one positive logit (tumor).  The
-                        # image-level target is enough to decide whether a
-                        # lesion CAM should exist; no polygon/bbox is read.
                         is_tumor = bool(float(targets[idx].item()) > 0.5)
                         gt_class = 0
                         class_weights = np.asarray([1.0 if is_tumor else 0.0], dtype=np.float32)
@@ -943,13 +900,6 @@ def main() -> None:
                 true_tumor = int(bool(sample_record.get("tumor", 0)))
                 true_tumor_type = int(sample_record.get("tumor_type", true_tumor))
 
-                # For multi-label checkpoints, low confidence can mean no reliable anatomy class.
-                # For single-label checkpoints, LayerCAM will fall back to the top softmax class.
-                # For ground_truth-conditioned CAM, gt_class==0 means "normal" (no tumor at all,
-                # see TUMOR_TYPE_CLASS_NAMES[0]) -- there is no lesion class to condition LayerCAM
-                # on, so this must still skip exactly like the low-confidence path does, or a
-                # normal image would get a CAM/pseudo-mask generated for the "normal" class as if
-                # it were a lesion type.
                 should_skip = (
                     (
                         target_columns == ["tumor_type"]
@@ -1020,9 +970,6 @@ def main() -> None:
                     and target_columns == ["tumor_type"]
                     and int(np.argmax(class_weights)) == 0
                 ):
-                    # Explicit end-to-end detection-recall ablation: retain
-                    # the strongest non-normal class when normal wins the
-                    # softmax, without using any polygon/bbox information.
                     non_normal = np.asarray(class_weights, dtype=np.float32).copy()
                     non_normal[0] = -np.inf
                     selected = int(np.argmax(non_normal))
@@ -1075,10 +1022,6 @@ def main() -> None:
                 ):
                     if not 0.0 <= args.cam_contrast_weight <= 1.0:
                         raise ValueError("--cam-contrast-weight must be in [0,1]")
-                    # Contrastive evidence is conditioned on the selected
-                    # image-level class only.  The normal class is skipped
-                    # above, so this never creates a lesion CAM for a normal
-                    # image.  No polygon/bbox information enters this path.
                     selected_class = (
                         int(gt_class)
                         if use_ground_truth_class and gt_class is not None
@@ -1267,12 +1210,6 @@ def main() -> None:
 
                 # ── 4. SAM candidate masks ────────────────────────────────────
                 component_ids = None
-                # The classifier/CAM grid can be much smaller than the
-                # original radiograph (BTXRD images are commonly 500--2500px
-                # wide).  Optionally run SAM on a higher-resolution square
-                # copy loaded from disk, then map its masks back to the CAM
-                # grid before scoring.  All component/prompt geometry remains
-                # derived from image-level CAM only.
                 sam_image_rgb = image_rgb
                 sam_image_pil = image_pil
                 sam_components = bone_components
@@ -1423,12 +1360,6 @@ def main() -> None:
                         mode="nearest",
                     )[:, 0].numpy() > 0.5
 
-                # The CAM component is already a valid weakly-supervised
-                # candidate, not a ground-truth-derived mask.  Keeping it in
-                # the candidate pool gives selection a safe fallback when
-                # SAM's mask decoder fails on radiographic texture.  It is
-                # opt-in because an over-diffuse CAM should not silently
-                # change the historical SAM-only baseline.
                 if args.include_cam_candidate and bone_components:
                     cam_masks = np.stack(
                         [component.mask.astype(bool) for component in bone_components], axis=0
@@ -1489,12 +1420,6 @@ def main() -> None:
                             )
                             if args.max_box_area_ratio <= 0 or box_area_ratio <= args.max_box_area_ratio:
                                 all_boxes.append(tuple(component.bbox))
-                    # bone_components/bone_support come from morphological
-                    # reconstruction (seed+support thresholds, not a single
-                    # percentile cut), so compare that concrete mask
-                    # directly rather than recomputing a percentile cut on
-                    # prompt_map, which would not reflect what SAM actually
-                    # receives in this mode.
                     if bone_support is not None:
                         fg_metrics = binary_mask_localization_metrics(bone_support, gt_mask)
                     else:

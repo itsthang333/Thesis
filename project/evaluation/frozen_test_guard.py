@@ -33,7 +33,6 @@ def verify_frozen_test_config(
     checkpoint_any_of: tuple[str, ...] = (),
     requested_checkpoint: str | Path | None = None,
 ) -> dict[str, object] | None:
-    """Require and fully verify a final freeze before opening split=test."""
     if split != "test":
         return None
     if frozen_config is None:

@@ -141,14 +141,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
-    """Freeze the classifier recipe paired with ``btxrd_best``/``btxrd_hybrid``.
-
-    This profile contains no segmentation supervision.  It only selects the
-    image-level classification head and training hyperparameters that feed
-    LayerCAM.  Explicit changes to recipe-critical options are rejected rather
-    than silently producing a checkpoint that no longer matches the frozen
-    downstream pipeline.
-    """
     if args.pipeline_profile == "default":
         return args
     if args.dataset != "btxrd":
@@ -194,8 +186,6 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if "--radimagenet-checkpoint" in explicit and args.radimagenet_checkpoint is not None:
         raise ValueError(f"--pipeline-profile {name} fixes ImageNet normalization/pretraining")
     if name == "btxrd_hybrid":
-        # btxrd_hybrid additionally enables its teacher/PuzzleCAM settings;
-        # both canonical profiles use the same 30-epoch early-stopped budget.
         require_or_set("--teacher-warmup-epochs", "teacher_warmup_epochs", profile.teacher_warmup_epochs)
         require_or_set("--teacher-ema-decay", "teacher_ema_decay", profile.teacher_ema_decay)
         require_or_set("--teacher-cam-percentile", "teacher_cam_percentile", profile.teacher_cam_percentile)
@@ -220,12 +210,6 @@ def seed_everything(seed: int) -> None:
 
 
 def confusion_counts(logits: torch.Tensor, targets: torch.Tensor) -> dict[str, int]:
-    """Raw TP/FP/FN/TN counts for the positive (index 0) class, accumulated over a full epoch.
-
-    Computed from per-sample counts (not averaged per-batch metrics) so precision/recall/F1
-    over an epoch reflect the true epoch-level confusion matrix instead of a batch-size-biased
-    average of noisy small-batch ratios.
-    """
     probs = torch.sigmoid(logits)
     preds = (probs >= 0.5).float()
     targets = targets.float()
@@ -271,15 +255,6 @@ def multiclass_confusion_matrix(logits: torch.Tensor, targets: torch.Tensor, num
 
 
 def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
-    """Accuracy + macro-averaged precision/recall/F1 across all classes.
-
-    Macro averaging (not micro/weighted) matters here specifically because
-    BTXRD's tumor_type classes are extremely imbalanced (44-1879 images per
-    class) -- a micro/weighted average would be dominated by the majority
-    classes (normal, osteochondroma) and could look good even if the rarest
-    classes (osteofibroma, other_mt, synovial_osteochondroma) are never
-    predicted correctly at all.
-    """
     num_classes = matrix.shape[0]
     total = matrix.sum().item()
     accuracy = matrix.diag().sum().item() / max(1, total)
@@ -363,22 +338,6 @@ def run_epoch_multiclass(
     attention_alpha: float = 0.0,
     teacher_percentile: float = 96.0,
 ) -> tuple[float, dict[str, float], torch.Tensor, dict[str, float]]:
-    """Single-label multi-class variant of run_epoch (targets are class indices, not multi-hot).
-
-    puzzle_alpha > 0 adds PuzzleCAM's consistency loss (Jo & Yu, ICIP 2021,
-    adapted for single-label CrossEntropy -- see models/puzzle_cam.py): an
-    extra forward pass on the image split into a 2x2 tile grid, comparing
-    the CAM reconstructed from the 4 tiles against the full-image CAM for
-    each sample's target class, and penalizing their L1 difference. This
-    directly targets the diffuse/non-discriminative CAM problem this
-    project's own debug_cam_by_tumor_type.py measured (cam_area_ratio pinned
-    at ~15% of the image regardless of content) by forcing the model's
-    spatial evidence to agree whether it sees the whole image or 4 separate
-    quadrants -- something a model that just "looks at everything" can't do
-    consistently, but one that's actually localizing the lesion can. Only
-    applied during training (train=True); val loss stays pure CrossEntropy
-    for a clean, comparable val_f1/early-stopping signal.
-    """
     total_cls_loss = 0.0
     total_optimization_loss = 0.0
     total_puzzle_cls_loss = 0.0
@@ -407,23 +366,12 @@ def run_epoch_multiclass(
                     logits, student_features = model(images, return_features=True)
                 else:
                     logits = model(images)
-                # cls_loss is logged separately from the combined `loss` used
-                # for backward(), so train_loss/val_loss in the CSV stay
-                # directly comparable to runs without PuzzleCAM (pure
-                # CrossEntropy) -- `loss` (with the puzzle term folded in)
-                # only drives the actual gradient step.
                 cls_loss = criterion(logits, targets)
                 loss = cls_loss
 
                 re_loss_value = 0.0
                 p_cls_loss_value = 0.0
                 if train and puzzle_alpha > 0:
-                    # Full PuzzleCAM objective: L_cls + L_p-cls + alpha*L_re
-                    # (Jo & Yu, ICIP 2021, Eq. 7). L_p-cls has weight 1.0 (not
-                    # scaled by alpha/warmup) since it's an ordinary
-                    # classification loss on the tiled reconstruction, not a
-                    # consistency regularizer -- only L_re gets the warmup
-                    # treatment, matching the paper.
                     _, _, re_loss, p_cls_loss = puzzle_cam_consistency_loss(model, images, targets)
                     loss = cls_loss + p_cls_loss + puzzle_alpha * re_loss
                     re_loss_value = re_loss.item()
@@ -433,22 +381,6 @@ def run_epoch_multiclass(
                 teacher_conf_value = 0.0
                 valid_teacher_fraction_value = 0.0
                 if need_features:
-                    # L_attention: student's own CAM vs. the teacher's refined
-                    # soft target (frozen EMA teacher -> LayerCAM -> percentile
-                    # threshold -> Torch morphology -> Gaussian blur), weighted
-                    # by the teacher's own confidence in the ground-truth
-                    # class (squared) to guard against confirmation bias --
-                    # an unsure teacher shouldn't teach as if it were certain.
-                    # Unlike PuzzleCAM's L_re (CAM(full) ~= CAM(tiles), which
-                    # a model can satisfy by being uniformly diffuse in both
-                    # views -- confirmed empirically: PuzzleCAM raised val_f1
-                    # sharply but left cam_area_ratio pinned at ~0.15,
-                    # unchanged from the plain baseline), this directly
-                    # supervises the student's CAM shape against a sharpened
-                    # target that's already been pushed toward the lesion's
-                    # actual (~2.6% of image area) footprint by the
-                    # percentile+morphology pipeline -- "CAM ~= lesion-shaped-
-                    # region", not just "CAM ~= CAM".
                     att_loss, teacher_conf, valid_teacher_fraction = attention_distillation_loss(
                         teacher, model, student_features, images, targets, percentile=teacher_percentile
                     )
@@ -469,14 +401,6 @@ def run_epoch_multiclass(
             if train:
                 optimizer.zero_grad(set_to_none=True)
                 scaler.scale(loss).backward()
-                # Unscale before clipping so the norm is computed on true
-                # (not loss-scaled) gradients -- without this, a handful of
-                # early batches with unusually large gradients (e.g. a
-                # freshly-initialized classifier head paired with a
-                # differently-scaled pretrained backbone) can push weights
-                # into a regime where logits blow up to the tens of
-                # thousands and never recover, since nothing bounds the
-                # update step size.
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 scaler.step(optimizer)
@@ -540,16 +464,7 @@ def save_checkpoint(
             "target_columns": target_columns,
             "task": task,
             "dataset": dataset,
-            # Consumers (generate_pseudo_masks.py/inference.py/
-            # downstream consumers must read num_classes from here, not
-            # infer it from len(target_columns) -- that breaks for
-            # target_columns=["tumor_type"] (1 element) mapping to a
-            # 10-class model. Falls back to len(target_columns) for old
-            # checkpoints saved before this field existed.
             "num_classes": num_classes if num_classes is not None else len(target_columns),
-            # Which input preprocessing this checkpoint's backbone expects --
-            # "imagenet" (RGB, ImageNet mean/std) or "radimagenet" (BGR,
-            # (x-127.5)*2/255, no mean/std). Must match at inference/CAM time.
             "normalization": normalization,
             "train_augment": bool(train_augment),
             "pipeline_profile": pipeline_profile,
@@ -567,18 +482,9 @@ def save_checkpoint(
 
 
 def select_cam_preview_indices(val_dataset, count: int) -> list[int]:
-    """Pick a fixed set of positive-class (or, for tumor_type, any non-normal-class)
-    validation samples for CAM snapshots.
-
-    Fixed indices (not re-sampled per epoch) so the same images are compared
-    across epochs, isolating changes in CAM quality from changes in which
-    image is shown.
-    """
     indices: list[int] = []
     for index in range(len(val_dataset)):
         _, target, _ = val_dataset[index]
-        # tumor_type: target is a scalar long class index (0=normal); binary
-        # tumor: target is a 1-element float multi-hot vector.
         is_positive = int(target.item()) != 0 if target.ndim == 0 else float(target[0]) == 1.0
         if is_positive:
             indices.append(index)
@@ -597,13 +503,6 @@ def save_cam_preview(
     is_multiclass: bool = False,
     normalization: str = "imagenet",
 ) -> None:
-    """Save a LayerCAM overlay for each fixed preview image at this epoch.
-
-    Lets you flip through cam_epoch{N}_sample{i}.png across epochs to judge
-    whether CAM localization is actually improving — in WSSS this matters more
-    than a few points of classifier F1, since CAM quality directly drives the
-    downstream SAM prompts.
-    """
     was_training = model.training
     model.eval()
     layercam = LayerCAM(model, device=device)
@@ -615,11 +514,6 @@ def save_cam_preview(
             with torch.no_grad():
                 logits = model(image_tensor)
                 if is_multiclass:
-                    # Softmax (mutually exclusive classes), not sigmoid --
-                    # class_weights here just needs to pick out the single
-                    # predicted class for generate_fused_cam's confidence
-                    # gate, same as classifier_class_weights() in
-                    # generate_pseudo_masks.py does for a "single-label" task.
                     class_weights = torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
                 else:
                     class_weights = torch.sigmoid(logits)[0].detach().cpu().numpy()
@@ -730,10 +624,6 @@ def main() -> None:
             "Only change this if you intentionally prepared extra labels for this dataset."
         )
 
-    # RadImageNet's BatchNorm statistics were empirically confirmed (see
-    # datasets/common.py's RadImageNetNormalize docstring) to match the
-    # official BGR+[-1,1] preprocessing, not ImageNet mean/std -- tied
-    # automatically to --radimagenet-checkpoint so the two can't drift out of sync.
     normalization = "radimagenet" if args.radimagenet_checkpoint else "imagenet"
 
     train_dataset = build_classification_dataset(
@@ -748,9 +638,6 @@ def main() -> None:
         split_manifest=args.split_manifest,
     )
     if args.random_erasing:
-        # RandomErasing operates on the tensor after resize/normalization and
-        # is attached only to the training dataset.  It uses no segmentation
-        # annotations and therefore remains a weak image-level augmentation.
         train_dataset.image_transform.transforms.append(
             tv_transforms.RandomErasing(
                 p=0.50, scale=(0.02, 0.12), ratio=(0.5, 2.0), value=0.0
@@ -773,11 +660,6 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # target_columns=["tumor_type"] is single-label multi-class (10 mutually
-    # exclusive BTXRD classes: normal + 9 tumor types), not the usual
-    # multi-label setup where num_classes == len(target_columns). Detect it
-    # explicitly rather than inferring from len(target_columns), since that
-    # would otherwise (wrongly) build a 1-output model for a 10-class problem.
     is_multiclass = target_columns == ["tumor_type"]
     if is_multiclass:
         from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
@@ -792,11 +674,6 @@ def main() -> None:
     ).to(device)
 
     if is_multiclass:
-        # Inverse-frequency class weights: BTXRD's tumor_type classes range
-        # from 44 to 1879 images (>40x imbalance) -- without weighting, the
-        # loss is dominated by the majority classes and the rarest tumor
-        # types (osteofibroma, other_mt, synovial_osteochondroma) are likely
-        # to never be predicted at all.
         class_counts = torch.zeros(num_classes)
         for sample in train_dataset.samples:
             class_counts[int(sample["tumor_type"])] += 1
@@ -820,9 +697,6 @@ def main() -> None:
     history_path = args.output_dir / "training_log.csv"
     best_val_f1 = -1.0
     epochs_without_improvement = 0
-    # "single-label" must match exactly what generate_pseudo_masks.py/
-    # Downstream CAM consumers inspect the task stored in the checkpoint.
-    # for (it applies softmax instead of sigmoid for this task string).
     checkpoint_task = "single-label" if is_multiclass else "multi-label"
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "training_metadata.json").write_text(
@@ -860,9 +734,6 @@ def main() -> None:
     with history_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         if is_multiclass:
-            # No fixed TP/FP/FN/TN here -- with 10 classes the full confusion
-            # matrix (10x10) is printed to stdout each epoch instead of being
-            # flattened into the CSV; macro precision/recall/f1 summarize it.
             writer.writerow([
                 "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1", "train_weighted_f1",
                 "train_puzzle_cls_loss", "train_reconstruction_loss", "train_attention_loss",
@@ -878,7 +749,7 @@ def main() -> None:
                 "val_tp", "val_fp", "val_fn", "val_tn",
             ])
 
-    teacher = None  # created once warmup ends; stays None (attention loss disabled) until then
+    teacher = None
     epoch_budget_records: list[dict[str, float | int]] = []
     stopped_early = False
 
@@ -892,21 +763,8 @@ def main() -> None:
             current_attention_alpha = 0.0
             if args.attention_alpha_max > 0 and epoch > args.teacher_warmup_epochs:
                 if teacher is None:
-                    # Snapshot the student as it is right after warmup -- this
-                    # is the "phá đối xứng" (symmetry-breaking) point: the
-                    # student has now trained on CE (+PuzzleCAM) alone for
-                    # teacher_warmup_epochs, so it's no longer identical to a
-                    # freshly-loaded checkpoint, giving EMA updates something
-                    # real to average over from here on.
                     teacher = EMATeacher(model, decay=args.teacher_ema_decay)
                     print(f"  --> Teacher initialized at epoch {epoch} (post-warmup snapshot)")
-                # Ramp over the epochs remaining after warmup, same linear
-                # shape as puzzle_alpha_schedule -- needed because this loss's
-                # per-pixel BCE gradient was measured at ~100-150x a
-                # per-sample CrossEntropy step's magnitude on real
-                # DenseNet121; an unscaled alpha from the moment the teacher
-                # activates would let it dominate and destabilize
-                # classification learning before CE has a chance to adapt.
                 epochs_since_warmup = epoch - args.teacher_warmup_epochs
                 remaining_epochs = args.epochs - args.teacher_warmup_epochs
                 current_attention_alpha = puzzle_alpha_schedule(

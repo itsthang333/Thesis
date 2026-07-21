@@ -1,14 +1,5 @@
 from __future__ import annotations
 
-"""Extract SAM point prompts from a fused bone CAM.
-
-Pipeline (per pipeline.md Stage 3):
-  1. Adaptive percentile threshold → binary foreground mask
-  2. Connected-components labelling (4-connectivity BFS)
-  3. Peak extraction: argmax(CAM) inside each component
-  4. Optional cap at max_points (sorted by CAM value, highest first)
-"""
-
 from collections import deque
 
 import numpy as np
@@ -20,7 +11,6 @@ except ImportError:  # pragma: no cover - optional dependency
 
 
 def _connected_components_bfs(binary: np.ndarray) -> list[list[tuple[int, int]]]:
-    """4-connectivity BFS over foreground pixels (fallback when cv2 is unavailable)."""
     h, w = binary.shape
     visited = np.zeros((h, w), dtype=bool)
     components: list[list[tuple[int, int]]] = []
@@ -46,7 +36,6 @@ def _connected_components_bfs(binary: np.ndarray) -> list[list[tuple[int, int]]]
 
 
 def _connected_components(binary: np.ndarray) -> list[list[tuple[int, int]]]:
-    """4-connectivity labelling. Uses cv2 (vectorised) when available, else BFS."""
     if cv2 is None:
         return _connected_components_bfs(binary)
 
@@ -67,26 +56,10 @@ def extract_point_prompts(
     debug_dir: str | None = None,
     image_pil=None,
 ) -> list[tuple[int, int]]:
-    """Return (row, col) peak points for SAM prompts.
-
-    Args:
-        bone_cam:            [H, W] float32 in [0, 1].
-        cam_percentile:      Threshold percentile (85 / 90 / 95 per pipeline.md).
-        max_points:          Cap on number of prompt points.
-        min_component_area:  Ignore components smaller than this.
-        debug_dir:           If set, saves foreground.png, component_*.png, layercam_with_points.png.
-        image_pil:           PIL Image for the CAM+points overlay.
-
-    Returns:
-        List of (row, col) tuples, sorted by CAM value descending.
-    """
     bone_cam = np.asarray(bone_cam, dtype=np.float32)
     if bone_cam.ndim != 2:
         raise ValueError(f"bone_cam must be a 2-D array, got shape={bone_cam.shape}")
     if not np.isfinite(bone_cam).all():
-        # A NaN/Inf CAM must never be converted into a seemingly valid SAM
-        # prompt.  Returning no prompts lets SAMPredictor fail closed with an
-        # empty candidate set instead of localising arbitrary pixels.
         return []
     if max_points <= 0:
         return []
@@ -97,9 +70,6 @@ def extract_point_prompts(
     )
     cam_range = float(bone_cam.max() - bone_cam.min())
     if not support_is_valid and (float(bone_cam.max()) <= 0.0 or cam_range <= 1e-6):
-        # Flat/all-zero CAMs contain no spatial evidence.  The previous
-        # fallback used argmax and therefore emitted (0, 0), which could make
-        # SAM return a confident but entirely artificial corner mask.
         return []
 
     threshold = float(np.percentile(bone_cam, cam_percentile))
@@ -119,13 +89,10 @@ def extract_point_prompts(
         cols = np.array([p[1] for p in comp])
         cam_vals = bone_cam[rows, cols]
 
-        # Semantic point: strongest CAM/bone-likelihood response.
         best_idx = int(np.argmax(cam_vals))
         r, c = int(rows[best_idx]), int(cols[best_idx])
         peaks.append((float(cam_vals[best_idx]), r, c))
 
-        # Geometric point: component pixel nearest its centroid. This is more
-        # likely to lie inside bone than an edge-only activation.
         centroid_r = float(rows.mean())
         centroid_c = float(cols.mean())
         distances = (rows - centroid_r) ** 2 + (cols - centroid_c) ** 2
@@ -134,7 +101,6 @@ def extract_point_prompts(
         if (center_r, center_c) != (r, c):
             peaks.append((float(cam_vals[center_idx]) + 0.05, center_r, center_c))
 
-    # Prefer high-confidence points while suppressing near-duplicates.
     peaks.sort(key=lambda x: x[0], reverse=True)
     result: list[tuple[int, int]] = []
     min_distance = max(6.0, min(bone_cam.shape) * 0.04)
@@ -144,8 +110,6 @@ def extract_point_prompts(
         if len(result) >= max_points:
             break
 
-    # Robust fallback for sparse wrist/finger candidates or aggressive
-    # morphology thresholds.
     if not result:
         candidate = support_mask.astype(bool) if support_is_valid else np.ones_like(bone_cam, dtype=bool)
         masked_values = np.where(candidate, bone_cam, -np.inf)
@@ -168,7 +132,6 @@ def _save_prompt_debug(
     point_prompts: list[tuple[int, int]],
     image_pil,
 ) -> None:
-    """Save foreground mask, per-component masks, and CAM+points overlay."""
     from pathlib import Path
     from PIL import Image as _Image, ImageDraw
 

@@ -97,8 +97,6 @@ def fill_holes(mask: np.ndarray, max_hole_area: int | None = None) -> np.ndarray
     h, w = mask.shape
     background = (mask == 0).astype(np.uint8)
 
-    # Label background components (4-connectivity, matching the original flood-fill)
-    # then mark labels touching the border as "outside" — everything else is a hole.
     labels, num_labels = _label_components(background, connectivity=4)
     border_labels = set(labels[0, :].tolist()) | set(labels[-1, :].tolist())
     border_labels |= set(labels[:, 0].tolist()) | set(labels[:, -1].tolist())

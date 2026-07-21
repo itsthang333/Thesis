@@ -28,9 +28,6 @@ class TumorComponent:
     score: float
     bbox: tuple[int, int, int, int]  # x0, y0, x1, y1
     positive_points: tuple[tuple[int, int], ...]  # row, col
-    # Chosen from a low-CAM ring outside the positive component.  Negative
-    # points must not contradict the positive evidence by landing inside the
-    # component itself.
     negative_points: tuple[tuple[int, int], ...] = ()
 
 
@@ -223,13 +220,6 @@ def _find_local_maxima(
     max_points: int,
     min_distance: float,
 ) -> list[tuple[float, int, int]]:
-    """Greedy non-maximum suppression over scattered (row, col, value) samples.
-
-    Repeatedly takes the highest remaining value, then removes every
-    unselected sample within min_distance of it, so selected peaks are true
-    local maxima of the response rather than points from unrelated summary
-    statistics (centroid, axis quantiles) that ignore the response entirely.
-    """
     order = np.argsort(values)[::-1]
     suppressed = np.zeros(values.shape[0], dtype=bool)
     selected: list[tuple[float, int, int]] = []
@@ -261,9 +251,6 @@ def _select_negative_points(
     if rows.size == 0 or max_points <= 0:
         return ()
 
-    # A small outside ring is safer than selecting low-CAM pixels inside the
-    # positive component.  Prefer OpenCV when available, with a NumPy shift
-    # fallback so the geometry is deterministic in the minimal test runtime.
     radius = max(1, int(round(min(component.shape) * 0.02)))
     if cv2 is not None:
         kernel = np.ones((2 * radius + 1, 2 * radius + 1), dtype=np.uint8)
@@ -292,14 +279,8 @@ def _select_negative_points(
 
     low_rows, low_cols, low_values = rows[low_mask], cols[low_mask], values[low_mask]
     min_distance = max(4.0, min(component.shape) * 0.03)
-    # Negate values so _find_local_maxima's "highest first" greedy selection
-    # picks the lowest-CAM points (local minima) instead of peaks.
     candidates = _find_local_maxima(-low_values, low_rows, low_cols, max_points, min_distance)
 
-    # A nearly flat ring can contain no strict local maxima after the greedy
-    # suppression step.  Keep the negative-prompt contract deterministic by
-    # falling back to the lowest-CAM ring samples; these are still guaranteed
-    # to be outside the positive component.
     if not candidates:
         order = np.argsort(low_values)[:max_points]
         candidates = [
@@ -314,10 +295,6 @@ def _select_negative_points(
             continue
         selected.append((row, col))
     if not selected:
-        # The ring is already disjoint from the component, so when the
-        # positive-point spacing constraint would discard every candidate,
-        # retain the lowest-CAM outside samples rather than silently emitting
-        # a promptless SAM request.
         selected = [
             (row, col)
             for _, row, col in candidates
@@ -332,21 +309,6 @@ def _structured_component_points(
     cam: np.ndarray,
     max_points: int = 3,
 ) -> tuple[tuple[int, int], ...]:
-    """Pick positive SAM prompt points at true local maxima of the CAM.
-
-    Support masks are intentionally permissive (they only need to avoid
-    missing the lesion, per build_tumor_guidance's own design — see that
-    function's docstring), so a component can be much larger than the actual
-    lesion. Picking points from the component's geometry (centroid, principal-
-    axis quantiles) — as an earlier version of this function did — samples
-    wherever the *support region* happens to be shaped, not wherever the
-    lesion evidence actually peaks, which is a mismatch that shows up as a low
-    point-in-lesion hit rate independent of how good the CAM itself is.
-    Peaks are also taken from cam alone (not blended with tumor_likelihood):
-    the prompt must stay faithful to the classifier's own evidence, while
-    tumor_likelihood's intensity/edge terms exist only to shape the support
-    region in build_tumor_guidance, not to relocate prompts away from CAM.
-    """
     rows, cols = np.where(component > 0)
     if rows.size == 0:
         return ()
@@ -375,41 +337,6 @@ def build_class_conditioned_components(
     negative_points_per_component: int = 4,
     debug_dir: str | Path | None = None,
 ) -> tuple[np.ndarray, np.ndarray, list[TumorComponent]]:
-    """Build tumor prompt components from a single CAM threshold.
-
-    An earlier version of this function ran a much more elaborate morphology
-    stage (seed+support percentile pair, morphological_reconstruction,
-    lytic/sclerotic anomaly + edge response fusion, CAM-recall-weighted
-    multi-component ranking) under the assumption that CAM alone was too
-    weak/noisy a signal to threshold directly. This project's own oracle
-    diagnostics (support_loss_dice ~ 0 on average, meaning the reconstructed
-    support mask essentially never changed Dice once SAM candidates were
-    clipped to it) showed that safety net rarely did anything useful on
-    BTXRD, so it was removed in favor of this: threshold the fused CAM at a
-    single percentile, keep the largest connected component by default, and
-    optionally retain a deterministic top-N set for ablation.
-
-    A single connected component is deliberately kept (not top-N by area)
-    since BTXRD lesions are typically one contiguous region, and this
-    project saw repeatedly, across both SAM mask-selection and CAM-
-    refinement debugging, that keeping/scoring multiple small components let
-    spurious high-activation noise blobs compete with the real lesion.
-
-    Args:
-        image_rgb:      [H, W, 3] uint8 input radiograph.
-        per_class_cams: list of [H, W] float32 CAMs, one per active class.
-        class_weights:  classifier confidence per active class.
-        cam_percentile: Single threshold on the (weighted-max-fused) CAM
-                         defining the seed/support region.
-        min_component_area, max_components, points_per_component,
-        bbox_padding_ratio, negative_points_per_component: same meaning as
-                         before.
-
-    Returns:
-        (likelihood, support, components): likelihood is the fused CAM
-        itself (float32 [H, W]), support is the selected component union,
-        components is a list of at most ``max_components`` TumorComponents.
-    """
     if not per_class_cams:
         h, w = image_rgb.shape[:2]
         return (
@@ -447,9 +374,6 @@ def build_class_conditioned_components(
 
     components: list[TumorComponent] = []
     if components_raw:
-        # Keep the historical largest-component behavior when max_components=1,
-        # but expose a deterministic top-N ablation for cases where CAM breaks
-        # a single lesion into several disconnected high-activation islands.
         ranked_components = sorted(components_raw, key=lambda c: int(c.sum()), reverse=True)
         selected_components = ranked_components[: max(1, int(max_components))]
         support = np.zeros_like(support, dtype=np.uint8)
@@ -526,14 +450,6 @@ def build_tumor_guidance(
     use_clahe: bool = True,
     debug_dir: str | Path | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return continuous tumor likelihood and reconstructed binary support.
-
-    BTXRD's classifier is trained directly on tumor presence, so CAM is the
-    dominant cue. Local intensity anomaly and edge response
-    refine CAM toward focal abnormal regions rather than assuming radiopaque
-    intensity means "target", since lytic lesions are locally darker than
-    surrounding bone while sclerotic lesions are locally brighter.
-    """
     fused_cam = np.asarray(fused_cam, dtype=np.float32)
     if (
         fused_cam.ndim != 2

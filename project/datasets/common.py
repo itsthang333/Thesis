@@ -92,11 +92,6 @@ def _foreground_crop(image: Image.Image, padding_ratio: float = 0.06) -> Image.I
 
 
 def preprocess_xray_image(image: Image.Image, mode: str = "none") -> Image.Image:
-    """Apply optional X-ray preprocessing before ImageNet normalization.
-
-    These modes are intended for CAM debugging/ablation. The default "none"
-    preserves the original training and inference behavior.
-    """
     mode = (mode or "none").lower()
     if mode not in XRAY_PREPROCESSING_MODES:
         raise ValueError(f"Unknown preprocessing mode '{mode}'. Choose from {XRAY_PREPROCESSING_MODES}.")
@@ -123,22 +118,6 @@ class XRayPreprocessTransform:
 
 
 class RadImageNetNormalize:
-    """Matches the official BMEII-AI/RadImageNet PyTorch example notebook's
-    preprocessing: BGR channel order, pixels rescaled to roughly [-1, 1] via
-    (x - 127.5) * 2 / 255, no ImageNet mean/std subtraction.
-
-    Confirmed empirically against the Lab-Rasool/RadImageNet DenseNet121.pt
-    checkpoint: feeding standard ImageNet-normalized RGB inputs into that
-    checkpoint's backbone (eval mode, using its loaded BatchNorm running
-    stats) produced abnormally large activations (features max ~1200-4700
-    across several candidate pipelines), while this BGR+[-1,1] pipeline
-    produced small, well-behaved activations (features max ~0.08) --
-    indicating this is the preprocessing the checkpoint's BatchNorm
-    statistics were actually calibrated on, contrary to that checkpoint's
-    own (third-party, unverified) HuggingFace README, which recommends
-    plain ImageNet normalization.
-    """
-
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         bgr = tensor[[2, 1, 0], :, :]
         return (bgr * 255.0 - 127.5) * 2 / 255.0

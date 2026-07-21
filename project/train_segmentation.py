@@ -184,27 +184,6 @@ def build_datasets(args: argparse.Namespace):
 
 
 def scan_mask_statistics(train_dataset, num_workers: int = 0, batch_size: int = 32) -> dict[str, float | int]:
-    """background_pixels / foreground_pixels across the actual train-set
-    masks -- used to weight BCE so missing a lesion pixel costs as much as
-    a false positive on background, countering the collapse-to-empty-mask
-    failure mode found empirically on BTXRD (see bce_dice_loss's docstring).
-    Iterates the raw mask tensors already produced by the dataset's own
-    transform, so this matches exactly what the model is trained against --
-    including pseudo-masks when --train-pred-mask-root is set, since the
-    ratio must reflect whatever target the model actually sees, not the
-    ground-truth polygon distribution.
-
-    num_workers defaults to 0 (single-process, no DataLoader worker
-    subprocesses) rather than the main training loop's --num-workers value.
-    An earlier version of this function defaulted to num_workers>0 here and
-    was observed to hang indefinitely (30+ minutes, no progress) on Colab --
-    a known failure mode of PyTorch DataLoader worker subprocesses combined
-    with a Google-Drive-backed FUSE mount (fork() inside a notebook kernel
-    plus network-filesystem I/O in each worker is a common deadlock
-    trigger). This one-time startup pass is small enough (~3000 images) that
-    single-process iteration is an acceptable, safe default; only raise
-    num_workers here if you've confirmed it doesn't hang in your environment.
-    """
     loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
@@ -323,12 +302,6 @@ def save_checkpoint(
     best_tiebreak_metric: float | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    # Unwrap nn.DataParallel before saving: DataParallel prefixes every state_dict
-    # key with "module." (model.module.inc.block.0.weight instead of
-    # model.inc.block.0.weight), so a checkpoint saved from a DataParallel-wrapped
-    # model would fail to load into a plain UNet() with strict=True (used by
-    # evaluate_unet.py and --resume-from) -- saving the unwrapped state_dict here
-    # keeps checkpoints identical whether or not multi-GPU was used to train.
     model_to_save = model.module if isinstance(model, nn.DataParallel) else model
     state = {
         "epoch": epoch,
@@ -450,13 +423,6 @@ def is_better_checkpoint(
     best_normal_specificity: float,
     dice_tolerance: float,
 ) -> bool:
-    """Lexicographic selection with a clinically relevant normal-case tie-break.
-
-    Positive-target Dice remains the primary endpoint. Only values that are
-    statistically indistinguishable at the configured numerical tolerance use
-    the normal empty-case rate, preventing an arbitrary earlier checkpoint from
-    winning while producing more false-positive normal masks.
-    """
     if dice_tolerance < 0:
         raise ValueError("--checkpoint-dice-tolerance must be non-negative")
     if candidate_dice > best_dice + dice_tolerance:
@@ -661,12 +627,6 @@ def main() -> None:
             f"(best_val_positive_dice={best_val_positive_dice:.4f}, "
             f"best_val_normal_specificity={best_val_normal_specificity:.4f})"
         )
-        # pos_weight is recomputed above from the CURRENT train_dataset (so it
-        # always reflects --train-pred-mask-root as currently set), not
-        # restored from the checkpoint. If that changed since the run being
-        # resumed (e.g. --train-pred-mask-root now points at a different
-        # pseudo-mask directory), the loss weighting shifts mid-training --
-        # warn loudly rather than silently changing the optimization target.
         checkpoint_pos_weight = checkpoint.get("pos_weight")
         if (
             checkpoint_pos_weight is not None
@@ -678,10 +638,6 @@ def main() -> None:
                 f"current={pos_weight:.4f}. Refusing to change the optimization objective mid-run."
             )
 
-    # Wrap in DataParallel AFTER loading any --resume-from checkpoint (which
-    # was saved from a plain, unwrapped model -- see save_checkpoint) so
-    # load_state_dict above always sees keys without the "module." prefix
-    # DataParallel would otherwise require.
     if use_multi_gpu:
         print(
             f"Using nn.DataParallel across {num_gpus} GPUs "
@@ -690,10 +646,6 @@ def main() -> None:
         model = nn.DataParallel(model)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    # Only (re)write the header when starting fresh -- resuming must append to
-    # the existing training_log.csv, not overwrite it (the file was opened
-    # with mode "w" unconditionally before this fix, which silently discarded
-    # every prior epoch's row on any re-run, resume or not).
     ensure_history_schema(history_path, start_fresh=args.resume_from is None)
 
     for epoch in range(start_epoch, args.epochs + 1):
@@ -726,11 +678,6 @@ def main() -> None:
             f"val_normal_empty_case_specificity={val_metrics['empty_specificity']:.4f}"
         )
 
-        # Update best metric for THIS epoch before saving last_unet.pt, so its
-        # best_metric field reflects the true best-so-far (including this epoch)
-        # rather than lagging one epoch behind -- otherwise resuming from
-        # last_unet.pt reads a stale best_metric and can let a worse later
-        # epoch overwrite best_unet.pt.
         if is_better_checkpoint(
             val_metrics["positive_dice"],
             val_metrics["empty_specificity"],

@@ -177,15 +177,6 @@ def main() -> None:
 
     rows: list[dict[str, object]] = []
     metadata_by_name = {str(sample["image_id"]): sample for sample in dataset.samples}
-    # Split metrics by whether the GT mask actually has a lesion/bone region,
-    # and further split tumor images by whether the classifier skipped them
-    # for low confidence. A pooled mean over all three conflates three
-    # different failure modes: normal images trivially score Dice=1 when both
-    # prediction and GT are empty (a correct *detection*, not evidence of good
-    # *segmentation*); classifier-skipped tumor images always get Dice≈0 by
-    # construction (an all-zero mask was saved before CAM/SAM ever ran) and
-    # blame the classifier threshold, not CAM/SAM/morphology; only tumor
-    # images that actually ran the full pipeline reflect CAM/SAM quality.
     tumor_skipped_count = 0
     missing = 0
 
@@ -234,11 +225,6 @@ def main() -> None:
                 **metrics,
             })
             if metrics["gt_positive"]:
-                # End-to-end metrics include detection/classification
-                # failures. If predicted protocol maps a tumor image to the
-                # normal class, generation deliberately writes an empty mask;
-                # that Dice/IoU belongs in the end-to-end result even though
-                # it is excluded from the conditional CAM/SAM-only metric.
                 if was_skipped:
                     tumor_skipped_count += 1
 
@@ -263,12 +249,6 @@ def main() -> None:
         "boundary_distance_unit": "pixels on the resized evaluation grid",
         "missing": missing,
         "tumor_images_skipped_by_image_gate": tumor_skipped_count,
-        # Keep the end-to-end aggregate fields at the top level as the stable
-        # report API used by the notebook's component-top-k audit, while also
-        # retaining the explicitly named nested block below.  Omitting these
-        # aliases made the notebook fail only after both full validation
-        # pseudo-mask runs had completed (KeyError on
-        # gt_component_count_histogram).
         **end_to_end,
         "end_to_end": end_to_end,
         "cam_sam_conditional_tumor_only": conditional,

@@ -85,9 +85,6 @@ class BtxrdBestPipelineConfig:
     sam_single_mask: bool = False
     max_bone_components: int = 3
     all_cam_components: bool = True
-    # Retain up to one proposal per CAM component so multifocal images are not
-    # forced into a single-lesion assumption. Evaluation reports the observed
-    # GT component distribution and one-to-one lesion matching separately.
     component_topk: int = 3
     points_per_component: int = 5
     bbox_padding_ratio: float = 0.02
@@ -96,8 +93,6 @@ class BtxrdBestPipelineConfig:
     max_box_area_ratio: float = 0.35
     selection_method: str = "coverage_mass_sam"
     best_per_component: bool = True
-    # Match the production single-component path if best_per_component is
-    # disabled for an ablation; top-3 fusion was otherwise inactive here.
     fusion_topk: int = 1
     support_clip_kernel: int = 5
     closing_kernel: int = 0
@@ -109,20 +104,6 @@ class BtxrdBestPipelineConfig:
 
 BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 
-# btxrd_hybrid: legacy validation candidate using the same CAM/SAM/mask-selection
-# recipe as btxrd_best (previous experiments reported higher oracle Dice -- contrastive
-# CAM, percentile ensemble, multi-component, SAM prompt ensemble at 512px),
-# combined with the classifier training recipe validated on the other
-# pipeline (30-epoch budget with early stopping, PuzzleCAM + Teacher-Student
-# attention distillation) instead of btxrd_best's pure-CE classifier
-# (val_f1=0.4251, visibly still improving at epoch 6 on the confusion
-# matrix). btxrd_best's classifier CAM/SAM stages produced a much higher
-# oracle_best_single_dice (0.52 vs 0.34) than the other pipeline's, but its
-# own classifier was undertrained relative to the other pipeline's
-# (val_f1=0.6774) -- this profile keeps the winning downstream recipe and
-# swaps in the previously stronger training recipe. These figures predate the
-# audited manifest hash 15e675... and cannot be cited as final results; rerun
-# validation and freeze a checksum-bearing configuration before locked test.
 @dataclass(frozen=True)
 class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
     name: str = "btxrd_hybrid"

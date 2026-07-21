@@ -69,11 +69,6 @@ def binary_auroc(target: np.ndarray, score: np.ndarray) -> float:
 
 
 def binary_average_precision(target: np.ndarray, score: np.ndarray) -> float:
-    """Non-interpolated AP = sum_n (R_n - R_{n-1}) P_n.
-
-    Thresholds advance only after a complete equal-score group, making the
-    result invariant to input order when predictions contain ties.
-    """
     target, score = _validated_binary_inputs(target, score)
     positives = int(target.sum())
     if positives == 0:
@@ -140,12 +135,6 @@ def classifier_group_bootstrap_confidence_intervals(
     iterations: int = 2000,
     seed: int = 42,
 ) -> dict[str, object]:
-    """Percentile CIs from complete heuristic-group resampling.
-
-    Metrics are recomputed after sampling groups with replacement; images in a
-    sampled group remain together. Undefined AUROC/AP replicates are omitted
-    and their valid replicate counts are reported explicitly.
-    """
     if iterations < 1:
         raise ValueError("bootstrap iterations must be positive")
     grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
