@@ -263,6 +263,13 @@ def main() -> None:
         "boundary_distance_unit": "pixels on the resized evaluation grid",
         "missing": missing,
         "tumor_images_skipped_by_image_gate": tumor_skipped_count,
+        # Keep the end-to-end aggregate fields at the top level as the stable
+        # report API used by the notebook's component-top-k audit, while also
+        # retaining the explicitly named nested block below.  Omitting these
+        # aliases made the notebook fail only after both full validation
+        # pseudo-mask runs had completed (KeyError on
+        # gt_component_count_histogram).
+        **end_to_end,
         "end_to_end": end_to_end,
         "cam_sam_conditional_tumor_only": conditional,
     }

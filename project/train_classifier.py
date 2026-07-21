@@ -639,7 +639,13 @@ def save_cam_preview(
         model.train(was_training)
 
 
-def classifier_epoch_budget_audit(records: list[dict[str, float | int]], requested_epochs: int) -> dict[str, object]:
+def classifier_epoch_budget_audit(
+    records: list[dict[str, float | int]],
+    requested_epochs: int,
+    *,
+    stopped_early: bool = False,
+    early_stop_patience: int = 0,
+) -> dict[str, object]:
     """Diagnose whether the audited validation curve supports the epoch budget."""
     if not records:
         raise ValueError("Cannot audit an empty classifier training history")
@@ -653,13 +659,28 @@ def classifier_epoch_budget_audit(records: list[dict[str, float | int]], request
         tail_slope = None
     last_epoch = int(records[-1]["epoch"])
     best_epoch = int(best["epoch"])
+    epochs_since_best = last_epoch - best_epoch
     best_at_boundary = best_epoch == last_epoch and last_epoch >= requested_epochs
+    valid_early_stop = (
+        stopped_early
+        and early_stop_patience > 0
+        and epochs_since_best >= early_stop_patience
+    )
     if best_at_boundary:
         assessment = "budget_boundary_best_requires_longer_ablation"
-    elif last_epoch - best_epoch >= 2 and tail_slope is not None and tail_slope <= 0:
+        assessment_basis = "best validation F1 occurred at the requested epoch boundary"
+    elif valid_early_stop:
         assessment = "plateau_or_decline_observed"
+        assessment_basis = (
+            f"early stopping fired after {epochs_since_best} epochs without a new best "
+            f"(patience={early_stop_patience})"
+        )
+    elif epochs_since_best >= 2 and tail_slope is not None and tail_slope <= 0:
+        assessment = "plateau_or_decline_observed"
+        assessment_basis = "best epoch precedes a non-positive trailing validation-F1 trend"
     else:
         assessment = "inconclusive"
+        assessment_basis = "neither a valid early stop nor a non-positive trailing trend was observed"
     return {
         "metric": "audited-split validation F1",
         "requested_epochs": int(requested_epochs),
@@ -667,10 +688,15 @@ def classifier_epoch_budget_audit(records: list[dict[str, float | int]], request
         "best_epoch": best_epoch,
         "best_val_f1": float(best["val_f1"]),
         "final_val_f1": float(records[-1]["val_f1"]),
+        "epochs_since_best": epochs_since_best,
+        "stopped_early": bool(stopped_early),
+        "early_stop_patience": int(early_stop_patience),
+        "valid_early_stop": valid_early_stop,
         "best_at_budget_boundary": best_at_boundary,
         "tail_window_epochs": [int(row["epoch"]) for row in tail],
         "tail_val_f1_slope_per_epoch": tail_slope,
         "assessment": assessment,
+        "assessment_basis": assessment_basis,
         "decision_rule": (
             "If the best audited-split validation F1 is at the requested budget boundary, "
             "run a longer otherwise-identical validation-only budget ablation before test freeze."
@@ -854,6 +880,7 @@ def main() -> None:
 
     teacher = None  # created once warmup ends; stays None (attention loss disabled) until then
     epoch_budget_records: list[dict[str, float | int]] = []
+    stopped_early = False
 
     for epoch in range(1, args.epochs + 1):
         if is_multiclass:
@@ -1009,13 +1036,19 @@ def main() -> None:
             print(f"  --> Saved CAM preview for epoch {epoch} to {cam_output_dir}")
 
         if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
+            stopped_early = True
             print(
                 f"Early stopping: val_f1 did not improve for {epochs_without_improvement} epochs "
                 f"(patience={args.early_stop_patience}). Best val_f1={best_val_f1:.4f}."
             )
             break
 
-    budget_audit = classifier_epoch_budget_audit(epoch_budget_records, args.epochs)
+    budget_audit = classifier_epoch_budget_audit(
+        epoch_budget_records,
+        args.epochs,
+        stopped_early=stopped_early,
+        early_stop_patience=args.early_stop_patience,
+    )
     budget_audit.update({
         "split": args.val_split,
         "split_manifest": str(args.split_manifest) if args.split_manifest else None,

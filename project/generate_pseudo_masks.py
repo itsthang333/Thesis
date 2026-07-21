@@ -33,6 +33,7 @@ if str(ROOT) not in sys.path:
 
 from config import (
     BTXRD_BEST_PIPELINE,
+    BTXRD_HYBRID_PIPELINE,
     DATASET_TARGET_COLUMNS,
     DEFAULT_DATASET,
     SUPPORTED_DATASETS,
@@ -79,7 +80,7 @@ def parse_args() -> argparse.Namespace:
         "--allow-validation-component-topk-ablation",
         action="store_true",
         help=(
-            "Allow an explicit --component-topk override under btxrd_best only on split=val. "
+            "Allow an explicit --component-topk override under a canonical BTXRD profile only on split=val. "
             "This is a diagnostic ablation and must never be used for canonical train/test artifacts."
         ),
     )
@@ -296,7 +297,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     """Resolve the tested pipeline configuration without using segmentation GT.
 
     The default CLI remains available for diagnostics, while
-    ``--pipeline-profile btxrd_best`` makes the exact BTXRD
+    ``--pipeline-profile btxrd_best`` or ``btxrd_hybrid`` makes the exact BTXRD
     configuration used in the best validation run reproducible.  Recipe-
     critical CLI changes are rejected under this profile; only dataset paths,
     protocol selection, output paths, checkpoint paths, and device placement
@@ -323,7 +324,11 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     if "--sam-checkpoint" not in explicit and best_sam.exists():
         args.sam_checkpoint = best_sam
 
-    profile = BTXRD_BEST_PIPELINE
+    profile = (
+        BTXRD_HYBRID_PIPELINE
+        if args.pipeline_profile == BTXRD_HYBRID_PIPELINE.name
+        else BTXRD_BEST_PIPELINE
+    )
 
     def require_or_set(option: str, attribute: str, expected: object) -> None:
         if (
@@ -442,11 +447,21 @@ def load_classifier(
     expected_task: str | None = None,
     expected_num_classes: int | None = None,
     expected_split_manifest: Path | None = None,
+    expected_pipeline_profile: str | None = None,
 ) -> tuple[DenseNet121AnatomyClassifier, str, str]:
     state = torch.load(checkpoint_path, map_location="cpu")
     checkpoint_target_columns = state.get("target_columns")
     checkpoint_task = state.get("task", "multi-label")
     checkpoint_num_classes = state.get("num_classes", fallback_num_classes)
+    checkpoint_pipeline_profile = state.get("pipeline_profile")
+    if (
+        expected_pipeline_profile is not None
+        and checkpoint_pipeline_profile != expected_pipeline_profile
+    ):
+        raise ValueError(
+            f"Checkpoint {checkpoint_path} has pipeline_profile={checkpoint_pipeline_profile!r}; "
+            f"the selected pipeline requires {expected_pipeline_profile!r}."
+        )
     if expected_target_columns is not None and checkpoint_target_columns != expected_target_columns:
         raise ValueError(
             f"Checkpoint {checkpoint_path} has target_columns={checkpoint_target_columns!r}; "
@@ -612,7 +627,11 @@ def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagen
 
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
-    if args.pipeline_profile == "btxrd_best" and args.split == "train" and args.evaluate_prompt_quality:
+    if (
+        args.pipeline_profile in {BTXRD_BEST_PIPELINE.name, BTXRD_HYBRID_PIPELINE.name}
+        and args.split == "train"
+        and args.evaluate_prompt_quality
+    ):
         raise ValueError(
             "Canonical train pseudo-mask generation cannot read polygon diagnostics. "
             "Run a separate non-canonical diagnostic output on val instead."
@@ -673,10 +692,12 @@ def main() -> None:
         raise RuntimeError("--classifier-device cuda requested but CUDA is unavailable")
     if sam_device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("--sam-device cuda requested but CUDA is unavailable")
+    canonical_profile = {
+        BTXRD_BEST_PIPELINE.name: BTXRD_BEST_PIPELINE,
+        BTXRD_HYBRID_PIPELINE.name: BTXRD_HYBRID_PIPELINE,
+    }.get(args.pipeline_profile)
     expected_profile_columns = (
-        list(BTXRD_BEST_PIPELINE.target_columns)
-        if args.pipeline_profile == BTXRD_BEST_PIPELINE.name
-        else None
+        list(canonical_profile.target_columns) if canonical_profile is not None else None
     )
     classifier, classifier_task, classifier_normalization = load_classifier(
         args.classifier_checkpoint,
@@ -686,6 +707,9 @@ def main() -> None:
         expected_task="single-label" if expected_profile_columns is not None else None,
         expected_num_classes=10 if expected_profile_columns is not None else None,
         expected_split_manifest=args.split_manifest,
+        expected_pipeline_profile=(
+            canonical_profile.name if canonical_profile is not None else None
+        ),
     )
     print(f"Loaded classifier checkpoint task={classifier_task} normalization={classifier_normalization}")
 

@@ -39,6 +39,13 @@ class NotebookBootstrapTests(unittest.TestCase):
             self.code_sources[0],
         )
 
+    def test_kaggle_defaults_to_hybrid_profile(self) -> None:
+        combined = "\n".join(self.code_sources)
+        self.assertIn(
+            'os.environ.get("BTXRD_PIPELINE_PROFILE", "btxrd_hybrid")',
+            combined,
+        )
+
 
 class ColabNotebookBootstrapTests(unittest.TestCase):
     @classmethod
@@ -79,6 +86,13 @@ class ColabNotebookBootstrapTests(unittest.TestCase):
         self.assertIn('drive.mount("/content/drive")', source)
         self.assertIn("shutil.copytree(OUTPUT_ROOT, drive_destination)", source)
         self.assertIn("Refusing to overwrite", source)
+
+    def test_colab_defaults_to_hybrid_profile(self) -> None:
+        combined = "\n".join(self.code_sources)
+        self.assertIn(
+            'os.environ.get("BTXRD_PIPELINE_PROFILE", "btxrd_hybrid")',
+            combined,
+        )
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ instead of duplicating model logic inside notebook cells.
 
 ```text
 audited group split manifest
-  -> DenseNet121 image classifier (tumor_type, btxrd_best)
+  -> DenseNet121 hybrid image classifier (tumor_type, btxrd_hybrid)
   -> multi-layer LayerCAM + class-vs-normal contrast
   -> tumor morphology + positive/negative point and box prompts
   -> local SAM v1 ViT-B
@@ -60,13 +60,13 @@ python tools/build_btxrd_split_manifest.py \
   --report-json /path/to/split_report.json
 
 python train_classifier.py \
-  --pipeline-profile btxrd_best \
+  --pipeline-profile btxrd_hybrid \
   --data-root /path/to/btxrd \
   --split-manifest /path/to/split_manifest.csv \
   --output-dir /path/to/classifier_run
 
 python generate_pseudo_masks.py \
-  --pipeline-profile btxrd_best \
+  --pipeline-profile btxrd_hybrid \
   --data-root /path/to/btxrd \
   --split-manifest /path/to/split_manifest.csv \
   --split train \
@@ -76,7 +76,7 @@ python generate_pseudo_masks.py \
   --process-all --output-dir /path/to/pseudo_train
 
 python train_segmentation.py \
-  --pipeline-profile btxrd_best \
+  --pipeline-profile btxrd_hybrid \
   --data-root /path/to/btxrd \
   --split-manifest /path/to/split_manifest.csv \
   --train-pred-mask-root /path/to/pseudo_train/masks \

@@ -35,11 +35,18 @@ class TorchMathTests(unittest.TestCase):
             {"epoch": 20, "val_f1": 0.33},
             {"epoch": 21, "val_f1": 0.32},
         ]
-        audit = classifier_epoch_budget_audit(records, requested_epochs=30)
+        audit = classifier_epoch_budget_audit(
+            records,
+            requested_epochs=30,
+            stopped_early=True,
+            early_stop_patience=7,
+        )
 
         self.assertEqual(audit["assessment"], "plateau_or_decline_observed")
         self.assertEqual(audit["best_epoch"], 14)
         self.assertAlmostEqual(audit["best_val_f1"], 0.4096)
+        self.assertTrue(audit["valid_early_stop"])
+        self.assertIn("early stopping fired", audit["assessment_basis"])
 
     def test_bce_dice_formula(self) -> None:
         from models.losses import bce_dice_loss, dice_loss_from_logits
