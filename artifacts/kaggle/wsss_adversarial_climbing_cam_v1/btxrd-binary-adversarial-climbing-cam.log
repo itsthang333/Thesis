@@ -1,0 +1,292 @@
+[{"stream_name":"stdout","time":29.089658732,"data":"RUN [\"/usr/bin/python3\", \"-m\", \"unittest\", \"discover\", \"-s\", \"/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v4/tests\", \"-p\", \"test_torch_math_and_resume.py\", \"-v\"]\n"}
+,{"stream_name":"stderr","time":32.334398063,"data":"test_resume_config_is_path_portable_but_training_strict (test_torch_math_and_resume.ResumeIntegrationTests.test_resume_config_is_path_portable_but_training_strict) ... ok\n"}
+,{"stream_name":"stderr","time":32.604822137,"data":"test_resume_matches_uninterrupted_next_step (test_torch_math_and_resume.ResumeIntegrationTests.test_resume_matches_uninterrupted_next_step) ... /kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v4/tests/test_torch_math_and_resume.py:183: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":32.604860461,"data":"  scaler = torch.cuda.amp.GradScaler(enabled=False)\n"}
+,{"stream_name":"stderr","time":35.224807122,"data":"ok\n"}
+,{"stream_name":"stderr","time":35.240775849,"data":"test_adversarial_climbing_layercam_is_bounded_and_aggregates_steps (test_torch_math_and_resume.TorchMathTests.test_adversarial_climbing_layercam_is_bounded_and_aggregates_steps) ... ok\n"}
+,{"stream_name":"stderr","time":35.241011962,"data":"test_adversarial_climbing_rejects_invalid_budget (test_torch_math_and_resume.TorchMathTests.test_adversarial_climbing_rejects_invalid_budget) ... ok\n"}
+,{"stream_name":"stderr","time":35.241611473,"data":"test_bce_dice_formula (test_torch_math_and_resume.TorchMathTests.test_bce_dice_formula) ... ok\n"}
+,{"stream_name":"stderr","time":35.314994812,"data":"test_classifier_budget_audit_runs_after_early_stopping (test_torch_math_and_resume.TorchMathTests.test_classifier_budget_audit_runs_after_early_stopping) ... ok\n"}
+,{"stream_name":"stderr","time":35.31551018,"data":"test_flat_puzzle_cam_normalises_to_zero (test_torch_math_and_resume.TorchMathTests.test_flat_puzzle_cam_normalises_to_zero) ... ok\n"}
+,{"stream_name":"stderr","time":35.330783213,"data":"test_postprocess_guidance_threshold_fails_closed (test_torch_math_and_resume.TorchMathTests.test_postprocess_guidance_threshold_fails_closed) ... ok\n"}
+,{"stream_name":"stderr","time":35.330812261,"data":"test_puzzle_tile_merge_is_exact (test_torch_math_and_resume.TorchMathTests.test_puzzle_tile_merge_is_exact) ... ok\n"}
+,{"stream_name":"stderr","time":35.554167848,"data":"test_resnet18_unet_preserves_spatial_shape_and_backpropagates (test_torch_math_and_resume.TorchMathTests.test_resnet18_unet_preserves_spatial_shape_and_backpropagates) ... ok\n"}
+,{"stream_name":"stderr","time":35.601720139,"data":"test_unet_preserves_spatial_shape_and_backpropagates (test_torch_math_and_resume.TorchMathTests.test_unet_preserves_spatial_shape_and_backpropagates) ... ok\n"}
+,{"stream_name":"stderr","time":35.601757805,"data":"\n"}
+,{"stream_name":"stderr","time":35.601785583,"data":"----------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":35.601847293,"data":"Ran 11 tests in 4.700s\n"}
+,{"stream_name":"stderr","time":35.601855175,"data":"\n"}
+,{"stream_name":"stderr","time":35.601933365,"data":"OK\n"}
+,{"stream_name":"stdout","time":37.721232019,"data":"RUN [\"/usr/bin/python3\", \"-m\", \"pip\", \"install\", \"--disable-pip-version-check\", \"--no-input\", \"--no-deps\", \"git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588\"]\n"}
+,{"stream_name":"stdout","time":40.120352925,"data":"Collecting git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588\n"}
+,{"stream_name":"stdout","time":40.121381191,"data":"  Cloning https://github.com/facebookresearch/segment-anything.git (to revision 6fdee8f2727f4506cfbbe553e23b895e27956588) to /tmp/pip-req-build-7t96_j7b\n"}
+,{"stream_name":"stderr","time":40.126243302,"data":"  Running command git clone --filter=blob:none --quiet https://github.com/facebookresearch/segment-anything.git /tmp/pip-req-build-7t96_j7b\n"}
+,{"stream_name":"stderr","time":42.09842235,"data":"  Running command git rev-parse -q --verify 'sha^6fdee8f2727f4506cfbbe553e23b895e27956588'\n"}
+,{"stream_name":"stderr","time":42.101318496,"data":"  Running command git fetch -q https://github.com/facebookresearch/segment-anything.git 6fdee8f2727f4506cfbbe553e23b895e27956588\n"}
+,{"stream_name":"stderr","time":42.362601772,"data":"  Running command git checkout -q 6fdee8f2727f4506cfbbe553e23b895e27956588\n"}
+,{"stream_name":"stdout","time":42.673308649,"data":"  Resolved https://github.com/facebookresearch/segment-anything.git to commit 6fdee8f2727f4506cfbbe553e23b895e27956588\n"}
+,{"stream_name":"stdout","time":42.680744468,"data":"  Preparing metadata (setup.py): started\n"}
+,{"stream_name":"stdout","time":43.551100293,"data":"  Preparing metadata (setup.py): finished with status 'done'\n"}
+,{"stream_name":"stdout","time":48.083933547,"data":"RUN [\"/usr/bin/python3\", \"/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v4/project/generate_pseudo_masks.py\", \"--pipeline-profile\", \"default\", \"--data-root\", \"/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD\", \"--split\", \"val\", \"--split-manifest\", \"/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v4/split_manifest.csv\", \"--classifier-checkpoint\", \"/kaggle/input/notebooks/itsthang333/btxrd-clean-binary-classifier/btxrd_clean_binary_classifier/training/best_classifier.pt\", \"--sam-checkpoint\", \"/kaggle/input/datasets/itsthang333/btxrd-model-checkpoints/btxrd-model-checkpoints/sam_vit_b_01ec64.pth\", \"--classifier-device\", \"cuda\", \"--sam-device\", \"cuda\", \"--target-columns\", \"tumor\", \"--image-size\", \"320\", \"--sam-image-size\", \"512\", \"--batch-size\", \"1\", \"--num-workers\", \"2\", \"--output-dir\", \"/kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/pseudo_masks\", \"--process-all\", \"--save-visuals-limit\", \"0\", \"--confidence-threshold\", \"0.5\", \"--cam-percentile\", \"90\", \"--cam-percentile-ensemble\", \"--cam-percentile-values\", \"85,90,95\", \"--cam-tta-flip\", \"--advcam-iterations\", \"10\", \"--advcam-step-size\", \"0.08\", \"--max-points\", \"5\", \"--min-component-area\", \"100\", \"--mask-score-threshold\", \"0.4\", \"--seed-percentile\", \"82\", \"--support-percentile\", \"55\", \"--morphology-fusion-mode\", \"components\", \"--sam-prompt-mode\", \"box_point\", \"--sam-prompt-ensemble\", \"--max-components\", \"3\", \"--all-cam-components\", \"--points-per-component\", \"5\", \"--bbox-padding-ratio\", \"0.02\", \"--negative-points-per-component\", \"4\", \"--prompt-border-margin\", \"2\", \"--max-box-area-ratio\", \"0.35\", \"--layercam-weights\", \"0.20,0.30,0.50\", \"--layercam-gradient-mode\", \"positive\", \"--selection-method\", \"coverage_mass_sam\", \"--fusion-topk\", \"1\", \"--component-topk\", \"3\", \"--support-clip-kernel\", \"5\", \"--closing-kernel\", \"0\", \"--opening-kernel\", \"0\", \"--min-size\", \"40\", \"--max-hole-area\", \"0\", \"--guidance-threshold\", \"0.4\", \"--preprocessing-mode\", \"none\", \"--cam-aggregation\", \"class\", \"--low-score-policy\", \"empty\", \"--cam-target-class\", \"ground_truth\", \"--evaluate-prompt-quality\"]\n"}
+,{"stream_name":"stdout","time":52.483995893,"data":"Loaded classifier checkpoint task=multi-label normalization=imagenet\n"}
+,{"stream_name":"stdout","time":95.528867451,"data":"Loaded 371 ground-truth masks for prompt-quality evaluation\n"}
+,{"stream_name":"stderr","time":96.750831262,"data":"/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v4/project/models/classifier.py:54: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":96.750875226,"data":"  with torch.cuda.amp.autocast(enabled=False):\n"}
+,{"stream_name":"stdout","time":583.395800067,"data":"\n"}
+,{"stream_name":"stdout","time":583.395869277,"data":"Done: full dataset. Masks saved to /kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/pseudo_masks/masks (skipped 187 normal/low-confidence images)\n"}
+,{"stream_name":"stdout","time":583.39622048,"data":"Saved list of 187 skipped image names to /kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/pseudo_masks/skipped_low_confidence.txt\n"}
+,{"stream_name":"stdout","time":584.128342069,"data":"Pseudo-mask completeness: 371/371 rows; manifest_sha256=baf4a50a9ef3e964dd8d8911a7066eeb30016fa88c2ace33b732892a369f3355\n"}
+,{"stream_name":"stdout","time":584.132042594,"data":"Prompt quality (184 images with GT): mean foreground_iou=0.0921 mean foreground_recall=0.8018 mean foreground_precision=0.1005 mean point_hit_rate=0.2959 mean negative_rejection=0.9690 mean box_recall=0.8408\n"}
+,{"stream_name":"stdout","time":584.132140952,"data":"SAM-vs-selection oracle diagnostic (total gap decomposed into support-clip loss vs. mask-selection loss): mean oracle_best_single_dice=0.4545 mean oracle_best_single_dice_clipped=0.4447 mean selected_dice=0.2519 mean total_gap=0.2026 mean support_loss=0.0098 mean selection_loss=0.1928 mean final_dice=0.2490 mean postprocess_delta=-0.0030 (large support_loss =\u003e bone_support under-covers the lesion, fix morphology seed/support percentiles, not mask_selection.py; large selection_loss =\u003e bone_hybrid scoring is discarding a good clipped candidate, fix mask_selection.py)\n"}
+,{"stream_name":"stdout","time":584.132158171,"data":"\n"}
+,{"stream_name":"stdout","time":584.132163165,"data":"Oracle Dice by tumor_type (breaks down where CAM localization fails):\n"}
+,{"stream_name":"stdout","time":584.13227748,"data":"  osteochondroma               n=  75  mean_oracle_dice=0.2772\n"}
+,{"stream_name":"stdout","time":584.132299679,"data":"  osteosarcoma                 n=  30  mean_oracle_dice=0.6809\n"}
+,{"stream_name":"stdout","time":584.132307125,"data":"  multiple osteochondromas     n=  26  mean_oracle_dice=0.5549\n"}
+,{"stream_name":"stdout","time":584.132312722,"data":"  simple bone cyst             n=  20  mean_oracle_dice=0.5371\n"}
+,{"stream_name":"stdout","time":584.132317935,"data":"  other bt                     n=  11  mean_oracle_dice=0.3336\n"}
+,{"stream_name":"stdout","time":584.132322525,"data":"  giant cell tumor             n=   9  mean_oracle_dice=0.6577\n"}
+,{"stream_name":"stdout","time":584.132327051,"data":"  synovial osteochondroma      n=   5  mean_oracle_dice=0.7878\n"}
+,{"stream_name":"stdout","time":584.132331462,"data":"  other mt                     n=   4  mean_oracle_dice=0.6814\n"}
+,{"stream_name":"stdout","time":584.132336035,"data":"  osteofibroma                 n=   4  mean_oracle_dice=0.2487\n"}
+,{"stream_name":"stdout","time":584.132349891,"data":"Saved per-image prompt-quality metrics to /kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/pseudo_masks/prompt_quality.csv\n"}
+,{"stream_name":"stdout","time":585.310292481,"data":"RUN [\"/usr/bin/python3\", \"/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v4/project/evaluate_pseudo_masks.py\", \"--data-root\", \"/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD\", \"--split\", \"val\", \"--split-manifest\", \"/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v4/split_manifest.csv\", \"--pred-mask-root\", \"/kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/pseudo_masks/masks\", \"--image-size\", \"320\", \"--batch-size\", \"8\", \"--num-workers\", \"2\", \"--output-csv\", \"/kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/evaluation/per_image.csv\", \"--output-json\", \"/kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/evaluation/summary.json\", \"--bootstrap-iterations\", \"2000\", \"--bootstrap-seed\", \"42\"]\n"}
+,{"stream_name":"stdout","time":602.160220602,"data":"Validated pseudo-mask manifest: baf4a50a9ef3e964dd8d8911a7066eeb30016fa88c2ace33b732892a369f3355\n"}
+,{"stream_name":"stdout","time":602.169174028,"data":"Pseudo-mask protocol: ground_truth\n"}
+,{"stream_name":"stdout","time":602.169196837,"data":"Loaded 187 low-confidence-skipped image names\n"}
+,{"stream_name":"stdout","time":615.562220564,"data":"btxrd val: tumor images=184 (image-gate skips=0) conditional Dice=0.2490 end-to-end Dice=0.2490 | normal empty_prediction_rate=1.0000 | missing=0\n"}
+,{"stream_name":"stdout","time":615.562266554,"data":"Saved separate per-image, summary, subgroup, bootstrap, confusion and run-manifest artifacts\n"}
+,{"stream_name":"stdout","time":619.001367906,"data":"{\n"}
+,{"stream_name":"stdout","time":619.001399008,"data":"  \"run_id\": \"btxrd_binary_adversarial_climbing_cam_v1\",\n"}
+,{"stream_name":"stdout","time":619.001404914,"data":"  \"status\": \"complete\",\n"}
+,{"stream_name":"stdout","time":619.001409493,"data":"  \"test_evaluated\": false,\n"}
+,{"stream_name":"stdout","time":619.001413976,"data":"  \"split_manifest_sha256\": \"85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c\",\n"}
+,{"stream_name":"stdout","time":619.001418851,"data":"  \"classifier_checkpoint_sha256\": \"f62d3702541ec3e6571751ddda22dab4c723943397471d3897500da1620304c5\",\n"}
+,{"stream_name":"stdout","time":619.001423477,"data":"  \"sam_checkpoint_sha256\": \"ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912\",\n"}
+,{"stream_name":"stdout","time":619.001428565,"data":"  \"baseline\": {\n"}
+,{"stream_name":"stdout","time":619.001432956,"data":"    \"run_id\": \"btxrd_binary_cam_sam_tta_flip_v1\",\n"}
+,{"stream_name":"stdout","time":619.00143738,"data":"    \"per_image_sha256\": \"fe5cf247cd236799de9e279db342314c11ff65fdb065cda26986c302efd05540\",\n"}
+,{"stream_name":"stdout","time":619.001442159,"data":"    \"mean_tumor_dice\": 0.23433922219069755\n"}
+,{"stream_name":"stdout","time":619.001447266,"data":"  },\n"}
+,{"stream_name":"stdout","time":619.001451992,"data":"  \"candidate_mean_tumor_dice\": 0.248972261417214,\n"}
+,{"stream_name":"stdout","time":619.001456245,"data":"  \"paired_vs_promoted_tta\": {\n"}
+,{"stream_name":"stdout","time":619.001460752,"data":"    \"method\": \"paired nonparametric bootstrap resampling complete tumor groups\",\n"}
+,{"stream_name":"stdout","time":619.001465629,"data":"    \"tumor_groups\": 167,\n"}
+,{"stream_name":"stdout","time":619.001470092,"data":"    \"tumor_images\": 184,\n"}
+,{"stream_name":"stdout","time":619.001474744,"data":"    \"iterations\": 10000,\n"}
+,{"stream_name":"stdout","time":619.001479347,"data":"    \"seed\": 42,\n"}
+,{"stream_name":"stdout","time":619.001483705,"data":"    \"mean_tumor_dice_delta\": 0.014633039226516438,\n"}
+,{"stream_name":"stdout","time":619.001488405,"data":"    \"ci95_low\": -0.018700614044493333,\n"}
+,{"stream_name":"stdout","time":619.001502894,"data":"    \"ci95_high\": 0.04764163746396906\n"}
+,{"stream_name":"stdout","time":619.001508568,"data":"  },\n"}
+,{"stream_name":"stdout","time":619.001512971,"data":"  \"promotion_rule\": \"candidate mean_tumor_dice exceeds promoted TTA baseline and paired tumor-group bootstrap ci95_low is above zero\",\n"}
+,{"stream_name":"stdout","time":619.001517974,"data":"  \"promoted\": false,\n"}
+,{"stream_name":"stdout","time":619.001522457,"data":"  \"protocol_results\": {\n"}
+,{"stream_name":"stdout","time":619.001537692,"data":"    \"ground_truth\": {\n"}
+,{"stream_name":"stdout","time":619.001541615,"data":"      \"evaluation\": {\n"}
+,{"stream_name":"stdout","time":619.001544801,"data":"        \"dataset\": \"btxrd\",\n"}
+,{"stream_name":"stdout","time":619.001548222,"data":"        \"split\": \"val\",\n"}
+,{"stream_name":"stdout","time":619.001575515,"data":"        \"cam_target_class_protocol\": \"ground_truth\",\n"}
+,{"stream_name":"stdout","time":619.001579322,"data":"        \"pred_mask_root\": \"/kaggle/working/btxrd_binary_adversarial_climbing_cam/ground_truth/pseudo_masks/masks\",\n"}
+,{"stream_name":"stdout","time":619.001583279,"data":"        \"boundary_distance_unit\": \"pixels on the resized evaluation grid\",\n"}
+,{"stream_name":"stdout","time":619.001587036,"data":"        \"missing\": 0,\n"}
+,{"stream_name":"stdout","time":619.00159081,"data":"        \"tumor_images_skipped_by_image_gate\": 0,\n"}
+,{"stream_name":"stdout","time":619.001594422,"data":"        \"images\": 371,\n"}
+,{"stream_name":"stdout","time":619.001597888,"data":"        \"tumor_images\": 184,\n"}
+,{"stream_name":"stdout","time":619.001601638,"data":"        \"normal_images\": 187,\n"}
+,{"stream_name":"stdout","time":619.001605219,"data":"        \"main_population\": \"tumor images only\",\n"}
+,{"stream_name":"stdout","time":619.001608943,"data":"        \"mean_tumor_dice\": 0.248972261417214,\n"}
+,{"stream_name":"stdout","time":619.001613052,"data":"        \"mean_tumor_iou\": 0.18136037318993017,\n"}
+,{"stream_name":"stdout","time":619.001616625,"data":"        \"mean_tumor_precision\": 0.23705980350887954,\n"}
+,{"stream_name":"stdout","time":619.001620532,"data":"        \"mean_tumor_recall\": 0.5582865492680057,\n"}
+,{"stream_name":"stdout","time":619.001624432,"data":"        \"mean_tumor_hd95_px_conditional_defined\": 112.21588354968893,\n"}
+,{"stream_name":"stdout","time":619.001628435,"data":"        \"mean_tumor_assd_px_conditional_defined\": 54.91271969976415,\n"}
+,{"stream_name":"stdout","time":619.001651327,"data":"        \"boundary_metric_definition\": \"conditional mean over tumor images with both GT and prediction non-empty; distances are pixels on the resized evaluation grid (not mm); complete misses are excluded and counted separately\",\n"}
+,{"stream_name":"stdout","time":619.001659998,"data":"        \"boundary_metric_eligible_tumor_images\": 183,\n"}
+,{"stream_name":"stdout","time":619.001663873,"data":"        \"boundary_metric_excluded_tumor_images\": 1,\n"}
+,{"stream_name":"stdout","time":619.001667611,"data":"        \"boundary_metric_complete_misses\": 1,\n"}
+,{"stream_name":"stdout","time":619.001671142,"data":"        \"tumor_non_empty_prediction_rate\": 0.9945652173913043,\n"}
+,{"stream_name":"stdout","time":619.001675254,"data":"        \"tumor_overlap_detection_rate\": 0.7771739130434783,\n"}
+,{"stream_name":"stdout","time":619.001679228,"data":"        \"lesion_any_overlap_recall\": 0.7017543859649122,\n"}
+,{"stream_name":"stdout","time":619.001682661,"data":"        \"lesion_any_overlap_precision\": 0.43360433604336046,\n"}
+,{"stream_name":"stdout","time":619.001686334,"data":"        \"gt_lesions\": 228,\n"}
+,{"stream_name":"stdout","time":619.001689794,"data":"        \"detected_lesions_any_overlap\": 160,\n"}
+,{"stream_name":"stdout","time":619.001693336,"data":"        \"predicted_lesions\": 369,\n"}
+,{"stream_name":"stdout","time":619.001696737,"data":"        \"multifocal_tumor_images\": 23,\n"}
+,{"stream_name":"stdout","time":619.001700294,"data":"        \"multifocal_tumor_image_rate\": 0.125,\n"}
+,{"stream_name":"stdout","time":619.001703873,"data":"        \"gt_component_count_histogram\": {\n"}
+,{"stream_name":"stdout","time":619.001712296,"data":"          \"1\": 161,\n"}
+,{"stream_name":"stdout","time":619.001715916,"data":"          \"2\": 12,\n"}
+,{"stream_name":"stdout","time":619.001719458,"data":"          \"3\": 5,\n"}
+,{"stream_name":"stdout","time":619.00172278,"data":"          \"4\": 4,\n"}
+,{"stream_name":"stdout","time":619.001726253,"data":"          \"5\": 1,\n"}
+,{"stream_name":"stdout","time":619.0017301,"data":"          \"7\": 1\n"}
+,{"stream_name":"stdout","time":619.001733546,"data":"        },\n"}
+,{"stream_name":"stdout","time":619.001737351,"data":"        \"normal_empty_prediction_rate\": 1.0,\n"}
+,{"stream_name":"stdout","time":619.001740962,"data":"        \"normal_false_positive_case_rate\": 0.0,\n"}
+,{"stream_name":"stdout","time":619.001744631,"data":"        \"pixel_specificity\": 0.9767470703287043,\n"}
+,{"stream_name":"stdout","time":619.001748288,"data":"        \"pixel_precision\": 0.19662347398516797,\n"}
+,{"stream_name":"stdout","time":619.001751722,"data":"        \"pixel_recall\": 0.5561515113716685,\n"}
+,{"stream_name":"stdout","time":619.001755584,"data":"        \"tp_pixels\": 214016,\n"}
+,{"stream_name":"stdout","time":619.001759182,"data":"        \"fp_pixels\": 874440,\n"}
+,{"stream_name":"stdout","time":619.001762783,"data":"        \"fn_pixels\": 170800,\n"}
+,{"stream_name":"stdout","time":619.001766646,"data":"        \"tn_pixels\": 36731144,\n"}
+,{"stream_name":"stdout","time":619.001770398,"data":"        \"lesion_one_to_one_iou10_recall\": 0.4298245614035088,\n"}
+,{"stream_name":"stdout","time":619.001774201,"data":"        \"lesion_one_to_one_iou10_precision\": 0.26558265582655827,\n"}
+,{"stream_name":"stdout","time":619.001777986,"data":"        \"lesion_one_to_one_iou10_f1\": 0.32830820770519265,\n"}
+,{"stream_name":"stdout","time":619.001789296,"data":"        \"lesion_tp_one_to_one_iou10\": 98,\n"}
+,{"stream_name":"stdout","time":619.001793123,"data":"        \"lesion_one_to_one_iou25_recall\": 0.3201754385964912,\n"}
+,{"stream_name":"stdout","time":619.001796838,"data":"        \"lesion_one_to_one_iou25_precision\": 0.1978319783197832,\n"}
+,{"stream_name":"stdout","time":619.001800506,"data":"        \"lesion_one_to_one_iou25_f1\": 0.24455611390284757,\n"}
+,{"stream_name":"stdout","time":619.001804163,"data":"        \"lesion_tp_one_to_one_iou25\": 73,\n"}
+,{"stream_name":"stdout","time":619.001807796,"data":"        \"lesion_one_to_one_iou50_recall\": 0.15350877192982457,\n"}
+,{"stream_name":"stdout","time":619.00181158,"data":"        \"lesion_one_to_one_iou50_precision\": 0.0948509485094851,\n"}
+,{"stream_name":"stdout","time":619.00181553,"data":"        \"lesion_one_to_one_iou50_f1\": 0.11725293132328309,\n"}
+,{"stream_name":"stdout","time":619.001819046,"data":"        \"lesion_tp_one_to_one_iou50\": 35,\n"}
+,{"stream_name":"stdout","time":619.001823572,"data":"        \"lesion_matching_definition\": \"maximum-cardinality one-to-one connected-component matching at IoU thresholds 0.10, 0.25, 0.50\",\n"}
+,{"stream_name":"stdout","time":619.0018277,"data":"        \"end_to_end\": {\n"}
+,{"stream_name":"stdout","time":619.001831374,"data":"          \"images\": 371,\n"}
+,{"stream_name":"stdout","time":619.001835294,"data":"          \"tumor_images\": 184,\n"}
+,{"stream_name":"stdout","time":619.001838969,"data":"          \"normal_images\": 187,\n"}
+,{"stream_name":"stdout","time":619.001842481,"data":"          \"main_population\": \"tumor images only\",\n"}
+,{"stream_name":"stdout","time":619.001846203,"data":"          \"mean_tumor_dice\": 0.248972261417214,\n"}
+,{"stream_name":"stdout","time":619.001850191,"data":"          \"mean_tumor_iou\": 0.18136037318993017,\n"}
+,{"stream_name":"stdout","time":619.001856927,"data":"          \"mean_tumor_precision\": 0.23705980350887954,\n"}
+,{"stream_name":"stdout","time":619.001860698,"data":"          \"mean_tumor_recall\": 0.5582865492680057,\n"}
+,{"stream_name":"stdout","time":619.001864388,"data":"          \"mean_tumor_hd95_px_conditional_defined\": 112.21588354968893,\n"}
+,{"stream_name":"stdout","time":619.001868215,"data":"          \"mean_tumor_assd_px_conditional_defined\": 54.91271969976415,\n"}
+,{"stream_name":"stdout","time":619.001871985,"data":"          \"boundary_metric_definition\": \"conditional mean over tumor images with both GT and prediction non-empty; distances are pixels on the resized evaluation grid (not mm); complete misses are excluded and counted separately\",\n"}
+,{"stream_name":"stdout","time":619.001876581,"data":"          \"boundary_metric_eligible_tumor_images\": 183,\n"}
+,{"stream_name":"stdout","time":619.001880175,"data":"          \"boundary_metric_excluded_tumor_images\": 1,\n"}
+,{"stream_name":"stdout","time":619.001883943,"data":"          \"boundary_metric_complete_misses\": 1,\n"}
+,{"stream_name":"stdout","time":619.001887755,"data":"          \"tumor_non_empty_prediction_rate\": 0.9945652173913043,\n"}
+,{"stream_name":"stdout","time":619.001894771,"data":"          \"tumor_overlap_detection_rate\": 0.7771739130434783,\n"}
+,{"stream_name":"stdout","time":619.001898549,"data":"          \"lesion_any_overlap_recall\": 0.7017543859649122,\n"}
+,{"stream_name":"stdout","time":619.001902462,"data":"          \"lesion_any_overlap_precision\": 0.43360433604336046,\n"}
+,{"stream_name":"stdout","time":619.001906383,"data":"          \"gt_lesions\": 228,\n"}
+,{"stream_name":"stdout","time":619.001910507,"data":"          \"detected_lesions_any_overlap\": 160,\n"}
+,{"stream_name":"stdout","time":619.001914379,"data":"          \"predicted_lesions\": 369,\n"}
+,{"stream_name":"stdout","time":619.001917905,"data":"          \"multifocal_tumor_images\": 23,\n"}
+,{"stream_name":"stdout","time":619.001921284,"data":"          \"multifocal_tumor_image_rate\": 0.125,\n"}
+,{"stream_name":"stdout","time":619.001924967,"data":"          \"gt_component_count_histogram\": {\n"}
+,{"stream_name":"stdout","time":619.00192866,"data":"            \"1\": 161,\n"}
+,{"stream_name":"stdout","time":619.001932383,"data":"            \"2\": 12,\n"}
+,{"stream_name":"stdout","time":619.001936367,"data":"            \"3\": 5,\n"}
+,{"stream_name":"stdout","time":619.001940006,"data":"            \"4\": 4,\n"}
+,{"stream_name":"stdout","time":619.001943407,"data":"            \"5\": 1,\n"}
+,{"stream_name":"stdout","time":619.00194704,"data":"            \"7\": 1\n"}
+,{"stream_name":"stdout","time":619.00195155,"data":"          },\n"}
+,{"stream_name":"stdout","time":619.001955143,"data":"          \"normal_empty_prediction_rate\": 1.0,\n"}
+,{"stream_name":"stdout","time":619.001959117,"data":"          \"normal_false_positive_case_rate\": 0.0,\n"}
+,{"stream_name":"stdout","time":619.001962983,"data":"          \"pixel_specificity\": 0.9767470703287043,\n"}
+,{"stream_name":"stdout","time":619.001968078,"data":"          \"pixel_precision\": 0.19662347398516797,\n"}
+,{"stream_name":"stdout","time":619.00197187,"data":"          \"pixel_recall\": 0.5561515113716685,\n"}
+,{"stream_name":"stdout","time":619.001975707,"data":"          \"tp_pixels\": 214016,\n"}
+,{"stream_name":"stdout","time":619.001979408,"data":"          \"fp_pixels\": 874440,\n"}
+,{"stream_name":"stdout","time":619.001982977,"data":"          \"fn_pixels\": 170800,\n"}
+,{"stream_name":"stdout","time":619.001989862,"data":"          \"tn_pixels\": 36731144,\n"}
+,{"stream_name":"stdout","time":619.001994859,"data":"          \"lesion_one_to_one_iou10_recall\": 0.4298245614035088,\n"}
+,{"stream_name":"stdout","time":619.001998815,"data":"          \"lesion_one_to_one_iou10_precision\": 0.26558265582655827,\n"}
+,{"stream_name":"stdout","time":619.002002743,"data":"          \"lesion_one_to_one_iou10_f1\": 0.32830820770519265,\n"}
+,{"stream_name":"stdout","time":619.002006849,"data":"          \"lesion_tp_one_to_one_iou10\": 98,\n"}
+,{"stream_name":"stdout","time":619.002010492,"data":"          \"lesion_one_to_one_iou25_recall\": 0.3201754385964912,\n"}
+,{"stream_name":"stdout","time":619.002014488,"data":"          \"lesion_one_to_one_iou25_precision\": 0.1978319783197832,\n"}
+,{"stream_name":"stdout","time":619.002018204,"data":"          \"lesion_one_to_one_iou25_f1\": 0.24455611390284757,\n"}
+,{"stream_name":"stdout","time":619.002022045,"data":"          \"lesion_tp_one_to_one_iou25\": 73,\n"}
+,{"stream_name":"stdout","time":619.002025811,"data":"          \"lesion_one_to_one_iou50_recall\": 0.15350877192982457,\n"}
+,{"stream_name":"stdout","time":619.002029657,"data":"          \"lesion_one_to_one_iou50_precision\": 0.0948509485094851,\n"}
+,{"stream_name":"stdout","time":619.002033963,"data":"          \"lesion_one_to_one_iou50_f1\": 0.11725293132328309,\n"}
+,{"stream_name":"stdout","time":619.002037593,"data":"          \"lesion_tp_one_to_one_iou50\": 35,\n"}
+,{"stream_name":"stdout","time":619.002041253,"data":"          \"lesion_matching_definition\": \"maximum-cardinality one-to-one connected-component matching at IoU thresholds 0.10, 0.25, 0.50\"\n"}
+,{"stream_name":"stdout","time":619.002045725,"data":"        },\n"}
+,{"stream_name":"stdout","time":619.002049119,"data":"        \"cam_sam_conditional_tumor_only\": {\n"}
+,{"stream_name":"stdout","time":619.00205274,"data":"          \"images\": 184,\n"}
+,{"stream_name":"stdout","time":619.002056314,"data":"          \"tumor_images\": 184,\n"}
+,{"stream_name":"stdout","time":619.002060107,"data":"          \"normal_images\": 0,\n"}
+,{"stream_name":"stdout","time":619.002063871,"data":"          \"main_population\": \"tumor images only\",\n"}
+,{"stream_name":"stdout","time":619.002067644,"data":"          \"mean_tumor_dice\": 0.248972261417214,\n"}
+,{"stream_name":"stdout","time":619.002071459,"data":"          \"mean_tumor_iou\": 0.18136037318993017,\n"}
+,{"stream_name":"stdout","time":619.002075115,"data":"          \"mean_tumor_precision\": 0.23705980350887954,\n"}
+,{"stream_name":"stdout","time":619.002078768,"data":"          \"mean_tumor_recall\": 0.5582865492680057,\n"}
+,{"stream_name":"stdout","time":619.002082647,"data":"          \"mean_tumor_hd95_px_conditional_defined\": 112.21588354968893,\n"}
+,{"stream_name":"stdout","time":619.002086595,"data":"          \"mean_tumor_assd_px_conditional_defined\": 54.91271969976415,\n"}
+,{"stream_name":"stdout","time":619.002090647,"data":"          \"boundary_metric_definition\": \"conditional mean over tumor images with both GT and prediction non-empty; distances are pixels on the resized evaluation grid (not mm); complete misses are excluded and counted separately\",\n"}
+,{"stream_name":"stdout","time":619.002094887,"data":"          \"boundary_metric_eligible_tumor_images\": 183,\n"}
+,{"stream_name":"stdout","time":619.002098401,"data":"          \"boundary_metric_excluded_tumor_images\": 1,\n"}
+,{"stream_name":"stdout","time":619.002102008,"data":"          \"boundary_metric_complete_misses\": 1,\n"}
+,{"stream_name":"stdout","time":619.002105476,"data":"          \"tumor_non_empty_prediction_rate\": 0.9945652173913043,\n"}
+,{"stream_name":"stdout","time":619.002112977,"data":"          \"tumor_overlap_detection_rate\": 0.7771739130434783,\n"}
+,{"stream_name":"stdout","time":619.002116899,"data":"          \"lesion_any_overlap_recall\": 0.7017543859649122,\n"}
+,{"stream_name":"stdout","time":619.002120363,"data":"          \"lesion_any_overlap_precision\": 0.43360433604336046,\n"}
+,{"stream_name":"stdout","time":619.002124473,"data":"          \"gt_lesions\": 228,\n"}
+,{"stream_name":"stdout","time":619.002128027,"data":"          \"detected_lesions_any_overlap\": 160,\n"}
+,{"stream_name":"stdout","time":619.002132639,"data":"          \"predicted_lesions\": 369,\n"}
+,{"stream_name":"stdout","time":619.002136425,"data":"          \"multifocal_tumor_images\": 23,\n"}
+,{"stream_name":"stdout","time":619.002140437,"data":"          \"multifocal_tumor_image_rate\": 0.125,\n"}
+,{"stream_name":"stdout","time":619.002144059,"data":"          \"gt_component_count_histogram\": {\n"}
+,{"stream_name":"stdout","time":619.002148019,"data":"            \"1\": 161,\n"}
+,{"stream_name":"stdout","time":619.002151828,"data":"            \"2\": 12,\n"}
+,{"stream_name":"stdout","time":619.002155845,"data":"            \"3\": 5,\n"}
+,{"stream_name":"stdout","time":619.00216011,"data":"            \"4\": 4,\n"}
+,{"stream_name":"stdout","time":619.002163718,"data":"            \"5\": 1,\n"}
+,{"stream_name":"stdout","time":619.002167305,"data":"            \"7\": 1\n"}
+,{"stream_name":"stdout","time":619.002170776,"data":"          },\n"}
+,{"stream_name":"stdout","time":619.002174291,"data":"          \"normal_empty_prediction_rate\": null,\n"}
+,{"stream_name":"stdout","time":619.002178151,"data":"          \"normal_false_positive_case_rate\": null,\n"}
+,{"stream_name":"stdout","time":619.002181935,"data":"          \"pixel_specificity\": 0.9526222986626489,\n"}
+,{"stream_name":"stdout","time":619.002185813,"data":"          \"pixel_precision\": 0.19662347398516797,\n"}
+,{"stream_name":"stdout","time":619.002189433,"data":"          \"pixel_recall\": 0.5561515113716685,\n"}
+,{"stream_name":"stdout","time":619.002193229,"data":"          \"tp_pixels\": 214016,\n"}
+,{"stream_name":"stdout","time":619.002196916,"data":"          \"fp_pixels\": 874440,\n"}
+,{"stream_name":"stdout","time":619.002200729,"data":"          \"fn_pixels\": 170800,\n"}
+,{"stream_name":"stdout","time":619.002204328,"data":"          \"tn_pixels\": 17582344,\n"}
+,{"stream_name":"stdout","time":619.002208099,"data":"          \"lesion_one_to_one_iou10_recall\": 0.4298245614035088,\n"}
+,{"stream_name":"stdout","time":619.002211917,"data":"          \"lesion_one_to_one_iou10_precision\": 0.26558265582655827,\n"}
+,{"stream_name":"stdout","time":619.002216041,"data":"          \"lesion_one_to_one_iou10_f1\": 0.32830820770519265,\n"}
+,{"stream_name":"stdout","time":619.002219736,"data":"          \"lesion_tp_one_to_one_iou10\": 98,\n"}
+,{"stream_name":"stdout","time":619.002223361,"data":"          \"lesion_one_to_one_iou25_recall\": 0.3201754385964912,\n"}
+,{"stream_name":"stdout","time":619.00222699,"data":"          \"lesion_one_to_one_iou25_precision\": 0.1978319783197832,\n"}
+,{"stream_name":"stdout","time":619.002230813,"data":"          \"lesion_one_to_one_iou25_f1\": 0.24455611390284757,\n"}
+,{"stream_name":"stdout","time":619.002234491,"data":"          \"lesion_tp_one_to_one_iou25\": 73,\n"}
+,{"stream_name":"stdout","time":619.002238063,"data":"          \"lesion_one_to_one_iou50_recall\": 0.15350877192982457,\n"}
+,{"stream_name":"stdout","time":619.002241793,"data":"          \"lesion_one_to_one_iou50_precision\": 0.0948509485094851,\n"}
+,{"stream_name":"stdout","time":619.00224559,"data":"          \"lesion_one_to_one_iou50_f1\": 0.11725293132328309,\n"}
+,{"stream_name":"stdout","time":619.002252916,"data":"          \"lesion_tp_one_to_one_iou50\": 35,\n"}
+,{"stream_name":"stdout","time":619.002256741,"data":"          \"lesion_matching_definition\": \"maximum-cardinality one-to-one connected-component matching at IoU thresholds 0.10, 0.25, 0.50\"\n"}
+,{"stream_name":"stdout","time":619.002260943,"data":"        }\n"}
+,{"stream_name":"stdout","time":619.00226453,"data":"      },\n"}
+,{"stream_name":"stdout","time":619.002268049,"data":"      \"prompt_quality\": {\n"}
+,{"stream_name":"stdout","time":619.00227192,"data":"        \"all_rows\": 184,\n"}
+,{"stream_name":"stdout","time":619.00227568,"data":"        \"tumor_rows\": 184,\n"}
+,{"stream_name":"stdout","time":619.002279519,"data":"        \"tumor_only_means\": {\n"}
+,{"stream_name":"stdout","time":619.002283068,"data":"          \"foreground_iou\": 0.09212302920107301,\n"}
+,{"stream_name":"stdout","time":619.0022867,"data":"          \"foreground_recall\": 0.8017557387627082,\n"}
+,{"stream_name":"stdout","time":619.002290539,"data":"          \"foreground_precision\": 0.10047751621922218,\n"}
+,{"stream_name":"stdout","time":619.002294245,"data":"          \"point_hit_rate\": 0.2959108893495884,\n"}
+,{"stream_name":"stdout","time":619.002297986,"data":"          \"negative_rejection_rate\": 0.9690426520370824,\n"}
+,{"stream_name":"stdout","time":619.002301686,"data":"          \"box_recall\": 0.8408480866202833,\n"}
+,{"stream_name":"stdout","time":619.002305704,"data":"          \"box_precision\": 0.07114915134259445,\n"}
+,{"stream_name":"stdout","time":619.002310257,"data":"          \"oracle_best_single_dice\": 0.45451610795170794,\n"}
+,{"stream_name":"stdout","time":619.002314024,"data":"          \"oracle_best_single_dice_clipped\": 0.4446819177920172,\n"}
+,{"stream_name":"stdout","time":619.002318042,"data":"          \"selected_dice\": 0.25192617018582547,\n"}
+,{"stream_name":"stdout","time":619.002321739,"data":"          \"oracle_gap_dice\": 0.2025899377658825,\n"}
+,{"stream_name":"stdout","time":619.002325603,"data":"          \"support_loss_dice\": 0.009834190159690729,\n"}
+,{"stream_name":"stdout","time":619.002329169,"data":"          \"selection_loss_dice\": 0.19275574760619177,\n"}
+,{"stream_name":"stdout","time":619.002332937,"data":"          \"final_dice\": 0.24897226172496686,\n"}
+,{"stream_name":"stdout","time":619.002347703,"data":"          \"final_iou\": 0.18136037353538512,\n"}
+,{"stream_name":"stdout","time":619.002351538,"data":"          \"postprocess_delta_dice\": -0.0029539084608585756\n"}
+,{"stream_name":"stdout","time":619.002354851,"data":"        }\n"}
+,{"stream_name":"stdout","time":619.002357977,"data":"      },\n"}
+,{"stream_name":"stdout","time":619.002361203,"data":"      \"run_metadata_sha256\": \"546a8b5bc5499a8a436a8c0d9bf93c58d20f13047561159e9b0088ef2be7c672\",\n"}
+,{"stream_name":"stdout","time":619.002364575,"data":"      \"pseudo_mask_manifest_sha256\": \"baf4a50a9ef3e964dd8d8911a7066eeb30016fa88c2ace33b732892a369f3355\",\n"}
+,{"stream_name":"stdout","time":619.002368195,"data":"      \"evaluation_per_image_sha256\": \"afa7dfeb700b4c20fcb3567fe2cf9fb695bba9d6fe15d7f8e3ca3efc34f595cc\"\n"}
+,{"stream_name":"stdout","time":619.002371891,"data":"    }\n"}
+,{"stream_name":"stdout","time":619.002374955,"data":"  }\n"}
+,{"stream_name":"stdout","time":619.002378003,"data":"}\n"}
+,{"stream_name":"stderr","time":621.882368413,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":621.88239947,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":622.177620652,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":622.177668815,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":622.816363011,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":624.187440043,"data":"[NbConvertApp] Writing 378828 bytes to __results__.html\n"}
+]

@@ -627,3 +627,30 @@ The Gate-E inference payload remains prepared but is deprioritized because a sma
 
 The active next experiment is `itsthang333/btxrd-binary-cam-sam-causal-selector`. It retains the promoted flip-TTA candidate pool and adds only within-component classifier-causal ranking: equal positive deletion/insertion logit evidence using a deterministic blurred same-image replacement, weighted 20% beside CAM density/mass and SAM rank. Source bundle `itsthang333/btxrd-small-lesion-research-v3` contains 41/41 worktree-matching project files and the unchanged split SHA. It evaluates validation only and compares against the frozen TTA per-image CSV by paired tumor-group bootstrap; test remains locked.
 
+## 23. Research resumed: adversarial-climbing CAM result
+
+The causal selector was rejected as recorded above. Research then resumed after the thesis-ready `main` branch was finalized.
+
+Kaggle kernel `itsthang333/btxrd-binary-adversarial-climbing-cam` completed a validation-only AdvCAM-inspired LayerCAM expansion test:
+
+- Candidate tumor-only Dice: `0.2489722614`.
+- Promoted flip-TTA baseline: `0.2343392222`.
+- Paired delta: `+0.0146330392`.
+- Independently reproduced paired tumor-group 95% CI: `-0.0187006140` to `+0.0476416375` over 167 groups / 184 tumor images.
+- Small-lesion delta: `-0.0475064946` on 94 images; medium `+0.0730616899`; large `+0.1054248913`.
+- Population: 371 unique validation rows, 184 tumor, 187 normal, zero missing.
+- Provenance: split/classifier/SAM/source hashes all match; 11/11 Kaggle Torch preflight tests pass; `test_evaluated=false`.
+- Comparison SHA-256: `3a387161a649b3240fe86b7af9c10c714d491de66cb00ea2f10d29d758c1aadc`.
+- Compact artifacts: `D:\thesis\artifacts\kaggle\wsss_adversarial_climbing_cam_v1`.
+
+Decision: **reject**. The point estimate rose, but the uncertainty interval crosses zero and the dominant small-lesion subgroup deteriorated substantially. The runtime implementation was removed after preserving commit history and evidence.
+
+Mechanism audit:
+
+- Small-lesion CAM support recall improves by `+0.190074`, SAM oracle Dice by `+0.027705`, and clipped-oracle Dice by `+0.036647`.
+- The regression occurs in ranking/fusion: selection loss rises by `+0.077056`, selected Dice falls by `-0.040409`, predicted area expands by `+0.024175`, and precision falls by `-0.062437`.
+- Medium and large lesions gain at both oracle and selected stages. Therefore the expanded proposal pool contains useful information; using the expanded map as its own ranking signal is the specific failure.
+- Simple GT-free scalar gates are not adequate (best tested single-feature benefit AUC approximately `0.55`; fixed one-percent predicted-area gate Dice `0.243597`). GT-size and per-image-oracle hybrids are diagnostic only and must not be implemented.
+
+Next controlled experiment: generate components/prompts/SAM candidates/support with the expanded AdvCAM map, but score the candidates with the original promoted flip-TTA CAM using the unchanged `coverage_mass_sam` formula. This dual-map design uses no GT size or polygon and introduces no learned validation gate. Freeze all other settings. Promotion requires a positive lower bound in the overall paired group bootstrap versus `0.2343392222` and a non-negative small-lesion point delta. Do not train the downstream segmenter unless that rule passes. The 448 px classifier ablation is deferred until this cheaper causal test is resolved.
+
