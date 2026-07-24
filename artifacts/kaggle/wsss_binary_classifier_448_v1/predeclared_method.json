@@ -1,0 +1,37 @@
+{
+  "stage": "Gate B2 controlled 448px binary-classifier resolution ablation",
+  "status": "predeclared_before_launch",
+  "supervision": "image-level binary tumor labels only; no polygons or masks",
+  "test_evaluated": false,
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "architecture": "torchvision DenseNet121",
+  "initialization": "official torchvision ImageNet DenseNet121 weights with hash check",
+  "target_columns": [
+    "tumor"
+  ],
+  "image_size": 448,
+  "batch_size": 8,
+  "optimizer": "AdamW",
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "loss": "BCEWithLogitsLoss",
+  "augmentation": false,
+  "seed": 42,
+  "maximum_epochs": 30,
+  "early_stop_patience": 7,
+  "checkpoint_selection": "clean validation tumor F1 at fixed sigmoid threshold 0.5",
+  "evaluation": "clean validation only; threshold 0.5; group bootstrap seed 42",
+  "single_scientific_variable": "classifier input resolution 320px to 448px",
+  "frozen_against_320": [
+    "clean split",
+    "binary tumor objective",
+    "DenseNet121 architecture and ImageNet initialization",
+    "batch size",
+    "optimizer, learning rate and weight decay",
+    "augmentation disabled",
+    "seed",
+    "maximum epochs and early stopping",
+    "checkpoint selection at fixed probability threshold 0.5"
+  ],
+  "created_at_utc": "2026-07-24T17:37:33.496469+00:00"
+}

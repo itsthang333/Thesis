@@ -687,3 +687,40 @@ Decision: reject. The three controlled variants establish that expanded CAM cont
 
 Next experiment: train the same clean binary DenseNet121 classifier at 448 px on Kaggle, then evaluate the unchanged promoted flip-TTA LayerCAM plus SAM Gate-C protocol. Treat classifier input resolution as the scientific variable; preserve relative morphology geometry by predeclared proportional scaling where a pixel constant is resolution-dependent. Promotion still requires an overall positive paired-bootstrap lower bound and no decrease in the fixed small-lesion subgroup. Test remains locked.
 
+## 26. Classifier 448 result and regularized-expansion follow-up
+
+The controlled 448 px classifier completed at epoch 12. Its fixed-threshold
+validation F1 is `0.7959183673`, sensitivity `0.8478260870`, specificity
+`0.7219251337`, AUROC `0.8665717275`, and checkpoint SHA-256
+`bb70912c179bda8cc32498b6bf8c405f11d46a37143cb4577a9986a838cec45c`.
+All 371 rows, checkpoint metadata, split SHA and `test_evaluated=false` verify.
+
+Gate-C with the 448 classifier is rejected:
+
+- Dice `0.2296019980`; paired delta `-0.0047372242`.
+- Paired group-bootstrap 95% CI `-0.0415031583` to `+0.0320557694`.
+- Small/medium deltas `+0.0018854426/+0.0015835381`; large delta
+  `-0.0646053111`.
+- Small foreground recall, SAM oracle and clipped-oracle improve
+  `+0.207594/+0.041537/+0.048980`, but small selected Dice changes
+  `-0.000195` because selection loss increases `+0.049174`.
+- Across all tumors oracle improves `+0.025554`, selected Dice falls
+  `-0.005526`; large proposal quality itself deteriorates.
+- Comparison SHA-256:
+  `98f5925c884a0b84b27aeb4a06ed4ebd6b80a748d77767edf402c7e7378a1daa`.
+  Nine Torch plus 29 audit tests pass; 371/184/187 rows are complete; test is
+  untouched.
+
+Interpretation: 448 and unregularized AdvCAM both add useful candidate evidence,
+especially for small lesions, but neither provides a calibrated ranking signal.
+Do not add an image-size gate or another post-hoc score threshold.
+
+Next experiment: return to the frozen 320 px classifier and add the
+activation-difference regularizer omitted by the first bounded AdvCAM
+adaptation. Keep ten steps and step size `0.08`; use the official repository
+defaults `AD_coeff=7` and activation threshold `0.5` on the differentiable
+final LayerCAM layer. Everything else remains the promoted flip-TTA Gate-C
+recipe. This isolates whether preserving the original discriminative core
+while expanding new evidence can retain the measured medium/large gain without
+destroying small-lesion selection. Test remains locked.
+

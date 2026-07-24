@@ -1,0 +1,23 @@
+{
+  "pipeline_profile": "default",
+  "dataset": "btxrd",
+  "train_split": "train",
+  "val_split": "val",
+  "split_manifest": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v7/split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "target_columns": [
+    "tumor"
+  ],
+  "image_size": 448,
+  "batch_size": 8,
+  "epochs": 30,
+  "seed": 42,
+  "lr": 0.0001,
+  "weight_decay": 0.0001,
+  "augment": false,
+  "random_erasing": false,
+  "puzzle_alpha_max": 0.0,
+  "attention_alpha_max": 0.0,
+  "preprocessing_mode": "none",
+  "normalization": "imagenet"
+}
