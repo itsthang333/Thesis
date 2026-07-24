@@ -126,4 +126,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Relative to unregularized climbing, `L_AD` partially rescues small selection: selection loss improves by `0.037925` and final small Dice by `0.007524`. The cost is weaker expansion: small oracle Dice falls `0.027753`, and medium/large final Dice lose `0.045512/0.043146` relative to the unregularized version. Relative to baseline, regularized small oracle is essentially unchanged (`-0.000048`) while selected Dice remains `-0.033557`. The official coefficient/threshold therefore trade coverage for core preservation but do not resolve the calibration problem; no coefficient sweep is justified on validation.
 - All 371 rows (184 tumor, 187 normal), 184 prompt diagnostics, split/checkpoint/SAM/source hashes, 11 real Torch tests, comparison hash, and `test_evaluated=false` verify. Compact evidence is under `artifacts/kaggle/wsss_advcam_regularized_v1/`; comparison SHA-256 is `0daec4744259e766b2e949fe4cbc9de21e8f4f81a5df35a5c605ca7c947e4e54`, per-image SHA-256 `573f429077cdd0151f55e8fcef56b19cfe14cbae0be669ac096a7b291557edd9`.
 - Decision: close inference-time climbing. The repeated pattern is now causal: expanding evidence improves the SAM oracle, while the classifier features/CAM score remain insufficiently region-aware to choose the right mask. The next high-potential experiment follows S2C's learned feature transfer rather than another post-hoc rule. Precompute SAM ViT-B Segment-Everything region maps on the 2,981 clean-train images only (no labels/polygons/validation/test), then train the frozen 320 px binary DenseNet recipe with BCE plus SAM-Segment Contrasting loss. Use the paper/code default loss weight and temperature `1`; keep augmentation off so region maps remain aligned. Gate-C and promotion rules remain unchanged.
+- The official S2C implementation was inspected before adaptation. Its Segment-Everything maps initialize uncovered pixels to `-1`, assign `enumerate(reversed(masks))`, then add one at load time so uncovered pixels become cross-entropy ignore ID `0`. SSC normalizes classifier features, averages detached features inside each SAM region to form prototypes, and classifies covered pixels by prototype-feature cosine similarity.
+- Private Kaggle kernel `itsthang333/btxrd-s2c-segment-everything-v1` was launched with official Segment Anything commit `6fdee8f...` and verified SAM ViT-B checkpoint `ec2df627...`. It processes exactly 2,981 clean-train images at 320 px, saves contiguous 80x80 `uint16` maps, and does not load polygons, validation images, or test. Every source/map hash and the complete population are checked before acceptance.
+- The classifier now has an opt-in S2C SSC path that is inert at weight zero. When enabled, it requires a frozen region-manifest SHA, verifies every train image/map hash, locks 320 px with augmentation off and preprocessing `none`, uses detached per-image segment prototypes, ignores ID 0, and records its full configuration in the checkpoint. The frozen ablation is BCE + SSC weight 1, temperature 1, with the otherwise unchanged clean binary DenseNet121 recipe.
+- The first real-PyTorch smoke test correctly stopped before training because
+  the per-image cosine matrix was passed to cross-entropy as
+  `[regions,pixels]` rather than `[pixels,regions]`. This is an implementation
+  error, not model evidence. The transpose was repaired and will be published
+  as a new immutable source bundle rather than overwriting v9. A separate real
+  DenseNet optimizer step must pass before the long classifier job. Test
+  remains locked.
+- Repaired source bundle `itsthang333/btxrd-small-lesion-research-v10` passed
+  all four SSC/map-integrity Torch tests and a faithful T4 optimizer step at
+  batch 8, image size 320, map size 80 and AMP. DenseNet feature shape was
+  `[8,1024,10,10]`; BCE/SSC/total loss was
+  `0.692756/3.825942/4.518698`, and the pre-clip gradient norm was finite at
+  `3.762442`. Compact evidence is
+  `artifacts/kaggle/s2c_ssc_torch_test_v1/test_result.json`.
+- The full classifier wrapper is prepared but deliberately fails its payload
+  test while the region-manifest hash placeholder remains. It may be launched
+  only after the train-only precompute completes and the exact manifest SHA is
+  frozen.
 

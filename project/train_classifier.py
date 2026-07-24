@@ -29,6 +29,10 @@ from config import (
 from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
+from models.sam_segment_contrastive import (
+    SamSegmentMapStore,
+    sam_segment_contrastive_loss,
+)
 from progress import should_disable_tqdm
 from models.puzzle_cam import puzzle_alpha as puzzle_alpha_schedule, puzzle_cam_consistency_loss
 from models.teacher_student import EMATeacher, attention_distillation_loss
@@ -131,6 +135,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_f1 does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
+    parser.add_argument(
+        "--sam-segment-map-root",
+        type=Path,
+        default=None,
+        help=(
+            "Root of a validated train-only S2C Segment-Everything artifact containing "
+            "region_map_manifest.csv and region_maps/. Required when "
+            "--sam-segment-contrastive-weight is positive."
+        ),
+    )
+    parser.add_argument(
+        "--sam-segment-map-manifest-sha256",
+        type=str,
+        default="",
+        help="Frozen SHA-256 of region_map_manifest.csv; required for S2C SSC.",
+    )
+    parser.add_argument(
+        "--sam-segment-contrastive-weight",
+        type=float,
+        default=0.0,
+        help="Weight for S2C SAM-Segment Contrasting loss. 0 disables SSC.",
+    )
+    parser.add_argument(
+        "--sam-segment-temperature",
+        type=float,
+        default=1.0,
+        help=(
+            "Cosine-logit multiplier for S2C SSC. The official S2C default is 1.0."
+        ),
+    )
     args = parser.parse_args()
     args._explicit_options = {
         token.split("=", 1)[0]
@@ -283,8 +317,21 @@ def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
     }
 
 
-def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) -> tuple[float, dict[str, float], dict[str, int]]:
-    total_loss = 0.0
+def run_epoch(
+    model,
+    loader,
+    criterion,
+    optimizer,
+    scaler,
+    device,
+    train: bool,
+    sam_segment_store: SamSegmentMapStore | None = None,
+    sam_segment_contrastive_weight: float = 0.0,
+    sam_segment_temperature: float = 1.0,
+) -> tuple[float, dict[str, float], dict[str, int], dict[str, float]]:
+    total_classification_loss = 0.0
+    total_ssc_loss = 0.0
+    total_optimization_loss = 0.0
     counts = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
     batches = 0
     model.train(train)
@@ -295,7 +342,7 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
         leave=False,
         disable=should_disable_tqdm(),
     )
-    for images, targets, _ in progress:
+    for images, targets, image_ids in progress:
         images = images.to(device)
         targets = targets.to(device)
         if targets.ndim == 1:
@@ -303,8 +350,31 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
 
         with torch.set_grad_enabled(train):
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
-                logits = model(images)
-                loss = criterion(logits, targets)
+                use_ssc = (
+                    train
+                    and sam_segment_store is not None
+                    and sam_segment_contrastive_weight > 0
+                )
+                if use_ssc:
+                    logits, features = model(images, return_features=True)
+                else:
+                    logits = model(images)
+                classification_loss = criterion(logits, targets)
+            if use_ssc:
+                region_maps = sam_segment_store.load_batch(image_ids, device=device)
+                with torch.cuda.amp.autocast(enabled=False):
+                    ssc_loss = sam_segment_contrastive_loss(
+                        features,
+                        region_maps,
+                        temperature=sam_segment_temperature,
+                    )
+                loss = (
+                    classification_loss
+                    + sam_segment_contrastive_weight * ssc_loss
+                )
+            else:
+                ssc_loss = classification_loss.new_zeros(())
+                loss = classification_loss
 
             if torch.isnan(loss) or torch.isinf(loss):
                 print(f"  [WARNING] Skipping batch with non-finite loss (pathological input)")
@@ -321,14 +391,36 @@ def run_epoch(model, loader, criterion, optimizer, scaler, device, train: bool) 
         batch_counts = confusion_counts(logits.detach(), targets.detach())
         for key in counts:
             counts[key] += batch_counts[key]
-        total_loss += loss.item()
+        total_classification_loss += classification_loss.item()
+        total_ssc_loss += ssc_loss.item()
+        total_optimization_loss += loss.item()
         batches += 1
         batch_metrics = metrics_from_confusion(batch_counts)
-        progress.set_postfix(loss=loss.item(), f1=batch_metrics["f1"])
+        progress.set_postfix(
+            cls=classification_loss.item(),
+            ssc=ssc_loss.item(),
+            loss=loss.item(),
+            f1=batch_metrics["f1"],
+        )
 
     if batches == 0:
-        return 0.0, metrics_from_confusion(counts), counts
-    return total_loss / batches, metrics_from_confusion(counts), counts
+        diagnostics = {
+            "classification_loss": 0.0,
+            "sam_segment_contrastive_loss": 0.0,
+            "optimization_loss": 0.0,
+        }
+        return 0.0, metrics_from_confusion(counts), counts, diagnostics
+    diagnostics = {
+        "classification_loss": total_classification_loss / batches,
+        "sam_segment_contrastive_loss": total_ssc_loss / batches,
+        "optimization_loss": total_optimization_loss / batches,
+    }
+    return (
+        diagnostics["classification_loss"],
+        metrics_from_confusion(counts),
+        counts,
+        diagnostics,
+    )
 
 
 def run_epoch_multiclass(
@@ -453,6 +545,7 @@ def save_checkpoint(
     split_manifest: Path | None = None,
     image_size: int | None = None,
     seed: int | None = None,
+    sam_segment_contrastive: dict[str, object] | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -476,6 +569,7 @@ def save_checkpoint(
                 if split_manifest is not None and split_manifest.is_file()
                 else None
             ),
+            "sam_segment_contrastive": sam_segment_contrastive,
         },
         path,
     )
@@ -625,6 +719,36 @@ def main() -> None:
         )
 
     normalization = "radimagenet" if args.radimagenet_checkpoint else "imagenet"
+    if not np.isfinite(args.sam_segment_contrastive_weight) or args.sam_segment_contrastive_weight < 0:
+        raise ValueError("--sam-segment-contrastive-weight must be finite and non-negative")
+    if not np.isfinite(args.sam_segment_temperature) or args.sam_segment_temperature <= 0:
+        raise ValueError("--sam-segment-temperature must be finite and positive")
+    if args.sam_segment_contrastive_weight > 0:
+        if args.sam_segment_map_root is None:
+            raise ValueError(
+                "--sam-segment-map-root is required when SSC weight is positive"
+            )
+        if not args.sam_segment_map_manifest_sha256:
+            raise ValueError(
+                "--sam-segment-map-manifest-sha256 is required when SSC is enabled"
+            )
+        if args.augment or args.random_erasing:
+            raise ValueError(
+                "S2C SSC requires augmentation and random erasing to remain off so "
+                "the precomputed SAM regions stay spatially aligned"
+            )
+        if args.preprocessing_mode != "none":
+            raise ValueError(
+                "S2C SSC requires preprocessing-mode=none to match the region maps"
+            )
+        if args.image_size != 320:
+            raise ValueError(
+                "The frozen S2C region maps are aligned to classifier image-size 320"
+            )
+    elif args.sam_segment_map_root is not None:
+        raise ValueError(
+            "--sam-segment-map-root was supplied but SSC weight is zero"
+        )
 
     train_dataset = build_classification_dataset(
         root=args.data_root,
@@ -658,9 +782,34 @@ def main() -> None:
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
+    sam_segment_store = None
+    sam_segment_config: dict[str, object] | None = None
+    if args.sam_segment_contrastive_weight > 0:
+        sam_segment_store = SamSegmentMapStore(
+            args.sam_segment_map_root,
+            train_dataset.samples,
+            expected_manifest_sha256=args.sam_segment_map_manifest_sha256,
+        )
+        sam_segment_config = {
+            "method": "S2C SAM-Segment Contrasting",
+            "weight": float(args.sam_segment_contrastive_weight),
+            "temperature": float(args.sam_segment_temperature),
+            "map_root": str(args.sam_segment_map_root.resolve()),
+            "manifest_sha256": sam_segment_store.manifest_sha256,
+            "map_shape": list(sam_segment_store.map_shape or ()),
+            "train_maps": len(sam_segment_store),
+            "prototype_gradient": "detached",
+            "ignore_region_id": 0,
+        }
+        print(f"Validated S2C region maps: {json.dumps(sam_segment_config)}")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     is_multiclass = target_columns == ["tumor_type"]
+    if is_multiclass and args.sam_segment_contrastive_weight > 0:
+        raise ValueError(
+            "The controlled S2C ablation is defined for the binary tumor classifier only"
+        )
     if is_multiclass:
         from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
         num_classes = len(TUMOR_TYPE_CLASS_NAMES)
@@ -725,6 +874,7 @@ def main() -> None:
                 "attention_alpha_max": args.attention_alpha_max,
                 "preprocessing_mode": args.preprocessing_mode,
                 "normalization": normalization,
+                "sam_segment_contrastive": sam_segment_config,
             },
             indent=2,
         )
@@ -744,6 +894,7 @@ def main() -> None:
         else:
             writer.writerow([
                 "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1",
+                "train_sam_segment_contrastive_loss", "train_optimization_loss",
                 "train_tp", "train_fp", "train_fn", "train_tn",
                 "val_loss", "val_acc", "val_precision", "val_recall", "val_f1",
                 "val_tp", "val_fp", "val_fn", "val_tn",
@@ -781,8 +932,27 @@ def main() -> None:
                 model, val_loader, criterion, optimizer, scaler, device, num_classes, train=False
             )
         else:
-            train_loss, train_metrics, train_counts = run_epoch(model, train_loader, criterion, optimizer, scaler, device, train=True)
-            val_loss, val_metrics, val_counts = run_epoch(model, val_loader, criterion, optimizer, scaler, device, train=False)
+            train_loss, train_metrics, train_counts, train_diagnostics = run_epoch(
+                model,
+                train_loader,
+                criterion,
+                optimizer,
+                scaler,
+                device,
+                train=True,
+                sam_segment_store=sam_segment_store,
+                sam_segment_contrastive_weight=args.sam_segment_contrastive_weight,
+                sam_segment_temperature=args.sam_segment_temperature,
+            )
+            val_loss, val_metrics, val_counts, _val_diagnostics = run_epoch(
+                model,
+                val_loader,
+                criterion,
+                optimizer,
+                scaler,
+                device,
+                train=False,
+            )
 
         epoch_budget_records.append({
             "epoch": epoch,
@@ -817,6 +987,8 @@ def main() -> None:
                         train_metrics["precision"],
                         train_metrics["recall"],
                         train_metrics["f1"],
+                        train_diagnostics["sam_segment_contrastive_loss"],
+                        train_diagnostics["optimization_loss"],
                         train_counts["tp"],
                         train_counts["fp"],
                         train_counts["fn"],
@@ -840,11 +1012,18 @@ def main() -> None:
                 f" attention_alpha={current_attention_alpha:.4f}"
                 f" teacher={'active' if teacher is not None else 'warmup'}"
             )
+        ssc_suffix = ""
+        if not is_multiclass and args.sam_segment_contrastive_weight > 0:
+            ssc_suffix = (
+                f" ssc={train_diagnostics['sam_segment_contrastive_loss']:.4f}"
+                f" optimization_loss={train_diagnostics['optimization_loss']:.4f}"
+            )
         print(
             f"Epoch {epoch:03d} | train_loss={train_loss:.4f} train_acc={train_metrics['acc']:.4f} "
             f"train_{'macro_f1' if is_multiclass else 'f1'}={train_metrics['f1']:.4f} | "
             f"val_loss={val_loss:.4f} val_acc={val_metrics['acc']:.4f} "
-            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}{puzzle_suffix}{teacher_suffix}"
+            f"val_{'macro_f1' if is_multiclass else 'f1'}={val_metrics['f1']:.4f}"
+            f"{puzzle_suffix}{teacher_suffix}{ssc_suffix}"
         )
         if is_multiclass:
             from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
@@ -873,6 +1052,7 @@ def main() -> None:
                 split_manifest=args.split_manifest,
                 image_size=args.image_size,
                 seed=args.seed,
+                sam_segment_contrastive=sam_segment_config,
             )
             print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:
@@ -887,6 +1067,7 @@ def main() -> None:
             split_manifest=args.split_manifest,
             image_size=args.image_size,
             seed=args.seed,
+            sam_segment_contrastive=sam_segment_config,
         )
 
         if epoch in cam_epochs and cam_preview_indices:

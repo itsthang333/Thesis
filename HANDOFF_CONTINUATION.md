@@ -761,3 +761,39 @@ This transfers SAM boundary/region knowledge into classifier features, directly
 targeting the measured oracle-to-selection gap instead of adding another
 inference heuristic.
 
+## 28. Active S2C experiment
+
+The AdvCAM/selector family is closed. The active direction is S2C
+SAM-Segment Contrasting because the 448/AdvCAM diagnostics improved small-lesion
+support recall and oracle candidates but lost the gain at feature
+calibration/ranking.
+
+- `itsthang333/btxrd-s2c-segment-everything-v1` is the heavy train-only
+  preprocessing kernel. It must finish with 2,981 unique 80x80 `uint16` maps,
+  exact split/SAM/source hashes, `polygons_or_masks_loaded=false`,
+  `validation_images_processed=false`, and `test_evaluated=false`.
+- Project source includes opt-in
+  `project/models/sam_segment_contrastive.py` plus classifier CLI/integrity
+  wiring. The frozen experiment is binary DenseNet121 320, BCE + SSC weight 1,
+  temperature 1, no augmentation, identical optimizer/early stopping and
+  clean-validation checkpoint rule.
+- Source bundle v9 failed its smoke test before training because the cosine
+  matrix needed one transpose before pixel-wise cross-entropy. Do not reuse or
+  overwrite v9; publish the repaired source as the next immutable bundle.
+  Smoke kernel `itsthang333/btxrd-s2c-ssc-torch-test-v1` must pass a real
+  DenseNet optimizer step before full training.
+- Repaired immutable source v10 passed 4/4 Torch tests and the faithful
+  batch-8/320px/map-80 AMP DenseNet step. Compact result:
+  `artifacts/kaggle/s2c_ssc_torch_test_v1/test_result.json`. The long classifier
+  wrapper is prepared under `tmp/kaggle/s2c_binary_classifier_v1` and its
+  static test must continue to fail until the completed region-manifest SHA
+  replaces `__FILL_AFTER_S2C_PRECOMPUTE__`.
+- Once preprocessing completes, download JSON/CSV/log first, verify the output,
+  freeze `region_map_manifest.csv` SHA-256 in the classifier wrapper, then use
+  the completed preprocessing kernel as an immutable Kaggle kernel source.
+- After classifier training, run the unchanged promoted flip-TTA LayerCAM+SAM
+  Gate-C recipe. Promotion requires a positive paired group-bootstrap lower
+  bound over Dice `0.2343392222` and a non-negative delta on the fixed 94
+  small-lesion cases. Do not evaluate test or train a downstream segmenter
+  unless that rule passes.
+
