@@ -26,6 +26,9 @@ Thumbs.db
 outputs/
 runs/
 checkpoints/
+!artifacts/official_wsss/checkpoints/
+!artifacts/official_wsss/checkpoints/README.md
+!artifacts/official_wsss/checkpoints/checkpoint_pointer.json
 .tmp_notebook_outputs/
 *.pt
 *.pth

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "large_files_committed": false,
+  "artifacts": {
+    "official_wsss_segmenter": {
+      "filename": "best_unet.pt",
+      "bytes": 230924939,
+      "sha256": "02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4",
+      "source": "Kaggle kernel output: itsthang333/btxrd-wsss-segmenter-v1",
+      "kernel_output_path": "btxrd_wsss_segmenter_v1/wsss_resnet18_pw10_448_e35/best_unet.pt"
+    },
+    "binary_classifier": {
+      "filename": "best_classifier.pt",
+      "sha256": "f62d3702541ec3e6571751ddda22dab4c723943397471d3897500da1620304c5",
+      "source": "Kaggle kernel output: itsthang333/btxrd-clean-binary-classifier"
+    },
+    "sam_vit_b": {
+      "filename": "sam_vit_b_01ec64.pth",
+      "bytes": 375042383,
+      "sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
+      "source": "official Segment Anything ViT-B checkpoint"
+    }
+  }
+}
