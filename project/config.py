@@ -46,17 +46,16 @@ class SegmentationConfig:
 
 @dataclass(frozen=True)
 class BtxrdBestPipelineConfig:
-    """Hardware-independent BTXRD WSSS candidate configuration.
+    """Validation-selected, hardware-independent BTXRD WSSS recipe.
 
-    The values preserve the earlier validation A/B candidate.  They are not a
-    final scientific freeze after the entity-level split audit: final status
-    requires a clean rerun and a checksum-bearing document produced by
-    tools/freeze_pipeline_config.py. Device/checkpoint paths remain external
-    deployment inputs.
+    The classifier and pseudo-mask stages use binary image-level labels only.
+    Segmentation thresholds and checkpoints still require a checksum-bearing
+    freeze from ``tools/freeze_pipeline_config.py`` before test evaluation.
+    Device and checkpoint paths remain deployment inputs.
     """
 
     name: str = "btxrd_best"
-    target_columns: tuple[str, ...] = ("tumor_type",)
+    target_columns: tuple[str, ...] = ("tumor",)
     classifier_image_size: int = 320
     classifier_batch_size: int = 4
     classifier_epochs: int = 30
@@ -68,9 +67,13 @@ class BtxrdBestPipelineConfig:
     classifier_attention_alpha_max: float = 0.0
     cam_percentile: float = 90.0
     cam_percentile_values: tuple[float, ...] = (85.0, 90.0, 95.0)
-    cam_contrast_normal: bool = True
+    cam_tta_flip: bool = True
+    cam_contrast_normal: bool = False
     cam_contrast_weight: float = 1.0
     cam_aggregation: str = "class"
+    cam_target_class: str = "ground_truth"
+    seed_percentile: float = 82.0
+    support_percentile: float = 55.0
     layercam_weights: tuple[float, ...] = (0.20, 0.30, 0.50)
     layercam_gradient_mode: str = "positive"
     confidence_threshold: float = 0.5
@@ -106,11 +109,17 @@ BTXRD_BEST_PIPELINE = BtxrdBestPipelineConfig()
 
 @dataclass(frozen=True)
 class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
+    """Legacy research profile retained for reproducibility, not thesis use."""
+
     name: str = "btxrd_hybrid"
+    target_columns: tuple[str, ...] = ("tumor_type",)
     classifier_epochs: int = 30
     classifier_early_stop_patience: int = 7
     classifier_puzzle_alpha_max: float = 4.0
     classifier_attention_alpha_max: float = 0.01
+    cam_tta_flip: bool = False
+    cam_contrast_normal: bool = True
+    cam_target_class: str = "predicted"
     teacher_warmup_epochs: int = 3
     teacher_ema_decay: float = 0.999
     teacher_cam_percentile: float = 96.0

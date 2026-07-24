@@ -1,159 +1,130 @@
-# BTXRD Weakly Supervised Bone-Tumor Segmentation
+# BTXRD weakly supervised bone-tumor segmentation
 
-This branch contains one production pipeline for segmenting bone tumors on
-BTXRD radiographs from image-level labels. The canonical executable workflow
-is [thesis_final.ipynb](thesis_final.ipynb); it calls the Python entrypoints
-instead of duplicating model logic inside notebook cells.
-
-## Canonical pipeline
+This `main` branch contains one thesis pipeline:
 
 ```text
-audited group split manifest
-  -> DenseNet121 hybrid image classifier (tumor_type, btxrd_hybrid)
-  -> multi-layer LayerCAM + class-vs-normal contrast
-  -> tumor morphology + positive/negative point and box prompts
-  -> local SAM v1 ViT-B
-  -> strict coverage_mass_sam selection
-  -> pseudo-mask manifest with hashes/provenance
-  -> U-Net trained on train pseudo-masks
-  -> validation selection and one locked test report
-  -> U-Net-only deployment inference
+binary image-level tumor label
+  -> DenseNet121 classifier
+  -> multi-layer LayerCAM + horizontal-flip TTA
+  -> SAM ViT-B pseudo masks selected by coverage_mass_sam
+  -> ResNet18 U-Net trained on checksum-bound train pseudo masks
+  -> validation-selected checkpoint and threshold
+  -> one locked test evaluation
 ```
 
-Supervision for classifier/CAM generation is the 10-class image-level
-`tumor_type` label (normal plus nine tumor types), not a binary mask label.
-The known image-level class is the canonical WSSS training protocol.
-Predicted-class CAM is reported separately as a deployment-oriented
-diagnostic. Polygon masks are used only for explicit evaluation, the
-fully-supervised oracle baseline, and held-out U-Net validation/test; they do
-not enter pseudo-label generation. Held-out validation polygons are explicitly
-used for U-Net checkpoint/model selection, so they are development labels even
-though the U-Net training targets remain weak pseudo-masks.
+The official validation result is WSSS mean tumor Dice **0.230020** at threshold
+**0.85**. See [FINAL_RESULTS.md](FINAL_RESULTS.md) and
+[artifacts/official_wsss/SELECTION.json](artifacts/official_wsss/SELECTION.json).
+The fully supervised Dice **0.495132** snapshot trained directly on polygon
+masks and is only an upper-bound diagnostic. It is not the official pipeline.
 
-## Kaggle bootstrap
+## Frozen evidence
 
-Enable Kaggle Internet and attach the BTXRD dataset containing `images/`,
-`Annotations/`, and its metadata spreadsheet/CSV. The first notebook cell then:
+- Clean split: 2,981 train / 371 validation / 373 test; SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`.
+- Binary classifier: F1 0.783333, AUROC 0.865453.
+- Validation pseudo masks: mean tumor Dice 0.234339.
+- WSSS segmenter: ResNet18 U-Net, selected epoch 13, image size 448,
+  checkpoint SHA-256
+  `02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4`.
+- WSSS validation Dice 95% group-bootstrap CI:
+  [0.185729, 0.275031].
+- Test status: not evaluated until the schema-v4 frozen config is committed.
 
-- clones the public `pipeline` branch and records its exact commit;
-- installs [project/requirements.txt](project/requirements.txt);
-- downloads official `sam_vit_b_01ec64.pth`;
-- uses a dataset-provided `split_manifest.csv` or deterministically creates the
-  group-aware audited manifest under `/kaggle/working`.
+Large checkpoints, BTXRD data, caches, temporary Kaggle payloads, and secrets
+are excluded from Git. Resolve checkpoints only through
+[checkpoint_pointer.json](artifacts/official_wsss/checkpoints/checkpoint_pointer.json).
 
-The default dataset path is
-`/kaggle/input/datasets/wanwin/data-btxrd/BTXRD`. `BTXRD_ROOT`,
-`BTXRD_SPLIT_MANIFEST`, and `SAM_CHECKPOINT` remain optional overrides.
-`BTXRD_RUN_ID`, `BTXRD_OUTPUT`, and `BTXRD_NUM_WORKERS` can also be overridden;
-the output directory must be new. After bootstrap, the preflight verifies exact
-dependency versions, repository revision, manifest integrity, SAM presence,
-and output isolation before training begins.
+## Reproduce on Kaggle
 
-## Command-line entrypoints
+GPU-heavy work must run on Kaggle. Attach BTXRD with `images/`, `Annotations/`,
+and metadata, then use a clean checkout of the exact commit.
 
-Run commands from `project/`. Representative canonical commands are:
+The canonical profile is `btxrd_best`. It locks:
+
+- target `tumor` (binary image-level label);
+- classifier image size 320 and no augmentation;
+- LayerCAM weights 0.20/0.30/0.50, horizontal-flip TTA, percentiles 85/90/95;
+- CAM target from the known image-level label for train pseudo-mask generation;
+- SAM image size 512 and box-point/point/box prompt ensemble;
+- `coverage_mass_sam`, `component_topk=3`, support clipping 5;
+- fail-closed low-score behavior.
+
+Exact generation, training, freeze, and final-evaluation commands are in
+[COMMANDS.md](artifacts/official_wsss/COMMANDS.md). The shorter stage sequence is:
 
 ```bash
-python tools/build_btxrd_split_manifest.py \
-  --dataset-root /path/to/btxrd \
-  --output-csv /path/to/split_manifest.csv \
-  --report-json /path/to/split_report.json
-
-python train_classifier.py \
-  --pipeline-profile btxrd_hybrid \
-  --data-root /path/to/btxrd \
-  --split-manifest /path/to/split_manifest.csv \
-  --output-dir /path/to/classifier_run
-
-python generate_pseudo_masks.py \
-  --pipeline-profile btxrd_hybrid \
-  --data-root /path/to/btxrd \
-  --split-manifest /path/to/split_manifest.csv \
+# 1. Generate all train pseudo masks with the locked btxrd_best profile.
+python project/generate_pseudo_masks.py \
+  --pipeline-profile btxrd_best \
+  --data-root /kaggle/input/.../BTXRD \
   --split train \
-  --classifier-checkpoint /path/to/best_classifier.pt \
-  --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
-  --cam-target-class ground_truth \
-  --process-all --output-dir /path/to/pseudo_train
+  --split-manifest artifacts/data_audit/split_manifest.csv \
+  --classifier-checkpoint /kaggle/input/.../best_classifier.pt \
+  --sam-checkpoint /kaggle/input/.../sam_vit_b_01ec64.pth \
+  --process-all --save-visuals-limit 0 \
+  --output-dir /kaggle/working/pseudo_train
 
-python train_segmentation.py \
-  --pipeline-profile btxrd_hybrid \
-  --data-root /path/to/btxrd \
-  --split-manifest /path/to/split_manifest.csv \
-  --train-pred-mask-root /path/to/pseudo_train/masks \
-  --output-dir /path/to/unet_run
-
-python evaluate_unet.py \
-  --data-root /path/to/btxrd \
-  --split-manifest /path/to/split_manifest.csv \
-  --split val --checkpoint /path/to/best_unet.pt \
-  --output-csv /path/to/unet_val.csv \
-  --output-json /path/to/unet_val.json
-
-python inference.py \
-  --image-path /path/to/radiograph.png \
-  --segmentation-checkpoint /path/to/best_unet.pt \
-  --output-dir /path/to/inference
+# 2. Train the U-Net only from pseudo masks; validation polygons select it.
+python project/train_segmentation.py \
+  --pipeline-profile btxrd_best \
+  --data-root /kaggle/input/.../BTXRD \
+  --split-manifest artifacts/data_audit/split_manifest.csv \
+  --train-pred-mask-root /kaggle/working/pseudo_train/masks \
+  --image-size 448 --model-architecture resnet18_unet \
+  --batch-size 8 --epochs 35 --early-stop-patience 10 \
+  --pos-weight-mode manual --pos-weight-value 10 \
+  --output-dir /kaggle/working/wsss_segmenter
 ```
 
-Use `evaluate_classifier.py` for the complete classifier and binary
-tumor-vs-normal gate report, and `evaluate_pseudo_masks.py` for pseudo-mask
-Dice/IoU, boundary metrics, normal-case specificity, and bootstrap confidence
-intervals.
+Do not run a new experiment merely to reproduce the thesis result: the
+validation-selected checkpoint already exists by hash. No threshold sweep,
+model selection, or qualitative cherry-picking is allowed on test.
 
-## Scientific and reproducibility guards
+## Test lock
 
-- The split manifest is authoritative and rejects group overlap or changed
-  image hashes.
-- Degenerate/non-finite CAMs fail closed and cannot create corner prompts.
-- Missing or tampered pseudo-masks fail before U-Net training.
-- Candidate thresholds are strict: no candidate below threshold is silently
-  promoted.
-- Checkpoints store preprocessing, architecture, optimizer/resume state,
-  dataset and manifest provenance.
-- Final inference restores U-Net preprocessing and decision threshold, checks
-  architecture/dataset compatibility, returns original-resolution outputs,
-  and records the checkpoint SHA-256.
-- Test-set execution is gated by `BTXRD_RUN_LOCKED_TEST=1` after the final
-  configuration is frozen. Frozen-config schema v3 also requires a classifier
-  epoch-budget audit showing a plateau/decline on the audited validation split.
-  Every test-split CLI now requires `--frozen-config`;
-  its checksum, Git commit, split manifest, SAM, classifier, and both U-Net
-  checkpoint hashes are verified before dataset construction.
-- HD95/ASSD are reported only as `*_conditional_defined` in pixels on the
-  resized evaluation grid (not millimetres), with the eligible,
-  excluded, and complete-miss counts beside them. They are not presented as
-  unconditional end-to-end means.
-- Lesion detection includes maximum one-to-one component matching at IoU >=
-  0.10, 0.25, and 0.50, alongside explicitly named any-overlap diagnostics and the GT
-  component-count/multifocal distribution.
-- Classifier macro-F1 and tumor-gate AUROC, AUPRC, sensitivity, and specificity
-  include percentile CIs from complete heuristic-group bootstrap resampling.
-  These groups are inferred from filenames/stable metadata and are not verified
-  patient identifiers.
-- U-Net training writes `pos_weight_audit.json` containing foreground ratio,
-  empty-mask rate, raw/clamped/fixed candidate weights, and both raw and
-  effective selected weights. Checkpoint selection keeps positive-lesion Dice
-  primary and uses normal empty-case specificity as a tolerance-based tie-breaker.
-  Set `BTXRD_RUN_POS_WEIGHT_ABLATION=1` to run raw and fixed-10 comparisons
-  against the canonical clamped run.
-- Pseudo-mask manifest schema v2 distinguishes above-threshold candidates,
-  selected candidates/components, SAM calls, and unique prompt points.
-- Any WSSS-versus-fully-supervised performance difference is reported as the
-  observed gap of this complete pipeline (classifier/CAM/SAM selection,
-  pseudo-label noise, optimization, and weak supervision together), not as a
-  causal estimate of the cost of weak labels alone.
-- Before any full pseudo-mask run, the notebook executes a mandatory one-epoch
-  U-Net preflight; its supervised smoke checkpoint is never reported as WSSS.
-  The SAM smoke cell processes five deterministic validation images with the
-  full prompt ensemble and requires CUDA.
+`project/tools/freeze_pipeline_config.py` creates a portable schema-v4 record
+that binds:
 
-## Tests
+- every `project/**/*.py` source hash;
+- split-manifest hash and size;
+- official WSSS checkpoint hash and size;
+- validation summary and threshold-selection evidence;
+- image size 448 and threshold 0.85;
+- the sole permitted test stage: official WSSS segmenter evaluation.
+
+`project/evaluate_unet.py` validates that record before constructing the test
+dataset. It rejects a threshold grid, rejects the fully supervised checkpoint,
+requires fresh prediction/qualitative directories, and writes:
+
+- summary and per-image metrics;
+- subgroup metrics, bootstrap confidence intervals, and pixel confusion;
+- one prediction-mask PNG per test image;
+- deterministic best/median/worst/failure overlays;
+- exact command, environment/provenance, hashes, and `test_evaluated=true`.
+
+## Repository layout
+
+```text
+artifacts/data_audit/                       clean split and leakage audit
+artifacts/official_wsss/                    official compact thesis evidence
+artifacts/diagnostics/fully_supervised.../  upper-bound diagnostic only
+configs/                                    portable frozen test config
+project/                                    executable pipeline and guards
+tests/                                      unit and integration guards
+```
+
+Expanded experiment history and rejected causal-selector implementation are
+preserved on `codex/research-wsss-improvement`. They are intentionally absent
+from the `main` execution path.
+
+## Verification
 
 ```bash
 python -m compileall -q project tests
 python -m unittest discover -s tests -v
 ```
 
-GPU/PyTorch integration tests must pass in the locked Kaggle environment.
-A lightweight local environment without PyTorch will explicitly skip those
-tests; that is not equivalent to a successful Kaggle smoke run.
+The local lightweight runtime may lack PyTorch/SciPy; that can only yield
+explicit skips/import errors, not a full pass. The final verification and smoke
+test must run in the locked Kaggle environment before test evaluation.

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "status": "validation_frozen_pending_final_test",
+  "official_pipeline": "btxrd_wsss_segmenter_v1",
+  "supervision": "binary image-level tumor labels -> LayerCAM/SAM pseudo masks -> ResNet18 U-Net",
+  "selection_partition": "val",
+  "test_evaluated": false,
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "train_pseudo_mask_manifest_sha256": "7b0b133e7bbff8fecb102159b1be41801b6c51199de549a3420978b13ea7c7e6",
+  "checkpoint": {
+    "path_policy": "external large artifact; resolve by hash using checkpoints/checkpoint_pointer.json",
+    "sha256": "02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4",
+    "bytes": 230924939,
+    "architecture": "resnet18_unet",
+    "selected_epoch": 13
+  },
+  "evaluation": {
+    "image_size": 448,
+    "threshold": 0.85,
+    "threshold_selected_on": "val",
+    "threshold_sweep_on_test": false,
+    "images": 371,
+    "tumor_images": 184,
+    "normal_images": 187,
+    "mean_tumor_dice": 0.23001987009320218,
+    "mean_tumor_iou": 0.1654705281882286,
+    "normal_empty_prediction_rate": 0.5133689839572193,
+    "mean_tumor_dice_group_bootstrap_ci95": [
+      0.18572883513641011,
+      0.27503072536311174
+    ]
+  },
+  "academic_guard": {
+    "fully_supervised_snapshot_is_official_wsss": false,
+    "fully_supervised_snapshot_role": "upper-bound diagnostic only",
+    "fully_supervised_validation_dice": 0.4951316962732512,
+    "evidence_path": "../diagnostics/fully_supervised_upper_bound"
+  }
+}

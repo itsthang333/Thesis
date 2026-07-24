@@ -1,0 +1,25 @@
+{
+  "stage": "Gate B clean binary image classifier",
+  "status": "predeclared_before_launch",
+  "supervision": "image-level binary tumor labels only; no polygons or masks",
+  "test_evaluated": false,
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "architecture": "torchvision DenseNet121",
+  "initialization": "official torchvision ImageNet DenseNet121 weights with hash check",
+  "target_columns": [
+    "tumor"
+  ],
+  "image_size": 320,
+  "batch_size": 8,
+  "optimizer": "AdamW",
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "loss": "BCEWithLogitsLoss",
+  "augmentation": false,
+  "seed": 42,
+  "maximum_epochs": 30,
+  "early_stop_patience": 7,
+  "checkpoint_selection": "clean validation tumor F1 at fixed sigmoid threshold 0.5",
+  "evaluation": "clean validation only; threshold 0.5; group bootstrap seed 42",
+  "created_at_utc": "2026-07-23T17:39:59.753395+00:00"
+}

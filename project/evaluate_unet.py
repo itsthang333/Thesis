@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from PIL import Image
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -31,7 +32,7 @@ from evaluation.segmentation_metrics import (
     summarize_segmentation_rows,
 )
 from evaluation.frozen_test_guard import verify_frozen_test_config
-from models.unet import UNet
+from models.unet import architecture_name_from_metadata, build_segmentation_model
 
 
 def parse_args() -> argparse.Namespace:
@@ -57,10 +58,39 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Segmentation threshold; defaults to the checkpoint decision_threshold (then 0.5).",
     )
+    parser.add_argument(
+        "--threshold-grid",
+        type=float,
+        nargs="+",
+        default=None,
+        help=(
+            "Optional validation-only threshold sweep. The primary output still uses --threshold; "
+            "the sweep is written beside it and reports the threshold maximizing tumor-only mean Dice. "
+            "Sweeping the test split is rejected to prevent test-set tuning."
+        ),
+    )
     parser.add_argument("--output-csv", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, default=None)
     parser.add_argument("--bootstrap-iterations", type=int, default=2000)
     parser.add_argument("--bootstrap-seed", type=int, default=42)
+    parser.add_argument(
+        "--prediction-dir",
+        type=Path,
+        default=None,
+        help="Optional directory for one thresholded PNG prediction per evaluated image.",
+    )
+    parser.add_argument(
+        "--qualitative-dir",
+        type=Path,
+        default=None,
+        help="Optional directory for best/median/worst/failure overlay figures.",
+    )
+    parser.add_argument(
+        "--qualitative-count",
+        type=int,
+        default=12,
+        help="Maximum number of deterministic qualitative cases (minimum 3).",
+    )
     return parser.parse_args()
 
 
@@ -80,16 +110,159 @@ def mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else float("nan")
 
 
+def rows_from_probabilities(
+    probability_records: list[tuple[np.ndarray, np.ndarray, str]],
+    metadata_by_name: dict[str, dict[str, object]],
+    threshold: float,
+) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for probability, target, image_name in probability_records:
+        metrics = segmentation_metrics(probability >= threshold, target > 0.5)
+        metadata = metadata_by_name.get(image_name, {})
+        tumor_type = int(metadata.get("tumor_type", 0) or 0)
+        rows.append({
+            "image_name": image_name,
+            "group": "tumor" if metrics["gt_positive"] else "normal",
+            "group_id": str(metadata.get("group_id", "")),
+            "group_source": str(metadata.get("group_source", "")),
+            "center": str(metadata.get("center", "")),
+            "anatomy": str(metadata.get("anatomy", "")),
+            "view": str(metadata.get("view", "")),
+            "tumor_type": tumor_type,
+            "tumor_type_name": (
+                TUMOR_TYPE_CLASS_NAMES[tumor_type]
+                if 0 <= tumor_type < len(TUMOR_TYPE_CLASS_NAMES) else "unknown"
+            ),
+            **metrics,
+        })
+    return rows
+
+
+def save_prediction_masks(
+    probability_records: list[tuple[np.ndarray, np.ndarray, str]],
+    threshold: float,
+    output_dir: Path,
+) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    saved: dict[str, Path] = {}
+    for probability, _target, image_name in probability_records:
+        path = output_dir / f"{Path(image_name).stem}.png"
+        mask = (probability >= threshold).astype(np.uint8) * 255
+        Image.fromarray(mask, mode="L").save(path)
+        saved[image_name] = path
+    return saved
+
+
+def select_qualitative_rows(
+    rows: list[dict[str, object]],
+    limit: int,
+) -> list[tuple[str, dict[str, object]]]:
+    tumors = sorted(
+        (row for row in rows if bool(row.get("gt_positive"))),
+        key=lambda row: (float(row.get("dice", 0.0)), str(row.get("image_name", ""))),
+    )
+    if not tumors:
+        return []
+    anchors = [
+        ("worst", tumors[0]),
+        ("median", tumors[len(tumors) // 2]),
+        ("best", tumors[-1]),
+    ]
+    complete_misses = [
+        ("complete_miss", row)
+        for row in tumors
+        if not bool(row.get("predicted_positive"))
+    ]
+    normal_false_positives = [
+        ("normal_false_positive", row)
+        for row in sorted(
+            (
+                row
+                for row in rows
+                if not bool(row.get("gt_positive")) and bool(row.get("predicted_positive"))
+            ),
+            key=lambda row: (
+                -float(row.get("pred_area_ratio", 0.0)),
+                str(row.get("image_name", "")),
+            ),
+        )
+    ]
+    selected: list[tuple[str, dict[str, object]]] = []
+    seen: set[str] = set()
+    for role, row in anchors + complete_misses + normal_false_positives:
+        image_name = str(row["image_name"])
+        if image_name in seen:
+            continue
+        selected.append((role, row))
+        seen.add(image_name)
+        if len(selected) >= max(3, limit):
+            break
+    return selected
+
+
+def save_qualitative_overlays(
+    *,
+    rows: list[dict[str, object]],
+    probability_records: list[tuple[np.ndarray, np.ndarray, str]],
+    images_dir: Path,
+    image_size: int,
+    threshold: float,
+    output_dir: Path,
+    limit: int,
+) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    records_by_name = {
+        image_name: (probability, target)
+        for probability, target, image_name in probability_records
+    }
+    case_rows: list[dict[str, object]] = []
+    for role, row in select_qualitative_rows(rows, limit):
+        image_name = str(row["image_name"])
+        probability, target = records_by_name[image_name]
+        prediction = probability >= threshold
+        original = Image.open(images_dir / image_name).convert("RGB").resize(
+            (image_size, image_size),
+            Image.Resampling.BILINEAR,
+        )
+        overlay = np.asarray(original, dtype=np.float32).copy()
+        gt = target > 0.5
+        pred_only = prediction & ~gt
+        gt_only = gt & ~prediction
+        overlap = prediction & gt
+        for region, color in (
+            (pred_only, np.array([32, 220, 80], dtype=np.float32)),
+            (gt_only, np.array([240, 45, 45], dtype=np.float32)),
+            (overlap, np.array([255, 210, 35], dtype=np.float32)),
+        ):
+            overlay[region] = 0.45 * overlay[region] + 0.55 * color
+        overlay_path = output_dir / f"{role}__{Path(image_name).stem}.png"
+        Image.fromarray(overlay.clip(0, 255).astype(np.uint8), mode="RGB").save(
+            overlay_path
+        )
+        case_rows.append({
+            "role": role,
+            "image_name": image_name,
+            "group": row.get("group"),
+            "dice": row.get("dice"),
+            "iou": row.get("iou"),
+            "gt_area_ratio": row.get("gt_area_ratio"),
+            "pred_area_ratio": row.get("pred_area_ratio"),
+            "predicted_positive": row.get("predicted_positive"),
+            "overlay": overlay_path.name,
+            "legend": "green=prediction_only; red=GT_only; yellow=overlap",
+        })
+    manifest_path = output_dir / "case_manifest.csv"
+    with manifest_path.open("w", newline="", encoding="utf-8") as handle:
+        fields = list(case_rows[0]) if case_rows else ["role", "image_name"]
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(json_safe(case_rows))
+    return manifest_path
+
+
 def main() -> None:
     args = parse_args()
-    verify_frozen_test_config(
-        args.frozen_config,
-        split=args.split,
-        split_manifest=args.split_manifest,
-        requested_checkpoint=args.checkpoint,
-        checkpoint_any_of=("unet_checkpoint", "supervised_unet_checkpoint"),
-    )
-    checkpoint = torch.load(args.checkpoint, map_location="cpu")
+    checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     checkpoint_dataset = checkpoint.get("dataset")
     if checkpoint_dataset and checkpoint_dataset != args.dataset:
         raise ValueError(f"Checkpoint dataset={checkpoint_dataset!r}, requested dataset={args.dataset!r}")
@@ -116,6 +289,36 @@ def main() -> None:
     )
     if not 0.0 <= threshold <= 1.0:
         raise ValueError(f"Segmentation threshold must be in [0,1], got {threshold}")
+    threshold_grid = sorted(set(args.threshold_grid or []))
+    if any(not 0.0 <= value <= 1.0 for value in threshold_grid):
+        raise ValueError("Every --threshold-grid value must be in [0,1]")
+    if threshold_grid and args.split.lower() == "test":
+        raise ValueError(
+            "Threshold sweeping is validation-only; select and freeze a threshold before test evaluation."
+        )
+    if args.qualitative_count < 3:
+        raise ValueError("--qualitative-count must be at least 3")
+    if args.split.lower() == "test" and (
+        args.prediction_dir is None or args.qualitative_dir is None
+    ):
+        raise ValueError(
+            "Final test evaluation requires --prediction-dir and --qualitative-dir"
+        )
+    for output_dir in (args.prediction_dir, args.qualitative_dir):
+        if output_dir is not None and output_dir.exists() and any(output_dir.iterdir()):
+            raise FileExistsError(
+                f"Refusing to reuse non-empty evaluation output directory: {output_dir}"
+            )
+    frozen_document = verify_frozen_test_config(
+        args.frozen_config,
+        split=args.split,
+        split_manifest=args.split_manifest,
+        requested_checkpoint=args.checkpoint,
+        checkpoint_any_of=("unet_checkpoint",),
+        requested_threshold=threshold,
+        requested_image_size=image_size,
+        requested_stage="official_wsss_segmenter",
+    )
 
     dataset = build_segmentation_dataset(
         root=args.data_root,
@@ -133,12 +336,13 @@ def main() -> None:
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet(in_channels=3, out_channels=1, base_channels=64)
+    architecture_name = architecture_name_from_metadata(checkpoint.get("architecture"))
+    model = build_segmentation_model(architecture_name, pretrained=False)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     model.to(device).eval()
 
     metadata_by_name = {str(sample["image_id"]): sample for sample in dataset.samples}
-    rows: list[dict[str, object]] = []
+    probability_records: list[tuple[np.ndarray, np.ndarray, str]] = []
 
     with torch.no_grad():
         for images, targets, image_names in tqdm(
@@ -147,29 +351,32 @@ def main() -> None:
             disable=should_disable_tqdm(),
         ):
             logits = model(images.to(device))
-            predictions = (torch.sigmoid(logits).cpu() >= threshold).float()
-            for pred, target, image_name in zip(predictions, targets, image_names):
-                metrics = segmentation_metrics(
-                    pred[0].numpy() > 0.5,
-                    target[0].numpy() > 0.5,
-                )
-                metadata = metadata_by_name.get(str(image_name), {})
-                tumor_type = int(metadata.get("tumor_type", 0) or 0)
-                rows.append({
-                    "image_name": str(image_name),
-                    "group": "tumor" if metrics["gt_positive"] else "normal",
-                    "group_id": str(metadata.get("group_id", "")),
-                    "group_source": str(metadata.get("group_source", "")),
-                    "center": str(metadata.get("center", "")),
-                    "anatomy": str(metadata.get("anatomy", "")),
-                    "view": str(metadata.get("view", "")),
-                    "tumor_type": tumor_type,
-                    "tumor_type_name": (
-                        TUMOR_TYPE_CLASS_NAMES[tumor_type]
-                        if 0 <= tumor_type < len(TUMOR_TYPE_CLASS_NAMES) else "unknown"
-                    ),
-                    **metrics,
-                })
+            probabilities = torch.sigmoid(logits).cpu().numpy()
+            target_arrays = targets.numpy()
+            for probability, target, image_name in zip(probabilities, target_arrays, image_names):
+                probability_records.append((
+                    probability[0].astype(np.float16, copy=False),
+                    target[0].astype(np.uint8, copy=False),
+                    str(image_name),
+                ))
+
+    rows = rows_from_probabilities(probability_records, metadata_by_name, threshold)
+    prediction_paths = (
+        save_prediction_masks(probability_records, threshold, args.prediction_dir)
+        if args.prediction_dir is not None
+        else {}
+    )
+    qualitative_manifest = None
+    if args.qualitative_dir is not None:
+        qualitative_manifest = save_qualitative_overlays(
+            rows=rows,
+            probability_records=probability_records,
+            images_dir=dataset.images_dir,
+            image_size=image_size,
+            threshold=threshold,
+            output_dir=args.qualitative_dir,
+            limit=args.qualitative_count,
+        )
 
     summary = {
         "dataset": args.dataset,
@@ -178,6 +385,10 @@ def main() -> None:
         "checkpoint_sha256": hashlib.sha256(args.checkpoint.read_bytes()).hexdigest(),
         "image_size": image_size,
         "threshold": threshold,
+        "test_evaluated": args.split.lower() == "test",
+        "frozen_config_sha256": (
+            frozen_document.get("freeze_sha256") if frozen_document else None
+        ),
         "boundary_distance_unit": "pixels on the resized evaluation grid",
         **summarize_segmentation_rows(rows),
     }
@@ -196,6 +407,38 @@ def main() -> None:
         writer.writerows(json_safe(rows))
     output_json = args.output_json or args.output_csv.with_suffix(".json")
     output_json.write_text(json.dumps(json_safe(summary), indent=2) + "\n", encoding="utf-8")
+    threshold_sweep_path = None
+    threshold_selection_path = None
+    if threshold_grid:
+        sweep_rows: list[dict[str, object]] = []
+        for candidate_threshold in threshold_grid:
+            candidate_summary = summarize_segmentation_rows(
+                rows_from_probabilities(probability_records, metadata_by_name, candidate_threshold)
+            )
+            sweep_rows.append({"threshold": candidate_threshold, **candidate_summary})
+        selection_key = lambda row: (
+            float(row["mean_tumor_dice"]),
+            float(row["normal_empty_prediction_rate"]),
+            -abs(float(row["threshold"]) - 0.5),
+        )
+        selected = max(sweep_rows, key=selection_key)
+        threshold_sweep_path = args.output_csv.with_name(args.output_csv.stem + "_threshold_sweep.csv")
+        with threshold_sweep_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(sweep_rows[0]))
+            writer.writeheader()
+            writer.writerows(json_safe(sweep_rows))
+        threshold_selection_path = args.output_csv.with_name(
+            args.output_csv.stem + "_threshold_selection.json"
+        )
+        threshold_selection_path.write_text(json.dumps(json_safe({
+            "selection_split": args.split,
+            "selection_rule": (
+                "maximize mean_tumor_dice; then normal_empty_prediction_rate; "
+                "then proximity to threshold 0.5"
+            ),
+            "selected": selected,
+            "candidate_count": len(sweep_rows),
+        }), indent=2) + "\n", encoding="utf-8")
     subgroup_path = args.output_csv.with_name(args.output_csv.stem + "_subgroups.csv")
     with subgroup_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(subgroup_rows[0]) if subgroup_rows else ["subgroup_field"])
@@ -233,7 +476,29 @@ def main() -> None:
             "subgroups": str(subgroup_path.resolve()),
             "bootstrap": str(bootstrap_path.resolve()),
             "pixel_confusion": str(confusion_path.resolve()),
+            "threshold_sweep": str(threshold_sweep_path.resolve()) if threshold_sweep_path else None,
+            "threshold_selection": (
+                str(threshold_selection_path.resolve()) if threshold_selection_path else None
+            ),
+            "prediction_dir": (
+                str(args.prediction_dir.resolve()) if prediction_paths else None
+            ),
+            "prediction_masks": len(prediction_paths),
+            "qualitative_dir": (
+                str(args.qualitative_dir.resolve()) if qualitative_manifest else None
+            ),
+            "qualitative_case_manifest": (
+                str(qualitative_manifest.resolve()) if qualitative_manifest else None
+            ),
         },
+        "command": [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]],
+        "test_evaluated": args.split.lower() == "test",
+        "frozen_config": (
+            str(args.frozen_config.resolve()) if args.frozen_config else None
+        ),
+        "frozen_config_sha256": (
+            frozen_document.get("freeze_sha256") if frozen_document else None
+        ),
     }
     run_manifest_path = args.output_csv.with_name(args.output_csv.stem + "_run_manifest.json")
     run_manifest_path.write_text(json.dumps(run_manifest, indent=2) + "\n", encoding="utf-8")
@@ -241,6 +506,8 @@ def main() -> None:
     print(json.dumps(summary, indent=2))
     print(f"Saved per-image metrics to {args.output_csv}")
     print(f"Saved summary to {output_json}")
+    if threshold_selection_path is not None:
+        print(f"Saved validation threshold sweep and selection to {threshold_selection_path}")
     print(f"Saved subgroup/bootstrap/confusion/run-manifest artifacts next to {args.output_csv}")
 
 

@@ -201,7 +201,12 @@ def parse_args() -> argparse.Namespace:
                         choices=["positive", "absolute"],
                         help="LayerCAM gradient evidence: standard positive ReLU or absolute-gradient ablation.")
     parser.add_argument("--selection-method", type=str, default="bone_hybrid",
-                        choices=["mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid", "simple_hybrid", "prompt_hybrid", "consistency_hybrid"],
+                        choices=[
+                            "mean", "sum", "mean_area", "coverage", "coverage_mass",
+                            "coverage_mass_sam", "hybrid",
+                            "bone_hybrid", "simple_hybrid", "prompt_hybrid",
+                            "consistency_hybrid",
+                        ],
                         help="CAM-guided mask scoring method")
     parser.add_argument(
         "--prompt-score-weights",
@@ -366,6 +371,8 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--fusion-topk", "fusion_topk", profile.fusion_topk)
     require_or_set("--support-clip-kernel", "support_clip_kernel", profile.support_clip_kernel)
     require_or_set("--confidence-threshold", "confidence_threshold", profile.confidence_threshold)
+    require_or_set("--seed-percentile", "seed_percentile", profile.seed_percentile)
+    require_or_set("--support-percentile", "support_percentile", profile.support_percentile)
     require_or_set("--max-points", "max_points", profile.max_points)
     require_or_set("--min-component-area", "min_component_area", profile.min_component_area)
     require_or_set("--mask-score-threshold", "mask_score_threshold", profile.mask_score_threshold)
@@ -373,6 +380,7 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--morphology-fusion-mode", "morphology_fusion_mode", profile.morphology_fusion_mode)
     require_or_set("--layercam-gradient-mode", "layercam_gradient_mode", profile.layercam_gradient_mode)
     require_or_set("--cam-aggregation", "cam_aggregation", profile.cam_aggregation)
+    require_or_set("--cam-target-class", "cam_target_class", profile.cam_target_class)
     require_or_set("--cam-contrast-weight", "cam_contrast_weight", profile.cam_contrast_weight)
     require_or_set("--closing-kernel", "closing_kernel", profile.closing_kernel)
     require_or_set("--opening-kernel", "opening_kernel", profile.opening_kernel)
@@ -397,7 +405,6 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--cam-percentile-ensemble": "cam_percentile_ensemble",
         "--sam-prompt-ensemble": "sam_prompt_ensemble",
         "--all-cam-components": "all_cam_components",
-        "--cam-contrast-normal": "cam_contrast_normal",
     }
     for option, attribute in locked_true.items():
         if option in explicit and not getattr(args, attribute):
@@ -408,7 +415,6 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--disable-cam-percentile-ensemble",
         "--disable-sam-prompt-ensemble",
         "--disable-all-cam-components",
-        "--disable-cam-contrast-normal",
     }
     for option in forbidden_disable_flags:
         if option in explicit:
@@ -419,7 +425,6 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--sam-single-mask": "sam_single_mask",
         "--include-cam-candidate": "include_cam_candidate",
         "--disable-morphology": "disable_morphology",
-        "--cam-tta-flip": "cam_tta_flip",
         "--disable-best-per-component": "disable_best_per_component",
         "--force-non-normal-cam": "force_non_normal_cam",
         "--use-clahe": "use_clahe",
@@ -428,6 +433,23 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         if option in explicit and getattr(args, attribute):
             raise ValueError(f"--pipeline-profile {args.pipeline_profile} fixes {option} off")
         setattr(args, attribute, False)
+
+    profile_booleans = {
+        "--cam-tta-flip": ("cam_tta_flip", profile.cam_tta_flip),
+        "--cam-contrast-normal": ("cam_contrast_normal", profile.cam_contrast_normal),
+    }
+    for option, (attribute, expected) in profile_booleans.items():
+        if option in explicit and bool(getattr(args, attribute)) != expected:
+            state = "on" if expected else "off"
+            raise ValueError(
+                f"--pipeline-profile {args.pipeline_profile} fixes {option} {state}"
+            )
+        setattr(args, attribute, expected)
+
+    if "--disable-cam-contrast-normal" in explicit and profile.cam_contrast_normal:
+        raise ValueError(
+            f"--pipeline-profile {args.pipeline_profile} requires --cam-contrast-normal"
+        )
 
     if "--auxiliary-binary-checkpoint" in explicit:
         raise ValueError(f"--pipeline-profile {args.pipeline_profile} does not use an auxiliary binary checkpoint")
@@ -445,7 +467,7 @@ def load_classifier(
     expected_split_manifest: Path | None = None,
     expected_pipeline_profile: str | None = None,
 ) -> tuple[DenseNet121AnatomyClassifier, str, str]:
-    state = torch.load(checkpoint_path, map_location="cpu")
+    state = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     checkpoint_target_columns = state.get("target_columns")
     checkpoint_task = state.get("task", "multi-label")
     checkpoint_num_classes = state.get("num_classes", fallback_num_classes)

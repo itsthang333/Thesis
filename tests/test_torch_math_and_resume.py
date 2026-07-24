@@ -81,6 +81,16 @@ class TorchMathTests(unittest.TestCase):
         output.mean().backward()
         self.assertTrue(all(parameter.grad is not None for parameter in model.parameters() if parameter.requires_grad))
 
+    def test_resnet18_unet_preserves_spatial_shape_and_backpropagates(self) -> None:
+        from models.unet import ResNet18UNet
+
+        model = ResNet18UNet(out_channels=1, pretrained=False)
+        inputs = torch.randn(1, 3, 64, 64)
+        output = model(inputs)
+        self.assertEqual(tuple(output.shape), (1, 1, 64, 64))
+        output.mean().backward()
+        self.assertTrue(all(parameter.grad is not None for parameter in model.parameters() if parameter.requires_grad))
+
     def test_postprocess_guidance_threshold_fails_closed(self) -> None:
         import numpy as np
         from pseudo.morphology import morphological_refinement
@@ -98,6 +108,25 @@ class TorchMathTests(unittest.TestCase):
 
 @unittest.skipIf(torch is None, "PyTorch is not installed in the lightweight audit environment")
 class ResumeIntegrationTests(unittest.TestCase):
+    def test_resume_config_is_path_portable_but_training_strict(self) -> None:
+        from train_segmentation import _portable_resume_config
+
+        local = {
+            "data_root": r"D:\\thesis\\BTXRD\\BTXRD",
+            "split_manifest": r"D:\\thesis\\artifacts\\split_manifest.csv",
+            "image_size": 320,
+            "batch_size": 8,
+            "early_stop_patience": 0,
+        }
+        kaggle = dict(local)
+        kaggle["data_root"] = "/kaggle/input/btxrd-raw/BTXRD"
+        kaggle["split_manifest"] = "/kaggle/input/research-bundle/split_manifest.csv"
+        kaggle["early_stop_patience"] = 8
+        self.assertEqual(_portable_resume_config(local), _portable_resume_config(kaggle))
+
+        kaggle["image_size"] = 448
+        self.assertNotEqual(_portable_resume_config(local), _portable_resume_config(kaggle))
+
     def test_resume_matches_uninterrupted_next_step(self) -> None:
         from models.losses import bce_dice_loss
         from models.unet import UNet
@@ -123,6 +152,7 @@ class ResumeIntegrationTests(unittest.TestCase):
             train_pred_mask_root=None, val_pred_mask_root=None, pos_weight_mode="none",
             pos_weight_value=None, output_dir=Path("unused"), resume_from=None, epochs=2,
             num_workers=0, multi_gpu=False,
+            model_architecture="unet", no_pretrained_encoder=False,
         )
         with tempfile.TemporaryDirectory() as temp_dir:
             checkpoint_path = Path(temp_dir) / "last.pt"
@@ -130,7 +160,7 @@ class ResumeIntegrationTests(unittest.TestCase):
                 checkpoint_path, model, optimizer, 1, 0.2, "btxrd", None, scaler,
                 run_args, 0, saved_best, 1, 1,
             )
-            checkpoint = torch.load(checkpoint_path, map_location="cpu")
+            checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
             self.assertEqual(checkpoint["global_step"], 1)
             self.assertIn("optimizer_state_dict", checkpoint)
             self.assertIn("scaler_state_dict", checkpoint)

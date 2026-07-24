@@ -14,6 +14,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from torch import nn
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent
@@ -21,7 +22,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from datasets.common import apply_clahe, make_segmentation_image_transform
-from models.unet import UNet
+from models.unet import (
+    architecture_metadata,
+    architecture_name_from_metadata,
+    build_segmentation_model,
+)
 from pseudo.visualization import overlay_heatmap, save_mask
 
 
@@ -57,26 +62,36 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_segmentation_model(path: Path, device: torch.device) -> tuple[UNet, dict[str, object]]:
+def resolve_segmentation_architecture(checkpoint: dict[str, object]) -> str:
+    """Resolve and strictly validate checkpoint architecture metadata.
+
+    Checkpoints created before architecture provenance was added are accepted
+    only as the legacy plain U-Net. New checkpoints must match one of the
+    canonical metadata dictionaries exactly.
+    """
+    metadata = checkpoint.get("architecture")
+    architecture_name = architecture_name_from_metadata(metadata)
+    expected_metadata = architecture_metadata(architecture_name)
+    if metadata is not None and metadata != expected_metadata:
+        raise ValueError(
+            f"Unsupported checkpoint architecture: {metadata!r}; "
+            f"expected {expected_metadata!r}"
+        )
+    return architecture_name
+
+
+def load_segmentation_model(
+    path: Path,
+    device: torch.device,
+) -> tuple[nn.Module, dict[str, object]]:
     if not path.is_file():
         raise FileNotFoundError(path)
-    checkpoint = torch.load(path, map_location="cpu")
-    expected_architecture = {
-        "name": "UNet",
-        "in_channels": 3,
-        "out_channels": 1,
-        "base_channels": 64,
-    }
-    architecture = checkpoint.get("architecture", expected_architecture)
-    if architecture != expected_architecture:
-        raise ValueError(
-            f"Unsupported checkpoint architecture: {architecture!r}; "
-            f"expected {expected_architecture!r}"
-        )
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    architecture_name = resolve_segmentation_architecture(checkpoint)
     dataset = checkpoint.get("dataset")
     if dataset not in (None, "btxrd"):
         raise ValueError(f"Expected a BTXRD checkpoint, got dataset={dataset!r}")
-    model = UNet(in_channels=3, out_channels=1, base_channels=64)
+    model = build_segmentation_model(architecture_name, pretrained=False)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     return model.to(device).eval(), checkpoint
 
@@ -84,7 +99,7 @@ def load_segmentation_model(path: Path, device: torch.device) -> tuple[UNet, dic
 def run_inference(
     image_path: Path,
     output_dir: Path,
-    model: UNet,
+    model: nn.Module,
     checkpoint: dict[str, object],
     checkpoint_path: Path,
     device: torch.device,
@@ -130,6 +145,10 @@ def run_inference(
         "checkpoint_sha256": sha256_file(checkpoint_path),
         "image_size": image_size,
         "decision_threshold": threshold,
+        "architecture": checkpoint.get(
+            "architecture",
+            architecture_metadata("unet"),
+        ),
         "use_clahe": use_clahe,
         "original_size": list(original_size),
         "device": str(device),

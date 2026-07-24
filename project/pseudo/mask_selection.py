@@ -10,8 +10,9 @@ except ImportError:  # pragma: no cover - optional dependency
     cv2 = None
 
 SELECTION_METHODS = (
-    "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid",
-    "simple_hybrid", "prompt_hybrid", "consistency_hybrid",
+    "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam",
+    "hybrid", "bone_hybrid", "simple_hybrid",
+    "prompt_hybrid", "consistency_hybrid",
 )
 
 DEFAULT_PROMPT_HYBRID_WEIGHTS = (0.30, 0.20, 0.15, 0.15, 0.20)
@@ -296,7 +297,9 @@ def constrain_to_bone_support(
     """
     fused_mask = fused_mask.astype(np.uint8)
     if (
-        selection_method not in {"bone_hybrid", "coverage_mass_sam"}
+        selection_method not in {
+            "bone_hybrid", "coverage_mass_sam"
+        }
         or bone_support is None
         or not bone_support.any()
         or support_clip_kernel < 0

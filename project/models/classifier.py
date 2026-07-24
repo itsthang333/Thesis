@@ -14,7 +14,7 @@ except Exception:  # pragma: no cover - torchvision version differences
 
 
 def load_radimagenet_densenet121_state_dict(checkpoint_path: str | Path) -> dict[str, torch.Tensor]:
-    raw_state_dict = torch.load(checkpoint_path, map_location="cpu")
+    raw_state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     remapped = {}
     for key, value in raw_state_dict.items():
         if key.startswith("backbone.0."):

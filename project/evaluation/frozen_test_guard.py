@@ -32,6 +32,10 @@ def verify_frozen_test_config(
     requested_artifacts: dict[str, str | Path] | None = None,
     checkpoint_any_of: tuple[str, ...] = (),
     requested_checkpoint: str | Path | None = None,
+    requested_threshold: float | None = None,
+    requested_image_size: int | None = None,
+    requested_stage: str | None = None,
+    validate_document_only: bool = False,
 ) -> dict[str, object] | None:
     if split != "test":
         return None
@@ -48,8 +52,91 @@ def verify_frozen_test_config(
         raise ValueError("Frozen config checksum mismatch")
     if document.get("status") != "final":
         raise ValueError("Test access requires a frozen config with status='final'")
-    if int(document.get("schema_version", -1)) != 3:
-        raise ValueError("Test access requires frozen-config schema v3")
+    schema_version = int(document.get("schema_version", -1))
+    if schema_version not in {3, 4}:
+        raise ValueError("Test access requires frozen-config schema v3 or v4")
+
+    if schema_version == 4:
+        source = document.get("source") or {}
+        source_files = source.get("files") or []
+        if not source_files:
+            raise ValueError("Frozen-config schema v4 requires checksum-bound source files")
+        for item in source_files:
+            relative = Path(str(item.get("path", "")))
+            if relative.is_absolute() or ".." in relative.parts:
+                raise ValueError(f"Unsafe frozen source path: {relative}")
+            source_path = (REPO_ROOT / relative).resolve()
+            try:
+                source_path.relative_to(REPO_ROOT.resolve())
+            except ValueError as exc:
+                raise ValueError(f"Frozen source path escapes repository: {relative}") from exc
+            if not source_path.is_file():
+                raise FileNotFoundError(f"Frozen source file is missing: {source_path}")
+            if _sha256_file(source_path) != item.get("sha256"):
+                raise ValueError(f"Frozen source hash mismatch: {relative.as_posix()}")
+
+        if validate_document_only:
+            return document
+
+        allowed_stages = set(document.get("allowed_test_stages") or ())
+        if not requested_stage or requested_stage not in allowed_stages:
+            raise ValueError(
+                f"Frozen config permits only {sorted(allowed_stages)} on test; "
+                f"requested stage={requested_stage!r}"
+            )
+
+        def verify_portable_artifact(
+            key: str,
+            requested_path_raw: str | Path | None,
+        ) -> None:
+            if requested_path_raw is None:
+                return
+            requested_path = Path(requested_path_raw).resolve()
+            if not requested_path.is_file():
+                raise FileNotFoundError(requested_path)
+            frozen_artifact = document.get(key) or {}
+            if _sha256_file(requested_path) != frozen_artifact.get("sha256"):
+                raise ValueError(f"Requested artifact hash differs from frozen config: {key}")
+            expected_bytes = frozen_artifact.get("bytes")
+            if expected_bytes is not None and requested_path.stat().st_size != int(expected_bytes):
+                raise ValueError(f"Requested artifact size differs from frozen config: {key}")
+
+        verify_portable_artifact("split_manifest", split_manifest)
+        for key, requested_path_raw in (requested_artifacts or {}).items():
+            verify_portable_artifact(key, requested_path_raw)
+        if requested_checkpoint is not None:
+            requested_path = Path(requested_checkpoint).resolve()
+            allowed = [document.get(key) or {} for key in checkpoint_any_of]
+            requested_hash = _sha256_file(requested_path)
+            requested_bytes = requested_path.stat().st_size
+            if not any(
+                requested_hash == item.get("sha256")
+                and (
+                    item.get("bytes") is None
+                    or requested_bytes == int(item.get("bytes"))
+                )
+                for item in allowed
+            ):
+                raise ValueError("Requested checkpoint is not the frozen official WSSS checkpoint")
+
+        evaluation = document.get("evaluation") or {}
+        if requested_threshold is None or not np_isclose(
+            requested_threshold, evaluation.get("threshold")
+        ):
+            raise ValueError(
+                f"Test threshold must equal frozen value {evaluation.get('threshold')!r}"
+            )
+        if requested_image_size is None or int(requested_image_size) != int(
+            evaluation.get("image_size", -1)
+        ):
+            raise ValueError(
+                f"Test image size must equal frozen value {evaluation.get('image_size')!r}"
+            )
+        if evaluation.get("threshold_selection_partition") != "val":
+            raise ValueError("Frozen threshold must be selected on validation")
+        if evaluation.get("threshold_sweep_forbidden") is not True:
+            raise ValueError("Frozen config must explicitly forbid threshold sweeping on test")
+        return document
 
     source = document.get("source") or {}
     expected_commit = str(source.get("git_commit", ""))
@@ -103,3 +190,10 @@ def verify_frozen_test_config(
         ):
             raise ValueError("Requested checkpoint is not one of the frozen U-Net checkpoints")
     return document
+
+
+def np_isclose(left: object, right: object, *, tolerance: float = 1e-12) -> bool:
+    try:
+        return abs(float(left) - float(right)) <= tolerance
+    except (TypeError, ValueError):
+        return False

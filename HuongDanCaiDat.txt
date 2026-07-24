@@ -1,246 +1,61 @@
 HƯỚNG DẪN CÀI ĐẶT
 ==================
 
-1. THÔNG TIN CHUNG
+1. PHẠM VI
 
-Tên chương trình:
-Phân đoạn khối u xương trên ảnh X-quang BTXRD bằng phương pháp học có giám sát yếu.
+Nhánh main chỉ chứa pipeline WSSS chính thức:
 
-Pipeline chính:
-- Phân loại ảnh bằng DenseNet121 với nhãn mức ảnh tumor_type.
-- Sinh bản đồ định vị bằng LayerCAM.
-- Tạo prompt điểm và hộp từ CAM.
-- Tinh chỉnh vùng tổn thương bằng Segment Anything Model (SAM v1 ViT-B).
-- Tạo pseudo-mask.
-- Huấn luyện U-Net bằng pseudo-mask.
-- Đánh giá trên validation và tập test đã khóa.
-- Chạy suy luận cuối bằng U-Net.
+nhãn ảnh nhị phân tumor
+-> DenseNet121
+-> LayerCAM + flip TTA
+-> SAM ViT-B
+-> pseudo-mask
+-> ResNet18 U-Net.
 
-Notebook chính:
-src/thesis_final.ipynb
+Mô hình fully supervised chỉ là upper-bound diagnostic, không phải kết quả
+WSSS của luận văn.
 
-Các chương trình dòng lệnh chính nằm trong:
-src/project/
+2. MÔI TRƯỜNG
 
+Các tác vụ GPU nặng phải chạy trên Kaggle. Môi trường đã dùng cho kết quả
+validation:
 
-2. CẤU TRÚC THƯ MỤC NỘP
+- Python 3.12.13
+- PyTorch 2.10.0+cu128
+- torchvision 0.25.0+cu128
+- CUDA 12.8
+- GPU Tesla T4
 
-MaDeTai/
-├── src/
-│   ├── project/
-│   │   ├── datasets/
-│   │   ├── evaluation/
-│   │   ├── models/
-│   │   ├── pseudo/
-│   │   ├── tools/
-│   │   ├── config.py
-│   │   ├── evaluate_classifier.py
-│   │   ├── evaluate_pseudo_masks.py
-│   │   ├── evaluate_unet.py
-│   │   ├── generate_pseudo_masks.py
-│   │   ├── inference.py
-│   │   ├── progress.py
-│   │   ├── requirements.txt
-│   │   ├── train_classifier.py
-│   │   └── train_segmentation.py
-│   ├── tests/
-│   ├── thesis_final.ipynb
-│   └── README.md
-├── HuongDanCaiDat.txt
-└── HuongDanSuDung.txt
-
-
-3. MÔI TRƯỜNG KHUYẾN NGHỊ
-
-Môi trường đã được mã nguồn định hướng hỗ trợ:
-- Python: 3.10 đến 3.12.
-- Hệ điều hành: Linux, Windows hoặc môi trường Kaggle Notebook.
-- GPU: NVIDIA GPU có hỗ trợ CUDA.
-- Môi trường khuyến nghị để chạy toàn bộ pipeline: Kaggle Notebook có GPU.
-- RAM hệ thống khuyến nghị: từ 16 GB.
-- Dung lượng ổ đĩa trống khuyến nghị: từ 20 GB trở lên.
-
-Có thể chạy một số chức năng trên CPU, nhưng quá trình huấn luyện và sinh pseudo-mask bằng SAM sẽ chậm đáng kể.
-
-
-4. PHIÊN BẢN THƯ VIỆN
-
-Các phiên bản chính được khóa trong file:
-
-src/project/requirements.txt
-
-Danh sách hiện tại:
-
-torch==2.5.1
-torchvision==0.20.1
-numpy==2.1.3
-pillow==11.0.0
-tqdm==4.67.1
-opencv-python-headless==4.10.0.84
-scipy==1.14.1
-pandas==2.2.3
-openpyxl==3.1.5
-
-Segment Anything được cài từ mã nguồn chính thức tại commit cố định:
-
-segment-anything @ git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588
-
-
-5. CÀI ĐẶT TRÊN MÁY CÁ NHÂN
-
-5.1. Mở Terminal tại thư mục MaDeTai/src
-
-Ví dụ:
-
-cd MaDeTai/src
-
-5.2. Tạo môi trường ảo
-
-Windows:
-
-python -m venv .venv
-.venv\Scripts\activate
-
-Linux hoặc macOS:
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-5.3. Cập nhật pip
-
-python -m pip install --upgrade pip
-
-5.4. Cài đặt thư viện
+Cài dependency từ repository:
 
 python -m pip install -r project/requirements.txt
 
-Lưu ý:
-- Lệnh trên cần kết nối Internet để tải thư viện và mã nguồn Segment Anything.
-- Không nâng cấp thư viện giữa một lần chạy huấn luyện đang dang dở.
-- Nếu máy sử dụng phiên bản CUDA khác, cần bảo đảm PyTorch và torchvision tương thích với CUDA của máy.
+3. INPUT KHÔNG ĐƯA VÀO GIT
 
+- BTXRD: images/, Annotations/ và bảng metadata.
+- SAM ViT-B checkpoint.
+- Classifier và U-Net checkpoint.
+- Cache, tmp, output Kaggle, token và secret.
 
-6. CÀI ĐẶT TRÊN KAGGLE
+Kiểm tra checkpoint bằng hash trong:
 
-6.1. Tạo Kaggle Notebook mới.
+artifacts/official_wsss/checkpoints/checkpoint_pointer.json
 
-6.2. Chọn GPU tại:
+Checkpoint U-Net WSSS chính thức:
 
-Settings -> Accelerator -> GPU
+SHA256 02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4
+bytes  230924939
 
-6.3. Thêm bộ dữ liệu BTXRD vào phần Input.
+4. KIỂM TRA CÀI ĐẶT
 
-6.4. Thêm SAM checkpoint vào phần Input, hoặc cho phép notebook tải checkpoint chính thức khi bật Internet.
+python -m compileall -q project tests
+python -m unittest discover -s tests -v
 
-6.5. Upload thư mục mã nguồn hoặc clone branch pipeline.
+Máy local thiếu PyTorch/SciPy không được xem là đã PASS đầy đủ. Verifier,
+unit test và smoke test đầy đủ phải chạy trên Kaggle trước lần đánh giá test.
 
-6.6. Cài thư viện bằng:
+5. NGUYÊN TẮC TEST
 
-python -m pip install -r project/requirements.txt
-
-Đối với chế độ Kaggle Internet tắt:
-- Cần đính kèm sẵn source hoặc wheel của Segment Anything.
-- Cần đính kèm sẵn SAM checkpoint.
-- Không thực hiện tải dependency trong quá trình chạy.
-
-
-7. CHUẨN BỊ SAM CHECKPOINT
-
-Pipeline canonical sử dụng:
-- SAM phiên bản: v1.
-- Model type: ViT-B.
-- Tên checkpoint thường dùng: sam_vit_b_01ec64.pth.
-
-Checkpoint không được đóng gói cùng mã nguồn do có dung lượng lớn.
-
-Ví dụ vị trí trên máy cá nhân:
-
-MaDeTai/data/checkpoints/sam_vit_b_01ec64.pth
-
-Ví dụ vị trí trên Kaggle:
-
-/kaggle/input/sam-checkpoint/sam_vit_b_01ec64.pth
-
-Khi sinh pseudo-mask, truyền đường dẫn checkpoint qua tham số:
-
---sam-checkpoint
-
-
-8. CHUẨN BỊ BỘ DỮ LIỆU BTXRD
-
-Bộ dữ liệu BTXRD không được đóng gói cùng mã nguồn.
-
-Thư mục dữ liệu cần chứa tối thiểu:
-
-BTXRD/
-├── images/
-├── Annotations/
-└── file metadata dạng CSV hoặc XLSX
-
-Trong đó:
-- images/: chứa ảnh X-quang.
-- Annotations/: chứa annotation polygon của ảnh có tổn thương.
-- File metadata: chứa tên ảnh và nhãn tumor_type cùng các thông tin liên quan.
-
-Đường dẫn mặc định được notebook sử dụng trên Kaggle:
-
-/kaggle/input/datasets/wanwin/data-btxrd/BTXRD
-
-Có thể thay đổi bằng biến môi trường hoặc biến cấu hình trong notebook:
-- BTXRD_ROOT
-- BTXRD_SPLIT_MANIFEST
-- SAM_CHECKPOINT
-- BTXRD_RUN_ID
-- BTXRD_OUTPUT
-- BTXRD_NUM_WORKERS
-
-
-9. TẠO SPLIT MANIFEST
-
-Pipeline sử dụng split manifest làm nguồn phân chia train, validation và test chính thức.
-
-Tại thư mục MaDeTai/src/project, chạy:
-
-python tools/build_btxrd_split_manifest.py \
-  --dataset-root /duong/dan/BTXRD \
-  --output-csv /duong/dan/output/split_manifest.csv \
-  --report-json /duong/dan/output/split_report.json
-
-Trên Windows PowerShell có thể viết trên một dòng:
-
-python tools/build_btxrd_split_manifest.py --dataset-root "D:\BTXRD" --output-csv "D:\BTXRD\split_manifest.csv" --report-json "D:\BTXRD\split_report.json"
-
-Không thay đổi split manifest giữa các bước huấn luyện, sinh pseudo-mask và đánh giá.
-
-
-10. KIỂM TRA CÀI ĐẶT
-
-Tại thư mục MaDeTai/src, chạy:
-
-python -m compileall project
-
-Sau đó chạy kiểm thử:
-
-python -m pytest tests -q
-
-Kiểm tra các chương trình dòng lệnh:
-
-python project/train_classifier.py --help
-python project/evaluate_classifier.py --help
-python project/generate_pseudo_masks.py --help
-python project/evaluate_pseudo_masks.py --help
-python project/train_segmentation.py --help
-python project/evaluate_unet.py --help
-python project/inference.py --help
-
-Nếu các lệnh trên hiển thị trợ giúp và không phát sinh lỗi import, môi trường cơ bản đã được cài đặt đúng.
-
-
-11. LƯU Ý QUAN TRỌNG
-
-- Không đưa dataset BTXRD, SAM checkpoint, model checkpoint, pseudo-mask hoặc output huấn luyện vào thư mục mã nguồn nộp.
-- Không đưa các thư mục .git, __pycache__, .pytest_cache, .ipynb_checkpoints, outputs, runs hoặc checkpoints vào file nộp.
-- Notebook canonical là thesis_final.ipynb.
-- Pipeline chính dùng profile btxrd_hybrid cho classifier và cùng cấu hình CAM/SAM/selection với btxrd_best.
-- Tập validation được dùng để chọn mô hình; tập test chỉ chạy sau khi cấu hình đã được khóa.
-- Mọi đường dẫn dữ liệu, checkpoint và output cần được cập nhật theo môi trường thực tế.
+Không truy cập test trước khi file configs/official_wsss_frozen_test.json đã
+được tạo từ working tree sạch và commit. Không sweep threshold trên test.
+Chỉ checkpoint WSSS, image size 448 và threshold validation 0.85 được phép.

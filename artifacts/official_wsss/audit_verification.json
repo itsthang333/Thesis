@@ -1,0 +1,90 @@
+{
+  "verifier": "official_wsss_artifacts_v1",
+  "passed": true,
+  "checks": 16,
+  "failures": [],
+  "results": [
+    {
+      "name": "split_manifest_sha256",
+      "passed": true,
+      "sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+    },
+    {
+      "name": "split_counts",
+      "passed": true,
+      "counts": {
+        "val": 371,
+        "train": 2981,
+        "test": 373
+      }
+    },
+    {
+      "name": "selection_is_wsss",
+      "passed": true
+    },
+    {
+      "name": "test_remains_locked",
+      "passed": true
+    },
+    {
+      "name": "train_pseudo_manifest_hash",
+      "passed": true,
+      "sha256": "7b0b133e7bbff8fecb102159b1be41801b6c51199de549a3420978b13ea7c7e6"
+    },
+    {
+      "name": "train_pseudo_manifest_complete",
+      "passed": true
+    },
+    {
+      "name": "train_pseudo_status_accounting",
+      "passed": true,
+      "statuses": {
+        "empty_after_localization": 25,
+        "empty_by_image_gate": 1493,
+        "ok": 1463
+      }
+    },
+    {
+      "name": "validation_pseudo_population",
+      "passed": true
+    },
+    {
+      "name": "validation_pseudo_dice",
+      "passed": true
+    },
+    {
+      "name": "segmenter_population",
+      "passed": true
+    },
+    {
+      "name": "segmenter_per_image_reproduces_summary",
+      "passed": true
+    },
+    {
+      "name": "segmenter_selection_matches_summary",
+      "passed": true
+    },
+    {
+      "name": "segmenter_bootstrap_interval",
+      "passed": true,
+      "ci95": [
+        0.18572883513641011,
+        0.27503072536311174
+      ]
+    },
+    {
+      "name": "official_checkpoint_pointer",
+      "passed": true,
+      "sha256": "02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4",
+      "bytes": 230924939
+    },
+    {
+      "name": "fully_supervised_is_not_official",
+      "passed": true
+    },
+    {
+      "name": "rejected_causal_selector_absent_from_execution_paths",
+      "passed": true
+    }
+  ]
+}

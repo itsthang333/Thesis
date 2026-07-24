@@ -5,7 +5,10 @@ import tempfile
 import types
 import unittest
 import importlib.util
+import hashlib
+import json
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 from PIL import Image
@@ -347,6 +350,77 @@ class FrozenTestGuardTests(unittest.TestCase):
     def test_validation_split_does_not_require_frozen_config(self) -> None:
         self.assertIsNone(frozen_test_guard.verify_frozen_test_config(None, split="val"))
 
+    def test_v4_guard_is_portable_and_locks_stage_threshold_and_size(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "split_manifest.csv"
+            checkpoint = root / "best_unet.pt"
+            manifest.write_bytes(b"locked split\n")
+            checkpoint.write_bytes(b"locked checkpoint\n")
+            source_path = PROJECT_ROOT / "evaluation" / "frozen_test_guard.py"
+            document = {
+                "schema_version": 4,
+                "status": "final",
+                "source": {
+                    "files": [{
+                        "path": "project/evaluation/frozen_test_guard.py",
+                        "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+                        "bytes": source_path.stat().st_size,
+                    }],
+                },
+                "split_manifest": {
+                    "path_hint": manifest.name,
+                    "sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
+                    "bytes": manifest.stat().st_size,
+                },
+                "unet_checkpoint": {
+                    "path_hint": checkpoint.name,
+                    "sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+                    "bytes": checkpoint.stat().st_size,
+                },
+                "evaluation": {
+                    "threshold": 0.85,
+                    "image_size": 448,
+                    "threshold_selection_partition": "val",
+                    "threshold_sweep_forbidden": True,
+                },
+                "allowed_test_stages": ["official_wsss_segmenter"],
+            }
+            document["freeze_sha256"] = hashlib.sha256(
+                frozen_test_guard._canonical_bytes(document)
+            ).hexdigest()
+            config_path = root / "frozen.json"
+            config_path.write_text(json.dumps(document), encoding="utf-8")
+
+            verified = frozen_test_guard.verify_frozen_test_config(
+                config_path,
+                split="test",
+                split_manifest=manifest,
+                requested_checkpoint=checkpoint,
+                checkpoint_any_of=("unet_checkpoint",),
+                requested_threshold=0.85,
+                requested_image_size=448,
+                requested_stage="official_wsss_segmenter",
+            )
+            self.assertEqual(verified["schema_version"], 4)
+            with self.assertRaisesRegex(ValueError, "threshold"):
+                frozen_test_guard.verify_frozen_test_config(
+                    config_path,
+                    split="test",
+                    split_manifest=manifest,
+                    requested_checkpoint=checkpoint,
+                    checkpoint_any_of=("unet_checkpoint",),
+                    requested_threshold=0.5,
+                    requested_image_size=448,
+                    requested_stage="official_wsss_segmenter",
+                )
+            with self.assertRaisesRegex(ValueError, "permits only"):
+                frozen_test_guard.verify_frozen_test_config(
+                    config_path,
+                    split="test",
+                    requested_stage="pseudo_masks",
+                )
+
 
 class PseudoManifestTests(unittest.TestCase):
     def test_manifest_detects_mask_tampering(self) -> None:
@@ -438,6 +512,51 @@ class BTXRDDatasetValidationTests(unittest.TestCase):
 
             with self.assertRaisesRegex(FileNotFoundError, "pseudo-masks are missing"):
                 btxrd.BTXRDSegmentationDataset(root, split="train", pred_mask_dir=masks)
+
+    def test_training_resizes_verified_pseudo_masks_from_source_grid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            row = self.normal_row()
+            self.write_dataset(root, row)
+            pseudo = root / "pseudo"
+            (pseudo / "masks").mkdir(parents=True)
+            (pseudo / "run_metadata.json").write_text(
+                '{"protocol":"ground_truth"}\n', encoding="utf-8"
+            )
+            Image.new("L", (8, 8), 0).save(pseudo / "masks" / "normal.png")
+            mask_manifest.write_pseudo_mask_manifest(
+                pseudo,
+                [{
+                    "image_name": "normal.png", "true_tumor": 0,
+                    "status": "empty_by_image_gate", "above_threshold_candidates": 0,
+                    "selected_candidates": 0, "selected_components": 0,
+                    "sam_prompt_calls": 0, "unique_prompt_points": 0,
+                }],
+                expected_image_names=["normal.png"],
+                split="train",
+                image_size=8,
+                run_metadata_sha256=mask_manifest.sha256_file(
+                    pseudo / "run_metadata.json"
+                ),
+            )
+
+            pseudo_package = types.ModuleType("pseudo")
+            pseudo_package.manifest = mask_manifest
+            with mock.patch.dict(
+                sys.modules,
+                {"pseudo": pseudo_package, "pseudo.manifest": mask_manifest},
+            ):
+                dataset = btxrd.BTXRDSegmentationDataset(
+                    root,
+                    split="train",
+                    image_size=16,
+                    pred_mask_dir=pseudo / "masks",
+                )
+            self.assertEqual(dataset.pseudo_manifest_info["source_image_size"], 8)
+            self.assertEqual(dataset.pseudo_manifest_info["consumer_image_size"], 16)
+            self.assertIs(dataset.pseudo_manifest_info["resized_for_consumer"], True)
+            resized_mask = dataset._build_mask(dataset.samples[0], (16, 16))
+            self.assertEqual(resized_mask.size, (16, 16))
 
     @staticmethod
     def write_split_manifest(root: Path, path: Path, rows: list[dict[str, str]]) -> None:

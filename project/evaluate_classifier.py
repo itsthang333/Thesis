@@ -82,7 +82,7 @@ def main() -> None:
     )
     if not 0.0 <= args.gate_threshold <= 1.0:
         raise ValueError("--gate-threshold must be in [0,1]")
-    checkpoint = torch.load(args.checkpoint, map_location="cpu")
+    checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     if checkpoint.get("dataset") not in (None, args.dataset):
         raise ValueError("Classifier checkpoint is not for BTXRD")
     if args.split_manifest is not None:

@@ -22,7 +22,7 @@ if str(ROOT) not in sys.path:
 from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
 from datasets.factory import build_segmentation_dataset
 from models.losses import bce_dice_loss, dice_coefficient, iou_score
-from models.unet import UNet
+from models.unet import architecture_metadata, build_segmentation_model
 from progress import should_disable_tqdm
 
 
@@ -45,6 +45,17 @@ def parse_args() -> argparse.Namespace:
         help="Immutable derived split manifest. Its assignments are authoritative for BTXRD.",
     )
     parser.add_argument("--image-size", type=int, default=SegmentationConfig.image_size)
+    parser.add_argument(
+        "--model-architecture",
+        choices=["unet", "resnet18_unet"],
+        default="unet",
+        help="Segmentation architecture. resnet18_unet uses an ImageNet-pretrained encoder.",
+    )
+    parser.add_argument(
+        "--no-pretrained-encoder",
+        action="store_true",
+        help="Initialize the ResNet-18 encoder randomly (diagnostic ablation).",
+    )
     parser.add_argument("--batch-size", type=int, default=SegmentationConfig.batch_size)
     parser.add_argument("--lr", type=float, default=SegmentationConfig.lr)
     parser.add_argument("--weight-decay", type=float, default=SegmentationConfig.weight_decay)
@@ -145,7 +156,7 @@ def resolved_training_config(args: argparse.Namespace) -> dict[str, object]:
             continue
         config[key] = str(value.resolve()) if isinstance(value, Path) else value
     config.update({
-        "architecture": {"name": "UNet", "in_channels": 3, "out_channels": 1, "base_channels": 64},
+        "architecture": architecture_metadata(args.model_architecture),
         "loss": "0.5 * BCEWithLogits(pos_weight) + 0.5 * soft Dice loss",
         "decision_threshold": 0.5,
         "scheduler": None,
@@ -340,7 +351,7 @@ def save_checkpoint(
         state.update(
             {
                 "image_size": run_config.image_size,
-                "architecture": {"name": "UNet", "in_channels": 3, "out_channels": 1, "base_channels": 64},
+                "architecture": architecture_metadata(run_config.model_architecture),
                 "train_split": run_config.train_split,
                 "val_split": run_config.val_split,
                 "train_pred_mask_root": str(run_config.train_pred_mask_root) if run_config.train_pred_mask_root else None,
@@ -448,8 +459,23 @@ def restore_best_checkpoint_from_resume(
     torch.save(best_state, output_path)
 
 
+def _portable_resume_config(config: dict[str, object]) -> dict[str, object]:
+    """Normalize only location-dependent fields for cross-machine resume.
+
+    Dataset identity is proved independently by the split-manifest SHA-256 and
+    by the manifest loader's source-file hashes. Absolute host paths therefore
+    must not prevent an otherwise identical run from resuming on Kaggle.
+    """
+    normalized = dict(config)
+    # Paths and run-control limits do not change gradient updates. Dataset
+    # identity is validated separately via immutable manifest/source hashes.
+    for key in ("data_root", "split_manifest", "early_stop_patience"):
+        normalized.pop(key, None)
+    return normalized
+
+
 def validate_resume_compatibility(checkpoint: dict[str, object], args: argparse.Namespace) -> None:
-    expected_architecture = {"name": "UNet", "in_channels": 3, "out_channels": 1, "base_channels": 64}
+    expected_architecture = architecture_metadata(args.model_architecture)
     if checkpoint.get("architecture") not in (None, expected_architecture):
         raise ValueError(f"Resume checkpoint architecture mismatch: {checkpoint.get('architecture')!r}")
     expected = {
@@ -473,7 +499,13 @@ def validate_resume_compatibility(checkpoint: dict[str, object], args: argparse.
     if checkpoint_config_hash is None:
         raise ValueError("Resume checkpoint has no resolved_config_sha256")
     if checkpoint_config_hash != current_hash:
-        raise ValueError("Resume checkpoint resolved training configuration does not match current run")
+        checkpoint_config = checkpoint.get("resolved_config")
+        if not isinstance(checkpoint_config, dict):
+            raise ValueError("Resume checkpoint resolved training configuration does not match current run")
+        if _portable_resume_config(checkpoint_config) != _portable_resume_config(current_config):
+            raise ValueError(
+                "Resume checkpoint resolved training configuration does not match current run"
+            )
     current_train_pseudo = getattr(args, "_train_pseudo_manifest_info", None)
     expected_pseudo_hash = current_train_pseudo.get("manifest_sha256") if current_train_pseudo else None
     if checkpoint.get("train_pseudo_mask_manifest_sha256") != expected_pseudo_hash:
@@ -497,11 +529,30 @@ def main() -> None:
     train_dataset, val_dataset = build_datasets(args)
     args._train_pseudo_manifest_info = getattr(train_dataset, "pseudo_manifest_info", None)
     args._val_pseudo_manifest_info = getattr(val_dataset, "pseudo_manifest_info", None)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        persistent_workers=args.num_workers > 0,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        persistent_workers=args.num_workers > 0,
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet(in_channels=3, out_channels=1, base_channels=64).to(device)
+    model = build_segmentation_model(
+        args.model_architecture,
+        pretrained=(
+            args.model_architecture == "resnet18_unet" and not args.no_pretrained_encoder
+        ),
+    ).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
 
@@ -520,7 +571,7 @@ def main() -> None:
         pred_mask_dir=args.train_pred_mask_root,
         split_manifest=args.split_manifest,
     )
-    mask_stats = scan_mask_statistics(mask_audit_dataset)
+    mask_stats = scan_mask_statistics(mask_audit_dataset, num_workers=args.num_workers)
     raw_pos_weight = float(mask_stats["raw_pos_weight"])
     if args.pos_weight_clamp_min <= 0 or args.pos_weight_clamp_max < args.pos_weight_clamp_min:
         raise ValueError("Invalid pos_weight clamp bounds")
@@ -575,7 +626,7 @@ def main() -> None:
 
     if args.resume_from is not None:
         print(f"Resuming from checkpoint: {args.resume_from}")
-        checkpoint = torch.load(args.resume_from, map_location=device)
+        checkpoint = torch.load(args.resume_from, map_location=device, weights_only=False)
         validate_resume_compatibility(checkpoint, args)
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
@@ -588,7 +639,7 @@ def main() -> None:
             if not isinstance(raw_best_state, dict):
                 legacy_best_path = args.resume_from.parent / "best_unet.pt"
                 if legacy_best_path.is_file():
-                    legacy_best = torch.load(legacy_best_path, map_location="cpu")
+                    legacy_best = torch.load(legacy_best_path, map_location="cpu", weights_only=False)
                     raw_best_state = legacy_best.get("model_state_dict")
             if not isinstance(raw_best_state, dict):
                 raise RuntimeError(

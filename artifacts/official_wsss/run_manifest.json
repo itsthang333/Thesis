@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "pipeline": "official_wsss",
+  "status": "validation_complete_test_locked",
+  "test_evaluated": false,
+  "dataset": "BTXRD",
+  "dataset_partition_counts": {
+    "train": 2981,
+    "val": 371,
+    "test": 373
+  },
+  "split_manifest": {
+    "path": "../data_audit/split_manifest.csv",
+    "sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "bytes": 1971731,
+    "grouping_limitation": "heuristic case groups; patient identity is not available"
+  },
+  "stages": {
+    "classifier": {
+      "run_id": "btxrd_clean_binary_classifier_v1",
+      "checkpoint_sha256": "f62d3702541ec3e6571751ddda22dab4c723943397471d3897500da1620304c5",
+      "validation_summary": "classifier/evaluation/summary.json"
+    },
+    "validation_pseudo_masks": {
+      "run_id": "btxrd_binary_cam_sam_tta_flip_v1",
+      "recipe": "binary LayerCAM + horizontal-flip TTA + SAM + coverage_mass_sam",
+      "validation_summary": "pseudo_masks/validation/evaluation/summary.json"
+    },
+    "train_pseudo_masks": {
+      "run_id": "btxrd_wsss_train_pseudo_v1",
+      "manifest": "pseudo_masks/train/pseudo_mask_manifest.csv",
+      "manifest_sha256": "7b0b133e7bbff8fecb102159b1be41801b6c51199de549a3420978b13ea7c7e6"
+    },
+    "segmenter": {
+      "run_id": "btxrd_wsss_segmenter_v1",
+      "source_bundle": "itsthang333/btxrd-small-lesion-research-v2",
+      "checkpoint_sha256": "02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4",
+      "validation_summary": "segmenter/evaluation/summary.json",
+      "threshold_selection": "segmenter/evaluation/threshold_selection.json",
+      "training_log": "segmenter/training/training_log.csv",
+      "training_curves": "segmenter/training/training_curves.svg"
+    }
+  },
+  "commands": "COMMANDS.md",
+  "environment": "environment.json",
+  "selection": "SELECTION.json"
+}

@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-24T20:20:19.3127758+07:00",
+  "purpose": "Lossless preservation record before separating research work from thesis-ready main.",
+  "source_worktree": "D:/thesis",
+  "source_branch": "main",
+  "preservation_branch": "codex/research-wsss-improvement",
+  "head_commit": "980722ac4b3f673dd09a9b2156d78b6ad334d0d9",
+  "upstream": "origin/main",
+  "worktrees": [
+    {
+      "path": "D:/thesis",
+      "head": "980722ac4b3f673dd09a9b2156d78b6ad334d0d9",
+      "branch_before_preservation": "main"
+    }
+  ],
+  "tracked_changes": {
+    "staged_files": 0,
+    "modified_files": 15,
+    "git_binary_diff_hash_object": "44b8224869c37ada2a2a26355a692844da01120e",
+    "paths": [
+      "README.md",
+      "project/datasets/btxrd.py",
+      "project/evaluate_classifier.py",
+      "project/evaluate_unet.py",
+      "project/generate_pseudo_masks.py",
+      "project/inference.py",
+      "project/models/__init__.py",
+      "project/models/classifier.py",
+      "project/models/unet.py",
+      "project/pseudo/manifest.py",
+      "project/pseudo/mask_selection.py",
+      "project/train_segmentation.py",
+      "tests/test_notebook_bootstrap.py",
+      "tests/test_pipeline_audit_fixes.py",
+      "tests/test_torch_math_and_resume.py"
+    ]
+  },
+  "untracked_top_level": [
+    "AUDIT_REPORT.md",
+    "BTXRD/",
+    "EXPERIMENT_COMPARISON.csv",
+    "HANDOFF_CONTINUATION.md",
+    "IMPROVEMENT_PLAN.md",
+    "RESEARCH_LOG.md",
+    "artifacts/",
+    "tests/test_inference_architecture.py",
+    "tmp/"
+  ],
+  "local_only_inventory": {
+    "BTXRD": {
+      "files": 5614,
+      "bytes": 903482027,
+      "git_policy": "never commit raw dataset"
+    },
+    "tmp": {
+      "files": 754,
+      "bytes": 2752013082,
+      "git_policy": "never commit caches, drivers, temporary Kaggle bundles, or rendered PDF intermediates"
+    },
+    "kaggle_outputs": {
+      "files": 123,
+      "bytes": 2062710379,
+      "git_policy": "local/cloud download cache; already ignored"
+    },
+    "artifacts": {
+      "files": 348,
+      "bytes": 1629621384,
+      "git_policy": "commit compact evidence and manifests only; checkpoints remain ignored and are represented by pointer plus hash"
+    }
+  },
+  "mission_pdf": {
+    "path": "C:/Users/USER/Downloads/NHIỆM VỤ TỔNG THỂ_ AUDIT, NGHIÊN CỨU VÀ CẢI TIẾN PIPELINE PHÂN ĐOẠN KHỐI U XƯƠNG.pdf",
+    "pages": 30,
+    "bytes": 359009,
+    "sha256": "e17b5bf70a65441c7b02c8f3761fdb051963a0219763016aa2a06059826bd766",
+    "read_complete": true,
+    "visual_review_complete": true
+  },
+  "supervised_upper_bound_snapshot": {
+    "pointer": "artifacts/best_pipeline/CURRENT.json",
+    "pointer_sha256": "430306f8a32f3795289e123f94aec2e0099006ae14e15d74f38f73cd088c3214",
+    "pipeline_id": "fs_resnet18_pw10_full_448_e20",
+    "academic_role": "fully_supervised_upper_bound_diagnostic_only",
+    "validation_mean_tumor_dice": 0.4951316962732512,
+    "validation_threshold": 0.2,
+    "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "audit_status": "PASS",
+    "snapshot_tests": 49,
+    "test_evaluated": false
+  },
+  "best_known_wsss_evidence": {
+    "pseudo_mask_stage": {
+      "run_id": "btxrd_binary_cam_sam_tta_flip_v1",
+      "validation_mean_tumor_dice": 0.23433922219069755,
+      "validation_mean_tumor_iou": 0.17320567596214276,
+      "validation_images": 371,
+      "validation_tumor_images": 184,
+      "validation_normal_images": 187,
+      "protocol": "binary image-label LayerCAM + horizontal-flip TTA + SAM-only candidates + coverage_mass_sam",
+      "comparison_sha256": "aa945e434b38a07df568841c3feb93d615a8aac757e701138613de5c9cbf74fd",
+      "test_evaluated": false
+    },
+    "final_segmenter_stage": {
+      "run_id": "btxrd_wsss_segmenter_v1",
+      "validation_mean_tumor_dice": 0.23001987009320218,
+      "validation_mean_tumor_iou": 0.1654705281882286,
+      "validation_threshold": 0.85,
+      "validation_group_bootstrap_ci95": [
+        0.18572883513641011,
+        0.27503072536311174
+      ],
+      "checkpoint_sha256": "02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4",
+      "checkpoint_present_locally": false,
+      "selected_summary_sha256": "d5ccc8acb5a8b9c35341c7bb0d7232ced406dc9f2884f525e28335aa44b2d2ca",
+      "selected_per_image_sha256": "12646d8dc569bc5db4d23a48010b4d1c4383ac66bc1acd4101d8458b4e2fc011",
+      "test_evaluated": false
+    },
+    "latest_rejected_candidate": {
+      "run_id": "btxrd_binary_cam_sam_causal_v1",
+      "validation_mean_tumor_dice": 0.22671748716400308,
+      "baseline_mean_tumor_dice": 0.23433922219069755,
+      "paired_delta": -0.007621735026694507,
+      "paired_ci95": [
+        -0.027079805377736636,
+        0.011757322157091604
+      ],
+      "promoted": false,
+      "comparison_sha256": "a6254cd855aef5115c2c25e098b5c7962b64c5e7314650d23abdb37b37c5fdde",
+      "test_evaluated": false
+    }
+  },
+  "test_lock": {
+    "test_evaluated": false,
+    "new_experiments_paused": true,
+    "final_test_authorized": true,
+    "final_test_allowed_only_after_official_wsss_config_checkpoint_threshold_and_commit_are_frozen": true
+  }
+}

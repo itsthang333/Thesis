@@ -126,7 +126,7 @@ def validate_pseudo_mask_manifest(
     samples: Iterable[Mapping[str, object]],
     *,
     split: str,
-    image_size: int,
+    image_size: int | None,
 ) -> dict[str, object]:
     mask_dir = Path(mask_dir).resolve()
     output_dir = mask_dir.parent
@@ -151,7 +151,12 @@ def validate_pseudo_mask_manifest(
         raise ValueError(f"Pseudo-mask summary is not marked complete: {summary_path}")
     if str(summary.get("split")) != split:
         raise ValueError(f"Pseudo-mask manifest split={summary.get('split')!r}, expected {split!r}")
-    if int(summary.get("image_size", -1)) != int(image_size):
+    source_image_size = int(summary.get("image_size", -1))
+    if source_image_size <= 0:
+        raise ValueError(
+            f"Pseudo-mask manifest has invalid image_size={summary.get('image_size')!r}"
+        )
+    if image_size is not None and source_image_size != int(image_size):
         raise ValueError(
             f"Pseudo-mask manifest image_size={summary.get('image_size')!r}, expected {image_size}"
         )
@@ -190,7 +195,10 @@ def validate_pseudo_mask_manifest(
         if row.get("split") != split:
             raise ValueError(f"Pseudo-mask row {stem} has split={row.get('split')!r}, expected {split!r}")
         mask_path = mask_dir / f"{stem}.png"
-        inspected = inspect_binary_mask(mask_path, expected_shape=(image_size, image_size))
+        inspected = inspect_binary_mask(
+            mask_path,
+            expected_shape=(source_image_size, source_image_size),
+        )
         if row.get("mask_sha256") != inspected["mask_sha256"]:
             raise ValueError(f"Pseudo-mask hash mismatch for {stem}")
         if str(row.get("true_tumor", "")) not in {"0", "1"}:
@@ -200,6 +208,7 @@ def validate_pseudo_mask_manifest(
 
     return {
         **summary,
+        "source_image_size": source_image_size,
         "manifest_path": str(manifest_path),
         "manifest_sha256": actual_manifest_hash,
         "summary_sha256": sha256_file(summary_path),

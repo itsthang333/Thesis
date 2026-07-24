@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "pipeline_id": "fs_resnet18_pw10_full_448_e20",
+  "status": "current_validation_winner_below_strict_target",
+  "role": "best-known clean supervised segmentation pipeline retained while new candidates are evaluated",
+  "promotion_policy": "Replace CURRENT only when a candidate uses the same clean protocol, keeps test locked, and has strictly higher validation mean tumor-only Dice without metric redefinition.",
+  "metric_contract": {
+    "primary": "mean per-image Dice over every tumor image in the partition, including complete misses",
+    "validation_tumor_images": 184,
+    "validation_normal_images": 187,
+    "selected_threshold": 0.2,
+    "selected_mean_tumor_dice": 0.4951316962732512,
+    "selected_group_bootstrap_ci95": [
+      0.44282689000786196,
+      0.5461137726185716
+    ],
+    "fixed_0_5_mean_tumor_dice": 0.489941358174933,
+    "normal_empty_prediction_rate_at_selected_threshold": 0.5561497326203209
+  },
+  "test_lock": {
+    "test_evaluated": false,
+    "threshold_selection_partition": "val",
+    "test_threshold_sweep_forbidden": true
+  },
+  "data_contract": {
+    "dataset": "BTXRD",
+    "split_manifest": "data/split_manifest.csv",
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "eligible_counts": {
+      "train": 2981,
+      "val": 371,
+      "test": 373
+    },
+    "grouping_limitation": "BTXRD publishes no patient/case identifier; the frozen manifest uses the audited consecutive-ID plus stable-metadata heuristic."
+  },
+  "model": {
+    "architecture": "resnet18_unet",
+    "encoder_initialization": "ImageNet ResNet-18",
+    "image_size": 448,
+    "checkpoint": "model/best_unet.pt",
+    "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+    "checkpoint_bytes": 230924939,
+    "best_epoch": 20,
+    "last_completed_epoch": 30
+  },
+  "training": {
+    "seed": 42,
+    "batch_size": 8,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "optimizer": "AdamW",
+    "loss": "0.5 * BCEWithLogits(pos_weight=10) + 0.5 * per-image soft Dice loss",
+    "train_augmentation": "paired random horizontal flip p=0.5",
+    "early_stop_patience": 10,
+    "checkpoint_primary": "validation positive-target Dice at threshold 0.5",
+    "checkpoint_tie_breaker": "normal empty-mask case specificity within Dice tolerance 0.0001"
+  },
+  "inference": {
+    "resize": "448x448",
+    "normalization": "ImageNet mean/std",
+    "output": "sigmoid probability",
+    "threshold": 0.2
+  },
+  "lineage": {
+    "resume_epoch": 10,
+    "resume_checkpoint_sha256": "8278865eba7e07e0f1e327e7f6a853e3ee770a30a5a57e35438bfe5f6c458bd3",
+    "environment": {
+      "python": "3.12.13",
+      "torch": "2.10.0+cu128",
+      "cuda": "12.8",
+      "gpu": "Tesla T4"
+    },
+    "post_run_source_cleanup": "The inactive compatibility shim for the rejected tumor-only ablation was removed after the new-schema winner checkpoint was saved; model, gradient path, evaluator, and metrics were unchanged.",
+    "post_freeze_correctness_repair": {
+      "date": "2026-07-24",
+      "scope": "deployment loader only",
+      "change": "Inference now instantiates the checkpoint-declared ResNet18UNet instead of rejecting every non-legacy UNet checkpoint; legacy UNet compatibility remains fail-closed.",
+      "model_checkpoint_changed": false,
+      "training_changed": false,
+      "evaluation_changed": false,
+      "metric_changed": false,
+      "test_evaluated": false
+    }
+  },
+  "artifacts": {
+    "training_log": "training/training_log.csv",
+    "training_console": "training/cloud_train.log",
+    "convergence_summary": "convergence_summary.json",
+    "selected_per_image": "evaluation/selected_per_image.csv",
+    "selected_summary": "evaluation/selected_summary.json",
+    "selected_subgroups": "evaluation/selected_per_image_subgroups.csv",
+    "selected_bootstrap": "evaluation/selected_per_image_bootstrap.json",
+    "threshold_selection": "evaluation/fixed_per_image_threshold_selection.json",
+    "source": "project/",
+    "tests": "tests/",
+    "verifier": "verify_pipeline.py",
+    "file_manifest": "FILE_MANIFEST.csv"
+  }
+}

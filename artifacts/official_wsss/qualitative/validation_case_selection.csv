@@ -1,0 +1,9 @@
+role,image_name,dice,selection_source,figure_available
+worst,IMG000838.jpeg,0.0,validation per-image metrics,false
+median,IMG000762.jpeg,0.04515778019586507,validation per-image metrics,false
+best,IMG001581.jpeg,0.9028415193828727,validation per-image metrics,false
+complete_miss,IMG000899.jpeg,0.0,validation per-image metrics,false
+complete_miss,IMG000751.jpeg,0.0,validation per-image metrics,false
+normal_false_positive,IMG001872.jpeg,,validation per-image metrics,false
+normal_false_positive,IMG003317.jpeg,,validation per-image metrics,false
+normal_false_positive,IMG002449.jpeg,,validation per-image metrics,false

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import torch
 from torch import nn
+from torchvision.models import ResNet18_Weights, resnet18
 
 
 class DoubleConv(nn.Module):
@@ -84,3 +85,79 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         return self.outc(x)
+
+
+class ResNet18UNet(nn.Module):
+    """Memory-efficient U-Net with an ImageNet-pretrained ResNet-18 encoder."""
+
+    def __init__(self, out_channels: int = 1, pretrained: bool = True) -> None:
+        super().__init__()
+        encoder = resnet18(
+            weights=ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
+        )
+        self.stem = nn.Sequential(encoder.conv1, encoder.bn1, encoder.relu)
+        self.maxpool = encoder.maxpool
+        self.layer1 = encoder.layer1
+        self.layer2 = encoder.layer2
+        self.layer3 = encoder.layer3
+        self.layer4 = encoder.layer4
+
+        self.up4 = Up(512 + 256, 256)
+        self.up3 = Up(256 + 128, 128)
+        self.up2 = Up(128 + 64, 64)
+        self.up1 = Up(64 + 64, 64)
+        self.final_up = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False),
+            DoubleConv(64, 32),
+            OutConv(32, out_channels),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        input_size = x.shape[-2:]
+        x0 = self.stem(x)
+        x1 = self.layer1(self.maxpool(x0))
+        x2 = self.layer2(x1)
+        x3 = self.layer3(x2)
+        x4 = self.layer4(x3)
+        x = self.up4(x4, x3)
+        x = self.up3(x, x2)
+        x = self.up2(x, x1)
+        x = self.up1(x, x0)
+        x = self.final_up(x)
+        if x.shape[-2:] != input_size:
+            x = nn.functional.interpolate(
+                x, size=input_size, mode="bilinear", align_corners=False
+            )
+        return x
+
+
+def architecture_metadata(name: str) -> dict[str, object]:
+    if name == "unet":
+        return {"name": "UNet", "in_channels": 3, "out_channels": 1, "base_channels": 64}
+    if name == "resnet18_unet":
+        return {
+            "name": "ResNet18UNet",
+            "in_channels": 3,
+            "out_channels": 1,
+            "encoder": "resnet18",
+        }
+    raise ValueError(f"Unknown segmentation architecture: {name}")
+
+
+def architecture_name_from_metadata(metadata: object) -> str:
+    if not isinstance(metadata, dict):
+        return "unet"
+    name = str(metadata.get("name", "UNet"))
+    if name == "UNet":
+        return "unet"
+    if name == "ResNet18UNet":
+        return "resnet18_unet"
+    raise ValueError(f"Unsupported checkpoint architecture metadata: {metadata!r}")
+
+
+def build_segmentation_model(name: str, pretrained: bool = False) -> nn.Module:
+    if name == "unet":
+        return UNet(in_channels=3, out_channels=1, base_channels=64)
+    if name == "resnet18_unet":
+        return ResNet18UNet(out_channels=1, pretrained=pretrained)
+    raise ValueError(f"Unknown segmentation architecture: {name}")

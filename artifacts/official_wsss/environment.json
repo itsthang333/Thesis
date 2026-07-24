@@ -1,0 +1,15 @@
+{
+  "execution_platform": "Kaggle",
+  "python": "3.12.13",
+  "platform": "Linux-6.12.90+-x86_64-with-glibc2.35",
+  "torch": "2.10.0+cu128",
+  "torchvision": "0.25.0+cu128",
+  "cuda": "12.8",
+  "gpu": "Tesla T4",
+  "segmenter_gpu_count": 2,
+  "segment_anything_commit": "6fdee8f2727f4506cfbbe553e23b895e27956588",
+  "provenance": [
+    "pseudo_masks/validation/run_manifest.json",
+    "segmenter/cloud_run.log"
+  ]
+}

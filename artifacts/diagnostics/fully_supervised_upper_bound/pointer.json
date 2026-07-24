@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "pipeline_id": "fs_resnet18_pw10_full_448_e20",
+  "path": "fs_resnet18_pw10_full_448_e20",
+  "status": "fully_supervised_upper_bound_diagnostic_only",
+  "selected_mean_tumor_dice": 0.4951316962732512,
+  "selected_threshold": 0.2,
+  "test_evaluated": false,
+  "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+  "file_manifest_sha256": "c7b6a8a720dbaf26514f22dda6ed18a5b5913afcafef884b1b730d50a288b898",
+  "audit_status": "PASS",
+  "audited_at": "2026-07-24T07:30:47.9624675+07:00",
+  "official_wsss": false,
+  "academic_role": "upper-bound diagnostic trained directly on ground-truth masks",
+  "replacement_rule": "Not eligible to replace or be reported as the official WSSS pipeline."
+}
