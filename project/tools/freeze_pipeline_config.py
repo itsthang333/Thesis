@@ -17,7 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from config import BTXRD_BEST_PIPELINE
-from evaluation.frozen_test_guard import verify_frozen_test_config
+from evaluation.frozen_test_guard import sha256_source_file, verify_frozen_test_config
 
 
 def sha256_file(path: Path) -> str:
@@ -95,7 +95,7 @@ def main() -> None:
         relative = source_path.relative_to(REPO_ROOT)
         source_files.append({
             "path": relative.as_posix(),
-            "sha256": sha256_file(source_path),
+            "sha256": sha256_source_file(source_path),
             "bytes": source_path.stat().st_size,
         })
 

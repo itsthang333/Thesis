@@ -364,7 +364,7 @@ class FrozenTestGuardTests(unittest.TestCase):
                 "source": {
                     "files": [{
                         "path": "project/evaluation/frozen_test_guard.py",
-                        "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+                        "sha256": frozen_test_guard.sha256_source_file(source_path),
                         "bytes": source_path.stat().st_size,
                     }],
                 },
@@ -403,6 +403,14 @@ class FrozenTestGuardTests(unittest.TestCase):
                 requested_stage="official_wsss_segmenter",
             )
             self.assertEqual(verified["schema_version"], 4)
+            crlf_copy = root / "guard_crlf.py"
+            crlf_copy.write_bytes(
+                source_path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+            )
+            self.assertEqual(
+                frozen_test_guard.sha256_source_file(source_path),
+                frozen_test_guard.sha256_source_file(crlf_copy),
+            )
             with self.assertRaisesRegex(ValueError, "threshold"):
                 frozen_test_guard.verify_frozen_test_config(
                     config_path,

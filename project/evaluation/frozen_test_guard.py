@@ -24,6 +24,12 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_source_file(path: Path) -> str:
+    """Hash text source with canonical LF newlines for cross-OS portability."""
+    data = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(data).hexdigest()
+
+
 def verify_frozen_test_config(
     frozen_config: str | Path | None,
     *,
@@ -72,7 +78,7 @@ def verify_frozen_test_config(
                 raise ValueError(f"Frozen source path escapes repository: {relative}") from exc
             if not source_path.is_file():
                 raise FileNotFoundError(f"Frozen source file is missing: {source_path}")
-            if _sha256_file(source_path) != item.get("sha256"):
+            if sha256_source_file(source_path) != item.get("sha256"):
                 raise ValueError(f"Frozen source hash mismatch: {relative.as_posix()}")
 
         if validate_document_only:
