@@ -654,3 +654,19 @@ Mechanism audit:
 
 Next controlled experiment: generate components/prompts/SAM candidates/support with the expanded AdvCAM map, but score the candidates with the original promoted flip-TTA CAM using the unchanged `coverage_mass_sam` formula. This dual-map design uses no GT size or polygon and introduces no learned validation gate. Freeze all other settings. Promotion requires a positive lower bound in the overall paired group bootstrap versus `0.2343392222` and a non-negative small-lesion point delta. Do not train the downstream segmenter unless that rule passes. The 448 px classifier ablation is deferred until this cheaper causal test is resolved.
 
+## 24. Dual-map result and eligibility/ranking split
+
+The dual-map run `itsthang333/btxrd-binary-advcam-dual-selection` completed:
+
+- Dice `0.2424091257` versus baseline `0.2343392222`.
+- Paired delta `+0.0080699035`, 95% CI `-0.0177663368` to `+0.0336182788`.
+- Small Dice `0.1004806976`, delta `-0.0116827063`.
+- Compared with expanded-map ranking, precision improves to `0.2480668260` but recall falls to `0.4582456568`; complete misses increase from one to nine.
+- All 371/184/187 population checks, source/split/checkpoint hashes, 11 Torch tests, and `test_evaluated=false` verify.
+- Comparison SHA-256: `ed3e2d7d2aca53e432297523d26b6da8dd40a5258490e7531751fe8ab78bf6b7`.
+- Compact artifacts: `D:\thesis\artifacts\kaggle\wsss_advcam_dual_selection_v1`.
+
+Decision: reject. It partially rescues small-lesion precision but applies the baseline score too broadly: eligibility thresholding and component priority lose useful expanded proposals.
+
+Next controlled experiment: expanded-CAM score determines whether a candidate/component is eligible and ranks the top three components; baseline-CAM score selects the best SAM mask only within each eligible component. Keep threshold, score formula, proposal pool, support clipping and morphology fixed. This is not a weight sweep or GT-size gate.
+
