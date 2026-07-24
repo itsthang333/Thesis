@@ -1,0 +1,124 @@
+[{"stream_name":"stdout","time":11.532734328,"data":"{\n"}
+,{"stream_name":"stdout","time":11.532812541,"data":"  \"python\": \"3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]\",\n"}
+,{"stream_name":"stdout","time":11.53282319,"data":"  \"platform\": \"Linux-6.12.90+-x86_64-with-glibc2.35\",\n"}
+,{"stream_name":"stdout","time":11.532825902999999,"data":"  \"torch\": \"2.10.0+cu128\",\n"}
+,{"stream_name":"stdout","time":11.532828368,"data":"  \"torchvision\": \"0.25.0+cu128\",\n"}
+,{"stream_name":"stdout","time":11.532830733,"data":"  \"cuda\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":11.532833403,"data":"  \"gpu\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":11.532835753,"data":"  \"gpu_count\": 2,\n"}
+,{"stream_name":"stdout","time":11.532838134,"data":"  \"payload_root\": \"/kaggle/input/datasets/itsthang333/btxrd-official-wsss-final-test-8796411\",\n"}
+,{"stream_name":"stdout","time":11.532840638,"data":"  \"source_commit\": \"ceceb7b8dc385c4f7052963b824419d44985b3ba\",\n"}
+,{"stream_name":"stdout","time":11.532843128,"data":"  \"data_root\": \"/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD\"\n"}
+,{"stream_name":"stdout","time":11.532845533,"data":"}\n"}
+,{"stream_name":"stdout","time":17.640112636,"data":"$ /usr/bin/python3 -m compileall -q project tests\n"}
+,{"stream_name":"stdout","time":18.011161258,"data":"*** Error compiling 'project/__init__.py'...\n"}
+,{"stream_name":"stdout","time":18.011200233,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011206724,"data":"*** Error compiling 'project/config.py'...\n"}
+,{"stream_name":"stdout","time":18.011211763,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011216045,"data":"*** Error compiling 'project/datasets/__init__.py'...\n"}
+,{"stream_name":"stdout","time":18.011220102,"data":"OSError: [Errno 30] Read-only file system: 'project/datasets/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011224298,"data":"*** Error compiling 'project/datasets/btxrd.py'...\n"}
+,{"stream_name":"stdout","time":18.011228686,"data":"OSError: [Errno 30] Read-only file system: 'project/datasets/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011232829,"data":"*** Error compiling 'project/datasets/common.py'...\n"}
+,{"stream_name":"stdout","time":18.011236889,"data":"OSError: [Errno 30] Read-only file system: 'project/datasets/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011247646,"data":"*** Error compiling 'project/datasets/factory.py'...\n"}
+,{"stream_name":"stdout","time":18.01125058,"data":"OSError: [Errno 30] Read-only file system: 'project/datasets/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011253365,"data":"*** Error compiling 'project/evaluate_classifier.py'...\n"}
+,{"stream_name":"stdout","time":18.011256093,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011258886,"data":"*** Error compiling 'project/evaluate_pseudo_masks.py'...\n"}
+,{"stream_name":"stdout","time":18.011261757,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011264569,"data":"*** Error compiling 'project/evaluate_unet.py'...\n"}
+,{"stream_name":"stdout","time":18.011267372,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011270274,"data":"*** Error compiling 'project/evaluation/__init__.py'...\n"}
+,{"stream_name":"stdout","time":18.01127311,"data":"OSError: [Errno 30] Read-only file system: 'project/evaluation/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011276775,"data":"*** Error compiling 'project/evaluation/classification_metrics.py'...\n"}
+,{"stream_name":"stdout","time":18.011313363,"data":"OSError: [Errno 30] Read-only file system: 'project/evaluation/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.01131808,"data":"*** Error compiling 'project/evaluation/frozen_test_guard.py'...\n"}
+,{"stream_name":"stdout","time":18.011322253,"data":"OSError: [Errno 30] Read-only file system: 'project/evaluation/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011329848,"data":"*** Error compiling 'project/evaluation/segmentation_metrics.py'...\n"}
+,{"stream_name":"stdout","time":18.011333958,"data":"OSError: [Errno 30] Read-only file system: 'project/evaluation/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011337997,"data":"*** Error compiling 'project/generate_pseudo_masks.py'...\n"}
+,{"stream_name":"stdout","time":18.011341979,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011345965,"data":"*** Error compiling 'project/inference.py'...\n"}
+,{"stream_name":"stdout","time":18.011349788,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011354663,"data":"*** Error compiling 'project/models/__init__.py'...\n"}
+,{"stream_name":"stdout","time":18.011378826,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011384512,"data":"*** Error compiling 'project/models/classifier.py'...\n"}
+,{"stream_name":"stdout","time":18.011388652,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011392732,"data":"*** Error compiling 'project/models/layercam.py'...\n"}
+,{"stream_name":"stdout","time":18.011396652,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011400987,"data":"*** Error compiling 'project/models/losses.py'...\n"}
+,{"stream_name":"stdout","time":18.011404935,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011413266,"data":"*** Error compiling 'project/models/puzzle_cam.py'...\n"}
+,{"stream_name":"stdout","time":18.01141819,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011422629,"data":"*** Error compiling 'project/models/teacher_student.py'...\n"}
+,{"stream_name":"stdout","time":18.011427169,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011431675,"data":"*** Error compiling 'project/models/torch_morphology.py'...\n"}
+,{"stream_name":"stdout","time":18.011436063,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011440118,"data":"*** Error compiling 'project/models/unet.py'...\n"}
+,{"stream_name":"stdout","time":18.011444797,"data":"OSError: [Errno 30] Read-only file system: 'project/models/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011449512,"data":"*** Error compiling 'project/progress.py'...\n"}
+,{"stream_name":"stdout","time":18.011454038,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011459056,"data":"*** Error compiling 'project/pseudo/__init__.py'...\n"}
+,{"stream_name":"stdout","time":18.011463037,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011466992,"data":"*** Error compiling 'project/pseudo/extract_prompts.py'...\n"}
+,{"stream_name":"stdout","time":18.011475808,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011479975,"data":"*** Error compiling 'project/pseudo/generate_layercam.py'...\n"}
+,{"stream_name":"stdout","time":18.01148394,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011487981,"data":"*** Error compiling 'project/pseudo/manifest.py'...\n"}
+,{"stream_name":"stdout","time":18.011491925,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011496015,"data":"*** Error compiling 'project/pseudo/mask_selection.py'...\n"}
+,{"stream_name":"stdout","time":18.011499913,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011506033,"data":"*** Error compiling 'project/pseudo/morphology.py'...\n"}
+,{"stream_name":"stdout","time":18.011514339,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011517319,"data":"*** Error compiling 'project/pseudo/oracle_diagnostics.py'...\n"}
+,{"stream_name":"stdout","time":18.011520029,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011522747,"data":"*** Error compiling 'project/pseudo/prompt_metrics.py'...\n"}
+,{"stream_name":"stdout","time":18.011526201,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011544021,"data":"*** Error compiling 'project/pseudo/sam_refine.py'...\n"}
+,{"stream_name":"stdout","time":18.011550088,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011554961,"data":"*** Error compiling 'project/pseudo/tumor_morphology.py'...\n"}
+,{"stream_name":"stdout","time":18.011559595,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011563983,"data":"*** Error compiling 'project/pseudo/visualization.py'...\n"}
+,{"stream_name":"stdout","time":18.01156792,"data":"OSError: [Errno 30] Read-only file system: 'project/pseudo/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011571978,"data":"*** Error compiling 'project/tools/build_btxrd_split_manifest.py'...\n"}
+,{"stream_name":"stdout","time":18.011575918,"data":"OSError: [Errno 30] Read-only file system: 'project/tools/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011579929,"data":"*** Error compiling 'project/tools/freeze_pipeline_config.py'...\n"}
+,{"stream_name":"stdout","time":18.011583909,"data":"OSError: [Errno 30] Read-only file system: 'project/tools/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011587933,"data":"*** Error compiling 'project/tools/plot_training_curves_svg.py'...\n"}
+,{"stream_name":"stdout","time":18.011591869,"data":"OSError: [Errno 30] Read-only file system: 'project/tools/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011595895,"data":"*** Error compiling 'project/tools/validate_kaggle_readiness.py'...\n"}
+,{"stream_name":"stdout","time":18.011599849,"data":"OSError: [Errno 30] Read-only file system: 'project/tools/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011603837,"data":"*** Error compiling 'project/tools/verify_official_wsss_artifacts.py'...\n"}
+,{"stream_name":"stdout","time":18.011607879,"data":"OSError: [Errno 30] Read-only file system: 'project/tools/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011611909,"data":"*** Error compiling 'project/train_classifier.py'...\n"}
+,{"stream_name":"stdout","time":18.011626168,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011644447,"data":"*** Error compiling 'project/train_segmentation.py'...\n"}
+,{"stream_name":"stdout","time":18.011649635,"data":"OSError: [Errno 30] Read-only file system: 'project/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011664281,"data":"*** Error compiling 'tests/test_inference_architecture.py'...\n"}
+,{"stream_name":"stdout","time":18.011668677,"data":"OSError: [Errno 30] Read-only file system: 'tests/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011672635,"data":"*** Error compiling 'tests/test_notebook_bootstrap.py'...\n"}
+,{"stream_name":"stdout","time":18.011676843,"data":"OSError: [Errno 30] Read-only file system: 'tests/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011680819,"data":"*** Error compiling 'tests/test_official_wsss_config.py'...\n"}
+,{"stream_name":"stdout","time":18.011684704,"data":"OSError: [Errno 30] Read-only file system: 'tests/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011688624,"data":"*** Error compiling 'tests/test_pipeline_audit_fixes.py'...\n"}
+,{"stream_name":"stdout","time":18.011692492,"data":"OSError: [Errno 30] Read-only file system: 'tests/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.01169641,"data":"*** Error compiling 'tests/test_progress.py'...\n"}
+,{"stream_name":"stdout","time":18.011700245,"data":"OSError: [Errno 30] Read-only file system: 'tests/__pycache__'\n"}
+,{"stream_name":"stdout","time":18.011704212,"data":"*** Error compiling 'tests/test_torch_math_and_resume.py'...\n"}
+,{"stream_name":"stdout","time":18.011708216,"data":"OSError: [Errno 30] Read-only file system: 'tests/__pycache__'\n"}
+,{"stream_name":"stderr","time":18.027992604,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":18.028049567,"data":"  File \"/kaggle/src/script.py\", line 111, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":18.028174269,"data":"    run(\n"}
+,{"stream_name":"stderr","time":18.028183325,"data":"  File \"/kaggle/src/script.py\", line 52, in run\n"}
+,{"stream_name":"stderr","time":18.02828919,"data":"    subprocess.run(command, cwd=str(cwd), check=True)\n"}
+,{"stream_name":"stderr","time":18.028368906,"data":"  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n"}
+,{"stream_name":"stderr","time":18.029877107,"data":"    raise CalledProcessError(retcode, process.args,\n"}
+,{"stream_name":"stderr","time":18.029892927,"data":"subprocess.CalledProcessError: Command '['/usr/bin/python3', '-m', 'compileall', '-q', 'project', 'tests']' returned non-zero exit status 1.\n"}
+,{"stream_name":"stderr","time":21.960811812,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":21.960845155,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":22.195236941,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":22.195268091,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":22.843918307,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":24.058328745,"data":"[NbConvertApp] Writing 333133 bytes to __results__.html\n"}
+]

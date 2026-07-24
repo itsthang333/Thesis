@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "status": "test_config_frozen_pending_final_test",
+  "status": "final_test_complete",
   "official_pipeline": "btxrd_wsss_segmenter_v1",
   "supervision": "binary image-level tumor labels -> LayerCAM/SAM pseudo masks -> ResNet18 U-Net",
   "selection_partition": "val",
-  "test_evaluated": false,
+  "test_evaluated": true,
   "frozen_test_config": {
     "path": "../../configs/official_wsss_frozen_test.json",
     "schema_version": 4,
@@ -21,6 +21,7 @@
     "selected_epoch": 13
   },
   "evaluation": {
+    "partition": "val",
     "image_size": 448,
     "threshold": 0.85,
     "threshold_selected_on": "val",
@@ -35,6 +36,34 @@
       0.18572883513641011,
       0.27503072536311174
     ]
+  },
+  "final_test": {
+    "evaluated_once": true,
+    "threshold_tuned_on_test": false,
+    "pipeline_selection_changed_after_test": false,
+    "kaggle_kernel": "itsthang333/btxrd-official-wsss-test-run-8796411",
+    "kaggle_kernel_version": 3,
+    "kaggle_dataset": "itsthang333/btxrd-official-wsss-final-test-8796411",
+    "kaggle_dataset_version": 2,
+    "gpu": "Tesla T4",
+    "image_size": 448,
+    "threshold": 0.85,
+    "images": 373,
+    "tumor_images": 187,
+    "normal_images": 186,
+    "mean_tumor_dice": 0.20328863455858454,
+    "mean_tumor_iou": 0.14500241864738583,
+    "normal_empty_prediction_rate": 0.478494623655914,
+    "mean_tumor_dice_group_bootstrap_ci95": [
+      0.16269100274205853,
+      0.24594880367905073
+    ],
+    "validation_to_test_dice_delta": -0.02673123553461764,
+    "summary": "test/evaluation/summary.json",
+    "per_image_metrics": "test/evaluation/per_image.csv",
+    "audit": "test/FINAL_TEST_AUDIT.json",
+    "audit_sha256": "30993bca4b10d709beee2f9fdce66ddb43f61c395210c956cc3270341d32f613",
+    "evaluation_ledger": "test/TEST_EVALUATION_LEDGER.json"
   },
   "academic_guard": {
     "fully_supervised_snapshot_is_official_wsss": false,

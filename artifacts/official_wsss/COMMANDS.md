@@ -39,7 +39,11 @@ python project/train_segmentation.py \
   --output-dir /kaggle/working/wsss_segmenter
 ```
 
-## Freeze and run the one permitted test evaluation
+## Archived freeze and one-time final-test command
+
+The final test evaluation below has already completed once. It is retained for
+provenance and independent replication, not as authorization to rerun or tune
+on the current test split.
 
 Create the frozen config only from a clean committed tree:
 

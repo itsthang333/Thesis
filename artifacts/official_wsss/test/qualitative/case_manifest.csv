@@ -1,0 +1,13 @@
+role,image_name,group,dice,iou,gt_area_ratio,pred_area_ratio,predicted_positive,overlay,legend
+worst,IMG000026.jpeg,tumor,0.0,0.0,0.03315828284438776,0.0,False,worst__IMG000026.png,green=prediction_only; red=GT_only; yellow=overlap
+median,IMG000680.jpeg,tumor,0.025435704192180875,0.012881679389312978,0.0005381058673469387,0.04177295918367347,True,median__IMG000680.png,green=prediction_only; red=GT_only; yellow=overlap
+best,IMG001739.jpeg,tumor,0.9342357297918529,0.8765875868679607,0.060133330676020405,0.056919642857142856,True,best__IMG001739.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000077.jpeg,tumor,0.0,0.0,0.011474609375,0.0,False,complete_miss__IMG000077.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000101.jpeg,tumor,0.0,0.0,0.07013811383928571,0.0,False,complete_miss__IMG000101.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000107.jpeg,tumor,0.0,0.0,0.022700095663265307,0.0,False,complete_miss__IMG000107.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000114.jpeg,tumor,0.0,0.0,0.011947943239795918,0.0,False,complete_miss__IMG000114.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000332.jpeg,tumor,0.0,0.0,0.08929069674744898,0.0,False,complete_miss__IMG000332.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000359.jpeg,tumor,0.0,0.0,8.96843112244898e-05,0.0,False,complete_miss__IMG000359.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000368.jpeg,tumor,0.0,0.0,0.00029894770408163266,0.0,False,complete_miss__IMG000368.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000371.jpeg,tumor,0.0,0.0,0.005605269451530612,0.0,False,complete_miss__IMG000371.png,green=prediction_only; red=GT_only; yellow=overlap
+complete_miss,IMG000437.jpeg,tumor,0.0,0.0,0.0055404974489795915,0.0,False,complete_miss__IMG000437.png,green=prediction_only; red=GT_only; yellow=overlap

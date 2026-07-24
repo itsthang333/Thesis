@@ -2,8 +2,8 @@
 
 ## Official WSSS pipeline
 
-Status on 2026-07-24: validation and schema-v4 test configuration frozen; test
-not yet evaluated.
+Status on 2026-07-24: validation selection frozen and the one permitted final
+test evaluation completed on Kaggle.
 
 The official pipeline is binary image-level supervision → LayerCAM with
 horizontal-flip TTA → SAM pseudo masks → ResNet18 U-Net. It trained on 2,981
@@ -27,6 +27,44 @@ Subgroup Dice is 0.071001 for lesions smaller than 1% of the resized image,
 the principal limitation. The epoch-wise evidence and rendered curve are in
 `artifacts/official_wsss/segmenter/training/`.
 
+## Locked final test
+
+The schema-v4 config, checkpoint, split, image size, and threshold were frozen
+before test access. Kaggle kernel
+`itsthang333/btxrd-official-wsss-test-run-8796411`, version 3, then executed
+the scientific evaluator exactly once. Versions 1 and 2 stopped in preflight
+with zero evaluator invocations. No threshold sweep or post-test model
+selection occurred.
+
+| Metric | Test result |
+|---|---:|
+| Images (tumor / normal) | 373 (187 / 186) |
+| Mean tumor Dice | 0.203289 |
+| Mean tumor Dice group-bootstrap 95% CI | [0.162691, 0.245949] |
+| Mean tumor IoU | 0.145002 |
+| Mean tumor precision | 0.216612 |
+| Mean tumor recall | 0.447688 |
+| Normal empty-mask specificity | 0.478495 |
+| Pixel specificity | 0.982539 |
+| Complete misses on tumor images | 27 / 187 |
+| Lesion recall, one-to-one IoU ≥ 0.10 | 0.373333 |
+| Lesion precision, one-to-one IoU ≥ 0.10 | 0.162791 |
+
+Test Dice is 0.026731 below validation Dice (an 11.6% relative decrease).
+Performance remains strongly lesion-size dependent: test Dice is 0.097937 for
+lesions smaller than 1% of the resized image, 0.333540 for 1–5%, and 0.405339
+for at least 5%. The bootstrap resamples 244 heuristic case groups because
+verified patient identifiers are unavailable; it must not be described as a
+patient-level interval. Boundary distances are reported only for the 160 tumor
+images with non-empty ground truth and prediction, in pixels on the resized
+448×448 grid; 27 complete misses are excluded from those conditional distance
+means and counted separately.
+
+The complete evidence is in `artifacts/official_wsss/test/`: summary and
+per-image metrics, group-bootstrap intervals, subgroups, pixel confusion,
+373 prediction masks, 12 deterministic qualitative overlays, environment,
+exact command, kernel logs, and a hash-bound final audit.
+
 ## Fully supervised diagnostic
 
 The `fs_resnet18_pw10_full_448_e20` snapshot reaches validation mean tumor Dice
@@ -36,10 +74,6 @@ reported as the thesis pipeline. Its observed gap from the official WSSS
 segmenter is 0.265112 Dice points on validation; this is a descriptive pipeline
 gap, not a causal estimate of weak supervision.
 
-## Test claim
-
-No test metric is reported yet. The one final test evaluation is now permitted
-by committed `configs/official_wsss_frozen_test.json`. It must run on Kaggle
-with checkpoint SHA-256
-`02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4`,
-image size 448, and threshold 0.85, without a threshold grid.
+The fully supervised validation result must not be compared with the WSSS test
+result as if both came from the same partition. It remains an upper-bound
+validation diagnostic only.

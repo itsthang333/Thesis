@@ -15,6 +15,9 @@ binary image-level tumor label
 The official validation result is WSSS mean tumor Dice **0.230020** at threshold
 **0.85**. See [FINAL_RESULTS.md](FINAL_RESULTS.md) and
 [artifacts/official_wsss/SELECTION.json](artifacts/official_wsss/SELECTION.json).
+The one locked test evaluation is complete: mean tumor Dice **0.203289**
+(group-bootstrap 95% CI **[0.162691, 0.245949]**) on 187 tumor images; all 373
+test images have per-image metrics and saved prediction masks.
 The fully supervised Dice **0.495132** snapshot trained directly on polygon
 masks and is only an upper-bound diagnostic. It is not the official pipeline.
 
@@ -29,7 +32,8 @@ masks and is only an upper-bound diagnostic. It is not the official pipeline.
   `02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4`.
 - WSSS validation Dice 95% group-bootstrap CI:
   [0.185729, 0.275031].
-- Test status: schema-v4 config frozen; test not yet evaluated.
+- Final test: Dice 0.203289, IoU 0.145002, normal empty-mask specificity
+  0.478495; evaluated exactly once on Kaggle with no threshold sweep.
 
 Large checkpoints, BTXRD data, caches, temporary Kaggle payloads, and secrets
 are excluded from Git. Resolve checkpoints only through
@@ -78,7 +82,8 @@ python project/train_segmentation.py \
 ```
 
 Do not run a new experiment merely to reproduce the thesis result: the
-validation-selected checkpoint already exists by hash. No threshold sweep,
+validation-selected checkpoint already exists by hash. The one authorized test
+evaluation has already been consumed; do not rerun it. No threshold sweep,
 model selection, or qualitative cherry-picking is allowed on test.
 
 ## Test lock
@@ -103,6 +108,12 @@ requires fresh prediction/qualitative directories, and writes:
 - deterministic best/median/worst/failure overlays;
 - exact command, environment/provenance, hashes, and `test_evaluated=true`.
 
+The immutable outputs of the completed run are in
+[artifacts/official_wsss/test](artifacts/official_wsss/test). The frozen config
+still says `test_evaluated=false` because it records the pre-test state; the
+selection record, result manifest, evaluator outputs, and evaluation ledger
+record the completed one-time evaluation.
+
 ## Repository layout
 
 ```text
@@ -125,6 +136,6 @@ python -m compileall -q project tests
 python -m unittest discover -s tests -v
 ```
 
-The local lightweight runtime may lack PyTorch/SciPy; that can only yield
-explicit skips/import errors, not a full pass. The final verification and smoke
-test must run in the locked Kaggle environment before test evaluation.
+The locked Kaggle run passed compilation, all 48 unit/integration tests, frozen
+config verification, the 16-check artifact verifier, a GPU forward smoke test,
+and the prediction/overlay writer smoke test before the sole test evaluation.

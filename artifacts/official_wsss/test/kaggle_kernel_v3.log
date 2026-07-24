@@ -1,0 +1,169 @@
+[{"stream_name":"stdout","time":21.196823842,"data":"{\n"}
+,{"stream_name":"stdout","time":21.196876905,"data":"  \"python\": \"3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]\",\n"}
+,{"stream_name":"stdout","time":21.196881775,"data":"  \"platform\": \"Linux-6.12.90+-x86_64-with-glibc2.35\",\n"}
+,{"stream_name":"stdout","time":21.196884421,"data":"  \"torch\": \"2.10.0+cu128\",\n"}
+,{"stream_name":"stdout","time":21.196886892,"data":"  \"torchvision\": \"0.25.0+cu128\",\n"}
+,{"stream_name":"stdout","time":21.196889786,"data":"  \"cuda\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":21.196906564,"data":"  \"gpu\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":21.196910738,"data":"  \"gpu_count\": 2,\n"}
+,{"stream_name":"stdout","time":21.196914788,"data":"  \"payload_root\": \"/kaggle/input/datasets/itsthang333/btxrd-official-wsss-final-test-8796411\",\n"}
+,{"stream_name":"stdout","time":21.196918723,"data":"  \"source_input\": \"/kaggle/input/datasets/itsthang333/btxrd-official-wsss-final-test-8796411/source\",\n"}
+,{"stream_name":"stdout","time":21.196922776,"data":"  \"source_runtime\": \"/kaggle/working/official_wsss_source_runtime\",\n"}
+,{"stream_name":"stdout","time":21.196926707,"data":"  \"source_commit\": \"ceceb7b8dc385c4f7052963b824419d44985b3ba\",\n"}
+,{"stream_name":"stdout","time":21.196930338,"data":"  \"data_root\": \"/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD\"\n"}
+,{"stream_name":"stdout","time":21.196934083,"data":"}\n"}
+,{"stream_name":"stdout","time":25.718477206,"data":"$ /usr/bin/python3 -m compileall -q project tests\n"}
+,{"stream_name":"stdout","time":25.936625949,"data":"$ /usr/bin/python3 -m unittest discover -s tests -v\n"}
+,{"stream_name":"stderr","time":30.371223484,"data":"test_current_resnet18_unet_metadata_is_supported (test_inference_architecture.InferenceArchitectureTests.test_current_resnet18_unet_metadata_is_supported) ... ok\n"}
+,{"stream_name":"stderr","time":30.371318181,"data":"test_legacy_checkpoint_defaults_to_plain_unet (test_inference_architecture.InferenceArchitectureTests.test_legacy_checkpoint_defaults_to_plain_unet) ... ok\n"}
+,{"stream_name":"stderr","time":30.371566179,"data":"test_noncanonical_architecture_metadata_fails_closed (test_inference_architecture.InferenceArchitectureTests.test_noncanonical_architecture_metadata_fails_closed) ... ok\n"}
+,{"stream_name":"stderr","time":30.372093121,"data":"test_bootstrap_precedes_pipeline_initialization (test_notebook_bootstrap.NotebookBootstrapTests.test_bootstrap_precedes_pipeline_initialization) ... ok\n"}
+,{"stream_name":"stderr","time":30.372188285,"data":"test_bootstrap_provisions_all_external_inputs (test_notebook_bootstrap.NotebookBootstrapTests.test_bootstrap_provisions_all_external_inputs) ... ok\n"}
+,{"stream_name":"stderr","time":30.372219737,"data":"test_default_dataset_path_is_the_requested_kaggle_input (test_notebook_bootstrap.NotebookBootstrapTests.test_default_dataset_path_is_the_requested_kaggle_input) ... ok\n"}
+,{"stream_name":"stderr","time":30.372343263,"data":"test_notebook_has_exactly_one_test_entrypoint (test_notebook_bootstrap.NotebookBootstrapTests.test_notebook_has_exactly_one_test_entrypoint) ... ok\n"}
+,{"stream_name":"stderr","time":30.372448671,"data":"test_binary_cam_sam_tta_recipe_is_canonical (test_official_wsss_config.OfficialWsssConfigTests.test_binary_cam_sam_tta_recipe_is_canonical) ... ok\n"}
+,{"stream_name":"stderr","time":30.422721605,"data":"test_invalid_flag_is_not_silently_converted_to_zero (test_pipeline_audit_fixes.BTXRDDatasetValidationTests.test_invalid_flag_is_not_silently_converted_to_zero) ... ok\n"}
+,{"stream_name":"stderr","time":30.424207945,"data":"test_manifest_assignments_are_authoritative (test_pipeline_audit_fixes.BTXRDDatasetValidationTests.test_manifest_assignments_are_authoritative) ... ok\n"}
+,{"stream_name":"stderr","time":30.425537328,"data":"test_manifest_rejects_changed_image_hash (test_pipeline_audit_fixes.BTXRDDatasetValidationTests.test_manifest_rejects_changed_image_hash) ... ok\n"}
+,{"stream_name":"stderr","time":30.427053721,"data":"test_manifest_rejects_group_overlap (test_pipeline_audit_fixes.BTXRDDatasetValidationTests.test_manifest_rejects_group_overlap) ... ok\n"}
+,{"stream_name":"stderr","time":30.428392362,"data":"test_missing_pseudo_mask_fails_before_training (test_pipeline_audit_fixes.BTXRDDatasetValidationTests.test_missing_pseudo_mask_fails_before_training) ... ok\n"}
+,{"stream_name":"stderr","time":30.437982005,"data":"test_training_resizes_verified_pseudo_masks_from_source_grid (test_pipeline_audit_fixes.BTXRDDatasetValidationTests.test_training_resizes_verified_pseudo_masks_from_source_grid) ... ok\n"}
+,{"stream_name":"stderr","time":30.438019215,"data":"test_test_split_requires_frozen_config_before_access (test_pipeline_audit_fixes.FrozenTestGuardTests.test_test_split_requires_frozen_config_before_access) ... ok\n"}
+,{"stream_name":"stderr","time":30.440968455,"data":"test_v4_guard_is_portable_and_locks_stage_threshold_and_size (test_pipeline_audit_fixes.FrozenTestGuardTests.test_v4_guard_is_portable_and_locks_stage_threshold_and_size) ... ok\n"}
+,{"stream_name":"stderr","time":30.440995329,"data":"test_validation_split_does_not_require_frozen_config (test_pipeline_audit_fixes.FrozenTestGuardTests.test_validation_split_does_not_require_frozen_config) ... ok\n"}
+,{"stream_name":"stderr","time":30.443586798,"data":"test_coverage_mass_sam_applies_support_clipping (test_pipeline_audit_fixes.MaskSelectionTests.test_coverage_mass_sam_applies_support_clipping) ... ok\n"}
+,{"stream_name":"stderr","time":30.449449956,"data":"test_keep_best_policy_is_explicit_debug_opt_in (test_pipeline_audit_fixes.MaskSelectionTests.test_keep_best_policy_is_explicit_debug_opt_in) ... ok\n"}
+,{"stream_name":"stderr","time":30.449628923,"data":"test_rejects_all_candidates_below_threshold_by_default (test_pipeline_audit_fixes.MaskSelectionTests.test_rejects_all_candidates_below_threshold_by_default) ... ok\n"}
+,{"stream_name":"stderr","time":30.454034122,"data":"test_selection_details_distinguish_threshold_candidates_and_components (test_pipeline_audit_fixes.MaskSelectionTests.test_selection_details_distinguish_threshold_candidates_and_components) ... ok\n"}
+,{"stream_name":"stderr","time":30.45429629,"data":"test_support_clipping_fails_closed_when_candidate_is_off_support (test_pipeline_audit_fixes.MaskSelectionTests.test_support_clipping_fails_closed_when_candidate_is_off_support) ... ok\n"}
+,{"stream_name":"stderr","time":30.458644335,"data":"test_manifest_detects_mask_tampering (test_pipeline_audit_fixes.PseudoManifestTests.test_manifest_detects_mask_tampering) ... ok\n"}
+,{"stream_name":"stderr","time":30.461092167,"data":"test_non_finite_cam_produces_empty_support (test_pipeline_audit_fixes.PseudoManifestTests.test_non_finite_cam_produces_empty_support) ... ok\n"}
+,{"stream_name":"stderr","time":30.464056769,"data":"test_binary_metric_math_on_small_mask (test_pipeline_audit_fixes.ReportingMetricTests.test_binary_metric_math_on_small_mask) ... ok\n"}
+,{"stream_name":"stderr","time":30.465028286,"data":"test_boundary_means_are_explicitly_conditional_and_misses_are_counted (test_pipeline_audit_fixes.ReportingMetricTests.test_boundary_means_are_explicitly_conditional_and_misses_are_counted) ... ok\n"}
+,{"stream_name":"stderr","time":30.470801586,"data":"test_classifier_auc_metrics_are_tie_invariant (test_pipeline_audit_fixes.ReportingMetricTests.test_classifier_auc_metrics_are_tie_invariant) ... ok\n"}
+,{"stream_name":"stderr","time":30.479885141,"data":"test_classifier_group_bootstrap_reports_required_intervals (test_pipeline_audit_fixes.ReportingMetricTests.test_classifier_group_bootstrap_reports_required_intervals) ... ok\n"}
+,{"stream_name":"stderr","time":30.480528218,"data":"test_normal_cases_are_not_mixed_into_main_tumor_dice (test_pipeline_audit_fixes.ReportingMetricTests.test_normal_cases_are_not_mixed_into_main_tumor_dice) ... ok\n"}
+,{"stream_name":"stderr","time":30.481361588,"data":"test_one_to_one_lesion_matching_does_not_double_credit_merged_prediction (test_pipeline_audit_fixes.ReportingMetricTests.test_one_to_one_lesion_matching_does_not_double_credit_merged_prediction) ... ok\n"}
+,{"stream_name":"stderr","time":30.481555373,"data":"test_pure_box_ignores_negative_points_and_passes_no_point_arrays (test_pipeline_audit_fixes.SAMPromptTests.test_pure_box_ignores_negative_points_and_passes_no_point_arrays) ... ok\n"}
+,{"stream_name":"stderr","time":30.482051667,"data":"test_constant_zero_cam_produces_empty_support (test_pipeline_audit_fixes.TumorMorphologyTests.test_constant_zero_cam_produces_empty_support) ... ok\n"}
+,{"stream_name":"stderr","time":30.482197223,"data":"test_flat_cam_does_not_create_corner_prompt (test_pipeline_audit_fixes.TumorMorphologyTests.test_flat_cam_does_not_create_corner_prompt) ... ok\n"}
+,{"stream_name":"stderr","time":30.482300049,"data":"test_legacy_tumor_guidance_also_fails_closed_on_flat_cam (test_pipeline_audit_fixes.TumorMorphologyTests.test_legacy_tumor_guidance_also_fails_closed_on_flat_cam) ... ok\n"}
+,{"stream_name":"stderr","time":30.530725021,"data":"test_negative_points_are_outside_positive_component (test_pipeline_audit_fixes.TumorMorphologyTests.test_negative_points_are_outside_positive_component) ... ok\n"}
+,{"stream_name":"stderr","time":30.530865063,"data":"test_non_finite_cam_does_not_create_prompt (test_pipeline_audit_fixes.TumorMorphologyTests.test_non_finite_cam_does_not_create_prompt) ... ok\n"}
+,{"stream_name":"stderr","time":30.532188045,"data":"test_invalid_progress_setting_fails_closed (test_progress.ProgressPolicyTests.test_invalid_progress_setting_fails_closed) ... ok\n"}
+,{"stream_name":"stderr","time":30.534282396000002,"data":"test_progress_can_be_disabled_explicitly (test_progress.ProgressPolicyTests.test_progress_can_be_disabled_explicitly) ... ok\n"}
+,{"stream_name":"stderr","time":30.536422815,"data":"test_progress_can_be_enabled_explicitly (test_progress.ProgressPolicyTests.test_progress_can_be_enabled_explicitly) ... ok\n"}
+,{"stream_name":"stderr","time":30.5376424,"data":"test_resume_config_is_path_portable_but_training_strict (test_torch_math_and_resume.ResumeIntegrationTests.test_resume_config_is_path_portable_but_training_strict) ... ok\n"}
+,{"stream_name":"stderr","time":30.86504788,"data":"test_resume_matches_uninterrupted_next_step (test_torch_math_and_resume.ResumeIntegrationTests.test_resume_matches_uninterrupted_next_step) ... /kaggle/working/official_wsss_source_runtime/tests/test_torch_math_and_resume.py:138: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":30.865090303,"data":"  scaler = torch.cuda.amp.GradScaler(enabled=False)\n"}
+,{"stream_name":"stderr","time":33.665918086,"data":"ok\n"}
+,{"stream_name":"stderr","time":33.666911954,"data":"test_bce_dice_formula (test_torch_math_and_resume.TorchMathTests.test_bce_dice_formula) ... ok\n"}
+,{"stream_name":"stderr","time":33.693864777,"data":"test_classifier_budget_audit_runs_after_early_stopping (test_torch_math_and_resume.TorchMathTests.test_classifier_budget_audit_runs_after_early_stopping) ... ok\n"}
+,{"stream_name":"stderr","time":33.703250678,"data":"test_flat_puzzle_cam_normalises_to_zero (test_torch_math_and_resume.TorchMathTests.test_flat_puzzle_cam_normalises_to_zero) ... ok\n"}
+,{"stream_name":"stderr","time":33.716588019,"data":"test_postprocess_guidance_threshold_fails_closed (test_torch_math_and_resume.TorchMathTests.test_postprocess_guidance_threshold_fails_closed) ... ok\n"}
+,{"stream_name":"stderr","time":33.718744629,"data":"test_puzzle_tile_merge_is_exact (test_torch_math_and_resume.TorchMathTests.test_puzzle_tile_merge_is_exact) ... ok\n"}
+,{"stream_name":"stderr","time":33.946039344,"data":"test_resnet18_unet_preserves_spatial_shape_and_backpropagates (test_torch_math_and_resume.TorchMathTests.test_resnet18_unet_preserves_spatial_shape_and_backpropagates) ... ok\n"}
+,{"stream_name":"stderr","time":33.992370414,"data":"test_unet_preserves_spatial_shape_and_backpropagates (test_torch_math_and_resume.TorchMathTests.test_unet_preserves_spatial_shape_and_backpropagates) ... ok\n"}
+,{"stream_name":"stderr","time":33.992402562,"data":"\n"}
+,{"stream_name":"stderr","time":33.992406802,"data":"----------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":33.992410491,"data":"Ran 48 tests in 3.621s\n"}
+,{"stream_name":"stderr","time":33.992413844,"data":"\n"}
+,{"stream_name":"stderr","time":33.992416931,"data":"OK\n"}
+,{"stream_name":"stdout","time":39.007038841,"data":"$ /usr/bin/python3 project/tools/freeze_pipeline_config.py --output /kaggle/working/official_wsss_source_runtime/configs/official_wsss_frozen_test.json --verify\n"}
+,{"stream_name":"stdout","time":39.421569497,"data":"{\n"}
+,{"stream_name":"stdout","time":39.421604124,"data":"  \"verified\": true,\n"}
+,{"stream_name":"stdout","time":39.421608331,"data":"  \"freeze_sha256\": \"3d8b5fbe2537f7830b95f9ad2e3d7cb5caa146da92d96ce4cce5c61cdcfbced7\"\n"}
+,{"stream_name":"stdout","time":39.421612367,"data":"}\n"}
+,{"stream_name":"stdout","time":39.466854976,"data":"$ /usr/bin/python3 project/tools/verify_official_wsss_artifacts.py --repo-root /kaggle/working/official_wsss_source_runtime --output /kaggle/working/official_wsss_preflight/official_wsss_artifact_verification.json\n"}
+,{"stream_name":"stdout","time":39.649026848,"data":"{\n"}
+,{"stream_name":"stdout","time":39.649073203,"data":"  \"passed\": true,\n"}
+,{"stream_name":"stdout","time":39.649093347,"data":"  \"checks\": 16,\n"}
+,{"stream_name":"stdout","time":39.64909768,"data":"  \"failures\": 0,\n"}
+,{"stream_name":"stdout","time":39.649101717,"data":"  \"output\": \"/kaggle/working/official_wsss_preflight/official_wsss_artifact_verification.json\"\n"}
+,{"stream_name":"stdout","time":39.649106207,"data":"}\n"}
+,{"stream_name":"stdout","time":42.951533264,"data":"$ /usr/bin/python3 project/evaluate_unet.py --data-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split test --split-manifest /kaggle/working/official_wsss_source_runtime/artifacts/data_audit/split_manifest.csv --checkpoint /kaggle/input/datasets/itsthang333/btxrd-official-wsss-final-test-8796411/models/best_unet.pt --frozen-config /kaggle/working/official_wsss_source_runtime/configs/official_wsss_frozen_test.json --image-size 448 --threshold 0.85 --batch-size 8 --num-workers 4 --bootstrap-iterations 10000 --bootstrap-seed 42 --prediction-dir /kaggle/working/official_wsss_final_test/prediction_masks --qualitative-dir /kaggle/working/official_wsss_final_test/qualitative --qualitative-count 12 --output-csv /kaggle/working/official_wsss_final_test/evaluation/per_image.csv --output-json /kaggle/working/official_wsss_final_test/evaluation/summary.json\n"}
+,{"stream_name":"stderr","time":127.320797883,"data":"/kaggle/working/official_wsss_source_runtime/project/evaluate_unet.py:151: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)\n"}
+,{"stream_name":"stderr","time":127.320847855,"data":"  Image.fromarray(mask, mode=\"L\").save(path)\n"}
+,{"stream_name":"stderr","time":128.38368363,"data":"/kaggle/working/official_wsss_source_runtime/project/evaluate_unet.py:239: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)\n"}
+,{"stream_name":"stderr","time":128.383753761,"data":"  Image.fromarray(overlay.clip(0, 255).astype(np.uint8), mode=\"RGB\").save(\n"}
+,{"stream_name":"stdout","time":148.170440978,"data":"{\n"}
+,{"stream_name":"stdout","time":148.170474913,"data":"  \"dataset\": \"btxrd\",\n"}
+,{"stream_name":"stdout","time":148.170478889,"data":"  \"split\": \"test\",\n"}
+,{"stream_name":"stdout","time":148.170496738,"data":"  \"checkpoint\": \"/kaggle/input/datasets/itsthang333/btxrd-official-wsss-final-test-8796411/models/best_unet.pt\",\n"}
+,{"stream_name":"stdout","time":148.170501792,"data":"  \"checkpoint_sha256\": \"02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4\",\n"}
+,{"stream_name":"stdout","time":148.170506056,"data":"  \"image_size\": 448,\n"}
+,{"stream_name":"stdout","time":148.170510149,"data":"  \"threshold\": 0.85,\n"}
+,{"stream_name":"stdout","time":148.170513958,"data":"  \"test_evaluated\": true,\n"}
+,{"stream_name":"stdout","time":148.170517793,"data":"  \"frozen_config_sha256\": \"3d8b5fbe2537f7830b95f9ad2e3d7cb5caa146da92d96ce4cce5c61cdcfbced7\",\n"}
+,{"stream_name":"stdout","time":148.170521536,"data":"  \"boundary_distance_unit\": \"pixels on the resized evaluation grid\",\n"}
+,{"stream_name":"stdout","time":148.170525001,"data":"  \"images\": 373,\n"}
+,{"stream_name":"stdout","time":148.170528301,"data":"  \"tumor_images\": 187,\n"}
+,{"stream_name":"stdout","time":148.170531641,"data":"  \"normal_images\": 186,\n"}
+,{"stream_name":"stdout","time":148.170535075,"data":"  \"main_population\": \"tumor images only\",\n"}
+,{"stream_name":"stdout","time":148.170538568,"data":"  \"mean_tumor_dice\": 0.20328863455858454,\n"}
+,{"stream_name":"stdout","time":148.170541966,"data":"  \"mean_tumor_iou\": 0.14500241864738583,\n"}
+,{"stream_name":"stdout","time":148.170545351,"data":"  \"mean_tumor_precision\": 0.21661235583000693,\n"}
+,{"stream_name":"stdout","time":148.170548791,"data":"  \"mean_tumor_recall\": 0.4476875036514254,\n"}
+,{"stream_name":"stdout","time":148.170552178,"data":"  \"mean_tumor_hd95_px_conditional_defined\": 156.97864367776202,\n"}
+,{"stream_name":"stdout","time":148.170555653,"data":"  \"mean_tumor_assd_px_conditional_defined\": 85.13672417343737,\n"}
+,{"stream_name":"stdout","time":148.170561146,"data":"  \"boundary_metric_definition\": \"conditional mean over tumor images with both GT and prediction non-empty; distances are pixels on the resized evaluation grid (not mm); complete misses are excluded and counted separately\",\n"}
+,{"stream_name":"stdout","time":148.170575454,"data":"  \"boundary_metric_eligible_tumor_images\": 160,\n"}
+,{"stream_name":"stdout","time":148.170577882,"data":"  \"boundary_metric_excluded_tumor_images\": 27,\n"}
+,{"stream_name":"stdout","time":148.170581023,"data":"  \"boundary_metric_complete_misses\": 27,\n"}
+,{"stream_name":"stdout","time":148.170597112,"data":"  \"tumor_non_empty_prediction_rate\": 0.8556149732620321,\n"}
+,{"stream_name":"stdout","time":148.170601125,"data":"  \"tumor_overlap_detection_rate\": 0.5989304812834224,\n"}
+,{"stream_name":"stdout","time":148.170605087,"data":"  \"lesion_any_overlap_recall\": 0.5911111111111111,\n"}
+,{"stream_name":"stdout","time":148.170609212,"data":"  \"lesion_any_overlap_precision\": 0.2616279069767442,\n"}
+,{"stream_name":"stdout","time":148.170613261,"data":"  \"gt_lesions\": 225,\n"}
+,{"stream_name":"stdout","time":148.170617183,"data":"  \"detected_lesions_any_overlap\": 133,\n"}
+,{"stream_name":"stdout","time":148.170621332,"data":"  \"predicted_lesions\": 516,\n"}
+,{"stream_name":"stdout","time":148.170635675,"data":"  \"multifocal_tumor_images\": 24,\n"}
+,{"stream_name":"stdout","time":148.170639295,"data":"  \"multifocal_tumor_image_rate\": 0.12834224598930483,\n"}
+,{"stream_name":"stdout","time":148.17064275,"data":"  \"gt_component_count_histogram\": {\n"}
+,{"stream_name":"stdout","time":148.170646137,"data":"    \"1\": 163,\n"}
+,{"stream_name":"stdout","time":148.170649466,"data":"    \"5\": 2,\n"}
+,{"stream_name":"stdout","time":148.170652787,"data":"    \"3\": 6,\n"}
+,{"stream_name":"stdout","time":148.17065606,"data":"    \"2\": 15,\n"}
+,{"stream_name":"stdout","time":148.17065925,"data":"    \"4\": 1\n"}
+,{"stream_name":"stdout","time":148.170662436,"data":"  },\n"}
+,{"stream_name":"stdout","time":148.170665628,"data":"  \"normal_empty_prediction_rate\": 0.478494623655914,\n"}
+,{"stream_name":"stdout","time":148.170669053,"data":"  \"normal_false_positive_case_rate\": 0.521505376344086,\n"}
+,{"stream_name":"stdout","time":148.170672413,"data":"  \"pixel_specificity\": 0.9825385297304361,\n"}
+,{"stream_name":"stdout","time":148.170675767,"data":"  \"pixel_precision\": 0.19767980862609796,\n"}
+,{"stream_name":"stdout","time":148.170679604,"data":"  \"pixel_recall\": 0.38986475488582306,\n"}
+,{"stream_name":"stdout","time":148.170683419,"data":"  \"tp_pixels\": 318562,\n"}
+,{"stream_name":"stdout","time":148.170687492,"data":"  \"fp_pixels\": 1292943,\n"}
+,{"stream_name":"stdout","time":148.170691745,"data":"  \"fn_pixels\": 498547,\n"}
+,{"stream_name":"stdout","time":148.17069728,"data":"  \"tn_pixels\": 72752540,\n"}
+,{"stream_name":"stdout","time":148.170700727,"data":"  \"lesion_one_to_one_iou10_recall\": 0.37333333333333335,\n"}
+,{"stream_name":"stdout","time":148.170704142,"data":"  \"lesion_one_to_one_iou10_precision\": 0.16279069767441862,\n"}
+,{"stream_name":"stdout","time":148.170707529,"data":"  \"lesion_one_to_one_iou10_f1\": 0.22672064777327935,\n"}
+,{"stream_name":"stdout","time":148.170711083,"data":"  \"lesion_tp_one_to_one_iou10\": 84,\n"}
+,{"stream_name":"stdout","time":148.17071441,"data":"  \"lesion_one_to_one_iou25_recall\": 0.26222222222222225,\n"}
+,{"stream_name":"stdout","time":148.170717824,"data":"  \"lesion_one_to_one_iou25_precision\": 0.11434108527131782,\n"}
+,{"stream_name":"stdout","time":148.170721234,"data":"  \"lesion_one_to_one_iou25_f1\": 0.1592442645074224,\n"}
+,{"stream_name":"stdout","time":148.1707246,"data":"  \"lesion_tp_one_to_one_iou25\": 59,\n"}
+,{"stream_name":"stdout","time":148.17072791,"data":"  \"lesion_one_to_one_iou50_recall\": 0.13333333333333333,\n"}
+,{"stream_name":"stdout","time":148.170731382,"data":"  \"lesion_one_to_one_iou50_precision\": 0.05813953488372093,\n"}
+,{"stream_name":"stdout","time":148.17073476,"data":"  \"lesion_one_to_one_iou50_f1\": 0.08097165991902834,\n"}
+,{"stream_name":"stdout","time":148.170738227,"data":"  \"lesion_tp_one_to_one_iou50\": 30,\n"}
+,{"stream_name":"stdout","time":148.170741792,"data":"  \"lesion_matching_definition\": \"maximum-cardinality one-to-one connected-component matching at IoU thresholds 0.10, 0.25, 0.50\"\n"}
+,{"stream_name":"stdout","time":148.170745532,"data":"}\n"}
+,{"stream_name":"stdout","time":148.17074881,"data":"Saved per-image metrics to /kaggle/working/official_wsss_final_test/evaluation/per_image.csv\n"}
+,{"stream_name":"stdout","time":148.170757625,"data":"Saved summary to /kaggle/working/official_wsss_final_test/evaluation/summary.json\n"}
+,{"stream_name":"stdout","time":148.170761089,"data":"Saved subgroup/bootstrap/confusion/run-manifest artifacts next to /kaggle/working/official_wsss_final_test/evaluation/per_image.csv\n"}
+,{"stream_name":"stdout","time":149.867224503,"data":"{\n"}
+,{"stream_name":"stdout","time":149.867258838,"data":"  \"FINAL_TEST_STATUS\": \"PASS\",\n"}
+,{"stream_name":"stdout","time":149.867262895,"data":"  \"test_evaluated\": true,\n"}
+,{"stream_name":"stdout","time":149.867265481,"data":"  \"mean_tumor_dice\": 0.20328863455858454,\n"}
+,{"stream_name":"stdout","time":149.867267977,"data":"  \"mean_tumor_iou\": 0.14500241864738583,\n"}
+,{"stream_name":"stdout","time":149.867270489,"data":"  \"normal_empty_prediction_rate\": 0.478494623655914,\n"}
+,{"stream_name":"stdout","time":149.867272965,"data":"  \"prediction_masks\": 373\n"}
+,{"stream_name":"stdout","time":149.867275225,"data":"}\n"}
+,{"stream_name":"stderr","time":153.369266469,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":153.369298322,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":153.807108854,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":153.807140905,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":154.541671161,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":156.288643371,"data":"[NbConvertApp] Writing 335466 bytes to __results__.html\n"}
+]

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "pipeline": "official_wsss",
-  "status": "validation_complete_test_config_frozen",
-  "test_evaluated": false,
+  "status": "final_test_complete",
+  "test_evaluated": true,
   "frozen_test_config": {
     "path": "../../configs/official_wsss_frozen_test.json",
     "freeze_sha256": "3d8b5fbe2537f7830b95f9ad2e3d7cb5caa146da92d96ce4cce5c61cdcfbced7"
@@ -44,6 +44,27 @@
       "training_log": "segmenter/training/training_log.csv",
       "training_curves": "segmenter/training/training_curves.svg"
     }
+  },
+  "final_test": {
+    "evaluation_count": 1,
+    "threshold_tuned_on_test": false,
+    "pipeline_selection_changed_after_test": false,
+    "kaggle_kernel": "itsthang333/btxrd-official-wsss-test-run-8796411",
+    "kaggle_kernel_version": 3,
+    "kaggle_dataset": "itsthang333/btxrd-official-wsss-final-test-8796411",
+    "kaggle_dataset_version": 2,
+    "summary": "test/evaluation/summary.json",
+    "per_image_metrics": "test/evaluation/per_image.csv",
+    "bootstrap": "test/evaluation/per_image_bootstrap.json",
+    "subgroups": "test/evaluation/per_image_subgroups.csv",
+    "pixel_confusion": "test/evaluation/per_image_pixel_confusion.json",
+    "prediction_masks": "test/prediction_masks",
+    "qualitative": "test/qualitative",
+    "environment": "test/provenance/environment.json",
+    "command": "test/provenance/command.json",
+    "audit": "test/FINAL_TEST_AUDIT.json",
+    "audit_sha256": "30993bca4b10d709beee2f9fdce66ddb43f61c395210c956cc3270341d32f613",
+    "evaluation_ledger": "test/TEST_EVALUATION_LEDGER.json"
   },
   "commands": "COMMANDS.md",
   "environment": "environment.json",

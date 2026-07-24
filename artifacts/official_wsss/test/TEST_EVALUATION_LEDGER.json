@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "status": "final_test_complete",
+  "scientific_test_evaluation_count": 1,
+  "threshold_tuned_on_test": false,
+  "pipeline_selection_changed_after_test": false,
+  "kaggle_kernel": "itsthang333/btxrd-official-wsss-test-run-8796411",
+  "kaggle_dataset": "itsthang333/btxrd-official-wsss-final-test-8796411",
+  "locked_inputs": {
+    "source_project_commit": "ceceb7b8dc385c4f7052963b824419d44985b3ba",
+    "source_payload_commit": "32ab7223c256b256ffd4822d64d4613acfa95828",
+    "frozen_config_sha256": "3d8b5fbe2537f7830b95f9ad2e3d7cb5caa146da92d96ce4cce5c61cdcfbced7",
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "checkpoint_sha256": "02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4",
+    "checkpoint_bytes": 230924939,
+    "image_size": 448,
+    "threshold": 0.85
+  },
+  "attempts": [
+    {
+      "kernel_version": 1,
+      "status": "preflight_error",
+      "scientific_evaluator_command_count": 0,
+      "test_accessed": false,
+      "reason": "compileall attempted to write __pycache__ into the read-only Kaggle input",
+      "log_path": "provenance/kaggle_kernel_v1_preflight.log",
+      "log_sha256": "3c979aea4df88f357c88e41cc97b8b3d444305d75bac528c37dad6126ba2e4c4"
+    },
+    {
+      "kernel_version": 2,
+      "status": "preflight_error",
+      "scientific_evaluator_command_count": 0,
+      "test_accessed": false,
+      "reason": "official artifact verifier failed closed because checkpoint_pointer.json was absent from the Git archive",
+      "log_path": "provenance/kaggle_kernel_v2_preflight.log",
+      "log_sha256": "257e5e45e19d8cd15e76475630ddda47348af37c98391baa5a3b2ef66034165b"
+    },
+    {
+      "kernel_version": 3,
+      "status": "complete",
+      "scientific_evaluator_command_count": 1,
+      "test_accessed": true,
+      "final_test_status": "PASS",
+      "log_path": "kaggle_kernel_v3.log",
+      "log_sha256": "02d166cc9541d40ad3f21ade394b11b6cdad5481a041cac46e76fde35417703c",
+      "final_audit": "FINAL_TEST_AUDIT.json",
+      "final_audit_sha256": "30993bca4b10d709beee2f9fdce66ddb43f61c395210c956cc3270341d32f613"
+    }
+  ]
+}
