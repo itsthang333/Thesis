@@ -724,3 +724,40 @@ recipe. This isolates whether preserving the original discriminative core
 while expanding new evidence can retain the measured medium/large gain without
 destroying small-lesion selection. Test remains locked.
 
+## 27. Activation-regularized AdvCAM result
+
+The regularized run `itsthang333/btxrd-binary-advcam-regularized` is rejected:
+
+- Dice `0.2307861310`; paired delta `-0.0035530912`.
+- Paired group-bootstrap 95% CI `-0.0289307324` to `+0.0207423190`.
+- Small/medium/large deltas versus baseline:
+  `-0.0399829922/+0.0275501896/+0.0622788244`.
+- Compared with unregularized climbing, small selection loss improves
+  `0.037925` and small Dice improves `0.007524`, but small oracle Dice falls
+  `0.027753`; medium/large Dice also lose `0.045512/0.043146`.
+- Compared with baseline, small oracle Dice is unchanged (`-0.000048`) and
+  selected Dice still falls `-0.033557`.
+- Population 371/184/187, 184 prompt rows, 11 Torch tests, hashes and test lock
+  all verify. Comparison SHA-256:
+  `0daec4744259e766b2e949fe4cbc9de21e8f4f81a5df35a5c605ca7c947e4e54`.
+
+Interpretation: the official `L_AD` defaults suppress part of the harmful
+expansion but also discard useful oracle coverage. Do not sweep its coefficient
+on validation. Inference-time climbing and post-hoc selector variants are now
+closed.
+
+Next experiment is a controlled S2C SAM-Segment Contrasting adaptation:
+
+1. On Kaggle, run SAM ViT-B Segment-Everything on the 2,981 clean-train images
+   only and save compact 80x80 region-index maps. Do not load polygons,
+   validation, or test.
+2. Train the same 320 px binary DenseNet121 recipe with BCE plus SSC, loss
+   weight 1 and temperature 1 from the official S2C code. Augmentation remains
+   off so the maps are spatially aligned.
+3. Evaluate the frozen flip-TTA LayerCAM+SAM Gate-C recipe. Promotion requires
+   positive paired-CI lower bound and no small-subgroup decrease.
+
+This transfers SAM boundary/region knowledge into classifier features, directly
+targeting the measured oracle-to-selection gap instead of adding another
+inference heuristic.
+
