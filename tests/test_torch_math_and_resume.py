@@ -21,6 +21,60 @@ if str(PROJECT_ROOT) not in sys.path:
 
 @unittest.skipIf(torch is None, "PyTorch is not installed in the lightweight audit environment")
 class TorchMathTests(unittest.TestCase):
+    def test_regularized_adversarial_climbing_is_bounded_and_aggregates(self) -> None:
+        from models.layercam import (
+            LayerCAMOutput,
+            regularized_adversarial_climbing_layercam,
+        )
+
+        class TinyClassifier(torch.nn.Module):
+            def forward(self, inputs):
+                return inputs.mean(dim=(1, 2, 3), keepdim=False).unsqueeze(1)
+
+        class FakeDifferentiableLayerCAM:
+            def __init__(self):
+                self.model = TinyClassifier()
+                self.seen = []
+
+            def cam_for_class_differentiable(self, inputs, class_index):
+                self.seen.append(inputs.detach().clone())
+                logits = self.model(inputs)
+                cam = torch.sigmoid(inputs[:, 0])
+                native_cam = torch.sigmoid(inputs[:, 0, ::2, ::2])
+                return LayerCAMOutput(logits=logits, cam=cam), native_cam
+
+        image = torch.linspace(-2.0, 2.0, 16).reshape(1, 1, 4, 4).repeat(1, 3, 1, 1)
+        layercam = FakeDifferentiableLayerCAM()
+        result = regularized_adversarial_climbing_layercam(
+            layercam,
+            image,
+            0,
+            iterations=2,
+            step_size=0.08,
+            ad_coeff=7.0,
+            score_threshold=0.5,
+        )
+
+        self.assertEqual(len(layercam.seen), 3)
+        self.assertTrue(torch.isfinite(result.cam).all())
+        self.assertGreaterEqual(float(result.cam.min()), 0.0)
+        self.assertLessEqual(float(result.cam.max()), 1.0)
+        for observed in layercam.seen:
+            self.assertGreaterEqual(float(observed.min()), float(image.min()))
+            self.assertLessEqual(float(observed.max()), float(image.max()))
+
+    def test_regularized_adversarial_climbing_rejects_invalid_coeff(self) -> None:
+        from models.layercam import regularized_adversarial_climbing_layercam
+
+        with self.assertRaisesRegex(ValueError, "non-negative"):
+            regularized_adversarial_climbing_layercam(
+                object(),
+                torch.zeros(1, 3, 4, 4),
+                0,
+                iterations=1,
+                ad_coeff=-1.0,
+            )
+
     def test_classifier_budget_audit_runs_after_early_stopping(self) -> None:
         from train_classifier import classifier_epoch_budget_audit
 

@@ -43,6 +43,7 @@ class LayerCAM:
                 raise ValueError("layer_weights must contain three non-negative values with positive sum")
             total = sum(values)
             self.layer_weights = tuple(value / total for value in values)
+        self._retain_activation_graph = False
 
         target_layers = [
             model.features.denseblock2,
@@ -69,10 +70,13 @@ class LayerCAM:
     # hooks
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _make_forward_hook(state: _HookState):
+    def _make_forward_hook(self, state: _HookState):
         def hook(module, inputs, output):
-            state.activations = output.detach()
+            state.activations = (
+                output
+                if self._retain_activation_graph
+                else output.detach()
+            )
         return hook
 
     @staticmethod
@@ -85,7 +89,7 @@ class LayerCAM:
     # core LayerCAM computation
     # ------------------------------------------------------------------
 
-    def _compute_layer_cam(self, state: _HookState, input_size: tuple[int, int]) -> torch.Tensor:
+    def _compute_native_layer_cam(self, state: _HookState) -> torch.Tensor:
         assert state.activations is not None and state.gradients is not None
         A = state.activations          # [B, C, H, W]
         G = state.gradients            # [B, C, H, W]
@@ -99,6 +103,10 @@ class LayerCAM:
         mn = cam_flat.min(dim=1).values.view(B, 1, 1, 1)
         mx = cam_flat.max(dim=1).values.view(B, 1, 1, 1)
         cam = (cam - mn) / (mx - mn + 1e-8)
+        return cam
+
+    def _compute_layer_cam(self, state: _HookState, input_size: tuple[int, int]) -> torch.Tensor:
+        cam = self._compute_native_layer_cam(state)
 
         cam = F.interpolate(cam, size=input_size, mode="bilinear", align_corners=False)
         return cam  # [B, 1, H_in, W_in]
@@ -176,6 +184,41 @@ class LayerCAM:
     def cam_for_class(self, input_tensor: torch.Tensor, class_index: int | torch.Tensor) -> LayerCAMOutput:
         return self._compute_cam(input_tensor, class_index=class_index)
 
+    def cam_for_class_differentiable(
+        self,
+        input_tensor: torch.Tensor,
+        class_index: int | torch.Tensor,
+    ) -> tuple[LayerCAMOutput, torch.Tensor]:
+        """Return LayerCAM plus a differentiable final-layer native CAM.
+
+        Gradients used as LayerCAM weights remain detached, matching the
+        reference GradCAM/AdvCAM implementation, while activations retain
+        their graph. This permits an activation-difference regularizer to
+        backpropagate through the final DenseNet block without changing the
+        normal inference path.
+        """
+        self.model.zero_grad(set_to_none=True)
+        for state in self._states:
+            state.activations = None
+            state.gradients = None
+        self._retain_activation_graph = True
+        try:
+            outputs = self.model(input_tensor)
+            logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
+            if logits.ndim == 1:
+                logits = logits.unsqueeze(0)
+            if isinstance(class_index, torch.Tensor):
+                batch_indices = torch.arange(logits.shape[0], device=logits.device)
+                score = logits[batch_indices, class_index].sum()
+            else:
+                score = logits[:, class_index].sum()
+            score.backward(retain_graph=True)
+            output = self._finish_cam(logits, input_tensor.shape[-2:])
+            final_native_cam = self._compute_native_layer_cam(self._states[-1])
+            return output, final_native_cam.squeeze(1)
+        finally:
+            self._retain_activation_graph = False
+
     def cam_for_class_contrast(
         self,
         input_tensor: torch.Tensor,
@@ -232,3 +275,111 @@ class LayerCAM:
                     logits = logits.unsqueeze(0)
                 class_index = int(logits.argmax(dim=1).item())
         return self._compute_cam(input_tensor, class_index=class_index)
+
+
+def regularized_adversarial_climbing_layercam(
+    layercam: LayerCAM,
+    input_tensor: torch.Tensor,
+    class_index: int | torch.Tensor,
+    *,
+    iterations: int,
+    step_size: float = 0.08,
+    ad_coeff: float = 7.0,
+    score_threshold: float = 0.5,
+) -> LayerCAMOutput:
+    """Aggregate LayerCAMs along an activation-regularized climbing path.
+
+    The target logit is maximized while the activation-difference penalty
+    preserves the initially discriminative core on the native final-layer
+    CAM grid. This mirrors AdvCAM's omitted ``L_AD`` mechanism while keeping
+    this project's multi-layer LayerCAM output and bounded input updates.
+    """
+    if iterations < 0:
+        raise ValueError("iterations must be non-negative")
+    if step_size <= 0 or not np.isfinite(step_size):
+        raise ValueError("step_size must be a finite positive value")
+    if ad_coeff < 0 or not np.isfinite(ad_coeff):
+        raise ValueError("ad_coeff must be finite and non-negative")
+    if not 0.0 < score_threshold < 1.0:
+        raise ValueError("score_threshold must be strictly between zero and one")
+    if input_tensor.ndim != 4 or input_tensor.shape[0] != 1:
+        raise ValueError(
+            "regularized_adversarial_climbing_layercam requires a single BCHW image"
+        )
+    if not torch.isfinite(input_tensor).all():
+        raise ValueError("input_tensor contains NaN or Inf")
+
+    original = input_tensor.detach()
+    lower = original.amin(dim=(1, 2, 3), keepdim=True)
+    upper = original.amax(dim=(1, 2, 3), keepdim=True)
+    current = original.clone()
+    accumulated: torch.Tensor | None = None
+    initial_logits: torch.Tensor | None = None
+    initial_native_cam: torch.Tensor | None = None
+
+    for step in range(iterations + 1):
+        current = current.detach().requires_grad_(True)
+        output, native_cam = layercam.cam_for_class_differentiable(
+            current,
+            class_index,
+        )
+        if initial_logits is None:
+            initial_logits = output.logits.detach()
+        if initial_native_cam is None:
+            initial_native_cam = native_cam.detach()
+        step_cam = output.cam.detach()
+        if not torch.isfinite(step_cam).all() or not torch.isfinite(native_cam).all():
+            raise RuntimeError("regularized adversarial climbing produced a non-finite CAM")
+        accumulated = step_cam if accumulated is None else accumulated + step_cam
+
+        if step == iterations:
+            break
+
+        native_scale = native_cam.detach().flatten(1).amax(dim=1)
+        native_scale = native_scale[:, None, None].clamp_min(1e-12)
+        expanded_mask = (
+            native_cam.detach() / native_scale > float(score_threshold)
+        ).to(native_cam.dtype)
+        activation_difference = (
+            (native_cam - initial_native_cam).abs() * expanded_mask
+        ).sum()
+        logits = output.logits
+        if isinstance(class_index, torch.Tensor):
+            batch_indices = torch.arange(logits.shape[0], device=logits.device)
+            target_logit = logits[batch_indices, class_index].sum()
+        else:
+            target_logit = logits[:, class_index].sum()
+        objective = target_logit - float(ad_coeff) * activation_difference
+
+        layercam.model.zero_grad(set_to_none=True)
+        if current.grad is not None:
+            current.grad.zero_()
+        objective.backward()
+        gradient = current.grad
+        if gradient is None:
+            raise RuntimeError(
+                "regularized adversarial climbing produced no input gradient"
+            )
+        if not torch.isfinite(gradient).all():
+            raise RuntimeError(
+                "regularized adversarial climbing produced a non-finite input gradient"
+            )
+        scale = gradient.detach().abs().amax(dim=(1, 2, 3), keepdim=True)
+        if float(scale.max()) <= 1e-12:
+            break
+        direction = gradient.detach() / scale.clamp_min(1e-12)
+        current = torch.maximum(
+            torch.minimum(current.detach() + float(step_size) * direction, upper),
+            lower,
+        )
+
+    assert accumulated is not None and initial_logits is not None
+    flat = accumulated.flatten(1)
+    minimum = flat.min(dim=1).values[:, None, None]
+    maximum = flat.max(dim=1).values[:, None, None]
+    aggregated = torch.where(
+        (maximum - minimum) > 1e-8,
+        (accumulated - minimum) / (maximum - minimum + 1e-8),
+        torch.zeros_like(accumulated),
+    )
+    return LayerCAMOutput(logits=initial_logits, cam=aggregated)
