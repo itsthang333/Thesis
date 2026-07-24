@@ -263,12 +263,19 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--advcam-selection-cam",
-        choices=["expanded", "baseline"],
+        choices=[
+            "expanded",
+            "baseline",
+            "baseline_with_expanded_eligibility",
+        ],
         default="expanded",
         help=(
             "CAM used only to rank/fuse SAM candidates when adversarial climbing is "
             "enabled. 'baseline' keeps the unmodified CAM as a high-precision ranker "
-            "while the expanded CAM still generates prompts, candidates and support."
+            "while the expanded CAM still generates prompts, candidates and support. "
+            "'baseline_with_expanded_eligibility' additionally keeps expanded-CAM "
+            "threshold eligibility/component priority, using baseline CAM only to "
+            "choose among eligible candidates."
         ),
     )
     parser.add_argument("--cam-multiscale-sizes", type=str, default="",
@@ -792,8 +799,11 @@ def main() -> None:
         raise ValueError("--advcam-iterations must be non-negative")
     if args.advcam_step_size <= 0 or not np.isfinite(args.advcam_step_size):
         raise ValueError("--advcam-step-size must be a finite positive value")
-    if args.advcam_selection_cam == "baseline" and not args.advcam_iterations:
-        raise ValueError("--advcam-selection-cam baseline requires --advcam-iterations > 0")
+    if args.advcam_selection_cam != "expanded" and not args.advcam_iterations:
+        raise ValueError(
+            "non-expanded --advcam-selection-cam modes require "
+            "--advcam-iterations > 0"
+        )
     if args.advcam_iterations:
         if target_columns != ["tumor"] or classifier_task != "multi-label":
             raise ValueError(
@@ -1318,8 +1328,17 @@ def main() -> None:
 
                 selection_cam = (
                     baseline_selection_cam
-                    if args.advcam_iterations and args.advcam_selection_cam == "baseline"
+                    if args.advcam_iterations
+                    and args.advcam_selection_cam
+                    in {"baseline", "baseline_with_expanded_eligibility"}
                     else fused_cam
+                )
+                eligibility_cam = (
+                    fused_cam
+                    if args.advcam_iterations
+                    and args.advcam_selection_cam
+                    == "baseline_with_expanded_eligibility"
+                    else None
                 )
 
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
@@ -1601,6 +1620,11 @@ def main() -> None:
                         component_ids=np.asarray(component_ids if component_ids is not None else np.zeros(len(sam_masks), dtype=np.int32)),
                         fused_cam=fused_cam.astype(np.float32),
                         selection_cam=selection_cam.astype(np.float32),
+                        eligibility_cam=(
+                            eligibility_cam.astype(np.float32)
+                            if eligibility_cam is not None
+                            else selection_cam.astype(np.float32)
+                        ),
                         component_masks=(
                             np.stack([component.mask for component in bone_components]).astype(np.uint8)
                             if bone_components else np.zeros((0, args.image_size, args.image_size), dtype=np.uint8)
@@ -1720,6 +1744,7 @@ def main() -> None:
                     component_topk=args.component_topk,
                     support_clip_kernel=args.support_clip_kernel,
                     low_score_policy=args.low_score_policy,
+                    eligibility_cam=eligibility_cam,
                     return_details=True,
                 )
 
