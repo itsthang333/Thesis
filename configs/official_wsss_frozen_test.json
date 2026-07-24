@@ -1,0 +1,323 @@
+{
+  "schema_version": 4,
+  "status": "final",
+  "profile": {
+    "name": "btxrd_best",
+    "target_columns": [
+      "tumor"
+    ],
+    "classifier_image_size": 320,
+    "classifier_batch_size": 4,
+    "classifier_epochs": 30,
+    "classifier_early_stop_patience": 7,
+    "classifier_lr": 0.0001,
+    "classifier_weight_decay": 0.0001,
+    "classifier_seed": 42,
+    "classifier_puzzle_alpha_max": 0.0,
+    "classifier_attention_alpha_max": 0.0,
+    "cam_percentile": 90.0,
+    "cam_percentile_values": [
+      85.0,
+      90.0,
+      95.0
+    ],
+    "cam_tta_flip": true,
+    "cam_contrast_normal": false,
+    "cam_contrast_weight": 1.0,
+    "cam_aggregation": "class",
+    "cam_target_class": "ground_truth",
+    "seed_percentile": 82.0,
+    "support_percentile": 55.0,
+    "layercam_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "layercam_gradient_mode": "positive",
+    "confidence_threshold": 0.5,
+    "max_points": 5,
+    "min_component_area": 100,
+    "mask_score_threshold": 0.4,
+    "morphology_fusion_mode": "components",
+    "sam_image_size": 512,
+    "sam_preserve_aspect": false,
+    "sam_prompt_mode": "box_point",
+    "sam_prompt_ensemble": true,
+    "sam_single_mask": false,
+    "max_bone_components": 3,
+    "all_cam_components": true,
+    "component_topk": 3,
+    "points_per_component": 5,
+    "bbox_padding_ratio": 0.02,
+    "negative_points_per_component": 4,
+    "prompt_border_margin": 2,
+    "max_box_area_ratio": 0.35,
+    "selection_method": "coverage_mass_sam",
+    "best_per_component": true,
+    "fusion_topk": 1,
+    "support_clip_kernel": 5,
+    "closing_kernel": 0,
+    "opening_kernel": 0,
+    "min_size": 40,
+    "max_hole_area": 0,
+    "guidance_threshold": 0.4
+  },
+  "source": {
+    "branch": "main",
+    "git_commit": "bdb411ec0bddf02405098bc24a0b0080e397f67a",
+    "git_dirty_at_freeze": false,
+    "files": [
+      {
+        "path": "project/__init__.py",
+        "sha256": "023ed9beb57920f6cbf3b8deb581cedd7f5fbf8e04aecf2ad579f7bc2abbf77e",
+        "bytes": 65
+      },
+      {
+        "path": "project/config.py",
+        "sha256": "b0f8c79eb9249cc8450410d43e9b688fbb6be431078b267b0099e45e419f143c",
+        "bytes": 4170
+      },
+      {
+        "path": "project/datasets/__init__.py",
+        "sha256": "e3124d19dd67de3f7e1f2b10189424b3632bc374c5ff925122f66a4de812e5ff",
+        "bytes": 271
+      },
+      {
+        "path": "project/datasets/btxrd.py",
+        "sha256": "dcb509a3a0406d158ecde040a00f5319237817f4409d5ca517061398fe09e3d9",
+        "bytes": 24394
+      },
+      {
+        "path": "project/datasets/common.py",
+        "sha256": "21d5efb20c09cbd69989cb9dfe9b5849707d3aa8000411b9518e3bf5f8fbda96",
+        "bytes": 5836
+      },
+      {
+        "path": "project/datasets/factory.py",
+        "sha256": "3278be5b0ef694e8aff796634b9ac7edd7dd0177c46ceadb2456a70160baf268",
+        "bytes": 1426
+      },
+      {
+        "path": "project/evaluate_classifier.py",
+        "sha256": "c4d719b0808c9e202c2ffb7128ccf39622580196eaf55a8a51f84592496ef6c8",
+        "bytes": 10773
+      },
+      {
+        "path": "project/evaluate_pseudo_masks.py",
+        "sha256": "3100f2c74a37c36bc043c10046be40ba325bf7b3938ddeda851bc3ad9dd35e77",
+        "bytes": 14519
+      },
+      {
+        "path": "project/evaluate_unet.py",
+        "sha256": "c274971648839a8352059e5250e6033af4117e1c33ac4ab06eedaecc4cf3ae67",
+        "bytes": 21823
+      },
+      {
+        "path": "project/evaluation/__init__.py",
+        "sha256": "c47b1732ee7b5ab5d27cc70137bc04ed7e083fffd156e3a881363e8a9a71ce98",
+        "bytes": 433
+      },
+      {
+        "path": "project/evaluation/classification_metrics.py",
+        "sha256": "3bffcd80c820f31e658b534e1f9b8f5ff25d3d06e28b1e78941c78c4cba4bea9",
+        "bytes": 8811
+      },
+      {
+        "path": "project/evaluation/frozen_test_guard.py",
+        "sha256": "92d65983d2d59f4886977d4be372e8dd22ffca1c2b6424819868166ef08d7ad9",
+        "bytes": 9013
+      },
+      {
+        "path": "project/evaluation/segmentation_metrics.py",
+        "sha256": "154aed506bb92d317bfe34a78204207a5e63f9e99e317ca33c755c7a5132b512",
+        "bytes": 15583
+      },
+      {
+        "path": "project/generate_pseudo_masks.py",
+        "sha256": "beb0a6134b77ae0a8d1c0529285999f0a4655d4f38e34c483201725820465f3a",
+        "bytes": 94454
+      },
+      {
+        "path": "project/inference.py",
+        "sha256": "9de7e8248070cb3ae31f6e31ff185e2ccdca8590bb8bb62282a1a616fad5be6d",
+        "bytes": 6366
+      },
+      {
+        "path": "project/models/__init__.py",
+        "sha256": "207eb33e8e616796d82899173a558b461b5d36e4b9a77a7f91012d3c04821592",
+        "bytes": 237
+      },
+      {
+        "path": "project/models/classifier.py",
+        "sha256": "bdd1c0376fe805486f6147afd97825a8cecb7ab61deb5e9404198449c48d5564",
+        "bytes": 2613
+      },
+      {
+        "path": "project/models/layercam.py",
+        "sha256": "72c31abf33e1ff19ed77c83eac8ba623a74aac6ec873e89675cf321319770637",
+        "bytes": 9761
+      },
+      {
+        "path": "project/models/losses.py",
+        "sha256": "3518afa1c78f2cd5427e3d800cf436a92c9988ad48b4e3c90da8213f362bca67",
+        "bytes": 2008
+      },
+      {
+        "path": "project/models/puzzle_cam.py",
+        "sha256": "28f0098b59be0df92bd0d5e9da82931208e6f31ef941e909539ef737fe57d011",
+        "bytes": 3303
+      },
+      {
+        "path": "project/models/teacher_student.py",
+        "sha256": "770aa43f2664acf9dad0a3602bb7779d648e0f3bf8a6849ae53903c9ebbced51",
+        "bytes": 4138
+      },
+      {
+        "path": "project/models/torch_morphology.py",
+        "sha256": "90e0896480f1455d52c1035f611b7d2382fd44ebf8a1504687b840945aa04ec0",
+        "bytes": 2794
+      },
+      {
+        "path": "project/models/unet.py",
+        "sha256": "7ee67f45773411e509a4e9aa687052ea73f6a2b7b158862095838253bd08975a",
+        "bytes": 6005
+      },
+      {
+        "path": "project/progress.py",
+        "sha256": "fd51330b606cd69d9a2f0c73a78f6b582977d8cae984fb75617e18af6ad746f2",
+        "bytes": 835
+      },
+      {
+        "path": "project/pseudo/__init__.py",
+        "sha256": "68ba868f660de89863d3c52bb7806a25f4035792c11b93e1893f9de8f7f21e40",
+        "bytes": 353
+      },
+      {
+        "path": "project/pseudo/extract_prompts.py",
+        "sha256": "deb44ab04a1f3ec3bb626135213be28ae7db412f8d7df2d5b9d506d352ef6e0c",
+        "bytes": 6672
+      },
+      {
+        "path": "project/pseudo/generate_layercam.py",
+        "sha256": "b0b8ac58a76af159b127507e0727aca28f7b1347e19fdbd10bbd452dc2491378",
+        "bytes": 1811
+      },
+      {
+        "path": "project/pseudo/manifest.py",
+        "sha256": "488cb2b53576ef286b6c6a4fc45c9ef69c7128edce1c699c949181f2faecd7ed",
+        "bytes": 9113
+      },
+      {
+        "path": "project/pseudo/mask_selection.py",
+        "sha256": "2cf4ba1275d9a35a8b4fd4b7c4c4d2ceba3157c6096dccef96a55a65ffd28c96",
+        "bytes": 20479
+      },
+      {
+        "path": "project/pseudo/morphology.py",
+        "sha256": "1171766263d2ffb88d60341e73353bf48f87fdc641ee61dc88d1b1cf6bfa1911",
+        "bytes": 6655
+      },
+      {
+        "path": "project/pseudo/oracle_diagnostics.py",
+        "sha256": "03574844cb32f68671a9417230dbf85b0629ff451ab01dd3c2c5514cb383c0c5",
+        "bytes": 8410
+      },
+      {
+        "path": "project/pseudo/prompt_metrics.py",
+        "sha256": "e1702e3b9d277b109a08603c804322e11c6af8a0591ea09c2e98575a4ab08b2c",
+        "bytes": 7081
+      },
+      {
+        "path": "project/pseudo/sam_refine.py",
+        "sha256": "188be8e2210d08c1fc1205b58baecd2e52c693c7fb3c51c0c06931eb17c646ed",
+        "bytes": 13042
+      },
+      {
+        "path": "project/pseudo/tumor_morphology.py",
+        "sha256": "20a43cecd5cc7f22421c6385cda9b8b335012729b7df85351718dda693895329",
+        "bytes": 20275
+      },
+      {
+        "path": "project/pseudo/visualization.py",
+        "sha256": "423e51a04eecba222ad777c0c25763b18da3cebfc2115294e2eed2b0cf8382cf",
+        "bytes": 3198
+      },
+      {
+        "path": "project/tools/build_btxrd_split_manifest.py",
+        "sha256": "03f0e40037e051dda1b0938e0aa2324adec6636a7e3fe6aba21dec2eb6b47856",
+        "bytes": 30696
+      },
+      {
+        "path": "project/tools/freeze_pipeline_config.py",
+        "sha256": "3d7582bad5f7c092a08db37e6616f19c5b9dc5334a6e789549793784a628aabd",
+        "bytes": 6546
+      },
+      {
+        "path": "project/tools/plot_training_curves_svg.py",
+        "sha256": "21f6837a7edba871bc2794fb43747f6c683af4366c50b861293ca5f8cde2b8d2",
+        "bytes": 5347
+      },
+      {
+        "path": "project/tools/validate_kaggle_readiness.py",
+        "sha256": "e98e95892e07129506cc416dd622e1aaff7d886b265369d85d8b7dec94026796",
+        "bytes": 7694
+      },
+      {
+        "path": "project/tools/verify_official_wsss_artifacts.py",
+        "sha256": "f190a3302212eb1a636f42798a27c58e94339810c124bd97a8911de05bcb25da",
+        "bytes": 6774
+      },
+      {
+        "path": "project/train_classifier.py",
+        "sha256": "d393d2db8f8f5f4b981426be49a0ac7fdf7b2275fea79ae1e0e4f9875879e8f3",
+        "bytes": 44451
+      },
+      {
+        "path": "project/train_segmentation.py",
+        "sha256": "d440f321d76a48a4cb8eacb0349f515bc90229d13b9f42bafd36b0ea3d130eda",
+        "bytes": 37386
+      }
+    ]
+  },
+  "split_manifest": {
+    "path_hint": "split_manifest.csv",
+    "sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "bytes": 1971731
+  },
+  "unet_checkpoint": {
+    "path_hint": "best_unet.pt",
+    "sha256": "02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4",
+    "bytes": 230924939
+  },
+  "validation_evidence": {
+    "summary": {
+      "path_hint": "summary.json",
+      "sha256": "62e46a839235d55b84238621e04339e52f95381ad355c98d65699e85d0864c8a",
+      "bytes": 2751
+    },
+    "threshold_selection": {
+      "path_hint": "threshold_selection.json",
+      "sha256": "729c8dda3f7488f1cf0eccc88ca75229d186f7342f65a4bfe878254241972330",
+      "bytes": 2727
+    }
+  },
+  "evaluation": {
+    "split": "test",
+    "threshold": 0.85,
+    "image_size": 448,
+    "threshold_selection_partition": "val",
+    "threshold_sweep_forbidden": true,
+    "test_evaluated": false
+  },
+  "allowed_test_stages": [
+    "official_wsss_segmenter"
+  ],
+  "protocols": {
+    "canonical_train_pseudo_masks": "known image-level label (ground_truth class target)",
+    "supervision": "WSSS: binary image-level labels -> LayerCAM/SAM pseudo masks -> U-Net",
+    "locked_test_usage": "exactly one final segmenter evaluation after status=final",
+    "final_inference": "U-Net only",
+    "fully_supervised_checkpoint_allowed": false
+  },
+  "freeze_sha256": "1f603516b61b3e143d744ee080a939115a1f22e59cff71dba61c8ea73b70aa11"
+}

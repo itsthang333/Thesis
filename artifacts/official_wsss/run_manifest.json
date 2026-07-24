@@ -1,8 +1,12 @@
 {
   "schema_version": 1,
   "pipeline": "official_wsss",
-  "status": "validation_complete_test_locked",
+  "status": "validation_complete_test_config_frozen",
   "test_evaluated": false,
+  "frozen_test_config": {
+    "path": "../../configs/official_wsss_frozen_test.json",
+    "freeze_sha256": "1f603516b61b3e143d744ee080a939115a1f22e59cff71dba61c8ea73b70aa11"
+  },
   "dataset": "BTXRD",
   "dataset_partition_counts": {
     "train": 2981,

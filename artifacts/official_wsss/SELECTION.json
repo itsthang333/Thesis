@@ -1,10 +1,16 @@
 {
   "schema_version": 1,
-  "status": "validation_frozen_pending_final_test",
+  "status": "test_config_frozen_pending_final_test",
   "official_pipeline": "btxrd_wsss_segmenter_v1",
   "supervision": "binary image-level tumor labels -> LayerCAM/SAM pseudo masks -> ResNet18 U-Net",
   "selection_partition": "val",
   "test_evaluated": false,
+  "frozen_test_config": {
+    "path": "../../configs/official_wsss_frozen_test.json",
+    "schema_version": 4,
+    "freeze_sha256": "1f603516b61b3e143d744ee080a939115a1f22e59cff71dba61c8ea73b70aa11",
+    "source_git_commit": "bdb411ec0bddf02405098bc24a0b0080e397f67a"
+  },
   "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
   "train_pseudo_mask_manifest_sha256": "7b0b133e7bbff8fecb102159b1be41801b6c51199de549a3420978b13ea7c7e6",
   "checkpoint": {

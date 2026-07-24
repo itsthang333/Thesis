@@ -29,7 +29,7 @@ masks and is only an upper-bound diagnostic. It is not the official pipeline.
   `02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4`.
 - WSSS validation Dice 95% group-bootstrap CI:
   [0.185729, 0.275031].
-- Test status: not evaluated until the schema-v4 frozen config is committed.
+- Test status: schema-v4 config frozen; test not yet evaluated.
 
 Large checkpoints, BTXRD data, caches, temporary Kaggle payloads, and secrets
 are excluded from Git. Resolve checkpoints only through

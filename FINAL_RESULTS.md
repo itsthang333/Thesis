@@ -2,7 +2,8 @@
 
 ## Official WSSS pipeline
 
-Status on 2026-07-24: validation frozen; test not yet evaluated.
+Status on 2026-07-24: validation and schema-v4 test configuration frozen; test
+not yet evaluated.
 
 The official pipeline is binary image-level supervision → LayerCAM with
 horizontal-flip TTA → SAM pseudo masks → ResNet18 U-Net. It trained on 2,981
@@ -37,8 +38,8 @@ gap, not a causal estimate of weak supervision.
 
 ## Test claim
 
-No test metric is reported yet. The one final test evaluation is permitted only
-after `configs/official_wsss_frozen_test.json` is generated and committed. It
-must run on Kaggle with checkpoint SHA-256
+No test metric is reported yet. The one final test evaluation is now permitted
+by committed `configs/official_wsss_frozen_test.json`. It must run on Kaggle
+with checkpoint SHA-256
 `02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4`,
 image size 448, and threshold 0.85, without a threshold grid.
