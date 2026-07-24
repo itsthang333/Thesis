@@ -1,0 +1,266 @@
+{
+  "builder_version": 1,
+  "generated_at_utc": "2026-07-22T13:38:03.304360+00:00",
+  "dataset_root": "D:\\thesis\\BTXRD\\BTXRD",
+  "metadata_path": "D:\\thesis\\BTXRD\\BTXRD\\dataset.xlsx",
+  "dataset_table_sha256": "4b7a4fa46a03aad2bfa2a694124178e77bc223676796321006af75e99c435f9b",
+  "image_file_list_sha256": "60b20492b67a91797dc779cc262e4e8e8815f626a7cc4cf0bc423d236aecdcad",
+  "annotation_manifest_sha256": "5db1c7b5615557b820ddf67e8ab3a1ef6db3c484ff1694396ca2a0b0aa1b55f5",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "repository": {
+    "branch": "main",
+    "commit": "980722ac4b3f673dd09a9b2156d78b6ad334d0d9",
+    "dirty": true,
+    "status_short": [
+      "?? BTXRD/",
+      "?? tmp/"
+    ]
+  },
+  "split_seed": 42,
+  "split_ratios": [
+    0.8,
+    0.1,
+    0.1
+  ],
+  "split_algorithm": "heuristic-consecutive-metadata-group-greedy-v1",
+  "partition_unit": "heuristic case group",
+  "partition_limitation": "The official BTXRD release contains no patient, lesion, case, study or accession ID. Groups are inferred from consecutive image IDs and identical stable metadata while excluding view. They reduce obvious multi-view leakage but do not prove patient- or lesion-independent evaluation.",
+  "inventory": {
+    "metadata_rows": 3746,
+    "source_images": 3746,
+    "source_annotations": 1867,
+    "missing_metadata_images": [],
+    "unused_source_images": [],
+    "missing_tumor_annotations": [],
+    "annotations_not_in_metadata": [],
+    "unreadable_images": [],
+    "invalid_annotations": []
+  },
+  "integrity": {
+    "eligible_images": 3725,
+    "excluded_images": 21,
+    "groups": 1470,
+    "group_overlap_count": 0,
+    "exact_hash_overlap_count": 0
+  },
+  "metadata_corrections": [
+    {
+      "image_id": "IMG001276.jpeg",
+      "correction": "source flags [osteochondroma,synovial osteochondroma] resolved to synovial osteochondroma from the matching LabelMe class label"
+    }
+  ],
+  "exact_duplicate_groups": 21,
+  "exact_duplicate_conflict_groups": 9,
+  "near_duplicate_candidates": 19,
+  "group_size_distribution": {
+    "1": 598,
+    "2": 1058,
+    "3": 327,
+    "4": 368,
+    "5": 165,
+    "6": 126,
+    "7": 63,
+    "8": 96,
+    "9": 117,
+    "10": 110,
+    "11": 88,
+    "12": 72,
+    "13": 39,
+    "14": 70,
+    "15": 15,
+    "16": 16,
+    "17": 68,
+    "18": 72,
+    "19": 19,
+    "20": 60,
+    "22": 44,
+    "24": 24,
+    "26": 52,
+    "27": 27,
+    "31": 31
+  },
+  "split_distributions": {
+    "train": {
+      "images": 2981,
+      "groups": 984,
+      "tumor_type": {
+        "osteosarcoma": 237,
+        "other mt": 36,
+        "giant cell tumor": 74,
+        "simple bone cyst": 164,
+        "other bt": 92,
+        "osteochondroma": 598,
+        "multiple osteochondromas": 211,
+        "osteofibroma": 35,
+        "synovial osteochondroma": 41,
+        "normal": 1493
+      },
+      "center": {
+        "1": 2354,
+        "2": 448,
+        "3": 179
+      },
+      "anatomy": {
+        "tibia": 399,
+        "foot": 67,
+        "femur": 382,
+        "humerus": 179,
+        "hip bone": 37,
+        "fibula": 87,
+        "ulna": 31,
+        "shoulder-joint": 5,
+        "radius": 33,
+        "tibia|femur": 7,
+        "hand|radius": 2,
+        "hand": 81,
+        "tibia|fibula|femur": 81,
+        "tibia|fibula": 17,
+        "femur|hip bone": 6,
+        "tibia|fibula|femur|hip bone": 3,
+        "fibula|femur": 2,
+        "humerus|shoulder-joint": 3,
+        "foot|tibia|fibula": 5,
+        "hand|ulna|radius": 2,
+        "ulna|radius": 16,
+        "knee-joint": 33,
+        "ulna|humerus": 1,
+        "ulna|radius|humerus": 2,
+        "tibia|fibula|hip bone": 1,
+        "elbow-joint": 4,
+        "ankle-joint": 2,
+        "": 1493
+      },
+      "view": {
+        "frontal": 1701,
+        "lateral": 1038,
+        "oblique": 242
+      }
+    },
+    "val": {
+      "images": 371,
+      "groups": 242,
+      "tumor_type": {
+        "other mt": 4,
+        "osteosarcoma": 30,
+        "synovial osteochondroma": 5,
+        "osteochondroma": 75,
+        "simple bone cyst": 20,
+        "multiple osteochondromas": 26,
+        "giant cell tumor": 9,
+        "other bt": 11,
+        "osteofibroma": 4,
+        "normal": 187
+      },
+      "center": {
+        "1": 296,
+        "2": 47,
+        "3": 28
+      },
+      "anatomy": {
+        "hip bone": 10,
+        "humerus": 25,
+        "femur": 48,
+        "ankle-joint": 1,
+        "tibia": 40,
+        "shoulder-joint": 2,
+        "fibula": 12,
+        "foot": 7,
+        "radius": 7,
+        "foot|tibia|fibula": 1,
+        "hand": 8,
+        "tibia|femur": 2,
+        "tibia|fibula|femur": 11,
+        "ulna|radius": 1,
+        "tibia|fibula": 2,
+        "ulna": 3,
+        "knee-joint": 2,
+        "hip-joint": 2,
+        "": 187
+      },
+      "view": {
+        "frontal": 231,
+        "oblique": 28,
+        "lateral": 112
+      }
+    },
+    "test": {
+      "images": 373,
+      "groups": 244,
+      "tumor_type": {
+        "other mt": 5,
+        "osteosarcoma": 29,
+        "synovial osteochondroma": 5,
+        "osteochondroma": 75,
+        "simple bone cyst": 21,
+        "giant cell tumor": 9,
+        "multiple osteochondromas": 26,
+        "osteofibroma": 5,
+        "other bt": 12,
+        "normal": 186
+      },
+      "center": {
+        "1": 274,
+        "2": 52,
+        "3": 47
+      },
+      "anatomy": {
+        "femur": 35,
+        "humerus": 20,
+        "tibia": 46,
+        "hip bone": 7,
+        "radius": 8,
+        "foot|ankle-joint": 1,
+        "hand": 4,
+        "ulna": 5,
+        "femur|hip bone": 4,
+        "tibia|fibula|femur": 6,
+        "fibula": 23,
+        "foot": 12,
+        "humerus|shoulder-joint": 1,
+        "shoulder-joint": 1,
+        "fibula|femur": 2,
+        "tibia|fibula": 5,
+        "tibia|femur": 1,
+        "hip bone|hip-joint": 1,
+        "elbow-joint": 1,
+        "knee-joint": 2,
+        "ulna|radius|humerus": 1,
+        "radius|humerus": 1,
+        "": 186
+      },
+      "view": {
+        "frontal": 240,
+        "lateral": 110,
+        "oblique": 23
+      }
+    },
+    "excluded": {
+      "images": 21,
+      "groups": 0,
+      "tumor_type": {
+        "giant cell tumor": 1,
+        "simple bone cyst": 1,
+        "osteochondroma": 5,
+        "osteosarcoma": 1,
+        "normal": 13
+      },
+      "center": {
+        "1": 14,
+        "3": 5,
+        "2": 2
+      },
+      "anatomy": {
+        "humerus": 2,
+        "femur": 2,
+        "tibia": 3,
+        "fibula": 1,
+        "": 13
+      },
+      "view": {
+        "frontal": 9,
+        "lateral": 9,
+        "oblique": 3
+      }
+    }
+  }
+}

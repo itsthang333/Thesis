@@ -9,8 +9,8 @@ instead of duplicating model logic inside notebook cells.
 
 ```text
 audited group split manifest
-  -> DenseNet121 hybrid image classifier (tumor_type, btxrd_hybrid)
-  -> multi-layer LayerCAM + class-vs-normal contrast
+  -> DenseNet121 binary image classifier (tumor vs normal)
+  -> multi-layer binary LayerCAM
   -> tumor morphology + positive/negative point and box prompts
   -> local SAM v1 ViT-B
   -> strict coverage_mass_sam selection
@@ -20,11 +20,11 @@ audited group split manifest
   -> U-Net-only deployment inference
 ```
 
-Supervision for classifier/CAM generation is the 10-class image-level
-`tumor_type` label (normal plus nine tumor types), not a binary mask label.
-The known image-level class is the canonical WSSS training protocol.
-Predicted-class CAM is reported separately as a deployment-oriented
-diagnostic. Polygon masks are used only for explicit evaluation, the
+Supervision for the official classifier/CAM path is the binary image-level
+`tumor` label, not a pixel mask and not the polygon-resolved subtype. The known
+image-level label is the canonical pseudo-mask training protocol. Classifier-
+predicted gating at the frozen probability threshold is reported separately as
+a deployment-oriented diagnostic. Polygon masks are used only for explicit evaluation, the
 fully-supervised oracle baseline, and held-out U-Net validation/test; they do
 not enter pseudo-label generation. Held-out validation polygons are explicitly
 used for U-Net checkpoint/model selection, so they are development labels even
@@ -60,26 +60,43 @@ python tools/build_btxrd_split_manifest.py \
   --report-json /path/to/split_report.json
 
 python train_classifier.py \
-  --pipeline-profile btxrd_hybrid \
+  --pipeline-profile default \
   --data-root /path/to/btxrd \
   --split-manifest /path/to/split_manifest.csv \
+  --target-columns tumor \
   --output-dir /path/to/classifier_run
 
 python generate_pseudo_masks.py \
-  --pipeline-profile btxrd_hybrid \
+  --pipeline-profile default \
   --data-root /path/to/btxrd \
   --split-manifest /path/to/split_manifest.csv \
   --split train \
   --classifier-checkpoint /path/to/best_classifier.pt \
   --sam-checkpoint /path/to/sam_vit_b_01ec64.pth \
+  --target-columns tumor \
+  --image-size 320 --sam-image-size 512 --batch-size 1 --num-workers 2 \
   --cam-target-class ground_truth \
+  --cam-percentile 90 --cam-percentile-ensemble \
+  --cam-percentile-values 85,90,95 --seed-percentile 82 \
+  --support-percentile 55 \
+  --cam-tta-flip \
+  --morphology-fusion-mode components \
+  --sam-prompt-mode box_point --sam-prompt-ensemble \
+  --max-components 3 --all-cam-components --points-per-component 5 \
+  --component-topk 3 --fusion-topk 1 \
+  --selection-method coverage_mass_sam --support-clip-kernel 5 \
+  --closing-kernel 0 --opening-kernel 0 --min-size 40 \
   --process-all --output-dir /path/to/pseudo_train
 
 python train_segmentation.py \
-  --pipeline-profile btxrd_hybrid \
+  --pipeline-profile btxrd_best \
   --data-root /path/to/btxrd \
   --split-manifest /path/to/split_manifest.csv \
   --train-pred-mask-root /path/to/pseudo_train/masks \
+  --image-size 448 --model-architecture resnet18_unet \
+  --batch-size 8 --lr 0.0001 --weight-decay 0.0001 \
+  --epochs 35 --seed 42 --early-stop-patience 10 \
+  --pos-weight-mode manual --pos-weight-value 10 \
   --output-dir /path/to/unet_run
 
 python evaluate_unet.py \

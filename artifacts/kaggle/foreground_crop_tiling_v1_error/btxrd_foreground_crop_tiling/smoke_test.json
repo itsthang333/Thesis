@@ -1,0 +1,10 @@
+{
+  "names": [
+    "IMG000002.jpeg",
+    "IMG000003.jpeg"
+  ],
+  "loss": 0.11765958368778229,
+  "logit_min": -10.8125,
+  "logit_max": 8.921875,
+  "status": "PASS"
+}

@@ -1,0 +1,75 @@
+Loaded btxrd: 2981 train images from train, 371 validation images from val.
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:567: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
+Scanning deterministic, non-augmented train masks for foreground ratio and empty-mask rate...
+  pos_weight scan: batch 0/94
+  pos_weight scan: batch 10/94
+  pos_weight scan: batch 20/94
+  pos_weight scan: batch 30/94
+  pos_weight scan: batch 40/94
+  pos_weight scan: batch 50/94
+  pos_weight scan: batch 60/94
+  pos_weight scan: batch 70/94
+  pos_weight scan: batch 80/94
+  pos_weight scan: batch 90/94
+{
+  "images": 2981,
+  "total_pixels": 598298624,
+  "foreground_pixels": 7247249,
+  "background_pixels": 591051375,
+  "foreground_ratio": 0.012113096552934743,
+  "empty_mask_count": 1493,
+  "empty_mask_rate": 0.5008386447500839,
+  "raw_pos_weight": 81.55527359415966,
+  "requested_mode": "manual",
+  "resolved_mode": "manual",
+  "candidate_weights": {
+    "raw": 81.55527359415966,
+    "clamped": 20.0,
+    "fixed_reference": 10.0,
+    "none": null
+  },
+  "selected_pos_weight": 10.0,
+  "effective_pos_weight": 10.0,
+  "clamp_min": 1.0,
+  "clamp_max": 20.0,
+  "ablation_note": "Compare separate otherwise-identical runs using auto-raw, auto-clamped, and manual --pos-weight-value equal to fixed_reference."
+}
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 001 | train_loss=0.7205 train_dice=0.2050 val_loss=0.6762 val_dice=0.3597 val_positive_dice=0.2415 val_normal_empty_case_specificity=0.4759
+--> Saved new best model: positive-target Dice=0.2415, normal empty-case specificity=0.4759
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 002 | train_loss=0.6360 train_dice=0.3336 val_loss=0.6167 val_dice=0.3880 val_positive_dice=0.2823 val_normal_empty_case_specificity=0.4920
+--> Saved new best model: positive-target Dice=0.2823, normal empty-case specificity=0.4920
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 003 | train_loss=0.5850 train_dice=0.4218 val_loss=0.5886 val_dice=0.4104 val_positive_dice=0.2840 val_normal_empty_case_specificity=0.5348
+--> Saved new best model: positive-target Dice=0.2840, normal empty-case specificity=0.5348
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 004 | train_loss=0.5453 train_dice=0.4489 val_loss=0.5512 val_dice=0.3611 val_positive_dice=0.2987 val_normal_empty_case_specificity=0.4225
+--> Saved new best model: positive-target Dice=0.2987, normal empty-case specificity=0.4225
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 005 | train_loss=0.5166 train_dice=0.4634 val_loss=0.5444 val_dice=0.4739 val_positive_dice=0.3414 val_normal_empty_case_specificity=0.6043
+--> Saved new best model: positive-target Dice=0.3414, normal empty-case specificity=0.6043
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 006 | train_loss=0.4925 train_dice=0.5037 val_loss=0.5144 val_dice=0.4577 val_positive_dice=0.3251 val_normal_empty_case_specificity=0.5882
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 007 | train_loss=0.4674 train_dice=0.5412 val_loss=0.5066 val_dice=0.5465 val_positive_dice=0.3628 val_normal_empty_case_specificity=0.7273
+--> Saved new best model: positive-target Dice=0.3628, normal empty-case specificity=0.7273
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 008 | train_loss=0.4438 train_dice=0.5598 val_loss=0.4963 val_dice=0.4894 val_positive_dice=0.4107 val_normal_empty_case_specificity=0.5668
+--> Saved new best model: positive-target Dice=0.4107, normal empty-case specificity=0.5668
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 009 | train_loss=0.4305 train_dice=0.5497 val_loss=0.4997 val_dice=0.2307 val_positive_dice=0.3401 val_normal_empty_case_specificity=0.1230
+/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/train_segmentation.py:266: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
+Epoch 010 | train_loss=0.4208 train_dice=0.5312 val_loss=0.4936 val_dice=0.4463 val_positive_dice=0.4161 val_normal_empty_case_specificity=0.4759
+--> Saved new best model: positive-target Dice=0.4161, normal empty-case specificity=0.4759

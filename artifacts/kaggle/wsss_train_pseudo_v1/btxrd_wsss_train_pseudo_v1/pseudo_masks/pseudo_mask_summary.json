@@ -1,0 +1,15 @@
+{
+  "complete": true,
+  "expected_images": 2981,
+  "image_size": 320,
+  "manifest_rows": 2981,
+  "manifest_sha256": "7b0b133e7bbff8fecb102159b1be41801b6c51199de549a3420978b13ea7c7e6",
+  "run_metadata_sha256": "bec5e639e08421190a74179abaaa9a9d65ade089851b7b22d3e28b24ef7887a6",
+  "schema_version": 2,
+  "split": "train",
+  "statuses": {
+    "empty_after_localization": 25,
+    "empty_by_image_gate": 1493,
+    "ok": 1463
+  }
+}

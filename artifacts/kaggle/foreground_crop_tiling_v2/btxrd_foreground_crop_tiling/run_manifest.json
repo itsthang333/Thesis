@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "run_id": "fs_resnet18_pw10_448_foreground_crop60_blind_blend50_seed42",
+  "timestamp_start_utc": "2026-07-23T18:05:37.665135+00:00",
+  "timestamp_finish_utc": "2026-07-23T18:36:16.810533+00:00",
+  "command": "python cloud_foreground_crop_tiling.py",
+  "candidate_script": "/kaggle/src/script.py",
+  "candidate_script_sha256": "cef4af9e4716873011d32ed3c2683e867d79094f0be589f199ce4853b835882a",
+  "source_project_git_commit": "unknown",
+  "source_project_dirty": null,
+  "dataset_path": "/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD",
+  "dataset_fingerprint": "split_manifest_sha256=85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "split_manifest": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "seed": 42,
+  "hardware": {
+    "python": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
+    "platform": "Linux-6.12.90+-x86_64-with-glibc2.35",
+    "torch": "2.10.0+cu128",
+    "torch_cuda": "12.8",
+    "gpu": "Tesla T4",
+    "gpu_count": 2
+  },
+  "input_checkpoint": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/winner_448_epoch20/best_unet.pt",
+  "input_checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+  "output_checkpoint": "/kaggle/working/btxrd_foreground_crop_tiling/training/best_crop_unet.pt",
+  "output_checkpoint_sha256": "ec2cdd1f11bc50be1aea172e8c6f5285c98b909fc569c1f2f99224e634723eaf",
+  "metric_summary": "/kaggle/working/btxrd_foreground_crop_tiling/crop_tiling_ablation_summary.json",
+  "metric_summary_sha256": "79fd3857dde48d883a4ee111f22c389ec811ef546c21ac0964a8d967146ec127",
+  "evaluation_protocol": "clean full validation only; unchanged tumor-only endpoint; clean-train polygons place training crops only; blind validation tiling",
+  "supervision_scope": "fully_supervised_upper_bound_diagnostic_only",
+  "test_evaluated": false
+}

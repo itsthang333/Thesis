@@ -1,0 +1,94 @@
+{
+  "method": "nonparametric bootstrap resampling complete groups with replacement",
+  "group_key": "group_id",
+  "group_provenance": "heuristic grouping; not verified patient/case identifiers",
+  "groups": 242,
+  "iterations": 5000,
+  "seed": 42,
+  "intervals": {
+    "mean_tumor_dice": {
+      "point_estimate": 0.23001987009320218,
+      "ci95_low": 0.18572883513641011,
+      "ci95_high": 0.27503072536311174,
+      "valid_iterations": 5000
+    },
+    "mean_tumor_iou": {
+      "point_estimate": 0.1654705281882286,
+      "ci95_low": 0.13160721688451787,
+      "ci95_high": 0.20031713027092282,
+      "valid_iterations": 5000
+    },
+    "mean_tumor_precision": {
+      "point_estimate": 0.23010321843059584,
+      "ci95_low": 0.18193903253040855,
+      "ci95_high": 0.2784437065356977,
+      "valid_iterations": 5000
+    },
+    "mean_tumor_recall": {
+      "point_estimate": 0.43152305787059675,
+      "ci95_low": 0.36767596364363575,
+      "ci95_high": 0.49516039677967216,
+      "valid_iterations": 5000
+    },
+    "mean_tumor_hd95_px_conditional_defined": {
+      "point_estimate": 148.81924482748013,
+      "ci95_low": 132.18020021120404,
+      "ci95_high": 166.28310368216754,
+      "valid_iterations": 5000
+    },
+    "mean_tumor_assd_px_conditional_defined": {
+      "point_estimate": 75.53498022197137,
+      "ci95_low": 63.35105281878257,
+      "ci95_high": 88.83899450405613,
+      "valid_iterations": 5000
+    },
+    "lesion_one_to_one_iou10_recall": {
+      "point_estimate": 0.3568281938325991,
+      "ci95_low": 0.28813220338983053,
+      "ci95_high": 0.42661230373137027,
+      "valid_iterations": 5000
+    },
+    "lesion_one_to_one_iou10_precision": {
+      "point_estimate": 0.17880794701986755,
+      "ci95_low": 0.1417004048582996,
+      "ci95_high": 0.22041944201861313,
+      "valid_iterations": 5000
+    },
+    "lesion_one_to_one_iou25_recall": {
+      "point_estimate": 0.2907488986784141,
+      "ci95_low": 0.22413614250965805,
+      "ci95_high": 0.3622499108813831,
+      "valid_iterations": 5000
+    },
+    "lesion_one_to_one_iou25_precision": {
+      "point_estimate": 0.1456953642384106,
+      "ci95_low": 0.11131904457240349,
+      "ci95_high": 0.18468468468468469,
+      "valid_iterations": 5000
+    },
+    "lesion_one_to_one_iou50_recall": {
+      "point_estimate": 0.1277533039647577,
+      "ci95_low": 0.08620104540489937,
+      "ci95_high": 0.1721010425020047,
+      "valid_iterations": 5000
+    },
+    "lesion_one_to_one_iou50_precision": {
+      "point_estimate": 0.0640176600441501,
+      "ci95_low": 0.04285714285714286,
+      "ci95_high": 0.08791385652973634,
+      "valid_iterations": 5000
+    },
+    "normal_empty_prediction_rate": {
+      "point_estimate": 0.5133689839572193,
+      "ci95_low": 0.4293458377518558,
+      "ci95_high": 0.595633538251366,
+      "valid_iterations": 5000
+    },
+    "normal_false_positive_case_rate": {
+      "point_estimate": 0.48663101604278075,
+      "ci95_low": 0.4043664617486339,
+      "ci95_high": 0.5706541622481441,
+      "valid_iterations": 5000
+    }
+  }
+}

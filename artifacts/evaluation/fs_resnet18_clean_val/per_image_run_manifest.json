@@ -1,0 +1,20 @@
+{
+  "entrypoint": "D:\\thesis\\project\\evaluate_unet.py",
+  "git_commit": "980722ac4b3f673dd09a9b2156d78b6ad334d0d9",
+  "git_dirty": true,
+  "dataset": "btxrd",
+  "split": "val",
+  "split_manifest": "D:\\thesis\\artifacts\\data_audit\\split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "checkpoint": "D:\\thesis\\artifacts\\runs\\fs_resnet18_clean_seed42\\best_unet.pt",
+  "checkpoint_sha256": "56bf92a544a81319fddbbbd0482bfc7c199302efd8f6801ea3d4606e0011c428",
+  "artifacts": {
+    "per_image": "D:\\thesis\\artifacts\\evaluation\\fs_resnet18_clean_val\\per_image.csv",
+    "summary": "D:\\thesis\\artifacts\\evaluation\\fs_resnet18_clean_val\\summary.json",
+    "subgroups": "D:\\thesis\\artifacts\\evaluation\\fs_resnet18_clean_val\\per_image_subgroups.csv",
+    "bootstrap": "D:\\thesis\\artifacts\\evaluation\\fs_resnet18_clean_val\\per_image_bootstrap.json",
+    "pixel_confusion": "D:\\thesis\\artifacts\\evaluation\\fs_resnet18_clean_val\\per_image_pixel_confusion.json",
+    "threshold_sweep": "D:\\thesis\\artifacts\\evaluation\\fs_resnet18_clean_val\\per_image_threshold_sweep.csv",
+    "threshold_selection": "D:\\thesis\\artifacts\\evaluation\\fs_resnet18_clean_val\\per_image_threshold_selection.json"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "candidate": "blind_tiling_blend50",
+  "kernel": "itsthang333/btxrd-small-lesion-tiling",
+  "kernel_version": 2,
+  "partition": "val",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+  "source_summary_sha256": "55c7a85c2e1ad4011f410d30e08effb18a31cb129b705f019a66d172ae4e4b7c",
+  "baseline": {
+    "selected_threshold": 0.2,
+    "mean_tumor_dice": 0.4951316962732512,
+    "normal_empty_prediction_rate": 0.5561497326203209
+  },
+  "candidate_result": {
+    "selected_threshold": 0.4,
+    "mean_tumor_dice": 0.49533714732323847,
+    "normal_empty_prediction_rate": 0.47058823529411764,
+    "paired_delta": 0.00020545104998727208,
+    "paired_ci95": [
+      -0.01329362905419054,
+      0.014944254845535158
+    ],
+    "small_lt_1pct_delta": 0.015205901893624767,
+    "small_overlap_recovered": 6,
+    "small_overlap_lost": 1
+  },
+  "decision": "reject_and_purge",
+  "reason": "The trivial point gain is not credible under paired group bootstrap, remains below the strict target, and worsens normal specificity plus medium/large lesion Dice.",
+  "current_pointer_changed": false,
+  "test_evaluated": false
+}

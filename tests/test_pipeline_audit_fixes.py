@@ -6,6 +6,7 @@ import types
 import unittest
 import importlib.util
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 from PIL import Image
@@ -122,6 +123,44 @@ class MaskSelectionTests(unittest.TestCase):
             selection_method="coverage_mass_sam",
             bone_support=support,
             sam_scores=np.array([0.9], dtype=np.float32),
+            support_clip_kernel=1,
+        )
+
+        self.assertTrue(np.array_equal(result, support))
+
+    def test_causal_selector_uses_classifier_rank_within_component(self) -> None:
+        masks = np.zeros((2, 4, 4), dtype=np.uint8)
+        masks[0, :2, :2] = 1
+        masks[1, 2:, 2:] = 1
+        cam = np.ones((4, 4), dtype=np.float32)
+
+        result = select_and_fuse_masks(
+            masks,
+            cam,
+            mask_score_threshold=0.0,
+            selection_method="coverage_mass_sam_causal",
+            sam_scores=np.array([0.5, 0.5], dtype=np.float32),
+            classifier_causal_scores=np.array([0.1, 0.9], dtype=np.float32),
+            component_ids=np.array([3, 3], dtype=np.int32),
+            best_per_component=True,
+        )
+
+        self.assertTrue(np.array_equal(result, masks[1]))
+
+    def test_causal_selector_retains_support_clipping(self) -> None:
+        masks = np.ones((1, 5, 5), dtype=np.uint8)
+        cam = np.ones((5, 5), dtype=np.float32)
+        support = np.zeros((5, 5), dtype=np.uint8)
+        support[2, 2] = 1
+
+        result = select_and_fuse_masks(
+            masks,
+            cam,
+            mask_score_threshold=0.0,
+            selection_method="coverage_mass_sam_causal",
+            bone_support=support,
+            sam_scores=np.array([0.9], dtype=np.float32),
+            classifier_causal_scores=np.array([0.9], dtype=np.float32),
             support_clip_kernel=1,
         )
 
@@ -438,6 +477,51 @@ class BTXRDDatasetValidationTests(unittest.TestCase):
 
             with self.assertRaisesRegex(FileNotFoundError, "pseudo-masks are missing"):
                 btxrd.BTXRDSegmentationDataset(root, split="train", pred_mask_dir=masks)
+
+    def test_training_resizes_verified_pseudo_masks_from_source_grid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            row = self.normal_row()
+            self.write_dataset(root, row)
+            pseudo = root / "pseudo"
+            (pseudo / "masks").mkdir(parents=True)
+            (pseudo / "run_metadata.json").write_text(
+                '{"protocol":"ground_truth"}\n', encoding="utf-8"
+            )
+            Image.new("L", (8, 8), 0).save(pseudo / "masks" / "normal.png")
+            mask_manifest.write_pseudo_mask_manifest(
+                pseudo,
+                [{
+                    "image_name": "normal.png", "true_tumor": 0,
+                    "status": "empty_by_image_gate", "above_threshold_candidates": 0,
+                    "selected_candidates": 0, "selected_components": 0,
+                    "sam_prompt_calls": 0, "unique_prompt_points": 0,
+                }],
+                expected_image_names=["normal.png"],
+                split="train",
+                image_size=8,
+                run_metadata_sha256=mask_manifest.sha256_file(
+                    pseudo / "run_metadata.json"
+                ),
+            )
+
+            pseudo_package = types.ModuleType("pseudo")
+            pseudo_package.manifest = mask_manifest
+            with mock.patch.dict(
+                sys.modules,
+                {"pseudo": pseudo_package, "pseudo.manifest": mask_manifest},
+            ):
+                dataset = btxrd.BTXRDSegmentationDataset(
+                    root,
+                    split="train",
+                    image_size=16,
+                    pred_mask_dir=pseudo / "masks",
+                )
+            self.assertEqual(dataset.pseudo_manifest_info["source_image_size"], 8)
+            self.assertEqual(dataset.pseudo_manifest_info["consumer_image_size"], 16)
+            self.assertIs(dataset.pseudo_manifest_info["resized_for_consumer"], True)
+            resized_mask = dataset._build_mask(dataset.samples[0], (16, 16))
+            self.assertEqual(resized_mask.size, (16, 16))
 
     @staticmethod
     def write_split_manifest(root: Path, path: Path, rows: list[dict[str, str]]) -> None:

@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 import random
+from functools import lru_cache
 from pathlib import Path
 from typing import Sequence
 
@@ -123,13 +124,23 @@ def _manifest_flag(row: dict[str, str], column: str, image_id: str) -> int:
     return int(value)
 
 
-def _load_split_manifest_records(
-    btxrd_root: Path,
-    split_manifest: str | Path,
+@lru_cache(maxsize=8)
+def _load_split_manifest_records_verified(
+    btxrd_root_text: str,
+    manifest_path_text: str,
+    manifest_mtime_ns: int,
+    manifest_size: int,
 ) -> list[dict[str, object]]:
-    manifest_path = Path(split_manifest).expanduser().resolve()
-    if not manifest_path.is_file():
-        raise FileNotFoundError(f"BTXRD split manifest does not exist: {manifest_path}")
+    """Validate every manifest source hash once per unchanged manifest and process.
+
+    Training constructs train, validation, and mask-audit datasets in the same
+    process. Re-hashing all full-resolution radiographs for each construction
+    adds minutes without increasing integrity evidence. The manifest stat is
+    part of the cache key, while a new process always performs a fresh check.
+    """
+    del manifest_mtime_ns, manifest_size  # cache-key provenance only
+    btxrd_root = Path(btxrd_root_text)
+    manifest_path = Path(manifest_path_text)
     with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
     if not rows:
@@ -241,6 +252,24 @@ def _load_split_manifest_records(
     if not records:
         raise ValueError(f"BTXRD split manifest has no eligible records: {manifest_path}")
     return sorted(records, key=lambda record: str(record["image_id"]))
+
+
+def _load_split_manifest_records(
+    btxrd_root: Path,
+    split_manifest: str | Path,
+) -> list[dict[str, object]]:
+    manifest_path = Path(split_manifest).expanduser().resolve()
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"BTXRD split manifest does not exist: {manifest_path}")
+    manifest_stat = manifest_path.stat()
+    cached = _load_split_manifest_records_verified(
+        str(btxrd_root.resolve()),
+        str(manifest_path),
+        manifest_stat.st_mtime_ns,
+        manifest_stat.st_size,
+    )
+    # Dataset instances should not be able to mutate the process-wide cache.
+    return [dict(record) for record in cached]
 
 
 def load_btxrd_records(
@@ -415,7 +444,12 @@ class BTXRDSegmentationDataset(Dataset):
                 self.pred_mask_dir,
                 self.samples,
                 split=split,
-                image_size=image_size,
+                image_size=None,
+            )
+            source_image_size = int(self.pseudo_manifest_info["source_image_size"])
+            self.pseudo_manifest_info["consumer_image_size"] = int(image_size)
+            self.pseudo_manifest_info["resized_for_consumer"] = (
+                source_image_size != int(image_size)
             )
 
         self.image_transform = make_segmentation_image_transform(image_size)

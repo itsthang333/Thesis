@@ -1,0 +1,173 @@
+[
+  {
+    "left": "IMG000234.jpeg",
+    "right": "IMG000235.jpeg",
+    "phash_hamming": 4,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG000453.jpeg",
+    "right": "IMG003703.jpeg",
+    "phash_hamming": 4,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "train",
+    "right_split": "val"
+  },
+  {
+    "left": "IMG000609.jpeg",
+    "right": "IMG000610.jpeg",
+    "phash_hamming": 2,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG000609.jpeg",
+    "right": "IMG000611.jpeg",
+    "phash_hamming": 2,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG000610.jpeg",
+    "right": "IMG000611.jpeg",
+    "phash_hamming": 2,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG000766.jpeg",
+    "right": "IMG000995.jpeg",
+    "phash_hamming": 4,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG001291.jpeg",
+    "right": "IMG001292.jpeg",
+    "phash_hamming": 4,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG001896.jpeg",
+    "right": "IMG002941.jpeg",
+    "phash_hamming": 4,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG001929.jpeg",
+    "right": "IMG003142.jpeg",
+    "phash_hamming": 2,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "test",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG001981.jpeg",
+    "right": "IMG002130.jpeg",
+    "phash_hamming": 4,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "train",
+    "right_split": "val"
+  },
+  {
+    "left": "IMG001996.jpeg",
+    "right": "IMG001997.jpeg",
+    "phash_hamming": 4,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG001996.jpeg",
+    "right": "IMG001998.jpeg",
+    "phash_hamming": 4,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG001997.jpeg",
+    "right": "IMG001998.jpeg",
+    "phash_hamming": 4,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG002010.jpeg",
+    "right": "IMG002012.jpeg",
+    "phash_hamming": 4,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG002012.jpeg",
+    "right": "IMG002349.jpeg",
+    "phash_hamming": 4,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG002112.jpeg",
+    "right": "IMG002199.jpeg",
+    "phash_hamming": 4,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG002144.jpeg",
+    "right": "IMG002155.jpeg",
+    "phash_hamming": 4,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG002677.jpeg",
+    "right": "IMG002686.jpeg",
+    "phash_hamming": 2,
+    "same_group": true,
+    "same_stable_metadata": true,
+    "left_split": "train",
+    "right_split": "train"
+  },
+  {
+    "left": "IMG003074.jpeg",
+    "right": "IMG003451.jpeg",
+    "phash_hamming": 4,
+    "same_group": false,
+    "same_stable_metadata": false,
+    "left_split": "train",
+    "right_split": "test"
+  }
+]

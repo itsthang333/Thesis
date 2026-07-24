@@ -1,0 +1,15 @@
+{
+  "dataset": "btxrd",
+  "split": "val",
+  "checkpoint": "D:\\thesis\\kaggle_outputs\\thesis-final\\btxrd_thesis_final\\unet_from_pseudo_btxrd_hybrid\\best_unet.pt",
+  "image_size": 320,
+  "threshold": 0.5,
+  "images": 374,
+  "tumor_images": 186,
+  "normal_images": 188,
+  "mean_tumor_dice": 0.17756167762308198,
+  "mean_tumor_iou": 0.11197773292514879,
+  "tumor_detection_sensitivity": 0.9946236559139785,
+  "normal_specificity": 0.0,
+  "normal_false_positive_rate": 1.0
+}

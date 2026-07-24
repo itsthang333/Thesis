@@ -10,8 +10,9 @@ except ImportError:  # pragma: no cover - optional dependency
     cv2 = None
 
 SELECTION_METHODS = (
-    "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid",
-    "simple_hybrid", "prompt_hybrid", "consistency_hybrid",
+    "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam",
+    "coverage_mass_sam_causal", "hybrid", "bone_hybrid", "simple_hybrid",
+    "prompt_hybrid", "consistency_hybrid",
 )
 
 DEFAULT_PROMPT_HYBRID_WEIGHTS = (0.30, 0.20, 0.15, 0.15, 0.20)
@@ -100,6 +101,7 @@ def score_masks(
     bone_likelihood: np.ndarray | None = None,
     bone_support: np.ndarray | None = None,
     sam_scores: np.ndarray | None = None,
+    classifier_causal_scores: np.ndarray | None = None,
     component_ids: np.ndarray | None = None,
     component_masks: np.ndarray | None = None,
     positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
@@ -124,6 +126,9 @@ def score_masks(
     n = masks.shape[0]
     scores = np.zeros(n, dtype=np.float32)
     sam_ranks = _within_group_percentile_ranks(sam_scores, component_ids, n)
+    causal_ranks = _within_group_percentile_ranks(
+        classifier_causal_scores, component_ids, n
+    )
 
     component_mask_by_id: dict[int, np.ndarray] = {}
     if component_masks is not None and len(component_masks) > 0:
@@ -172,6 +177,15 @@ def score_masks(
                 0.60 * cam_density
                 + 0.25 * mass_coverage
                 + 0.15 * float(sam_ranks[i])
+            )
+        elif method == "coverage_mass_sam_causal":
+            cam_density = float((cam_vals > 0.5).sum()) / area
+            mass_coverage = float(cam_vals.sum()) / max(float(bone_cam.sum()), 1e-8)
+            scores[i] = (
+                0.45 * cam_density
+                + 0.20 * mass_coverage
+                + 0.15 * float(sam_ranks[i])
+                + 0.20 * float(causal_ranks[i])
             )
         elif method == "hybrid":
             # mean CAM quality + log-normalised area bonus
@@ -296,7 +310,9 @@ def constrain_to_bone_support(
     """
     fused_mask = fused_mask.astype(np.uint8)
     if (
-        selection_method not in {"bone_hybrid", "coverage_mass_sam"}
+        selection_method not in {
+            "bone_hybrid", "coverage_mass_sam", "coverage_mass_sam_causal"
+        }
         or bone_support is None
         or not bone_support.any()
         or support_clip_kernel < 0
@@ -320,6 +336,7 @@ def select_and_fuse_masks(
     bone_likelihood: np.ndarray | None = None,
     bone_support: np.ndarray | None = None,
     sam_scores: np.ndarray | None = None,
+    classifier_causal_scores: np.ndarray | None = None,
     component_ids: np.ndarray | None = None,
     component_masks: np.ndarray | None = None,
     positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
@@ -389,6 +406,7 @@ def select_and_fuse_masks(
         bone_likelihood=bone_likelihood,
         bone_support=bone_support,
         sam_scores=sam_scores,
+        classifier_causal_scores=classifier_causal_scores,
         component_ids=component_ids,
         component_masks=component_masks,
         positive_points_by_component=positive_points_by_component,

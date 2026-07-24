@@ -1,0 +1,16 @@
+{
+  "entrypoint": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/evaluate_pseudo_masks.py",
+  "dataset": "btxrd",
+  "split": "val",
+  "protocol": "predicted",
+  "run_metadata_sha256": "f1dd7d5499a96fdb2513c46ee58772f7ecbcdcf1a65a989d570800bd9042c36c",
+  "split_manifest": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "artifacts": {
+    "per_image": "/kaggle/working/btxrd_binary_cam_sam_gate_c/predicted/evaluation/per_image.csv",
+    "summary": "/kaggle/working/btxrd_binary_cam_sam_gate_c/predicted/evaluation/summary.json",
+    "subgroups": "/kaggle/working/btxrd_binary_cam_sam_gate_c/predicted/evaluation/per_image_subgroups.csv",
+    "bootstrap": "/kaggle/working/btxrd_binary_cam_sam_gate_c/predicted/evaluation/per_image_bootstrap.json",
+    "pixel_confusion": "/kaggle/working/btxrd_binary_cam_sam_gate_c/predicted/evaluation/per_image_pixel_confusion.json"
+  }
+}

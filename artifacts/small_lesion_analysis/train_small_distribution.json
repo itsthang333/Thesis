@@ -1,0 +1,668 @@
+{
+  "method": "sum of LabelMe polygon shoelace areas divided by source image area; validated against 448 nearest-neighbor raster ratios",
+  "validation_check": {
+    "n": 184,
+    "mean_abs_ratio_error": 0.000184046228760326,
+    "max_abs_ratio_error": 0.0017580430493929489,
+    "lt_1pct_classification_agreement": 1.0
+  },
+  "splits": {
+    "train": {
+      "tumor_images": 1488,
+      "small_lt_1pct": 754,
+      "medium_1_to_5pct": 498,
+      "large_ge_5pct": 236,
+      "small_fraction": 0.5067204301075269,
+      "by_anatomy": [
+        {
+          "value": "ankle-joint",
+          "all_tumor": 2,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.5
+        },
+        {
+          "value": "elbow-joint",
+          "all_tumor": 4,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "femur",
+          "all_tumor": 382,
+          "small_lt_1pct": 151,
+          "small_fraction": 0.39528795811518325
+        },
+        {
+          "value": "femur|hip bone",
+          "all_tumor": 6,
+          "small_lt_1pct": 2,
+          "small_fraction": 0.3333333333333333
+        },
+        {
+          "value": "fibula",
+          "all_tumor": 87,
+          "small_lt_1pct": 59,
+          "small_fraction": 0.6781609195402298
+        },
+        {
+          "value": "fibula|femur",
+          "all_tumor": 2,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.5
+        },
+        {
+          "value": "foot",
+          "all_tumor": 67,
+          "small_lt_1pct": 47,
+          "small_fraction": 0.7014925373134329
+        },
+        {
+          "value": "foot|tibia|fibula",
+          "all_tumor": 5,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.2
+        },
+        {
+          "value": "hand",
+          "all_tumor": 81,
+          "small_lt_1pct": 68,
+          "small_fraction": 0.8395061728395061
+        },
+        {
+          "value": "hand|radius",
+          "all_tumor": 2,
+          "small_lt_1pct": 2,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "hand|ulna|radius",
+          "all_tumor": 2,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "hip bone",
+          "all_tumor": 37,
+          "small_lt_1pct": 17,
+          "small_fraction": 0.4594594594594595
+        },
+        {
+          "value": "humerus",
+          "all_tumor": 179,
+          "small_lt_1pct": 63,
+          "small_fraction": 0.35195530726256985
+        },
+        {
+          "value": "humerus|shoulder-joint",
+          "all_tumor": 3,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "knee-joint",
+          "all_tumor": 33,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.030303030303030304
+        },
+        {
+          "value": "radius",
+          "all_tumor": 33,
+          "small_lt_1pct": 20,
+          "small_fraction": 0.6060606060606061
+        },
+        {
+          "value": "shoulder-joint",
+          "all_tumor": 5,
+          "small_lt_1pct": 3,
+          "small_fraction": 0.6
+        },
+        {
+          "value": "tibia",
+          "all_tumor": 399,
+          "small_lt_1pct": 288,
+          "small_fraction": 0.7218045112781954
+        },
+        {
+          "value": "tibia|femur",
+          "all_tumor": 7,
+          "small_lt_1pct": 3,
+          "small_fraction": 0.42857142857142855
+        },
+        {
+          "value": "tibia|fibula",
+          "all_tumor": 17,
+          "small_lt_1pct": 4,
+          "small_fraction": 0.23529411764705882
+        },
+        {
+          "value": "tibia|fibula|femur",
+          "all_tumor": 81,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.012345679012345678
+        },
+        {
+          "value": "tibia|fibula|femur|hip bone",
+          "all_tumor": 3,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "tibia|fibula|hip bone",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "ulna",
+          "all_tumor": 31,
+          "small_lt_1pct": 19,
+          "small_fraction": 0.6129032258064516
+        },
+        {
+          "value": "ulna|humerus",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "ulna|radius",
+          "all_tumor": 16,
+          "small_lt_1pct": 2,
+          "small_fraction": 0.125
+        },
+        {
+          "value": "ulna|radius|humerus",
+          "all_tumor": 2,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.5
+        }
+      ],
+      "by_tumor_type": [
+        {
+          "value": "giant cell tumor",
+          "all_tumor": 74,
+          "small_lt_1pct": 11,
+          "small_fraction": 0.14864864864864866
+        },
+        {
+          "value": "multiple osteochondromas",
+          "all_tumor": 211,
+          "small_lt_1pct": 37,
+          "small_fraction": 0.17535545023696683
+        },
+        {
+          "value": "osteochondroma",
+          "all_tumor": 598,
+          "small_lt_1pct": 511,
+          "small_fraction": 0.8545150501672241
+        },
+        {
+          "value": "osteofibroma",
+          "all_tumor": 35,
+          "small_lt_1pct": 30,
+          "small_fraction": 0.8571428571428571
+        },
+        {
+          "value": "osteosarcoma",
+          "all_tumor": 237,
+          "small_lt_1pct": 19,
+          "small_fraction": 0.08016877637130802
+        },
+        {
+          "value": "other bt",
+          "all_tumor": 92,
+          "small_lt_1pct": 53,
+          "small_fraction": 0.5760869565217391
+        },
+        {
+          "value": "other mt",
+          "all_tumor": 36,
+          "small_lt_1pct": 10,
+          "small_fraction": 0.2777777777777778
+        },
+        {
+          "value": "simple bone cyst",
+          "all_tumor": 164,
+          "small_lt_1pct": 79,
+          "small_fraction": 0.4817073170731707
+        },
+        {
+          "value": "synovial osteochondroma",
+          "all_tumor": 41,
+          "small_lt_1pct": 4,
+          "small_fraction": 0.0975609756097561
+        }
+      ],
+      "by_view": [
+        {
+          "value": "frontal",
+          "all_tumor": 908,
+          "small_lt_1pct": 457,
+          "small_fraction": 0.5033039647577092
+        },
+        {
+          "value": "lateral",
+          "all_tumor": 490,
+          "small_lt_1pct": 248,
+          "small_fraction": 0.5061224489795918
+        },
+        {
+          "value": "oblique",
+          "all_tumor": 90,
+          "small_lt_1pct": 49,
+          "small_fraction": 0.5444444444444444
+        }
+      ]
+    },
+    "val": {
+      "tumor_images": 184,
+      "small_lt_1pct": 94,
+      "medium_1_to_5pct": 72,
+      "large_ge_5pct": 18,
+      "small_fraction": 0.5108695652173914,
+      "by_anatomy": [
+        {
+          "value": "ankle-joint",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "femur",
+          "all_tumor": 48,
+          "small_lt_1pct": 16,
+          "small_fraction": 0.3333333333333333
+        },
+        {
+          "value": "fibula",
+          "all_tumor": 12,
+          "small_lt_1pct": 12,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "foot",
+          "all_tumor": 7,
+          "small_lt_1pct": 6,
+          "small_fraction": 0.8571428571428571
+        },
+        {
+          "value": "foot|tibia|fibula",
+          "all_tumor": 1,
+          "small_lt_1pct": 1,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "hand",
+          "all_tumor": 8,
+          "small_lt_1pct": 5,
+          "small_fraction": 0.625
+        },
+        {
+          "value": "hip bone",
+          "all_tumor": 10,
+          "small_lt_1pct": 2,
+          "small_fraction": 0.2
+        },
+        {
+          "value": "hip-joint",
+          "all_tumor": 2,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "humerus",
+          "all_tumor": 25,
+          "small_lt_1pct": 8,
+          "small_fraction": 0.32
+        },
+        {
+          "value": "knee-joint",
+          "all_tumor": 2,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "radius",
+          "all_tumor": 7,
+          "small_lt_1pct": 5,
+          "small_fraction": 0.7142857142857143
+        },
+        {
+          "value": "shoulder-joint",
+          "all_tumor": 2,
+          "small_lt_1pct": 2,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "tibia",
+          "all_tumor": 40,
+          "small_lt_1pct": 31,
+          "small_fraction": 0.775
+        },
+        {
+          "value": "tibia|femur",
+          "all_tumor": 2,
+          "small_lt_1pct": 2,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "tibia|fibula",
+          "all_tumor": 2,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "tibia|fibula|femur",
+          "all_tumor": 11,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.09090909090909091
+        },
+        {
+          "value": "ulna",
+          "all_tumor": 3,
+          "small_lt_1pct": 2,
+          "small_fraction": 0.6666666666666666
+        },
+        {
+          "value": "ulna|radius",
+          "all_tumor": 1,
+          "small_lt_1pct": 1,
+          "small_fraction": 1.0
+        }
+      ],
+      "by_tumor_type": [
+        {
+          "value": "giant cell tumor",
+          "all_tumor": 9,
+          "small_lt_1pct": 2,
+          "small_fraction": 0.2222222222222222
+        },
+        {
+          "value": "multiple osteochondromas",
+          "all_tumor": 26,
+          "small_lt_1pct": 5,
+          "small_fraction": 0.19230769230769232
+        },
+        {
+          "value": "osteochondroma",
+          "all_tumor": 75,
+          "small_lt_1pct": 69,
+          "small_fraction": 0.92
+        },
+        {
+          "value": "osteofibroma",
+          "all_tumor": 4,
+          "small_lt_1pct": 4,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "osteosarcoma",
+          "all_tumor": 30,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "other bt",
+          "all_tumor": 11,
+          "small_lt_1pct": 7,
+          "small_fraction": 0.6363636363636364
+        },
+        {
+          "value": "other mt",
+          "all_tumor": 4,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "simple bone cyst",
+          "all_tumor": 20,
+          "small_lt_1pct": 7,
+          "small_fraction": 0.35
+        },
+        {
+          "value": "synovial osteochondroma",
+          "all_tumor": 5,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        }
+      ],
+      "by_view": [
+        {
+          "value": "frontal",
+          "all_tumor": 132,
+          "small_lt_1pct": 71,
+          "small_fraction": 0.5378787878787878
+        },
+        {
+          "value": "lateral",
+          "all_tumor": 41,
+          "small_lt_1pct": 20,
+          "small_fraction": 0.4878048780487805
+        },
+        {
+          "value": "oblique",
+          "all_tumor": 11,
+          "small_lt_1pct": 3,
+          "small_fraction": 0.2727272727272727
+        }
+      ]
+    },
+    "test": {
+      "tumor_images": 187,
+      "small_lt_1pct": 112,
+      "medium_1_to_5pct": 50,
+      "large_ge_5pct": 25,
+      "small_fraction": 0.5989304812834224,
+      "by_anatomy": [
+        {
+          "value": "elbow-joint",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "femur",
+          "all_tumor": 35,
+          "small_lt_1pct": 17,
+          "small_fraction": 0.4857142857142857
+        },
+        {
+          "value": "femur|hip bone",
+          "all_tumor": 4,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "fibula",
+          "all_tumor": 23,
+          "small_lt_1pct": 20,
+          "small_fraction": 0.8695652173913043
+        },
+        {
+          "value": "fibula|femur",
+          "all_tumor": 2,
+          "small_lt_1pct": 2,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "foot",
+          "all_tumor": 12,
+          "small_lt_1pct": 9,
+          "small_fraction": 0.75
+        },
+        {
+          "value": "foot|ankle-joint",
+          "all_tumor": 1,
+          "small_lt_1pct": 1,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "hand",
+          "all_tumor": 4,
+          "small_lt_1pct": 3,
+          "small_fraction": 0.75
+        },
+        {
+          "value": "hip bone",
+          "all_tumor": 7,
+          "small_lt_1pct": 3,
+          "small_fraction": 0.42857142857142855
+        },
+        {
+          "value": "hip bone|hip-joint",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "humerus",
+          "all_tumor": 20,
+          "small_lt_1pct": 6,
+          "small_fraction": 0.3
+        },
+        {
+          "value": "humerus|shoulder-joint",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "knee-joint",
+          "all_tumor": 2,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.5
+        },
+        {
+          "value": "radius",
+          "all_tumor": 8,
+          "small_lt_1pct": 5,
+          "small_fraction": 0.625
+        },
+        {
+          "value": "radius|humerus",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "shoulder-joint",
+          "all_tumor": 1,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "tibia",
+          "all_tumor": 46,
+          "small_lt_1pct": 37,
+          "small_fraction": 0.8043478260869565
+        },
+        {
+          "value": "tibia|femur",
+          "all_tumor": 1,
+          "small_lt_1pct": 1,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "tibia|fibula",
+          "all_tumor": 5,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.2
+        },
+        {
+          "value": "tibia|fibula|femur",
+          "all_tumor": 6,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "ulna",
+          "all_tumor": 5,
+          "small_lt_1pct": 5,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "ulna|radius|humerus",
+          "all_tumor": 1,
+          "small_lt_1pct": 1,
+          "small_fraction": 1.0
+        }
+      ],
+      "by_tumor_type": [
+        {
+          "value": "giant cell tumor",
+          "all_tumor": 9,
+          "small_lt_1pct": 3,
+          "small_fraction": 0.3333333333333333
+        },
+        {
+          "value": "multiple osteochondromas",
+          "all_tumor": 26,
+          "small_lt_1pct": 9,
+          "small_fraction": 0.34615384615384615
+        },
+        {
+          "value": "osteochondroma",
+          "all_tumor": 75,
+          "small_lt_1pct": 71,
+          "small_fraction": 0.9466666666666667
+        },
+        {
+          "value": "osteofibroma",
+          "all_tumor": 5,
+          "small_lt_1pct": 5,
+          "small_fraction": 1.0
+        },
+        {
+          "value": "osteosarcoma",
+          "all_tumor": 29,
+          "small_lt_1pct": 0,
+          "small_fraction": 0.0
+        },
+        {
+          "value": "other bt",
+          "all_tumor": 12,
+          "small_lt_1pct": 9,
+          "small_fraction": 0.75
+        },
+        {
+          "value": "other mt",
+          "all_tumor": 5,
+          "small_lt_1pct": 1,
+          "small_fraction": 0.2
+        },
+        {
+          "value": "simple bone cyst",
+          "all_tumor": 21,
+          "small_lt_1pct": 12,
+          "small_fraction": 0.5714285714285714
+        },
+        {
+          "value": "synovial osteochondroma",
+          "all_tumor": 5,
+          "small_lt_1pct": 2,
+          "small_fraction": 0.4
+        }
+      ],
+      "by_view": [
+        {
+          "value": "frontal",
+          "all_tumor": 133,
+          "small_lt_1pct": 83,
+          "small_fraction": 0.6240601503759399
+        },
+        {
+          "value": "lateral",
+          "all_tumor": 48,
+          "small_lt_1pct": 27,
+          "small_fraction": 0.5625
+        },
+        {
+          "value": "oblique",
+          "all_tumor": 6,
+          "small_lt_1pct": 2,
+          "small_fraction": 0.3333333333333333
+        }
+      ]
+    }
+  }
+}

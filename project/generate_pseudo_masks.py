@@ -201,7 +201,12 @@ def parse_args() -> argparse.Namespace:
                         choices=["positive", "absolute"],
                         help="LayerCAM gradient evidence: standard positive ReLU or absolute-gradient ablation.")
     parser.add_argument("--selection-method", type=str, default="bone_hybrid",
-                        choices=["mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam", "hybrid", "bone_hybrid", "simple_hybrid", "prompt_hybrid", "consistency_hybrid"],
+                        choices=[
+                            "mean", "sum", "mean_area", "coverage", "coverage_mass",
+                            "coverage_mass_sam", "coverage_mass_sam_causal", "hybrid",
+                            "bone_hybrid", "simple_hybrid", "prompt_hybrid",
+                            "consistency_hybrid",
+                        ],
                         help="CAM-guided mask scoring method")
     parser.add_argument(
         "--prompt-score-weights",
@@ -445,7 +450,7 @@ def load_classifier(
     expected_split_manifest: Path | None = None,
     expected_pipeline_profile: str | None = None,
 ) -> tuple[DenseNet121AnatomyClassifier, str, str]:
-    state = torch.load(checkpoint_path, map_location="cpu")
+    state = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     checkpoint_target_columns = state.get("target_columns")
     checkpoint_task = state.get("task", "multi-label")
     checkpoint_num_classes = state.get("num_classes", fallback_num_classes)
@@ -616,6 +621,74 @@ def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagen
     return np.array(pil, dtype=np.uint8)
 
 
+def classifier_candidate_causal_scores(
+    classifier: torch.nn.Module,
+    image_tensor: torch.Tensor,
+    original_logits: torch.Tensor,
+    candidate_masks: np.ndarray,
+    *,
+    candidate_batch_size: int = 8,
+    blur_kernel: int = 31,
+    feather_kernel: int = 7,
+) -> np.ndarray:
+    """Measure proposal-specific deletion and insertion evidence.
+
+    Only the frozen image-level classifier is used. Candidate pixels are
+    replaced with a deterministic blurred version of the same radiograph for
+    deletion; insertion keeps the candidate over that blurred baseline.
+    ``mask_selection`` later converts these values to within-component ranks,
+    so raw classifier calibration never crosses images.
+    """
+    if image_tensor.ndim != 4 or image_tensor.shape[0] != 1:
+        raise ValueError("Causal candidate scoring expects one image tensor")
+    if original_logits.ndim != 2 or tuple(original_logits.shape) != (1, 1):
+        raise ValueError(
+            "coverage_mass_sam_causal requires a one-logit binary classifier"
+        )
+    if candidate_masks.ndim != 3:
+        raise ValueError("candidate_masks must have shape [N,H,W]")
+    if candidate_masks.shape[0] == 0:
+        return np.zeros(0, dtype=np.float32)
+    if candidate_batch_size <= 0:
+        raise ValueError("candidate_batch_size must be positive")
+    for name, value in (("blur_kernel", blur_kernel), ("feather_kernel", feather_kernel)):
+        if value <= 0 or value % 2 == 0:
+            raise ValueError(f"{name} must be a positive odd integer")
+
+    device = image_tensor.device
+    target_size = tuple(int(value) for value in image_tensor.shape[-2:])
+    mask_tensor = torch.from_numpy(candidate_masks.astype(np.float32))[:, None]
+    if tuple(mask_tensor.shape[-2:]) != target_size:
+        mask_tensor = F.interpolate(mask_tensor, size=target_size, mode="nearest")
+    mask_tensor = mask_tensor.to(device)
+    if feather_kernel > 1:
+        mask_tensor = F.avg_pool2d(
+            mask_tensor,
+            kernel_size=feather_kernel,
+            stride=1,
+            padding=feather_kernel // 2,
+        ).clamp_(0.0, 1.0)
+    blur_pad = blur_kernel // 2
+    padded = F.pad(image_tensor, (blur_pad,) * 4, mode="reflect")
+    blurred = F.avg_pool2d(padded, kernel_size=blur_kernel, stride=1)
+    original_logit = original_logits.detach()[0, 0]
+    with torch.no_grad():
+        baseline_logit = classifier(blurred)[0, 0]
+        causal_scores: list[torch.Tensor] = []
+        for start in range(0, mask_tensor.shape[0], candidate_batch_size):
+            masks = mask_tensor[start:start + candidate_batch_size]
+            image_batch = image_tensor.expand(masks.shape[0], -1, -1, -1)
+            blurred_batch = blurred.expand_as(image_batch)
+            removed = image_batch * (1.0 - masks) + blurred_batch * masks
+            inserted = image_batch * masks + blurred_batch * (1.0 - masks)
+            paired_logits = classifier(torch.cat([removed, inserted], dim=0))[:, 0]
+            batch_size = masks.shape[0]
+            deletion = torch.relu(original_logit - paired_logits[:batch_size])
+            insertion = torch.relu(paired_logits[batch_size:] - baseline_logit)
+            causal_scores.append(0.5 * (deletion + insertion))
+    return torch.cat(causal_scores).detach().cpu().numpy().astype(np.float32)
+
+
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
     if (
@@ -738,6 +811,18 @@ def main() -> None:
             "negative_points_per_component": args.negative_points_per_component,
             "max_box_area_ratio": args.max_box_area_ratio,
             "selection_method": args.selection_method,
+            "classifier_causal_scoring": (
+                {
+                    "evidence": "equal-weight positive deletion and insertion logit deltas",
+                    "replacement": "same-image 31px mean blur",
+                    "mask_feather_kernel": 7,
+                    "candidate_batch_size": 8,
+                    "normalization": "within-component percentile rank",
+                    "score_weight": 0.20,
+                }
+                if args.selection_method == "coverage_mass_sam_causal"
+                else None
+            ),
             "mask_score_threshold": args.mask_score_threshold,
             "fusion_topk": args.fusion_topk,
             "best_per_component": not args.disable_best_per_component,
@@ -951,6 +1036,9 @@ def main() -> None:
                             "selection_score_min": "",
                             "selection_score_max": "",
                             "selection_score_mean": "",
+                            "classifier_causal_score_min": "",
+                            "classifier_causal_score_max": "",
+                            "classifier_causal_score_mean": "",
                             "above_threshold_candidates": 0,
                             "selected_candidates": 0,
                             "selected_components": 0,
@@ -1378,11 +1466,31 @@ def main() -> None:
                     ], axis=0)
                     candidate_prompt_modes.extend(["cam"] * len(cam_masks))
 
+                classifier_causal_scores = None
+                if args.selection_method == "coverage_mass_sam_causal":
+                    if target_columns != ["tumor"] or classifier.classifier.out_features != 1:
+                        raise ValueError(
+                            "coverage_mass_sam_causal requires target_columns=['tumor'] "
+                            "and a one-logit binary classifier"
+                        )
+                    classifier_causal_scores = classifier_candidate_causal_scores(
+                        classifier,
+                        image_tensor,
+                        logits,
+                        sam_masks,
+                    )
+
                 if debug_dir is not None:
                     np.savez_compressed(
                         Path(debug_dir) / "candidate_diagnostics.npz",
                         masks=sam_masks.astype(np.uint8),
                         sam_scores=np.asarray(sam_scores, dtype=np.float32),
+                        classifier_causal_scores=np.asarray(
+                            classifier_causal_scores
+                            if classifier_causal_scores is not None
+                            else np.zeros(len(sam_masks), dtype=np.float32),
+                            dtype=np.float32,
+                        ),
                         component_ids=np.asarray(component_ids if component_ids is not None else np.zeros(len(sam_masks), dtype=np.int32)),
                         fused_cam=fused_cam.astype(np.float32),
                         component_masks=(
@@ -1474,6 +1582,7 @@ def main() -> None:
                     bone_likelihood=bone_likelihood,
                     bone_support=bone_support,
                     sam_scores=sam_scores,
+                    classifier_causal_scores=classifier_causal_scores,
                     component_ids=component_ids,
                     component_masks=component_mask_array,
                     positive_points_by_component=positive_points_by_component,
@@ -1491,6 +1600,7 @@ def main() -> None:
                     bone_likelihood=bone_likelihood,
                     bone_support=bone_support,
                     sam_scores=sam_scores,
+                    classifier_causal_scores=classifier_causal_scores,
                     component_ids=component_ids,
                     component_masks=component_mask_array,
                     positive_points_by_component=positive_points_by_component,
@@ -1569,6 +1679,21 @@ def main() -> None:
                         "selection_score_min": float(selection_scores.min()) if len(selection_scores) else "",
                         "selection_score_max": float(selection_scores.max()) if len(selection_scores) else "",
                         "selection_score_mean": float(selection_scores.mean()) if len(selection_scores) else "",
+                        "classifier_causal_score_min": (
+                            float(classifier_causal_scores.min())
+                            if classifier_causal_scores is not None and len(classifier_causal_scores)
+                            else ""
+                        ),
+                        "classifier_causal_score_max": (
+                            float(classifier_causal_scores.max())
+                            if classifier_causal_scores is not None and len(classifier_causal_scores)
+                            else ""
+                        ),
+                        "classifier_causal_score_mean": (
+                            float(classifier_causal_scores.mean())
+                            if classifier_causal_scores is not None and len(classifier_causal_scores)
+                            else ""
+                        ),
                         **selection_details,
                         "support_area_ratio": (
                             float(np.count_nonzero(bone_support) / bone_support.size)

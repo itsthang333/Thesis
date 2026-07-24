@@ -1,0 +1,20 @@
+{
+  "entrypoint": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/project/evaluate_unet.py",
+  "git_commit": "unknown",
+  "git_dirty": null,
+  "dataset": "btxrd",
+  "split": "val",
+  "split_manifest": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v1/split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "checkpoint": "/kaggle/working/btxrd_convergence_448/fs_pw10_full_448_e35/best_unet.pt",
+  "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+  "artifacts": {
+    "per_image": "/kaggle/working/btxrd_convergence_448/evaluation/selected_per_image.csv",
+    "summary": "/kaggle/working/btxrd_convergence_448/evaluation/selected_summary.json",
+    "subgroups": "/kaggle/working/btxrd_convergence_448/evaluation/selected_per_image_subgroups.csv",
+    "bootstrap": "/kaggle/working/btxrd_convergence_448/evaluation/selected_per_image_bootstrap.json",
+    "pixel_confusion": "/kaggle/working/btxrd_convergence_448/evaluation/selected_per_image_pixel_confusion.json",
+    "threshold_sweep": null,
+    "threshold_selection": null
+  }
+}
