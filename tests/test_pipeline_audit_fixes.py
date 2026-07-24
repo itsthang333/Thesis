@@ -205,27 +205,6 @@ class MaskSelectionTests(unittest.TestCase):
         self.assertEqual(details["selected_candidates"], 2)
         self.assertEqual(details["selected_components"], 2)
 
-    def test_eligibility_cam_keeps_component_while_rank_cam_selects_mask(self) -> None:
-        masks = np.zeros((2, 4, 4), dtype=np.uint8)
-        masks[0, :2, :] = 1
-        masks[1, 2:, :] = 1
-        ranking_cam = np.zeros((4, 4), dtype=np.float32)
-        ranking_cam[:2, :] = 0.3
-        ranking_cam[2:, :] = 0.1
-        eligibility_cam = np.full((4, 4), 0.9, dtype=np.float32)
-
-        result = select_and_fuse_masks(
-            masks,
-            ranking_cam,
-            eligibility_cam=eligibility_cam,
-            mask_score_threshold=0.4,
-            selection_method="mean",
-            component_ids=np.array([5, 5], dtype=np.int32),
-            best_per_component=True,
-        )
-
-        self.assertTrue(np.array_equal(result, masks[0]))
-
 
 class SAMPromptTests(unittest.TestCase):
     def test_pure_box_ignores_negative_points_and_passes_no_point_arrays(self) -> None:

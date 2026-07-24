@@ -348,7 +348,6 @@ def select_and_fuse_masks(
     component_topk: int = 0,
     support_clip_kernel: int = 5,
     low_score_policy: str = "empty",
-    eligibility_cam: np.ndarray | None = None,
     return_details: bool = False,
 ) -> np.ndarray | tuple[np.ndarray, dict[str, int]]:
     """Select and fuse masks using CAM and bone morphology evidence.
@@ -371,9 +370,6 @@ def select_and_fuse_masks(
     Args:
         masks:               [N, H, W] bool/uint8 from SAM.
         bone_cam:            [H, W] float32 in [0, 1].
-        eligibility_cam:     Optional [H, W] CAM used only for threshold
-                             eligibility and component priority. ``bone_cam``
-                             still ranks candidates within the eligible set.
         mask_score_threshold: Masks below this are discarded.
         selection_method:    "mean" | "sum" | "mean_area" (see SELECTION_METHODS).
         fusion_topk:         Fusion mode (0=default OR, k>1=top-k union, k<0=top-|k| intersection).
@@ -419,30 +415,7 @@ def select_and_fuse_masks(
         prompt_area_target=prompt_area_target,
         prompt_area_log_sigma=prompt_area_log_sigma,
     )
-    if eligibility_cam is not None:
-        if eligibility_cam.shape != bone_cam.shape:
-            raise ValueError("eligibility_cam must have the same shape as bone_cam")
-        eligibility_scores = score_masks(
-            masks,
-            eligibility_cam,
-            method=selection_method,
-            bone_likelihood=bone_likelihood,
-            bone_support=bone_support,
-            sam_scores=sam_scores,
-            classifier_causal_scores=classifier_causal_scores,
-            component_ids=component_ids,
-            component_masks=component_masks,
-            positive_points_by_component=positive_points_by_component,
-            negative_points_by_component=negative_points_by_component,
-            prompt_hybrid_weights=prompt_hybrid_weights,
-            prompt_area_target=prompt_area_target,
-            prompt_area_log_sigma=prompt_area_log_sigma,
-        )
-    else:
-        eligibility_scores = scores
-    above_threshold_count = int(
-        np.count_nonzero(eligibility_scores >= mask_score_threshold)
-    )
+    above_threshold_count = int(np.count_nonzero(scores >= mask_score_threshold))
 
     if best_per_component and component_ids is not None and component_ids.size == masks.shape[0]:
         selected_components: list[tuple[float, int]] = []
@@ -450,16 +423,11 @@ def select_and_fuse_masks(
             candidates = np.where(component_ids == component_id)[0]
             if candidates.size == 0:
                 continue
-            eligible = candidates[
-                eligibility_scores[candidates] >= mask_score_threshold
-            ]
-            if eligible.size == 0:
-                continue
-            component_scores = scores[eligible]
+            component_scores = scores[candidates]
             best_local = int(np.argmax(component_scores))
-            best_index = int(eligible[best_local])
-            component_priority = float(np.max(eligibility_scores[eligible]))
-            selected_components.append((component_priority, best_index))
+            best_index = int(candidates[best_local])
+            if float(component_scores[best_local]) >= mask_score_threshold:
+                selected_components.append((float(component_scores[best_local]), best_index))
         if component_topk > 0 and len(selected_components) > component_topk:
             selected_components.sort(key=lambda item: item[0], reverse=True)
             selected_components = selected_components[:component_topk]
@@ -472,9 +440,7 @@ def select_and_fuse_masks(
             )
 
     order = np.argsort(scores)[::-1]
-    above = [
-        i for i in order if eligibility_scores[i] >= mask_score_threshold
-    ]
+    above = [i for i in order if scores[i] >= mask_score_threshold]
 
     if not above:
         if low_score_policy == "empty":

@@ -670,3 +670,20 @@ Decision: reject. It partially rescues small-lesion precision but applies the ba
 
 Next controlled experiment: expanded-CAM score determines whether a candidate/component is eligible and ranks the top three components; baseline-CAM score selects the best SAM mask only within each eligible component. Keep threshold, score formula, proposal pool, support clipping and morphology fixed. This is not a weight sweep or GT-size gate.
 
+## 25. Split-selector result and technique-family closure
+
+The split-selector run `itsthang333/btxrd-binary-advcam-split-selector` completed on the locked validation split:
+
+- Dice `0.2387746569` versus baseline `0.2343392222`.
+- Paired delta `+0.0044354347`, 95% CI `-0.0271092059` to `+0.0354617169`.
+- Small Dice `0.0673641053`, delta `-0.0447992986` across the fixed 94-image subgroup.
+- Medium delta `+0.0476357232`; large delta `+0.0887489992`.
+- Mean precision/recall `0.2289799200/0.5518265541`; one complete tumor miss.
+- Population and provenance pass: 371 unique rows, 184 tumors, 187 normals, zero missing, frozen split/classifier/SAM/source hashes, 11 Torch tests plus 30 audit tests, and `test_evaluated=false`.
+- Comparison SHA-256: `41ecb86cb423c929993d8197968191155981fc00c5ec4c69a437a3a0dd6e61d6`.
+- Compact artifacts: `D:\thesis\artifacts\kaggle\wsss_advcam_split_selector_v1`.
+
+Decision: reject. The three controlled variants establish that expanded CAM contains useful medium/large evidence and improves the candidate oracle, but none of the available ground-truth-free post-hoc scoring variants can preserve that gain without harming small lesions. Do not add another selector threshold, size gate, or validation-derived mixture.
+
+Next experiment: train the same clean binary DenseNet121 classifier at 448 px on Kaggle, then evaluate the unchanged promoted flip-TTA LayerCAM plus SAM Gate-C protocol. Treat classifier input resolution as the scientific variable; preserve relative morphology geometry by predeclared proportional scaling where a pixel constant is resolution-dependent. Promotion still requires an overall positive paired-bootstrap lower bound and no decrease in the fixed small-lesion subgroup. Test remains locked.
+
