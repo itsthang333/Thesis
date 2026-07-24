@@ -64,193 +64,193 @@
   },
   "source": {
     "branch": "main",
-    "git_commit": "bdb411ec0bddf02405098bc24a0b0080e397f67a",
+    "git_commit": "ceceb7b8dc385c4f7052963b824419d44985b3ba",
     "git_dirty_at_freeze": false,
     "files": [
       {
         "path": "project/__init__.py",
-        "sha256": "023ed9beb57920f6cbf3b8deb581cedd7f5fbf8e04aecf2ad579f7bc2abbf77e",
+        "sha256": "3867702f012dd53e1d653ca8aff9563a663166354622a45f4ddc0a7496fba97d",
         "bytes": 65
       },
       {
         "path": "project/config.py",
-        "sha256": "b0f8c79eb9249cc8450410d43e9b688fbb6be431078b267b0099e45e419f143c",
+        "sha256": "975b07f079ba183b9d0ca68a93367a6b422e4d0bd559a4ca744e183328ee1674",
         "bytes": 4170
       },
       {
         "path": "project/datasets/__init__.py",
-        "sha256": "e3124d19dd67de3f7e1f2b10189424b3632bc374c5ff925122f66a4de812e5ff",
+        "sha256": "6b478bbb7af1b77f31e1aa96f197aee1138623b0c87e9385b4b4323542432784",
         "bytes": 271
       },
       {
         "path": "project/datasets/btxrd.py",
-        "sha256": "dcb509a3a0406d158ecde040a00f5319237817f4409d5ca517061398fe09e3d9",
+        "sha256": "d8f0804be4e81cdb4d58e4673708c1067eb7d9b49b42bb78cb6051188c156001",
         "bytes": 24394
       },
       {
         "path": "project/datasets/common.py",
-        "sha256": "21d5efb20c09cbd69989cb9dfe9b5849707d3aa8000411b9518e3bf5f8fbda96",
+        "sha256": "1927eb358a9db1a0e9c2571be5e222c3edd9d69814dfb4bc3375bd3f8593b98a",
         "bytes": 5836
       },
       {
         "path": "project/datasets/factory.py",
-        "sha256": "3278be5b0ef694e8aff796634b9ac7edd7dd0177c46ceadb2456a70160baf268",
+        "sha256": "e8307d32baf10b4b5183a2ab0ac2cca7dad264f7ab8f782e92d0fa75b410455b",
         "bytes": 1426
       },
       {
         "path": "project/evaluate_classifier.py",
-        "sha256": "c4d719b0808c9e202c2ffb7128ccf39622580196eaf55a8a51f84592496ef6c8",
+        "sha256": "091f25ad73f07af49f46b24bd8761d4e750f93d35e26eb33bfa5d2227e64b4eb",
         "bytes": 10773
       },
       {
         "path": "project/evaluate_pseudo_masks.py",
-        "sha256": "3100f2c74a37c36bc043c10046be40ba325bf7b3938ddeda851bc3ad9dd35e77",
+        "sha256": "acae150b0932ab54290f93d98849d63e71de1c996eb8d12fe305ee5f0672db2d",
         "bytes": 14519
       },
       {
         "path": "project/evaluate_unet.py",
-        "sha256": "c274971648839a8352059e5250e6033af4117e1c33ac4ab06eedaecc4cf3ae67",
+        "sha256": "597a311b30fdfc8731c60f9d3bb2518002618e1c45beb993b9c3262e7d5d196a",
         "bytes": 21823
       },
       {
         "path": "project/evaluation/__init__.py",
-        "sha256": "c47b1732ee7b5ab5d27cc70137bc04ed7e083fffd156e3a881363e8a9a71ce98",
+        "sha256": "3683be3d2b8392172a0885e617ee35637041ca40b7c83c7d9b6ca6069b2ad7a2",
         "bytes": 433
       },
       {
         "path": "project/evaluation/classification_metrics.py",
-        "sha256": "3bffcd80c820f31e658b534e1f9b8f5ff25d3d06e28b1e78941c78c4cba4bea9",
+        "sha256": "ae0ddabf4ca0cb476a770dcc3e824b52ccd6157f9ea17b0eb394d5cb284e1931",
         "bytes": 8811
       },
       {
         "path": "project/evaluation/frozen_test_guard.py",
-        "sha256": "92d65983d2d59f4886977d4be372e8dd22ffca1c2b6424819868166ef08d7ad9",
-        "bytes": 9013
+        "sha256": "0cd0707ee1835af302e517b84f0e36594d537d50c61ea14093c2311186cd0ea6",
+        "bytes": 9259
       },
       {
         "path": "project/evaluation/segmentation_metrics.py",
-        "sha256": "154aed506bb92d317bfe34a78204207a5e63f9e99e317ca33c755c7a5132b512",
+        "sha256": "070ebb9f1092dac5fe87ff7c1acc7470d5834ce4e1dae0373b8ef60783cf314a",
         "bytes": 15583
       },
       {
         "path": "project/generate_pseudo_masks.py",
-        "sha256": "beb0a6134b77ae0a8d1c0529285999f0a4655d4f38e34c483201725820465f3a",
+        "sha256": "35ff123e06d62d702182221156bf004a605b4e4c82065f54b2a51bcf368f14f4",
         "bytes": 94454
       },
       {
         "path": "project/inference.py",
-        "sha256": "9de7e8248070cb3ae31f6e31ff185e2ccdca8590bb8bb62282a1a616fad5be6d",
+        "sha256": "d38ef87e97b76f7b17638b7427f79e13335c550c9253e7caeea26c33023e1ae5",
         "bytes": 6366
       },
       {
         "path": "project/models/__init__.py",
-        "sha256": "207eb33e8e616796d82899173a558b461b5d36e4b9a77a7f91012d3c04821592",
+        "sha256": "7f0297f16e74a2761efd70669e3e656495a1b627360e79d751a7319b0618d609",
         "bytes": 237
       },
       {
         "path": "project/models/classifier.py",
-        "sha256": "bdd1c0376fe805486f6147afd97825a8cecb7ab61deb5e9404198449c48d5564",
+        "sha256": "8f65720d7ddcf3ea657c126e7ba184cef2669a8da766a2ba82dc1e488bd551a0",
         "bytes": 2613
       },
       {
         "path": "project/models/layercam.py",
-        "sha256": "72c31abf33e1ff19ed77c83eac8ba623a74aac6ec873e89675cf321319770637",
+        "sha256": "b065af6c5be129804d0a19539b3bcef92662923a04b7086459c04189bafa4d51",
         "bytes": 9761
       },
       {
         "path": "project/models/losses.py",
-        "sha256": "3518afa1c78f2cd5427e3d800cf436a92c9988ad48b4e3c90da8213f362bca67",
+        "sha256": "330b1d4eb536c078ea73f4ea68b1ba34ea3392704c104dd99b5f7950a8d51e7c",
         "bytes": 2008
       },
       {
         "path": "project/models/puzzle_cam.py",
-        "sha256": "28f0098b59be0df92bd0d5e9da82931208e6f31ef941e909539ef737fe57d011",
+        "sha256": "e37f4abd5fdb3fd6bca8ccb0fbaf1402b1942c39bc55b1cdde6a48abc2aa2e01",
         "bytes": 3303
       },
       {
         "path": "project/models/teacher_student.py",
-        "sha256": "770aa43f2664acf9dad0a3602bb7779d648e0f3bf8a6849ae53903c9ebbced51",
+        "sha256": "71fd2834be5ba319fb1a3d9864357f858aa0477536dd370fa267c5fce8588bce",
         "bytes": 4138
       },
       {
         "path": "project/models/torch_morphology.py",
-        "sha256": "90e0896480f1455d52c1035f611b7d2382fd44ebf8a1504687b840945aa04ec0",
+        "sha256": "495531e4b6f8b41d7c63f143fc79281d0a887264420c9fe956c3290b10bf49af",
         "bytes": 2794
       },
       {
         "path": "project/models/unet.py",
-        "sha256": "7ee67f45773411e509a4e9aa687052ea73f6a2b7b158862095838253bd08975a",
+        "sha256": "aa867b3c95aeed4e906dd03203283bee7d5dd717e1144ba626bd41150c88bf64",
         "bytes": 6005
       },
       {
         "path": "project/progress.py",
-        "sha256": "fd51330b606cd69d9a2f0c73a78f6b582977d8cae984fb75617e18af6ad746f2",
+        "sha256": "2cbd300b9f43bbad3ef2f259c032e8cea0277d99ffd2ba51ef00350c6491f07f",
         "bytes": 835
       },
       {
         "path": "project/pseudo/__init__.py",
-        "sha256": "68ba868f660de89863d3c52bb7806a25f4035792c11b93e1893f9de8f7f21e40",
+        "sha256": "f3fbbb83a1c6c3ae61ca8247ca6c1400050ee38659ad24788f0043764dc76c0b",
         "bytes": 353
       },
       {
         "path": "project/pseudo/extract_prompts.py",
-        "sha256": "deb44ab04a1f3ec3bb626135213be28ae7db412f8d7df2d5b9d506d352ef6e0c",
+        "sha256": "8ca416d1f1151363c02cb0ad0adc917e700a6feb99c2396a1dedf1bab83e37b2",
         "bytes": 6672
       },
       {
         "path": "project/pseudo/generate_layercam.py",
-        "sha256": "b0b8ac58a76af159b127507e0727aca28f7b1347e19fdbd10bbd452dc2491378",
+        "sha256": "24bdd8033049de651902f781a4b9842f3ff007354407ac3fb57a091ee9f1b782",
         "bytes": 1811
       },
       {
         "path": "project/pseudo/manifest.py",
-        "sha256": "488cb2b53576ef286b6c6a4fc45c9ef69c7128edce1c699c949181f2faecd7ed",
+        "sha256": "48467c99dd7257722ea08f1012fa723ce4bd19221965a453bbee682df0f7e404",
         "bytes": 9113
       },
       {
         "path": "project/pseudo/mask_selection.py",
-        "sha256": "2cf4ba1275d9a35a8b4fd4b7c4c4d2ceba3157c6096dccef96a55a65ffd28c96",
+        "sha256": "ab1471e78bbc2e3a6c0b5c70c4d3bce5e950b58d89a0cd4a17cd30fa67b9b254",
         "bytes": 20479
       },
       {
         "path": "project/pseudo/morphology.py",
-        "sha256": "1171766263d2ffb88d60341e73353bf48f87fdc641ee61dc88d1b1cf6bfa1911",
+        "sha256": "dc9f66039a9d5fc93b796e810f132192c6ee01508b1ad68f7712d42d6e8bab89",
         "bytes": 6655
       },
       {
         "path": "project/pseudo/oracle_diagnostics.py",
-        "sha256": "03574844cb32f68671a9417230dbf85b0629ff451ab01dd3c2c5514cb383c0c5",
+        "sha256": "2397f4a06a0d0e384d7684c30d53d8bdc3f18bfb1dafa211111b3c8b10888929",
         "bytes": 8410
       },
       {
         "path": "project/pseudo/prompt_metrics.py",
-        "sha256": "e1702e3b9d277b109a08603c804322e11c6af8a0591ea09c2e98575a4ab08b2c",
+        "sha256": "f6bb01a5c93b77ba99125297a8c29afef3fbce33f83882839c494005b6fdf1bd",
         "bytes": 7081
       },
       {
         "path": "project/pseudo/sam_refine.py",
-        "sha256": "188be8e2210d08c1fc1205b58baecd2e52c693c7fb3c51c0c06931eb17c646ed",
+        "sha256": "0ed4d449af4a709f51963e6185e555ddf78c159cd823590240868bda466bb45a",
         "bytes": 13042
       },
       {
         "path": "project/pseudo/tumor_morphology.py",
-        "sha256": "20a43cecd5cc7f22421c6385cda9b8b335012729b7df85351718dda693895329",
+        "sha256": "ed53acb95ce4a3878e3e8fb20574ac5bac87a45bfe910afa129a7ac289740973",
         "bytes": 20275
       },
       {
         "path": "project/pseudo/visualization.py",
-        "sha256": "423e51a04eecba222ad777c0c25763b18da3cebfc2115294e2eed2b0cf8382cf",
+        "sha256": "791f9e79ab1e6f664b2ea1174608e64dea9274fbb9c198e812ba02a649ef60fc",
         "bytes": 3198
       },
       {
         "path": "project/tools/build_btxrd_split_manifest.py",
-        "sha256": "03f0e40037e051dda1b0938e0aa2324adec6636a7e3fe6aba21dec2eb6b47856",
+        "sha256": "64924a2971f2b9fc6244e7dfea83f35f5fe9f7bdbb0f71bdfafc5c9e5959cd65",
         "bytes": 30696
       },
       {
         "path": "project/tools/freeze_pipeline_config.py",
-        "sha256": "3d7582bad5f7c092a08db37e6616f19c5b9dc5334a6e789549793784a628aabd",
-        "bytes": 6546
+        "sha256": "7b4418637aaf640da89bc36b7f8600b69a1427e978418c0eb762218f1175bb58",
+        "bytes": 6572
       },
       {
         "path": "project/tools/plot_training_curves_svg.py",
@@ -259,7 +259,7 @@
       },
       {
         "path": "project/tools/validate_kaggle_readiness.py",
-        "sha256": "e98e95892e07129506cc416dd622e1aaff7d886b265369d85d8b7dec94026796",
+        "sha256": "d2c0eff82b773ce064b16fd4c5e9965172358642db0abff022612ed0ae9aa0b0",
         "bytes": 7694
       },
       {
@@ -269,12 +269,12 @@
       },
       {
         "path": "project/train_classifier.py",
-        "sha256": "d393d2db8f8f5f4b981426be49a0ac7fdf7b2275fea79ae1e0e4f9875879e8f3",
+        "sha256": "f37c170a62398e4295a8bfe853a3ebdd0647e52afd296a87c6d7fc580898170f",
         "bytes": 44451
       },
       {
         "path": "project/train_segmentation.py",
-        "sha256": "d440f321d76a48a4cb8eacb0349f515bc90229d13b9f42bafd36b0ea3d130eda",
+        "sha256": "5c940cf86ff95d395b320d9f973b625d3d15b5296820606a654a404259891fd4",
         "bytes": 37386
       }
     ]
@@ -319,5 +319,5 @@
     "final_inference": "U-Net only",
     "fully_supervised_checkpoint_allowed": false
   },
-  "freeze_sha256": "1f603516b61b3e143d744ee080a939115a1f22e59cff71dba61c8ea73b70aa11"
+  "freeze_sha256": "3d8b5fbe2537f7830b95f9ad2e3d7cb5caa146da92d96ce4cce5c61cdcfbced7"
 }
