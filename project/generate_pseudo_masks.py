@@ -41,7 +41,7 @@ from config import (
 from progress import should_disable_tqdm
 from datasets.factory import build_classification_dataset, build_segmentation_dataset
 from models.classifier import DenseNet121AnatomyClassifier
-from models.layercam import LayerCAM
+from models.layercam import LayerCAM, adversarial_climbing_layercam
 from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
@@ -245,6 +245,22 @@ def parse_args() -> argparse.Namespace:
                         help="Clip fused SAM masks to dilated bone support; 0/1 means no dilation, -1 disables")
     parser.add_argument("--cam-tta-flip", action="store_true",
                         help="Average LayerCAM from the original and horizontally flipped image (inference-only consistency A/B test).")
+    parser.add_argument(
+        "--advcam-iterations",
+        type=int,
+        default=0,
+        help=(
+            "A/B: number of target-logit adversarial-climbing updates used to aggregate "
+            "LayerCAMs. Zero preserves the baseline. This option is currently restricted "
+            "to the one-logit binary tumor classifier."
+        ),
+    )
+    parser.add_argument(
+        "--advcam-step-size",
+        type=float,
+        default=0.08,
+        help="Normalised-input step size for --advcam-iterations.",
+    )
     parser.add_argument("--cam-multiscale-sizes", type=str, default="",
                         help="A/B: comma-separated classifier input sizes for a contrastive CAM ensemble, "
                              "e.g. '224,256,288'. Maps are normalized before averaging; empty disables it.")
@@ -386,6 +402,8 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     require_or_set("--guidance-threshold", "guidance_threshold", profile.guidance_threshold)
     require_or_set("--preprocessing-mode", "preprocessing_mode", "none")
     require_or_set("--cam-multiscale-sizes", "cam_multiscale_sizes", "")
+    require_or_set("--advcam-iterations", "advcam_iterations", 0)
+    require_or_set("--advcam-step-size", "advcam_step_size", 0.08)
     require_or_set(
         "--layercam-weights",
         "layercam_weights",
@@ -759,6 +777,23 @@ def main() -> None:
         ),
     )
     print(f"Loaded classifier checkpoint task={classifier_task} normalization={classifier_normalization}")
+    if args.advcam_iterations < 0:
+        raise ValueError("--advcam-iterations must be non-negative")
+    if args.advcam_step_size <= 0 or not np.isfinite(args.advcam_step_size):
+        raise ValueError("--advcam-step-size must be a finite positive value")
+    if args.advcam_iterations:
+        if target_columns != ["tumor"] or classifier_task != "multi-label":
+            raise ValueError(
+                "--advcam-iterations currently requires the one-logit multi-label "
+                "binary tumor classifier"
+            )
+        if args.cam_aggregation != "class" or cam_multiscale_sizes:
+            raise ValueError(
+                "--advcam-iterations requires --cam-aggregation class and no "
+                "--cam-multiscale-sizes"
+            )
+        if args.auxiliary_binary_checkpoint is not None:
+            raise ValueError("--advcam-iterations does not support an auxiliary classifier")
 
     run_metadata = {
             "pipeline_profile": args.pipeline_profile,
@@ -798,6 +833,13 @@ def main() -> None:
             "cam_percentile_values": list(cam_percentile_values),
             "confidence_threshold": args.confidence_threshold,
             "cam_tta_flip": args.cam_tta_flip,
+            "advcam_iterations": args.advcam_iterations,
+            "advcam_step_size": args.advcam_step_size,
+            "advcam_variant": (
+                "target-logit climbing with per-step normalized LayerCAM aggregation"
+                if args.advcam_iterations
+                else None
+            ),
             "cam_multiscale_sizes": list(cam_multiscale_sizes),
             "cam_aggregation": args.cam_aggregation,
             "cam_contrast_normal": args.cam_contrast_normal,
@@ -1103,6 +1145,20 @@ def main() -> None:
                         class_weights=class_weights,
                         confidence_threshold=args.confidence_threshold,
                     )
+                if args.advcam_iterations:
+                    if active_indices != [0]:
+                        raise RuntimeError(
+                            "Binary adversarial climbing expected exactly the tumor logit at index 0"
+                        )
+                    adv_output = adversarial_climbing_layercam(
+                        layercam,
+                        image_tensor,
+                        0,
+                        iterations=args.advcam_iterations,
+                        step_size=args.advcam_step_size,
+                    )
+                    fused_cam = adv_output.cam[0].detach().cpu().numpy()
+                    per_class_cams = [fused_cam]
                 if (
                     args.cam_contrast_normal
                     and target_columns == ["tumor_type"]
@@ -1198,12 +1254,24 @@ def main() -> None:
                         flipped_class_cams = [flipped_cam]
                         flipped_indices = [0]
                     else:
-                        flipped_cam, flipped_class_cams, flipped_indices = generate_fused_cam(
-                            layercam,
-                            flipped_tensor,
-                            class_weights=class_weights,
-                            confidence_threshold=args.confidence_threshold,
-                        )
+                        if args.advcam_iterations:
+                            flipped_output = adversarial_climbing_layercam(
+                                layercam,
+                                flipped_tensor,
+                                0,
+                                iterations=args.advcam_iterations,
+                                step_size=args.advcam_step_size,
+                            )
+                            flipped_cam = flipped_output.cam[0].detach().cpu().numpy()
+                            flipped_class_cams = [flipped_cam]
+                            flipped_indices = [0]
+                        else:
+                            flipped_cam, flipped_class_cams, flipped_indices = generate_fused_cam(
+                                layercam,
+                                flipped_tensor,
+                                class_weights=class_weights,
+                                confidence_threshold=args.confidence_threshold,
+                            )
                     if active_indices != flipped_indices:
                         raise RuntimeError("CAM TTA changed active class indices; cannot fuse maps safely")
                     fused_cam = 0.5 * (fused_cam + np.fliplr(flipped_cam))
