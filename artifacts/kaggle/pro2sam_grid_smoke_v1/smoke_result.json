@@ -1,0 +1,24 @@
+{
+  "run_id": "btxrd_pro2sam_grid_smoke_v1",
+  "status": "complete",
+  "scientific_scope": "execution smoke only; no performance or promotion claim",
+  "test_evaluated": false,
+  "smoke_image": "IMG000001.jpeg",
+  "source_commit": "ab5f7cca1036b60a8b225288f14e20a70097234a",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "classifier_checkpoint_sha256": "7da19e9c0537501c4c919200ed65b2bf6992383af70aa91c18b312a5d6204043",
+  "sam_checkpoint_sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
+  "segment_anything_commit": "6fdee8f2727f4506cfbbe553e23b895e27956588",
+  "grid_points_per_side": 32,
+  "nominal_grid_prompt_count": 1024,
+  "retained_gallery_masks": 16,
+  "gallery_grid_shape": [
+    320,
+    320
+  ],
+  "sam_score_min": 0.8808805346488953,
+  "sam_score_max": 0.9812082052230835,
+  "elapsed_seconds": 95.530504156,
+  "started_at_utc": "2026-07-25T18:04:08.467608+00:00",
+  "finished_at_utc": "2026-07-25T18:05:43.998161+00:00"
+}

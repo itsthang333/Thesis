@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -80,6 +81,36 @@ class WslGtPairAuditTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS")
         self.assertFalse(result["test_evaluated"])
         self.assertEqual(result["population"]["size_counts"]["small_lt_1pct"], 94)
+
+    def test_paired_protocol_matches_reference_and_historical_audit(self) -> None:
+        root = (
+            Path(__file__).resolve().parents[1]
+            / "artifacts"
+            / "reference"
+            / "gt_resnet18_unet_448_v1"
+        )
+        lock = json.loads((root / "reference_lock.json").read_text(encoding="utf-8"))
+        protocol = json.loads(
+            (root / "paired_protocol_v1.json").read_text(encoding="utf-8")
+        )
+        baseline = json.loads(
+            (root / "baseline_wsl_pair_audit.json").read_text(encoding="utf-8")
+        )
+        self.assertFalse(protocol["consumer_invariants"]["test_evaluated"])
+        self.assertEqual(
+            protocol["consumer_invariants"]["architecture"],
+            lock["consumer_training_contract"]["architecture"],
+        )
+        for subgroup, values in protocol["subgroup_contract"].items():
+            reference = float(values["reference_mean_dice"])
+            lower, upper = map(float, values["success_interval_inclusive"])
+            self.assertAlmostEqual(lower, reference - 0.05)
+            self.assertAlmostEqual(upper, reference + 0.05)
+            self.assertAlmostEqual(
+                protocol["historical_wsl_baseline"]["absolute_gap"][subgroup],
+                baseline["paired_gap"][subgroup]["absolute_gap"],
+            )
+        self.assertFalse(baseline["primary_success"])
 
 
 if __name__ == "__main__":

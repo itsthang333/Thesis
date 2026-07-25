@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "protocol_id": "btxrd_wsl_vs_gt_reference_pair_v1",
+  "status": "locked_before_new_wsl_training",
+  "primary_objective": "For every frozen lesion-size subgroup, absolute mean tumor-only Dice gap between the image-label-only WSL consumer and GT-trained reference must be <= 0.05.",
+  "reference_lock": "reference_lock.json",
+  "consumer_invariants": {
+    "architecture": "ResNet18UNet",
+    "encoder_initialization": "ImageNet pretrained ResNet-18",
+    "input_size": 448,
+    "seed": 42,
+    "batch_size": 8,
+    "preprocessing": "RGB resize to 448x448 and ImageNet normalization",
+    "train_augmentation": "paired random horizontal flip p=0.5",
+    "loss": "0.5 * BCEWithLogits(pos_weight=10) + 0.5 * per-image soft Dice loss",
+    "optimizer": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "maximum_epoch": 35,
+    "early_stop_patience": 10,
+    "checkpoint_selection": "maximum validation tumor-only Dice at fixed threshold 0.5; tie-break by normal empty-mask specificity within Dice tolerance 0.0001",
+    "threshold_grid": [
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85
+    ],
+    "threshold_selection": "independently per arm on validation: maximize mean tumor-only Dice, then normal empty-prediction rate, then proximity to 0.5",
+    "evaluation_population": "all 371 validation images; primary Dice means include all 184 tumors and every complete miss",
+    "test_evaluated": false
+  },
+  "only_allowed_training_difference": {
+    "gt_reference": "train ground-truth binary masks",
+    "wsl_experimental": "train pseudo-masks produced using radiographs and image-level labels only"
+  },
+  "prohibited_wsl_inputs": [
+    "train ground-truth masks or polygons",
+    "GT-derived lesion size, location, shape or crop",
+    "GT reference checkpoint weights",
+    "GT reference predictions or logits",
+    "validation annotations before prediction",
+    "test images or annotations for model selection"
+  ],
+  "subgroup_contract": {
+    "small_lt_1pct": {
+      "definition": "validation gt_area_ratio < 0.01",
+      "images": 94,
+      "reference_mean_dice": 0.32895493248574226,
+      "success_interval_inclusive": [
+        0.27895493248574227,
+        0.37895493248574225
+      ]
+    },
+    "medium_1_to_5pct": {
+      "definition": "0.01 <= validation gt_area_ratio < 0.05",
+      "images": 72,
+      "reference_mean_dice": 0.6624417783635557,
+      "success_interval_inclusive": [
+        0.6124417783635556,
+        0.7124417783635557
+      ]
+    },
+    "large_ge_5pct": {
+      "definition": "validation gt_area_ratio >= 0.05",
+      "images": 18,
+      "reference_mean_dice": 0.6937033565801355,
+      "success_interval_inclusive": [
+        0.6437033565801354,
+        0.7437033565801355
+      ]
+    }
+  },
+  "statistics": {
+    "paired_unit": "complete frozen validation group",
+    "bootstrap_iterations": 10000,
+    "bootstrap_seed": 42,
+    "subgroup_membership_usage": "post-prediction diagnosis only; never used by inference or per-image routing",
+    "authoritative_auditor": "../../../project/tools/audit_wsl_gt_pair.py"
+  },
+  "historical_wsl_baseline": {
+    "run_id": "btxrd_wsss_segmenter_v1",
+    "pair_audit": "baseline_wsl_pair_audit.json",
+    "effective_common_threshold_grid_note": "The historical WSL sweep additionally evaluated 0.05/0.10/0.15/0.90, but selected 0.85; restricting both arms to the locked common 0.20-0.85 grid leaves both selected thresholds and every reported metric unchanged.",
+    "candidate_mean_dice": {
+      "overall": 0.23001987009320218,
+      "small_lt_1pct": 0.07100141707025527,
+      "medium_1_to_5pct": 0.4134030430410359,
+      "large_ge_5pct": 0.32691687742170106
+    },
+    "absolute_gap": {
+      "overall": 0.26511182618004897,
+      "small_lt_1pct": 0.25795351541548694,
+      "medium_1_to_5pct": 0.2490387353225198,
+      "large_ge_5pct": 0.3667864791584343
+    },
+    "primary_success": false
+  }
+}

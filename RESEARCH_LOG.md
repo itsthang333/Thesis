@@ -387,6 +387,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `ab5f7cca1036b60a8b225288f14e20a70097234a`. No experiment ran and test was
   not read. Version 2 replaces only those two expected source hashes with the
   canonical Git-blob SHA-256 values; the scientific protocol is unchanged.
+- Grid-gallery smoke version 2 passes on a Kaggle T4. The official SAM commit
+  `6fdee8f...` generated a 32-by-32 dense point gallery for the frozen
+  validation tumor `IMG000001.jpeg`, retained 16 independent masks at the
+  predeclared predicted-IoU/stability filters, returned aligned
+  `[16,320,320]` candidates and 16 scores in `[0.88088,0.98121]`, and preserved
+  prompt mode `grid` for every candidate. CPM classifier, SAM checkpoint and
+  split hashes match the frozen values; source is commit `ab5f7cca...`;
+  `test_evaluated=false`. This is execution evidence only, not a performance
+  or promotion claim. Full validation is now authorized with the same CPM CAM,
+  `coverage_mass_sam` score, support clipping and post-processing; global
+  top-1 is required because dense gallery candidates have no CAM-component
+  identity.
 - The new goal's fully supervised reference arm is now independently audited
   and hash-locked as `gt_resnet18_unet_448_v1`. It is the existing 448px
   ImageNet-ResNet18 U-Net trained on all 2,981 clean-train images with seed 42,
@@ -408,4 +420,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   pass. The lock explicitly forbids checkpoint/prediction reuse or any
   train-GT influence in the WSL arm, permits validation GT only after
   prediction, and records `test_evaluated=false`.
+- The paired WSL-vs-GT protocol is frozen before any new WSL consumer
+  training. Both arms must use the exact reference consumer contract and the
+  common validation threshold grid `0.20:0.05:0.85`; only the train mask
+  source may differ. The historical WSL segmenter already satisfies the
+  consumer contract. Its older sweep included four extra endpoints, but its
+  selected `0.85` threshold and the reference's selected `0.20` are both in
+  the frozen common grid, so restricting the comparison does not change either
+  result.
+- The first authoritative paired audit quantifies the starting gap. Historical
+  image-label-only WSL Dice is `0.2300198701` overall and
+  `0.0710014171/0.4134030430/0.3269168774` for small/medium/large. Absolute
+  gaps to the GT reference are respectively
+  `0.2651118262` overall and
+  `0.2579535154/0.2490387353/0.3667864792`; all fail the `<=0.05` criterion,
+  with paired group-bootstrap intervals wholly below zero. The required WSL
+  Dice intervals are now explicit: small
+  `[0.2789549325,0.3789549325]`, medium
+  `[0.6124417784,0.7124417784]`, and large
+  `[0.6437033566,0.7437033566]`. This makes clear that small tumors remain the
+  priority named by the goal, while large tumors currently have the largest
+  supervision gap and cannot be ignored.
 
