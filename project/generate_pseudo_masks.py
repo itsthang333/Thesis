@@ -105,8 +105,9 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "Optional frozen pseudo-mask-trained U-Net used only to add SAM prompt "
-            "components. It never replaces the CAM support or selector score map."
+            "Optional frozen pseudo-mask-trained U-Net used to add SAM prompt "
+            "components. Its probability map is also available only to the explicit "
+            "source_consensus selector; CAM support clipping remains unchanged."
         ),
     )
     parser.add_argument(
@@ -981,7 +982,12 @@ def main() -> None:
                 args.proposal_teacher_max_components if proposal_teacher is not None else None
             ),
             "proposal_teacher_semantics": (
-                "proposal_components_only; CAM scoring and support clipping unchanged"
+                (
+                    "proposal_components_plus_source_consensus_scoring; "
+                    "CAM support clipping unchanged"
+                    if args.selection_method == "source_consensus"
+                    else "proposal_components_only; CAM scoring and support clipping unchanged"
+                )
                 if proposal_teacher is not None else None
             ),
             "auxiliary_binary_checkpoint": (
