@@ -441,4 +441,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `[0.6437033566,0.7437033566]`. This makes clear that small tumors remain the
   priority named by the goal, while large tumors currently have the largest
   supervision gap and cannot be ignored.
+- Future paired WSL consumer runs are now fail-closed at the training entry
+  point. Supplying `--paired-reference-lock` verifies the frozen split hash and
+  requires the exact GT-reference consumer contract: ResNet18 U-Net with
+  ImageNet initialization, 448px input, batch size 8, seed 42, AdamW at
+  `1e-4`, weight decay `1e-4`, manual `pos_weight=10`, no CLAHE, maximum 35
+  epochs, patience 10, and Dice tie tolerance `1e-4`. It also requires a train
+  pseudo-mask root and forbids a validation pseudo-mask override, so the sole
+  permitted arm difference is the train mask source and validation GT remains
+  post-prediction only. The resolved reference-lock identity and hashes are
+  embedded in training configuration and checkpoints. Seven contract and
+  paired-audit tests pass; test remains locked.
 

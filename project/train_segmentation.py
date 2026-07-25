@@ -24,6 +24,7 @@ from datasets.factory import build_segmentation_dataset
 from models.losses import bce_dice_loss, dice_coefficient, iou_score
 from models.unet import architecture_metadata, build_segmentation_model
 from progress import should_disable_tqdm
+from tools.paired_reference_contract import validate_paired_wsl_contract
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,6 +44,16 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Immutable derived split manifest. Its assignments are authoritative for BTXRD.",
+    )
+    parser.add_argument(
+        "--paired-reference-lock",
+        type=Path,
+        default=None,
+        help=(
+            "Optional fail-closed GT-reference contract for paired WSL training. "
+            "When supplied, consumer hyperparameters are verified and only the "
+            "train pseudo-mask source may differ from the reference arm."
+        ),
     )
     parser.add_argument("--image-size", type=int, default=SegmentationConfig.image_size)
     parser.add_argument(
@@ -149,7 +160,14 @@ def git_provenance() -> tuple[str, bool | None]:
 
 
 def resolved_training_config(args: argparse.Namespace) -> dict[str, object]:
-    excluded = {"output_dir", "resume_from", "epochs", "num_workers", "multi_gpu"}
+    excluded = {
+        "output_dir",
+        "resume_from",
+        "epochs",
+        "num_workers",
+        "multi_gpu",
+        "paired_reference_lock",
+    }
     config: dict[str, object] = {}
     for key, value in vars(args).items():
         if key.startswith("_") or key in excluded:
@@ -162,6 +180,7 @@ def resolved_training_config(args: argparse.Namespace) -> dict[str, object]:
         "scheduler": None,
         "gradient_accumulation_steps": 1,
         "gradient_clip_max_norm": None,
+        "paired_reference_lock": getattr(args, "_paired_reference_lock_info", None),
     })
     return config
 
@@ -371,6 +390,9 @@ def save_checkpoint(
                 "train_pseudo_mask_manifest_sha256": (
                     train_pseudo_info.get("manifest_sha256") if train_pseudo_info else None
                 ),
+                "paired_reference_lock": getattr(
+                    run_config, "_paired_reference_lock_info", None
+                ),
                 "val_pseudo_mask_manifest": val_pseudo_info,
                 "val_pseudo_mask_manifest_sha256": (
                     val_pseudo_info.get("manifest_sha256") if val_pseudo_info else None
@@ -524,6 +546,11 @@ def validate_resume_compatibility(checkpoint: dict[str, object], args: argparse.
 
 def main() -> None:
     args = parse_args()
+    if args.paired_reference_lock is not None:
+        args._paired_reference_lock_info = validate_paired_wsl_contract(
+            args.paired_reference_lock,
+            args,
+        )
     seed_everything(args.seed)
 
     train_dataset, val_dataset = build_datasets(args)
