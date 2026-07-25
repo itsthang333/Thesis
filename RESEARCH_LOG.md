@@ -307,4 +307,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   correction made before any long CPM training or validation localization
   result; it does not change the predeclared objective or use validation/test
   feedback.
+- The corrected source at Git commit
+  `f4a17a41d9e66d2e23f1c7b079d882a5e89e7ca4` then passed all six CPM
+  tensor/state tests and a real T4 batch-2 optimizer step. Fused feature/CAM
+  shapes were `[2,256,40,40]` and `[2,1,40,40]`; BCE/SSC/CPM/total losses
+  were `0.678304/4.011762/0.379352/5.069419`; the finite pre-clip gradient
+  norm was `13.012649`, and both lateral projections plus the CAM head
+  received gradients. Compact evidence is under
+  `artifacts/kaggle/s2c_cpm_torch_test_v2/`. The long classifier run is
+  authorized only with this commit and the frozen cache/index hashes.
 
