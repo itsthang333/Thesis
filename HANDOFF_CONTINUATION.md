@@ -814,3 +814,58 @@ Current status:
   after the training kernel completes, then run its payload tests and push
   Gate C.
 
+## 29. S2C final-feature result and stride-8 continuation
+
+The first S2C classifier and Gate-C evaluation are complete.
+
+Classifier:
+
+- Kernel: `itsthang333/btxrd-s2c-binary-classifier-v1`, version 1, COMPLETE.
+- Valid early stop at epoch 17; selected checkpoint epoch 10.
+- Validation F1 `0.8201058201`, sensitivity `0.8423913043`, specificity
+  `0.7914438503`, AUROC `0.8762206464`, AUPRC `0.8832401125`.
+- Baseline F1 was `0.7833333333`; the SSC classifier improved F1 by
+  `+0.0367724868`.
+- Checkpoint SHA-256:
+  `6c1562a4f6b2e789d71749c20fb9e8e3304e74c5f10da4f77cbd3657d820ee48`.
+- All 371 rows, fixed confusion `155/39/29/148`, source/split/region hashes,
+  polygon flags, and `test_evaluated=false` verify.
+
+Gate C:
+
+- Kernel: `itsthang333/btxrd-s2c-gate-c-v1`, version 1, COMPLETE.
+- Candidate Dice `0.2334851256` versus promoted baseline `0.2343392222`.
+- Paired delta `-0.0008540966`; tumor-group bootstrap 95% CI
+  `-0.0312535770` to `+0.0291092193`.
+- Small/medium/large deltas:
+  `-0.0487671999/+0.0476879964/+0.0551904038`.
+- Promotion is false. Compact evidence is under
+  `artifacts/kaggle/s2c_binary_classifier_v1/` and
+  `artifacts/kaggle/s2c_gate_c_v1/`. Test stayed locked.
+
+Mechanism:
+
+- Overall foreground recall, box recall, and SAM oracle Dice improve by
+  `+0.138044/+0.169903/+0.012096`.
+- On the fixed 94 small lesions, predicted area rises from `0.03105` to
+  `0.07195`, precision falls `-0.066781`, point-hit rate falls `-0.017469`,
+  oracle Dice falls `-0.024367`, selected Dice falls `-0.041551`, and
+  post-processing costs another `-0.007216`.
+- The first adaptation used final DenseNet features at 10x10/stride 32.
+  Official S2C uses a high-resolution, stride-8 classifier feature map. At
+  320 px the median small lesion is only about 11 px across, so final-grid
+  interpolation cannot restore the missing spatial degrees of freedom.
+
+Next controlled experiment:
+
+- Move only the SSC feature tap to DenseNet `denseblock2`, which is
+  `[B,512,40,40]`/stride 8 at 320 px.
+- Add no projection layer, so the DenseNet state dictionary and inference
+  architecture remain unchanged.
+- Freeze the same 2,981 region maps, BCE/SSC weight and temperature,
+  initialization, optimizer, split, early stopping, Gate-C recipe, metric, and
+  promotion rule.
+- Do not sweep SSC weight, CAM thresholds, or selectors. If the stride-8
+  feature tap fails Gate C, close this SSC family and move to a separately
+  predeclared CAM-logit supervision/CPM hypothesis.
+

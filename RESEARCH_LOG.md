@@ -165,4 +165,46 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   predeclared binary DenseNet121 320 BCE+SSC experiment. Gate C remains
   unchanged and fail-closed until the completed classifier checkpoint hash is
   available.
+- The S2C SSC classifier completed 17 epochs and early-stopped validly after
+  seven epochs without improving its epoch-10 checkpoint. Clean-validation F1
+  was `0.8201058201`, versus `0.7833333333` for the BCE baseline; sensitivity
+  rose by `+0.0760869565`, specificity fell by `-0.0213903743`, AUROC rose by
+  `+0.0107678447`, and AUPRC rose by `+0.0060122330`. The checkpoint SHA-256 is
+  `6c1562a4f6b2e789d71749c20fb9e8e3304e74c5f10da4f77cbd3657d820ee48`.
+  All 371 validation rows, 17 training rows, fixed-threshold confusion
+  `155/39/29/148`, early-stop record, split/region/source hashes, and
+  `test_evaluated=false` were independently reproduced.
+- The unchanged Gate-C run `itsthang333/btxrd-s2c-gate-c-v1` is rejected.
+  Tumor-only Dice is `0.2334851256` versus the promoted flip-TTA baseline
+  `0.2343392222`; paired delta is `-0.0008540966`, with complete-group
+  bootstrap 95% CI `-0.0312535770` to `+0.0291092193`. The frozen 94-image
+  small-lesion subgroup falls by `-0.0487671999`, while medium and large rise
+  by `+0.0476879964/+0.0551904038`; therefore every promotion condition is
+  false. All 371 images, 184 tumors, 187 normals, 42 runtime tests, source and
+  artifact hashes verify; test stayed locked.
+- Mechanism decomposition explains why classification improvement did not
+  transfer to small-lesion localization. Across all tumors, foreground recall
+  rises `+0.138044`, box recall `+0.169903`, and SAM single-candidate oracle
+  Dice `+0.012096`. For small lesions, however, predicted area rises from
+  `0.03105` to `0.07195` of the image, precision falls `-0.066781`, point-hit
+  rate falls `-0.017469`, oracle Dice falls `-0.024367`, selected Dice falls
+  `-0.041551`, and post-processing costs another `-0.007216`. SSC therefore
+  learned broader tumor evidence useful to medium/large cases but not a
+  sufficiently fine spatial representation for sub-one-percent lesions.
+- This result exposes a controlled fidelity gap rather than grounds for an
+  SSC weight or threshold sweep. Official S2C applies SSC to a 256-channel
+  high-resolution feature map from a stride-8 dilated classifier, whereas the
+  first BTXRD adaptation applied the same prototype/cosine loss to the final
+  DenseNet map `[B,1024,10,10]` at 320 px (stride 32) and then interpolated it
+  to 80x80. A median small lesion is only about 11 px across and is therefore
+  substantially below one final-map cell.
+- The next predeclared single-change experiment moves SSC from final
+  DenseNet features to the existing `denseblock2` output
+  `[B,512,40,40]` (stride 8 at 320 px), without adding a projection head or
+  changing the model state dictionary. BCE, SSC weight/temperature, SAM maps,
+  initialization, optimizer, split, checkpoint selection, flip-TTA LayerCAM,
+  SAM recipe, selector, metric, and promotion rule remain fixed. This directly
+  tests spatial granularity; no validation-derived threshold or per-image
+  gate is introduced. If this stride-8 candidate fails Gate C, close the SSC
+  feature-tap family rather than tuning loss weights on validation.
 
