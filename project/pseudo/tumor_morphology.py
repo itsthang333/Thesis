@@ -407,6 +407,82 @@ def build_class_conditioned_components(
     return fused_cam, support, components[:max_components]
 
 
+def build_probability_components(
+    probability: np.ndarray,
+    *,
+    threshold: float,
+    min_component_area: int = 20,
+    max_components: int = 3,
+    points_per_component: int = 5,
+    bbox_padding_ratio: float = 0.02,
+    negative_points_per_component: int = 4,
+) -> tuple[np.ndarray, list[TumorComponent]]:
+    """Build prompt components from a pseudo-trained segmentation teacher.
+
+    This consumes only a predicted probability map. It deliberately does not
+    modify the caller's CAM-derived support mask or scoring map, so teacher
+    components can expand the SAM proposal gallery without silently changing
+    the frozen selector/support contract.
+    """
+    probability = np.asarray(probability, dtype=np.float32)
+    if probability.ndim != 2:
+        raise ValueError(
+            f"Teacher probability must be 2D, got shape {probability.shape}"
+        )
+    if not np.isfinite(probability).all():
+        raise ValueError("Teacher probability contains non-finite values")
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("Teacher probability threshold must be in [0,1]")
+    if min_component_area <= 0 or max_components <= 0:
+        raise ValueError("Teacher component area/count limits must be positive")
+    if points_per_component <= 0 or negative_points_per_component < 0:
+        raise ValueError("Teacher point budgets are invalid")
+
+    probability = np.clip(probability, 0.0, 1.0)
+    support = (probability >= float(threshold)).astype(np.uint8)
+    ranked: list[tuple[float, int, np.ndarray]] = []
+    for component in _connected_components(support):
+        area = int(component.sum())
+        if area < min_component_area:
+            continue
+        region = component.astype(bool)
+        confidence = float(probability[region].mean())
+        ranked.append((confidence, area, component))
+    ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+
+    selected_support = np.zeros_like(support, dtype=np.uint8)
+    components: list[TumorComponent] = []
+    for component_id, (confidence, _, component) in enumerate(
+        ranked[:max_components]
+    ):
+        selected_support |= component
+        positive_points = _structured_component_points(
+            component,
+            tumor_likelihood=probability,
+            cam=probability,
+            max_points=points_per_component,
+        )
+        components.append(
+            TumorComponent(
+                component_id=component_id,
+                mask=component,
+                score=confidence,
+                bbox=_component_bbox(
+                    component,
+                    padding_ratio=bbox_padding_ratio,
+                ),
+                positive_points=positive_points,
+                negative_points=_select_negative_points(
+                    component,
+                    cam=probability,
+                    positive_points=positive_points,
+                    max_points=negative_points_per_component,
+                ),
+            )
+        )
+    return selected_support, components
+
+
 def _select_cam_supported_components(
     reconstructed: np.ndarray,
     cam: np.ndarray,

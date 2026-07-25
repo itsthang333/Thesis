@@ -46,6 +46,7 @@ from models.s2c_cpm import (
     S2CCPMDirectCAM,
 )
 from models.layercam import LayerCAM
+from models.unet import architecture_name_from_metadata, build_segmentation_model
 from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
@@ -99,6 +100,37 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
+    parser.add_argument(
+        "--proposal-teacher-segmentation-checkpoint",
+        type=Path,
+        default=None,
+        help=(
+            "Optional frozen pseudo-mask-trained U-Net used only to add SAM prompt "
+            "components. It never replaces the CAM support or selector score map."
+        ),
+    )
+    parser.add_argument(
+        "--proposal-teacher-expected-sha256",
+        type=str,
+        default=None,
+        help="Required immutable SHA-256 when a proposal-teacher checkpoint is supplied.",
+    )
+    parser.add_argument(
+        "--proposal-teacher-threshold",
+        type=float,
+        default=0.85,
+        help="Absolute probability threshold for frozen teacher proposal components.",
+    )
+    parser.add_argument(
+        "--proposal-teacher-min-component-area",
+        type=int,
+        default=20,
+    )
+    parser.add_argument(
+        "--proposal-teacher-max-components",
+        type=int,
+        default=3,
+    )
     parser.add_argument("--auxiliary-binary-checkpoint", type=Path, default=None,
                         help="Optional one-logit tumor checkpoint whose CAM is blended with the main CAM.")
     parser.add_argument("--auxiliary-binary-weight", type=float, default=0.35,
@@ -541,6 +573,91 @@ def load_classifier(
     return model, checkpoint_task, state.get("normalization", "imagenet")
 
 
+def load_proposal_teacher(
+    checkpoint_path: Path,
+    *,
+    expected_sha256: str | None,
+    expected_split_manifest: Path | None,
+    device: torch.device,
+) -> tuple[torch.nn.Module, dict[str, object]]:
+    """Load an image-label-only segmentation teacher under a fail-closed contract."""
+    checkpoint_path = checkpoint_path.resolve()
+    expected_hash = str(expected_sha256 or "").strip().lower()
+    if len(expected_hash) != 64 or any(char not in "0123456789abcdef" for char in expected_hash):
+        raise ValueError(
+            "--proposal-teacher-expected-sha256 must be a 64-character hexadecimal digest"
+        )
+    actual_hash = sha256_file(checkpoint_path)
+    if actual_hash != expected_hash:
+        raise ValueError(
+            "Proposal-teacher checkpoint SHA-256 mismatch: "
+            f"expected={expected_hash}, actual={actual_hash}"
+        )
+    try:
+        state = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    except TypeError:  # torch<2.0 compatibility for local provenance checks
+        state = torch.load(checkpoint_path, map_location="cpu")
+    if not isinstance(state, dict) or not isinstance(state.get("model_state_dict"), dict):
+        raise ValueError("Proposal-teacher checkpoint is missing model_state_dict")
+    if state.get("dataset") != "btxrd":
+        raise ValueError("Proposal teacher must be a BTXRD checkpoint")
+    if int(state.get("image_size", -1)) != 448:
+        raise ValueError("Proposal teacher must use the frozen 448px WSL consumer contract")
+    architecture = architecture_name_from_metadata(state.get("architecture"))
+    if architecture != "resnet18_unet":
+        raise ValueError("Proposal teacher must be the frozen ResNet18UNet consumer")
+    if not state.get("train_pred_mask_root"):
+        raise ValueError("Proposal teacher is not pseudo-mask trained")
+    pseudo_manifest_hash = str(
+        state.get("train_pseudo_mask_manifest_sha256") or ""
+    ).strip().lower()
+    if len(pseudo_manifest_hash) != 64:
+        raise ValueError("Proposal teacher lacks a valid train pseudo-mask manifest hash")
+    if state.get("val_pred_mask_root") is not None:
+        raise ValueError("Proposal teacher validation must use GT masks, not pseudo masks")
+    if expected_split_manifest is None:
+        raise ValueError("Proposal teacher requires --split-manifest")
+    expected_split_hash = sha256_file(expected_split_manifest.resolve())
+    if state.get("split_manifest_sha256") != expected_split_hash:
+        raise ValueError(
+            "Proposal-teacher split hash differs from the requested frozen split"
+        )
+
+    resolved = state.get("resolved_config")
+    if not isinstance(resolved, dict):
+        raise ValueError("Proposal teacher lacks its resolved training configuration")
+    required_contract = {
+        "dataset": "btxrd",
+        "image_size": 448,
+        "model_architecture": "resnet18_unet",
+        "seed": 42,
+        "val_pred_mask_root": None,
+    }
+    mismatches = {
+        key: (resolved.get(key), value)
+        for key, value in required_contract.items()
+        if resolved.get(key) != value
+    }
+    if mismatches:
+        raise ValueError(f"Proposal-teacher consumer contract mismatch: {mismatches}")
+
+    model = build_segmentation_model(architecture, pretrained=False)
+    model.load_state_dict(state["model_state_dict"], strict=True)
+    model.to(device)
+    model.eval()
+    return model, {
+        "checkpoint": str(checkpoint_path),
+        "checkpoint_sha256": actual_hash,
+        "architecture": architecture,
+        "image_size": 448,
+        "split_manifest_sha256": expected_split_hash,
+        "train_pseudo_mask_manifest_sha256": pseudo_manifest_hash,
+        "supervision": "image_labels_via_pseudo_masks_only",
+        "test_evaluated": False,
+        "proposal_role": "add_prompt_components_only",
+    }
+
+
 def classifier_class_weights(logits: torch.Tensor, task: str) -> np.ndarray:
     if task == "single-label":
         return torch.softmax(logits, dim=1)[0].detach().cpu().numpy()
@@ -803,6 +920,44 @@ def main() -> None:
         ),
     )
     print(f"Loaded classifier checkpoint task={classifier_task} normalization={classifier_normalization}")
+    proposal_teacher = None
+    proposal_teacher_info = None
+    if args.proposal_teacher_segmentation_checkpoint is not None:
+        if args.sam_grid_gallery:
+            raise ValueError("Proposal-teacher components are incompatible with --sam-grid-gallery")
+        if args.disable_morphology or args.morphology_fusion_mode != "components":
+            raise ValueError(
+                "Proposal teacher requires enabled component-mode morphology"
+            )
+        if target_columns != ["tumor"] or args.cam_target_class != "ground_truth":
+            raise ValueError(
+                "The frozen proposal-teacher experiment requires tumor image labels "
+                "and --cam-target-class ground_truth"
+            )
+        if classifier_normalization != "imagenet":
+            raise ValueError("Proposal teacher requires ImageNet-normalized inputs")
+        if not 0.0 <= args.proposal_teacher_threshold <= 1.0:
+            raise ValueError("--proposal-teacher-threshold must be in [0,1]")
+        if (
+            args.proposal_teacher_min_component_area <= 0
+            or args.proposal_teacher_max_components <= 0
+        ):
+            raise ValueError("Proposal-teacher component limits must be positive")
+        proposal_teacher, proposal_teacher_info = load_proposal_teacher(
+            args.proposal_teacher_segmentation_checkpoint,
+            expected_sha256=args.proposal_teacher_expected_sha256,
+            expected_split_manifest=args.split_manifest,
+            device=device,
+        )
+        print(
+            "Loaded frozen pseudo-trained proposal teacher "
+            f"sha256={proposal_teacher_info['checkpoint_sha256']}"
+        )
+    elif args.proposal_teacher_expected_sha256 is not None:
+        raise ValueError(
+            "--proposal-teacher-expected-sha256 requires "
+            "--proposal-teacher-segmentation-checkpoint"
+        )
 
     run_metadata = {
             "pipeline_profile": args.pipeline_profile,
@@ -815,6 +970,20 @@ def main() -> None:
             "classifier_task": classifier_task,
             "classifier_checkpoint": str(args.classifier_checkpoint.resolve()),
             "classifier_checkpoint_sha256": sha256_file(args.classifier_checkpoint.resolve()),
+            "proposal_teacher": proposal_teacher_info,
+            "proposal_teacher_threshold": (
+                args.proposal_teacher_threshold if proposal_teacher is not None else None
+            ),
+            "proposal_teacher_min_component_area": (
+                args.proposal_teacher_min_component_area if proposal_teacher is not None else None
+            ),
+            "proposal_teacher_max_components": (
+                args.proposal_teacher_max_components if proposal_teacher is not None else None
+            ),
+            "proposal_teacher_semantics": (
+                "proposal_components_only; CAM scoring and support clipping unchanged"
+                if proposal_teacher is not None else None
+            ),
             "auxiliary_binary_checkpoint": (
                 str(args.auxiliary_binary_checkpoint.resolve())
                 if args.auxiliary_binary_checkpoint else None
@@ -1283,6 +1452,33 @@ def main() -> None:
 
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
                 image_rgb = tensor_to_rgb_numpy(image_tensor[0], normalization=classifier_normalization)
+                teacher_probability = None
+                teacher_support = None
+                teacher_components = []
+                cam_component_count = 0
+                if proposal_teacher is not None:
+                    with torch.no_grad():
+                        teacher_input = F.interpolate(
+                            image_tensor,
+                            size=(448, 448),
+                            mode="bilinear",
+                            align_corners=False,
+                        )
+                        teacher_logits = proposal_teacher(teacher_input)
+                        teacher_probability_tensor = torch.sigmoid(teacher_logits)
+                        teacher_probability_tensor = F.interpolate(
+                            teacher_probability_tensor,
+                            size=(args.image_size, args.image_size),
+                            mode="bilinear",
+                            align_corners=False,
+                        )
+                        teacher_probability = (
+                            teacher_probability_tensor[0, 0]
+                            .detach()
+                            .cpu()
+                            .numpy()
+                            .astype(np.float32)
+                        )
                 if save_visuals:
                     for local_i, cls_i in enumerate(active_indices):
                         cls_name = class_names[cls_i]
@@ -1347,6 +1543,29 @@ def main() -> None:
                             bone_likelihood = np.zeros_like(fused_cam, dtype=np.float32)
                         if bone_support is None:
                             bone_support = np.zeros_like(fused_cam, dtype=np.uint8)
+                        cam_component_count = len(bone_components)
+                        if teacher_probability is not None:
+                            teacher_support, teacher_components = (
+                                morphology.build_probability_components(
+                                    teacher_probability,
+                                    threshold=args.proposal_teacher_threshold,
+                                    min_component_area=args.proposal_teacher_min_component_area,
+                                    max_components=args.proposal_teacher_max_components,
+                                    points_per_component=args.points_per_component,
+                                    bbox_padding_ratio=args.bbox_padding_ratio,
+                                    negative_points_per_component=(
+                                        args.negative_points_per_component
+                                    ),
+                                )
+                            )
+                            offset = len(bone_components)
+                            bone_components.extend(
+                                replace(
+                                    component,
+                                    component_id=offset + int(component.component_id),
+                                )
+                                for component in teacher_components
+                            )
                     else:
                         bone_likelihood, bone_support = morphology.build_tumor_guidance(
                             image_rgb,
@@ -1752,6 +1971,13 @@ def main() -> None:
                         "cam_std": float(np.std(fused_cam)),
                         "cam_nonzero_ratio": float(np.count_nonzero(fused_cam) / fused_cam.size),
                         "morphology_components": len(bone_components),
+                        "cam_morphology_components": cam_component_count,
+                        "proposal_teacher_components": len(teacher_components),
+                        "proposal_teacher_support_area_ratio": (
+                            float(np.count_nonzero(teacher_support) / teacher_support.size)
+                            if teacher_probability is not None and teacher_support is not None
+                            else 0.0
+                        ),
                         **prompt_stats,
                         "sam_candidate_count": sam_candidate_count,
                         "selection_score_min": float(selection_scores.min()) if len(selection_scores) else "",
