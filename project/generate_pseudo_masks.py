@@ -103,8 +103,17 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Optional prediction-first image-label-only saliency manifest. Its "
-            "maps replace LayerCAM after classifier/image-label gating while all "
-            "downstream morphology, SAM, selection and post-processing stay fixed."
+            "role is controlled by --external-saliency-role."
+        ),
+    )
+    parser.add_argument(
+        "--external-saliency-role",
+        choices=["replace", "proposal_gallery"],
+        default="replace",
+        help=(
+            "replace reproduces the original external-saliency ablation. "
+            "proposal_gallery keeps LayerCAM as the selector/support map and "
+            "unconditionally appends external-saliency component/SAM proposals."
         ),
     )
     parser.add_argument("--external-saliency-run-metadata", type=Path, default=None)
@@ -909,6 +918,52 @@ def load_external_saliency_map(
     return values
 
 
+def build_external_saliency_proposal_gallery(
+    *,
+    image_rgb: np.ndarray,
+    saliency_map: np.ndarray,
+    prompt_percentiles: tuple[float, ...],
+    min_component_area: int,
+    max_components: int,
+    all_cam_components: bool,
+    points_per_component: int,
+    bbox_padding_ratio: float,
+    negative_points_per_component: int,
+) -> list:
+    """Build the same component gallery used by external-saliency replacement.
+
+    Component IDs are made contiguous across percentile views. The caller
+    applies a second offset before appending this gallery to the LayerCAM
+    gallery, so existing LayerCAM proposals and source ordering are preserved.
+    """
+    components = []
+    for prompt_percentile in prompt_percentiles:
+        _, _, local_components = morphology.build_class_conditioned_components(
+            image_rgb,
+            [saliency_map],
+            [1.0],
+            cam_percentile=prompt_percentile,
+            min_component_area=max(20, min_component_area // 2),
+            max_components=(max_components if all_cam_components else 1),
+            points_per_component=points_per_component,
+            bbox_padding_ratio=bbox_padding_ratio,
+            negative_points_per_component=negative_points_per_component,
+            debug_dir=None,
+        )
+        offset = len(components)
+        components.extend(
+            replace(
+                component,
+                component_id=offset + int(component.component_id),
+            )
+            for component in local_components
+        )
+    maximum = max_components * len(prompt_percentiles)
+    if all_cam_components and len(components) > maximum:
+        components = components[:maximum]
+    return components
+
+
 def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagenet") -> np.ndarray:
     """Convert a [3,H,W] normalised tensor to [H,W,3] uint8 RGB numpy for SAM."""
     pil = tensor_to_pil(image_tensor.detach().cpu(), normalization=normalization)
@@ -1121,6 +1176,11 @@ def main() -> None:
                 "The first external-saliency diagnostic isolates one localization "
                 "source and cannot mix proposal-teacher/auxiliary CAM evidence"
             )
+    elif args.external_saliency_role != "replace":
+        raise ValueError(
+            "--external-saliency-role proposal_gallery requires the complete "
+            "hash-locked external-saliency contract"
+        )
 
     run_metadata = {
             "pipeline_profile": args.pipeline_profile,
@@ -1153,6 +1213,21 @@ def main() -> None:
                 if proposal_teacher is not None else None
             ),
             "external_saliency": external_saliency_contract,
+            "external_saliency_role": (
+                args.external_saliency_role
+                if external_saliency_contract is not None else None
+            ),
+            "external_saliency_semantics": (
+                (
+                    "replace_layercam"
+                    if args.external_saliency_role == "replace"
+                    else (
+                        "append_component_sam_proposals_only; layercam selector, "
+                        "support and post-processing unchanged"
+                    )
+                )
+                if external_saliency_contract is not None else None
+            ),
             "auxiliary_binary_checkpoint": (
                 str(args.auxiliary_binary_checkpoint.resolve())
                 if args.auxiliary_binary_checkpoint else None
@@ -1645,24 +1720,28 @@ def main() -> None:
                         float(fused_cam.max()) - float(fused_cam.min()) + 1e-8
                     )
 
+                external_saliency_map = None
                 if external_saliency_contract is not None:
                     assert external_saliency_root is not None
-                    fused_cam = load_external_saliency_map(
+                    external_saliency_map = load_external_saliency_map(
                         external_saliency_rows[str(image_name)],
                         root=external_saliency_root,
                         expected_image_id=str(image_name),
                         expected_image_label=true_tumor,
                         image_size=args.image_size,
                     )
-                    per_class_cams = [fused_cam]
-                    active_indices = [0]
-                    class_weights = np.asarray([1.0], dtype=np.float32)
+                    if args.external_saliency_role == "replace":
+                        fused_cam = external_saliency_map
+                        per_class_cams = [fused_cam]
+                        active_indices = [0]
+                        class_weights = np.asarray([1.0], dtype=np.float32)
 
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
                 image_rgb = tensor_to_rgb_numpy(image_tensor[0], normalization=classifier_normalization)
                 teacher_probability = None
                 teacher_support = None
                 teacher_components = []
+                external_saliency_components = []
                 cam_component_count = 0
                 if proposal_teacher is not None:
                     with torch.no_grad():
@@ -1752,6 +1831,36 @@ def main() -> None:
                         if bone_support is None:
                             bone_support = np.zeros_like(fused_cam, dtype=np.uint8)
                         cam_component_count = len(bone_components)
+                        if (
+                            external_saliency_map is not None
+                            and args.external_saliency_role == "proposal_gallery"
+                        ):
+                            external_components = (
+                                build_external_saliency_proposal_gallery(
+                                    image_rgb=image_rgb,
+                                    saliency_map=external_saliency_map,
+                                    prompt_percentiles=tuple(prompt_percentiles),
+                                    min_component_area=args.min_component_area,
+                                    max_components=args.max_components,
+                                    all_cam_components=args.all_cam_components,
+                                    points_per_component=args.points_per_component,
+                                    bbox_padding_ratio=args.bbox_padding_ratio,
+                                    negative_points_per_component=(
+                                        args.negative_points_per_component
+                                    ),
+                                )
+                            )
+                            offset = len(bone_components)
+                            external_saliency_components = [
+                                replace(
+                                    component,
+                                    component_id=(
+                                        offset + int(component.component_id)
+                                    ),
+                                )
+                                for component in external_components
+                            ]
+                            bone_components.extend(external_saliency_components)
                         if teacher_probability is not None:
                             teacher_support, teacher_components = (
                                 morphology.build_probability_components(
@@ -2168,6 +2277,9 @@ def main() -> None:
                         "cam_nonzero_ratio": float(np.count_nonzero(fused_cam) / fused_cam.size),
                         "morphology_components": len(bone_components),
                         "cam_morphology_components": cam_component_count,
+                        "external_saliency_components": len(
+                            external_saliency_components
+                        ),
                         "proposal_teacher_components": len(teacher_components),
                         "proposal_teacher_support_area_ratio": (
                             float(np.count_nonzero(teacher_support) / teacher_support.size)

@@ -1,0 +1,24 @@
+{
+  "candidate_manifest_sha256": "eb4923e55de898eb288bdb3bd3285b62bd25148879a3cfe1fa37869e27cb6c13",
+  "candidate_per_image_sha256": "012b8ed4911a4c2aabb45463125471569dea04f401fd0a979fd3147f7d1de46c",
+  "candidate_prompt_quality_sha256": "b9173dd5893c00b22c7d8054949dcef9921883a21ca44da6ba172ba03b10d1a1",
+  "cohort": {
+    "images": 371,
+    "normal": 187,
+    "tumor": 184
+  },
+  "complete_misses_included": true,
+  "decision": "REJECT",
+  "diagnostic_prediction_first_audit_sha256": "d5ddb55d3692e46f17ce088d1a5157447fc05b3aac12bea6d74fa3128f6300ab",
+  "prediction_artifacts_verified_before_gt_load": true,
+  "prediction_freeze_sha256": "955060b4d8f099c43c712d45a7a0e48e63d55fc4c735ba1591ee0760683bc5ce",
+  "pseudo_manifest_sha256": "c15a7bfc13c3d7bd93211ed7fb742efd1f65fd2058fb1a67c3be45aaeeca41c3",
+  "status": "PASS",
+  "subgroups": {
+    "large": 18,
+    "medium": 72,
+    "small": 94
+  },
+  "test_evaluated": false,
+  "validation_gt_read_only_after_prediction_freeze": true
+}

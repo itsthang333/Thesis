@@ -1084,4 +1084,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   leakage-prone execution ordering. Test remains locked. Kernel status after
   launch is RUNNING, and the single 15-minute monitor was retargeted without
   creating a duplicate.
+- The prediction-first BiomedCLIP downstream kernel completed in 550.1
+  seconds and passed the local compact-evidence audit: all declared wrapper,
+  protocol, split, source, saliency, prediction-freeze, pseudo-mask and
+  candidate-manifest hashes match; the exact `371/184/187` cohort is present;
+  complete misses are retained; validation GT is first read by the separate
+  post-freeze evaluator; and `test_evaluated=false`.
+- Direct BiomedCLIP replacement is rejected. Final tumor Dice falls from
+  `0.2343392222` to `0.1760893904`, paired complete-group CI95 for the
+  `-0.0582498318` delta is `[-0.09982265,-0.01839313]`. Small falls
+  `0.1121634039 -> 0.02578231`; medium `0.3486037144 -> 0.31764299`; large
+  `0.4153105265 -> 0.39481197`. Neither the oracle research gate nor the
+  direct-train-mask gate passes.
+- Mechanism decomposition explains why the arm still contains useful signal.
+  Raw best-single oracle Dice changes by `-0.08847388/+0.04288522/+0.06791886`
+  for small/medium/large, while selection loss worsens strongly for medium and
+  large. Small-lesion failure occurs before support/morphology: foreground
+  recall falls `-0.042835`, positive-point hit rate falls `-0.071061`, and raw
+  oracle falls `-0.088474`, whereas its support loss improves.
+- A post-freeze feasibility diagnostic takes the maximum raw single-candidate
+  Dice over the two already frozen galleries. This is not an executable
+  GT-oracle router. The unconditional gallery has oracle Dice `0.4837261732`,
+  `+0.0746498827` over baseline with 10,000-resample complete-group CI95
+  `[+0.05277334,+0.09832107]`. Gains are positive in every fixed subgroup:
+  small `+0.03701584` (`[+0.02287461,+0.05389866]`), medium `+0.11669329`
+  (`[+0.07082705,+0.16560901]`), and large `+0.10300960`
+  (`[+0.03699213,+0.18664071]`).
+- Decision: preserve the promoted flip-TTA LayerCAM proposals, selector map,
+  support and post-processing; append the frozen BiomedCLIP component/SAM
+  proposal gallery unconditionally. Pixel blending, replacement, GT-oracle
+  routing, lesion-size routing and subgroup-specific tuning remain forbidden.
+  This bounded arm tests whether the existing selector can exploit a strictly
+  richer candidate pool; it does not authorize train pseudo masks.
 

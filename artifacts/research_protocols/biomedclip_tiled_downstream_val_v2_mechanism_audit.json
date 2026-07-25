@@ -1,0 +1,118 @@
+{
+  "audit_id": "biomedclip_tiled_downstream_val_v2_mechanism_audit",
+  "status": "PASS",
+  "decision": "REJECT_REPLACEMENT_AND_AUTHORIZE_PROPOSAL_GALLERY_RESEARCH_ONLY",
+  "population": {
+    "tumor_images": 184,
+    "tumor_groups": 167,
+    "subgroups": {
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    }
+  },
+  "final_dice_comparison": {
+    "overall": {
+      "baseline": 0.23433922219069755,
+      "biomedclip": 0.17608939038121405,
+      "delta": -0.0582498318094835,
+      "ci95": [-0.09982265, -0.01839313]
+    },
+    "small": {
+      "baseline": 0.1121634039,
+      "biomedclip": 0.02578231,
+      "delta": -0.08638109,
+      "ci95": [-0.13233748, -0.04491846]
+    },
+    "medium": {
+      "baseline": 0.3486037144,
+      "biomedclip": 0.31764299,
+      "delta": -0.03096073,
+      "ci95": [-0.10789671, 0.04365603]
+    },
+    "large": {
+      "baseline": 0.4153105265,
+      "biomedclip": 0.39481197,
+      "delta": -0.02049856,
+      "ci95": [-0.14791560, 0.10644361]
+    }
+  },
+  "raw_single_candidate_oracle": {
+    "overall": {
+      "baseline": 0.40907629052253885,
+      "biomedclip": 0.3873030879285899,
+      "delta": -0.02177320259394896
+    },
+    "small": {
+      "baseline": 0.22274967689066472,
+      "biomedclip": 0.13427579857913718,
+      "delta": -0.08847387831152754
+    },
+    "medium": {
+      "baseline": 0.5941481658893992,
+      "biomedclip": 0.6370333859689317,
+      "delta": 0.04288522007953255
+    },
+    "large": {
+      "baseline": 0.6418277713548849,
+      "biomedclip": 0.7097466290365871,
+      "delta": 0.06791885768170225
+    }
+  },
+  "unconditional_proposal_gallery_oracle_diagnostic": {
+    "definition": "Per-image maximum raw single-candidate Dice over the already frozen baseline and BiomedCLIP candidate galleries. This is a post-freeze feasibility diagnostic only; GT-oracle routing is forbidden at runtime.",
+    "bootstrap": {
+      "unit": "complete frozen group_id",
+      "iterations": 10000,
+      "seed_rule": "20260726 plus subgroup image count",
+      "interval": "percentile_95"
+    },
+    "overall": {
+      "images": 184,
+      "groups": 167,
+      "baseline": 0.40907629052253885,
+      "biomedclip": 0.3873030879285899,
+      "gallery_union_oracle": 0.4837261731750971,
+      "delta_vs_baseline": 0.07464988265255823,
+      "ci95": [0.05277333564894581, 0.09832107187410818],
+      "images_where_biomedclip_is_better": 98
+    },
+    "small": {
+      "images": 94,
+      "groups": 92,
+      "baseline": 0.22274967689066472,
+      "biomedclip": 0.13427579857913718,
+      "gallery_union_oracle": 0.25976551415627286,
+      "delta_vs_baseline": 0.03701583726560818,
+      "ci95": [0.022874609999741495, 0.05389865801875742],
+      "images_where_biomedclip_is_better": 47
+    },
+    "medium": {
+      "images": 72,
+      "groups": 61,
+      "baseline": 0.5941481658893992,
+      "biomedclip": 0.6370333859689317,
+      "gallery_union_oracle": 0.7108414553356078,
+      "delta_vs_baseline": 0.11669328944620865,
+      "ci95": [0.07082705459117086, 0.16560900836959805],
+      "images_where_biomedclip_is_better": 41
+    },
+    "large": {
+      "images": 18,
+      "groups": 17,
+      "baseline": 0.6418277713548849,
+      "biomedclip": 0.7097466290365871,
+      "gallery_union_oracle": 0.7448373749646916,
+      "delta_vs_baseline": 0.10300960360980677,
+      "ci95": [0.03699213040947855, 0.18664070901535137],
+      "images_where_biomedclip_is_better": 10
+    }
+  },
+  "mechanism_conclusion": {
+    "small": "Failure is primarily localization/proposal and positive-point collapse; support clipping is not the cause.",
+    "medium_large": "BiomedCLIP contains useful proposals, but the frozen selector/support path discards the gain.",
+    "next_bounded_hypothesis": "Keep the promoted flip-TTA LayerCAM gallery, selector map, support clip and post-processing unchanged; append the frozen BiomedCLIP component/SAM proposal gallery unconditionally. Do not replace or pixel-blend LayerCAM and do not route by GT, subgroup or lesion size."
+  },
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "test_evaluated": false
+}
