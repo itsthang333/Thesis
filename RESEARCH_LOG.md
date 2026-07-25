@@ -761,4 +761,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   test this geometry. Four synthetic geometry/aggregation tests and five smoke
   auditor tests pass. The module remains prospective until the train-only smoke
   gate passes.
+- A prediction-first saliency generator was added while the smoke run remains
+  pending. `project/generate_biomedclip_saliency.py` permits only train/val,
+  requires exact split and physical BiomedCLIP-weight hashes, verifies every
+  source-image hash, creates exact empty maps for known-normal image labels,
+  and stores float16 maps plus per-file hashes and fixed-view diagnostics before
+  any GT evaluator is allowed. It never enumerates or opens `Annotations` and
+  has no test-split CLI choice. Four focused manifest/map tests, four saliency
+  geometry tests and five smoke-auditor tests pass. This is implementation
+  preparation only, not validation evidence.
 

@@ -197,6 +197,14 @@ mechanism and remain image-label-only.
      geometry never receives lesion area, mask, subgroup or validation score.
      Four focused geometry/aggregation tests pass. It remains inactive unless
      the train-only smoke gate passes.
+   - Prediction-first generation is isolated in
+     `project/generate_biomedclip_saliency.py`. It accepts only `train` or
+     `val`, verifies the frozen split and every image hash, makes known-normal
+     maps exactly empty from the binary image label, and writes float16 maps,
+     source identities, view scores and file hashes before any segmentation
+     evaluator is run. The command requires the physical pretrained-weight
+     hash obtained from the smoke audit, records zero validation-GT/test access,
+     and has no code path for the test split.
 
 Every validation candidate must report the complete error chain:
 
