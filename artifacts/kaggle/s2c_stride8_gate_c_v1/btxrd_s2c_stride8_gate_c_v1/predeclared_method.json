@@ -1,0 +1,61 @@
+{
+  "stage": "Gate C evaluation of the S2C SSC stride-8 binary classifier",
+  "status": "predeclared_before_launch",
+  "supervision": "binary image-level tumor labels only for classifier/CAM generation; validation polygons only for post-prediction diagnostic metrics",
+  "test_evaluated": false,
+  "split": "val",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "classifier_checkpoint_sha256": "8bb4a9136291bffba9d2e70752f5b03c003730ff5365ab7e1033f8dc222331d6",
+  "classifier_region_map_manifest_sha256": "677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e",
+  "protocols": {
+    "ground_truth": "known binary image label selects tumor CAM; known normals are explicit empty masks"
+  },
+  "recipe": {
+    "target_columns": [
+      "tumor"
+    ],
+    "classifier_image_size": 320,
+    "sam_image_size": 512,
+    "layercam_weights": [
+      0.2,
+      0.3,
+      0.5
+    ],
+    "layercam_gradient_mode": "positive",
+    "cam_percentile": 90,
+    "cam_percentile_values": [
+      85,
+      90,
+      95
+    ],
+    "cam_tta_flip": true,
+    "scientific_variable": "classifier training objective: baseline BCE versus BCE plus S2C SAM-Segment Contrasting weight 1, temperature 1, using the post-ReLU DenseNet121 denseblock2 stride-8 feature tap",
+    "proposal_and_ranking_cam": "unmodified flip-TTA LayerCAM from the S2C classifier",
+    "confidence_threshold": 0.5,
+    "seed_percentile": 82,
+    "support_percentile": 55,
+    "sam_prompt_modes": [
+      "box_point",
+      "point",
+      "box"
+    ],
+    "max_components": 3,
+    "component_topk": 3,
+    "points_per_component": 5,
+    "prompt_border_margin": 2,
+    "selection_method": "coverage_mass_sam",
+    "support_clip_kernel": 5,
+    "support_semantics": "frozen promoted baseline global support clipping",
+    "closing_kernel": 0,
+    "opening_kernel": 0,
+    "min_component_area": 100,
+    "min_size": 40,
+    "max_hole_area": 0,
+    "guidance_threshold": 0.4,
+    "low_score_policy": "empty"
+  },
+  "evaluation": "full clean validation; all 184 tumors count end-to-end, including image-gate skips and empty predictions; 187 normals reported separately",
+  "segment_anything_commit": "6fdee8f2727f4506cfbbe553e23b895e27956588",
+  "created_at_utc": "2026-07-25T07:27:47.767357+00:00",
+  "sam_checkpoint_sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912"
+}

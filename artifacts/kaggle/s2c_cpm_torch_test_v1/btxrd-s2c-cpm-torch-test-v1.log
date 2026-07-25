@@ -1,0 +1,62 @@
+[{"stream_name":"stderr","time":21.133311617,"data":"test_cpm_loss_prefers_cam_aligned_with_sam_mask (test_s2c_cpm.S2CCPMTests.test_cpm_loss_prefers_cam_aligned_with_sam_mask) ... ok\n"}
+,{"stream_name":"stderr","time":21.133750802,"data":"test_known_normal_forces_all_background (test_s2c_cpm.S2CCPMTests.test_known_normal_forces_all_background) ... ok\n"}
+,{"stream_name":"stderr","time":21.30057612,"data":"test_model_emits_stride8_cam_and_fused_features (test_s2c_cpm.S2CCPMTests.test_model_emits_stride8_cam_and_fused_features) ... /kaggle/input/btxrd-s2c-cpm-smoke-source-v1/models/s2c_cpm.py:93: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":21.300624863,"data":"  with torch.cuda.amp.autocast(enabled=False):\n"}
+,{"stream_name":"stderr","time":21.550804178,"data":"ok\n"}
+,{"stream_name":"stderr","time":21.550849169,"data":"\n"}
+,{"stream_name":"stderr","time":21.550853706,"data":"----------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":21.550857304,"data":"Ran 3 tests in 19.257s\n"}
+,{"stream_name":"stderr","time":21.550860555,"data":"\n"}
+,{"stream_name":"stderr","time":21.550863887,"data":"OK\n"}
+,{"stream_name":"stderr","time":28.59996474,"data":"/kaggle/src/script.py:88: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":28.600006392,"data":"  scaler = torch.cuda.amp.GradScaler(enabled=True)\n"}
+,{"stream_name":"stderr","time":28.804738745,"data":"/kaggle/src/script.py:105: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":28.804775152,"data":"  with torch.cuda.amp.autocast(enabled=True):\n"}
+,{"stream_name":"stderr","time":28.806514227,"data":"/kaggle/input/btxrd-s2c-cpm-smoke-source-v1/models/s2c_cpm.py:93: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":28.806539569,"data":"  with torch.cuda.amp.autocast(enabled=False):\n"}
+,{"stream_name":"stderr","time":30.25703081,"data":"/kaggle/src/script.py:111: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":30.257074928,"data":"  with torch.cuda.amp.autocast(enabled=False):\n"}
+,{"stream_name":"stdout","time":31.891485701,"data":"{\n"}
+,{"stream_name":"stdout","time":31.89153008,"data":"  \"test_evaluated\": false,\n"}
+,{"stream_name":"stdout","time":31.891540411,"data":"  \"torch_tests_passed\": 3,\n"}
+,{"stream_name":"stdout","time":31.891543911,"data":"  \"real_densenet_optimizer_step_passed\": true,\n"}
+,{"stream_name":"stdout","time":31.891547218,"data":"  \"batch_size\": 2,\n"}
+,{"stream_name":"stdout","time":31.891550714,"data":"  \"image_size\": 320,\n"}
+,{"stream_name":"stdout","time":31.891553889,"data":"  \"feature_shape\": [\n"}
+,{"stream_name":"stdout","time":31.891556989,"data":"    2,\n"}
+,{"stream_name":"stdout","time":31.891560087,"data":"    256,\n"}
+,{"stream_name":"stdout","time":31.891563211,"data":"    40,\n"}
+,{"stream_name":"stdout","time":31.891566233,"data":"    40\n"}
+,{"stream_name":"stdout","time":31.891569165,"data":"  ],\n"}
+,{"stream_name":"stdout","time":31.891572276,"data":"  \"cam_shape\": [\n"}
+,{"stream_name":"stdout","time":31.8916054,"data":"    2,\n"}
+,{"stream_name":"stdout","time":31.891612992,"data":"    1,\n"}
+,{"stream_name":"stdout","time":31.891617469,"data":"    40,\n"}
+,{"stream_name":"stdout","time":31.891634138,"data":"    40\n"}
+,{"stream_name":"stdout","time":31.891637703,"data":"  ],\n"}
+,{"stream_name":"stdout","time":31.891640979,"data":"  \"feature_stride\": 8,\n"}
+,{"stream_name":"stdout","time":31.891644286000002,"data":"  \"feature_channels\": 256,\n"}
+,{"stream_name":"stdout","time":31.891648007,"data":"  \"classification_loss\": 0.678304135799408,\n"}
+,{"stream_name":"stdout","time":31.891651415,"data":"  \"ssc_loss\": 4.0117621421813965,\n"}
+,{"stream_name":"stdout","time":31.891654957,"data":"  \"cpm_loss\": 0.3793523907661438,\n"}
+,{"stream_name":"stdout","time":31.891660303,"data":"  \"optimization_loss\": 5.069418907165527,\n"}
+,{"stream_name":"stdout","time":31.89166624,"data":"  \"gradient_norm_before_clip\": 13.012648582458496,\n"}
+,{"stream_name":"stdout","time":31.891668738,"data":"  \"lateral_and_cam_gradients_present\": true,\n"}
+,{"stream_name":"stdout","time":31.891671179,"data":"  \"torch\": \"2.10.0+cu128\",\n"}
+,{"stream_name":"stdout","time":31.891673571,"data":"  \"cuda\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":31.891676012,"data":"  \"gpu\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":31.89167927,"data":"  \"source_hashes\": {\n"}
+,{"stream_name":"stdout","time":31.891695346,"data":"    \"models/classifier.py\": \"83ae792015a370777acb4e35781396de08a78bb43ef93092d17d5501a9776355\",\n"}
+,{"stream_name":"stdout","time":31.891699846,"data":"    \"models/s2c_cpm.py\": \"17495a8439e38f2a43cc9729bfc1703664d5d74de525d36911ca227ac085afbc\",\n"}
+,{"stream_name":"stdout","time":31.891703996,"data":"    \"models/sam_segment_contrastive.py\": \"9aa8971f98b5e134cc2cb1c1f627caa55aa523f5950c4e2590be22510f79530e\",\n"}
+,{"stream_name":"stdout","time":31.891708453,"data":"    \"tests/test_s2c_cpm.py\": \"665a63f8339963b9656b699e771f6205ae3e0d2afa5c9fb8974be7a6eeb1b3e1\"\n"}
+,{"stream_name":"stdout","time":31.891712621,"data":"  },\n"}
+,{"stream_name":"stdout","time":31.891715945,"data":"  \"kernel_script_sha256\": \"93474986c19bdbf7f9bd5a3dc4589fb5b354a4c4b7c4a237b11860ce46ead7ff\"\n"}
+,{"stream_name":"stdout","time":31.891719574,"data":"}\n"}
+,{"stream_name":"stderr","time":35.672826989,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":35.672861944,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":36.081830526,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":36.081853698,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":36.832686186,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":38.490768959,"data":"[NbConvertApp] Writing 306284 bytes to __results__.html\n"}
+]

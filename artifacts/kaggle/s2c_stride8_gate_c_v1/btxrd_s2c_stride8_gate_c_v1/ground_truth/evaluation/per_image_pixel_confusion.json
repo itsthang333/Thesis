@@ -1,0 +1,6 @@
+{
+  "tp_pixels": 144885,
+  "fp_pixels": 879860,
+  "fn_pixels": 239931,
+  "tn_pixels": 36725724
+}

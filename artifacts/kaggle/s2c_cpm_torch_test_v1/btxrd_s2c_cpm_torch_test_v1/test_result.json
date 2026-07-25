@@ -1,0 +1,37 @@
+{
+  "test_evaluated": false,
+  "torch_tests_passed": 3,
+  "real_densenet_optimizer_step_passed": true,
+  "batch_size": 2,
+  "image_size": 320,
+  "feature_shape": [
+    2,
+    256,
+    40,
+    40
+  ],
+  "cam_shape": [
+    2,
+    1,
+    40,
+    40
+  ],
+  "feature_stride": 8,
+  "feature_channels": 256,
+  "classification_loss": 0.678304135799408,
+  "ssc_loss": 4.0117621421813965,
+  "cpm_loss": 0.3793523907661438,
+  "optimization_loss": 5.069418907165527,
+  "gradient_norm_before_clip": 13.012648582458496,
+  "lateral_and_cam_gradients_present": true,
+  "torch": "2.10.0+cu128",
+  "cuda": "12.8",
+  "gpu": "Tesla T4",
+  "source_hashes": {
+    "models/classifier.py": "83ae792015a370777acb4e35781396de08a78bb43ef93092d17d5501a9776355",
+    "models/s2c_cpm.py": "17495a8439e38f2a43cc9729bfc1703664d5d74de525d36911ca227ac085afbc",
+    "models/sam_segment_contrastive.py": "9aa8971f98b5e134cc2cb1c1f627caa55aa523f5950c4e2590be22510f79530e",
+    "tests/test_s2c_cpm.py": "665a63f8339963b9656b699e771f6205ae3e0d2afa5c9fb8974be7a6eeb1b3e1"
+  },
+  "kernel_script_sha256": "93474986c19bdbf7f9bd5a3dc4589fb5b354a4c4b7c4a237b11860ce46ead7ff"
+}

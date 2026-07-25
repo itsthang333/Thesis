@@ -257,4 +257,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   manifest hash. Train/validation polygons were not loaded and test remained
   locked. Classification alone cannot promote the model; the unchanged
   Gate-C localization run is now authorized.
+- The unchanged stride-8 Gate-C run is decisively rejected. Mean tumor-only
+  Dice is `0.1842404724` versus `0.2343392222`; paired delta is
+  `-0.0500987498`, with predeclared complete-group bootstrap 95% CI
+  `-0.0818340900` to `-0.0195896270`. The frozen small/medium/large deltas
+  are all negative: `-0.0597196529/-0.0289336577/-0.0845166242`.
+  Independent reconstruction from the two 371-row files reproduced 184
+  tumors, 167 tumor groups, the exact point delta and a 10,000-resample CI
+  within `3e-5` of the recorded interval. All source/checkpoint/split hashes
+  verify and test remained locked.
+- The mechanism also closes the SSC feature-tap family rather than motivating
+  another weight/temperature sweep. Relative to the promoted baseline,
+  foreground recall changes only `+0.0093599`, while foreground precision,
+  point-hit rate, SAM single-candidate oracle Dice, clipped oracle Dice,
+  selected Dice and final Dice change by
+  `-0.0121927/-0.0514334/-0.0310159/-0.0325518/-0.0499680/-0.0500988`.
+  The stride-8 regularizer therefore does not merely expose a selector issue;
+  it degrades the candidate evidence itself on this domain.
+- The next method is a separately bounded CPM adaptation, not another SSC
+  tap. A DenseNet FPN-style CAM classifier fuses the existing stride-8
+  `denseblock2` tensor with projected final semantics, produces a
+  256-channel 40x40 feature and a differentiable one-channel CAM, and couples
+  classification to that CAM through global average pooling. This preserves
+  fine spatial degrees of freedom while avoiding the shallow-feature-only
+  classifier that a direct `denseblock2` head would create. A T4 smoke run
+  passed 3/3 tensor tests plus a real 320px batch-2 BCE+SSC+CPM optimizer
+  step; losses were `0.678304/4.011762/0.379352`, all three head branches
+  received gradients, and test was not evaluated. The full CPM training
+  remains gated on a train-only, hash-audited SAM embedding cache and a frozen
+  no-polygon protocol.
 

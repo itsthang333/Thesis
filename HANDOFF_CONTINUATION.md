@@ -917,3 +917,47 @@ The frozen classifier hash is now inserted into
 `tmp/kaggle/s2c_stride8_gate_c_v1`; its 6/6 fail-closed tests and Python
 compilation pass. The next action is the unchanged Gate-C localization run.
 
+## 31. Stride-8 Gate-C rejection and CPM transition
+
+`itsthang333/btxrd-s2c-stride8-gate-c-v1` is COMPLETE and rejected.
+
+- Candidate tumor-only Dice `0.1842404724`, promoted baseline
+  `0.2343392222`.
+- Paired delta `-0.0500987498`; complete-tumor-group bootstrap 95% CI
+  `[-0.0818340900, -0.0195896270]`.
+- Frozen small/medium/large subgroup deltas:
+  `-0.0597196529/-0.0289336577/-0.0845166242`.
+- All 371 rows, 184 tumors, 187 normals and 167 tumor groups verify.
+  Checkpoint, region-map, baseline, split, SAM and 11 source hashes match;
+  `test_evaluated=false`.
+- Mechanism deltas versus the promoted baseline: support recall
+  `+0.0093599`, support precision `-0.0121927`, point hit `-0.0514334`,
+  SAM oracle `-0.0310159`, clipped oracle `-0.0325518`, selected Dice
+  `-0.0499680`, final Dice `-0.0500988`.
+
+Decision: close SSC tap/weight/temperature variations. The failure now affects
+the proposal oracle and all three lesion-size groups, so neither another
+selector nor a regularizer sweep is justified.
+
+The next bounded direction is CAM-based Prompting Module supervision. The
+prepared model is a BTXRD/DenseNet adaptation, not a copy of S2C's ResNet38:
+it fuses projected `denseblock2` stride-8 detail with projected final
+DenseNet semantics, creates a 256x40x40 feature, emits a differentiable
+one-channel CAM, and obtains the image logit by global average pooling that
+CAM. `project/models/s2c_cpm.py` contains the model and binary CPM loss.
+
+Private T4 smoke kernel `itsthang333/btxrd-s2c-cpm-torch-test-v1` version 2
+passed 3/3 tests and a real batch-2, 320px backward/optimizer step:
+
+- feature `[2,256,40,40]`, CAM `[2,1,40,40]`;
+- BCE/SSC/CPM/total `0.678304/4.011762/0.379352/5.069419`;
+- finite pre-clip gradient norm `13.012649`;
+- gradients reach both FPN projections and the CAM head;
+- no test evaluation.
+
+Before full training, create a train-tumor-only cache of frozen SAM ViT-B
+image embeddings. With augmentation disabled, caching the encoder result is
+mathematically equivalent to rerunning the frozen encoder each epoch; CPM
+still recomputes CAM peaks and the SAM prompt decoder online. Bind the cache
+to the clean split/image hashes and do not process validation/test images.
+
