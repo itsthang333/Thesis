@@ -797,3 +797,20 @@ calibration/ranking.
   small-lesion cases. Do not evaluate test or train a downstream segmenter
   unless that rule passes.
 
+Current status:
+
+- The precompute is complete and audited: 2,981/2,981 unique train maps,
+  80x80 `uint16`, map-manifest SHA-256
+  `677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e`.
+  It did not load polygon/mask supervision, validation images, or test.
+  Compact evidence is in
+  `artifacts/kaggle/s2c_segment_everything_v1/`.
+- The hash placeholder in `tmp/kaggle/s2c_binary_classifier_v1` has been
+  frozen, 3/3 payload tests pass, and
+  `itsthang333/btxrd-s2c-binary-classifier-v1` version 1 is running.
+- The prepared `tmp/kaggle/s2c_gate_c_v1` payload already binds the region
+  manifest and promoted baseline per-image hash, but intentionally retains
+  `__FILL_AFTER_S2C_CLASSIFIER__`. Freeze the classifier checkpoint SHA only
+  after the training kernel completes, then run its payload tests and push
+  Gate C.
+

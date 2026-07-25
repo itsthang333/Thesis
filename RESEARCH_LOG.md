@@ -147,4 +147,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   test while the region-manifest hash placeholder remains. It may be launched
   only after the train-only precompute completes and the exact manifest SHA is
   frozen.
+- The train-only SAM Segment-Everything precompute completed after
+  `15104.39` seconds. It produced exactly 2,981 unique 80x80 `uint16` region
+  maps for the 2,981 clean-train images; region count was min/mean/median/max
+  `1/7.7246/7/51`, and uncovered fraction was
+  `0/0.41980/0.42828/0.99344`. The split population remained
+  2,981/371/373 with no group overlap, every source/map hash was populated,
+  and the final map-manifest SHA-256 is
+  `677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e`.
+  `polygons_or_masks_loaded=false`, `validation_images_processed=false`, and
+  `test_evaluated=false`; compact evidence is under
+  `artifacts/kaggle/s2c_segment_everything_v1/`.
+- That manifest hash is now frozen in the classifier wrapper, whose 3/3
+  fail-closed payload tests pass and whose four bound project-source hashes
+  match the repaired v10 bundle. Kaggle kernel
+  `itsthang333/btxrd-s2c-binary-classifier-v1` version 1 is running the
+  predeclared binary DenseNet121 320 BCE+SSC experiment. Gate C remains
+  unchanged and fail-closed until the completed classifier checkpoint hash is
+  available.
 
