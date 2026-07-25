@@ -1,7 +1,7 @@
 {
   "audit_id": "biomedclip_layercam_proposal_gallery_val_v1_wrapper_audit",
   "status": "PASS",
-  "wrapper_sha256": "fd70b742ed8d6758222a1a83109344aba4018433ba48f4889ef35412b60658cf",
+  "wrapper_sha256": "767af8ddde1edbdf5d94e12f053e5ee8df51f380bab20e092869c3148730ec8c",
   "source_commit": "c3845f78128bdad95aab909180f5ac701e713a10",
   "implementation_commit": "1f6847d9326d9e8a789e1924a3a2a7735f5a1f0f",
   "protocol_sha256": "8b5883780df881ecb654ee9a6d431a56a175d560c41f34f0ca6170f8a54a8c1d",

@@ -1135,4 +1135,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   decrease, proposal-source counts must balance, and all 184 tumor candidate
   diagnostics must freeze successfully. The single existing monitor was
   retargeted to this kernel at the unchanged 15-minute interval.
+- Proposal-gallery kernel version 1 failed after 501.47 seconds with
+  `KeyError: 'parameters'` in the wrapper-only post-generation audit. The
+  no-GT generation subprocess had completed, but the wrapper assumed a nested
+  `run_metadata["parameters"]` object while the hash-locked generator writes a
+  flat metadata schema. Prediction manifests were not frozen, the separate
+  validation-GT evaluator was never invoked, and test remained untouched; no
+  scientific result exists for version 1.
+- The repair changes only that wrapper lookup to use the flat `run_metadata`
+  object. Source commit, implementation, protocol, split, checkpoints,
+  saliency maps, generation command, selector, support, metric and promotion
+  gates remain unchanged. Version 2 is held until the repaired wrapper hash
+  and static audit are updated. The repaired wrapper compiles and passes the
+  static ordering/contract audit at SHA-256
+  `767af8ddde1edbdf5d94e12f053e5ee8df51f380bab20e092869c3148730ec8c`.
 
