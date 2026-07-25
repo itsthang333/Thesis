@@ -770,4 +770,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   has no test-split CLI choice. Four focused manifest/map tests, four saliency
   geometry tests and five smoke-auditor tests pass. This is implementation
   preparation only, not validation evidence.
+- The generator now also requires a full lowercase Git source commit and writes
+  hashes for both the CLI and saliency implementation into its immutable run
+  metadata. This closes the remaining source-provenance gap before a validation
+  launch; it does not change the saliency method.
 

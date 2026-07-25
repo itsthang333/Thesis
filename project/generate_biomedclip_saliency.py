@@ -64,6 +64,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-split-sha256", required=True)
     parser.add_argument("--expected-model-weight-sha256", required=True)
+    parser.add_argument("--source-commit", required=True)
     parser.add_argument("--output-size", type=int, default=448)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="cuda")
@@ -144,6 +145,11 @@ def main() -> None:
     args = parse_args()
     if args.output_size <= 0:
         raise ValueError("--output-size must be positive")
+    if (
+        len(args.source_commit) != 40
+        or any(character not in "0123456789abcdef" for character in args.source_commit)
+    ):
+        raise ValueError("--source-commit must be a lowercase 40-character Git SHA")
     if args.split == "test":
         raise ValueError("Test saliency generation is locked")
     if args.output_dir.exists() and any(args.output_dir.iterdir()) and not args.overwrite:
@@ -268,6 +274,13 @@ def main() -> None:
     metadata = {
         "stage": "prediction-first BiomedCLIP saliency generation",
         "supervision": "images and binary image-level labels only",
+        "source_commit": args.source_commit,
+        "source_files": {
+            "generate_biomedclip_saliency.py": sha256_file(Path(__file__).resolve()),
+            "models/biomedclip_saliency.py": sha256_file(
+                Path(__file__).resolve().parent / "models" / "biomedclip_saliency.py"
+            ),
+        },
         "split": args.split,
         "population": {
             "images": len(rows),
