@@ -1116,4 +1116,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   routing, lesion-size routing and subgroup-specific tuning remain forbidden.
   This bounded arm tests whether the existing selector can exploit a strictly
   richer candidate pool; it does not authorize train pseudo masks.
+- Protocol `biomedclip_layercam_proposal_gallery_val_v1` is predeclared before
+  any gallery-union prediction. It locks implementation commit
+  `1f6847d9326d9e8a789e1924a3a2a7735f5a1f0f`, protocol SHA-256
+  `8b5883780df881ecb654ee9a6d431a56a175d560c41f34f0ca6170f8a54a8c1d`,
+  the exact saliency/checkpoint/split/baseline hashes and the unchanged
+  `coverage_mass_sam` selector/support/post-processing recipe. Prediction
+  manifests must be frozen before validation GT is loaded. Promotion to train
+  pseudo masks requires a positive overall paired-CI lower bound and no mean
+  final-Dice decrease in any fixed size subgroup; test remains locked.
 

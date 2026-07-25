@@ -1,0 +1,117 @@
+{
+  "protocol_id": "biomedclip_layercam_proposal_gallery_val_v1",
+  "status": "predeclared_before_any_proposal_gallery_prediction",
+  "scientific_question": "Can the frozen promoted flip-TTA LayerCAM selector exploit useful BiomedCLIP proposals when the two component/SAM galleries are appended unconditionally rather than replacing or blending LayerCAM?",
+  "mechanism_evidence": {
+    "path": "artifacts/research_protocols/biomedclip_tiled_downstream_val_v2_mechanism_audit.json",
+    "decision": "REJECT_REPLACEMENT_AND_AUTHORIZE_PROPOSAL_GALLERY_RESEARCH_ONLY",
+    "unconditional_gallery_oracle_delta": {
+      "overall": 0.07464988265255823,
+      "small": 0.03701583726560818,
+      "medium": 0.11669328944620865,
+      "large": 0.10300960360980677
+    }
+  },
+  "source_lock": {
+    "implementation_commit": "1f6847d9326d9e8a789e1924a3a2a7735f5a1f0f",
+    "generate_pseudo_masks.py": "2470eddf73d2e717f654113d03c1a1829c73d16c1c44f555cc71484ab42c8f3d",
+    "evaluate_saved_candidate_diagnostics.py": "a746da95b0e8bb6e8afde24d8ddee95d0b04692a4ee725aa4c57d0e627173f6a",
+    "pseudo/candidate_diagnostics.py": "0ec601e723da317383a42a00ac64583b43bda6e856542a7b0ea2fcd247c18db3",
+    "tools/compare_candidate_diagnostics.py": "ef5e07b7cc8e5495aa22f8b2de877d83040bd89a908d1c609876de205a6c2ad8",
+    "evaluate_pseudo_masks.py": "acae150b0932ab54290f93d98849d63e71de1c996eb8d12fe305ee5f0672db2d",
+    "pseudo/manifest.py": "48467c99dd7257722ea08f1012fa723ce4bd19221965a453bbee682df0f7e404",
+    "tests/test_external_saliency_proposal_gallery.py": "94dda50ccd5155451a4c803fc28fdb939796fedb4b4ad3db1731068331491dfe"
+  },
+  "saliency_input_lock": {
+    "kernel": "itsthang333/btxrd-biomedclip-tiled-saliency-val-v1",
+    "saliency_manifest_sha256": "72360237a12802c06ea5da8cecde7dbb87d4fef7a9dbf358f09e080384267bf1",
+    "saliency_metadata_sha256": "06109965042b9c433126101f7e32c609c8069312af58b2d0e6693ad4e77ccc4b",
+    "independent_audit_sha256": "9afafa07681a83f7b31b08c9cceb79635d2dd58af53c7a8a9561f7ae01de21cf",
+    "source_commit": "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
+    "model_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be"
+  },
+  "population": {
+    "split": "val",
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "images": 371,
+    "tumor_images": 184,
+    "normal_images": 187,
+    "tumor_groups": 167,
+    "subgroups": {
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    }
+  },
+  "baseline_lock": {
+    "method": "promoted binary LayerCAM plus horizontal-flip TTA",
+    "mean_tumor_dice": 0.23433922219069755,
+    "subgroup_dice": {
+      "small": 0.1121634039,
+      "medium": 0.3486037144,
+      "large": 0.4153105265
+    },
+    "per_image_sha256": "fe5cf247cd236799de9e279db342314c11ff65fdb065cda26986c302efd05540",
+    "prompt_quality_sha256": "d1b570ae3a6287fdaf7fc5c28aea864d6883e5c57037542b39b17c4c6ea995e4"
+  },
+  "single_changed_variable": {
+    "external_saliency_role": "proposal_gallery",
+    "operation": "Append the exact frozen BiomedCLIP percentile-component/SAM proposal gallery after the exact promoted LayerCAM gallery for every image-level-positive validation image.",
+    "layercam_candidates_preserved": true,
+    "biomedclip_candidates_appended_unconditionally": true,
+    "selector_map": "promoted flip-TTA LayerCAM only",
+    "support_clip": "promoted flip-TTA LayerCAM support only",
+    "pixel_blending": false,
+    "source_replacement": false,
+    "per_image_routing": false
+  },
+  "frozen_downstream": {
+    "classifier_checkpoint_sha256": "f62d3702541ec3e6571751ddda22dab4c723943397471d3897500da1620304c5",
+    "sam_checkpoint_sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
+    "image_size": 320,
+    "sam_image_size": 512,
+    "cam_tta_flip": true,
+    "cam_percentile_ensemble": [85, 90, 95],
+    "min_component_area": 100,
+    "max_components_per_percentile": 3,
+    "points_per_component": 5,
+    "bbox_padding_ratio": 0.02,
+    "negative_points_per_component": 4,
+    "sam_prompt_ensemble": ["box_point", "point", "box"],
+    "max_box_area_ratio": 0.35,
+    "selection_method": "coverage_mass_sam",
+    "mask_score_threshold": 0.4,
+    "component_topk": 3,
+    "support_clip_kernel": 5,
+    "closing_kernel": 0,
+    "opening_kernel": 0,
+    "min_size": 40,
+    "max_hole_area": 0,
+    "guidance_threshold": 0.4,
+    "low_score_policy": "empty"
+  },
+  "execution_order": [
+    "Verify exact source, split, checkpoints and all 371 physical saliency-map hashes without segmentation GT",
+    "Run focused tests including proposal-gallery source ordering and cap",
+    "Generate all 371 pseudo masks and 184 complete candidate diagnostics without segmentation GT",
+    "Freeze pseudo-mask and candidate-diagnostic manifest hashes",
+    "Only then load validation GT in a separate evaluator",
+    "Compare against the frozen promoted baseline with 10000-iteration paired complete-group bootstrap overall and for all fixed subgroups"
+  ],
+  "promotion_gates": {
+    "continue_selector_research": "unconditional union raw-oracle delta CI95 lower bound > 0 overall and in each subgroup",
+    "direct_train_pseudo_mask_generation": "overall final-Dice paired CI95 lower bound > 0 and final mean Dice does not decrease in any of small, medium or large",
+    "interpretation": "Oracle success permits selector research only. Train pseudo masks remain unauthorized unless the final-Dice gate passes."
+  },
+  "forbidden": [
+    "train polygons or masks",
+    "validation segmentation GT before both prediction manifests are hash-frozen",
+    "test images, labels, predictions or metrics",
+    "GT-oracle candidate selection or per-image source routing",
+    "lesion-size or subgroup routing",
+    "pixelwise LayerCAM/BiomedCLIP blending",
+    "post-hoc threshold, selector, support, morphology or prompt tuning",
+    "dropping complete misses or changing the cohort, split, group IDs or metric"
+  ],
+  "test_evaluated": false
+}
