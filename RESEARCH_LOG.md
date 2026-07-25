@@ -544,4 +544,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   polygon, GT size gate or per-image oracle routing is permitted. Promotion
   still requires a positive overall paired-CI lower bound versus
   `0.2343392222` and no decrease on the fixed 94-case small subgroup.
+- That validation-only experiment is now running as private Kaggle kernel
+  `itsthang333/btxrd-wsl-proposal-teacher-val-v1`, version 1. Source is pinned
+  to commit `ef4cd71290e9aa40f6f66983e8f0aba05d8fd4a8`; the cloud wrapper SHA-256 is
+  `2a8d10543c7c158c56a67d15a07b63b018c3984a8087ca0e44dca80f32a5e549`.
+  The proposal teacher is independently packaged and frozen at checkpoint
+  SHA-256
+  `02d3af8feede3c3e650cb76d664185c59092697c1c8306ea67613b89f8407fb4`.
+  Loading fails closed unless its BTXRD split, 448px ResNet18-U-Net consumer,
+  seed-42 and pseudo-mask-only training provenance match. The sole experimental
+  change is up to three teacher probability components at threshold `0.85`
+  and minimum area 20 added to the exact promoted flip-TTA component/SAM
+  gallery; CAM scoring and support clipping are unchanged. The full 371-case
+  validation run will be compared to the frozen baseline with 10,000 paired
+  complete-group bootstrap iterations and fixed `94/72/18` size groups. Test
+  remains locked and generated masks will not be retained in compact evidence.
 
