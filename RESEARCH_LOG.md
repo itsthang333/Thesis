@@ -372,4 +372,40 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the CPM CAM, `coverage_mass_sam` ranking score, support clipping,
   morphology, split, metric and promotion rule. It does not import Pro2SAM's
   full training method or replace the pipeline selector. Test remains locked.
+- A fresh execution audit of the frozen GT reference exposed a portability
+  defect in its old snapshot verifier: text files were recorded with LF byte
+  sizes/hashes, while the Windows working tree uses CRLF. The verifier therefore
+  rejects `convergence_summary.json` before reaching the otherwise intact
+  checkpoint. The 230,924,939-byte checkpoint still independently hashes to
+  `05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31`.
+  This is an audit-tool defect, not permission to waive verification; the new
+  reference lock will use canonical-LF hashes for text and exact byte hashes
+  for binary checkpoints.
+- Grid-gallery smoke version 1 failed closed before loading data or a model.
+  Its source audit used hashes calculated from the CRLF Windows checkout,
+  whereas Kaggle correctly cloned canonical LF Git blobs at commit
+  `ab5f7cca1036b60a8b225288f14e20a70097234a`. No experiment ran and test was
+  not read. Version 2 replaces only those two expected source hashes with the
+  canonical Git-blob SHA-256 values; the scientific protocol is unchanged.
+- The new goal's fully supervised reference arm is now independently audited
+  and hash-locked as `gt_resnet18_unet_448_v1`. It is the existing 448px
+  ImageNet-ResNet18 U-Net trained on all 2,981 clean-train images with seed 42,
+  paired horizontal-flip augmentation, batch size 8, AdamW at `1e-4`,
+  weight decay `1e-4`, and
+  `0.5*BCEWithLogits(pos_weight=10)+0.5*soft-Dice`. The frozen budget is 35
+  epochs with patience 10; checkpoint selection uses validation tumor Dice at
+  threshold 0.5 and normal empty-mask specificity only as a tie-breaker.
+  The exact 230,924,939-byte epoch-20 checkpoint hashes to
+  `05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31`.
+- Independent reconstruction from the frozen 371-row validation file verifies
+  184 tumors, 187 normals, 167 tumor groups, and size counts `94/72/18`.
+  With the predeclared validation threshold grid and selection rule, reference
+  Dice is `0.4951316963` overall and
+  `0.3289549325/0.6624417784/0.6937033566` for small/medium/large. Complete
+  misses remain included. The authoritative lock and reusable paired auditor
+  are under `artifacts/reference/gt_resnet18_unet_448_v1/` and
+  `project/tools/audit_wsl_gt_pair.py`; all three reference/pair audit tests
+  pass. The lock explicitly forbids checkpoint/prediction reuse or any
+  train-GT influence in the WSL arm, permits validation GT only after
+  prediction, and records `test_evaluated=false`.
 

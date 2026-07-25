@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "reference_id": "gt_resnet18_unet_448_v1",
+  "role": "frozen fully supervised reference arm for paired WSL supervision-gap experiments",
+  "status": "hash_locked",
+  "reference_snapshot_root": "../../best_pipeline/fs_resnet18_pw10_full_448_e20",
+  "weak_supervision_isolation": {
+    "reference_training_supervision": "BTXRD train ground-truth polygons rasterized to binary masks",
+    "experimental_training_supervision": "pseudo-masks generated from radiographs and image-level labels only",
+    "reference_checkpoint_reuse_by_wsl": false,
+    "reference_prediction_reuse_by_wsl": false,
+    "train_gt_may_influence_wsl_generation_or_selection": false,
+    "validation_gt_usage": "post-prediction evaluation and subgroup diagnosis only",
+    "test_evaluated": false
+  },
+  "data": {
+    "dataset": "BTXRD",
+    "split_manifest": "../../best_pipeline/fs_resnet18_pw10_full_448_e20/data/split_manifest.csv",
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "train_images": 2981,
+    "validation_images": 371,
+    "validation_tumors": 184,
+    "validation_normals": 187,
+    "validation_tumor_groups": 167,
+    "cross_split_group_overlap": 0,
+    "cross_split_image_sha256_overlap": 0,
+    "grouping_limitation": "BTXRD publishes no patient/case identifier; the frozen manifest uses audited consecutive-ID plus stable-metadata heuristic grouping."
+  },
+  "consumer_training_contract": {
+    "architecture": "ResNet18UNet",
+    "encoder_initialization": "ImageNet pretrained ResNet-18",
+    "input_size": 448,
+    "seed": 42,
+    "batch_size": 8,
+    "preprocessing": "RGB resize to 448x448 and ImageNet normalization",
+    "augmentation": "paired random horizontal flip with probability 0.5 on train only",
+    "loss": "0.5 * BCEWithLogits(pos_weight=10) + 0.5 * per-image soft Dice loss",
+    "optimizer": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "maximum_epoch": 35,
+    "early_stop_patience": 10,
+    "checkpoint_selection": "maximum validation tumor-only Dice at fixed threshold 0.5; tie-break by normal empty-mask specificity within Dice tolerance 0.0001",
+    "best_epoch": 20,
+    "last_completed_epoch": 30,
+    "paired_experiment_rule": "The WSL consumer must use this complete contract unchanged; only the train mask source may differ."
+  },
+  "evaluation_contract": {
+    "primary_population": "all validation tumor images, including complete misses",
+    "threshold_grid": [
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85
+    ],
+    "threshold_selection": "independently per arm on validation: maximize mean tumor-only Dice, then normal empty-prediction rate, then proximity to 0.5",
+    "reference_selected_threshold": 0.2,
+    "size_subgroups": {
+      "small_lt_1pct": {
+        "definition": "gt_area_ratio < 0.01",
+        "images": 94
+      },
+      "medium_1_to_5pct": {
+        "definition": "0.01 <= gt_area_ratio < 0.05",
+        "images": 72
+      },
+      "large_ge_5pct": {
+        "definition": "gt_area_ratio >= 0.05",
+        "images": 18
+      }
+    },
+    "success_rule": "absolute difference between WSL and GT-reference mean tumor-only Dice is <= 0.05 separately for small, medium and large",
+    "bootstrap": "10,000 paired resamples of complete validation groups with seed 42"
+  },
+  "reference_result": {
+    "overall_mean_tumor_dice": 0.4951316962732512,
+    "small_lt_1pct_mean_tumor_dice": 0.32895493248574226,
+    "medium_1_to_5pct_mean_tumor_dice": 0.6624417783635557,
+    "large_ge_5pct_mean_tumor_dice": 0.6937033565801355,
+    "complete_misses": 17,
+    "normal_empty_prediction_rate": 0.5561497326203209
+  },
+  "artifact_hashes": {
+    "checkpoint_path": "../../best_pipeline/fs_resnet18_pw10_full_448_e20/model/best_unet.pt",
+    "checkpoint_bytes": 230924939,
+    "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+    "reference_per_image_canonical_lf_sha256": "5934903ff3f225441b557e8da87af1adb9c6fcd80f625ea113cec2bac1cbac1b",
+    "training_log_canonical_lf_sha256": "dfded2f0be5e59d320b3b28f48e6a8f0c074ca323a1867507c8949d321a2df5a",
+    "selected_summary_canonical_lf_sha256": "383d83bafd3020d9aa935e1f927a9db9c5f15dfa7e5c967e6c658c9c4a827603",
+    "selected_subgroups_canonical_lf_sha256": "d32456a4760f6c08709d1fd38151c32bbd2f17d2d3e85e92ea75fdbf27d20981"
+  },
+  "source_canonical_lf_sha256": {
+    "project/train_segmentation.py": "5c940cf86ff95d395b320d9f973b625d3d15b5296820606a654a404259891fd4",
+    "project/models/unet.py": "aa867b3c95aeed4e906dd03203283bee7d5dd717e1144ba626bd41150c88bf64",
+    "project/models/losses.py": "330b1d4eb536c078ea73f4ea68b1ba34ea3392704c104dd99b5f7950a8d51e7c",
+    "project/datasets/btxrd.py": "e0b78250577804092549bce848476c55f1ed432530238c6a1b070642af720ae9",
+    "project/evaluate_unet.py": "61cf37093f5e4d335d47d33c2d2e7e6c14cd712badc761afc27aeed30f0860eb",
+    "project/evaluation/segmentation_metrics.py": "070ebb9f1092dac5fe87ff7c1acc7470d5834ce4e1dae0373b8ef60783cf314a"
+  },
+  "audit_notes": {
+    "authoritative_pair_auditor": "../../../project/tools/audit_wsl_gt_pair.py",
+    "metric_audit": "reference_metric_audit.json",
+    "legacy_snapshot_verifier": "superseded for cross-platform hashing because its text manifest mixed historical and platform-specific byte representations",
+    "scientific_artifacts_changed": false
+  }
+}
