@@ -559,4 +559,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   validation run will be compared to the frozen baseline with 10,000 paired
   complete-group bootstrap iterations and fixed `94/72/18` size groups. Test
   remains locked and generated masks will not be retained in compact evidence.
+- Proposal-teacher kernel version 1 failed before loading a radiograph or
+  running any model inference. Its cloud smoke-test command imported
+  `tests.test_proposal_teacher_components`, but the repository's `tests/`
+  directory is not a Python package and Kaggle resolves an unrelated installed
+  `tests` namespace first. The direct traceback is
+  `ModuleNotFoundError: No module named 'tests.test_proposal_teacher_components'`.
+  No validation prediction or scientific metric was produced, so version 1 is
+  implementation evidence only. Version 2 replaces that invocation with
+  explicit `unittest discover -s tests -p
+  test_proposal_teacher_components.py`; every source/model/split hash and
+  scientific parameter remains unchanged. The repaired wrapper SHA-256 is
+  `a08edf88efacb2d6ca339c0920a142049c36ae411cdac1174c1234af38f92d58`.
 
