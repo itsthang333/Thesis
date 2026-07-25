@@ -1,0 +1,726 @@
+{
+  "status": "PASS",
+  "audit_role": "fully supervised GT reference stability audit; not a WSL result",
+  "test_evaluated": false,
+  "v3_protocol": {
+    "path": "D:\\thesis\\artifacts\\research_protocols\\gt_reference_reproduction_v3.json",
+    "sha256": "30ade50a777cf376b7c8dbf0fd1fd913f52dd258e5efac1eb00f47f900149c8e",
+    "wrapper_sha256": "4080d04f6042ea03ba872b5bbee7ac6c0060f64ce08c3719e8a102e5d25f0193",
+    "status": "PASS"
+  },
+  "reference_reproducibility_evidence": {
+    "determinism_static_audit": {
+      "path": "D:\\thesis\\artifacts\\reference\\gt_resnet18_unet_448_v1\\reproducibility_static_audit.json",
+      "sha256": "8e09ef42b22799825d7cd53631b91277a22d34bdd89f8eb5b6eee9a14978ab9e",
+      "status": "PASS_WITH_LIMITATIONS",
+      "bitwise_reproduction_guaranteed": false
+    },
+    "pretrained_encoder_weight_audit": {
+      "path": "D:\\thesis\\artifacts\\reference\\gt_resnet18_unet_448_v1\\pretrained_weight_audit.json",
+      "sha256": "ec93ca3d391f4e364acdc3837dc427f00d2bc1c8e3bccedd835b54cdc10a42be",
+      "status": "PASS_WITH_PROVENANCE_LIMITATION",
+      "weight_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+      "weight_bytes": 46830571,
+      "in_kernel_hash_assertion": false
+    },
+    "paired_consumer_source_equivalence_audit": {
+      "path": "D:\\thesis\\artifacts\\reference\\gt_resnet18_unet_448_v1\\paired_consumer_source_equivalence_audit.json",
+      "sha256": "52571e311f9475191b50b6f969181a2c82c8fbc201d0faf6b4f7f1026cd83f84",
+      "status": "PASS",
+      "bit_identical_core": {
+        "architecture": true,
+        "loss": true,
+        "evaluation_entrypoint": true,
+        "segmentation_metrics": true
+      },
+      "consumer_behavior_drift_detected": false
+    }
+  },
+  "v2_against_frozen_reference": {
+    "status": "PASS",
+    "audit_role": "GT reference reproducibility; not a WSL success claim",
+    "test_evaluated": false,
+    "reference_verification": {
+      "status": "PASS",
+      "reference_id": "gt_resnet18_unet_448_v1",
+      "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+      "test_evaluated": false,
+      "weak_supervision_isolation": "PASS",
+      "population": {
+        "images": 371,
+        "tumor_images": 184,
+        "normal_images": 187,
+        "tumor_groups": 167,
+        "size_counts": {
+          "small_lt_1pct": 94,
+          "medium_1_to_5pct": 72,
+          "large_ge_5pct": 18
+        }
+      },
+      "reference_mean_tumor_dice": {
+        "overall": 0.4951316962732512,
+        "small_lt_1pct": 0.32895493248574226,
+        "medium_1_to_5pct": 0.6624417783635557,
+        "large_ge_5pct": 0.6937033565801355
+      }
+    },
+    "candidate_contract": {
+      "mode": "independent epoch-1 training with frozen seed-42 contract",
+      "source_hashes": "PASS",
+      "split_hash": "PASS",
+      "checkpoint_selection_recomputed": {
+        "best_epoch": 33,
+        "best_val_positive_dice_at_0_5": 0.5106942783231321,
+        "best_val_normal_specificity_at_0_5": 0.5882352941176471,
+        "last_completed_epoch": 35
+      },
+      "threshold_selection": {
+        "grid": [
+          0.2,
+          0.25,
+          0.3,
+          0.35,
+          0.4,
+          0.45,
+          0.5,
+          0.55,
+          0.6,
+          0.65,
+          0.7,
+          0.75,
+          0.8,
+          0.85
+        ],
+        "selected": 0.25,
+        "status": "PASS"
+      },
+      "checkpoint_sha256": "ad0605a97e716a195b9981ca4f22170048c6a6e82d751f8d783846a400bd0824",
+      "checkpoint_file_verified": true,
+      "wrapper": {
+        "path": "D:\\thesis\\tmp\\kaggle\\gt_reference_reproduction_v1\\btxrd-448-convergence.py",
+        "sha256": "afa5d4be59a062c2822f467a0dfcb1019842e81dc369646653abd859df8bfcb1",
+        "status": "PASS"
+      }
+    },
+    "paired_reproduction": {
+      "protocol": "paired independent GT reproduction versus hash-locked GT reference",
+      "split": "val",
+      "test_evaluated": false,
+      "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+      "reference_per_image_canonical_lf_sha256": "5934903ff3f225441b557e8da87af1adb9c6fcd80f625ea113cec2bac1cbac1b",
+      "population": {
+        "images": 371,
+        "tumor_images": 184,
+        "normal_images": 187,
+        "tumor_groups": 167,
+        "size_counts": {
+          "small_lt_1pct": 94,
+          "medium_1_to_5pct": 72,
+          "large_ge_5pct": 18
+        }
+      },
+      "reference_mean_tumor_dice": {
+        "overall": 0.4951316962732512,
+        "small_lt_1pct": 0.32895493248574226,
+        "medium_1_to_5pct": 0.6624417783635557,
+        "large_ge_5pct": 0.6937033565801355
+      },
+      "size_definitions": {
+        "small_lt_1pct": "gt_area_ratio < 0.01",
+        "medium_1_to_5pct": "0.01 <= gt_area_ratio < 0.05",
+        "large_ge_5pct": "gt_area_ratio >= 0.05",
+        "usage": "post-prediction validation diagnostic only; never an inference input"
+      },
+      "candidate_per_image_canonical_lf_sha256": "25e7605d10d91da34808f3a3fe9895f26f80ffe0eae571241554644ca4f0dfec",
+      "candidate_mean_tumor_dice": {
+        "overall": 0.5113904440613517,
+        "small_lt_1pct": 0.3998633759797167,
+        "medium_1_to_5pct": 0.6330372530709371,
+        "large_ge_5pct": 0.6072223413382152
+      },
+      "paired_gap": {
+        "overall": {
+          "images": 184,
+          "groups": 167,
+          "signed_gap_candidate_minus_reference": 0.016258747788100523,
+          "absolute_gap": 0.016258747788100523,
+          "criterion_abs_gap_le_0_05": true,
+          "paired_group_bootstrap_ci95_low": -0.01612038573283274,
+          "paired_group_bootstrap_ci95_high": 0.04954784974680941
+        },
+        "small_lt_1pct": {
+          "images": 94,
+          "groups": 92,
+          "signed_gap_candidate_minus_reference": 0.0709084434939745,
+          "absolute_gap": 0.0709084434939745,
+          "criterion_abs_gap_le_0_05": false,
+          "paired_group_bootstrap_ci95_low": 0.024955043602370896,
+          "paired_group_bootstrap_ci95_high": 0.11938815164643961
+        },
+        "medium_1_to_5pct": {
+          "images": 72,
+          "groups": 61,
+          "signed_gap_candidate_minus_reference": -0.029404525292618652,
+          "absolute_gap": 0.029404525292618652,
+          "criterion_abs_gap_le_0_05": true,
+          "paired_group_bootstrap_ci95_low": -0.08016620473001103,
+          "paired_group_bootstrap_ci95_high": 0.018178987098967866
+        },
+        "large_ge_5pct": {
+          "images": 18,
+          "groups": 17,
+          "signed_gap_candidate_minus_reference": -0.08648101524192023,
+          "absolute_gap": 0.08648101524192023,
+          "criterion_abs_gap_le_0_05": false,
+          "paired_group_bootstrap_ci95_low": -0.16586840679718481,
+          "paired_group_bootstrap_ci95_high": -0.021984419573847506
+        }
+      },
+      "primary_success": false,
+      "bootstrap": {
+        "unit": "complete validation group",
+        "iterations": 10000,
+        "seed": 42
+      }
+    },
+    "reproduction_within_abs_0_05_all_size_subgroups": false
+  },
+  "v3_against_frozen_reference": {
+    "status": "PASS",
+    "audit_role": "GT reference reproducibility; not a WSL success claim",
+    "test_evaluated": false,
+    "reference_verification": {
+      "status": "PASS",
+      "reference_id": "gt_resnet18_unet_448_v1",
+      "checkpoint_sha256": "05606a0ace6c845ca52a26e8c4a5269bf8e03350dd31d27bbd5e80d55df70c31",
+      "test_evaluated": false,
+      "weak_supervision_isolation": "PASS",
+      "population": {
+        "images": 371,
+        "tumor_images": 184,
+        "normal_images": 187,
+        "tumor_groups": 167,
+        "size_counts": {
+          "small_lt_1pct": 94,
+          "medium_1_to_5pct": 72,
+          "large_ge_5pct": 18
+        }
+      },
+      "reference_mean_tumor_dice": {
+        "overall": 0.4951316962732512,
+        "small_lt_1pct": 0.32895493248574226,
+        "medium_1_to_5pct": 0.6624417783635557,
+        "large_ge_5pct": 0.6937033565801355
+      }
+    },
+    "candidate_contract": {
+      "mode": "independent epoch-1 training with frozen seed-42 contract",
+      "source_hashes": "PASS",
+      "split_hash": "PASS",
+      "checkpoint_selection_recomputed": {
+        "best_epoch": 33,
+        "best_val_positive_dice_at_0_5": 0.4952337806639464,
+        "best_val_normal_specificity_at_0_5": 0.8128342245989305,
+        "last_completed_epoch": 35
+      },
+      "threshold_selection": {
+        "grid": [
+          0.2,
+          0.25,
+          0.3,
+          0.35,
+          0.4,
+          0.45,
+          0.5,
+          0.55,
+          0.6,
+          0.65,
+          0.7,
+          0.75,
+          0.8,
+          0.85
+        ],
+        "selected": 0.2,
+        "status": "PASS"
+      },
+      "checkpoint_sha256": "65bb34613f53134ce3b0b9469278e5e5ec1da87d4bbed01e0b2807b21a99ad95",
+      "checkpoint_file_verified": true,
+      "wrapper": {
+        "path": "D:\\thesis\\tmp\\kaggle\\gt_reference_reproduction_v3\\btxrd-448-convergence.py",
+        "sha256": "4080d04f6042ea03ba872b5bbee7ac6c0060f64ce08c3719e8a102e5d25f0193",
+        "status": "PASS"
+      }
+    },
+    "paired_reproduction": {
+      "protocol": "paired independent GT reproduction versus hash-locked GT reference",
+      "split": "val",
+      "test_evaluated": false,
+      "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+      "reference_per_image_canonical_lf_sha256": "5934903ff3f225441b557e8da87af1adb9c6fcd80f625ea113cec2bac1cbac1b",
+      "population": {
+        "images": 371,
+        "tumor_images": 184,
+        "normal_images": 187,
+        "tumor_groups": 167,
+        "size_counts": {
+          "small_lt_1pct": 94,
+          "medium_1_to_5pct": 72,
+          "large_ge_5pct": 18
+        }
+      },
+      "reference_mean_tumor_dice": {
+        "overall": 0.4951316962732512,
+        "small_lt_1pct": 0.32895493248574226,
+        "medium_1_to_5pct": 0.6624417783635557,
+        "large_ge_5pct": 0.6937033565801355
+      },
+      "size_definitions": {
+        "small_lt_1pct": "gt_area_ratio < 0.01",
+        "medium_1_to_5pct": "0.01 <= gt_area_ratio < 0.05",
+        "large_ge_5pct": "gt_area_ratio >= 0.05",
+        "usage": "post-prediction validation diagnostic only; never an inference input"
+      },
+      "candidate_per_image_canonical_lf_sha256": "72ad85c3cb710ea9a9deb3342d354ca9be57a289f0d8e06374e7117794bb7f34",
+      "candidate_mean_tumor_dice": {
+        "overall": 0.4994012363463918,
+        "small_lt_1pct": 0.35218988579362814,
+        "medium_1_to_5pct": 0.6293762321757863,
+        "large_ge_5pct": 0.7482716392488015
+      },
+      "paired_gap": {
+        "overall": {
+          "images": 184,
+          "groups": 167,
+          "signed_gap_candidate_minus_reference": 0.004269540073140596,
+          "absolute_gap": 0.004269540073140596,
+          "criterion_abs_gap_le_0_05": true,
+          "paired_group_bootstrap_ci95_low": -0.03042099852584881,
+          "paired_group_bootstrap_ci95_high": 0.04031827353614765
+        },
+        "small_lt_1pct": {
+          "images": 94,
+          "groups": 92,
+          "signed_gap_candidate_minus_reference": 0.023234953307885938,
+          "absolute_gap": 0.023234953307885938,
+          "criterion_abs_gap_le_0_05": true,
+          "paired_group_bootstrap_ci95_low": -0.027991607562577688,
+          "paired_group_bootstrap_ci95_high": 0.0735878312146072
+        },
+        "medium_1_to_5pct": {
+          "images": 72,
+          "groups": 61,
+          "signed_gap_candidate_minus_reference": -0.03306554618776939,
+          "absolute_gap": 0.03306554618776939,
+          "criterion_abs_gap_le_0_05": true,
+          "paired_group_bootstrap_ci95_low": -0.08907281538519442,
+          "paired_group_bootstrap_ci95_high": 0.020420428712820012
+        },
+        "large_ge_5pct": {
+          "images": 18,
+          "groups": 17,
+          "signed_gap_candidate_minus_reference": 0.054568282668666014,
+          "absolute_gap": 0.054568282668666014,
+          "criterion_abs_gap_le_0_05": false,
+          "paired_group_bootstrap_ci95_low": -0.022273623164575356,
+          "paired_group_bootstrap_ci95_high": 0.14687709227056053
+        }
+      },
+      "primary_success": false,
+      "bootstrap": {
+        "unit": "complete validation group",
+        "iterations": 10000,
+        "seed": 42
+      }
+    },
+    "reproduction_within_abs_0_05_all_size_subgroups": false
+  },
+  "v3_against_v2": {
+    "protocol": "paired repeated fully supervised GT runs; v3 candidate minus v2",
+    "split": "val",
+    "test_evaluated": false,
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "reference_per_image_canonical_lf_sha256": "25e7605d10d91da34808f3a3fe9895f26f80ffe0eae571241554644ca4f0dfec",
+    "population": {
+      "images": 371,
+      "tumor_images": 184,
+      "normal_images": 187,
+      "tumor_groups": 167,
+      "size_counts": {
+        "small_lt_1pct": 94,
+        "medium_1_to_5pct": 72,
+        "large_ge_5pct": 18
+      }
+    },
+    "reference_mean_tumor_dice": {
+      "overall": 0.5113904440613517,
+      "small_lt_1pct": 0.3998633759797167,
+      "medium_1_to_5pct": 0.6330372530709371,
+      "large_ge_5pct": 0.6072223413382152
+    },
+    "size_definitions": {
+      "small_lt_1pct": "gt_area_ratio < 0.01",
+      "medium_1_to_5pct": "0.01 <= gt_area_ratio < 0.05",
+      "large_ge_5pct": "gt_area_ratio >= 0.05",
+      "usage": "post-prediction validation diagnostic only; never an inference input"
+    },
+    "candidate_per_image_canonical_lf_sha256": "72ad85c3cb710ea9a9deb3342d354ca9be57a289f0d8e06374e7117794bb7f34",
+    "candidate_mean_tumor_dice": {
+      "overall": 0.4994012363463918,
+      "small_lt_1pct": 0.35218988579362814,
+      "medium_1_to_5pct": 0.6293762321757863,
+      "large_ge_5pct": 0.7482716392488015
+    },
+    "paired_gap": {
+      "overall": {
+        "images": 184,
+        "groups": 167,
+        "signed_gap_candidate_minus_reference": -0.011989207714959926,
+        "absolute_gap": 0.011989207714959926,
+        "criterion_abs_gap_le_0_05": true,
+        "paired_group_bootstrap_ci95_low": -0.049986336953903636,
+        "paired_group_bootstrap_ci95_high": 0.026621526810520227
+      },
+      "small_lt_1pct": {
+        "images": 94,
+        "groups": 92,
+        "signed_gap_candidate_minus_reference": -0.047673490186088574,
+        "absolute_gap": 0.047673490186088574,
+        "criterion_abs_gap_le_0_05": true,
+        "paired_group_bootstrap_ci95_low": -0.10606098935159275,
+        "paired_group_bootstrap_ci95_high": 0.00889894866535626
+      },
+      "medium_1_to_5pct": {
+        "images": 72,
+        "groups": 61,
+        "signed_gap_candidate_minus_reference": -0.0036610208951507422,
+        "absolute_gap": 0.0036610208951507422,
+        "criterion_abs_gap_le_0_05": true,
+        "paired_group_bootstrap_ci95_low": -0.05915814498720531,
+        "paired_group_bootstrap_ci95_high": 0.05062642479161324
+      },
+      "large_ge_5pct": {
+        "images": 18,
+        "groups": 17,
+        "signed_gap_candidate_minus_reference": 0.14104929791058626,
+        "absolute_gap": 0.14104929791058626,
+        "criterion_abs_gap_le_0_05": false,
+        "paired_group_bootstrap_ci95_low": 0.03556306513120338,
+        "paired_group_bootstrap_ci95_high": 0.2661625861925646
+      }
+    },
+    "primary_success": false,
+    "bootstrap": {
+      "unit": "complete validation group",
+      "iterations": 10000,
+      "seed": 42
+    }
+  },
+  "v3_vs_v2_per_image_stability": {
+    "overall": {
+      "images": 184,
+      "mean_signed_delta_right_minus_left": -0.011989207714959926,
+      "mean_absolute_per_image_delta": 0.15081957117065634,
+      "rmse_per_image_delta": 0.25742857025799604,
+      "pearson_per_image_dice": 0.7372107120468661,
+      "images_abs_delta_gt_0_05": 102,
+      "images_abs_delta_gt_0_10": 74,
+      "maximum_absolute_per_image_delta": 0.8715201176594181
+    },
+    "small_lt_1pct": {
+      "images": 94,
+      "mean_signed_delta_right_minus_left": -0.047673490186088574,
+      "mean_absolute_per_image_delta": 0.17478594104006737,
+      "rmse_per_image_delta": 0.2874802646587335,
+      "pearson_per_image_dice": 0.6620768759014612,
+      "images_abs_delta_gt_0_05": 53,
+      "images_abs_delta_gt_0_10": 41,
+      "maximum_absolute_per_image_delta": 0.8283062645011601
+    },
+    "medium_1_to_5pct": {
+      "images": 72,
+      "mean_signed_delta_right_minus_left": -0.0036610208951507422,
+      "mean_absolute_per_image_delta": 0.1129100657865968,
+      "rmse_per_image_delta": 0.20377179560532477,
+      "pearson_per_image_dice": 0.7966317140790204,
+      "images_abs_delta_gt_0_05": 36,
+      "images_abs_delta_gt_0_10": 24,
+      "maximum_absolute_per_image_delta": 0.8715201176594181
+    },
+    "large_ge_5pct": {
+      "images": 18,
+      "mean_signed_delta_right_minus_left": 0.14104929791058626,
+      "mean_absolute_per_image_delta": 0.17729988338885888,
+      "rmse_per_image_delta": 0.28238167608302556,
+      "pearson_per_image_dice": 0.597228711150147,
+      "images_abs_delta_gt_0_05": 13,
+      "images_abs_delta_gt_0_10": 9,
+      "maximum_absolute_per_image_delta": 0.7572422910914959
+    },
+    "largest_absolute_deltas": [
+      {
+        "image_name": "IMG000793.jpeg",
+        "group_id": "btxrd-heuristic-000452",
+        "lesion_size": "medium_1_to_5pct",
+        "left_dice": 0.8715201176594181,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.8715201176594181
+      },
+      {
+        "image_name": "IMG000612.jpeg",
+        "group_id": "btxrd-heuristic-000341",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.8283062645011601,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.8283062645011601
+      },
+      {
+        "image_name": "IMG001759.jpeg",
+        "group_id": "btxrd-heuristic-001056",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.0,
+        "right_dice": 0.8054474708171206,
+        "delta_right_minus_left": 0.8054474708171206
+      },
+      {
+        "image_name": "IMG000582.jpeg",
+        "group_id": "btxrd-heuristic-000324",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.8039702233250621,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.8039702233250621
+      },
+      {
+        "image_name": "IMG000372.jpeg",
+        "group_id": "btxrd-heuristic-000203",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.7902097902097902,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.7902097902097902
+      },
+      {
+        "image_name": "IMG000414.jpeg",
+        "group_id": "btxrd-heuristic-000228",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.8070175438596491,
+        "right_dice": 0.016853932584269662,
+        "delta_right_minus_left": -0.7901636112753794
+      },
+      {
+        "image_name": "IMG000152.jpeg",
+        "group_id": "btxrd-heuristic-000078",
+        "lesion_size": "large_ge_5pct",
+        "left_dice": 0.0,
+        "right_dice": 0.7572422910914959,
+        "delta_right_minus_left": 0.7572422910914959
+      },
+      {
+        "image_name": "IMG000340.jpeg",
+        "group_id": "btxrd-heuristic-000183",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.7157190635451505,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.7157190635451505
+      },
+      {
+        "image_name": "IMG000048.jpeg",
+        "group_id": "btxrd-heuristic-000025",
+        "lesion_size": "medium_1_to_5pct",
+        "left_dice": 0.0,
+        "right_dice": 0.6632996632996633,
+        "delta_right_minus_left": 0.6632996632996633
+      },
+      {
+        "image_name": "IMG001538.jpeg",
+        "group_id": "btxrd-heuristic-000916",
+        "lesion_size": "medium_1_to_5pct",
+        "left_dice": 0.7978889081155909,
+        "right_dice": 0.13658136033940058,
+        "delta_right_minus_left": -0.6613075477761903
+      },
+      {
+        "image_name": "IMG001580.jpeg",
+        "group_id": "btxrd-heuristic-000940",
+        "lesion_size": "large_ge_5pct",
+        "left_dice": 0.1602792632204397,
+        "right_dice": 0.8113246681415929,
+        "delta_right_minus_left": 0.6510454049211531
+      },
+      {
+        "image_name": "IMG000439.jpeg",
+        "group_id": "btxrd-heuristic-000244",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.6349206349206349,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.6349206349206349
+      },
+      {
+        "image_name": "IMG000924.jpeg",
+        "group_id": "btxrd-heuristic-000533",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.05555555555555555,
+        "right_dice": 0.6779661016949152,
+        "delta_right_minus_left": 0.6224105461393596
+      },
+      {
+        "image_name": "IMG001098.jpeg",
+        "group_id": "btxrd-heuristic-000644",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.5831220572256429,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.5831220572256429
+      },
+      {
+        "image_name": "IMG000481.jpeg",
+        "group_id": "btxrd-heuristic-000269",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.24132730015082957,
+        "right_dice": 0.8129675810473815,
+        "delta_right_minus_left": 0.5716402808965519
+      },
+      {
+        "image_name": "IMG001476.jpeg",
+        "group_id": "btxrd-heuristic-000885",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.5609981515711645,
+        "right_dice": 0.0,
+        "delta_right_minus_left": -0.5609981515711645
+      },
+      {
+        "image_name": "IMG001454.jpeg",
+        "group_id": "btxrd-heuristic-000872",
+        "lesion_size": "medium_1_to_5pct",
+        "left_dice": 0.0,
+        "right_dice": 0.524788391777509,
+        "delta_right_minus_left": 0.524788391777509
+      },
+      {
+        "image_name": "IMG001867.jpeg",
+        "group_id": "btxrd-heuristic-001123",
+        "lesion_size": "large_ge_5pct",
+        "left_dice": 0.09858864027538726,
+        "right_dice": 0.6158808933002481,
+        "delta_right_minus_left": 0.5172922530248608
+      },
+      {
+        "image_name": "IMG001539.jpeg",
+        "group_id": "btxrd-heuristic-000916",
+        "lesion_size": "medium_1_to_5pct",
+        "left_dice": 0.7774138199968803,
+        "right_dice": 0.2755515533543449,
+        "delta_right_minus_left": -0.5018622666425354
+      },
+      {
+        "image_name": "IMG000327.jpeg",
+        "group_id": "btxrd-heuristic-000172",
+        "lesion_size": "small_lt_1pct",
+        "left_dice": 0.19412878787878787,
+        "right_dice": 0.6391752577319587,
+        "delta_right_minus_left": 0.44504646985317087
+      }
+    ]
+  },
+  "environment_differences_v2_to_v3": {
+    "cudnn": {
+      "left": null,
+      "right": 91002
+    },
+    "cudnn_benchmark_before_training_process": {
+      "left": null,
+      "right": false
+    },
+    "cudnn_deterministic_before_training_process": {
+      "left": null,
+      "right": false
+    },
+    "multi_gpu_training": {
+      "left": null,
+      "right": false
+    },
+    "num_workers": {
+      "left": null,
+      "right": 4
+    },
+    "pillow": {
+      "left": null,
+      "right": "11.3.0"
+    },
+    "torch_deterministic_algorithms_explicitly_enabled": {
+      "left": null,
+      "right": false
+    },
+    "torchvision": {
+      "left": null,
+      "right": "0.25.0+cu128"
+    },
+    "training_source_sets_cudnn_benchmark_false": {
+      "left": null,
+      "right": true
+    },
+    "training_source_sets_cudnn_deterministic": {
+      "left": null,
+      "right": true
+    }
+  },
+  "training_lineage_and_trajectory": {
+    "frozen_reference": {
+      "resume_epoch": 10,
+      "resume_checkpoint_sha256": "8278865eba7e07e0f1e327e7f6a853e3ee770a30a5a57e35438bfe5f6c458bd3",
+      "best_epoch": 20,
+      "last_completed_epoch": 30
+    },
+    "v2": {
+      "start_epoch": 1,
+      "best_epoch": 33
+    },
+    "v3": {
+      "start_epoch": 1,
+      "best_epoch": 33
+    },
+    "reference_vs_v2": {
+      "left_epochs": 30,
+      "right_epochs": 35,
+      "exact_equal_prefix_epochs": 0,
+      "first_numeric_divergence_epoch": 1,
+      "epoch_1": {
+        "left_val_positive_dice": 0.2414823084583749,
+        "right_val_positive_dice": 0.22033120541954818,
+        "delta_right_minus_left": -0.021151103038826724
+      }
+    },
+    "reference_vs_v3": {
+      "left_epochs": 30,
+      "right_epochs": 35,
+      "exact_equal_prefix_epochs": 0,
+      "first_numeric_divergence_epoch": 1,
+      "epoch_1": {
+        "left_val_positive_dice": 0.2414823084583749,
+        "right_val_positive_dice": 0.21135136310982963,
+        "delta_right_minus_left": -0.03013094534854527
+      }
+    },
+    "v2_vs_v3": {
+      "left_epochs": 35,
+      "right_epochs": 35,
+      "exact_equal_prefix_epochs": 0,
+      "first_numeric_divergence_epoch": 1,
+      "epoch_1": {
+        "left_val_positive_dice": 0.22033120541954818,
+        "right_val_positive_dice": 0.21135136310982963,
+        "delta_right_minus_left": -0.008979842309718544
+      }
+    },
+    "interpretation_rule": "If v2 and v3 are identical while each differs from the historical resumed reference, the current fresh-run recipe is reproducible and historical lineage explains the external score mismatch. If v2 and v3 diverge from epoch 1 under the same environment and hashes, training itself is not bitwise reproducible under the recorded determinism controls."
+  },
+  "stability_conclusion": {
+    "metric_split_and_population_contract_consistent": true,
+    "checkpoint_sha256_equal_between_repeats": false,
+    "absolute_mean_repeat_gap_by_size": {
+      "small_lt_1pct": 0.047673490186088574,
+      "medium_1_to_5pct": 0.0036610208951507422,
+      "large_ge_5pct": 0.14104929791058626
+    },
+    "material_repeat_instability_detected": true,
+    "interpretation": "A different checkpoint or score after both fail-closed audits is training-run variability, not evidence of a changed split or metric. This audit alone does not identify the exact numeric kernel responsible.",
+    "frozen_reference_replacement_authorized": false
+  }
+}

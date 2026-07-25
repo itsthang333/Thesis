@@ -982,4 +982,50 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   arm difference remains the training mask source, validation GT remains
   evaluation/model-selection only, and test remains locked. Evidence:
   `artifacts/reference/gt_resnet18_unet_448_v1/paired_consumer_source_equivalence_audit.json`.
+- Independent fully supervised GT reproduction v3 completed on Kaggle in
+  3,186.30 seconds and passed the fail-closed reproduction auditor. It started
+  at epoch 1, completed all 35 epochs, independently reselects epoch 33 at
+  fixed-threshold validation positive Dice `0.4952337807`, and selects
+  inference threshold `0.20` from the frozen grid. Exact source/split/wrapper
+  hashes, the 371/184/187 validation cohort, 167 tumor groups, `94/72/18`
+  lesion-size groups, contiguous training log, threshold selection, per-image
+  artifact hashes and `test_evaluated=false` all pass.
+- V3 selected mean tumor Dice is `0.4994012363` overall and
+  `0.3521898858/0.6293762322/0.7482716392` for small/medium/large. Signed gaps
+  to the hash-locked reference are
+  `+0.0042695401/+0.0232349533/-0.0330655462/+0.0545682827`.
+  Overall, small and medium fall within absolute `0.05`; large exceeds the
+  bound by `0.0045682827`. Paired complete-group CI95 values are
+  `[-0.0304210,+0.0403183]` overall,
+  `[-0.0279916,+0.0735878]` small,
+  `[-0.0890728,+0.0204204]` medium and
+  `[-0.0222736,+0.1468771]` large. This is GT reproducibility evidence, not a
+  WSL success claim.
+- Physical v3 checkpoint verification passes: the downloaded
+  230,923,915-byte selected checkpoint hashes to
+  `65bb34613f53134ce3b0b9469278e5e5ec1da87d4bbed01e0b2807b21a99ad95`.
+  The 46,830,571-byte ResNet-18 weight copied and used inside the kernel hashes
+  to `f37072fd...e07ec`, resolving the earlier provenance limitation. Neither
+  large binary is retained in Git; compact logs, per-image results, summaries,
+  audits, wrapper and metadata are retained.
+- The three-run stability audit confirms the collaborator discrepancy is real
+  run-to-run training instability, not cohort/metric/source drift. Fresh v2
+  and v3 differ from epoch 1 and select different checkpoint bytes despite the
+  same seed/source/split/environment contract. V3 minus v2 mean Dice is
+  `-0.0119892077` overall,
+  `-0.0476734902/-0.0036610209/+0.1410492979` for
+  small/medium/large; the large paired CI95
+  `[+0.0355631,+0.2661626]` excludes zero. Across the frozen reference, v2 and
+  v3, subgroup ranges are `0.0709084` small, `0.0330655` medium and
+  `0.1410493` large, versus only `0.0162587` overall. Per-image v2-v3 mean
+  absolute Dice difference is `0.1508196`; 102/184 tumors differ by more than
+  0.05 and 74/184 by more than 0.10.
+- Decision: retain `gt_resnet18_unet_448_v1` as the predeclared hash-locked
+  paired-study anchor. Replacing it after observing repeated validation
+  results would invalidate comparability. The thesis must report v2/v3 as
+  sensitivity evidence and explicitly warn that the 18-image large subgroup
+  is unstable. A stricter deterministic GT run may be a separately
+  predeclared sensitivity arm, never a silent replacement. Compact evidence,
+  report-ready comparison and decision are under
+  `artifacts/kaggle/gt_reference_independent_reproduction_v3/`.
 
