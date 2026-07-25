@@ -809,4 +809,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   repair commit `8b265e9c4cb75604eeb8612c8f750d31d0b3f0da`; generator and saliency-module
   SHA-256 values are `2366fd8c...` and `f07718a4...`, respectively. This lock
   applies only to a future full diagnostic after smoke version 3 passes.
+- The repaired private GPU kernel
+  `itsthang333/btxrd-biomedclip-saliency-smoke-v3`, version 1, was launched and
+  is RUNNING. The existing single 15-minute monitor was retargeted to version 3;
+  no duplicate monitor was created.
 
