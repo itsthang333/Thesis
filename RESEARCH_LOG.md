@@ -911,4 +911,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   it contains no pseudo-mask/segmentation evaluator and cannot read validation
   GT. The same single 15-minute monitor was retargeted from smoke V4 to this
   kernel; no duplicate monitor was created.
+- A third independent fully supervised GT reproduction is predeclared after an
+  external similar experiment reported a different score. It starts from epoch
+  1 and preserves the frozen `gt_resnet18_unet_448_v1` consumer contract:
+  ResNet18UNet, ImageNet encoder, 448 px, seed 42, batch 8, fixed
+  `pos_weight=10`, AdamW `1e-4`, 35 epochs, patience 10 and the frozen
+  validation threshold grid. The run is a reference-stability audit only, uses
+  no test data and cannot replace the hash-locked reference automatically.
+  Protocol is
+  `artifacts/research_protocols/gt_reference_reproduction_v3.json`; wrapper
+  SHA-256 is `4080d04f...f0193`. The post-run audit will compare v3 pairwise
+  against both the frozen reference and reproduction v2 at image, complete
+  validation-group and lesion-size-subgroup levels.
 
