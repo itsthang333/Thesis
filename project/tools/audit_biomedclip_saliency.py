@@ -11,13 +11,13 @@ from typing import Any
 import numpy as np
 
 
-EXPECTED_SOURCE_COMMIT = "34484b3e28cb22e97ae76c6569b42465b3a7fd25"
+EXPECTED_SOURCE_COMMIT = "8b265e9c4cb75604eeb8612c8f750d31d0b3f0da"
 EXPECTED_SOURCE_HASHES = {
     "generate_biomedclip_saliency.py": (
-        "873a5e04b47cdb390c77bc48abb4c01517562531e6a2a14900de01ab1d3024fa"
+        "2366fd8cdd21770aaebe4dd060005c79624767faf8480ff44da6c4a694aa5a85"
     ),
     "models/biomedclip_saliency.py": (
-        "ce770574efce557a19c8b4f299525bae1d62bc615317755fd840aa826b6e5586"
+        "f07718a47d71c0aa05c6e110c243d3dfc7197064cca89d5e1dfb44612fd28d5d"
     ),
 }
 EXPECTED_SPLIT_SHA256 = (

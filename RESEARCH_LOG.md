@@ -805,4 +805,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `e70928fc44485b02cd74874ae9398cfcb7f846e28baf82be9d2231f0403cc0c1`;
   the smoke auditor now fails closed on reduction drift. All 17 focused tests
   pass.
+- The prospective prediction-first saliency source/auditor lock is advanced to
+  repair commit `8b265e9c4cb75604eeb8612c8f750d31d0b3f0da`; generator and saliency-module
+  SHA-256 values are `2366fd8c...` and `f07718a4...`, respectively. This lock
+  applies only to a future full diagnostic after smoke version 3 passes.
 
