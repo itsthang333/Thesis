@@ -665,4 +665,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   proposal/pipeline tests pass. Promotion still requires the paired
   complete-group overall delta CI95 lower bound above zero versus
   `0.2343392222` and no decrease on all 94 small tumors; test remains locked.
+- The source-consensus experiment was launched as private Kaggle kernel
+  `itsthang333/btxrd-wsl-source-consensus-val-v1`, version 1, and is RUNNING.
+  Source is pinned to commit
+  `80443fddec1cea8333905dff8650f5a2eeacff5d`; wrapper SHA-256 is
+  `ed75e59158e2014532cecba50909c3eca0e72fe8c0c96be0abf6cda76f79b3dc`.
+  It uses the same frozen classifier, SAM, proposal-teacher, split and promoted
+  baseline artifacts as the audited proposal-teacher experiment. Heavy
+  inference executes only on Kaggle; validation polygons remain
+  post-prediction diagnostics and test is not accessed.
 
