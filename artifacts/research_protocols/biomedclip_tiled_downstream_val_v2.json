@@ -8,12 +8,12 @@
   "scientific_question": "Do the frozen full-plus-top3 BiomedCLIP saliency maps improve proposal oracle and final pseudo masks, especially for tumors occupying less than 1% of the image?",
   "source_lock": {
     "implementation_commit": "37a10c95bdef1e4b3bf7c875379f9ef16f4ba9a8",
-    "generate_pseudo_masks.py": "ea28942d592b478eb2ddb73eed50fab28ec3446932837c5607c45d76d5ada3e4",
+    "generate_pseudo_masks.py": "da4c47fa6ec54665c1b2d7d603bfa04f103c1c84dbd42bb3ac8ae6d0a1c799ff",
     "evaluate_saved_candidate_diagnostics.py": "a746da95b0e8bb6e8afde24d8ddee95d0b04692a4ee725aa4c57d0e627173f6a",
     "pseudo/candidate_diagnostics.py": "0ec601e723da317383a42a00ac64583b43bda6e856542a7b0ea2fcd247c18db3",
     "tools/compare_candidate_diagnostics.py": "ef5e07b7cc8e5495aa22f8b2de877d83040bd89a908d1c609876de205a6c2ad8",
-    "evaluate_pseudo_masks.py": "3100f2c74a37c36bc043c10046be40ba325bf7b3938ddeda851bc3ad9dd35e77",
-    "pseudo/manifest.py": "488cb2b53576ef286b6c6a4fc45c9ef69c7128edce1c699c949181f2faecd7ed"
+    "evaluate_pseudo_masks.py": "acae150b0932ab54290f93d98849d63e71de1c996eb8d12fe305ee5f0672db2d",
+    "pseudo/manifest.py": "48467c99dd7257722ea08f1012fa723ce4bd19221965a453bbee682df0f7e404"
   },
   "saliency_input_lock": {
     "kernel": "itsthang333/btxrd-biomedclip-tiled-saliency-val-v1",
