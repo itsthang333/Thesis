@@ -829,4 +829,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   external-map pseudo generator hash to `c475f3b8...`, `f07718a4...` and
   `35462180...`, respectively. No validation map or metric has been produced
   under this source lock yet.
+- The conditional full-validation protocol is frozen before smoke V3 returns
+  and before any BiomedCLIP validation prediction or metric. Protocol
+  `artifacts/research_protocols/biomedclip_tiled_val_v1.json` has SHA-256
+  `d20712790808dc14fc5c6d882502872a04edb4b2d516fa986a1be57122217e1c`.
+  It fixes the 371/184/187 cohort, 94/72/18 subgroups, physical model/source/
+  prompt hashes, tiled-view geometry, exact promoted downstream settings and
+  prediction-before-GT order. Passing the small-lesion oracle gate authorizes
+  only selector/support research; direct train-mask generation still requires
+  positive overall final-Dice CI95 lower bound and no small-lesion decrease.
 
