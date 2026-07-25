@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 import sys
 import unittest
@@ -75,6 +76,38 @@ class GtReproductionStabilityAuditTests(unittest.TestCase):
         result = AUDIT.compare_training_logs(reference, v2)
         self.assertEqual(result["exact_equal_prefix_epochs"], 0)
         self.assertEqual(result["first_numeric_divergence_epoch"], 1)
+
+    def test_reference_reproducibility_evidence_is_explicitly_limited(self) -> None:
+        evidence_root = (
+            ROOT
+            / "artifacts"
+            / "reference"
+            / "gt_resnet18_unet_448_v1"
+        )
+        determinism = json.loads(
+            (evidence_root / "reproducibility_static_audit.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        pretrained = json.loads(
+            (evidence_root / "pretrained_weight_audit.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(determinism["status"], "PASS_WITH_LIMITATIONS")
+        self.assertFalse(
+            determinism["limitations"][
+                "bitwise_checkpoint_reproduction_guaranteed"
+            ]
+        )
+        self.assertEqual(
+            pretrained["sha256"],
+            "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+        )
+        self.assertEqual(
+            pretrained["status"],
+            "PASS_WITH_PROVENANCE_LIMITATION",
+        )
 
 
 if __name__ == "__main__":

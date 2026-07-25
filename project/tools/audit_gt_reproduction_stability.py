@@ -183,6 +183,43 @@ def audit_stability(
     if sha256_file(v3_wrapper) != v3_wrapper_sha256:
         raise ValueError("V3 physical wrapper hash mismatch")
 
+    determinism_audit_path = (
+        reference_lock.parent / "reproducibility_static_audit.json"
+    )
+    pretrained_audit_path = (
+        reference_lock.parent / "pretrained_weight_audit.json"
+    )
+    determinism_audit = json.loads(
+        determinism_audit_path.read_text(encoding="utf-8")
+    )
+    pretrained_audit = json.loads(
+        pretrained_audit_path.read_text(encoding="utf-8")
+    )
+    if determinism_audit.get("status") != "PASS_WITH_LIMITATIONS":
+        raise ValueError("GT determinism limitation audit is absent or changed")
+    if (
+        determinism_audit.get("reference_status", {}).get(
+            "hash_locked_reference_invalidated"
+        )
+        is not False
+    ):
+        raise ValueError("GT determinism audit invalidates the frozen reference")
+    if pretrained_audit.get("status") != "PASS_WITH_PROVENANCE_LIMITATION":
+        raise ValueError("Pretrained-weight provenance audit is absent or changed")
+    if pretrained_audit.get("sha256") != (
+        "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
+    ):
+        raise ValueError("Pretrained ResNet-18 weight hash changed")
+    if int(pretrained_audit.get("bytes", -1)) != 46_830_571:
+        raise ValueError("Pretrained ResNet-18 weight size changed")
+    if (
+        pretrained_audit.get("reference_status", {}).get(
+            "test_evaluated"
+        )
+        is not False
+    ):
+        raise ValueError("Pretrained-weight audit does not keep test locked")
+
     v2_audit = audit_gt_reproduction(
         reference_lock,
         v2_root,
@@ -258,6 +295,26 @@ def audit_stability(
             "sha256": sha256_file(v3_protocol),
             "wrapper_sha256": v3_wrapper_sha256,
             "status": "PASS",
+        },
+        "reference_reproducibility_evidence": {
+            "determinism_static_audit": {
+                "path": str(determinism_audit_path.resolve()),
+                "sha256": sha256_file(determinism_audit_path),
+                "status": determinism_audit["status"],
+                "bitwise_reproduction_guaranteed": (
+                    determinism_audit["limitations"][
+                        "bitwise_checkpoint_reproduction_guaranteed"
+                    ]
+                ),
+            },
+            "pretrained_encoder_weight_audit": {
+                "path": str(pretrained_audit_path.resolve()),
+                "sha256": sha256_file(pretrained_audit_path),
+                "status": pretrained_audit["status"],
+                "weight_sha256": pretrained_audit["sha256"],
+                "weight_bytes": pretrained_audit["bytes"],
+                "in_kernel_hash_assertion": False,
+            },
         },
         "v2_against_frozen_reference": v2_audit,
         "v3_against_frozen_reference": v3_audit,
