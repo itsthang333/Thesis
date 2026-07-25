@@ -783,4 +783,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tumor map to be nonconstant; verifies top-three tile ranking; and rejects
   missing or unmanifested maps. Four focused mutation tests bring the current
   BiomedCLIP preparation/auditor suite to 17 passing tests.
+- BiomedCLIP smoke version 2 completed its train-only computation but failed
+  the nonconstant-saliency implementation gate. The physical 783,705,670-byte
+  BiomedCLIP weight hashes to
+  `52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be`;
+  source, split, prompt, 32+32 score cohort, 4+4 saliency cohort and
+  `validation_masks_read=false`/`test_evaluated=false` all match the
+  predeclaration. Frozen contrast scores are finite and show a small train-only
+  tumor-minus-normal mean difference `+0.0048933686` with overall standard
+  deviation `0.0257473165`. Repeat delta is exactly zero, but all eight 14x14
+  maps have zero dynamic range, so no validation diagnostic is authorized.
+- The zero-map failure is localized to the saliency reduction, not model
+  loading or text/image scoring: summing `activation*gradient` over channels at
+  LayerNorm `norm2` cancels to zero before the outer absolute value. Version 3
+  replaces only that invalid reduction with channelwise
+  `mean(abs(activation*gradient))`, and disables flash/memory-efficient SDP in
+  favor of deterministic math SDP. Model, weight, source, prompt, train sample
+  identities, target layer and all implementation gates remain unchanged.
+  This repair uses no validation image, mask or metric. Version 3 wrapper
+  SHA-256 is
+  `e70928fc44485b02cd74874ae9398cfcb7f846e28baf82be9d2231f0403cc0c1`;
+  the smoke auditor now fails closed on reduction drift. All 17 focused tests
+  pass.
 

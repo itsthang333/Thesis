@@ -162,7 +162,10 @@ def main() -> None:
     torch.cuda.manual_seed_all(args.seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-    torch.use_deterministic_algorithms(True, warn_only=True)
+    torch.backends.cuda.enable_flash_sdp(False)
+    torch.backends.cuda.enable_mem_efficient_sdp(False)
+    torch.backends.cuda.enable_math_sdp(True)
+    torch.use_deterministic_algorithms(True, warn_only=False)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
     rows = load_rows(
@@ -302,6 +305,7 @@ def main() -> None:
             ),
         },
         "view_contract": {
+            "saliency_reduction": "channelwise mean absolute gradient-times-activation",
             "full_view": "black pad to square",
             "crop_fraction_of_short_side": 0.5,
             "positions_per_axis": 3,

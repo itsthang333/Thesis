@@ -1,0 +1,478 @@
+{
+  "status": "FAIL",
+  "source_commit": "de02acb59900cc64f7bdf649d20286d6219af82c",
+  "split_sha256": "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8",
+  "model_id": "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224",
+  "model_weight_files": [
+    {
+      "name": "open_clip_pytorch_model.bin",
+      "bytes": 783705670,
+      "sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be"
+    }
+  ],
+  "prompt_sha256": "e8f859fbcc2b7814b974cc4d28ce8b07a6bf012d62ddf7dd72fe058938466ad9",
+  "population": {
+    "score_images": 64,
+    "saliency_images": 8,
+    "source_split": "train",
+    "validation_images": 0,
+    "test_images": 0
+  },
+  "score_diagnostic": {
+    "tumor_mean": -0.017217571279616095,
+    "normal_mean": -0.02211093986988999,
+    "tumor_minus_normal": 0.004893368590273894,
+    "overall_std": 0.025747316452697396,
+    "rows": [
+      {
+        "image_id": "IMG003615.jpeg",
+        "image_label": 0,
+        "score": 0.0009714146144688129
+      },
+      {
+        "image_id": "IMG002585.jpeg",
+        "image_label": 0,
+        "score": -0.04114007204771042
+      },
+      {
+        "image_id": "IMG002515.jpeg",
+        "image_label": 0,
+        "score": -0.04572988674044609
+      },
+      {
+        "image_id": "IMG003519.jpeg",
+        "image_label": 0,
+        "score": -0.04153788089752197
+      },
+      {
+        "image_id": "IMG002575.jpeg",
+        "image_label": 0,
+        "score": -0.002840228844434023
+      },
+      {
+        "image_id": "IMG002721.jpeg",
+        "image_label": 0,
+        "score": -0.04288142919540405
+      },
+      {
+        "image_id": "IMG003520.jpeg",
+        "image_label": 0,
+        "score": -0.006295233964920044
+      },
+      {
+        "image_id": "IMG002473.jpeg",
+        "image_label": 0,
+        "score": 0.017709845677018166
+      },
+      {
+        "image_id": "IMG003675.jpeg",
+        "image_label": 0,
+        "score": -0.007460561580955982
+      },
+      {
+        "image_id": "IMG003060.jpeg",
+        "image_label": 0,
+        "score": -0.03691648691892624
+      },
+      {
+        "image_id": "IMG003609.jpeg",
+        "image_label": 0,
+        "score": 0.0018885130994021893
+      },
+      {
+        "image_id": "IMG002499.jpeg",
+        "image_label": 0,
+        "score": -0.051414500921964645
+      },
+      {
+        "image_id": "IMG003432.jpeg",
+        "image_label": 0,
+        "score": 0.02107183448970318
+      },
+      {
+        "image_id": "IMG002815.jpeg",
+        "image_label": 0,
+        "score": -0.0004912614822387695
+      },
+      {
+        "image_id": "IMG002628.jpeg",
+        "image_label": 0,
+        "score": -0.03171129524707794
+      },
+      {
+        "image_id": "IMG002920.jpeg",
+        "image_label": 0,
+        "score": -0.05860918015241623
+      },
+      {
+        "image_id": "IMG002001.jpeg",
+        "image_label": 0,
+        "score": -0.007617729716002941
+      },
+      {
+        "image_id": "IMG002501.jpeg",
+        "image_label": 0,
+        "score": -0.03800637274980545
+      },
+      {
+        "image_id": "IMG002577.jpeg",
+        "image_label": 0,
+        "score": -0.036652207374572754
+      },
+      {
+        "image_id": "IMG001896.jpeg",
+        "image_label": 0,
+        "score": -0.04691758379340172
+      },
+      {
+        "image_id": "IMG002975.jpeg",
+        "image_label": 0,
+        "score": -0.04862650856375694
+      },
+      {
+        "image_id": "IMG003457.jpeg",
+        "image_label": 0,
+        "score": -0.02222284860908985
+      },
+      {
+        "image_id": "IMG003602.jpeg",
+        "image_label": 0,
+        "score": -0.01884118840098381
+      },
+      {
+        "image_id": "IMG002960.jpeg",
+        "image_label": 0,
+        "score": -0.034698694944381714
+      },
+      {
+        "image_id": "IMG001925.jpeg",
+        "image_label": 0,
+        "score": 0.036487407982349396
+      },
+      {
+        "image_id": "IMG002061.jpeg",
+        "image_label": 0,
+        "score": -0.027010593563318253
+      },
+      {
+        "image_id": "IMG003606.jpeg",
+        "image_label": 0,
+        "score": -0.051677118986845016
+      },
+      {
+        "image_id": "IMG002936.jpeg",
+        "image_label": 0,
+        "score": -5.298620089888573e-05
+      },
+      {
+        "image_id": "IMG002961.jpeg",
+        "image_label": 0,
+        "score": -0.012061670422554016
+      },
+      {
+        "image_id": "IMG002056.jpeg",
+        "image_label": 0,
+        "score": -0.015363751910626888
+      },
+      {
+        "image_id": "IMG003258.jpeg",
+        "image_label": 0,
+        "score": -0.043785810470581055
+      },
+      {
+        "image_id": "IMG002222.jpeg",
+        "image_label": 0,
+        "score": -0.015116007998585701
+      },
+      {
+        "image_id": "IMG001470.jpeg",
+        "image_label": 1,
+        "score": -0.005621119402348995
+      },
+      {
+        "image_id": "IMG001526.jpeg",
+        "image_label": 1,
+        "score": -0.05492474138736725
+      },
+      {
+        "image_id": "IMG000624.jpeg",
+        "image_label": 1,
+        "score": 0.019224220886826515
+      },
+      {
+        "image_id": "IMG001727.jpeg",
+        "image_label": 1,
+        "score": -0.044919922947883606
+      },
+      {
+        "image_id": "IMG000528.jpeg",
+        "image_label": 1,
+        "score": -0.00452958419919014
+      },
+      {
+        "image_id": "IMG001796.jpeg",
+        "image_label": 1,
+        "score": -0.0631253719329834
+      },
+      {
+        "image_id": "IMG000987.jpeg",
+        "image_label": 1,
+        "score": -0.04406549781560898
+      },
+      {
+        "image_id": "IMG001167.jpeg",
+        "image_label": 1,
+        "score": -0.03988600894808769
+      },
+      {
+        "image_id": "IMG001121.jpeg",
+        "image_label": 1,
+        "score": -0.019343901425600052
+      },
+      {
+        "image_id": "IMG001150.jpeg",
+        "image_label": 1,
+        "score": -0.005545855965465307
+      },
+      {
+        "image_id": "IMG001008.jpeg",
+        "image_label": 1,
+        "score": -0.024492118507623672
+      },
+      {
+        "image_id": "IMG000726.jpeg",
+        "image_label": 1,
+        "score": -0.04491762816905975
+      },
+      {
+        "image_id": "IMG000590.jpeg",
+        "image_label": 1,
+        "score": 0.025876853615045547
+      },
+      {
+        "image_id": "IMG000507.jpeg",
+        "image_label": 1,
+        "score": -0.027225082740187645
+      },
+      {
+        "image_id": "IMG000880.jpeg",
+        "image_label": 1,
+        "score": 0.0014416296035051346
+      },
+      {
+        "image_id": "IMG001303.jpeg",
+        "image_label": 1,
+        "score": 0.028493359684944153
+      },
+      {
+        "image_id": "IMG000419.jpeg",
+        "image_label": 1,
+        "score": -0.0085510378703475
+      },
+      {
+        "image_id": "IMG001676.jpeg",
+        "image_label": 1,
+        "score": -0.003344929777085781
+      },
+      {
+        "image_id": "IMG000915.jpeg",
+        "image_label": 1,
+        "score": 0.0072744544595479965
+      },
+      {
+        "image_id": "IMG000832.jpeg",
+        "image_label": 1,
+        "score": -0.008976204320788383
+      },
+      {
+        "image_id": "IMG001592.jpeg",
+        "image_label": 1,
+        "score": -0.04788031801581383
+      },
+      {
+        "image_id": "IMG001758.jpeg",
+        "image_label": 1,
+        "score": -0.022423051297664642
+      },
+      {
+        "image_id": "IMG001411.jpeg",
+        "image_label": 1,
+        "score": 0.010860804468393326
+      },
+      {
+        "image_id": "IMG001745.jpeg",
+        "image_label": 1,
+        "score": 0.0022341376170516014
+      },
+      {
+        "image_id": "IMG000459.jpeg",
+        "image_label": 1,
+        "score": 0.006127443164587021
+      },
+      {
+        "image_id": "IMG000847.jpeg",
+        "image_label": 1,
+        "score": -0.04562780261039734
+      },
+      {
+        "image_id": "IMG001076.jpeg",
+        "image_label": 1,
+        "score": -0.06892379373311996
+      },
+      {
+        "image_id": "IMG000650.jpeg",
+        "image_label": 1,
+        "score": -0.022143809124827385
+      },
+      {
+        "image_id": "IMG000112.jpeg",
+        "image_label": 1,
+        "score": -0.04840179532766342
+      },
+      {
+        "image_id": "IMG001512.jpeg",
+        "image_label": 1,
+        "score": -0.03810036927461624
+      },
+      {
+        "image_id": "IMG000248.jpeg",
+        "image_label": 1,
+        "score": 0.03540924936532974
+      },
+      {
+        "image_id": "IMG000226.jpeg",
+        "image_label": 1,
+        "score": 0.005065510980784893
+      }
+    ]
+  },
+  "saliency_diagnostic": {
+    "target_layer": "model.visual.trunk.blocks[11].norm2",
+    "repeat_max_abs_delta": 0.0,
+    "rows": [
+      {
+        "image_id": "IMG003615.jpeg",
+        "image_label": 0,
+        "contrast_score": 0.0009714146144688129,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      },
+      {
+        "image_id": "IMG002585.jpeg",
+        "image_label": 0,
+        "contrast_score": -0.04114007204771042,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      },
+      {
+        "image_id": "IMG002515.jpeg",
+        "image_label": 0,
+        "contrast_score": -0.04572988674044609,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      },
+      {
+        "image_id": "IMG003519.jpeg",
+        "image_label": 0,
+        "contrast_score": -0.04153788089752197,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      },
+      {
+        "image_id": "IMG001470.jpeg",
+        "image_label": 1,
+        "contrast_score": -0.005621119402348995,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      },
+      {
+        "image_id": "IMG001526.jpeg",
+        "image_label": 1,
+        "contrast_score": -0.05492474138736725,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      },
+      {
+        "image_id": "IMG000624.jpeg",
+        "image_label": 1,
+        "contrast_score": 0.019224220886826515,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      },
+      {
+        "image_id": "IMG001727.jpeg",
+        "image_label": 1,
+        "contrast_score": -0.044919922947883606,
+        "shape": [
+          14,
+          14
+        ],
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "dynamic_range": 0.0,
+        "finite": true
+      }
+    ]
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "open_clip": "2.32.0",
+    "transformers": "4.35.2",
+    "cuda": "12.8",
+    "gpu": "Tesla T4"
+  },
+  "validation_masks_read": false,
+  "test_evaluated": false,
+  "completed_at_utc": "2026-07-25T20:34:09.345987+00:00"
+}

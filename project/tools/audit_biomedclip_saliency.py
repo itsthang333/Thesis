@@ -39,6 +39,7 @@ EXPECTED_PROMPTS = {
     ],
 }
 EXPECTED_VIEW_CONTRACT = {
+    "saliency_reduction": "channelwise mean absolute gradient-times-activation",
     "full_view": "black pad to square",
     "crop_fraction_of_short_side": 0.5,
     "positions_per_axis": 3,

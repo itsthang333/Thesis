@@ -76,6 +76,7 @@ def make_valid_payloads():
         "open_clip_torch": AUDIT.EXPECTED_OPEN_CLIP_VERSION,
         "transformers": AUDIT.EXPECTED_TRANSFORMERS_VERSION,
         "prompts": copy.deepcopy(AUDIT.EXPECTED_PROMPTS),
+        "saliency": AUDIT.EXPECTED_SALIENCY_METHOD,
         "prompt_sha256": prompt_sha,
         "validation_masks_read": False,
         "test_evaluated": False,

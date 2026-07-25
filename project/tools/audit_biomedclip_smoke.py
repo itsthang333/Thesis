@@ -12,7 +12,7 @@ from typing import Any
 
 EXPECTED_SOURCE_COMMIT = "de02acb59900cc64f7bdf649d20286d6219af82c"
 EXPECTED_WRAPPER_SHA256 = (
-    "3a881de74c7f2cadd152e67d079f29e39f92e14480fa84f374c76e19e51e372d"
+    "e70928fc44485b02cd74874ae9398cfcb7f846e28baf82be9d2231f0403cc0c1"
 )
 EXPECTED_SPLIT_SHA256 = (
     "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
@@ -38,6 +38,10 @@ EXPECTED_SCORE_PER_CLASS = 32
 EXPECTED_SALIENCY_PER_CLASS = 4
 EXPECTED_REPEAT_ATOL = 1e-5
 EXPECTED_DYNAMIC_RANGE_MIN = 1e-6
+EXPECTED_SALIENCY_METHOD = (
+    "channelwise mean absolute gradient-times-activation at frozen visual "
+    "transformer block 11 norm2, tumor-prompt mean minus normal-prompt mean"
+)
 HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -132,6 +136,8 @@ def validate_payloads(
         raise ValueError("Runtime transformers version mismatch")
     if predeclared.get("prompts") != EXPECTED_PROMPTS:
         raise ValueError("Frozen prompt text mismatch")
+    if predeclared.get("saliency") != EXPECTED_SALIENCY_METHOD:
+        raise ValueError("Frozen saliency reduction mismatch")
     if predeclared.get("prompt_sha256") != prompt_sha:
         raise ValueError("Predeclared prompt SHA-256 mismatch")
     if result.get("prompt_sha256") != prompt_sha:

@@ -236,8 +236,8 @@ class FrozenBiomedClipSaliency:
                     raise ValueError(f"Unexpected BiomedCLIP token count: {token_count}")
             saliency = (
                 (activation * gradient)
-                .sum(dim=-1)
                 .abs()
+                .mean(dim=-1)
                 .reshape(side, side)
                 .detach()
                 .float()
