@@ -923,4 +923,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   SHA-256 is `4080d04f...f0193`. The post-run audit will compare v3 pairwise
   against both the frozen reference and reproduction v2 at image, complete
   validation-group and lesion-size-subgroup levels.
+- Static determinism audit of the frozen GT training source passes its recorded
+  seed controls but identifies explicit limitations relevant to the reported
+  collaborator discrepancy. Python/NumPy/Torch/CUDA RNGs are seeded, cuDNN
+  deterministic mode is enabled, benchmarking is disabled, and resume restores
+  model/optimizer/AMP plus global RNG states. However,
+  `torch.use_deterministic_algorithms` and `CUBLAS_WORKSPACE_CONFIG` are not
+  enabled; DataLoaders have no explicit generator or worker-init function;
+  persistent worker RNG states are neither checkpointed nor restored; and AMP
+  remains active. Reference and independent v2 trajectories already differ at
+  epoch 1. These facts identify plausible reproducibility gaps but do not prove
+  a specific CUDA/DataLoader mechanism. The frozen reference remains valid and
+  unchanged; v3 will distinguish current fresh-run repeatability from
+  historical-lineage sensitivity. Evidence:
+  `artifacts/reference/gt_resnet18_unet_448_v1/reproducibility_static_audit.json`.
 

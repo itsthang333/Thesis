@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "audit_id": "gt_resnet18_unet_448_v1_reproducibility_static_audit",
+  "status": "PASS_WITH_LIMITATIONS",
+  "scope": "Static audit of determinism and resume controls in the frozen fully supervised training source; no model was trained and no validation or test data was read by this audit.",
+  "source": {
+    "path": "../../best_pipeline/fs_resnet18_pw10_full_448_e20/project/train_segmentation.py",
+    "canonical_lf_sha256": "5c940cf86ff95d395b320d9f973b625d3d15b5296820606a654a404259891fd4",
+    "matches_reference_lock": true
+  },
+  "positive_controls": {
+    "seed_python_random": true,
+    "seed_numpy": true,
+    "seed_torch_cpu": true,
+    "seed_all_visible_cuda_devices": true,
+    "cudnn_deterministic_true": true,
+    "cudnn_benchmark_false": true,
+    "resume_restores_torch_rng_state": true,
+    "resume_restores_cuda_rng_state_all": true,
+    "resume_restores_numpy_rng_state": true,
+    "resume_restores_python_rng_state": true,
+    "resume_restores_model_optimizer_and_amp_scaler": true
+  },
+  "limitations": {
+    "torch_use_deterministic_algorithms_enabled": false,
+    "cublas_workspace_config_locked": false,
+    "explicit_dataloader_generator": false,
+    "explicit_worker_init_function": false,
+    "dataloader_worker_rng_state_saved_in_checkpoint": false,
+    "dataloader_worker_rng_state_restored_on_resume": false,
+    "persistent_workers": true,
+    "automatic_mixed_precision": true,
+    "bitwise_checkpoint_reproduction_guaranteed": false
+  },
+  "lineage_evidence": {
+    "frozen_reference_started_by_resume": true,
+    "resume_epoch": 10,
+    "resume_checkpoint_sha256": "8278865eba7e07e0f1e327e7f6a853e3ee770a30a5a57e35438bfe5f6c458bd3",
+    "reference_selected_epoch": 20,
+    "independent_reproduction_v2_started_epoch": 1,
+    "independent_reproduction_v2_selected_epoch": 33,
+    "reference_and_v2_first_numeric_training_log_divergence_epoch": 1
+  },
+  "interpretation": {
+    "cohort_or_metric_drift_explains_v2_difference": false,
+    "recorded_controls_are_sufficient_to_claim_statistical_reproducibility": false,
+    "recorded_controls_are_sufficient_to_claim_bitwise_reproducibility": false,
+    "causal_claim": "The static audit identifies plausible reproducibility gaps but does not by itself prove which CUDA, DataLoader, AMP or historical-lineage mechanism caused the observed trajectory difference.",
+    "v3_decision_rule": "If fresh epoch-1 v3 is byte-identical to v2, treat the fresh recipe as reproducible in the current Kaggle environment and historical lineage as the primary explanation. If v3 differs, treat the frozen training implementation as non-bitwise-reproducible under its recorded controls."
+  },
+  "reference_status": {
+    "hash_locked_reference_invalidated": false,
+    "automatic_reference_replacement_authorized": false,
+    "test_evaluated": false
+  }
+}
