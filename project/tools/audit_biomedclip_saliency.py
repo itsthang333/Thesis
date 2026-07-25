@@ -46,7 +46,7 @@ EXPECTED_VIEW_CONTRACT = {
     "top_k_tiles_by_contrast_score": 3,
     "normalization_percentiles": [1.0, 99.0],
     "fusion": "pixelwise maximum of full view and selected tiles",
-    "output_size": 448,
+    "output_size": 320,
 }
 EXPECTED_POPULATIONS = {
     "train": {"images": 2981, "tumor": 1488, "normal": 1493},
@@ -113,7 +113,7 @@ def validate_manifest_rows(
     manifest_rows: list[dict[str, str]],
     expected_rows: list[dict[str, str]],
     *,
-    output_size: int = 448,
+    output_size: int = 320,
 ) -> dict[str, Any]:
     expected_names = [row["image_id"] for row in expected_rows]
     actual_names = [row.get("image_id", "") for row in manifest_rows]

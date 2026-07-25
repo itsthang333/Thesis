@@ -205,6 +205,13 @@ mechanism and remain image-label-only.
      evaluator is run. The command requires the physical pretrained-weight
      hash obtained from the smoke audit, records zero validation-GT/test access,
      and has no code path for the test split.
+   - The existing pseudo-mask generator accepts the external map only through a
+     fail-closed manifest contract: manifest/metadata/source/model hashes,
+     split, cohort, image label, map path, dtype, shape, range and per-map hash
+     all verify before the map replaces LayerCAM. The diagnostic grid is fixed
+     at 320 to preserve the promoted pipeline's CAM grid. Morphology, SAM 512,
+     prompt ensemble, component settings, selector, support clipping and
+     post-processing remain the promoted baseline settings.
 
 Every validation candidate must report the complete error chain:
 

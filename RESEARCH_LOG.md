@@ -813,4 +813,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `itsthang333/btxrd-biomedclip-saliency-smoke-v3`, version 1, was launched and
   is RUNNING. The existing single 15-minute monitor was retargeted to version 3;
   no duplicate monitor was created.
+- Downstream ingestion was prepared without activating validation. The
+  prediction-first map grid is fixed at 320 to match the promoted CAM grid.
+  `generate_pseudo_masks.py` now accepts external saliency only when manifest,
+  metadata, source commit, model weight, split, cohort, image-label and per-map
+  hashes all verify; maps must be pickle-free float16, aligned, finite and in
+  range. Known-normal maps must be exactly empty and tumor maps nonconstant.
+  The first diagnostic forbids test, proposal-teacher and auxiliary-CAM mixing;
+  after map replacement it retains the promoted morphology, SAM 512, prompt
+  ensemble, selector, support clip and post-processing contract. Three focused
+  ingestion tests, the 17 existing BiomedCLIP tests and 37 broader
+  proposal/pipeline regressions pass. This remains inactive pending smoke V3.
 

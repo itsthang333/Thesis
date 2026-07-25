@@ -14,6 +14,7 @@ Pipeline per pipeline.md:
 """
 
 import argparse
+import csv
 import hashlib
 import json
 import sys
@@ -100,6 +101,21 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
+    parser.add_argument(
+        "--external-saliency-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "Optional prediction-first image-label-only saliency manifest. Its "
+            "maps replace LayerCAM after classifier/image-label gating while all "
+            "downstream morphology, SAM, selection and post-processing stay fixed."
+        ),
+    )
+    parser.add_argument("--external-saliency-run-metadata", type=Path, default=None)
+    parser.add_argument("--external-saliency-expected-manifest-sha256", default=None)
+    parser.add_argument("--external-saliency-expected-metadata-sha256", default=None)
+    parser.add_argument("--external-saliency-expected-source-commit", default=None)
+    parser.add_argument("--external-saliency-expected-model-weight-sha256", default=None)
     parser.add_argument(
         "--proposal-teacher-segmentation-checkpoint",
         type=Path,
@@ -777,6 +793,120 @@ def sha256_file(path: Path | None) -> str | None:
     return digest.hexdigest()
 
 
+def load_external_saliency_contract(
+    *,
+    manifest_path: Path | None,
+    metadata_path: Path | None,
+    expected_manifest_sha256: str | None,
+    expected_metadata_sha256: str | None,
+    expected_source_commit: str | None,
+    expected_model_weight_sha256: str | None,
+    split: str,
+    split_manifest_sha256: str | None,
+    image_size: int,
+) -> tuple[dict[str, dict[str, str]], dict[str, object] | None]:
+    supplied = [
+        manifest_path,
+        metadata_path,
+        expected_manifest_sha256,
+        expected_metadata_sha256,
+        expected_source_commit,
+        expected_model_weight_sha256,
+    ]
+    if not any(value is not None for value in supplied):
+        return {}, None
+    if any(value is None for value in supplied):
+        raise ValueError(
+            "External saliency requires manifest, run metadata and all four "
+            "expected manifest/metadata/source/model hashes"
+        )
+    assert manifest_path is not None and metadata_path is not None
+    assert expected_manifest_sha256 is not None and expected_metadata_sha256 is not None
+    assert expected_source_commit is not None and expected_model_weight_sha256 is not None
+    manifest_path = manifest_path.resolve()
+    metadata_path = metadata_path.resolve()
+    if sha256_file(manifest_path) != expected_manifest_sha256:
+        raise ValueError("External saliency manifest SHA-256 mismatch")
+    if sha256_file(metadata_path) != expected_metadata_sha256:
+        raise ValueError("External saliency metadata SHA-256 mismatch")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if metadata.get("stage") != "prediction-first BiomedCLIP saliency generation":
+        raise ValueError("External saliency stage is not the frozen prediction-first stage")
+    if metadata.get("supervision") != "images and binary image-level labels only":
+        raise ValueError("External saliency supervision contract mismatch")
+    if metadata.get("source_commit") != expected_source_commit:
+        raise ValueError("External saliency source commit mismatch")
+    if metadata.get("split") != split:
+        raise ValueError("External saliency split mismatch")
+    if metadata.get("split_manifest_sha256") != split_manifest_sha256:
+        raise ValueError("External saliency split-manifest hash mismatch")
+    if metadata.get("manifest_sha256") != expected_manifest_sha256:
+        raise ValueError("External saliency metadata does not lock the manifest")
+    if metadata.get("model", {}).get("weight_sha256") != expected_model_weight_sha256:
+        raise ValueError("External saliency model-weight hash mismatch")
+    if metadata.get("validation_gt_read") is not False:
+        raise ValueError("External saliency generation accessed validation GT")
+    if metadata.get("test_evaluated") is not False:
+        raise ValueError("External saliency generation accessed test")
+    if metadata.get("view_contract", {}).get("output_size") != image_size:
+        raise ValueError("External saliency grid differs from --image-size")
+    with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    indexed = {row["image_id"]: row for row in rows}
+    if len(indexed) != len(rows):
+        raise ValueError("External saliency manifest contains duplicate image IDs")
+    contract = {
+        "manifest": str(manifest_path),
+        "manifest_sha256": expected_manifest_sha256,
+        "metadata": str(metadata_path),
+        "metadata_sha256": expected_metadata_sha256,
+        "source_commit": expected_source_commit,
+        "source_files": metadata.get("source_files"),
+        "model": metadata.get("model"),
+        "prompts": metadata.get("prompts"),
+        "view_contract": metadata.get("view_contract"),
+        "validation_gt_read": False,
+        "test_evaluated": False,
+    }
+    return indexed, contract
+
+
+def load_external_saliency_map(
+    record: dict[str, str],
+    *,
+    root: Path,
+    expected_image_id: str,
+    expected_image_label: int,
+    image_size: int,
+) -> np.ndarray:
+    if record.get("image_id") != expected_image_id:
+        raise ValueError("External saliency image identity mismatch")
+    if int(record.get("tumor_image_label", "-1")) != expected_image_label:
+        raise ValueError(f"External saliency image-label mismatch: {expected_image_id}")
+    expected_relative = Path("maps") / f"{Path(expected_image_id).stem}.npy"
+    relative = Path(record.get("map_path", ""))
+    if relative != expected_relative:
+        raise ValueError(f"External saliency path mismatch: {expected_image_id}")
+    path = (root / relative).resolve()
+    try:
+        path.relative_to(root.resolve())
+    except ValueError as error:
+        raise ValueError("External saliency map escapes artifact root") from error
+    if sha256_file(path) != record.get("map_sha256"):
+        raise ValueError(f"External saliency map SHA-256 mismatch: {expected_image_id}")
+    values = np.load(path, allow_pickle=False)
+    if values.dtype != np.float16 or values.shape != (image_size, image_size):
+        raise ValueError(f"External saliency map dtype/shape mismatch: {expected_image_id}")
+    values = values.astype(np.float32)
+    if not np.isfinite(values).all() or float(values.min()) < 0.0 or float(values.max()) > 1.0:
+        raise ValueError(f"External saliency map value range mismatch: {expected_image_id}")
+    if expected_image_label == 0 and np.count_nonzero(values) != 0:
+        raise ValueError(f"Known-normal external saliency is nonempty: {expected_image_id}")
+    if expected_image_label == 1 and float(values.max() - values.min()) <= 1e-6:
+        raise ValueError(f"Tumor external saliency is constant: {expected_image_id}")
+    return values
+
+
 def tensor_to_rgb_numpy(image_tensor: torch.Tensor, normalization: str = "imagenet") -> np.ndarray:
     """Convert a [3,H,W] normalised tensor to [H,W,3] uint8 RGB numpy for SAM."""
     pil = tensor_to_pil(image_tensor.detach().cpu(), normalization=normalization)
@@ -959,6 +1089,39 @@ def main() -> None:
             "--proposal-teacher-expected-sha256 requires "
             "--proposal-teacher-segmentation-checkpoint"
         )
+    external_saliency_rows, external_saliency_contract = load_external_saliency_contract(
+        manifest_path=args.external_saliency_manifest,
+        metadata_path=args.external_saliency_run_metadata,
+        expected_manifest_sha256=args.external_saliency_expected_manifest_sha256,
+        expected_metadata_sha256=args.external_saliency_expected_metadata_sha256,
+        expected_source_commit=args.external_saliency_expected_source_commit,
+        expected_model_weight_sha256=args.external_saliency_expected_model_weight_sha256,
+        split=args.split,
+        split_manifest_sha256=(
+            sha256_file(args.split_manifest.resolve()) if args.split_manifest else None
+        ),
+        image_size=args.image_size,
+    )
+    external_saliency_root = (
+        args.external_saliency_run_metadata.resolve().parent
+        if external_saliency_contract is not None
+        else None
+    )
+    if external_saliency_contract is not None:
+        if args.split == "test":
+            raise ValueError("External-saliency test generation remains locked")
+        if target_columns != ["tumor"] or args.cam_target_class != "ground_truth":
+            raise ValueError(
+                "External saliency requires binary image labels and "
+                "--cam-target-class ground_truth"
+            )
+        if args.disable_morphology or args.morphology_fusion_mode != "components":
+            raise ValueError("External saliency requires component-mode morphology")
+        if proposal_teacher is not None or args.auxiliary_binary_checkpoint is not None:
+            raise ValueError(
+                "The first external-saliency diagnostic isolates one localization "
+                "source and cannot mix proposal-teacher/auxiliary CAM evidence"
+            )
 
     run_metadata = {
             "pipeline_profile": args.pipeline_profile,
@@ -990,6 +1153,7 @@ def main() -> None:
                 )
                 if proposal_teacher is not None else None
             ),
+            "external_saliency": external_saliency_contract,
             "auxiliary_binary_checkpoint": (
                 str(args.auxiliary_binary_checkpoint.resolve())
                 if args.auxiliary_binary_checkpoint else None
@@ -1091,6 +1255,14 @@ def main() -> None:
         if not dataset.samples:
             raise ValueError(f"--image-list {args.image_list} matched no images in split '{args.split}'")
         print(f"Image-list filter: {len(dataset.samples)}/{original_count} samples")
+    if external_saliency_contract is not None:
+        dataset_names = [str(sample["image_id"]) for sample in dataset.samples]
+        if set(dataset_names) != set(external_saliency_rows) or len(
+            dataset_names
+        ) != len(external_saliency_rows):
+            raise ValueError(
+                "External saliency cohort differs from the exact pseudo-mask dataset cohort"
+            )
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -1455,6 +1627,19 @@ def main() -> None:
                     fused_cam = (fused_cam - float(fused_cam.min())) / (
                         float(fused_cam.max()) - float(fused_cam.min()) + 1e-8
                     )
+
+                if external_saliency_contract is not None:
+                    assert external_saliency_root is not None
+                    fused_cam = load_external_saliency_map(
+                        external_saliency_rows[str(image_name)],
+                        root=external_saliency_root,
+                        expected_image_id=str(image_name),
+                        expected_image_label=true_tumor,
+                        image_size=args.image_size,
+                    )
+                    per_class_cams = [fused_cam]
+                    active_indices = [0]
+                    class_weights = np.asarray([1.0], dtype=np.float32)
 
                 image_pil = tensor_to_pil(image_tensor[0].detach().cpu(), normalization=classifier_normalization)
                 image_rgb = tensor_to_rgb_numpy(image_tensor[0], normalization=classifier_normalization)

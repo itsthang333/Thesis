@@ -65,7 +65,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-split-sha256", required=True)
     parser.add_argument("--expected-model-weight-sha256", required=True)
     parser.add_argument("--source-commit", required=True)
-    parser.add_argument("--output-size", type=int, default=448)
+    parser.add_argument("--output-size", type=int, default=320)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--overwrite", action="store_true")
