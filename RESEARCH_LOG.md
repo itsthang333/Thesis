@@ -904,4 +904,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   or content drift; one focused test covers the repair. Scientific evidence,
   samples and gates are unchanged. The conditional activation gate for the
   independently audited saliency-only full-validation kernel is now satisfied.
+- The private GPU kernel
+  `itsthang333/btxrd-biomedclip-tiled-saliency-val-v1`, version 1, was launched
+  and is RUNNING with audited wrapper `e34171b6...`. This stage generates and
+  hashes all 371 saliency maps and runs the independent manifest auditor only;
+  it contains no pseudo-mask/segmentation evaluator and cannot read validation
+  GT. The same single 15-minute monitor was retargeted from smoke V4 to this
+  kernel; no duplicate monitor was created.
 
