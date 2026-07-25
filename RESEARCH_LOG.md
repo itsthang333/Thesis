@@ -1028,4 +1028,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   predeclared sensitivity arm, never a silent replacement. Compact evidence,
   report-ready comparison and decision are under
   `artifacts/kaggle/gt_reference_independent_reproduction_v3/`.
+- With the requested GT rerun/audit complete, WSL research resumed. The
+  repaired saliency-only kernel
+  `itsthang333/btxrd-biomedclip-tiled-saliency-val-v1`, version 2, was
+  launched and is RUNNING. Static audit immediately before launch passes
+  wrapper SHA-256 `c3b5088d...`, unchanged protocol `9f5b2250...`,
+  canonical-LF protocol-audit `844cd93c...`, source/model/split locks,
+  prediction-first ordering, `validation_gt_read=false` and
+  `test_evaluated=false`. This kernel only generates/hashes 371 BiomedCLIP
+  saliency maps and runs the independent map auditor; downstream pseudo-mask
+  generation remains unauthorized until the map audit passes. The single
+  existing 15-minute monitor was retargeted from GT v3 to this version; no
+  duplicate monitor was created.
 
