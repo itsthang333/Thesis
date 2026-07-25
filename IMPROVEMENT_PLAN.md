@@ -187,6 +187,16 @@ mechanism and remain image-label-only.
      cannot inspect validation masks. A full 371-image validation diagnostic is
      allowed only after that implementation gate passes and its source/model/
      prompt hashes are locked.
+   - The prospective small-lesion view strategy is deterministic and already
+     implemented without data access: one black-padded full-image view plus a
+     3-by-3 grid of square crops whose side is half the shorter image dimension.
+     Local crops are ranked only by the frozen tumor-minus-normal text contrast;
+     the top three are retained. Each gradient-times-activation map is
+     normalized at fixed 1st/99th percentiles, projected back to the immutable
+     source grid, and combined by pixelwise maximum with the full view. This
+     geometry never receives lesion area, mask, subgroup or validation score.
+     Four focused geometry/aggregation tests pass. It remains inactive unless
+     the train-only smoke gate passes.
 
 Every validation candidate must report the complete error chain:
 

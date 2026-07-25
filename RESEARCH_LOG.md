@@ -752,4 +752,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `itsthang333/btxrd-biomedclip-saliency-smoke-v2`, version 1, was launched and
   is RUNNING. The same single 15-minute monitor was retargeted from the failed
   version 1 kernel to version 2; no additional monitor was created.
+- While version 2 runs, the data-independent small-lesion saliency geometry was
+  implemented in `project/models/biomedclip_saliency.py`: a padded full view
+  plus fixed 3-by-3 half-short-side square crops, top-three local views selected
+  only by frozen tumor-minus-normal text contrast, fixed 1st/99th percentile
+  normalization, exact projection to the source grid and pixelwise-max fusion.
+  No image, label, mask, subgroup or validation metric was used to implement or
+  test this geometry. Four synthetic geometry/aggregation tests and five smoke
+  auditor tests pass. The module remains prospective until the train-only smoke
+  gate passes.
 
