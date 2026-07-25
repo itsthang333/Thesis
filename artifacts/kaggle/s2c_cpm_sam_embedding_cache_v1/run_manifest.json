@@ -1,0 +1,64 @@
+{
+  "run_id": "btxrd_s2c_cpm_sam_embedding_cache_v1",
+  "test_evaluated": false,
+  "polygons_or_masks_loaded": false,
+  "validation_images_processed": false,
+  "started_at_utc": "2026-07-25T07:45:35.281391+00:00",
+  "finished_at_utc": "2026-07-25T08:00:31.557438+00:00",
+  "elapsed_seconds": 896.2760779900001,
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "split_audit": {
+    "train": {
+      "images": 2981,
+      "tumor": 1488,
+      "normal": 1493
+    },
+    "val": {
+      "images": 371,
+      "tumor": 184,
+      "normal": 187
+    },
+    "test": {
+      "images": 373,
+      "tumor": 187,
+      "normal": 186
+    }
+  },
+  "processed_split": "train",
+  "processed_population": "tumor image-level label only",
+  "processed_images": 1488,
+  "sam": {
+    "model": "vit_b",
+    "checkpoint_sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
+    "segment_anything_commit": "6fdee8f2727f4506cfbbe553e23b895e27956588",
+    "source_image_size": [
+      512,
+      512
+    ],
+    "internal_encoder_size": 1024,
+    "embedding_shape": [
+      256,
+      64,
+      64
+    ],
+    "embedding_dtype": "float16"
+  },
+  "artifacts": {
+    "embedding_cache": "sam_embeddings_fp16.npy",
+    "embedding_cache_bytes": 3120562304,
+    "embedding_cache_sha256": "1853602fb36913c049010461057014465780ba06f37e5a562a4aae2f0a6436be",
+    "index": "embedding_index.csv",
+    "index_rows": 1488,
+    "index_sha256": "4c838827c02be65f3c1793b4c7036b2c7d0625d920d19c56666251a237ad7d06"
+  },
+  "environment": {
+    "python": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
+    "platform": "Linux-6.12.90+-x86_64-with-glibc2.35",
+    "torch": "2.10.0+cu128",
+    "torchvision": "0.25.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4"
+  },
+  "kernel_script_sha256": "44d9150a73826da79b1a951b2332016a14b09db00b32a8c38d927df111b6d3a9",
+  "known_limitation": "BTXRD group IDs are heuristic because verified patient IDs are unavailable"
+}

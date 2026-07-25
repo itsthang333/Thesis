@@ -59,6 +59,62 @@ class S2CCPMTests(unittest.TestCase):
             float(cpm_cross_entropy_loss(foreground_cam, accidental_mask, labels)),
         )
 
+    def test_cpm_peak_extraction_keeps_global_and_separated_peaks(self) -> None:
+        import torch
+
+        from train_s2c_cpm_classifier import extract_cpm_peaks
+
+        cam = torch.zeros(40, 40)
+        cam[4, 5] = 1.0
+        cam[5, 6] = 0.9
+        cam[30, 31] = 0.8
+        peaks = extract_cpm_peaks(
+            cam,
+            threshold=0.5,
+            min_distance=10,
+            max_peaks=8,
+        )
+        self.assertEqual(peaks.tolist(), [[5.0, 4.0], [31.0, 30.0]])
+
+    def test_direct_cam_adapter_returns_normalized_multiscale_map(self) -> None:
+        import torch
+        from torch import nn
+
+        from models.s2c_cpm import S2CCPMDirectCAM
+
+        class FakeCPM(nn.Module):
+            def forward(self, images, *, return_spatial=False):
+                cam = images[:, :1]
+                logits = cam.mean(dim=(2, 3))
+                features = cam.repeat(1, 2, 1, 1)
+                return (logits, features, cam) if return_spatial else logits
+
+        adapter = S2CCPMDirectCAM(FakeCPM(), scales=(0.5, 1.0))
+        image = torch.linspace(0, 1, 64).view(1, 1, 8, 8).repeat(1, 3, 1, 1)
+        output = adapter.cam_for_class(image, 0)
+        self.assertEqual(tuple(output.cam.shape), (1, 8, 8))
+        self.assertGreaterEqual(float(output.cam.min()), 0.0)
+        self.assertLessEqual(float(output.cam.max()), 1.0)
+        self.assertGreater(float(output.cam.max()), 0.99)
+
+    def test_multiscale_teacher_cam_restores_training_state(self) -> None:
+        import torch
+        from torch import nn
+
+        from train_s2c_cpm_classifier import multiscale_teacher_cam
+
+        class FakeCPM(nn.Module):
+            def forward(self, images, *, return_spatial=False):
+                cam = images[:, :1]
+                logits = cam.mean(dim=(2, 3))
+                features = cam
+                return (logits, features, cam) if return_spatial else logits
+
+        model = FakeCPM().train()
+        output = multiscale_teacher_cam(model, torch.rand(1, 3, 16, 16))
+        self.assertTrue(model.training)
+        self.assertEqual(tuple(output.shape), (1, 1, 320, 320))
+
 
 if __name__ == "__main__":
     unittest.main()

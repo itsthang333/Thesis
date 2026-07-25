@@ -11,6 +11,7 @@ from .classifier import (
     densenet121,
     load_radimagenet_densenet121_state_dict,
 )
+from .layercam import LayerCAMOutput
 
 
 class DenseNet121S2CCPMClassifier(nn.Module):
@@ -180,3 +181,84 @@ def cpm_cross_entropy_loss(
     )
     targets[masks[:, 0]] = 0
     return F.cross_entropy(class_scores, targets)
+
+
+class S2CCPMDirectCAM:
+    """Adapter exposing the trained CPM CAM through the LayerCAM call surface."""
+
+    def __init__(
+        self,
+        model: DenseNet121S2CCPMClassifier,
+        *,
+        scales: tuple[float, ...] = (0.5, 1.0, 1.5, 2.0),
+    ) -> None:
+        if not scales or any(scale <= 0 for scale in scales):
+            raise ValueError("scales must contain positive values")
+        self.model = model
+        self.scales = tuple(float(scale) for scale in scales)
+
+    def close(self) -> None:
+        return None
+
+    @torch.inference_mode()
+    def cam_for_class(
+        self,
+        input_tensor: torch.Tensor,
+        class_index: int | torch.Tensor,
+    ) -> LayerCAMOutput:
+        if isinstance(class_index, torch.Tensor):
+            if bool((class_index != 0).any()):
+                raise ValueError("The binary CPM classifier has only class index 0")
+        elif int(class_index) != 0:
+            raise ValueError("The binary CPM classifier has only class index 0")
+        target_size = tuple(int(value) for value in input_tensor.shape[-2:])
+        accumulated = None
+        reference_logits = None
+        for scale in self.scales:
+            scaled = (
+                input_tensor
+                if scale == 1.0
+                else F.interpolate(
+                    input_tensor,
+                    scale_factor=scale,
+                    mode="bilinear",
+                    align_corners=False,
+                )
+            )
+            logits, _features, cam_logits = self.model(
+                scaled,
+                return_spatial=True,
+            )
+            if scale == 1.0:
+                reference_logits = logits
+            cam = normalized_foreground_cam(
+                cam_logits,
+                output_size=target_size,
+            )
+            accumulated = cam if accumulated is None else accumulated + cam
+        assert accumulated is not None
+        maxima = F.adaptive_max_pool2d(accumulated, output_size=1)
+        cam = accumulated / (maxima + 1e-5)
+        if reference_logits is None:
+            reference_logits = self.model(input_tensor)
+        return LayerCAMOutput(
+            logits=reference_logits,
+            cam=cam[:, 0],
+        )
+
+    def cams_for_active_classes(
+        self,
+        input_tensor: torch.Tensor,
+        class_weights,
+        confidence_threshold: float = 0.5,
+    ):
+        weights = [float(value) for value in class_weights]
+        if len(weights) != 1:
+            raise ValueError("The direct CPM CAM backend requires one tumor class")
+        output = self.cam_for_class(input_tensor, 0)
+        return (
+            output.logits,
+            [output.cam[0].detach().cpu().numpy()],
+            [weights[0]],
+            [0],
+        )

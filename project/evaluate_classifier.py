@@ -34,6 +34,7 @@ from evaluation.classification_metrics import (
 )
 from evaluation.frozen_test_guard import verify_frozen_test_config
 from models.classifier import DenseNet121AnatomyClassifier
+from models.s2c_cpm import DenseNet121S2CCPMClassifier
 
 
 def parse_args() -> argparse.Namespace:
@@ -105,7 +106,21 @@ def main() -> None:
     )
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+    if checkpoint.get("pipeline_profile") == "s2c_cpm_fpn_v1":
+        cpm_config = checkpoint.get("s2c_cpm")
+        if not isinstance(cpm_config, dict):
+            raise ValueError("S2C CPM checkpoint is missing its frozen configuration")
+        if target_columns != ["tumor"] or task != "multi-label" or num_classes != 1:
+            raise ValueError("S2C CPM checkpoint must be a one-logit binary tumor classifier")
+        model = DenseNet121S2CCPMClassifier(
+            pretrained=False,
+            feature_channels=int(cpm_config["feature_channels"]),
+        )
+    else:
+        model = DenseNet121AnatomyClassifier(
+            num_classes=num_classes,
+            pretrained=False,
+        )
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     model.to(device).eval()
 

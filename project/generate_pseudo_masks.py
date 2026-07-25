@@ -41,6 +41,10 @@ from config import (
 from progress import should_disable_tqdm
 from datasets.factory import build_classification_dataset, build_segmentation_dataset
 from models.classifier import DenseNet121AnatomyClassifier
+from models.s2c_cpm import (
+    DenseNet121S2CCPMClassifier,
+    S2CCPMDirectCAM,
+)
 from models.layercam import LayerCAM
 from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.generate_layercam import generate_fused_cam
@@ -191,6 +195,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--preprocessing-mode", type=str, default="none",
                         choices=["none", "clahe", "contrast", "gamma", "foreground_crop"],
                         help="Optional X-ray preprocessing before classifier/CAM")
+    parser.add_argument(
+        "--cam-backend",
+        choices=["layercam", "s2c_cpm"],
+        default="layercam",
+        help=(
+            "layercam uses gradient-weighted DenseNet blocks; s2c_cpm uses "
+            "the checkpoint's directly trained stride-8 multiscale CAM."
+        ),
+    )
     parser.add_argument(
         "--layercam-weights",
         type=str,
@@ -449,7 +462,7 @@ def load_classifier(
     expected_num_classes: int | None = None,
     expected_split_manifest: Path | None = None,
     expected_pipeline_profile: str | None = None,
-) -> tuple[DenseNet121AnatomyClassifier, str, str]:
+) -> tuple[torch.nn.Module, str, str]:
     state = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     checkpoint_target_columns = state.get("target_columns")
     checkpoint_task = state.get("task", "multi-label")
@@ -490,7 +503,25 @@ def load_classifier(
                 "the requested manifest"
             )
     num_classes = checkpoint_num_classes
-    model = DenseNet121AnatomyClassifier(num_classes=num_classes, pretrained=False)
+    if checkpoint_pipeline_profile == "s2c_cpm_fpn_v1":
+        cpm_config = state.get("s2c_cpm")
+        if not isinstance(cpm_config, dict):
+            raise ValueError("S2C CPM checkpoint is missing its frozen configuration")
+        if (
+            checkpoint_target_columns != ["tumor"]
+            or checkpoint_task != "multi-label"
+            or checkpoint_num_classes != 1
+        ):
+            raise ValueError("S2C CPM checkpoint must be a one-logit tumor classifier")
+        model = DenseNet121S2CCPMClassifier(
+            pretrained=False,
+            feature_channels=int(cpm_config["feature_channels"]),
+        )
+    else:
+        model = DenseNet121AnatomyClassifier(
+            num_classes=num_classes,
+            pretrained=False,
+        )
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device)
     model.eval()
@@ -799,6 +830,7 @@ def main() -> None:
             "confidence_threshold": args.confidence_threshold,
             "cam_tta_flip": args.cam_tta_flip,
             "cam_multiscale_sizes": list(cam_multiscale_sizes),
+            "cam_backend": args.cam_backend,
             "cam_aggregation": args.cam_aggregation,
             "cam_contrast_normal": args.cam_contrast_normal,
             "cam_contrast_weight": args.cam_contrast_weight,
@@ -892,12 +924,27 @@ def main() -> None:
             gt_masks_by_name[str(image_name)] = (mask_tensor[0].numpy() > 0.5)
         print(f"Loaded {len(gt_masks_by_name)} ground-truth masks for prompt-quality evaluation")
 
-    layercam = LayerCAM(
-        classifier,
-        device=device,
-        layer_weights=layercam_weights,
-        gradient_mode=args.layercam_gradient_mode,
-    )
+    if args.cam_backend == "s2c_cpm":
+        if not isinstance(classifier, DenseNet121S2CCPMClassifier):
+            raise ValueError(
+                "--cam-backend s2c_cpm requires an s2c_cpm_fpn_v1 checkpoint"
+            )
+        if target_columns != ["tumor"] or classifier_task != "multi-label":
+            raise ValueError("The direct CPM CAM backend requires binary tumor labels")
+        if args.auxiliary_binary_checkpoint is not None:
+            raise ValueError("The direct CPM CAM backend does not use an auxiliary CAM")
+        layercam = S2CCPMDirectCAM(classifier)
+    else:
+        if isinstance(classifier, DenseNet121S2CCPMClassifier):
+            raise ValueError(
+                "An s2c_cpm_fpn_v1 checkpoint must use --cam-backend s2c_cpm"
+            )
+        layercam = LayerCAM(
+            classifier,
+            device=device,
+            layer_weights=layercam_weights,
+            gradient_mode=args.layercam_gradient_mode,
+        )
     auxiliary_classifier = None
     auxiliary_layercam = None
     if args.auxiliary_binary_checkpoint is not None:

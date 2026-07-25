@@ -286,4 +286,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   received gradients, and test was not evaluated. The full CPM training
   remains gated on a train-only, hash-audited SAM embedding cache and a frozen
   no-polygon protocol.
+- The frozen SAM ViT-B embedding cache completed on Kaggle in `896.28`
+  seconds. It contains exactly the 1,488 clean-train tumor images as
+  `[256,64,64]` float16 tensors (3,120,562,304 bytes); normal-image CPM
+  targets remain deterministic all-background and therefore require no cached
+  embedding. Cache/index SHA-256 values are
+  `1853602fb36913c049010461057014465780ba06f37e5a562a4aae2f0a6436be`
+  and
+  `4c838827c02be65f3c1793b4c7036b2c7d0625d920d19c56666251a237ad7d06`.
+  The run used only raw train radiographs and binary image labels, loaded no
+  polygon or mask, processed no validation image, and kept test locked.
+  Compact evidence is under
+  `artifacts/kaggle/s2c_cpm_sam_embedding_cache_v1/`; the 3 GB cache remains
+  on Kaggle.
+- A pre-launch state audit found that multiscale teacher-CAM generation left
+  the classifier in evaluation mode after the first CPM batch. This would
+  unintentionally freeze BatchNorm behavior from epoch 3 onward. The function
+  now restores its incoming train/eval state in a `finally` block, and a
+  dedicated regression test checks the invariant. This is an implementation
+  correction made before any long CPM training or validation localization
+  result; it does not change the predeclared objective or use validation/test
+  feedback.
 
