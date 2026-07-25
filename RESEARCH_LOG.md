@@ -877,4 +877,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `a160a5a7...`/`18858511...`. The full independent pre-launch protocol audit
   passes again and still records no validation prediction, validation-GT read
   or test access.
+- The repaired private GPU kernel
+  `itsthang333/btxrd-biomedclip-saliency-smoke-v4`, version 1, was launched and
+  is RUNNING. The same single 15-minute monitor was retargeted to V4; the
+  saliency-only full-validation kernel remains unlaunched.
 
