@@ -1,0 +1,53 @@
+{
+  "split_manifest": "/kaggle/working/frozen_split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "train_images": 2981,
+  "val_images": 371,
+  "s2c_cpm": {
+    "method": "BTXRD DenseNet FPN adaptation of S2C SSC plus CPM",
+    "architecture": "DenseNet121 stride-8 FPN CAM classifier",
+    "feature_sources": [
+      "denseblock2",
+      "final"
+    ],
+    "feature_channels": 256,
+    "feature_stride": 8,
+    "classification_head": "global average pooling of one-channel CAM",
+    "image_size": 320,
+    "batch_size": 2,
+    "seed": 42,
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "augmentation": false,
+    "preprocessing": "none",
+    "normalization": "imagenet",
+    "ssc_weight": 1.0,
+    "ssc_temperature": 1.0,
+    "ssc_region_manifest_sha256": "677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e",
+    "cpm_weight": 1.0,
+    "cpm_warmup_epochs": 2,
+    "cpm_cam_scales": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+    ],
+    "cpm_peak_threshold": 0.5,
+    "cpm_peak_min_distance": 20,
+    "cpm_max_peaks": 8,
+    "sam_model": "vit_b",
+    "sam_checkpoint_sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
+    "sam_embedding_cache_sha256": "1853602fb36913c049010461057014465780ba06f37e5a562a4aae2f0a6436be",
+    "sam_embedding_index_sha256": "4c838827c02be65f3c1793b4c7036b2c7d0625d920d19c56666251a237ad7d06",
+    "sam_embedding_cache_population": 1488,
+    "sam_mask_selection": "highest SAM predicted-IoU times mean normalized CAM inside mask",
+    "optimizer": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "maximum_epochs": 30,
+    "early_stop_patience": 7,
+    "checkpoint_selection": "clean validation tumor F1 at threshold 0.5",
+    "train_polygons_loaded": false,
+    "validation_polygons_loaded": false,
+    "test_evaluated": false
+  }
+}

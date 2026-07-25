@@ -1,0 +1,59 @@
+{
+  "stage": "S2C SSC+CPM DenseNet FPN binary classifier",
+  "status": "predeclared_before_launch",
+  "supervision": "binary image-level tumor labels, class-agnostic train SAM regions, and frozen train-tumor SAM image embeddings; no polygons",
+  "train_polygons_loaded": false,
+  "validation_polygons_loaded": false,
+  "test_evaluated": false,
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "region_map_manifest_sha256": "677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e",
+  "embedding_cache_sha256": "1853602fb36913c049010461057014465780ba06f37e5a562a4aae2f0a6436be",
+  "embedding_index_sha256": "4c838827c02be65f3c1793b4c7036b2c7d0625d920d19c56666251a237ad7d06",
+  "architecture": "torchvision DenseNet121 with stride-8 FPN fusion of denseblock2 and final semantics, one-channel CAM head, CAM global-average pooling",
+  "initialization": "official hash-checked torchvision ImageNet weights",
+  "target_columns": [
+    "tumor"
+  ],
+  "image_size": 320,
+  "batch_size": 2,
+  "optimizer": "AdamW",
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "loss": {
+    "classification": "BCEWithLogitsLoss",
+    "spatial": [
+      "S2C SAM-Segment Contrasting",
+      "binary CAM-based Prompting Module"
+    ],
+    "ssc_weight": 1.0,
+    "ssc_temperature": 1.0,
+    "prototype_gradient": "detached",
+    "ignore_region_id": 0,
+    "region_map_size": 80,
+    "feature_stage": "FPN(denseblock2, final)",
+    "feature_stride": 8,
+    "feature_channels": 256,
+    "feature_activation": "relu",
+    "feature_projection": "two learned 1x1 lateral projections",
+    "cpm_weight": 1.0,
+    "cpm_warmup_epochs": 2,
+    "cpm_cam_scales": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+    ],
+    "cpm_peak_threshold": 0.5,
+    "cpm_peak_min_distance": 20,
+    "cpm_max_peaks": 8,
+    "sam_mask_selection": "highest SAM predicted-IoU times mean normalized CAM inside mask"
+  },
+  "augmentation": false,
+  "preprocessing": "none",
+  "seed": 42,
+  "maximum_epochs": 30,
+  "early_stop_patience": 7,
+  "checkpoint_selection": "clean validation tumor F1 at fixed sigmoid threshold 0.5",
+  "evaluation": "full clean validation only; test locked",
+  "created_at_utc": "2026-07-25T08:23:09.447914+00:00"
+}

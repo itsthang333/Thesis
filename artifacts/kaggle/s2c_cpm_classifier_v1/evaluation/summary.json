@@ -1,0 +1,68 @@
+{
+  "dataset": "btxrd",
+  "split": "val",
+  "task": "multi-label",
+  "target_columns": [
+    "tumor"
+  ],
+  "images": 371,
+  "image_size": 320,
+  "gate_tumor_vs_normal": {
+    "positive_class": "tumor",
+    "decision_rule": "probability",
+    "threshold": 0.5,
+    "tp": 142,
+    "fp": 54,
+    "fn": 42,
+    "tn": 133,
+    "accuracy": 0.7412398921832885,
+    "sensitivity": 0.7717391304347826,
+    "specificity": 0.7112299465240641,
+    "precision": 0.7244897959183674,
+    "recall": 0.7717391304347826,
+    "f1": 0.7473684210526316,
+    "auroc": 0.7764764008370146,
+    "auprc": 0.7529114728770645
+  },
+  "multiclass": null,
+  "confidence_intervals": {
+    "method": "nonparametric percentile bootstrap of complete heuristic groups",
+    "group_key": "group_id",
+    "group_provenance": "heuristic grouping; not verified patient/case identifiers",
+    "groups": 242,
+    "iterations": 2000,
+    "seed": 42,
+    "intervals": {
+      "macro_f1": {
+        "point_estimate": 0.7410875254434428,
+        "ci95_low": 0.6796069396717251,
+        "ci95_high": 0.7924566761084415,
+        "valid_iterations": 2000
+      },
+      "tumor_gate_auroc": {
+        "point_estimate": 0.7764764008370146,
+        "ci95_low": 0.7101897386357156,
+        "ci95_high": 0.8339458077062684,
+        "valid_iterations": 2000
+      },
+      "tumor_gate_auprc": {
+        "point_estimate": 0.7529114728770645,
+        "ci95_low": 0.6606354462596649,
+        "ci95_high": 0.843834271713686,
+        "valid_iterations": 2000
+      },
+      "tumor_gate_sensitivity": {
+        "point_estimate": 0.7717391304347826,
+        "ci95_low": 0.7102090210766887,
+        "ci95_high": 0.8298969072164949,
+        "valid_iterations": 2000
+      },
+      "tumor_gate_specificity": {
+        "point_estimate": 0.7112299465240641,
+        "ci95_low": 0.6108002808002808,
+        "ci95_high": 0.7951363755573039,
+        "valid_iterations": 2000
+      }
+    }
+  }
+}

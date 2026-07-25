@@ -328,4 +328,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   rule would remain unchanged. If CPM instead has poor CAM support or high
   selection loss with an adequate oracle pool, grid prompting is rejected
   without a GPU run because it does not address the observed bottleneck.
+- The full S2C SSC+CPM classifier completed on Kaggle and passed the frozen
+  artifact audit. It validly early-stopped after 10 epochs and selected epoch
+  3 with clean-validation F1 `0.7473684211`. Independent reconstruction from
+  all 371 per-image rows gives `TP/FP/FN/TN = 142/54/42/133` and the exact
+  recorded F1. Relative to the baseline classifier, F1/AUROC/AUPRC change by
+  `-0.0359649123/-0.0889764008/-0.1243164066`; sensitivity changes by
+  `+0.0054347826`, while specificity changes by `-0.1016042781`. These are
+  diagnostics, not localization evidence. The downloaded 89,100,000-byte
+  checkpoint independently hashes to
+  `7da19e9c0537501c4c919200ed65b2bf6992383af70aa91c18b312a5d6204043`.
+  Split/source hashes match commit
+  `f4a17a41d9e66d2e23f1c7b079d882a5e89e7ca4`; train/validation polygons were
+  not loaded and test remained locked. Compact evidence is under
+  `artifacts/kaggle/s2c_cpm_classifier_v1/`.
+- The checkpoint hash is now frozen into the predeclared Gate-C wrapper. All
+  six local fail-closed protocol tests pass. Kernel
+  `itsthang333/btxrd-s2c-cpm-gate-c-v1` version 1 was launched with the
+  unchanged promoted CAM-percentile/SAM selector and the three-part promotion
+  rule: improve overall tumor Dice above `0.2343392222`, paired complete-group
+  bootstrap 95% lower bound above zero, and no decrease on the frozen 94-case
+  small-lesion subgroup. All 184 validation tumors remain in the endpoint and
+  complete misses remain zero; test remains inaccessible to model selection.
 

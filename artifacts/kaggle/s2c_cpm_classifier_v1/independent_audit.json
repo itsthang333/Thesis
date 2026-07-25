@@ -1,0 +1,52 @@
+{
+  "audit_status": "pass_for_gate_c",
+  "kernel": "itsthang333/btxrd-s2c-cpm-classifier-v1",
+  "kernel_status": "COMPLETE",
+  "source_commit": "f4a17a41d9e66d2e23f1c7b079d882a5e89e7ca4",
+  "split_manifest_sha256_downloaded": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "checkpoint_sha256_manifest": "7da19e9c0537501c4c919200ed65b2bf6992383af70aa91c18b312a5d6204043",
+  "checkpoint_sha256_downloaded": "7da19e9c0537501c4c919200ed65b2bf6992383af70aa91c18b312a5d6204043",
+  "checkpoint_bytes": 89100000,
+  "checkpoint_epoch": 3,
+  "checkpoint_best_val_f1": 0.7473684210526316,
+  "completed_epochs": 10,
+  "early_stopping_valid": true,
+  "validation_recomputed_from_per_image": {
+    "rows": 371,
+    "unique_images": 371,
+    "unique_groups": 242,
+    "positive": 184,
+    "negative": 187,
+    "tp": 142,
+    "fp": 54,
+    "fn": 42,
+    "tn": 133,
+    "f1": 0.7473684210526316
+  },
+  "split_counts_recomputed": {
+    "train": {"images": 2981, "tumor": 1488, "normal": 1493},
+    "val": {"images": 371, "tumor": 184, "normal": 187},
+    "test": {"images": 373, "tumor": 187, "normal": 186}
+  },
+  "protocol_guards": {
+    "test_evaluated": false,
+    "train_polygons_loaded": false,
+    "validation_polygons_loaded": false,
+    "validation_only_checkpoint_selection": true
+  },
+  "source_hashes_verified_from_git_commit": {
+    "project/train_s2c_cpm_classifier.py": "3a6c7e34307b33453aeb496e2af09fd0ad394ebdb546b362534965c1c3704f7b",
+    "project/evaluate_classifier.py": "63847e5069c266a7c1bd1ef564ad83d93f2c2c9e357911c4a6b21cdd4f0603a3",
+    "project/models/classifier.py": "81b9dd45c924a67e4659b61e240e91f1d86ed3ea4874c2890276362f66e6f854",
+    "project/models/sam_segment_contrastive.py": "9aa8971f98b5e134cc2cb1c1f627caa55aa523f5950c4e2590be22510f79530e",
+    "project/models/s2c_cpm.py": "f47eb64dd76f6e94a859cdef64b1eafd8cd5b7a5027d62b1704abe8107cce62c"
+  },
+  "classification_delta_vs_baseline": {
+    "f1": -0.035964912280701755,
+    "sensitivity": 0.005434782608695676,
+    "specificity": -0.10160427807486638,
+    "auroc": -0.08897640083701464,
+    "auprc": -0.12431640659204146
+  },
+  "interpretation": "Classification is diagnostic only. The checkpoint is admissible for the predeclared localization Gate-C, which must evaluate all 184 validation tumors and retain complete misses as zero. Test remains locked."
+}
