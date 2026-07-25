@@ -499,4 +499,49 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   It then computes paired complete-group bootstrap differences against the
   hash-locked reference for overall and all three lesion-size groups. Ten
   combined reference, paired-contract and reproduction-auditor tests pass.
+- The full 32-by-32 official SAM automatic-mask grid-gallery diagnostic
+  completed on Kaggle and is decisively rejected. Independent reconstruction
+  verifies all 371 validation images, 184 tumors, 187 normals, 167 tumor
+  groups, frozen `94/72/18` size counts, source commit `ab5f7cca...`, split,
+  CPM-classifier and SAM hashes, and `test_evaluated=false`. Downloaded
+  comparison/per-image/run-metadata/pseudo-manifest hashes all match the cloud
+  manifest; no mask PNGs were retained locally.
+- Candidate mean tumor Dice is only `0.0278769051`. Relative to the promoted
+  flip-TTA baseline `0.2343392222`, paired complete-group delta is
+  `-0.2064623171` with 95% CI
+  `[-0.2524417116,-0.1607865654]`; relative to the same-CPM component-prompt
+  control `0.1643982371`, delta is `-0.1365213321` with 95% CI
+  `[-0.1764958606,-0.0986665204]`. Small/medium/large Dice is
+  `0.0072473952/0.0579301833/0.0153956770`; all are below both controls.
+  There are 110/184 complete misses, only 74 non-empty tumor predictions and
+  only 16 tumor images with any overlap.
+- The mechanism audit falsifies the intended proposal hypothesis. Direct
+  CPM-CAM support, point and box diagnostics are bit-for-bit identical to the
+  component-prompt control, but automatic-grid single-candidate oracle Dice
+  falls from `0.3693434433` to `0.1193872516`, and clipped oracle from
+  `0.3413734584` to `0.1130855663`. Clipped-oracle drops are
+  `-0.0802427974/-0.3769592013/-0.4067270392` for small/medium/large. Thus
+  dense SAM objectness proposals mainly capture radiographic anatomy rather
+  than the tumor and do not repair small-lesion omission. The smaller reported
+  selection loss is an artifact of the impoverished oracle pool, not selector
+  improvement.
+- Decision: close the dense automatic-grid family under this SAM/checkpoint
+  and filtering contract; do not generate train masks or spend GPU time on a
+  multiscale grid. This is a bounded grid-gallery adaptation, not a claim that
+  the complete Pro2SAM method was reproduced. Dense masks lack CAM-component
+  identity, so the predeclared global-top-1 aggregation is also a structural
+  limitation. Compact evidence and the independent auditor are under
+  `artifacts/kaggle/pro2sam_grid_full_v1/` and
+  `project/tools/audit_grid_gallery.py`; eleven combined protocol tests pass.
+- The next bounded WSL proposal experiment will retain the promoted flip-TTA
+  CAM component-prompt gallery exactly and add proposals from the frozen
+  pseudo-mask-trained WSL U-Net as a second, GT-free spatial teacher. Its
+  checkpoint was trained only from image-label-derived pseudo-masks. The
+  existing CAM, score, support clipping, SAM and baseline candidates remain
+  available; the added teacher components are ranked only with frozen
+  image-derived signals. This tests whether learned spatial generalization can
+  add proposals that automatic SAM objectness missed. No train/validation
+  polygon, GT size gate or per-image oracle routing is permitted. Promotion
+  still requires a positive overall paired-CI lower bound versus
+  `0.2343392222` and no decrease on the fixed 94-case small subgroup.
 

@@ -89,6 +89,14 @@ declared successful by improving only the overall mean or only one subgroup.
 
 ### Stage 1 — close the existing proposal-gallery diagnostic
 
+**Completed and rejected.** The independently audited 32-by-32 grid run
+achieved only `0.0278769051` tumor Dice and reduced clipped single-candidate
+oracle Dice from `0.3413734584` for the same-CPM component-prompt control to
+`0.1130855663`. Direct CAM/prompt diagnostics were identical, so the failure
+is localized to the automatic SAM proposal pool. Dense-grid and multiscale-grid
+follow-ups are closed under this SAM/filtering contract; no train masks are
+generated from this candidate.
+
 Finish the already-predeclared 32-by-32 SAM grid-gallery validation run.
 Freeze the CPM CAM, `coverage_mass_sam` scoring formula, support clipping,
 post-processing, cohort and metrics. Compare it against both:
@@ -116,7 +124,8 @@ Candidate families are not restricted, but every run must change a declared
 mechanism and remain image-label-only.
 
 1. **Proposal omission**
-   - dense grid or multiscale grid SAM gallery;
+   - pseudo-trained segmentation-teacher components added to the retained
+     CAM-component SAM gallery;
    - high-resolution/pyramidal image-label CAM;
    - CAM peak and connected-region prompts;
    - consensus proposals from independently pretrained foundation models.
