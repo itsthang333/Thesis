@@ -1160,4 +1160,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   371-image validation cohort and `94/72/18` lesion-size subgroups. The purpose
   is to isolate stochastic/runtime variation from configuration or metric
   drift; it cannot replace the hash-locked reference and test remains locked.
+- Proposal-gallery version 2 completed and passed the independent and local
+  compact-evidence audits. All retained artifact hashes match the run
+  manifest; prediction artifacts were frozen before validation GT; the exact
+  `371/184/187` cohort and `94/72/18` subgroups include complete misses;
+  LayerCAM component counts are preserved, SAM candidate counts never decrease,
+  every tumor receives external proposals, and test remains untouched.
+- The direct promotion gate fails. Final mean tumor Dice changes only
+  `0.2343392 -> 0.2373441` overall (`+0.0030049`, complete-group CI95
+  `[-0.0049258,+0.0106602]`); small and medium improve by `+0.0020985` and
+  `+0.0141854`, but large declines by `-0.0369836` with CI95 entirely below
+  zero `[-0.0789123,-0.0072707]`. These masks are therefore not authorized
+  for train-pseudo generation.
+- The selector-research gate passes because the unchanged unconditional
+  proposal gallery retains the previously frozen positive oracle gains:
+  `+0.0746499` overall, `+0.0370158/+0.1166933/+0.1030096` for
+  small/medium/large, with every complete-group CI95 lower bound positive.
+  The evidence isolates proposal selection—not source availability—as the
+  remaining failure, especially for the 18-image large subgroup. Next WSL work
+  may study a no-GT selector only; no size routing or GT-oracle routing is
+  authorized.
+- Fully supervised GT kernel version 2 (scientific role v4) was launched and
+  is RUNNING. The single 15-minute monitor was retargeted to this exact rerun;
+  the completed proposal-gallery kernel no longer has a monitor.
 

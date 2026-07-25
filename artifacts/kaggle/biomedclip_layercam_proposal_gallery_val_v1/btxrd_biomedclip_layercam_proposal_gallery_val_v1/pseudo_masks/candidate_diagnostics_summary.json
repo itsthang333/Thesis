@@ -1,0 +1,15 @@
+{
+  "cam_percentile": 90.0,
+  "complete": true,
+  "expected_tumor_images": 184,
+  "ground_truth_loaded_during_generation": false,
+  "image_size": 320,
+  "manifest_rows": 184,
+  "manifest_sha256": "eacd38b10e82e28dce3e42bcc6e7971bdc9861e760bd91f234ebab3b22b6480d",
+  "prediction_first": true,
+  "pseudo_manifest_sha256": "6962bb4b92a0311f2f8d0f5e68e14a4aac0e4199994868c6eb0d5626f08790ba",
+  "schema_version": 1,
+  "selection_method": "coverage_mass_sam",
+  "split": "val",
+  "support_clip_kernel": 5
+}

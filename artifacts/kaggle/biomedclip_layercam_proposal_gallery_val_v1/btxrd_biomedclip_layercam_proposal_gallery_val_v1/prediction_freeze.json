@@ -1,0 +1,10 @@
+{
+  "candidate_manifest_sha256": "eacd38b10e82e28dce3e42bcc6e7971bdc9861e760bd91f234ebab3b22b6480d",
+  "candidate_tumor_rows": 184,
+  "frozen_at_utc": "2026-07-25T23:42:42.216751+00:00",
+  "pseudo_manifest_sha256": "6962bb4b92a0311f2f8d0f5e68e14a4aac0e4199994868c6eb0d5626f08790ba",
+  "pseudo_rows": 371,
+  "status": "FROZEN_BEFORE_GT",
+  "test_evaluated": false,
+  "validation_gt_read": false
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "kernel": "itsthang333/btxrd-biomedclip-layercam-proposal-gallery-val-v1",
+  "kernel_version": 2,
+  "protocol_sha256": "8b5883780df881ecb654ee9a6d431a56a175d560c41f34f0ca6170f8a54a8c1d",
+  "wrapper_sha256": "767af8ddde1edbdf5d94e12f053e5ee8df51f380bab20e092869c3148730ec8c",
+  "artifact_hashes_match_run_manifest": {
+    "candidate_manifest": true,
+    "candidate_per_image": true,
+    "candidate_prompt_quality": true,
+    "comparison": true,
+    "independent_audit": true,
+    "prediction_freeze": true,
+    "pseudo_manifest": true
+  },
+  "protocol_checks": {
+    "cohort_371_184_187": true,
+    "subgroups_94_72_18": true,
+    "prediction_frozen_before_validation_gt": true,
+    "complete_misses_included": true,
+    "baseline_layercam_component_counts_preserved": true,
+    "baseline_sam_candidate_counts_not_reduced": true,
+    "tumor_images_with_external_components": 184,
+    "test_evaluated": false
+  },
+  "promotion_gates": {
+    "direct_train_pseudo_mask_generation": "FAIL",
+    "localization_source_to_selector_research": "PASS"
+  },
+  "decision": "SELECTOR_RESEARCH_ONLY"
+}

@@ -1,0 +1,27 @@
+{
+  "baseline_layercam_component_counts_preserved": true,
+  "baseline_sam_candidate_counts_not_reduced": true,
+  "candidate_manifest_sha256": "eacd38b10e82e28dce3e42bcc6e7971bdc9861e760bd91f234ebab3b22b6480d",
+  "candidate_per_image_sha256": "59bead9162ff90851087c67ecac7f1bc8d9133e7c6a8aebb2f3db6e6606d7b05",
+  "candidate_prompt_quality_sha256": "200dbc4172dcd7e5bd7c2c0a23734725925e3153d73b52a2796c4f3fcda5ab9a",
+  "cohort": {
+    "images": 371,
+    "normal": 187,
+    "tumor": 184
+  },
+  "complete_misses_included": true,
+  "decision": "SELECTOR_RESEARCH_ONLY",
+  "diagnostic_prediction_first_audit_sha256": "13d50ce3c38d910654e8a90bec8774922a4aad40bc2fcaf3073d17bb07884fed",
+  "prediction_artifacts_verified_before_gt_load": true,
+  "prediction_freeze_sha256": "342e0ad73ba6edec97f6b1d047d931558d58386d978d7f1d73fa8e15930ed16f",
+  "pseudo_manifest_sha256": "6962bb4b92a0311f2f8d0f5e68e14a4aac0e4199994868c6eb0d5626f08790ba",
+  "status": "PASS",
+  "subgroups": {
+    "large": 18,
+    "medium": 72,
+    "small": 94
+  },
+  "test_evaluated": false,
+  "tumor_images_with_external_components": 184,
+  "validation_gt_read_only_after_prediction_freeze": true
+}
