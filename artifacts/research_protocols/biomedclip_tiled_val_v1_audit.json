@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "role": "pre-launch BiomedCLIP validation protocol audit",
+  "protocol_sha256": "d20712790808dc14fc5c6d882502872a04edb4b2d516fa986a1be57122217e1c",
+  "source_lock": {
+    "implementation_commit": "8a997c87170538f897e6aa3b13b0f6c13e39f32f",
+    "generate_biomedclip_saliency.py": "c475f3b8bd16b3b2fd85add21cf35e4b631943ab50be9c4217302dba763ed46c",
+    "models/biomedclip_saliency.py": "f07718a47d71c0aa05c6e110c243d3dfc7197064cca89d5e1dfb44612fd28d5d",
+    "generate_pseudo_masks.py": "354621802dfee4fe39d24325a706ac40e7a1dfce5929ced4a35f530bb95a9124"
+  },
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "model_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+  "baseline": {
+    "per_image_sha256": "fe5cf247cd236799de9e279db342314c11ff65fdb065cda26986c302efd05540",
+    "prompt_quality_sha256": "d1b570ae3a6287fdaf7fc5c28aea864d6883e5c57037542b39b17c4c6ea995e4"
+  },
+  "validation_predictions_generated": false,
+  "validation_gt_read": false,
+  "test_evaluated": false
+}

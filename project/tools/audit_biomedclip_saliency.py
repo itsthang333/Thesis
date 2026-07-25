@@ -21,7 +21,7 @@ EXPECTED_SOURCE_HASHES = {
     ),
 }
 EXPECTED_SPLIT_SHA256 = (
-    "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
+    "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 )
 EXPECTED_MODEL_ID = (
     "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"

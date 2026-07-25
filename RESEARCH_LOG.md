@@ -838,4 +838,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prediction-before-GT order. Passing the small-lesion oracle gate authorizes
   only selector/support research; direct train-mask generation still requires
   positive overall final-Dice CI95 lower bound and no small-lesion decrease.
+- The independent pre-launch protocol audit passes. It verifies the exact
+  protocol file hash, frozen CRLF paired split `85511ee1...`, three source-file
+  hashes, the physical BiomedCLIP weight evidence from smoke V2, and both
+  promoted baseline evidence hashes. It records
+  `validation_predictions_generated=false`, `validation_gt_read=false` and
+  `test_evaluated=false`. The saliency-manifest auditor was corrected from the
+  repository LF serialization to this authoritative paired split hash before
+  any launch. Four protocol mutation tests plus four saliency-auditor tests
+  pass.
 
