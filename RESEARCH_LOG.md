@@ -937,4 +937,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   unchanged; v3 will distinguish current fresh-run repeatability from
   historical-lineage sensitivity. Evidence:
   `artifacts/reference/gt_resnet18_unet_448_v1/reproducibility_static_audit.json`.
+- The physical ImageNet ResNet-18 encoder input was independently downloaded
+  as the single 46,830,571-byte
+  `resnet18-f37072fd.pth` file from the exact Kaggle dataset attached by GT
+  reproduction v2/v3. Its SHA-256 is
+  `f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec`.
+  Wrapper hashes prove both runs locate that unique filename and copy it into
+  the Torch cache, but the wrappers do not assert the physical weight hash
+  inside the cloud process. The evidence is therefore marked
+  `PASS_WITH_PROVENANCE_LIMITATION`, not overstated as an in-kernel proof.
+  Every future paired consumer wrapper must fail closed on this weight hash.
+  Evidence:
+  `artifacts/reference/gt_resnet18_unet_448_v1/pretrained_weight_audit.json`.
 
