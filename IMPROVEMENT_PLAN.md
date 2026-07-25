@@ -145,6 +145,29 @@ mechanism and remain image-label-only.
      paired consumer contract and training the matching GT reference;
    - no morphology or area threshold selected from GT lesion size.
 
+4. **Foundation-model localization fallback**
+   - This branch is activated only if the frozen proposal-teacher
+     `source_consensus` selector is rejected. It does not repeat the already
+     rejected 448px DenseNet, AdvCAM, S2C/CPM or automatic SAM-grid families.
+   - Use a frozen biomedical vision-language encoder (BiomedCLIP) to produce a
+     tumor-vs-normal saliency map from image-label-derived text prompts. The
+     prompt templates and model/checkpoint hash must be fixed before reading
+     validation segmentation metrics. Tumor-type text may be used only when it
+     is an available image-level label.
+   - First run a validation-only zero-shot diagnostic: BiomedCLIP
+     saliency/gScoreCAM -> deterministic CRF or confidence seeds -> the existing
+     hash-locked SAM candidate/evaluator. Report the same support, prompt,
+     oracle, selector, post-processing and subgroup chain. Do not generate
+     train masks unless the candidate passes a predeclared promotion gate.
+   - If zero-shot localization adds a credible proposal oracle, a later
+     train-only prompt-tuning stage may use BTXRD image labels but no polygons,
+     masks, validation GT routing or test images. Any pseudo-mask consumer still
+     uses the frozen paired GT-reference contract.
+   - This is a BTXRD-specific, independently audited adaptation motivated by
+     FMA-WSSS and MedCLIP-SAM, not a claim of copying or reproducing either
+     complete method. External pretrained weights, licenses, source commits and
+     deviations must be recorded explicitly.
+
 Every validation candidate must report the complete error chain:
 
 `CAM support -> proposal oracle -> selector -> support clip -> post-process`.
@@ -212,6 +235,16 @@ instead of extending identical training.
   Pro2SAM ECCV paper while retaining this project's independently frozen
   selector and protocol:
   https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/08795.pdf
+- FMA-WSSS motivates frozen CLIP/SAM coarse-to-fine seeds and learnable
+  task-specific prompts under image-level supervision:
+  https://openaccess.thecvf.com/content/WACV2024/html/Yang_Foundation_Model_Assisted_Weakly_Supervised_Semantic_Segmentation_WACV_2024_paper.html
+- MedCLIP-SAM motivates biomedical CLIP saliency, CRF seed refinement and SAM
+  prompting across medical modalities, including X-ray:
+  https://papers.miccai.org/miccai-2024/paper/2311_paper.pdf
+- BiomedCLIP is an open biomedical vision-language model pretrained on PMC-15M
+  and is used only as an external frozen prior unless a separate image-label
+  prompt-tuning protocol is predeclared:
+  https://arxiv.org/abs/2303.00915
 
 External papers motivate mechanisms only. Their benchmark scores are never
 treated as BTXRD evidence.
