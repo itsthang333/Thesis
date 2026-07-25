@@ -316,4 +316,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   received gradients. Compact evidence is under
   `artifacts/kaggle/s2c_cpm_torch_test_v2/`. The long classifier run is
   authorized only with this commit and the frozen cache/index hashes.
+- A contingent post-CPM diagnostic is pre-scoped from Pro2SAM
+  (`https://arxiv.org/abs/2505.04905`), which addresses SAM prompt ambiguity
+  by generating a grid-point mask gallery and matching masks to a coarse
+  semantic map at pixel level. It is not authorized as an unconditional next
+  run. It may be tested only if the completed CPM Gate-C mechanism audit shows
+  that small-lesion loss is dominated by missing SAM proposals (low
+  single-candidate oracle/point-hit despite usable direct-CAM support). The
+  only changed variable would be the proposal gallery; the frozen CPM CAM,
+  selector score, support clipping, morphology, split, metric, and promotion
+  rule would remain unchanged. If CPM instead has poor CAM support or high
+  selection loss with an adequate oracle pool, grid prompting is rejected
+  without a GPU run because it does not address the observed bottleneck.
 
