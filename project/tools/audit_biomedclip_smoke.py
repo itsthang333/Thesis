@@ -12,7 +12,7 @@ from typing import Any
 
 EXPECTED_SOURCE_COMMIT = "de02acb59900cc64f7bdf649d20286d6219af82c"
 EXPECTED_WRAPPER_SHA256 = (
-    "8aa182ade040082ac40be8c40ade8ea8af41c32245018a03c8bb0075b014d5af"
+    "3a881de74c7f2cadd152e67d079f29e39f92e14480fa84f374c76e19e51e372d"
 )
 EXPECTED_SPLIT_SHA256 = (
     "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
@@ -21,6 +21,7 @@ EXPECTED_MODEL_ID = (
     "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
 )
 EXPECTED_OPEN_CLIP_VERSION = "2.32.0"
+EXPECTED_TRANSFORMERS_VERSION = "4.35.2"
 EXPECTED_PROMPTS = {
     "tumor": [
         "A bone radiograph showing a bone tumor.",
@@ -123,8 +124,12 @@ def validate_payloads(
         raise ValueError("Result BiomedCLIP model mismatch")
     if predeclared.get("open_clip_torch") != EXPECTED_OPEN_CLIP_VERSION:
         raise ValueError("Predeclared open_clip version mismatch")
+    if predeclared.get("transformers") != EXPECTED_TRANSFORMERS_VERSION:
+        raise ValueError("Predeclared transformers version mismatch")
     if result.get("environment", {}).get("open_clip") != EXPECTED_OPEN_CLIP_VERSION:
         raise ValueError("Runtime open_clip version mismatch")
+    if result.get("environment", {}).get("transformers") != EXPECTED_TRANSFORMERS_VERSION:
+        raise ValueError("Runtime transformers version mismatch")
     if predeclared.get("prompts") != EXPECTED_PROMPTS:
         raise ValueError("Frozen prompt text mismatch")
     if predeclared.get("prompt_sha256") != prompt_sha:

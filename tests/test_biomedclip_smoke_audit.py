@@ -74,6 +74,7 @@ def make_valid_payloads():
         "source_commit": AUDIT.EXPECTED_SOURCE_COMMIT,
         "model_id": AUDIT.EXPECTED_MODEL_ID,
         "open_clip_torch": AUDIT.EXPECTED_OPEN_CLIP_VERSION,
+        "transformers": AUDIT.EXPECTED_TRANSFORMERS_VERSION,
         "prompts": copy.deepcopy(AUDIT.EXPECTED_PROMPTS),
         "prompt_sha256": prompt_sha,
         "validation_masks_read": False,
@@ -100,7 +101,10 @@ def make_valid_payloads():
             "repeat_max_abs_delta": 0.0,
             "rows": saliency_rows,
         },
-        "environment": {"open_clip": AUDIT.EXPECTED_OPEN_CLIP_VERSION},
+        "environment": {
+            "open_clip": AUDIT.EXPECTED_OPEN_CLIP_VERSION,
+            "transformers": AUDIT.EXPECTED_TRANSFORMERS_VERSION,
+        },
         "validation_masks_read": False,
         "test_evaluated": False,
     }

@@ -733,4 +733,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   recomputed score summaries, finite/nonconstant maps and repeatability; and
   requires zero validation/test access. Five focused mutation tests plus three
   source-consensus auditor tests pass.
+- BiomedCLIP smoke version 1 ended in an implementation error before any image
+  was processed. Source checkout and model download succeeded, but
+  `open_clip_torch==2.32.0` called `BertTokenizer.batch_encode_plus` against
+  Kaggle's newer incompatible `transformers` runtime, raising
+  `AttributeError: BertTokenizer has no attribute batch_encode_plus` during
+  fixed-prompt tokenization. No score, saliency, validation/test access or
+  scientific metric was produced.
+- Version 2 changes only the environment contract by pinning
+  `transformers==4.35.2`, the tokenizer version used by the inspected
+  BiomedCLIP/MedCLIP-SAM compatibility stack. Model ID, pretrained weights,
+  source commit, prompts, deterministic train sample identities, saliency
+  definition and all gates are unchanged. The repaired wrapper SHA-256 is
+  `3a881de74c7f2cadd152e67d079f29e39f92e14480fa84f374c76e19e51e372d`;
+  the auditor now also verifies the predeclared and runtime transformers
+  version. All five focused auditor tests pass after the repair.
 
