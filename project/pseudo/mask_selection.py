@@ -12,7 +12,7 @@ except ImportError:  # pragma: no cover - optional dependency
 SELECTION_METHODS = (
     "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam",
     "coverage_mass_sam_causal", "hybrid", "bone_hybrid", "simple_hybrid",
-    "prompt_hybrid", "consistency_hybrid",
+    "prompt_hybrid", "consistency_hybrid", "source_consensus",
 )
 
 DEFAULT_PROMPT_HYBRID_WEIGHTS = (0.30, 0.20, 0.15, 0.15, 0.20)
@@ -106,6 +106,8 @@ def score_masks(
     component_masks: np.ndarray | None = None,
     positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
+    proposal_teacher_probability: np.ndarray | None = None,
+    proposal_teacher_component_start: int | None = None,
     prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
     prompt_area_target: float = 2.0,
     prompt_area_log_sigma: float = 1.0,
@@ -264,6 +266,65 @@ def score_masks(
                     dtype=np.float32,
                 )
                 scores[i] = float(np.dot(weights, terms))
+        elif method == "source_consensus":
+            if (
+                proposal_teacher_probability is None
+                or proposal_teacher_probability.shape != bone_cam.shape
+                or proposal_teacher_component_start is None
+                or component_ids is None
+                or len(component_ids) != n
+            ):
+                raise ValueError(
+                    "source_consensus requires an aligned proposal-teacher "
+                    "probability map, component boundary and candidate component IDs"
+                )
+            component_id = int(component_ids[i])
+            is_teacher = component_id >= int(proposal_teacher_component_start)
+            source_map = (
+                proposal_teacher_probability.astype(np.float32)
+                if is_teacher
+                else bone_cam
+            )
+            support = component_mask_by_id.get(component_id)
+            if support is not None and support.any():
+                source_mass = float(source_map[support].sum())
+                source_coverage = float(source_map[m & support].sum()) / max(
+                    source_mass, 1e-8
+                )
+            else:
+                source_coverage = float(source_map[m].sum()) / max(
+                    float(source_map.sum()), 1e-8
+                )
+            source_density = float(source_map[m].mean())
+            cam_density = float((cam_vals > 0.5).sum()) / area
+            cam_mass_coverage = float(cam_vals.sum()) / max(
+                float(bone_cam.sum()), 1e-8
+            )
+            cross_source_iou = 0.0
+            for other_index in range(n):
+                if other_index == i:
+                    continue
+                other_component = int(component_ids[other_index])
+                other_is_teacher = (
+                    other_component >= int(proposal_teacher_component_start)
+                )
+                if other_is_teacher == is_teacher:
+                    continue
+                other = masks[other_index].astype(bool)
+                union = float(np.logical_or(m, other).sum())
+                if union > 0:
+                    cross_source_iou = max(
+                        cross_source_iou,
+                        float(np.logical_and(m, other).sum()) / union,
+                    )
+            scores[i] = (
+                0.25 * cam_density
+                + 0.15 * cam_mass_coverage
+                + 0.15 * float(sam_ranks[i])
+                + 0.25 * source_coverage
+                + 0.10 * source_density
+                + 0.10 * cross_source_iou
+            )
         elif method == "bone_hybrid":
             if bone_likelihood is None:
                 scores[i] = float(cam_vals.mean())
@@ -311,7 +372,10 @@ def constrain_to_bone_support(
     fused_mask = fused_mask.astype(np.uint8)
     if (
         selection_method not in {
-            "bone_hybrid", "coverage_mass_sam", "coverage_mass_sam_causal"
+            "bone_hybrid",
+            "coverage_mass_sam",
+            "coverage_mass_sam_causal",
+            "source_consensus",
         }
         or bone_support is None
         or not bone_support.any()
@@ -341,6 +405,8 @@ def select_and_fuse_masks(
     component_masks: np.ndarray | None = None,
     positive_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
+    proposal_teacher_probability: np.ndarray | None = None,
+    proposal_teacher_component_start: int | None = None,
     prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
     prompt_area_target: float = 2.0,
     prompt_area_log_sigma: float = 1.0,
@@ -411,6 +477,8 @@ def select_and_fuse_masks(
         component_masks=component_masks,
         positive_points_by_component=positive_points_by_component,
         negative_points_by_component=negative_points_by_component,
+        proposal_teacher_probability=proposal_teacher_probability,
+        proposal_teacher_component_start=proposal_teacher_component_start,
         prompt_hybrid_weights=prompt_hybrid_weights,
         prompt_area_target=prompt_area_target,
         prompt_area_log_sigma=prompt_area_log_sigma,

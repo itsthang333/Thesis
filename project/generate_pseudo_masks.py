@@ -263,7 +263,7 @@ def parse_args() -> argparse.Namespace:
                             "mean", "sum", "mean_area", "coverage", "coverage_mass",
                             "coverage_mass_sam", "coverage_mass_sam_causal", "hybrid",
                             "bone_hybrid", "simple_hybrid", "prompt_hybrid",
-                            "consistency_hybrid",
+                            "consistency_hybrid", "source_consensus",
                         ],
                         help="CAM-guided mask scoring method")
     parser.add_argument(
@@ -1884,6 +1884,10 @@ def main() -> None:
                     component_masks=component_mask_array,
                     positive_points_by_component=positive_points_by_component,
                     negative_points_by_component=negative_points_by_component,
+                    proposal_teacher_probability=teacher_probability,
+                    proposal_teacher_component_start=(
+                        cam_component_count if teacher_probability is not None else None
+                    ),
                     prompt_hybrid_weights=prompt_score_weights,
                     prompt_area_target=args.prompt_area_target,
                     prompt_area_log_sigma=args.prompt_area_log_sigma,
@@ -1902,6 +1906,10 @@ def main() -> None:
                     component_masks=component_mask_array,
                     positive_points_by_component=positive_points_by_component,
                     negative_points_by_component=negative_points_by_component,
+                    proposal_teacher_probability=teacher_probability,
+                    proposal_teacher_component_start=(
+                        cam_component_count if teacher_probability is not None else None
+                    ),
                     prompt_hybrid_weights=prompt_score_weights,
                     prompt_area_target=args.prompt_area_target,
                     prompt_area_log_sigma=args.prompt_area_log_sigma,

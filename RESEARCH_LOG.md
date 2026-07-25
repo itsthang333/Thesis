@@ -648,4 +648,21 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   only that optional prefix, rejects normalized duplicates, and still requires
   exact key/hash equality. Five focused tests pass. This was an audit
   implementation repair and did not alter any result or scientific gate.
+- The next validation-only WSL experiment is predeclared from the rejected
+  proposal-teacher mechanism audit. It keeps the exact teacher/CAM/SAM
+  proposal pool, teacher threshold `0.85`, minimum area 20, maximum three
+  teacher components, CAM-only support clipping (kernel 5), component-top-3,
+  post-processing, cohort and promotion rule. The sole scientific variable is
+  selector `source_consensus` in place of `coverage_mass_sam`.
+  Each candidate receives fixed weights: CAM density `0.25`, global CAM-mass
+  coverage `0.15`, within-prompt SAM rank `0.15`, component-local source-map
+  coverage `0.25`, source-map density `0.10`, and maximum IoU with a candidate
+  from the opposite proposal source `0.10`. CAM components use the frozen CAM
+  as their source map; teacher components use the frozen teacher probability
+  map. The implementation fails closed unless the teacher map, component
+  boundary and component IDs are aligned. It never reads GT, lesion size or a
+  per-image oracle. Three focused selector tests and 31 existing
+  proposal/pipeline tests pass. Promotion still requires the paired
+  complete-group overall delta CI95 lower bound above zero versus
+  `0.2343392222` and no decrease on all 94 small tumors; test remains locked.
 
