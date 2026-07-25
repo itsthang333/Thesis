@@ -748,4 +748,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `3a881de74c7f2cadd152e67d079f29e39f92e14480fa84f374c76e19e51e372d`;
   the auditor now also verifies the predeclared and runtime transformers
   version. All five focused auditor tests pass after the repair.
+- The repaired private GPU kernel
+  `itsthang333/btxrd-biomedclip-saliency-smoke-v2`, version 1, was launched and
+  is RUNNING. The same single 15-minute monitor was retargeted from the failed
+  version 1 kernel to version 2; no additional monitor was created.
 
