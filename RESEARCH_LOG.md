@@ -725,4 +725,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `itsthang333/btxrd-biomedclip-saliency-smoke-v1`, version 1, was launched and
   is RUNNING. The existing single 15-minute monitor was retargeted to this
   kernel; no duplicate monitor was created.
+- Independent smoke auditing was prepared before completion in
+  `project/tools/audit_biomedclip_smoke.py`. It fails closed on wrapper,
+  source, split, model, runtime-version or prompt hash drift; reconstructs the
+  exact 32+32 score and 4+4 saliency train-image selection from the frozen
+  split; verifies image-label assignments, physical model-weight hashes,
+  recomputed score summaries, finite/nonconstant maps and repeatability; and
+  requires zero validation/test access. Five focused mutation tests plus three
+  source-consensus auditor tests pass.
 
