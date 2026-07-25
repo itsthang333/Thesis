@@ -9,18 +9,18 @@ from audit_biomedclip_saliency import sha256_file
 
 
 EXPECTED_PROTOCOL_SHA256 = (
-    "aac8ad62fbaa2d15042853e8ad76bcddf5cf38266d442481751ea0dc0a17f078"
+    "9f5b2250d4a82fa8d546f3dd1dd3c7b477235addb9ab93d709637dc376015ea8"
 )
 EXPECTED_SPLIT_SHA256 = (
     "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 )
 EXPECTED_SOURCE = {
-    "implementation_commit": "8a997c87170538f897e6aa3b13b0f6c13e39f32f",
+    "implementation_commit": "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
     "generate_biomedclip_saliency.py": (
-        "c475f3b8bd16b3b2fd85add21cf35e4b631943ab50be9c4217302dba763ed46c"
+        "a160a5a70fb15dda3c3e72c9005f4cd45ba769468188aeda0b7ce39badedb40d"
     ),
     "models/biomedclip_saliency.py": (
-        "f07718a47d71c0aa05c6e110c243d3dfc7197064cca89d5e1dfb44612fd28d5d"
+        "18858511a8b14bec2bfed4578ed17ae1a08191728892846e3af6b19f18a86623"
     ),
     "generate_pseudo_masks.py": (
         "354621802dfee4fe39d24325a706ac40e7a1dfce5929ced4a35f530bb95a9124"

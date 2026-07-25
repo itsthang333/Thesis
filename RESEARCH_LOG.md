@@ -870,4 +870,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `ef0521b9a9080bce722d72c71ae4a773fe4d446008eedea88907c5b118a99f86`.
   The previously prepared full-validation wrapper is invalidated and remains
   unlaunched until V4 passes and the amended protocol/source hashes re-audit.
+- The conditional validation protocol was amended before any validation
+  prediction to target `model.visual.trunk.blocks[11].norm1`, activate only on
+  smoke V4, and lock repaired implementation commit `95fc1c24...`. Amended
+  protocol SHA-256 is `9f5b2250...15ea8`; generator/module hashes are
+  `a160a5a7...`/`18858511...`. The full independent pre-launch protocol audit
+  passes again and still records no validation prediction, validation-GT read
+  or test access.
 
