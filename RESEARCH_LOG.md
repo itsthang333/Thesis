@@ -774,4 +774,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   hashes for both the CLI and saliency implementation into its immutable run
   metadata. This closes the remaining source-provenance gap before a validation
   launch; it does not change the saliency method.
+- Independent map auditing is prepared in
+  `project/tools/audit_biomedclip_saliency.py`, pinned to source commit
+  `34484b3e28cb22e97ae76c6569b42465b3a7fd25`. It reconstructs the exact
+  train/val cohort from the frozen split; verifies source/model/prompt/view
+  contracts; opens every map with pickle disabled; recomputes dtype, shape,
+  range and hash checks; requires normal maps to be exactly empty and every
+  tumor map to be nonconstant; verifies top-three tile ranking; and rejects
+  missing or unmanifested maps. Four focused mutation tests bring the current
+  BiomedCLIP preparation/auditor suite to 17 passing tests.
 
