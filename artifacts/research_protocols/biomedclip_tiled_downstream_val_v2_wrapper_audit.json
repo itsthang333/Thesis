@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "role": "pre-launch static downstream wrapper audit",
+  "kernel": "itsthang333/btxrd-biomedclip-tiled-downstream-val-v2",
+  "source_commit": "c71c2f2e7b319b327c31e76e14a4828a17ac3b43",
+  "implementation_commit": "37a10c95bdef1e4b3bf7c875379f9ef16f4ba9a8",
+  "protocol_sha256": "8f1fbbe273ed07b05f22401a651df42cde301540e2bda58267792b25bed84b56",
+  "wrapper_sha256": "d70ae1568b7da3a00df89eef4c9fc1408c4eab6e6712c22f0466444c21e55d7b",
+  "kernel_metadata_sha256": "39943c483ec98ffcbaeeca5f70631ac0cc86de13b83836dd65e0cb617603651e",
+  "checks": {
+    "all_git_blob_source_hashes_match_wrapper": true,
+    "saliency_manifest_metadata_audit_and_371_physical_map_hashes_checked_before_generation": true,
+    "generation_uses_save_candidate_diagnostics": true,
+    "generation_does_not_use_inline_prompt_quality_gt": true,
+    "pseudo_and_candidate_manifests_frozen_before_gt_evaluator": true,
+    "explicit_frozen_hashes_passed_to_gt_evaluator": true,
+    "all_184_tumor_cases_including_complete_misses_required": true,
+    "paired_complete_group_bootstrap_iterations": 10000,
+    "subgroups": {
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    },
+    "test_evaluated": false
+  },
+  "heavy_workload": "Kaggle GPU only",
+  "decision": "AUTHORIZED_FOR_LAUNCH"
+}
