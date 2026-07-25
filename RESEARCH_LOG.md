@@ -1149,4 +1149,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   and static audit are updated. The repaired wrapper compiles and passes the
   static ordering/contract audit at SHA-256
   `767af8ddde1edbdf5d94e12f053e5ee8df51f380bab20e092869c3148730ec8c`.
+- Repaired kernel version 2 was launched and is RUNNING. The single existing
+  15-minute monitor was updated in place to version 2 and the repaired wrapper
+  hash; no duplicate monitor or competing heavy job was created.
 
