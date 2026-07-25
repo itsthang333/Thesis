@@ -189,11 +189,18 @@ def audit_stability(
     pretrained_audit_path = (
         reference_lock.parent / "pretrained_weight_audit.json"
     )
+    consumer_equivalence_path = (
+        reference_lock.parent
+        / "paired_consumer_source_equivalence_audit.json"
+    )
     determinism_audit = json.loads(
         determinism_audit_path.read_text(encoding="utf-8")
     )
     pretrained_audit = json.loads(
         pretrained_audit_path.read_text(encoding="utf-8")
+    )
+    consumer_equivalence = json.loads(
+        consumer_equivalence_path.read_text(encoding="utf-8")
     )
     if determinism_audit.get("status") != "PASS_WITH_LIMITATIONS":
         raise ValueError("GT determinism limitation audit is absent or changed")
@@ -219,6 +226,24 @@ def audit_stability(
         is not False
     ):
         raise ValueError("Pretrained-weight audit does not keep test locked")
+    if consumer_equivalence.get("status") != "PASS":
+        raise ValueError("Paired consumer source-equivalence audit failed")
+    if not all(consumer_equivalence.get("bit_identical_core", {}).values()):
+        raise ValueError("Paired consumer core source is not bit-identical")
+    if (
+        consumer_equivalence.get("paired_contract_conclusion", {}).get(
+            "consumer_behavior_drift_detected"
+        )
+        is not False
+    ):
+        raise ValueError("Paired consumer behavior drift is not ruled out")
+    if (
+        consumer_equivalence.get("paired_contract_conclusion", {}).get(
+            "test_evaluated"
+        )
+        is not False
+    ):
+        raise ValueError("Paired consumer source audit does not keep test locked")
 
     v2_audit = audit_gt_reproduction(
         reference_lock,
@@ -314,6 +339,15 @@ def audit_stability(
                 "weight_sha256": pretrained_audit["sha256"],
                 "weight_bytes": pretrained_audit["bytes"],
                 "in_kernel_hash_assertion": False,
+            },
+            "paired_consumer_source_equivalence_audit": {
+                "path": str(consumer_equivalence_path.resolve()),
+                "sha256": sha256_file(consumer_equivalence_path),
+                "status": consumer_equivalence["status"],
+                "bit_identical_core": consumer_equivalence[
+                    "bit_identical_core"
+                ],
+                "consumer_behavior_drift_detected": False,
             },
         },
         "v2_against_frozen_reference": v2_audit,

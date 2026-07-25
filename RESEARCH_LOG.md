@@ -968,4 +968,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   no-GT/no-test flags and saliency-only stage; four mutation tests pass. The
   repaired heavy rerun is held until it will not interfere with the active GT
   reproduction priority.
+- Static paired-consumer source audit now proves the current WSL consumer has
+  not silently drifted from the frozen GT consumer. `models/unet.py`,
+  `models/losses.py`, `evaluate_unet.py` and
+  `evaluation/segmentation_metrics.py` are canonical-LF byte-identical.
+  The exact reviewed `train_segmentation.py` diff adds only fail-closed
+  paired-reference validation and provenance; optimizer, AMP, DataLoaders,
+  seed, model, loss and train/validation loops are unchanged. The exact
+  `datasets/btxrd.py` diff only permits a pseudo-mask source grid different
+  from consumer 448 px and records resize provenance; GT construction, image
+  and mask transforms and paired flip are unchanged. Both complete diff hashes
+  are fail-closed, so any further drift breaks the audit. The sole scientific
+  arm difference remains the training mask source, validation GT remains
+  evaluation/model-selection only, and test remains locked. Evidence:
+  `artifacts/reference/gt_resnet18_unet_448_v1/paired_consumer_source_equivalence_audit.json`.
 
