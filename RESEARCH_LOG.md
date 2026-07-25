@@ -230,4 +230,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   fitting the current Dice-0.234 pseudo masks does not generalize. It is
   therefore not allowed to displace the current stride-8 Gate-C test or to be
   reported as a pseudo-mask improvement.
+- A train-only CPU oracle tested whether the stored 80x80 Segment-Everything
+  partitions could instead be learned or selected directly. Across all 1,488
+  clean-train tumors, the mean target coverage ceiling was only `0.4480473`,
+  the best-single-region Dice was `0.1112537`, and the exact optimal subset
+  Dice was `0.1126347`; 648 tumors had zero best-single overlap. For the 752
+  small tumors, optimal-subset Dice was only `0.0759493` and 355 had zero
+  overlap. Eleven small targets vanished entirely after 80x80 downsampling.
+  The audited row SHA-256 is
+  `3cc3d41d2cafd842361a382089270506e00fd55fec592708f3cd13a9b0b6fffa`;
+  no validation/test images were processed. Direct MIL/selection over these
+  overwritten partitions is therefore rejected without spending a validation
+  GPU run. This does not reject official S2C CPM, which obtains separate
+  point-prompted SAM masks online instead of treating the SSC partition map as
+  a proposal inventory.
+- The stride-8 SSC classifier version 2 completed and passed independent
+  audit. It validly early-stopped at epoch 19 and selected epoch 12.
+  Clean-validation F1 is `0.7965616046` versus baseline `0.7833333333`
+  (`+0.0132282713`); sensitivity changes by `-0.0108695652`, specificity by
+  `+0.0481283422`, AUROC by `-0.0041850732`, and AUPRC by `+0.0043807906`.
+  The 371-row confusion matrix recomputes exactly as
+  `TP/FP/FN/TN = 139/26/45/161`. Checkpoint SHA-256 is
+  `8bb4a9136291bffba9d2e70752f5b03c003730ff5365ab7e1033f8dc222331d6`.
+  Its metadata freezes `denseblock2`, stride 8, 512 channels, post-ReLU,
+  no projection, SSC weight/temperature 1, all 2,981 maps and the region
+  manifest hash. Train/validation polygons were not loaded and test remained
+  locked. Classification alone cannot promote the model; the unchanged
+  Gate-C localization run is now authorized.
 

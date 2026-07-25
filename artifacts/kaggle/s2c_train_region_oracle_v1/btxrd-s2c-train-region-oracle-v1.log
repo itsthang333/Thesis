@@ -1,0 +1,113 @@
+[{"stream_name":"stderr","time":10.430350509,"data":"/kaggle/src/script.py:136: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)\n"}
+,{"stream_name":"stderr","time":10.430430589,"data":"  image = Image.fromarray(mask.astype(np.uint8) * 255, mode=\"L\")\n"}
+,{"stream_name":"stdout","time":10.438011348,"data":"PROGRESS 1/2981 tumor_rows=1 elapsed=9.5s\n"}
+,{"stream_name":"stdout","time":11.901727344,"data":"PROGRESS 100/2981 tumor_rows=100 elapsed=11.0s\n"}
+,{"stream_name":"stdout","time":13.274189594,"data":"PROGRESS 200/2981 tumor_rows=200 elapsed=12.3s\n"}
+,{"stream_name":"stdout","time":14.973733247,"data":"PROGRESS 300/2981 tumor_rows=300 elapsed=14.0s\n"}
+,{"stream_name":"stdout","time":16.885165388,"data":"PROGRESS 400/2981 tumor_rows=400 elapsed=15.9s\n"}
+,{"stream_name":"stdout","time":18.806304537,"data":"PROGRESS 500/2981 tumor_rows=500 elapsed=17.9s\n"}
+,{"stream_name":"stdout","time":20.696379732,"data":"PROGRESS 600/2981 tumor_rows=600 elapsed=19.7s\n"}
+,{"stream_name":"stdout","time":22.224719969,"data":"PROGRESS 700/2981 tumor_rows=700 elapsed=21.3s\n"}
+,{"stream_name":"stdout","time":23.949701628,"data":"PROGRESS 800/2981 tumor_rows=800 elapsed=23.0s\n"}
+,{"stream_name":"stdout","time":25.626412335,"data":"PROGRESS 900/2981 tumor_rows=900 elapsed=24.7s\n"}
+,{"stream_name":"stdout","time":27.401870684,"data":"PROGRESS 1000/2981 tumor_rows=1000 elapsed=26.5s\n"}
+,{"stream_name":"stdout","time":29.235197684,"data":"PROGRESS 1100/2981 tumor_rows=1100 elapsed=28.3s\n"}
+,{"stream_name":"stdout","time":30.976167033,"data":"PROGRESS 1200/2981 tumor_rows=1200 elapsed=30.0s\n"}
+,{"stream_name":"stdout","time":32.727524282,"data":"PROGRESS 1300/2981 tumor_rows=1300 elapsed=31.8s\n"}
+,{"stream_name":"stdout","time":34.094274124,"data":"PROGRESS 1400/2981 tumor_rows=1400 elapsed=33.1s\n"}
+,{"stream_name":"stdout","time":39.432856022,"data":"{\n"}
+,{"stream_name":"stdout","time":39.432890722,"data":"  \"run_id\": \"btxrd_s2c_train_region_oracle_v1\",\n"}
+,{"stream_name":"stdout","time":39.432895722,"data":"  \"training_performed\": false,\n"}
+,{"stream_name":"stdout","time":39.432899193,"data":"  \"train_polygons_loaded_for_diagnostic\": true,\n"}
+,{"stream_name":"stdout","time":39.432902282,"data":"  \"validation_images_processed\": false,\n"}
+,{"stream_name":"stdout","time":39.432905722,"data":"  \"validation_polygons_loaded\": false,\n"}
+,{"stream_name":"stdout","time":39.432908902,"data":"  \"test_evaluated\": false,\n"}
+,{"stream_name":"stdout","time":39.432911822,"data":"  \"started_at_utc\": \"2026-07-25T02:02:10.802899+00:00\",\n"}
+,{"stream_name":"stdout","time":39.432915493,"data":"  \"finished_at_utc\": \"2026-07-25T02:02:49.275161+00:00\",\n"}
+,{"stream_name":"stdout","time":39.432918393,"data":"  \"elapsed_seconds\": 38.47225824099999,\n"}
+,{"stream_name":"stdout","time":39.432920413,"data":"  \"split_manifest_sha256\": \"85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c\",\n"}
+,{"stream_name":"stdout","time":39.432922522,"data":"  \"split_audit\": {\n"}
+,{"stream_name":"stdout","time":39.432924633,"data":"    \"train\": {\n"}
+,{"stream_name":"stdout","time":39.432926762,"data":"      \"images\": 2981,\n"}
+,{"stream_name":"stdout","time":39.432928862,"data":"      \"tumor\": 1488,\n"}
+,{"stream_name":"stdout","time":39.432930762,"data":"      \"normal\": 1493\n"}
+,{"stream_name":"stdout","time":39.432932642,"data":"    },\n"}
+,{"stream_name":"stdout","time":39.432934522,"data":"    \"val\": {\n"}
+,{"stream_name":"stdout","time":39.432936522,"data":"      \"images\": 371,\n"}
+,{"stream_name":"stdout","time":39.432938433,"data":"      \"tumor\": 184,\n"}
+,{"stream_name":"stdout","time":39.432953942,"data":"      \"normal\": 187\n"}
+,{"stream_name":"stdout","time":39.432956082,"data":"    },\n"}
+,{"stream_name":"stdout","time":39.432957962,"data":"    \"test\": {\n"}
+,{"stream_name":"stdout","time":39.432959902,"data":"      \"images\": 373,\n"}
+,{"stream_name":"stdout","time":39.432961782,"data":"      \"tumor\": 187,\n"}
+,{"stream_name":"stdout","time":39.432963653,"data":"      \"normal\": 186\n"}
+,{"stream_name":"stdout","time":39.432965533,"data":"    }\n"}
+,{"stream_name":"stdout","time":39.432967362,"data":"  },\n"}
+,{"stream_name":"stdout","time":39.432969282,"data":"  \"region_map_manifest_sha256\": \"677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e\",\n"}
+,{"stream_name":"stdout","time":39.432971422,"data":"  \"tumor_region_oracle_sha256\": \"3cc3d41d2cafd842361a382089270506e00fd55fec592708f3cd13a9b0b6fffa\",\n"}
+,{"stream_name":"stdout","time":39.432973562,"data":"  \"tumor_region_oracle\": {\n"}
+,{"stream_name":"stdout","time":39.432975502,"data":"    \"tumors\": 1488,\n"}
+,{"stream_name":"stdout","time":39.432977482,"data":"    \"mean_covered_target_recall\": 0.4480472775157635,\n"}
+,{"stream_name":"stdout","time":39.432979482,"data":"    \"median_covered_target_recall\": 0.11822947000582411,\n"}
+,{"stream_name":"stdout","time":39.432981453,"data":"    \"mean_best_single_region_dice\": 0.11125366585838309,\n"}
+,{"stream_name":"stdout","time":39.432983402,"data":"    \"median_best_single_region_dice\": 0.00511340116342404,\n"}
+,{"stream_name":"stdout","time":39.432985342,"data":"    \"mean_optimal_subset_dice\": 0.11263473443475565,\n"}
+,{"stream_name":"stdout","time":39.432987353,"data":"    \"median_optimal_subset_dice\": 0.00511340116342404,\n"}
+,{"stream_name":"stdout","time":39.432989302,"data":"    \"target_vanished\": 11,\n"}
+,{"stream_name":"stdout","time":39.432991242,"data":"    \"zero_best_single_region_dice\": 648\n"}
+,{"stream_name":"stdout","time":39.432993193,"data":"  },\n"}
+,{"stream_name":"stdout","time":39.432995042,"data":"  \"tumor_region_oracle_by_lesion_size\": {\n"}
+,{"stream_name":"stdout","time":39.432997022,"data":"    \"small_lt_1pct\": {\n"}
+,{"stream_name":"stdout","time":39.432998953,"data":"      \"tumors\": 752,\n"}
+,{"stream_name":"stdout","time":39.433000893,"data":"      \"mean_covered_target_recall\": 0.46628885373674867,\n"}
+,{"stream_name":"stdout","time":39.433002882,"data":"      \"median_covered_target_recall\": 0.27157894736842103,\n"}
+,{"stream_name":"stdout","time":39.433004842,"data":"      \"mean_best_single_region_dice\": 0.07594927537541425,\n"}
+,{"stream_name":"stdout","time":39.433006813,"data":"      \"median_best_single_region_dice\": 0.0013542755496873337,\n"}
+,{"stream_name":"stdout","time":39.433008793,"data":"      \"mean_optimal_subset_dice\": 0.07594927537541425,\n"}
+,{"stream_name":"stdout","time":39.433010762,"data":"      \"median_optimal_subset_dice\": 0.0013542755496873337,\n"}
+,{"stream_name":"stdout","time":39.433012782,"data":"      \"target_vanished\": 11,\n"}
+,{"stream_name":"stdout","time":39.433014733,"data":"      \"zero_best_single_region_dice\": 355\n"}
+,{"stream_name":"stdout","time":39.433047973,"data":"    },\n"}
+,{"stream_name":"stdout","time":39.433051873,"data":"    \"medium_1_to_5pct\": {\n"}
+,{"stream_name":"stdout","time":39.433055373,"data":"      \"tumors\": 499,\n"}
+,{"stream_name":"stdout","time":39.433058573,"data":"      \"mean_covered_target_recall\": 0.41472860127511824,\n"}
+,{"stream_name":"stdout","time":39.433063533,"data":"      \"median_covered_target_recall\": 0.03076923076923077,\n"}
+,{"stream_name":"stdout","time":39.433074053,"data":"      \"mean_best_single_region_dice\": 0.13258535473339872,\n"}
+,{"stream_name":"stdout","time":39.433077833,"data":"      \"median_best_single_region_dice\": 0.020512820512820513,\n"}
+,{"stream_name":"stdout","time":39.433080893,"data":"      \"mean_optimal_subset_dice\": 0.13396787615234704,\n"}
+,{"stream_name":"stdout","time":39.433083902,"data":"      \"median_optimal_subset_dice\": 0.020512820512820513,\n"}
+,{"stream_name":"stdout","time":39.433086942,"data":"      \"target_vanished\": 0,\n"}
+,{"stream_name":"stdout","time":39.433089802,"data":"      \"zero_best_single_region_dice\": 234\n"}
+,{"stream_name":"stdout","time":39.433092653,"data":"    },\n"}
+,{"stream_name":"stdout","time":39.433095813,"data":"    \"large_ge_5pct\": {\n"}
+,{"stream_name":"stdout","time":39.433099233,"data":"      \"tumors\": 237,\n"}
+,{"stream_name":"stdout","time":39.433102282,"data":"      \"mean_covered_target_recall\": 0.4603188139119711,\n"}
+,{"stream_name":"stdout","time":39.433105453,"data":"      \"median_covered_target_recall\": 0.19184652278177458,\n"}
+,{"stream_name":"stdout","time":39.433108393,"data":"      \"mean_best_single_region_dice\": 0.1783607919957661,\n"}
+,{"stream_name":"stdout","time":39.433111413,"data":"      \"median_best_single_region_dice\": 0.14780168381665107,\n"}
+,{"stream_name":"stdout","time":39.433114453,"data":"      \"mean_optimal_subset_dice\": 0.18412092639908745,\n"}
+,{"stream_name":"stdout","time":39.433117442,"data":"      \"median_optimal_subset_dice\": 0.16286644951140064,\n"}
+,{"stream_name":"stdout","time":39.433120502,"data":"      \"target_vanished\": 0,\n"}
+,{"stream_name":"stdout","time":39.433123482,"data":"      \"zero_best_single_region_dice\": 59\n"}
+,{"stream_name":"stdout","time":39.433126562,"data":"    }\n"}
+,{"stream_name":"stdout","time":39.433129453,"data":"  },\n"}
+,{"stream_name":"stdout","time":39.433132382,"data":"  \"oracle_definition\": {\n"}
+,{"stream_name":"stdout","time":39.433135582,"data":"    \"best_single\": \"maximum Dice over one disjoint 80x80 SAM region\",\n"}
+,{"stream_name":"stdout","time":39.433138802,"data":"    \"optimal_subset\": \"exact maximum Dice over every subset of disjoint regions, obtained by evaluating prefixes sorted by region foreground precision\",\n"}
+,{"stream_name":"stdout","time":39.433142422,"data":"    \"ground_truth_usage\": \"train polygons are used only for this non-promotable diagnostic\"\n"}
+,{"stream_name":"stdout","time":39.433145893,"data":"  },\n"}
+,{"stream_name":"stdout","time":39.433149142,"data":"  \"environment\": {\n"}
+,{"stream_name":"stdout","time":39.433152033,"data":"    \"python\": \"3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]\",\n"}
+,{"stream_name":"stdout","time":39.433155233,"data":"    \"platform\": \"Linux-6.12.90+-x86_64-with-glibc2.35\",\n"}
+,{"stream_name":"stdout","time":39.433158793,"data":"    \"numpy\": \"2.0.2\"\n"}
+,{"stream_name":"stdout","time":39.433161053,"data":"  },\n"}
+,{"stream_name":"stdout","time":39.433163042,"data":"  \"kernel_script_sha256\": \"54a2fe2bef557129f1f0fcbaab1b83d5672e2362cd6bd4945c30aae6f8d83e2f\",\n"}
+,{"stream_name":"stdout","time":39.433165213,"data":"  \"known_limitation\": \"This train-polygon oracle is not a weakly supervised prediction and does not establish validation generalization\"\n"}
+,{"stream_name":"stdout","time":39.433167382,"data":"}\n"}
+,{"stream_name":"stderr","time":41.678211039,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":41.678247759,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":41.996551455,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":41.996588715,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":43.389766418,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":44.75047545,"data":"[NbConvertApp] Writing 344851 bytes to __results__.html\n"}
+]

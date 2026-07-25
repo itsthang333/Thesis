@@ -882,3 +882,38 @@ Next controlled experiment:
   test until the completed classifier checkpoint SHA-256 is independently
   verified. Do not launch it early.
 
+## 30. Stride-8 classifier audit and partition-oracle rejection
+
+The stride-8 classifier kernel version 2 is COMPLETE. The wrapper-only
+metadata fix is present and the scientific recipe is unchanged.
+
+- Valid early stop: 19 completed epochs, checkpoint epoch 12.
+- Validation F1 `0.7965616046`; fixed confusion
+  `TP/FP/FN/TN = 139/26/45/161`.
+- Relative to the clean BCE baseline, F1 is `+0.0132282713`, sensitivity
+  `-0.0108695652`, specificity `+0.0481283422`, AUROC `-0.0041850732`, and
+  AUPRC `+0.0043807906`.
+- Checkpoint SHA-256:
+  `8bb4a9136291bffba9d2e70752f5b03c003730ff5365ab7e1033f8dc222331d6`.
+- The checkpoint/run metadata binds `denseblock2`, stride 8, 512 channels,
+  post-ReLU, no projection, SSC weight/temperature 1, the 2,981 verified maps,
+  and region-manifest SHA. Both polygon-loaded flags and
+  `test_evaluated` are false.
+- Compact evidence, excluding the 84 MB reconstructible checkpoint, is under
+  `artifacts/kaggle/s2c_stride8_binary_classifier_v1/`.
+
+A separate train-only CPU oracle rules out direct region selection over the
+stored SSC maps. On 1,488 tumors the exact optimal subset of disjoint 80x80
+partitions reaches mean Dice only `0.1126347` (best single `0.1112537`);
+648 targets have zero best-single overlap. Small-lesion optimal-subset Dice is
+`0.0759493`, with 355/752 zero-overlap cases and 11 targets disappearing at
+80x80. Evidence is in `artifacts/kaggle/s2c_train_region_oracle_v1/`, row SHA
+`3cc3d41d2cafd842361a382089270506e00fd55fec592708f3cd13a9b0b6fffa`.
+Do not launch the prepared validation oracle: the geometric ceiling is already
+decisive and validation GPU use would add no decision value. This result does
+not test official online point-prompted CPM.
+
+The frozen classifier hash is now inserted into
+`tmp/kaggle/s2c_stride8_gate_c_v1`; its 6/6 fail-closed tests and Python
+compilation pass. The next action is the unchanged Gate-C localization run.
+

@@ -1,0 +1,42 @@
+{
+  "pipeline_profile": "default",
+  "dataset": "btxrd",
+  "train_split": "train",
+  "val_split": "val",
+  "split_manifest": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v11/split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "target_columns": [
+    "tumor"
+  ],
+  "image_size": 320,
+  "batch_size": 8,
+  "epochs": 30,
+  "seed": 42,
+  "lr": 0.0001,
+  "weight_decay": 0.0001,
+  "augment": false,
+  "random_erasing": false,
+  "puzzle_alpha_max": 0.0,
+  "attention_alpha_max": 0.0,
+  "preprocessing_mode": "none",
+  "normalization": "imagenet",
+  "sam_segment_contrastive": {
+    "method": "S2C SAM-Segment Contrasting",
+    "weight": 1.0,
+    "temperature": 1.0,
+    "feature_stage": "denseblock2",
+    "feature_stride": 8,
+    "feature_channels": 512,
+    "feature_activation": "relu",
+    "feature_projection": "none",
+    "map_root": "/kaggle/input/notebooks/itsthang333/btxrd-s2c-segment-everything-v1/btxrd_s2c_segment_everything_v1",
+    "manifest_sha256": "677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e",
+    "map_shape": [
+      80,
+      80
+    ],
+    "train_maps": 2981,
+    "prototype_gradient": "detached",
+    "ignore_region_id": 0
+  }
+}

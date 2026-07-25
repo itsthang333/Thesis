@@ -1,0 +1,20 @@
+{
+  "stage": "S2C train-region oracle diagnostic",
+  "status": "predeclared_before_launch",
+  "training_performed": false,
+  "train_polygons_loaded_for_diagnostic": true,
+  "validation_images_processed": false,
+  "validation_polygons_loaded": false,
+  "test_evaluated": false,
+  "processed_split": "train",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "region_map_manifest_sha256": "677dbb16ca0824a03bb75c991a01e6a83de5819d1db1f6f6d9f02765375c8f8e",
+  "train_images": 2981,
+  "train_tumors": 1488,
+  "region_grid": [
+    80,
+    80
+  ],
+  "decision_boundary": "diagnostic upper bound only; cannot promote a weakly supervised prediction or tune the active stride-8 classifier",
+  "created_at_utc": "2026-07-25T02:02:10.802899+00:00"
+}
