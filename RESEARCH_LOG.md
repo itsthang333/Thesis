@@ -721,4 +721,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   train pseudo-mask generation. Source is pinned to
   `de02acb59900cc64f7bdf649d20286d6219af82c`; wrapper SHA-256 is
   `8aa182ade040082ac40be8c40ade8ea8af41c32245018a03c8bb0075b014d5af`.
+- The private GPU kernel
+  `itsthang333/btxrd-biomedclip-saliency-smoke-v1`, version 1, was launched and
+  is RUNNING. The existing single 15-minute monitor was retargeted to this
+  kernel; no duplicate monitor was created.
 
