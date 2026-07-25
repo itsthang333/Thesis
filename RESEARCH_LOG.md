@@ -674,4 +674,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   baseline artifacts as the audited proposal-teacher experiment. Heavy
   inference executes only on Kaggle; validation polygons remain
   post-prediction diagnostics and test is not accessed.
+- Independent source-consensus auditing is prepared before completion in
+  `project/tools/audit_source_consensus.py`. It verifies the cloud wrapper,
+  source commit and changed-file hashes, exact six fixed selector weights,
+  teacher/CAM/SAM/split provenance, generation command, unchanged CAM support,
+  cohort/subgroups, compact artifact hashes, mechanism chain and recomputed
+  paired promotion decision. Eight combined selector/auditor tests pass.
 
