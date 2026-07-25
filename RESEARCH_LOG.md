@@ -890,4 +890,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   hashes. It rejects annotation/segmentation-evaluator tokens, requires the
   `norm1` target and both zero-access flags, and has four passing mutation
   tests. The audited wrapper remains unlaunched.
+- BiomedCLIP smoke V4 completed and independently passes the implementation
+  gate. Exact wrapper/source/model/prompt and deterministic train-sample
+  identities verify; the physical weight remains `52cc993c...`. Recomputed
+  32+32 train contrast difference is `+0.0048933701`, all eight saliency maps
+  are finite and nonconstant, minimum dynamic range is `3.1789790e-05`, and
+  exact repeat delta is zero. Population is train-only with zero validation/test
+  images; `validation_masks_read=false` and `test_evaluated=false`.
+- The first local audit invocation exposed only checkout serialization drift:
+  cloud/source split is canonical LF `43662d5d...`, while Windows materializes
+  the same file as CRLF `85511ee1...`. The smoke auditor now accepts only that
+  exact CRLF-to-LF canonicalization and rejects any remaining carriage return
+  or content drift; one focused test covers the repair. Scientific evidence,
+  samples and gates are unchanged. The conditional activation gate for the
+  independently audited saliency-only full-validation kernel is now satisfied.
 

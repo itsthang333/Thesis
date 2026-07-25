@@ -60,8 +60,12 @@ def sha256_json(value: object) -> str:
 
 
 def load_train_rows(split_manifest: Path) -> list[dict[str, str]]:
-    if sha256_file(split_manifest) != EXPECTED_SPLIT_SHA256:
-        raise ValueError("Frozen split manifest SHA-256 mismatch")
+    raw = split_manifest.read_bytes()
+    physical_hash = hashlib.sha256(raw).hexdigest()
+    if physical_hash != EXPECTED_SPLIT_SHA256:
+        canonical = raw.replace(b"\r\n", b"\n")
+        if b"\r" in canonical or hashlib.sha256(canonical).hexdigest() != EXPECTED_SPLIT_SHA256:
+            raise ValueError("Frozen split manifest SHA-256 mismatch")
     with split_manifest.open("r", encoding="utf-8-sig", newline="") as handle:
         rows = [
             row

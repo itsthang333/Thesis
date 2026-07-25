@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import copy
+import csv
+import hashlib
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -146,6 +149,32 @@ class BiomedClipSmokeAuditTests(unittest.TestCase):
         result["saliency_diagnostic"]["rows"][0]["dynamic_range"] = 0.0
         with self.assertRaisesRegex(ValueError, "constant"):
             AUDIT.validate_payloads(predeclared, result, rows)
+
+    def test_crlf_checkout_normalizes_to_frozen_lf_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "split.csv"
+            fields = ["image_id", "split", "eligible", "tumor"]
+            rows = [
+                {
+                    "image_id": f"image-{index:04d}.jpeg",
+                    "split": "train",
+                    "eligible": "1",
+                    "tumor": "1" if index < 1488 else "0",
+                }
+                for index in range(2981)
+            ]
+            with path.open("w", encoding="utf-8", newline="\n") as handle:
+                writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+                writer.writeheader()
+                writer.writerows(rows)
+            original_expected = AUDIT.EXPECTED_SPLIT_SHA256
+            try:
+                AUDIT.EXPECTED_SPLIT_SHA256 = hashlib.sha256(path.read_bytes()).hexdigest()
+                path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+                loaded = AUDIT.load_train_rows(path)
+                self.assertEqual(len(loaded), 2981)
+            finally:
+                AUDIT.EXPECTED_SPLIT_SHA256 = original_expected
 
 
 if __name__ == "__main__":
