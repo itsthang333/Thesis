@@ -96,6 +96,7 @@ def audit_gt_reproduction(
     candidate_root: Path,
     *,
     wrapper_path: Path | None = None,
+    expected_wrapper_sha256: str = EXPECTED_WRAPPER_SHA256,
     iterations: int = 10_000,
     seed: int = 42,
 ) -> dict[str, Any]:
@@ -234,7 +235,7 @@ def audit_gt_reproduction(
     wrapper_verification: dict[str, Any] | None = None
     if wrapper_path is not None:
         actual_wrapper_hash = sha256_file(wrapper_path.resolve())
-        if actual_wrapper_hash != EXPECTED_WRAPPER_SHA256:
+        if actual_wrapper_hash != expected_wrapper_sha256:
             raise ValueError("Independent-reproduction wrapper SHA-256 mismatch")
         wrapper_verification = {
             "path": str(wrapper_path.resolve()),
@@ -274,6 +275,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reference-lock", type=Path, required=True)
     parser.add_argument("--candidate-root", type=Path, required=True)
     parser.add_argument("--wrapper", type=Path)
+    parser.add_argument(
+        "--expected-wrapper-sha256",
+        default=EXPECTED_WRAPPER_SHA256,
+        help="Exact predeclared wrapper hash; defaults to the v2 reproduction wrapper.",
+    )
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--bootstrap-iterations", type=int, default=10_000)
     parser.add_argument("--bootstrap-seed", type=int, default=42)
@@ -288,6 +294,7 @@ def main() -> None:
         args.reference_lock,
         args.candidate_root,
         wrapper_path=args.wrapper,
+        expected_wrapper_sha256=args.expected_wrapper_sha256,
         iterations=args.bootstrap_iterations,
         seed=args.bootstrap_seed,
     )
