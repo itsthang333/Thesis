@@ -824,4 +824,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   ensemble, selector, support clip and post-processing contract. Three focused
   ingestion tests, the 17 existing BiomedCLIP tests and 37 broader
   proposal/pipeline regressions pass. This remains inactive pending smoke V3.
+- The prospective full-diagnostic source lock is advanced to commit
+  `8a997c87170538f897e6aa3b13b0f6c13e39f32f`; generator, saliency module and
+  external-map pseudo generator hash to `c475f3b8...`, `f07718a4...` and
+  `35462180...`, respectively. No validation map or metric has been produced
+  under this source lock yet.
 

@@ -11,10 +11,10 @@ from typing import Any
 import numpy as np
 
 
-EXPECTED_SOURCE_COMMIT = "8b265e9c4cb75604eeb8612c8f750d31d0b3f0da"
+EXPECTED_SOURCE_COMMIT = "8a997c87170538f897e6aa3b13b0f6c13e39f32f"
 EXPECTED_SOURCE_HASHES = {
     "generate_biomedclip_saliency.py": (
-        "2366fd8cdd21770aaebe4dd060005c79624767faf8480ff44da6c4a694aa5a85"
+        "c475f3b8bd16b3b2fd85add21cf35e4b631943ab50be9c4217302dba763ed46c"
     ),
     "models/biomedclip_saliency.py": (
         "f07718a47d71c0aa05c6e110c243d3dfc7197064cca89d5e1dfb44612fd28d5d"
