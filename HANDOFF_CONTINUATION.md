@@ -1,6 +1,6 @@
 # BTXRD Research Continuation Handoff
 
-Updated: 2026-07-23, Asia/Bangkok.
+Updated: 2026-07-26, Asia/Bangkok.
 
 This document is the starting point for a new Codex task or account. Its purpose is to continue the work without reconstructing the protocol, opening the test set early, losing the current winner, or leaving rejected-ablation debris in the source tree.
 
@@ -8,12 +8,26 @@ This document is the starting point for a new Codex task or account. Its purpose
 
 Primary objective:
 
-- The final segmentation model must achieve mean tumor-only Dice greater than 0.50.
-- Stretch target, if feasible: mean tumor-only Dice at least 0.55.
-- Do not use data leakage, redefine the metric to cross the target, remove complete misses from the denominator, or select a threshold on the test set.
-- If serious research does not reach 0.50, report the best result, confidence interval, remaining bottleneck, and experimental evidence honestly.
-- User-defined research budget: 20 hours.
-- When account usage falls below 5%, do not launch new work. Update this handoff and stop. The API does not expose the account-usage percentage; the goal tool reported `remainingTokens=null`, so the user or UI must provide this signal.
+- Build an image-label-only weakly supervised bone-tumor segmentation pipeline.
+- Under the locked paired consumer protocol, the pseudo-mask-trained U-Net must
+  have absolute mean tumor-only Dice gap `<=0.05` from the GT-trained reference
+  separately for small (`<1%`), medium (`1%` to `<5%`) and large (`>=5%`)
+  validation tumors.
+- Architecture and WSL technique are unrestricted, but the experimental arm
+  may use only radiographs and image-level labels from BTXRD. Train GT masks,
+  GT-derived crops/size/location, reference weights/predictions and
+  pre-prediction validation annotations are prohibited.
+- The authoritative reference and pair contracts are
+  `artifacts/reference/gt_resnet18_unet_448_v1/reference_lock.json` and
+  `paired_protocol_v1.json`. With reference-v1, only the train mask source may
+  differ between arms.
+- Do not use data leakage, redefine metrics, change cohorts, remove complete
+  misses, or select on test. Test stays locked until the final WSL pipeline is
+  frozen.
+- If the three gap criteria are not reached, report the best result, paired
+  uncertainty, subgroup gaps, remaining bottlenecks and experimental evidence
+  honestly.
+- Run all heavy generation, training and full-cohort inference on Kaggle.
 
 Source-cleanliness rules:
 
