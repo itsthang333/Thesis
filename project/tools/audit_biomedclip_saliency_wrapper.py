@@ -9,15 +9,15 @@ from typing import Any
 
 
 EXPECTED_WRAPPER_SHA256 = (
-    "e34171b67f0bca069d488eaa47610ae6cbc6415e2ac6a9f45f306eb1a8b02a30"
+    "c3b5088dfbe1ac7713af440ef541395d9968f03d371b75f91e5129c8428476cf"
 )
 EXPECTED_REPOSITORY_COMMIT = "26c22db7c3af18c32f66b1cd3b4c3987a10ded19"
 EXPECTED_IMPLEMENTATION_COMMIT = "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68"
 EXPECTED_PROTOCOL_SHA256 = (
     "9f5b2250d4a82fa8d546f3dd1dd3c7b477235addb9ab93d709637dc376015ea8"
 )
-EXPECTED_PROTOCOL_AUDIT_SHA256 = (
-    "b009cad423567d3b98f7d6d31e8418695cf6bf7734b7669d3e40750fc31e0c5e"
+EXPECTED_PROTOCOL_AUDIT_CANONICAL_LF_SHA256 = (
+    "844cd93cd5240c917e15b4c3dbce011514ea6d1bb4847c6095e8c91617e54225"
 )
 EXPECTED_SPLIT_SHA256 = (
     "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
@@ -36,6 +36,11 @@ FORBIDDEN_SOURCE_TOKENS = (
 
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def canonical_text_sha256(path: Path) -> str:
+    data = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(data).hexdigest()
 
 
 def literal_assignments(source: str) -> dict[str, Any]:
@@ -81,7 +86,9 @@ def validate_wrapper_source(source: str, *, wrapper_sha256: str) -> dict[str, An
         "EXPECTED_FROZEN_SPLIT_SHA256": EXPECTED_SPLIT_SHA256,
         "EXPECTED_MODEL_WEIGHT_SHA256": EXPECTED_WEIGHT_SHA256,
         "EXPECTED_PROTOCOL_SHA256": EXPECTED_PROTOCOL_SHA256,
-        "EXPECTED_PROTOCOL_AUDIT_SHA256": EXPECTED_PROTOCOL_AUDIT_SHA256,
+        "EXPECTED_PROTOCOL_AUDIT_CANONICAL_LF_SHA256": (
+            EXPECTED_PROTOCOL_AUDIT_CANONICAL_LF_SHA256
+        ),
     }
     for name, expected in expected_constants.items():
         if assignments.get(name) != expected:
@@ -118,7 +125,9 @@ def validate_wrapper_source(source: str, *, wrapper_sha256: str) -> dict[str, An
         "source_repository_commit": EXPECTED_REPOSITORY_COMMIT,
         "implementation_commit": EXPECTED_IMPLEMENTATION_COMMIT,
         "protocol_sha256": EXPECTED_PROTOCOL_SHA256,
-        "protocol_audit_sha256": EXPECTED_PROTOCOL_AUDIT_SHA256,
+        "protocol_audit_canonical_lf_sha256": (
+            EXPECTED_PROTOCOL_AUDIT_CANONICAL_LF_SHA256
+        ),
         "split_sha256": EXPECTED_SPLIT_SHA256,
         "model_weight_sha256": EXPECTED_WEIGHT_SHA256,
         "validation_gt_read": False,
@@ -129,7 +138,10 @@ def validate_wrapper_source(source: str, *, wrapper_sha256: str) -> dict[str, An
 def audit(wrapper: Path, protocol: Path, protocol_audit: Path) -> dict[str, Any]:
     if sha256_file(protocol) != EXPECTED_PROTOCOL_SHA256:
         raise ValueError("Local protocol SHA-256 mismatch")
-    if sha256_file(protocol_audit) != EXPECTED_PROTOCOL_AUDIT_SHA256:
+    if (
+        canonical_text_sha256(protocol_audit)
+        != EXPECTED_PROTOCOL_AUDIT_CANONICAL_LF_SHA256
+    ):
         raise ValueError("Local protocol-audit SHA-256 mismatch")
     source = wrapper.read_text(encoding="utf-8")
     return validate_wrapper_source(source, wrapper_sha256=sha256_file(wrapper))

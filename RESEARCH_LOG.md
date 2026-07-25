@@ -949,4 +949,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Every future paired consumer wrapper must fail closed on this weight hash.
   Evidence:
   `artifacts/reference/gt_resnet18_unet_448_v1/pretrained_weight_audit.json`.
+- The first full-validation BiomedCLIP saliency kernel failed after 4.07
+  seconds, before model loading or any radiograph/validation prediction. Direct
+  Kaggle logs show `RuntimeError: Frozen protocol-audit SHA-256 mismatch`.
+  Root cause is cross-platform text serialization only: the wrapper had locked
+  the Windows CRLF byte hash `b009cad4...`, whereas the same committed
+  `biomedclip_tiled_val_v1_audit.json` is checked out by Git on Kaggle as LF
+  with canonical hash `844cd93c...`. Protocol, source, model, split and
+  scientific settings were not reached; validation GT/test access remains
+  false and no metric exists for this failed version.
+- The repaired wrapper normalizes only CRLF/CR to LF for this exact text audit
+  file and fails closed on canonical SHA-256
+  `844cd93cd5240c917e15b4c3dbce011514ea6d1bb4847c6095e8c91617e54225`.
+  Its new wrapper SHA-256 is
+  `c3b5088dfbe1ac7713af440ef541395d9968f03d371b75f91e5129c8428476cf`.
+  Static wrapper audit passes again with the unchanged repository commit,
+  implementation, protocol, split, physical BiomedCLIP weight, `norm1` target,
+  no-GT/no-test flags and saliency-only stage; four mutation tests pass. The
+  repaired heavy rerun is held until it will not interfere with the active GT
+  reproduction priority.
 
