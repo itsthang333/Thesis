@@ -168,6 +168,26 @@ mechanism and remain image-label-only.
      complete method. External pretrained weights, licenses, source commits and
      deviations must be recorded explicitly.
 
+   Feasibility audit (planning only; not an experiment):
+
+   - MedCLIP-SAM was inspected at source commit
+     `7c51122914718cf6d0f5172530ee0d5aa23e6d3c` (MIT). Its published
+     implementation loads
+     `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`, wraps the
+     image/text logits, and applies gScoreCAM at visual transformer block 11
+     `norm2` before CRF/SAM refinement.
+   - FMA-WSSS was inspected at source commit
+     `e61d7d75abbfcc8e362b9a7a20e091ae8da95ca1` (Apache-2.0).
+   - No source tree or full environment will be copied into this project.
+     MedCLIP-SAM pins an old Python 3.9 / PyTorch 1.11 / CUDA 11.3 stack, so
+     the first Kaggle action will be an isolated compatibility smoke test using
+     the current project runtime and only the official BiomedCLIP API.
+   - The smoke test must freeze a small, image-label-derived prompt set and
+     verify finite, nonconstant saliency plus deterministic repeatability. It
+     cannot inspect validation masks. A full 371-image validation diagnostic is
+     allowed only after that implementation gate passes and its source/model/
+     prompt hashes are locked.
+
 Every validation candidate must report the complete error chain:
 
 `CAM support -> proposal oracle -> selector -> support clip -> post-process`.
