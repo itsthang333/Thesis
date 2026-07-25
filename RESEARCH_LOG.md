@@ -1125,4 +1125,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   manifests must be frozen before validation GT is loaded. Promotion to train
   pseudo masks requires a positive overall paired-CI lower bound and no mean
   final-Dice decrease in any fixed size subgroup; test remains locked.
+- Kaggle kernel
+  `itsthang333/btxrd-biomedclip-layercam-proposal-gallery-val-v1`, version 1,
+  was launched and is RUNNING. Static wrapper audit passes SHA-256
+  `fd70b742ed8d6758222a1a83109344aba4018433ba48f4889ef35412b60658cf`;
+  protocol SHA-256 remains `8b588378...`. The wrapper additionally compares
+  every tumor image against the frozen baseline manifest before GT access:
+  LayerCAM component counts must be identical, SAM candidate counts cannot
+  decrease, proposal-source counts must balance, and all 184 tumor candidate
+  diagnostics must freeze successfully. The single existing monitor was
+  retargeted to this kernel at the unchanged 15-minute interval.
 
