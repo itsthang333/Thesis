@@ -452,4 +452,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   post-prediction only. The resolved reference-lock identity and hashes are
   embedded in training configuration and checkpoints. Seven contract and
   paired-audit tests pass; test remains locked.
+- An exact GT-reference reproduction was launched as private Kaggle kernel
+  `itsthang333/btxrd-gt-reference-exact-reproduction-v1`, version 1, after an
+  independent run by a collaborator was reported to differ. This is not a new
+  model or hyperparameter experiment: it reuses the original historical
+  wrapper byte-for-byte (SHA-256
+  `900d0594d593e9bb980b5cb46401be164bce9e3a495d8aedeebb2c7f3da90123`),
+  immutable clean split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`,
+  and epoch-10 resume checkpoint SHA-256
+  `8278865eba7e07e0f1e327e7f6a853e3ee770a30a5a57e35438bfe5f6c458bd3`.
+  The resume checkpoint restores model, optimizer, AMP scaler and saved
+  PyTorch/CUDA/NumPy/Python RNG state before continuing the frozen 448px,
+  seed-42, `pos_weight=10` contract. The new run is isolated from the
+  authoritative reference and will be compared by epoch, checkpoint hash,
+  threshold selection, per-image predictions and lesion-size subgroup after
+  completion. Validation only is authorized; test remains locked.
 
