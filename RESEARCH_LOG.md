@@ -1066,4 +1066,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   This preserves error decomposition into saliency support, prompts, proposal
   oracle, selector and post-processing without allowing GT to influence the
   predictions being diagnosed.
+- Predeclared downstream protocol
+  `biomedclip_tiled_downstream_val_v2` was hash-locked and launched as Kaggle
+  kernel `itsthang333/btxrd-biomedclip-tiled-downstream-val-v2`, version 1.
+  Protocol SHA-256 is
+  `8f1fbbe273ed07b05f22401a651df42cde301540e2bda58267792b25bed84b56`;
+  wrapper SHA-256 is
+  `d70ae1568b7da3a00df89eef4c9fc1408c4eab6e6712c22f0466444c21e55d7b`.
+  The wrapper first verifies all 371 physical saliency-map hashes, then
+  generates all pseudo masks and all 184 tumor candidate diagnostics without
+  segmentation GT, writes an explicit prediction-freeze artifact, and passes
+  both frozen manifest hashes to the separate validation-GT evaluator. It then
+  evaluates the final 371-mask cohort and performs 10,000-iteration paired
+  complete-group bootstrap overall and for the fixed `94/72/18`
+  small/medium/large subgroups. The scientific parameters are unchanged from
+  the parent predeclared protocol; this version changes only the formerly
+  leakage-prone execution ordering. Test remains locked. Kernel status after
+  launch is RUNNING, and the single 15-minute monitor was retargeted without
+  creating a duplicate.
 
