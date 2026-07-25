@@ -350,4 +350,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   bootstrap 95% lower bound above zero, and no decrease on the frozen 94-case
   small-lesion subgroup. All 184 validation tumors remain in the endpoint and
   complete misses remain zero; test remains inaccessible to model selection.
+- The completed CPM Gate-C run is decisively rejected. Mean tumor-only Dice is
+  `0.1643982371` versus the promoted `0.2343392222`; the paired complete-group
+  delta is `-0.0699409850` with 10,000-resample 95% CI
+  `[-0.1088206332, -0.0322901766]`. Small/medium/large deltas are
+  `-0.0825044780/-0.0632940569/-0.0309193456`. Independent reconstruction
+  verifies 371 validation images, 184 tumors, 187 normals, 167 complete tumor
+  groups, zero missing predictions, the frozen split/checkpoint hashes, and
+  `test_evaluated=false`.
+- The mechanism audit separates the bottlenecks. On the 94 small tumors, CAM
+  support recall remains usable (`+0.02737` versus the promoted baseline), but
+  point-hit falls `-0.0617` and clipped single-candidate oracle Dice is only
+  `0.12942` (`-0.08397`), so proposal omission/quality is dominant. Medium and
+  large clipped oracle Dice remains `0.56444/0.55598`, while selection loses
+  `0.26923/0.17487` Dice, so those groups are mainly selector-limited. Overall
+  clipped oracle Dice is only `0.34137`, which also proves that selector repair
+  alone cannot meet the former `>0.50` endpoint.
+- The predeclared dense grid SAM gallery diagnostic is therefore authorized,
+  but only to test the small-lesion proposal hypothesis. It changes the SAM
+  proposal gallery to the official 32-by-32 automatic-mask grid while freezing
+  the CPM CAM, `coverage_mass_sam` ranking score, support clipping,
+  morphology, split, metric and promotion rule. It does not import Pro2SAM's
+  full training method or replace the pipeline selector. Test remains locked.
 

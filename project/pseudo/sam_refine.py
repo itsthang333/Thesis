@@ -20,7 +20,11 @@ class SAMPredictor:
         device: str = "cuda",
     ) -> None:
         try:
-            from segment_anything import SamPredictor, sam_model_registry
+            from segment_anything import (
+                SamAutomaticMaskGenerator,
+                SamPredictor,
+                sam_model_registry,
+            )
         except ImportError as exc:
             raise ImportError(
                 "segment_anything is not installed. "
@@ -37,7 +41,72 @@ class SAMPredictor:
         sam = sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
         sam.to(device=device)
         self._predictor = SamPredictor(sam)
+        self._automatic_mask_generator_cls = SamAutomaticMaskGenerator
         self.last_prompt_stats: dict[str, int] = {}
+
+    def predict_grid_gallery(
+        self,
+        image_rgb: np.ndarray,
+        *,
+        points_per_side: int = 32,
+        points_per_batch: int = 64,
+        pred_iou_thresh: float = 0.88,
+        stability_score_thresh: float = 0.95,
+        box_nms_thresh: float = 0.7,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Generate a Pro2SAM-style dense grid gallery with official SAM.
+
+        This deliberately delegates point batching, duplicate removal, and
+        stability filtering to ``SamAutomaticMaskGenerator``.  Each retained
+        mask remains an independent candidate; no class label, annotation, or
+        lesion-size information is used.
+        """
+        if points_per_side <= 0:
+            raise ValueError("points_per_side must be positive")
+        if points_per_batch <= 0:
+            raise ValueError("points_per_batch must be positive")
+        if not 0.0 <= pred_iou_thresh <= 1.0:
+            raise ValueError("pred_iou_thresh must be in [0, 1]")
+        if not 0.0 <= stability_score_thresh <= 1.0:
+            raise ValueError("stability_score_thresh must be in [0, 1]")
+        if not 0.0 <= box_nms_thresh <= 1.0:
+            raise ValueError("box_nms_thresh must be in [0, 1]")
+
+        generator = self._automatic_mask_generator_cls(
+            self._predictor.model,
+            points_per_side=points_per_side,
+            points_per_batch=points_per_batch,
+            pred_iou_thresh=pred_iou_thresh,
+            stability_score_thresh=stability_score_thresh,
+            box_nms_thresh=box_nms_thresh,
+            crop_n_layers=0,
+            min_mask_region_area=0,
+            output_mode="binary_mask",
+        )
+        records = generator.generate(image_rgb)
+        h, w = image_rgb.shape[:2]
+        if records:
+            masks = np.stack(
+                [np.asarray(record["segmentation"], dtype=bool) for record in records],
+                axis=0,
+            )
+            scores = np.asarray(
+                [float(record["predicted_iou"]) for record in records],
+                dtype=np.float32,
+            )
+        else:
+            masks = np.zeros((0, h, w), dtype=bool)
+            scores = np.zeros(0, dtype=np.float32)
+
+        grid_points = points_per_side * points_per_side
+        self.last_prompt_stats = {
+            "sam_prompt_calls": grid_points,
+            "unique_positive_prompt_points": grid_points,
+            "unique_negative_prompt_points": 0,
+            "unique_prompt_points": grid_points,
+            "box_prompt_calls": 0,
+        }
+        return masks, scores
 
     def predict_from_points(
         self,

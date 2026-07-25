@@ -171,6 +171,19 @@ def parse_args() -> argparse.Namespace:
                         choices=["point", "joint_points", "box", "box_point"])
     parser.add_argument("--sam-prompt-ensemble", action="store_true",
                         help="A/B: generate candidates from box_point, point, and box prompts for each CAM component.")
+    parser.add_argument(
+        "--sam-grid-gallery",
+        action="store_true",
+        help=(
+            "Pro2SAM-style diagnostic: replace component prompts with the official "
+            "SAM dense grid mask gallery. No annotation or lesion-size input is used."
+        ),
+    )
+    parser.add_argument("--sam-grid-points-per-side", type=int, default=32)
+    parser.add_argument("--sam-grid-points-per-batch", type=int, default=64)
+    parser.add_argument("--sam-grid-pred-iou-thresh", type=float, default=0.88)
+    parser.add_argument("--sam-grid-stability-thresh", type=float, default=0.95)
+    parser.add_argument("--sam-grid-box-nms-thresh", type=float, default=0.7)
     parser.add_argument("--disable-sam-prompt-ensemble", action="store_true",
                         help="A/B override for the default profile; rejected by btxrd_best.")
     parser.add_argument("--max-components", type=int, default=12)
@@ -822,6 +835,12 @@ def main() -> None:
             "split_manifest_sha256": sha256_file(args.split_manifest.resolve()) if args.split_manifest else None,
             "sam_prompt_mode": args.sam_prompt_mode,
             "sam_prompt_ensemble": args.sam_prompt_ensemble,
+            "sam_grid_gallery": args.sam_grid_gallery,
+            "sam_grid_points_per_side": args.sam_grid_points_per_side,
+            "sam_grid_points_per_batch": args.sam_grid_points_per_batch,
+            "sam_grid_pred_iou_thresh": args.sam_grid_pred_iou_thresh,
+            "sam_grid_stability_thresh": args.sam_grid_stability_thresh,
+            "sam_grid_box_nms_thresh": args.sam_grid_box_nms_thresh,
             "sam_single_mask": args.sam_single_mask,
             "include_cam_candidate": args.include_cam_candidate,
             "cam_percentile": args.cam_percentile,
@@ -1422,7 +1441,19 @@ def main() -> None:
                                 values["negative_points"] = negative_points
                             sam_components.append(replace(component, **values))
 
-                if sam_components:
+                if args.sam_grid_gallery:
+                    sam_masks, sam_scores = sam_predictor.predict_grid_gallery(
+                        sam_image_rgb,
+                        points_per_side=args.sam_grid_points_per_side,
+                        points_per_batch=args.sam_grid_points_per_batch,
+                        pred_iou_thresh=args.sam_grid_pred_iou_thresh,
+                        stability_score_thresh=args.sam_grid_stability_thresh,
+                        box_nms_thresh=args.sam_grid_box_nms_thresh,
+                    )
+                    component_ids = None
+                    candidate_prompt_modes.extend(["grid"] * len(sam_scores))
+                    prompt_stats.update(sam_predictor.last_prompt_stats)
+                elif sam_components:
                     prompt_modes = [args.sam_prompt_mode]
                     if args.sam_prompt_ensemble:
                         prompt_modes = list(dict.fromkeys(prompt_modes + ["point", "box"]))
