@@ -680,4 +680,45 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   teacher/CAM/SAM/split provenance, generation command, unchanged CAM support,
   cohort/subgroups, compact artifact hashes, mechanism chain and recomputed
   paired promotion decision. Eight combined selector/auditor tests pass.
+- Source-consensus validation version 1 completed and the independent audit
+  passed. Source commit `80443fd...`, wrapper `ed75e591...`, split
+  `85511ee1...`, classifier `f62d3702...`, SAM `ec2df627...`, frozen teacher
+  `02d3af8f...`, generation parameters, exact six selector weights, downloaded
+  evidence hashes and the complete 371/184/187 cohort all verify; test was not
+  evaluated. Candidate per-image SHA-256 is
+  `da42b92526320564f28cb5f08ca028b4ba93b2efc0439873108d347e1db0c85d`.
+- The source-consensus selector is rejected. Final tumor Dice is
+  `0.2125053135` versus promoted baseline `0.2343392222`, paired delta
+  `-0.0218339086` with group-bootstrap CI95
+  `[-0.0515454335,+0.0064740245]`. Small falls from `0.1121634055` to
+  `0.0472296920`, delta `-0.0649337119`, CI95
+  `[-0.1063383543,-0.0283010629]`, violating the explicit small-lesion gate.
+  Medium improves `+0.0182890292` and large improves `+0.0427510904`, but these
+  gains do not authorize train pseudo-mask generation.
+- Mechanism decomposition confirms that added teacher proposals remain useful
+  while the selector is harmful. Overall single-proposal oracle improves
+  `+0.0400704867` and clipped oracle `+0.0220265163`, but selected Dice falls
+  `-0.0220649034`. For small tumors oracle improves `+0.0419288505`, while
+  selected Dice falls `-0.0648511286`; source-consensus increases the small
+  selection loss by `+0.0905868438`. The next branch therefore changes the
+  localization evidence itself through a frozen biomedical vision-language
+  prior, rather than tuning these validation-derived selector weights or
+  generating 2,981 train masks from a rejected candidate.
+- Before any biomedical-VLM validation diagnostic, an implementation-only
+  BiomedCLIP saliency smoke test is predeclared. It loads frozen
+  `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224` through
+  `open_clip_torch==2.32.0`, with three fixed tumor and three fixed normal
+  bone-radiograph prompts. Samples come only from train: within each binary
+  image-label class, rows are sorted by SHA-256 of image ID; the first 32 are
+  used for score diagnostics and the first four for saliency. Every source
+  image hash must match the frozen split manifest.
+- The smoke saliency is predeclared as absolute gradient-times-activation over
+  channels at visual transformer block 11 `norm2`, targeted by mean frozen
+  tumor text embedding minus mean frozen normal text embedding. The gate
+  requires a physical pretrained-weight hash, finite scores/maps, dynamic
+  range above `1e-6` on all eight maps and deterministic repeat delta at most
+  `1e-5`. It reads no annotations, validation or test images and cannot promote
+  train pseudo-mask generation. Source is pinned to
+  `de02acb59900cc64f7bdf649d20286d6219af82c`; wrapper SHA-256 is
+  `8aa182ade040082ac40be8c40ade8ea8af41c32245018a03c8bb0075b014d5af`.
 
