@@ -885,4 +885,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   re-audited `norm1` protocol and current repository snapshot. Its new SHA-256
   is `e34171b67f0bca069d488eaa47610ae6cbc6415e2ac6a9f45f306eb1a8b02a30`.
   It remains conditional and unlaunched pending an audited V4 smoke pass.
+- Static wrapper audit passes and verifies the exact wrapper, repository,
+  implementation, protocol, protocol-audit, split and physical model-weight
+  hashes. It rejects annotation/segmentation-evaluator tokens, requires the
+  `norm1` target and both zero-access flags, and has four passing mutation
+  tests. The audited wrapper remains unlaunched.
 

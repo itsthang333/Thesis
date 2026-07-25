@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "wrapper_sha256": "e34171b67f0bca069d488eaa47610ae6cbc6415e2ac6a9f45f306eb1a8b02a30",
+  "source_repository_commit": "26c22db7c3af18c32f66b1cd3b4c3987a10ded19",
+  "implementation_commit": "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
+  "protocol_sha256": "9f5b2250d4a82fa8d546f3dd1dd3c7b477235addb9ab93d709637dc376015ea8",
+  "protocol_audit_sha256": "b009cad423567d3b98f7d6d31e8418695cf6bf7734b7669d3e40750fc31e0c5e",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "model_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+  "validation_gt_read": false,
+  "test_evaluated": false
+}
