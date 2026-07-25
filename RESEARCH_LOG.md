@@ -881,4 +881,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `itsthang333/btxrd-biomedclip-saliency-smoke-v4`, version 1, was launched and
   is RUNNING. The same single 15-minute monitor was retargeted to V4; the
   saliency-only full-validation kernel remains unlaunched.
+- The saliency-only full-validation wrapper was rebuilt against the independently
+  re-audited `norm1` protocol and current repository snapshot. Its new SHA-256
+  is `e34171b67f0bca069d488eaa47610ae6cbc6415e2ac6a9f45f306eb1a8b02a30`.
+  It remains conditional and unlaunched pending an audited V4 smoke pass.
 
