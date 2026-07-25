@@ -1,0 +1,24 @@
+{
+  "audit_id": "biomedclip_layercam_proposal_gallery_val_v1_wrapper_audit",
+  "status": "PASS",
+  "wrapper_sha256": "fd70b742ed8d6758222a1a83109344aba4018433ba48f4889ef35412b60658cf",
+  "source_commit": "c3845f78128bdad95aab909180f5ac701e713a10",
+  "implementation_commit": "1f6847d9326d9e8a789e1924a3a2a7735f5a1f0f",
+  "protocol_sha256": "8b5883780df881ecb654ee9a6d431a56a175d560c41f34f0ca6170f8a54a8c1d",
+  "checks": {
+    "exact_source_hashes_fail_closed": true,
+    "exact_split_checkpoint_saliency_and_baseline_hashes_fail_closed": true,
+    "external_saliency_role_is_proposal_gallery": true,
+    "layercam_flip_tta_is_enabled": true,
+    "selector_is_coverage_mass_sam": true,
+    "support_clip_kernel_is_5": true,
+    "baseline_layercam_component_counts_are_compared_per_image": true,
+    "baseline_sam_candidate_counts_cannot_decrease": true,
+    "proposal_source_counts_must_balance": true,
+    "candidate_diagnostics_cover_all_184_tumors": true,
+    "prediction_manifests_freeze_before_validation_gt": true,
+    "protocol_promotion_requires_no_subgroup_final_mean_decrease": true,
+    "test_is_locked": true
+  },
+  "test_evaluated": false
+}
