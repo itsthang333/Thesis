@@ -847,4 +847,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   repository LF serialization to this authoritative paired split hash before
   any launch. Four protocol mutation tests plus four saliency-auditor tests
   pass.
+- A saliency-only full-validation Kaggle wrapper is prepared but not launched
+  before smoke V3 passes. Wrapper SHA-256 is
+  `dfade1d3598d8d19d74d56d0be0ff1e66191ff0f54d19bfdba27de67c492183e`.
+  It writes the predeclaration first, checks out the locked source, reconstructs
+  the paired split, generates/hashes all 371 maps, and runs the independent map
+  auditor. It contains no segmentation evaluator or pseudo-mask stage and
+  records zero validation-GT/test access.
 
