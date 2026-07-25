@@ -489,4 +489,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   small/medium/large Dice deltas against the authoritative reference. This
   independent run is the appropriate comparison for a collaborator's
   independently trained model. Test remains locked.
+- The GT reproduction will be audited independently with
+  `project/tools/audit_gt_reproduction.py`, rather than accepting the cloud
+  summary at face value. The auditor reselects the checkpoint directly from
+  contiguous epoch-1 training rows using the frozen Dice/specificity
+  tie-breaker, verifies the 35-epoch/patience-10 budget, frozen source/split
+  hashes, validation-only threshold grid, exact 371/184/187 cohort, per-image
+  identity/group/GT-area equality, downloaded artifact hashes and test lock.
+  It then computes paired complete-group bootstrap differences against the
+  hash-locked reference for overall and all three lesion-size groups. Ten
+  combined reference, paired-contract and reproduction-auditor tests pass.
 
