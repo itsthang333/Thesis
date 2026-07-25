@@ -854,4 +854,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the paired split, generates/hashes all 371 maps, and runs the independent map
   auditor. It contains no segmentation evaluator or pseudo-mask stage and
   records zero validation-GT/test access.
+- BiomedCLIP smoke version 3 also fails the nonconstant-saliency gate with the
+  same physical weight, cohort and finite contrast scores; repeat delta remains
+  zero and all eight patch maps remain exactly zero. No validation/test access
+  occurred. Channelwise mean-absolute reduction therefore fixed cancellation
+  but exposed a second implementation issue: block 11 `norm2` is after the last
+  self-attention, so its patch-token MLP outputs have no path to the pooled CLS
+  token and their gradients are zero.
+- Version 4 moves only the hook from block 11 `norm2` to block 11 `norm1`,
+  immediately before final self-attention where patch keys/values affect CLS.
+  Reduction, deterministic math-SDP, model, weight, prompts, train cohort and
+  gates stay fixed. This is the standard causal location for last-block ViT
+  patch gradients and was selected without validation data. V4 wrapper
+  SHA-256 is
+  `ef0521b9a9080bce722d72c71ae4a773fe4d446008eedea88907c5b118a99f86`.
+  The previously prepared full-validation wrapper is invalidated and remains
+  unlaunched until V4 passes and the amended protocol/source hashes re-audit.
 

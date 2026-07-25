@@ -98,7 +98,7 @@ def make_valid_payloads():
         },
         "score_diagnostic": score_diagnostic,
         "saliency_diagnostic": {
-            "target_layer": "model.visual.trunk.blocks[11].norm2",
+            "target_layer": "model.visual.trunk.blocks[11].norm1",
             "repeat_max_abs_delta": 0.0,
             "rows": saliency_rows,
         },

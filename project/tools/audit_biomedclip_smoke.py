@@ -12,7 +12,7 @@ from typing import Any
 
 EXPECTED_SOURCE_COMMIT = "de02acb59900cc64f7bdf649d20286d6219af82c"
 EXPECTED_WRAPPER_SHA256 = (
-    "e70928fc44485b02cd74874ae9398cfcb7f846e28baf82be9d2231f0403cc0c1"
+    "ef0521b9a9080bce722d72c71ae4a773fe4d446008eedea88907c5b118a99f86"
 )
 EXPECTED_SPLIT_SHA256 = (
     "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
@@ -40,7 +40,8 @@ EXPECTED_REPEAT_ATOL = 1e-5
 EXPECTED_DYNAMIC_RANGE_MIN = 1e-6
 EXPECTED_SALIENCY_METHOD = (
     "channelwise mean absolute gradient-times-activation at frozen visual "
-    "transformer block 11 norm2, tumor-prompt mean minus normal-prompt mean"
+    "transformer block 11 norm1 before final self-attention, tumor-prompt mean "
+    "minus normal-prompt mean"
 )
 HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -212,7 +213,7 @@ def validate_payloads(
             raise ValueError(f"Score diagnostic {key} was not reproduced")
 
     saliency_diagnostic = result.get("saliency_diagnostic", {})
-    if saliency_diagnostic.get("target_layer") != "model.visual.trunk.blocks[11].norm2":
+    if saliency_diagnostic.get("target_layer") != "model.visual.trunk.blocks[11].norm1":
         raise ValueError("Saliency target layer mismatch")
     repeat_delta = require_finite(
         saliency_diagnostic.get("repeat_max_abs_delta"), "repeat delta"

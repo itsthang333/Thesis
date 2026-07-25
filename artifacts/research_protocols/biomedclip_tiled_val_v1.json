@@ -2,9 +2,9 @@
   "protocol_id": "biomedclip_tiled_val_v1",
   "status": "predeclared_before_any_validation_prediction_or_metric",
   "activation_condition": {
-    "kernel": "itsthang333/btxrd-biomedclip-saliency-smoke-v3",
+    "kernel": "itsthang333/btxrd-biomedclip-saliency-smoke-v4",
     "required_smoke_decision": "IMPLEMENTATION_GATE_PASS",
-    "smoke_wrapper_sha256": "e70928fc44485b02cd74874ae9398cfcb7f846e28baf82be9d2231f0403cc0c1"
+    "smoke_wrapper_sha256": "ef0521b9a9080bce722d72c71ae4a773fe4d446008eedea88907c5b118a99f86"
   },
   "scientific_question": "Does frozen biomedical vision-language localization add useful small-lesion SAM proposals before selector and support losses?",
   "supervision": "images and binary image-level labels only until all predictions and candidate galleries are frozen",
@@ -33,7 +33,7 @@
     "model_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
     "open_clip_torch": "2.32.0",
     "transformers": "4.35.2",
-    "target_layer": "model.visual.trunk.blocks[11].norm2",
+    "target_layer": "model.visual.trunk.blocks[11].norm1",
     "saliency_reduction": "channelwise mean absolute gradient-times-activation",
     "text_target": "mean tumor prompt embedding minus mean normal prompt embedding",
     "tumor_prompts": [

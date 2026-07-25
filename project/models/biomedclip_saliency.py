@@ -200,7 +200,7 @@ class FrozenBiomedClipSaliency:
             normal = normal / normal.norm()
             self.contrast = (tumor - normal).detach()
         try:
-            self.target_layer = self.model.visual.trunk.blocks[11].norm2
+            self.target_layer = self.model.visual.trunk.blocks[11].norm1
         except (AttributeError, IndexError) as error:
             raise ValueError("Unexpected BiomedCLIP visual-transformer structure") from error
 

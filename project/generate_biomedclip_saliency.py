@@ -306,6 +306,7 @@ def main() -> None:
         },
         "view_contract": {
             "saliency_reduction": "channelwise mean absolute gradient-times-activation",
+            "target_layer": "model.visual.trunk.blocks[11].norm1",
             "full_view": "black pad to square",
             "crop_fraction_of_short_side": 0.5,
             "positions_per_axis": 3,

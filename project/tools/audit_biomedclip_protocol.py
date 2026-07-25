@@ -9,7 +9,7 @@ from audit_biomedclip_saliency import sha256_file
 
 
 EXPECTED_PROTOCOL_SHA256 = (
-    "d20712790808dc14fc5c6d882502872a04edb4b2d516fa986a1be57122217e1c"
+    "aac8ad62fbaa2d15042853e8ad76bcddf5cf38266d442481751ea0dc0a17f078"
 )
 EXPECTED_SPLIT_SHA256 = (
     "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
@@ -72,6 +72,8 @@ def validate_protocol(protocol: dict[str, Any]) -> None:
         "channelwise mean absolute gradient-times-activation"
     ):
         raise ValueError("BiomedCLIP protocol saliency reduction mismatch")
+    if localization.get("target_layer") != "model.visual.trunk.blocks[11].norm1":
+        raise ValueError("BiomedCLIP protocol target-layer mismatch")
     if protocol.get("promoted_baseline", {}).get(
         "per_image_sha256"
     ) != EXPECTED_BASELINE["per_image_sha256"]:

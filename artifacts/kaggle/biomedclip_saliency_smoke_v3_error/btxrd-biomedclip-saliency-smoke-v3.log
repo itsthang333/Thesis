@@ -1,0 +1,33 @@
+[{"stream_name":"stdout","time":4.776820187,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 123.5/123.5 kB 3.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":5.8962283620000004,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.5/1.5 MB 29.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":5.994298781,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.9/7.9 MB 98.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":6.031121146,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.4/566.4 kB 31.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":6.09029253,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.6/3.6 MB 85.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":6.118619326,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.8/44.8 kB 2.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stderr","time":18.304151807,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":18.304213318,"data":"sentence-transformers 5.4.1 requires transformers\u003c6.0.0,\u003e=4.41.0, but you have transformers 4.35.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":33.149014909,"data":"/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py:441: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.\n"}
+,{"stream_name":"stderr","time":33.14905024,"data":"  _torch_pytree._register_pytree_node(\n"}
+,{"stream_name":"stderr","time":33.292809878,"data":"/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py:309: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.\n"}
+,{"stream_name":"stderr","time":33.292859688,"data":"  _torch_pytree._register_pytree_node(\n"}
+,{"stream_name":"stderr","time":37.460660925,"data":"Cloning into '/kaggle/working/thesis_source'...\n"}
+,{"stream_name":"stderr","time":39.053959669,"data":"HEAD is now at de02acb research: audit BiomedCLIP fallback feasibility\n"}
+,{"stream_name":"stderr","time":51.344958209,"data":"/usr/local/lib/python3.12/dist-packages/huggingface_hub/file_download.py:949: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.\n"}
+,{"stream_name":"stderr","time":51.345022447,"data":"  warnings.warn(\n"}
+,{"stream_name":"stderr","time":52.878247191,"data":"/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py:309: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.\n"}
+,{"stream_name":"stderr","time":52.878289231,"data":"  _torch_pytree._register_pytree_node(\n"}
+,{"stream_name":"stderr","time":55.022432145,"data":"/usr/local/lib/python3.12/dist-packages/huggingface_hub/file_download.py:949: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.\n"}
+,{"stream_name":"stderr","time":55.022465577,"data":"  warnings.warn(\n"}
+,{"stream_name":"stderr","time":66.352927148,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":66.352979604,"data":"  File \"/kaggle/src/script.py\", line 352, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":66.35317607,"data":"    main()\n"}
+,{"stream_name":"stderr","time":66.35326404,"data":"  File \"/kaggle/src/script.py\", line 347, in main\n"}
+,{"stream_name":"stderr","time":66.353500721,"data":"    raise RuntimeError(\"BiomedCLIP saliency implementation gate failed\")\n"}
+,{"stream_name":"stderr","time":66.353654969,"data":"RuntimeError: BiomedCLIP saliency implementation gate failed\n"}
+,{"stream_name":"stderr","time":71.76768676,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":71.767726141,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":72.059100514,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":72.059144546,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":72.768591194,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":74.19601916,"data":"[NbConvertApp] Writing 337971 bytes to __results__.html\n"}
+]
