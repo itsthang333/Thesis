@@ -468,4 +468,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   authoritative reference and will be compared by epoch, checkpoint hash,
   threshold selection, per-image predictions and lesion-size subgroup after
   completion. Validation only is authorized; test remains locked.
+- GT reproduction version 1 failed before loading the dataset, model or any
+  training state. The historical wrapper expected the old direct bundle with
+  `resume_448_epoch10/last_unet.pt`, but the current immutable dataset version
+  contains compressed source/split/winner artifacts and no longer exposes that
+  epoch-10 resume directory. The traceback was
+  `Expected one research bundle, found []`; no epoch ran, no validation metric
+  was produced, and this is not scientific evidence about reproducibility.
+- Because the unavailable epoch-10 state makes an exact continuation
+  impossible, the active replacement is explicitly an **independent epoch-1
+  reproduction**, not a continuation. Kaggle renamed the private kernel to
+  `itsthang333/btxrd-gt-reference-independent-reproduction-v2`, version 2.
+  It extracts the frozen source archive and fails closed against the six
+  canonical-LF source hashes in the GT reference lock, verifies the same clean
+  split hash, and trains from epoch 1 with the frozen seed-42, 448px,
+  ResNet18-U-Net, batch-8, AdamW `1e-4`/`1e-4`, manual `pos_weight=10`,
+  35-epoch/patience-10 contract. Its wrapper SHA-256 is
+  `afa5d4be59a062c2822f467a0dfcb1019842e81dc369646653abd859df8bfcb1`.
+  After validation it will record checkpoint/epoch/threshold and
+  small/medium/large Dice deltas against the authoritative reference. This
+  independent run is the appropriate comparison for a collaborator's
+  independently trained model. Test remains locked.
 
