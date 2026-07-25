@@ -78,6 +78,19 @@ def _require_close(actual: float, expected: float, label: str) -> None:
         raise ValueError(f"{label} mismatch: {actual} != {expected}")
 
 
+def normalize_source_hashes(hashes: dict[str, str]) -> dict[str, str]:
+    """Normalize the optional repository-root prefix without weakening hashes."""
+    normalized: dict[str, str] = {}
+    for raw_path, digest in hashes.items():
+        path = str(raw_path).replace("\\", "/")
+        if path.startswith("project/"):
+            path = path[len("project/") :]
+        if path in normalized:
+            raise ValueError(f"Duplicate normalized source-hash path: {path}")
+        normalized[path] = str(digest)
+    return normalized
+
+
 def audit_gt_reproduction(
     reference_lock_path: Path,
     candidate_root: Path,
@@ -137,9 +150,12 @@ def audit_gt_reproduction(
         raise ValueError("Candidate reproduction mode mismatch")
     if environment.get("split_sha256") != lock["data"]["split_manifest_sha256"]:
         raise ValueError("Candidate split SHA-256 mismatch")
-    if environment.get("source_canonical_lf_sha256") != lock[
-        "source_canonical_lf_sha256"
-    ]:
+    cloud_source_hashes = environment.get("source_canonical_lf_sha256")
+    if not isinstance(cloud_source_hashes, dict):
+        raise ValueError("Candidate source-hash map is missing or malformed")
+    if normalize_source_hashes(cloud_source_hashes) != normalize_source_hashes(
+        lock["source_canonical_lf_sha256"]
+    ):
         raise ValueError("Candidate frozen source hashes mismatch")
 
     training_rows = read_csv(training_log_path)

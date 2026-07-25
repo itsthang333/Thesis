@@ -1,0 +1,36 @@
+{
+  "baseline_mean_tumor_dice": 0.23433922219069755,
+  "candidate_mean_tumor_dice": 0.23365921129613312,
+  "decision": "REJECT",
+  "paired_group_bootstrap": {
+    "ci95_high": 0.00846603746279894,
+    "ci95_low": -0.00932840223018439,
+    "groups": 167,
+    "iterations": 10000,
+    "mean_delta": -0.0006800108945644319,
+    "seed": 42,
+    "tumor_images": 184,
+    "unit": "complete validation tumor group"
+  },
+  "promotion_rule": "paired complete-group bootstrap overall delta CI95 lower bound >0 and mean Dice on all 94 small tumors does not decrease",
+  "subgroups": {
+    "large_ge_5pct": {
+      "baseline_mean_dice": 0.4153105265301879,
+      "candidate_mean_dice": 0.39617191646055283,
+      "delta": -0.019138610069635076,
+      "images": 18
+    },
+    "medium_1_to_5pct": {
+      "baseline_mean_dice": 0.34860371437700266,
+      "candidate_mean_dice": 0.35002763267851145,
+      "delta": 0.0014239183015087864,
+      "images": 72
+    },
+    "small_lt_1pct": {
+      "baseline_mean_dice": 0.1121634039404338,
+      "candidate_mean_dice": 0.11340649818452891,
+      "delta": 0.0012430942440951193,
+      "images": 94
+    }
+  }
+}

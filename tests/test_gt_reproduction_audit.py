@@ -21,6 +21,30 @@ spec.loader.exec_module(AUDIT)
 
 
 class GtReproductionAuditTests(unittest.TestCase):
+    def test_source_hash_normalization_only_removes_project_prefix(self) -> None:
+        normalized = AUDIT.normalize_source_hashes(
+            {
+                "project/train_segmentation.py": "abc",
+                "models/unet.py": "def",
+            }
+        )
+        self.assertEqual(
+            normalized,
+            {
+                "train_segmentation.py": "abc",
+                "models/unet.py": "def",
+            },
+        )
+
+    def test_source_hash_normalization_rejects_duplicate_paths(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Duplicate normalized"):
+            AUDIT.normalize_source_hashes(
+                {
+                    "project/models/unet.py": "abc",
+                    "models/unet.py": "def",
+                }
+            )
+
     def test_reference_training_log_reselects_epoch_20(self) -> None:
         path = (
             ROOT

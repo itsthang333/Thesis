@@ -1,0 +1,16 @@
+{
+  "entrypoint": "/kaggle/working/thesis_source/project/evaluate_pseudo_masks.py",
+  "dataset": "btxrd",
+  "split": "val",
+  "protocol": "ground_truth",
+  "run_metadata_sha256": "cd939e040b11c11ae5edc9c2afef8e1396f849c79a8ce85dc96517a38e97d765",
+  "split_manifest": "/kaggle/working/frozen_split_manifest.csv",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "artifacts": {
+    "per_image": "/kaggle/working/btxrd_wsl_proposal_teacher_val_v1/ground_truth/evaluation/per_image.csv",
+    "summary": "/kaggle/working/btxrd_wsl_proposal_teacher_val_v1/ground_truth/evaluation/summary.json",
+    "subgroups": "/kaggle/working/btxrd_wsl_proposal_teacher_val_v1/ground_truth/evaluation/per_image_subgroups.csv",
+    "bootstrap": "/kaggle/working/btxrd_wsl_proposal_teacher_val_v1/ground_truth/evaluation/per_image_bootstrap.json",
+    "pixel_confusion": "/kaggle/working/btxrd_wsl_proposal_teacher_val_v1/ground_truth/evaluation/per_image_pixel_confusion.json"
+  }
+}

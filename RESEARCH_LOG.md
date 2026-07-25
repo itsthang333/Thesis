@@ -571,4 +571,81 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   test_proposal_teacher_components.py`; every source/model/split hash and
   scientific parameter remains unchanged. The repaired wrapper SHA-256 is
   `a08edf88efacb2d6ca339c0920a142049c36ae411cdac1174c1234af38f92d58`.
+- Proposal-teacher version 2 completed and its compact evidence passed the
+  independent auditor. Provenance is locked to source commit
+  `ef4cd71290e9aa40f6f66983e8f0aba05d8fd4a8`, split SHA-256
+  `85511ee1...`, classifier `f62d3702...`, SAM `ec2df627...`, frozen
+  pseudo-trained teacher checkpoint `02d3af8f...`, and the teacher's
+  pseudo-mask training manifest `7b0b133e...`. The full validation population
+  is unchanged at 371 images/184 tumors/187 normals, 167 tumor groups and
+  `94/72/18` small/medium/large; test was not evaluated. Downloaded candidate,
+  run-metadata and pseudo-manifest hashes all match the cloud manifest.
+- The proposal-teacher hypothesis is rejected. Candidate mean tumor Dice is
+  `0.2336592113` versus promoted flip-TTA baseline `0.2343392222`, paired
+  complete-group delta `-0.0006800109` with 95% CI
+  `[-0.0093284022,+0.0084660375]`. Small and medium change only
+  `+0.0012430942/+0.0014239183`, while large decreases
+  `-0.0191386101` with paired 95% CI
+  `[-0.0426347225,-0.0025369182]`; the predeclared promotion rule is false.
+  No 2,981-image train pseudo-mask generation is authorized.
+- The mechanism result is informative despite rejection. Teacher components
+  are available on 154/184 tumors and increase unclipped single-candidate
+  oracle Dice by `+0.0400704867`; clipped oracle still increases
+  `+0.0220265163`. However selected Dice changes `-0.0009038856`.
+  Added proposals increase support loss by `+0.0180439704` and selection loss
+  by `+0.0229304020`. On large tumors specifically, oracle improves
+  `+0.0399334479` but clipping retains only `+0.0037785493`, selected Dice
+  falls `-0.0189320037`, and final Dice falls `-0.0191386101`. Therefore the
+  next proposal-teacher experiment must change source-aware candidate
+  selection/support semantics rather than adding more teacher components under
+  the unchanged CAM-only selector and clip.
+- A lightweight post-hoc gate diagnostic was used only to localize the
+  mechanism and is not promotion evidence. Candidate masks differ from the
+  baseline on 97/184 tumors. Changed small/medium cases average
+  `+0.003246/+0.002092` Dice, whereas 12 changed large cases average
+  `-0.028708`. Teacher-support upper gates produce at most about `+0.0022`
+  overall in this diagnostic and do not robustly protect large tumors.
+  Consequently no validation-GT-derived area gate will be implemented.
+- The independent epoch-1 GT reproduction completed on Kaggle with the exact
+  frozen code, split, ImageNet initialization, seed-42, 448 px, batch-8,
+  AdamW `1e-4`/`1e-4`, `pos_weight=10`, 35-epoch/patience-10 contract and
+  validation-only threshold grid. The independently recomputed checkpoint
+  selection is epoch 33, last epoch 35, validation positive Dice at fixed 0.5
+  `0.5106942783`, and selected inference threshold `0.25`. Source and split
+  hashes, wrapper SHA-256 `afa5d4be...`, all 371/184/187 identities, all
+  GT-area/subgroup assignments, training-log continuity, cloud artifact
+  hashes and `test_evaluated=false` pass. The frozen authoritative reference
+  is not overwritten. The 230,923,915-byte reproduction checkpoint was also
+  downloaded independently and its physical SHA-256 verifies as
+  `ad0605a97e716a195b9981ca4f22170048c6a6e82d751f8d783846a400bd0824`;
+  the final auditor records `checkpoint_file_verified=true`.
+- Reproduction Dice is `0.5113904441` overall versus frozen reference
+  `0.4951316963`, a paired delta `+0.0162587478` with 95% CI
+  `[-0.0161203857,+0.0495478497]`. Subgroup reproduction is not within 0.05
+  everywhere: small is `0.3998633760` versus `0.3289549325`
+  (`+0.0709084435`, CI `[+0.0249550436,+0.1193881516]`); medium is
+  `0.6330372531` versus `0.6624417784` (`-0.0294045253`, CI
+  `[-0.0801662047,+0.0181789871]`); large is `0.6072223413` versus
+  `0.6937033566` (`-0.0864810152`, CI
+  `[-0.1658684068,-0.0219844196]`). Thus overall Dice is reproducible within
+  0.05, but seed-42 independent training is not subgroup-stable; this directly
+  explains why a collaborator can obtain a different result under an
+  apparently similar protocol.
+- Both runs used Python 3.12.13, PyTorch 2.10.0+cu128, CUDA 12.8 and Tesla T4,
+  and the same source/data hashes. The historical reference lineage resumed
+  an epoch-10 checkpoint and selected epoch 20, whereas the reproduction
+  started independently at epoch 1 and selected epoch 33. Their training
+  trajectories already differ at epoch 1 despite seeding and cuDNN
+  deterministic/benchmark flags; `torch.use_deterministic_algorithms` was not
+  enabled. The evidence therefore localizes the discrepancy to independent
+  optimization trajectory/GPU algorithm reproducibility rather than cohort,
+  metric, threshold leakage, source drift or split drift. The reference stays
+  hash-locked as the paired-study anchor, while the reproduction result must
+  be reported as sensitivity evidence.
+- The first GT-auditor pass exposed a path-schema mismatch: the reference lock
+  names source files with a `project/` prefix while the cloud wrapper stores
+  the same six paths relative to that directory. The auditor now normalizes
+  only that optional prefix, rejects normalized duplicates, and still requires
+  exact key/hash equality. Five focused tests pass. This was an audit
+  implementation repair and did not alter any result or scientific gate.
 
