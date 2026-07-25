@@ -121,6 +121,46 @@ def environment_difference(
     }
 
 
+def compare_training_logs(left_path: Path, right_path: Path) -> dict[str, Any]:
+    left = read_csv(left_path)
+    right = read_csv(right_path)
+    if not left or not right:
+        raise ValueError("Training logs must be non-empty")
+    if list(left[0]) != list(right[0]):
+        raise ValueError("Training-log schemas differ")
+    numeric_columns = [column for column in left[0] if column != "epoch"]
+    common_epochs = min(len(left), len(right))
+    exact_prefix = 0
+    first_numeric_divergence: int | None = None
+    for index in range(common_epochs):
+        if left[index] == right[index] and exact_prefix == index:
+            exact_prefix += 1
+        if first_numeric_divergence is None and any(
+            not math.isclose(
+                float(left[index][column]),
+                float(right[index][column]),
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            )
+            for column in numeric_columns
+        ):
+            first_numeric_divergence = index + 1
+    return {
+        "left_epochs": len(left),
+        "right_epochs": len(right),
+        "exact_equal_prefix_epochs": exact_prefix,
+        "first_numeric_divergence_epoch": first_numeric_divergence,
+        "epoch_1": {
+            "left_val_positive_dice": float(left[0]["val_positive_dice"]),
+            "right_val_positive_dice": float(right[0]["val_positive_dice"]),
+            "delta_right_minus_left": (
+                float(right[0]["val_positive_dice"])
+                - float(left[0]["val_positive_dice"])
+            ),
+        },
+    }
+
+
 def audit_stability(
     *,
     reference_lock: Path,
@@ -162,6 +202,9 @@ def audit_stability(
 
     lock = json.loads(reference_lock.read_text(encoding="utf-8"))
     lock_root = reference_lock.parent
+    reference_snapshot = (
+        lock_root / lock["reference_snapshot_root"]
+    ).resolve()
     split_manifest = (lock_root / lock["data"]["split_manifest"]).resolve()
     v2_per_image = v2_root / "evaluation" / "selected_per_image.csv"
     v3_per_image = v3_root / "evaluation" / "selected_per_image.csv"
@@ -192,6 +235,18 @@ def audit_stability(
         v2_checkpoint != v3_checkpoint
         and any(value > 0.05 for value in subgroup_repeat_gaps.values())
     )
+    reference_summary = json.loads(
+        (reference_snapshot / "convergence_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    reference_log = reference_snapshot / "training" / "training_log.csv"
+    v2_log = (
+        v2_root / "fs_resnet18_pw10_full_448_seed42" / "training_log.csv"
+    )
+    v3_log = (
+        v3_root / "fs_resnet18_pw10_full_448_seed42" / "training_log.csv"
+    )
     return {
         "status": "PASS",
         "audit_role": (
@@ -215,6 +270,43 @@ def audit_stability(
             v2_root / "convergence_summary.json",
             v3_root / "convergence_summary.json",
         ),
+        "training_lineage_and_trajectory": {
+            "frozen_reference": {
+                "resume_epoch": reference_summary["training"].get(
+                    "resume_epoch"
+                ),
+                "resume_checkpoint_sha256": reference_summary[
+                    "environment"
+                ].get("resume_sha256"),
+                "best_epoch": reference_summary["training"]["best_epoch"],
+                "last_completed_epoch": reference_summary["training"][
+                    "last_completed_epoch"
+                ],
+            },
+            "v2": {
+                "start_epoch": 1,
+                "best_epoch": v2_audit["candidate_contract"][
+                    "checkpoint_selection_recomputed"
+                ]["best_epoch"],
+            },
+            "v3": {
+                "start_epoch": 1,
+                "best_epoch": v3_audit["candidate_contract"][
+                    "checkpoint_selection_recomputed"
+                ]["best_epoch"],
+            },
+            "reference_vs_v2": compare_training_logs(reference_log, v2_log),
+            "reference_vs_v3": compare_training_logs(reference_log, v3_log),
+            "v2_vs_v3": compare_training_logs(v2_log, v3_log),
+            "interpretation_rule": (
+                "If v2 and v3 are identical while each differs from the "
+                "historical resumed reference, the current fresh-run recipe "
+                "is reproducible and historical lineage explains the external "
+                "score mismatch. If v2 and v3 diverge from epoch 1 under the "
+                "same environment and hashes, training itself is not bitwise "
+                "reproducible under the recorded determinism controls."
+            ),
+        },
         "stability_conclusion": {
             "metric_split_and_population_contract_consistent": True,
             "checkpoint_sha256_equal_between_repeats": (

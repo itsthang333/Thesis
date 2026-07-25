@@ -54,6 +54,28 @@ class GtReproductionStabilityAuditTests(unittest.TestCase):
                 )
             )
 
+    def test_reference_and_v2_training_diverge_at_epoch_one(self) -> None:
+        reference = (
+            ROOT
+            / "artifacts"
+            / "best_pipeline"
+            / "fs_resnet18_pw10_full_448_e20"
+            / "training"
+            / "training_log.csv"
+        )
+        v2 = (
+            ROOT
+            / "artifacts"
+            / "kaggle"
+            / "gt_reference_independent_reproduction_v2"
+            / "btxrd_gt_reference_independent_reproduction_v2"
+            / "fs_resnet18_pw10_full_448_seed42"
+            / "training_log.csv"
+        )
+        result = AUDIT.compare_training_logs(reference, v2)
+        self.assertEqual(result["exact_equal_prefix_epochs"], 0)
+        self.assertEqual(result["first_numeric_divergence_epoch"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
