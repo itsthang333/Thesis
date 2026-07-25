@@ -1152,4 +1152,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Repaired kernel version 2 was launched and is RUNNING. The single existing
   15-minute monitor was updated in place to version 2 and the repaired wrapper
   hash; no duplicate monitor or competing heavy job was created.
+- A fourth fully supervised GT reproducibility run was predeclared after a
+  collaborator reported a different result from a similar experiment. This is
+  an exact byte-identical rerun of the v3 Kaggle wrapper (SHA-256
+  `4080d04f...f0193`) as kernel version 2, with the same frozen source, split
+  SHA-256 `85511ee1...c8c`, seed 42, 448-pixel ResNet18UNet consumer contract,
+  371-image validation cohort and `94/72/18` lesion-size subgroups. The purpose
+  is to isolate stochastic/runtime variation from configuration or metric
+  drift; it cannot replace the hash-locked reference and test remains locked.
 
