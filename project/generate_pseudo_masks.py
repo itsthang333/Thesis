@@ -40,7 +40,7 @@ from config import (
     SUPPORTED_DATASETS,
 )
 from progress import should_disable_tqdm
-from datasets.factory import build_classification_dataset, build_segmentation_dataset
+from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier
 from models.s2c_cpm import (
     DenseNet121S2CCPMClassifier,
@@ -52,17 +52,13 @@ from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.generate_layercam import generate_fused_cam
 from pseudo.extract_prompts import extract_point_prompts
 from pseudo import tumor_morphology as morphology
-from pseudo.prompt_metrics import (
-    binary_mask_localization_metrics,
-    box_prompt_localization_metrics,
-    cam_localization_metrics,
-    negative_point_rejection_rate,
-    point_prompt_hit_rate,
-)
-from pseudo.oracle_diagnostics import binary_overlap_metrics, oracle_vs_selected_metrics
 from pseudo.sam_refine import SAMPredictor
 from pseudo.mask_selection import score_masks, select_and_fuse_masks
 from pseudo.manifest import sha256_file as manifest_sha256_file, write_pseudo_mask_manifest
+from pseudo.candidate_diagnostics import (
+    save_candidate_diagnostics,
+    write_candidate_diagnostics_manifest,
+)
 from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
@@ -348,10 +344,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--debug", action="store_true",
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
     parser.add_argument("--evaluate-prompt-quality", action="store_true",
-        help="Log CAM localization and point-prompt hit-rate against ground-truth "
-                        "masks to prompt_quality.csv. Isolates CAM/prompt failure from SAM/mask-"
-             "selection failure, unlike the final pseudo-mask Dice/IoU. Only meaningful "
-             "on images that actually have a lesion/bone GT mask.")
+        help="Removed leakage-prone legacy mode. Use --save-candidate-diagnostics, "
+             "freeze the generated manifests, then run evaluate_saved_candidate_diagnostics.py.")
+    parser.add_argument(
+        "--save-candidate-diagnostics",
+        action="store_true",
+        help=(
+            "Save prediction-only candidates/prompts/stage masks for every image-level-positive "
+            "case. No segmentation GT is loaded; evaluate them only after the manifests freeze."
+        ),
+    )
     parser.add_argument("--force-non-normal-cam", action="store_true",
                         help="Predicted-protocol A/B: if argmax is normal, condition CAM on the strongest "
                              "non-normal class instead of skipping. Default keeps normal images empty.")
@@ -983,14 +985,11 @@ def classifier_candidate_causal_scores(
 
 def main() -> None:
     args = apply_pipeline_profile(parse_args())
-    if (
-        args.pipeline_profile in {BTXRD_BEST_PIPELINE.name, BTXRD_HYBRID_PIPELINE.name}
-        and args.split == "train"
-        and args.evaluate_prompt_quality
-    ):
+    if args.evaluate_prompt_quality:
         raise ValueError(
-            "Canonical train pseudo-mask generation cannot read polygon diagnostics. "
-            "Run a separate non-canonical diagnostic output on val instead."
+            "--evaluate-prompt-quality was removed because it loaded validation GT before "
+            "predictions were frozen. Generate with --save-candidate-diagnostics, then run "
+            "evaluate_saved_candidate_diagnostics.py against the locked manifests."
         )
     verify_frozen_test_config(
         args.frozen_config,
@@ -1276,20 +1275,6 @@ def main() -> None:
         for sample in dataset.samples:
             tumor_type_by_name[str(sample["image_id"])] = TUMOR_TYPE_CLASS_NAMES[int(sample["tumor_type"])]
 
-    gt_masks_by_name: dict[str, np.ndarray] = {}
-    if args.evaluate_prompt_quality:
-        seg_dataset = build_segmentation_dataset(
-            root=args.data_root,
-            split=args.split,
-            image_size=args.image_size,
-            augment=False,
-            split_manifest=args.split_manifest,
-        )
-        for index in range(len(seg_dataset)):
-            _, mask_tensor, image_name = seg_dataset[index]
-            gt_masks_by_name[str(image_name)] = (mask_tensor[0].numpy() > 0.5)
-        print(f"Loaded {len(gt_masks_by_name)} ground-truth masks for prompt-quality evaluation")
-
     if args.cam_backend == "s2c_cpm":
         if not isinstance(classifier, DenseNet121S2CCPMClassifier):
             raise ValueError(
@@ -1337,10 +1322,13 @@ def main() -> None:
 
     mask_dir = args.output_dir / "masks"
     overlay_dir = args.output_dir / "overlays"
+    candidate_diagnostic_dir = args.output_dir / "candidate_diagnostics"
     mask_dir.mkdir(parents=True, exist_ok=True)
     overlay_dir.mkdir(parents=True, exist_ok=True)
+    if args.save_candidate_diagnostics:
+        candidate_diagnostic_dir.mkdir(parents=True, exist_ok=True)
 
-    prompt_quality_rows: list[list[object]] = []
+    candidate_diagnostic_rows: list[dict[str, object]] = []
     pseudo_manifest_rows: list[dict[str, object]] = []
     skipped_image_names: list[str] = []
     samples_by_name = {str(sample["image_id"]): sample for sample in dataset.samples}
@@ -1417,7 +1405,8 @@ def main() -> None:
                     )
                 )
                 if should_skip:
-                    save_mask(np.zeros((args.image_size, args.image_size), dtype=np.uint8), mask_path)
+                    empty_mask = np.zeros((args.image_size, args.image_size), dtype=np.uint8)
+                    save_mask(empty_mask, mask_path)
                     skip_reason = (
                         "known_image_label_normal"
                         if use_ground_truth_class
@@ -1460,6 +1449,34 @@ def main() -> None:
                             "final_area_ratio": 0.0,
                         }
                     )
+                    if args.save_candidate_diagnostics and true_tumor:
+                        diagnostic_path = candidate_diagnostic_dir / f"{Path(image_name).stem}.npz"
+                        diagnostic_row = save_candidate_diagnostics(
+                            diagnostic_path,
+                            sam_masks=np.zeros(
+                                (0, args.image_size, args.image_size), dtype=np.uint8
+                            ),
+                            refined_mask=empty_mask,
+                            final_mask=empty_mask,
+                            bone_support=None,
+                            prompt_map=np.zeros_like(empty_mask, dtype=np.float32),
+                            positive_points=[],
+                            negative_points=[],
+                            boxes=[],
+                            sam_scores=np.zeros(0, dtype=np.float32),
+                            selection_scores=np.zeros(0, dtype=np.float32),
+                            classifier_causal_scores=None,
+                            component_ids=None,
+                            prompt_modes=[],
+                        )
+                        candidate_diagnostic_rows.append(
+                            {
+                                "image_name": str(image_name),
+                                "tumor_type": tumor_type_by_name.get(str(image_name), ""),
+                                "generation_status": "empty_by_image_gate",
+                                **diagnostic_row,
+                            }
+                        )
                     skipped += 1
                     skipped_image_names.append(str(image_name))
                     processed += 1
@@ -1989,61 +2006,6 @@ def main() -> None:
                     )
 
                 # ── 4b. Prompt-quality metrics (optional, pre-SAM diagnostics) ──
-                gt_mask = gt_masks_by_name.get(str(image_name)) if args.evaluate_prompt_quality else None
-                prompt_quality_entry: list[object] | None = None
-                if gt_mask is not None:
-                    all_points = (
-                        [point for component in bone_components for point in component.positive_points]
-                        if bone_components
-                        else point_prompts
-                    )
-                    all_negative_points = (
-                        [
-                            point
-                            for component in bone_components
-                            for point in getattr(component, "negative_points", ())
-                        ]
-                        if bone_components else []
-                    )
-                    all_boxes: list[tuple[int, int, int, int]] = []
-                    if bone_components and args.sam_prompt_mode in {"box", "box_point"}:
-                        image_height, image_width = image_rgb.shape[:2]
-                        for component in bone_components:
-                            x0, y0, x1, y1 = component.bbox
-                            box_area_ratio = (
-                                max(1, x1 - x0 + 1) * max(1, y1 - y0 + 1)
-                                / float(image_height * image_width)
-                            )
-                            if args.max_box_area_ratio <= 0 or box_area_ratio <= args.max_box_area_ratio:
-                                all_boxes.append(tuple(component.bbox))
-                    if bone_support is not None:
-                        fg_metrics = binary_mask_localization_metrics(bone_support, gt_mask)
-                    else:
-                        fg_metrics = cam_localization_metrics(prompt_map, gt_mask, percentile=args.cam_percentile)
-                        fg_metrics = {
-                            "iou": fg_metrics["cam_iou"],
-                            "recall": fg_metrics["cam_recall"],
-                            "precision": fg_metrics["cam_precision"],
-                        }
-                    hit_metrics = point_prompt_hit_rate(all_points, gt_mask)
-                    negative_metrics = negative_point_rejection_rate(all_negative_points, gt_mask)
-                    box_metrics = box_prompt_localization_metrics(all_boxes, gt_mask)
-                    prompt_quality_entry = [
-                        image_name,
-                        tumor_type_by_name.get(str(image_name), ""),
-                        fg_metrics["iou"],
-                        fg_metrics["recall"],
-                        fg_metrics["precision"],
-                        hit_metrics["point_hit_rate"],
-                        hit_metrics["num_points"],
-                        hit_metrics["num_hits"],
-                        negative_metrics["negative_rejection_rate"],
-                        negative_metrics["num_negative_points"],
-                        negative_metrics["num_false_negatives"],
-                        box_metrics["box_recall"],
-                        box_metrics["box_precision"],
-                    ]
-
                 # ── 5. CAM-guided mask selection ──────────────────────────────
                 component_mask_array = (
                     np.stack([component.mask for component in bone_components])
@@ -2112,24 +2074,6 @@ def main() -> None:
                 )
 
                 # ── 5b. SAM-vs-selection oracle diagnostic (optional) ───────────
-                if prompt_quality_entry is not None:
-                    oracle_metrics = oracle_vs_selected_metrics(
-                        sam_masks,
-                        refined,
-                        gt_mask,
-                        bone_support=bone_support,
-                        selection_method=args.selection_method,
-                        support_clip_kernel=args.support_clip_kernel,
-                    )
-                    prompt_quality_entry.extend([
-                        oracle_metrics["best_single_dice"],
-                        oracle_metrics["best_single_dice_clipped"],
-                        oracle_metrics["selected_dice"],
-                        oracle_metrics["gap_dice"],
-                        oracle_metrics["support_loss_dice"],
-                        oracle_metrics["selection_loss_dice"],
-                    ])
-
                 # ── 6. Morphological refinement ───────────────────────────────
                 final_mask = morphological_refinement(
                     refined,
@@ -2141,17 +2085,70 @@ def main() -> None:
                     max_hole_area=args.max_hole_area,
                 )
 
-                if prompt_quality_entry is not None:
-                    final_metrics = binary_overlap_metrics(final_mask, gt_mask)
-                    selected_dice = float(prompt_quality_entry[15])
-                    prompt_quality_entry.extend([
-                        final_metrics["dice"],
-                        final_metrics["iou"],
-                        final_metrics["dice"] - selected_dice,
-                    ])
-                    prompt_quality_rows.append(prompt_quality_entry)
-
                 # ── 7. Save ───────────────────────────────────────────────────
+                if args.save_candidate_diagnostics and true_tumor:
+                    all_points = (
+                        [
+                            point
+                            for component in bone_components
+                            for point in component.positive_points
+                        ]
+                        if bone_components
+                        else point_prompts
+                    )
+                    all_negative_points = (
+                        [
+                            point
+                            for component in bone_components
+                            for point in getattr(component, "negative_points", ())
+                        ]
+                        if bone_components
+                        else []
+                    )
+                    all_boxes: list[tuple[int, int, int, int]] = []
+                    if bone_components and args.sam_prompt_mode in {"box", "box_point"}:
+                        image_height, image_width = image_rgb.shape[:2]
+                        for component in bone_components:
+                            x0, y0, x1, y1 = component.bbox
+                            box_area_ratio = (
+                                max(1, x1 - x0 + 1) * max(1, y1 - y0 + 1)
+                                / float(image_height * image_width)
+                            )
+                            if (
+                                args.max_box_area_ratio <= 0
+                                or box_area_ratio <= args.max_box_area_ratio
+                            ):
+                                all_boxes.append(tuple(component.bbox))
+                    diagnostic_path = (
+                        candidate_diagnostic_dir / f"{Path(image_name).stem}.npz"
+                    )
+                    diagnostic_row = save_candidate_diagnostics(
+                        diagnostic_path,
+                        sam_masks=sam_masks,
+                        refined_mask=refined,
+                        final_mask=final_mask,
+                        bone_support=bone_support,
+                        prompt_map=prompt_map,
+                        positive_points=all_points,
+                        negative_points=all_negative_points,
+                        boxes=all_boxes,
+                        sam_scores=sam_scores,
+                        selection_scores=selection_scores,
+                        classifier_causal_scores=classifier_causal_scores,
+                        component_ids=component_ids,
+                        prompt_modes=candidate_prompt_modes,
+                    )
+                    candidate_diagnostic_rows.append(
+                        {
+                            "image_name": str(image_name),
+                            "tumor_type": tumor_type_by_name.get(str(image_name), ""),
+                            "generation_status": (
+                                "ok" if final_mask.any() else "empty_after_localization"
+                            ),
+                            **diagnostic_row,
+                        }
+                    )
+
                 save_mask(final_mask, mask_path)
                 pseudo_manifest_rows.append(
                     {
@@ -2244,57 +2241,29 @@ def main() -> None:
         f"{pseudo_summary['manifest_sha256']}"
     )
 
-    if args.evaluate_prompt_quality:
-        import csv
-
-        quality_csv = args.output_dir / "prompt_quality.csv"
-        with quality_csv.open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.writer(handle)
-            writer.writerow([
-                "image_name", "tumor_type", "foreground_iou", "foreground_recall", "foreground_precision",
-                "point_hit_rate", "num_points", "num_hits",
-                "negative_rejection_rate", "num_negative_points", "num_false_negative_points",
-                "box_recall", "box_precision",
-                "oracle_best_single_dice", "oracle_best_single_dice_clipped", "selected_dice",
-                "oracle_gap_dice", "support_loss_dice", "selection_loss_dice",
-                "final_dice", "final_iou", "postprocess_delta_dice",
-            ])
-            writer.writerows(prompt_quality_rows)
-
-        def _mean(column_index: int) -> float:
-            values = [row[column_index] for row in prompt_quality_rows if row[column_index] == row[column_index]]
-            return sum(values) / len(values) if values else float("nan")
-
-        print(
-            f"Prompt quality ({len(prompt_quality_rows)} images with GT): "
-            f"mean foreground_iou={_mean(2):.4f} mean foreground_recall={_mean(3):.4f} "
-            f"mean foreground_precision={_mean(4):.4f} mean point_hit_rate={_mean(5):.4f} "
-            f"mean negative_rejection={_mean(8):.4f} mean box_recall={_mean(11):.4f}"
+    if args.save_candidate_diagnostics:
+        expected_tumor_names = [
+            str(sample["image_id"])
+            for sample in dataset.samples[: len(expected_names)]
+            if bool(sample.get("tumor", 0))
+        ]
+        diagnostic_summary = write_candidate_diagnostics_manifest(
+            args.output_dir,
+            candidate_diagnostic_rows,
+            expected_image_names=expected_tumor_names,
+            split=args.split,
+            image_size=args.image_size,
+            pseudo_manifest_sha256=str(pseudo_summary["manifest_sha256"]),
+            selection_method=args.selection_method,
+            support_clip_kernel=args.support_clip_kernel,
+            cam_percentile=args.cam_percentile,
         )
         print(
-            f"SAM-vs-selection oracle diagnostic (total gap decomposed into support-clip loss "
-            f"vs. mask-selection loss): "
-            f"mean oracle_best_single_dice={_mean(13):.4f} "
-            f"mean oracle_best_single_dice_clipped={_mean(14):.4f} "
-            f"mean selected_dice={_mean(15):.4f} mean total_gap={_mean(16):.4f} "
-            f"mean support_loss={_mean(17):.4f} mean selection_loss={_mean(18):.4f} "
-            f"mean final_dice={_mean(19):.4f} mean postprocess_delta={_mean(21):.4f} "
-            "(large support_loss => bone_support under-covers the lesion, fix morphology "
-            "seed/support percentiles, not mask_selection.py; large selection_loss => "
-            "bone_hybrid scoring is discarding a good clipped candidate, fix mask_selection.py)"
+            "Prediction-first candidate diagnostics frozen: "
+            f"{diagnostic_summary['manifest_rows']}/"
+            f"{diagnostic_summary['expected_tumor_images']} tumor cases; "
+            f"manifest_sha256={diagnostic_summary['manifest_sha256']}"
         )
-        if any(row[1] for row in prompt_quality_rows):
-            print("\nOracle Dice by tumor_type (breaks down where CAM localization fails):")
-            by_type: dict[str, list[float]] = {}
-            for row in prompt_quality_rows:
-                tumor_type_name = row[1]
-                oracle_dice = row[13]
-                if tumor_type_name and oracle_dice == oracle_dice:  # skip empty/NaN
-                    by_type.setdefault(tumor_type_name, []).append(oracle_dice)
-            for tumor_type_name, values in sorted(by_type.items(), key=lambda item: -len(item[1])):
-                print(f"  {tumor_type_name:<28} n={len(values):>4}  mean_oracle_dice={sum(values)/len(values):.4f}")
-        print(f"Saved per-image prompt-quality metrics to {quality_csv}")
-
 
 if __name__ == "__main__":
     main()

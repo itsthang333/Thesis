@@ -1040,4 +1040,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   generation remains unauthorized until the map audit passes. The single
   existing 15-minute monitor was retargeted from GT v3 to this version; no
   duplicate monitor was created.
+- BiomedCLIP full-validation saliency v1 version 2 completed on Kaggle in
+  164.16 seconds and passed both the in-kernel independent audit and a local
+  compact-evidence audit. The frozen cohort is exactly 371 validation images
+  (`184` tumor, `187` normal, 371 unique IDs); all 371 manifest rows contain
+  valid map hashes. Every tumor map has positive dynamic range and every known
+  normal map is exactly zero under the predeclared image-label policy.
+  Saliency-manifest SHA-256 is
+  `72360237a12802c06ea5da8cecde7dbb87d4fef7a9dbf358f09e080384267bf1`;
+  metadata SHA-256 is
+  `06109965042b9c433126101f7e32c609c8069312af58b2d0e6693ad4e77ccc4b`.
+  Local source hashes exactly match the Kaggle run for the generator, model
+  and independent auditor. Validation polygon GT was not read and test was not
+  evaluated. Maps were intentionally not downloaded locally; the next Kaggle
+  stage must consume the hash-locked kernel output directly.
+- The former inline `--evaluate-prompt-quality` path was retired because it
+  loaded validation GT before prediction generation had finished. The
+  replacement is a two-phase, prediction-first diagnostic contract:
+  generation saves pickle-free candidate/prompt/support/selected/final NPZ
+  artifacts for all 184 image-level-positive cases (including classifier-gate
+  complete misses), then freezes their hashes and cohort against the
+  pseudo-mask manifest. Only the separate
+  `evaluate_saved_candidate_diagnostics.py` process may load validation GT,
+  and only after both caller-locked manifests pass. Test is unsupported.
+  This preserves error decomposition into saliency support, prompts, proposal
+  oracle, selector and post-processing without allowing GT to influence the
+  predictions being diagnosed.
 

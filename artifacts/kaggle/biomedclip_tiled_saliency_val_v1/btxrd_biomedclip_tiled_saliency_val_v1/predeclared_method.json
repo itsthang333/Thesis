@@ -1,0 +1,39 @@
+{
+  "protocol_id": "biomedclip_tiled_val_v1",
+  "stage": "prediction-first full-validation saliency generation only",
+  "status": "conditional_on_audited_smoke_v3_pass",
+  "supervision": "images and binary image-level labels only",
+  "source_repository_commit": "26c22db7c3af18c32f66b1cd3b4c3987a10ded19",
+  "implementation_commit": "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
+  "source_hashes": {
+    "generate_biomedclip_saliency.py": "a160a5a70fb15dda3c3e72c9005f4cd45ba769468188aeda0b7ce39badedb40d",
+    "models/biomedclip_saliency.py": "18858511a8b14bec2bfed4578ed17ae1a08191728892846e3af6b19f18a86623",
+    "tools/audit_biomedclip_saliency.py": "ffc02132b02939415086116bf83b3473541f936f0af9e521d20eef1983e43a96"
+  },
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "population": {
+    "images": 371,
+    "tumor": 184,
+    "normal": 187
+  },
+  "model_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+  "output_grid": [
+    320,
+    320
+  ],
+  "method": {
+    "model": "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224",
+    "open_clip_torch": "2.32.0",
+    "transformers": "4.35.2",
+    "target_layer": "model.visual.trunk.blocks[11].norm1",
+    "reduction": "channelwise mean absolute gradient-times-activation",
+    "views": "black-padded full plus 3x3 half-short-side tiles",
+    "tile_selection": "top 3 by tumor-minus-normal contrast score",
+    "normalization": "fixed 1st/99th percentiles",
+    "fusion": "pixelwise maximum",
+    "known_normal_policy": "exact empty map from binary image label"
+  },
+  "output_contract": "write/hash all 371 maps and pass independent manifest audit; no pseudo-mask generation and no segmentation evaluator in this kernel",
+  "validation_gt_read": false,
+  "test_evaluated": false
+}

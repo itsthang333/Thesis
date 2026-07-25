@@ -1,0 +1,62 @@
+{
+  "stage": "prediction-first BiomedCLIP saliency generation",
+  "supervision": "images and binary image-level labels only",
+  "source_commit": "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
+  "source_files": {
+    "generate_biomedclip_saliency.py": "a160a5a70fb15dda3c3e72c9005f4cd45ba769468188aeda0b7ce39badedb40d",
+    "models/biomedclip_saliency.py": "18858511a8b14bec2bfed4578ed17ae1a08191728892846e3af6b19f18a86623"
+  },
+  "split": "val",
+  "population": {
+    "images": 371,
+    "tumor": 184,
+    "normal": 187
+  },
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "model": {
+    "id": "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224",
+    "weight_path_name": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+    "weight_bytes": 783705670,
+    "weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be"
+  },
+  "prompts": {
+    "tumor": [
+      "A bone radiograph showing a bone tumor.",
+      "An x-ray image with a bone neoplasm.",
+      "An x-ray image showing an abnormal bone lesion."
+    ],
+    "normal": [
+      "A normal bone radiograph without a tumor.",
+      "An x-ray image of healthy bone.",
+      "An x-ray image without a bone lesion."
+    ],
+    "sha256": "e8f859fbcc2b7814b974cc4d28ce8b07a6bf012d62ddf7dd72fe058938466ad9"
+  },
+  "view_contract": {
+    "saliency_reduction": "channelwise mean absolute gradient-times-activation",
+    "target_layer": "model.visual.trunk.blocks[11].norm1",
+    "full_view": "black pad to square",
+    "crop_fraction_of_short_side": 0.5,
+    "positions_per_axis": 3,
+    "top_k_tiles_by_contrast_score": 3,
+    "normalization_percentiles": [
+      1.0,
+      99.0
+    ],
+    "fusion": "pixelwise maximum of full view and selected tiles",
+    "output_size": 320
+  },
+  "manifest_sha256": "72360237a12802c06ea5da8cecde7dbb87d4fef7a9dbf358f09e080384267bf1",
+  "annotation_contract": "directory_present_but_never_enumerated_or_opened",
+  "validation_gt_read": false,
+  "test_evaluated": false,
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "cuda": "12.8",
+    "gpu": "Tesla T4",
+    "open_clip": "2.32.0",
+    "transformers": "4.35.2"
+  },
+  "completed_at_utc": "2026-07-25T22:38:16.620661+00:00"
+}

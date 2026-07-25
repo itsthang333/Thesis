@@ -1,0 +1,74 @@
+{
+  "run_id": "btxrd_biomedclip_tiled_saliency_val_v1",
+  "source_repository_commit": "26c22db7c3af18c32f66b1cd3b4c3987a10ded19",
+  "implementation_commit": "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
+  "source_hashes": {
+    "generate_biomedclip_saliency.py": "a160a5a70fb15dda3c3e72c9005f4cd45ba769468188aeda0b7ce39badedb40d",
+    "models/biomedclip_saliency.py": "18858511a8b14bec2bfed4578ed17ae1a08191728892846e3af6b19f18a86623",
+    "tools/audit_biomedclip_saliency.py": "ffc02132b02939415086116bf83b3473541f936f0af9e521d20eef1983e43a96"
+  },
+  "kernel_script_sha256": "c3b5088dfbe1ac7713af440ef541395d9968f03d371b75f91e5129c8428476cf",
+  "protocol_sha256": "9f5b2250d4a82fa8d546f3dd1dd3c7b477235addb9ab93d709637dc376015ea8",
+  "protocol_audit_canonical_lf_sha256": "844cd93cd5240c917e15b4c3dbce011514ea6d1bb4847c6095e8c91617e54225",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "split_population": {
+    "images": 371,
+    "tumor": 184,
+    "normal": 187
+  },
+  "model_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+  "commands": {
+    "generate": [
+      "/usr/bin/python3",
+      "/kaggle/working/thesis_source/project/generate_biomedclip_saliency.py",
+      "--dataset-root",
+      "/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD",
+      "--split-manifest",
+      "/kaggle/working/frozen_split_manifest.csv",
+      "--split",
+      "val",
+      "--output-dir",
+      "/kaggle/working/btxrd_biomedclip_tiled_saliency_val_v1/saliency",
+      "--expected-split-sha256",
+      "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+      "--expected-model-weight-sha256",
+      "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+      "--source-commit",
+      "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
+      "--output-size",
+      "320",
+      "--seed",
+      "42",
+      "--device",
+      "cuda"
+    ],
+    "audit": [
+      "/usr/bin/python3",
+      "/kaggle/working/thesis_source/project/tools/audit_biomedclip_saliency.py",
+      "--root",
+      "/kaggle/working/btxrd_biomedclip_tiled_saliency_val_v1/saliency",
+      "--split-manifest",
+      "/kaggle/working/frozen_split_manifest.csv",
+      "--local-project",
+      "/kaggle/working/thesis_source/project",
+      "--split",
+      "val",
+      "--expected-model-weight-sha256",
+      "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+      "--output-json",
+      "/kaggle/working/btxrd_biomedclip_tiled_saliency_val_v1/independent_saliency_audit.json"
+    ]
+  },
+  "artifacts": {
+    "saliency_manifest_sha256": "72360237a12802c06ea5da8cecde7dbb87d4fef7a9dbf358f09e080384267bf1",
+    "saliency_metadata_sha256": "06109965042b9c433126101f7e32c609c8069312af58b2d0e6693ad4e77ccc4b",
+    "independent_audit_sha256": "9afafa07681a83f7b31b08c9cceb79635d2dd58af53c7a8a9561f7ae01de21cf"
+  },
+  "environment": {
+    "python": "3.12.13"
+  },
+  "validation_gt_read": false,
+  "test_evaluated": false,
+  "elapsed_seconds": 164.1583592891693,
+  "finished_at_utc": "2026-07-25T22:38:21.051965+00:00"
+}

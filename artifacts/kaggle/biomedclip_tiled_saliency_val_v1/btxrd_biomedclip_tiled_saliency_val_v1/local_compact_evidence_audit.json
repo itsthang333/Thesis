@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "audit_role": "local independent audit of compact Kaggle evidence",
+  "kernel": "itsthang333/btxrd-biomedclip-tiled-saliency-val-v1",
+  "kernel_status": "COMPLETE",
+  "split": "val",
+  "test_evaluated": false,
+  "validation_gt_read": false,
+  "cohort": {
+    "rows": 371,
+    "unique_image_ids": 371,
+    "tumor": 184,
+    "normal": 187,
+    "valid_map_sha256_rows": 371,
+    "tumor_maps_with_positive_dynamic_range": 184,
+    "normal_maps_with_zero_dynamic_range": 187
+  },
+  "locked_hashes": {
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "model_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+    "protocol_sha256": "9f5b2250d4a82fa8d546f3dd1dd3c7b477235addb9ab93d709637dc376015ea8",
+    "kernel_script_sha256": "c3b5088dfbe1ac7713af440ef541395d9968f03d371b75f91e5129c8428476cf",
+    "saliency_manifest_sha256": "72360237a12802c06ea5da8cecde7dbb87d4fef7a9dbf358f09e080384267bf1",
+    "saliency_metadata_sha256": "06109965042b9c433126101f7e32c609c8069312af58b2d0e6693ad4e77ccc4b",
+    "independent_saliency_audit_sha256": "9afafa07681a83f7b31b08c9cceb79635d2dd58af53c7a8a9561f7ae01de21cf",
+    "predeclared_method_sha256": "d8a4162fab6a4d806184a935234394dc721fc45034943896f52a1758cfae22f1",
+    "run_manifest_sha256": "0f3a0e79f1e74bb8f352c728ca8618680e15729c024c79a327caeb1022e8bba3"
+  },
+  "local_source_hash_matches": {
+    "generate_biomedclip_saliency.py": true,
+    "models/biomedclip_saliency.py": true,
+    "tools/audit_biomedclip_saliency.py": true
+  },
+  "artifact_policy": {
+    "maps_downloaded_locally": false,
+    "maps_to_be_consumed_as_locked_kaggle_kernel_output": true
+  },
+  "decision": "PASS Gate: full-validation BiomedCLIP saliency is eligible for a prediction-first downstream pseudo-mask diagnostic; no GT/test access is authorized during generation."
+}
