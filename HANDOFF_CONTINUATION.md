@@ -868,4 +868,17 @@ Next controlled experiment:
 - Do not sweep SSC weight, CAM thresholds, or selectors. If the stride-8
   feature tap fails Gate C, close this SSC family and move to a separately
   predeclared CAM-logit supervision/CPM hypothesis.
+- Source bundle v11 and the real T4 optimizer smoke test are complete. The
+  latter passed 6/6 tests with a `[8,512,40,40]` tap, finite total loss and
+  gradient norm, unchanged inference state dict, and no test evaluation.
+  Compact evidence is
+  `artifacts/kaggle/s2c_stride8_torch_test_v1/`.
+- `itsthang333/btxrd-s2c-stride8-binary-classifier-v1` version 2 is the active
+  Kaggle run. Version 2 changes only the fail-closed wrapper key from the
+  generic projection name to the exact checkpoint key
+  `feature_projection`; the scientific recipe is unchanged.
+- Prepared Gate-C payload:
+  `tmp/kaggle/s2c_stride8_gate_c_v1`. It intentionally fails the frozen-hash
+  test until the completed classifier checkpoint SHA-256 is independently
+  verified. Do not launch it early.
 

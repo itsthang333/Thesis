@@ -50,16 +50,51 @@ class DenseNet121AnatomyClassifier(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
         self.classifier = nn.Linear(self.classifier_input_features, num_classes)
 
-    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+    def _forward_backbone(
+        self,
+        x: torch.Tensor,
+        *,
+        capture_stage: str | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+        if capture_stage not in {None, "denseblock2"}:
+            raise ValueError(
+                "capture_stage must be None or 'denseblock2'"
+            )
+        captured = None
         with torch.cuda.amp.autocast(enabled=False):
-            x = self.features(x.float())
+            x = x.float()
+            for name, module in self.features.named_children():
+                x = module(x)
+                if name == capture_stage:
+                    captured = torch.relu(x)
             x = torch.relu(x)
-        return x
+        if capture_stage is not None and captured is None:
+            raise RuntimeError(f"DenseNet feature stage was not found: {capture_stage}")
+        return x, captured
 
-    def forward(self, x: torch.Tensor, return_features: bool = False):
-        features = self.forward_features(x)
-        pooled = self.avgpool(features).flatten(1)
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+        features, _ = self._forward_backbone(x)
+        return features
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        return_features: bool = False,
+        feature_stage: str = "final",
+    ):
+        if feature_stage not in {"final", "denseblock2"}:
+            raise ValueError(
+                "feature_stage must be 'final' or 'denseblock2'"
+            )
+        capture_stage = feature_stage if return_features and feature_stage != "final" else None
+        final_features, captured = self._forward_backbone(
+            x,
+            capture_stage=capture_stage,
+        )
+        pooled = self.avgpool(final_features).flatten(1)
         logits = self.classifier(self.dropout(pooled))
         if return_features:
-            return logits, features
+            spatial_features = final_features if feature_stage == "final" else captured
+            assert spatial_features is not None
+            return logits, spatial_features
         return logits

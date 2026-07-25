@@ -207,4 +207,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tests spatial granularity; no validation-derived threshold or per-image
   gate is introduced. If this stride-8 candidate fails Gate C, close the SSC
   feature-tap family rather than tuning loss weights on validation.
+- Source bundle `itsthang333/btxrd-small-lesion-research-v11` passed 58/58
+  local tests. Private T4 smoke kernel
+  `itsthang333/btxrd-s2c-stride8-torch-test-v1` then passed all six targeted
+  tests and one real batch-8, 320 px AMP optimizer step. The captured feature
+  is `[8,512,40,40]`; BCE/SSC/total loss is
+  `0.692756/4.124758/4.817514`; gradient norm is finite at `3.758309`; and the
+  inference state dictionary is unchanged. Compact evidence is under
+  `artifacts/kaggle/s2c_stride8_torch_test_v1/`.
+- Classifier kernel
+  `itsthang333/btxrd-s2c-stride8-binary-classifier-v1` version 2 is running.
+  Version 2 corrects only a wrapper metadata-key mismatch
+  (`feature_projection`); the predeclared training recipe and source bundle
+  are unchanged. Gate C remains fail-closed until the completed checkpoint
+  SHA-256 replaces its placeholder.
+- The WACV 2024 paper *Small Objects Matters in Weakly-supervised Semantic
+  Segmentation* was reviewed as a bounded downstream option. Its
+  size-weighted cross-entropy upweights pixels in small connected components
+  of pseudo masks, while an EWC second stage preserves the preceding
+  large-object objective. This is relevant only after pseudo-label/localization
+  quality improves: the existing Gate-D experiment already showed that merely
+  fitting the current Dice-0.234 pseudo masks does not generalize. It is
+  therefore not allowed to displace the current stride-8 Gate-C test or to be
+  reported as a pseudo-mask improvement.
 

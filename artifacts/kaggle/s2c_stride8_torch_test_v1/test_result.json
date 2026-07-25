@@ -1,0 +1,39 @@
+{
+  "test_evaluated": false,
+  "torch_tests_passed": 6,
+  "real_densenet_optimizer_step_passed": true,
+  "faithful_batch_size": 8,
+  "faithful_image_size": 320,
+  "faithful_region_map_size": 80,
+  "amp": true,
+  "classification_loss": 0.6927562355995178,
+  "ssc_loss": 4.124757766723633,
+  "optimization_loss": 4.817513942718506,
+  "gradient_norm_before_clip": 3.7583093643188477,
+  "feature_shape": [
+    8,
+    512,
+    40,
+    40
+  ],
+  "feature_stage": "denseblock2",
+  "feature_stride": 8,
+  "feature_channels": 512,
+  "feature_projection": "none",
+  "state_dict_unchanged_by_ssc": true,
+  "region_map_shape": [
+    8,
+    80,
+    80
+  ],
+  "torch": "2.10.0+cu128",
+  "cuda": "12.8",
+  "gpu": "Tesla T4",
+  "source_hashes": {
+    "models/sam_segment_contrastive.py": "9aa8971f98b5e134cc2cb1c1f627caa55aa523f5950c4e2590be22510f79530e",
+    "models/classifier.py": "83ae792015a370777acb4e35781396de08a78bb43ef93092d17d5501a9776355",
+    "train_classifier.py": "aac8c283a55b69964c1c53a92c5850d1dcdae7deaa55a4a1746714ea9228b318",
+    "tests/test_sam_segment_contrastive.py": "5dbfd10a5a09800adb9a8977e97ab7e9177b94ecbc34673fca610776a5f7b6fe"
+  },
+  "kernel_script_sha256": "cf101756d2544dc925e589b4ac84891a7dc594fefc1ec5735dde604358d19a7c"
+}

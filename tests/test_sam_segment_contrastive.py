@@ -20,6 +20,44 @@ except Exception:
 
 @unittest.skipUnless(TORCH_AVAILABLE, "PyTorch is not installed in the local audit runtime")
 class SamSegmentContrastiveLossTests(unittest.TestCase):
+    def test_denseblock2_tap_is_stride8_and_preserves_logits(self) -> None:
+        from models.classifier import DenseNet121AnatomyClassifier
+
+        torch.manual_seed(7)
+        model = DenseNet121AnatomyClassifier(
+            num_classes=1,
+            pretrained=False,
+            dropout=0.0,
+        ).eval()
+        images = torch.randn(1, 3, 64, 64)
+        with torch.no_grad():
+            plain_logits = model(images)
+            tapped_logits, features = model(
+                images,
+                return_features=True,
+                feature_stage="denseblock2",
+            )
+        self.assertEqual(tuple(features.shape), (1, 512, 8, 8))
+        self.assertTrue(torch.equal(plain_logits, tapped_logits))
+        self.assertFalse(
+            any("sam_segment" in key or "projection" in key for key in model.state_dict())
+        )
+
+    def test_denseblock2_tap_rejects_unknown_stage(self) -> None:
+        from models.classifier import DenseNet121AnatomyClassifier
+
+        model = DenseNet121AnatomyClassifier(
+            num_classes=1,
+            pretrained=False,
+            dropout=0.0,
+        ).eval()
+        with self.assertRaisesRegex(ValueError, "feature_stage"):
+            model(
+                torch.randn(1, 3, 64, 64),
+                return_features=True,
+                feature_stage="unknown",
+            )
+
     def test_coherent_region_features_have_lower_loss(self) -> None:
         from models.sam_segment_contrastive import sam_segment_contrastive_loss
 

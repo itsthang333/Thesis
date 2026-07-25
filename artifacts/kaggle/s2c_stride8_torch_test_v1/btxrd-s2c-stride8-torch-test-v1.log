@@ -1,0 +1,69 @@
+[{"stream_name":"stderr","time":12.432409865,"data":"test_coherent_region_features_have_lower_loss (test_sam_segment_contrastive.SamSegmentContrastiveLossTests.test_coherent_region_features_have_lower_loss) ... ok\n"}
+,{"stream_name":"stderr","time":12.577056844,"data":"test_denseblock2_tap_is_stride8_and_preserves_logits (test_sam_segment_contrastive.SamSegmentContrastiveLossTests.test_denseblock2_tap_is_stride8_and_preserves_logits) ... /kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v11/project/models/classifier.py:64: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":12.577095765,"data":"  with torch.cuda.amp.autocast(enabled=False):\n"}
+,{"stream_name":"stderr","time":12.747916015,"data":"ok\n"}
+,{"stream_name":"stderr","time":12.862763967,"data":"test_denseblock2_tap_rejects_unknown_stage (test_sam_segment_contrastive.SamSegmentContrastiveLossTests.test_denseblock2_tap_rejects_unknown_stage) ... ok\n"}
+,{"stream_name":"stderr","time":12.864793379,"data":"test_ignore_zero_does_not_create_a_prototype (test_sam_segment_contrastive.SamSegmentContrastiveLossTests.test_ignore_zero_does_not_create_a_prototype) ... ok\n"}
+,{"stream_name":"stderr","time":12.866146883,"data":"test_store_rejects_manifest_hash_mismatch (test_sam_segment_contrastive.SamSegmentMapStoreTests.test_store_rejects_manifest_hash_mismatch) ... ok\n"}
+,{"stream_name":"stderr","time":12.866635608,"data":"test_store_verifies_population_hashes_and_loads_uint16 (test_sam_segment_contrastive.SamSegmentMapStoreTests.test_store_verifies_population_hashes_and_loads_uint16) ... /kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v11/tests/test_sam_segment_contrastive.py:106: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)\n"}
+,{"stream_name":"stderr","time":12.866651258,"data":"  Image.fromarray(\n"}
+,{"stream_name":"stderr","time":12.910053392,"data":"ok\n"}
+,{"stream_name":"stderr","time":12.910075962,"data":"\n"}
+,{"stream_name":"stderr","time":12.910080399,"data":"----------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":12.910085661,"data":"Ran 6 tests in 6.636s\n"}
+,{"stream_name":"stderr","time":12.910091968,"data":"\n"}
+,{"stream_name":"stderr","time":12.910094621,"data":"OK\n"}
+,{"stream_name":"stderr","time":18.493560418,"data":"/kaggle/src/script.py:90: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":18.49360194,"data":"  scaler = torch.cuda.amp.GradScaler(enabled=True)\n"}
+,{"stream_name":"stderr","time":18.614290344,"data":"/kaggle/src/script.py:106: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":18.614326315,"data":"  with torch.cuda.amp.autocast(enabled=True):\n"}
+,{"stream_name":"stderr","time":18.615321174,"data":"/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v11/project/models/classifier.py:64: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":18.615336404,"data":"  with torch.cuda.amp.autocast(enabled=False):\n"}
+,{"stream_name":"stderr","time":19.571209447,"data":"/kaggle/src/script.py:124: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n"}
+,{"stream_name":"stderr","time":19.571246239,"data":"  with torch.cuda.amp.autocast(enabled=False):\n"}
+,{"stream_name":"stdout","time":20.680527211,"data":"{\n"}
+,{"stream_name":"stdout","time":20.680601744,"data":"  \"test_evaluated\": false,\n"}
+,{"stream_name":"stdout","time":20.680605828,"data":"  \"torch_tests_passed\": 6,\n"}
+,{"stream_name":"stdout","time":20.6806084,"data":"  \"real_densenet_optimizer_step_passed\": true,\n"}
+,{"stream_name":"stdout","time":20.680610832,"data":"  \"faithful_batch_size\": 8,\n"}
+,{"stream_name":"stdout","time":20.680613159,"data":"  \"faithful_image_size\": 320,\n"}
+,{"stream_name":"stdout","time":20.680615854,"data":"  \"faithful_region_map_size\": 80,\n"}
+,{"stream_name":"stdout","time":20.680624185,"data":"  \"amp\": true,\n"}
+,{"stream_name":"stdout","time":20.680626626,"data":"  \"classification_loss\": 0.6927562355995178,\n"}
+,{"stream_name":"stdout","time":20.680628942,"data":"  \"ssc_loss\": 4.124757766723633,\n"}
+,{"stream_name":"stdout","time":20.680631193,"data":"  \"optimization_loss\": 4.817513942718506,\n"}
+,{"stream_name":"stdout","time":20.680633429,"data":"  \"gradient_norm_before_clip\": 3.7583093643188477,\n"}
+,{"stream_name":"stdout","time":20.680635699,"data":"  \"feature_shape\": [\n"}
+,{"stream_name":"stdout","time":20.680637942,"data":"    8,\n"}
+,{"stream_name":"stdout","time":20.6806401,"data":"    512,\n"}
+,{"stream_name":"stdout","time":20.680642238,"data":"    40,\n"}
+,{"stream_name":"stdout","time":20.680644894,"data":"    40\n"}
+,{"stream_name":"stdout","time":20.680648276,"data":"  ],\n"}
+,{"stream_name":"stdout","time":20.68065143,"data":"  \"feature_stage\": \"denseblock2\",\n"}
+,{"stream_name":"stdout","time":20.680653966,"data":"  \"feature_stride\": 8,\n"}
+,{"stream_name":"stdout","time":20.680656346,"data":"  \"feature_channels\": 512,\n"}
+,{"stream_name":"stdout","time":20.680658559,"data":"  \"feature_projection\": \"none\",\n"}
+,{"stream_name":"stdout","time":20.680660867,"data":"  \"state_dict_unchanged_by_ssc\": true,\n"}
+,{"stream_name":"stdout","time":20.680663091,"data":"  \"region_map_shape\": [\n"}
+,{"stream_name":"stdout","time":20.680665358,"data":"    8,\n"}
+,{"stream_name":"stdout","time":20.680667462,"data":"    80,\n"}
+,{"stream_name":"stdout","time":20.680669562,"data":"    80\n"}
+,{"stream_name":"stdout","time":20.680671654,"data":"  ],\n"}
+,{"stream_name":"stdout","time":20.68067374,"data":"  \"torch\": \"2.10.0+cu128\",\n"}
+,{"stream_name":"stdout","time":20.680676008,"data":"  \"cuda\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":20.680678279,"data":"  \"gpu\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":20.680680547,"data":"  \"source_hashes\": {\n"}
+,{"stream_name":"stdout","time":20.680682889,"data":"    \"models/sam_segment_contrastive.py\": \"9aa8971f98b5e134cc2cb1c1f627caa55aa523f5950c4e2590be22510f79530e\",\n"}
+,{"stream_name":"stdout","time":20.680685414,"data":"    \"models/classifier.py\": \"83ae792015a370777acb4e35781396de08a78bb43ef93092d17d5501a9776355\",\n"}
+,{"stream_name":"stdout","time":20.680687811,"data":"    \"train_classifier.py\": \"aac8c283a55b69964c1c53a92c5850d1dcdae7deaa55a4a1746714ea9228b318\",\n"}
+,{"stream_name":"stdout","time":20.680690171,"data":"    \"tests/test_sam_segment_contrastive.py\": \"5dbfd10a5a09800adb9a8977e97ab7e9177b94ecbc34673fca610776a5f7b6fe\"\n"}
+,{"stream_name":"stdout","time":20.680692554,"data":"  },\n"}
+,{"stream_name":"stdout","time":20.680694704,"data":"  \"kernel_script_sha256\": \"cf101756d2544dc925e589b4ac84891a7dc594fefc1ec5735dde604358d19a7c\"\n"}
+,{"stream_name":"stdout","time":20.680697067,"data":"}\n"}
+,{"stream_name":"stderr","time":23.858375311,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":23.858417614,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":24.088966796,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":24.088991234,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":24.700653556,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":25.91027288,"data":"[NbConvertApp] Writing 304849 bytes to __results__.html\n"}
+]

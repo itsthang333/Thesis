@@ -165,6 +165,16 @@ def parse_args() -> argparse.Namespace:
             "Cosine-logit multiplier for S2C SSC. The official S2C default is 1.0."
         ),
     )
+    parser.add_argument(
+        "--sam-segment-feature-stage",
+        type=str,
+        default="denseblock2",
+        choices=["denseblock2"],
+        help=(
+            "Frozen DenseNet feature tap for SSC. denseblock2 is 40x40/stride 8 "
+            "at the required 320px input and is the only predeclared option."
+        ),
+    )
     args = parser.parse_args()
     args._explicit_options = {
         token.split("=", 1)[0]
@@ -328,6 +338,7 @@ def run_epoch(
     sam_segment_store: SamSegmentMapStore | None = None,
     sam_segment_contrastive_weight: float = 0.0,
     sam_segment_temperature: float = 1.0,
+    sam_segment_feature_stage: str = "denseblock2",
 ) -> tuple[float, dict[str, float], dict[str, int], dict[str, float]]:
     total_classification_loss = 0.0
     total_ssc_loss = 0.0
@@ -356,7 +367,11 @@ def run_epoch(
                     and sam_segment_contrastive_weight > 0
                 )
                 if use_ssc:
-                    logits, features = model(images, return_features=True)
+                    logits, features = model(
+                        images,
+                        return_features=True,
+                        feature_stage=sam_segment_feature_stage,
+                    )
                 else:
                     logits = model(images)
                 classification_loss = criterion(logits, targets)
@@ -794,6 +809,11 @@ def main() -> None:
             "method": "S2C SAM-Segment Contrasting",
             "weight": float(args.sam_segment_contrastive_weight),
             "temperature": float(args.sam_segment_temperature),
+            "feature_stage": args.sam_segment_feature_stage,
+            "feature_stride": 8,
+            "feature_channels": 512,
+            "feature_activation": "relu",
+            "feature_projection": "none",
             "map_root": str(args.sam_segment_map_root.resolve()),
             "manifest_sha256": sam_segment_store.manifest_sha256,
             "map_shape": list(sam_segment_store.map_shape or ()),
@@ -943,6 +963,7 @@ def main() -> None:
                 sam_segment_store=sam_segment_store,
                 sam_segment_contrastive_weight=args.sam_segment_contrastive_weight,
                 sam_segment_temperature=args.sam_segment_temperature,
+                sam_segment_feature_stage=args.sam_segment_feature_stage,
             )
             val_loss, val_metrics, val_counts, _val_diagnostics = run_epoch(
                 model,
