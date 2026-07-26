@@ -7,6 +7,8 @@ only from clean-train normal radiographs selected by image-level labels.
 """
 
 from dataclasses import dataclass
+import hashlib
+import json
 
 import numpy as np
 
@@ -19,6 +21,73 @@ def l2_normalize_rows(values: np.ndarray, *, epsilon: float = 1e-12) -> np.ndarr
     if np.any(norms <= epsilon):
         raise ValueError("Feature bank contains a zero-norm embedding")
     return values / norms
+
+
+def make_seeded_random_projection(
+    *,
+    input_dim: int,
+    output_dim: int,
+    seed: int,
+) -> np.ndarray:
+    """Create a frozen Gaussian Johnson-Lindenstrauss projection.
+
+    A direct seeded matrix avoids a dataset-fitted PCA step and therefore
+    cannot leak validation distribution into the nominal representation.
+    """
+    if input_dim <= 0 or output_dim <= 0 or output_dim > input_dim:
+        raise ValueError("Projection dimensions require 0 < output_dim <= input_dim")
+    rng = np.random.default_rng(seed)
+    projection = rng.standard_normal((input_dim, output_dim), dtype=np.float32)
+    projection /= np.sqrt(float(output_dim))
+    if not np.isfinite(projection).all():
+        raise RuntimeError("Random projection contains non-finite values")
+    return projection
+
+
+def projection_sha256(projection: np.ndarray) -> str:
+    projection = np.asarray(projection, dtype=np.float32)
+    if projection.ndim != 2 or not np.isfinite(projection).all():
+        raise ValueError("Projection must be a finite matrix")
+    payload = {
+        "dtype": "float32",
+        "shape": list(projection.shape),
+        "bytes_sha256": hashlib.sha256(
+            projection.astype("<f4", copy=False).tobytes(order="C")
+        ).hexdigest(),
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def project_features(
+    values: np.ndarray,
+    projection: np.ndarray,
+) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float32)
+    projection = np.asarray(projection, dtype=np.float32)
+    if values.ndim < 2 or projection.ndim != 2:
+        raise ValueError("Features/projection must have embedding dimensions")
+    if values.shape[-1] != projection.shape[0]:
+        raise ValueError("Feature and projection dimensions are incompatible")
+    if not np.isfinite(values).all() or not np.isfinite(projection).all():
+        raise ValueError("Features/projection must be finite")
+    projected = values @ projection
+    return l2_normalize_rows(projected)
+
+
+def projected_bank_size_bytes(
+    *,
+    images: int,
+    grid_height: int,
+    grid_width: int,
+    output_dim: int,
+    bytes_per_value: int = 2,
+) -> int:
+    dimensions = (images, grid_height, grid_width, output_dim, bytes_per_value)
+    if any(value <= 0 for value in dimensions):
+        raise ValueError("Projected bank dimensions must be positive")
+    return int(np.prod(dimensions, dtype=np.int64))
 
 
 def retrieve_normal_context(

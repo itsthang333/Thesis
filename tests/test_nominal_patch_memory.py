@@ -26,6 +26,10 @@ FrozenNormalCalibration = MEMORY.FrozenNormalCalibration
 blend_anomaly_scores = MEMORY.blend_anomaly_scores
 cosine_anomaly_scores = MEMORY.cosine_anomaly_scores
 flatten_context_patch_bank = MEMORY.flatten_context_patch_bank
+make_seeded_random_projection = MEMORY.make_seeded_random_projection
+project_features = MEMORY.project_features
+projected_bank_size_bytes = MEMORY.projected_bank_size_bytes
+projection_sha256 = MEMORY.projection_sha256
 retrieve_normal_context = MEMORY.retrieve_normal_context
 spatial_cosine_anomaly_scores = MEMORY.spatial_cosine_anomaly_scores
 
@@ -37,6 +41,29 @@ def test_retrieve_normal_context_is_deterministic_on_ties() -> None:
     )
     assert indices.tolist() == [0, 1]
     assert similarities.tolist() == [1.0, 1.0]
+
+
+def test_random_projection_is_seeded_hash_locked_and_normalized() -> None:
+    first = make_seeded_random_projection(input_dim=8, output_dim=4, seed=42)
+    second = make_seeded_random_projection(input_dim=8, output_dim=4, seed=42)
+    different = make_seeded_random_projection(input_dim=8, output_dim=4, seed=43)
+    assert np.array_equal(first, second)
+    assert not np.array_equal(first, different)
+    assert projection_sha256(first) == projection_sha256(second)
+    features = np.eye(8, dtype=np.float32)[:3]
+    projected = project_features(features, first)
+    assert projected.shape == (3, 4)
+    assert np.allclose(np.linalg.norm(projected, axis=1), 1.0)
+
+
+def test_projected_bank_size_is_explicit() -> None:
+    assert projected_bank_size_bytes(
+        images=1493,
+        grid_height=28,
+        grid_width=28,
+        output_dim=128,
+        bytes_per_value=2,
+    ) == 299_651_072
 
 
 def test_cosine_anomaly_score_detects_unseen_direction() -> None:
