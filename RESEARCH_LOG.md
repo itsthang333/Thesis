@@ -2297,3 +2297,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `theo-d-i-rad-dino-affinity-decoder` follows the kernel; no duplicate
   monitor or competing local heavy job was created.
 
+## 2026-07-27 - Affinity-decoder probe v1 source-binding error
+
+- Kaggle kernel version 1 terminated approximately three seconds after
+  checkout, before package installation, Torch tests, dataset discovery,
+  model download, feature extraction, training, validation prediction, GT
+  access or test access. The direct Kaggle traceback is
+  `RuntimeError: Source hash mismatch: datasets/btxrd.py`.
+- Root cause is limited to provenance serialization: the prelaunch audit
+  recorded Windows CRLF working-tree SHA-256 values for
+  `project/datasets/btxrd.py` and `project/datasets/common.py`, while Kaggle
+  correctly checked out the canonical LF Git blobs. The canonical blob
+  hashes are respectively
+  `d8f0804be4e81cdb4d58e4673708c1067eb7d9b49b42bb78cb6051188c156001`
+  and
+  `1927eb358a9db1a0e9c2571be5e222c3edd9d69814dfb4bc3375bd3f8593b98a`.
+- The admissible correction changes only those two source-hash bindings in
+  the protocol/wrapper. The scientific source commit, architecture, teacher,
+  losses, schedule, gate, split, baseline, model, prediction geometry and
+  evaluation contract are unchanged. Corrected protocol SHA-256 is
+  `53e2bb82ef35862b6c3e20387edbe60776f9d1ba46da516b9d5116db3fa2e7cf`.
+  `consumer_trained=false`, validation GT was not read, and test remains
+  locked. Version 2 may rerun only after the corrected wrapper is re-audited.
+
