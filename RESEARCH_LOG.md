@@ -1869,3 +1869,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   plus broad-context-suppression head, while keeping the same frozen
   RAD-DINO encoder, image-label-only supervision and prediction-first audit.
 
+## 2026-07-26 - INSIGHT mechanism probe launched after dense-MIL audit
+
+- The dense-MIL probe reached a terminal result and passed its independent
+  physical audit, satisfying the prelaunch condition for the separate
+  INSIGHT transfer probe. No dense-MIL threshold, pseudo-mask or consumer was
+  promoted.
+- Kaggle kernel
+  `itsthang333/btxrd-rad-dino-insight-mechanism-probe-v1` version 1 was
+  pushed as a private Tesla T4 run and entered `RUNNING`. The actual Kaggle
+  slug follows the URL returned by the push; no duplicate dense-MIL job was
+  created.
+- The probe remains mechanism-only: frozen RAD-DINO patch tokens, a local
+  3x3 detector branch, depthwise-separable 9x9 context-suppression branch,
+  fixed fusion, SmoothMax image-level pooling and spectral-decoupling
+  regularization. It uses 2,981 clean-train binary image labels only,
+  produces fixed single/multiscale validation maps, freezes all maps before
+  validation-GT evaluation, and cannot select a threshold, create training
+  pseudo-masks, train a consumer or access test.
+- Prelaunch evidence remains `PRELAUNCH_PASS` at wrapper SHA-256
+  `5708c75603f838a9b9d753a9cc8a893eb295a2ae8a74a459f80939e766251a42`,
+  source commit `813d6848941ac6a3ebe77538f4c0e34a0ddf7f4a`, protocol SHA-256
+  `12289c77839a2c24d6e9ad92165fb1d95f46cf9c6b51ec8c6b693eba6aded83f`,
+  split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c` and
+  RAD-DINO weight SHA-256
+  `dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae`.
+  Status polling must remain on the exact URL slug above; no test is read
+  while the kernel is non-terminal.
+
