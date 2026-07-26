@@ -2497,4 +2497,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   existing `btxrd-pseudomask` environment (16 tests). Heavy computation has
   not run locally, validation GT has not been read for the new selector,
   `consumer_trained=false`, and `test_evaluated=false`.
+- Protocol was frozen in commit
+  `ca9462f13588243c0e490c2f18564038e49fd857` at canonical Git-blob
+  SHA-256
+  `07bd490d309a850daeba1d00590d36968360aa7a70bebe3d418feb7c44ffadf7`.
+  The prelaunch wrapper audit
+  `affinity_guided_proposal_selector_val_v1_wrapper_audit.json` passes.
+  Wrapper SHA-256 is
+  `526bf6b32cdbee15a872290ffaa85e0b92950559c0aac63e97fafe2addaf7e47`;
+  it binds all 12 canonical source blobs, the direct private dataset mount,
+  same-gallery baseline evidence, both frozen proposal sources, checkpoints
+  and split. Static order verification places generation before manifest
+  freeze, both validation-GT evaluators after freeze, and even the
+  GT-derived baseline metric artifacts after freeze. Kernel metadata
+  SHA-256 is
+  `183dc06f9cbb853531ae7a6f9786b0b8637e2bf8e10d7d02fd3bc144c51a5f5c`.
 

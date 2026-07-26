@@ -1,0 +1,72 @@
+{
+  "audit_id": "affinity_guided_proposal_selector_val_v1_wrapper_audit",
+  "status": "PASS",
+  "audited_before_launch": true,
+  "wrapper": {
+    "path": "tmp/kaggle/affinity_guided_proposal_selector_val_v1/run_affinity_guided_proposal_selector_val_v1.py",
+    "bytes": 37864,
+    "sha256": "526bf6b32cdbee15a872290ffaa85e0b92950559c0aac63e97fafe2addaf7e47"
+  },
+  "kernel_metadata": {
+    "id": "itsthang333/btxrd-affinity-guided-proposal-selector-val-v1",
+    "bytes": 1030,
+    "sha256": "183dc06f9cbb853531ae7a6f9786b0b8637e2bf8e10d7d02fd3bc144c51a5f5c",
+    "private": true,
+    "gpu": true,
+    "machine_shape": "NvidiaTeslaT4",
+    "internet": true,
+    "dataset_sources": [
+      "itsthang333/btxrd-model-checkpoints",
+      "itsthang333/btxrd-raw",
+      "itsthang333/btxrd-rad-dino-affinity-selector-input-v1"
+    ],
+    "kernel_sources": [
+      "itsthang333/btxrd-clean-binary-classifier",
+      "itsthang333/btxrd-biomedclip-tiled-saliency-val-v1",
+      "itsthang333/btxrd-biomedclip-layercam-proposal-gallery-val-v1"
+    ]
+  },
+  "bindings": {
+    "checkout_commit": "ca9462f13588243c0e490c2f18564038e49fd857",
+    "scientific_implementation_commit": "56c01f241bda4b80183918517999f7ddbb37fc55",
+    "protocol_sha256": "07bd490d309a850daeba1d00590d36968360aa7a70bebe3d418feb7c44ffadf7",
+    "git_split_sha256": "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8",
+    "frozen_crlf_split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "same_gallery_baseline_per_image_sha256": "59bead9162ff90851087c67ecac7f1bc8d9133e7c6a8aebb2f3db6e6606d7b05",
+    "same_gallery_baseline_prompt_quality_sha256": "200dbc4172dcd7e5bd7c2c0a23734725925e3153d73b52a2796c4f3fcda5ab9a",
+    "same_gallery_baseline_pseudo_manifest_sha256": "6962bb4b92a0311f2f8d0f5e68e14a4aac0e4199994868c6eb0d5626f08790ba",
+    "affinity_prediction_manifest_sha256": "c066744a2acf3df3a078f4b25a973ea21bf140adeb88f713c90de8886a53fc42",
+    "affinity_package_manifest_sha256": "f9fb008a19c9f0ed1cb5ffb3f04f4f35227562614ca1dd6655fdaff6373167e9",
+    "affinity_prediction_freeze_sha256": "ed8b323dfaddf8fc9b5f7061a49dbc74f67187a45fb55c73ebdb46f36f9ff4ad"
+  },
+  "checks": {
+    "wrapper_python_compile": "PASS",
+    "wrapper_ast_parse": "PASS",
+    "protocol_json_parse": "PASS",
+    "all_twelve_runtime_source_hashes_match_canonical_git_blobs": "PASS",
+    "sanitized_local_input_all_371_map_hashes_and_schemas": "PASS",
+    "sanitized_local_input_exact_cohort_371_184_187": "PASS",
+    "sanitized_local_input_exact_map_bytes_76028288": "PASS",
+    "direct_kaggle_dataset_mount_is_audited_before_prediction": "PASS",
+    "affinity_metadata_and_all_physical_map_hashes_fail_closed": "PASS",
+    "same_gallery_layercam_external_and_sam_counts_must_match_per_image": "PASS",
+    "selector_is_exactly_one_raw_candidate": "PASS",
+    "rank_support_family_is_fixed_80_85_90_95_97_99": "PASS",
+    "support_clipping_union_and_boundary_postprocessing_are_disabled": "PASS",
+    "four_focused_local_test_modules_16_tests": "PASS",
+    "prediction_and_candidate_manifests_freeze_before_gt_evaluation": "PASS",
+    "gt_derived_baseline_evaluation_artifacts_are_opened_only_after_freeze": "PASS",
+    "paired_complete_group_bootstrap_iterations_10000": "PASS",
+    "consumer_protocol_requires_oracle_statistical_and_halfway_quality_gates": "PASS",
+    "consumer_trained_false": "PASS",
+    "test_evaluated_false": "PASS"
+  },
+  "launch_contract": {
+    "single_kernel": true,
+    "single_monitor": true,
+    "monitor_interval_minutes": 5,
+    "heavy_compute_local": false
+  },
+  "consumer_trained": false,
+  "test_evaluated": false
+}
