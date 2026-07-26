@@ -1,0 +1,62 @@
+{
+  "arm": "multiscale",
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "image_level_auroc_from_raw_p99": 0.7230731225296443,
+  "tumor_localization": {
+    "overall": {
+      "n": 184,
+      "pixel_ap": 0.027812135879929638,
+      "pixel_auroc": 0.514065425427901,
+      "argmax_hit": 0.016304347826086956,
+      "saliency_mass_in_gt": 0.01781063245164269,
+      "dice_p90": 0.022101102912095254,
+      "dice_p95": 0.016897507251646758,
+      "dice_p97": 0.01407809592081356,
+      "dice_p99": 0.006650559794882946
+    },
+    "small": {
+      "n": 94,
+      "pixel_ap": 0.007289536274160612,
+      "pixel_auroc": 0.5219268378408255,
+      "argmax_hit": 0.010638297872340425,
+      "saliency_mass_in_gt": 0.0018914344790600967,
+      "dice_p90": 0.0036342471812347093,
+      "dice_p95": 0.003804357634468855,
+      "dice_p97": 0.004403642056977699,
+      "dice_p99": 0.0016073811272354908
+    },
+    "medium": {
+      "n": 72,
+      "pixel_ap": 0.03234602792766281,
+      "pixel_auroc": 0.5136711041772891,
+      "argmax_hit": 0.013888888888888888,
+      "saliency_mass_in_gt": 0.021247063967154187,
+      "dice_p90": 0.029607747110439137,
+      "dice_p95": 0.02157363662269222,
+      "dice_p97": 0.01798792072456747,
+      "dice_p99": 0.009209864878401875
+    },
+    "large": {
+      "n": 18,
+      "pixel_ap": 0.11685014340801297,
+      "pixel_auroc": 0.4745886678295197,
+      "argmax_hit": 0.05555555555555555,
+      "saliency_mass_in_gt": 0.08719849580197242,
+      "dice_p90": 0.08851255049099149,
+      "dice_p95": 0.06656832665717176,
+      "dice_p97": 0.048960944661385196,
+      "dice_p99": 0.022749939169632832
+    }
+  },
+  "prediction_manifest_sha256": "4074232f546929724c2eaf2c5e5b0b6957b824b2270935762364b9d1e9eb084b",
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "complete_misses_included": true,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

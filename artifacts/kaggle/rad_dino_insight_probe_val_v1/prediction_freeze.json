@@ -1,0 +1,12 @@
+{
+  "source_commit": "da676c9e862d36792fcbe8fdea268a557ecafe2c",
+  "protocol_sha256": "a7aa1adfd99237193f1cb7ea61a049e7195d60fb73994bcd71a51cdadab0918a",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "checkpoint_sha256": "35bc926bb5768e1f2879dd7ae8ce37ac1e8538ed1223bcd65e81424f2f950286",
+  "prediction_manifests": {
+    "single_scale": "478d0aad0907c015af3394842aff1a0d63112d5b259eff63a88a84c62a18cc3c",
+    "multiscale": "4074232f546929724c2eaf2c5e5b0b6957b824b2270935762364b9d1e9eb084b"
+  },
+  "validation_gt_read": false,
+  "test_evaluated": false
+}

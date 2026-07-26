@@ -1932,3 +1932,67 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   with the corrected hashes; no duplicate monitor or competing heavy job was
   created.
 
+## 2026-07-26 - INSIGHT mechanism probe completed and rejected
+
+- Kaggle kernel
+  `itsthang333/btxrd-rad-dino-insight-mechanism-probe-v1` version 2
+  completed. The independent physical auditor returned `PASS`, re-hashing
+  the wrapper, probe/head sources, source commit, protocol, split, RAD-DINO
+  snapshot, checkpoint, prediction freeze, all 742 maps, both manifests,
+  evaluation files and the stored paired comparison. Wrapper SHA-256 is
+  `839a1256e6a1c602d28dca9379f861e567d8deafa0adaab04b52f3c5323afd1e`;
+  source commit is `da676c9e862d36792fcbe8fdea268a557ecafe2c`;
+  protocol SHA-256 is
+  `a7aa1adfd99237193f1cb7ea61a049e7195d60fb73994bcd71a51cdadab0918a`;
+  split SHA-256 is
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  RAD-DINO weight SHA-256 is
+  `dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae`;
+  checkpoint SHA-256 is
+  `35bc926bb5768e1f2879dd7ae8ce37ac1e8538ed1223bcd65e81424f2f950286`.
+- The weak-supervision and evaluation contract is intact: training uses
+  2,981 clean-train binary image labels and no segmentation annotation or
+  validation input; every validation prediction is frozen before GT access;
+  cohorts are `371/184/187`, subgroups are `94/72/18`, complete misses are
+  included, `consumer_trained=false` and `test_evaluated=false`.
+- Single-scale absolute localization improves substantially over the rejected
+  linear dense-MIL head but remains weak. Overall pixel AP/AUROC is
+  `0.03207112/0.53918555`; small `0.00553422/0.54775549`; medium
+  `0.03905904/0.54029862`; large `0.14270105/0.48997917`.
+  Overall/small/medium/large fixed-p90 Dice is
+  `0.03117199/0.00513944/0.04241465/0.12214912`; small argmax hit remains
+  `0/94`.
+- Relative to dense-MIL single-scale, INSIGHT raises overall pixel AP/AUROC
+  by `+0.01484530/+0.21756486` and p90 Dice by `+0.02261334`; on small it
+  raises AP/AUROC by `+0.00392043/+0.21930550` and p90 Dice by
+  `+0.00424195`. Thus local detection plus context suppression is a real
+  architectural improvement over a per-patch linear scorer, but it still
+  fails to identify the tumor maximum in every small case.
+- The stronger normal-memory single-scale arm remains clearly better:
+  INSIGHT versus nominal memory is lower by `-0.06126783` overall pixel AP,
+  `-0.22836631` overall pixel AUROC and `-0.05348178` overall p90 Dice.
+  On small it is lower by `-0.01243283/-0.23938799/-0.00784295`, and its
+  argmax hit is `0/94` versus `2/94`. Therefore INSIGHT does not replace the
+  retained nominal-memory ranking signal.
+- Fixed multiscale fusion degrades the INSIGHT map. Overall pixel AP/AUROC
+  changes by `-0.00425899/-0.02512013`, with AUROC CI95 entirely negative
+  `[-0.04218326,-0.00756706]`; p90 Dice changes by `-0.00907089`
+  `[-0.01454480,-0.00393037]`. Small AP rises only `+0.00175532` with CI
+  crossing zero while small AUROC, saliency mass and p90/p95 Dice fall.
+  Medium and large show statistically coherent AP/AUROC or overlap
+  regressions. The multiscale arm is rejected.
+- Decision: reject both INSIGHT arms as standalone pseudo-mask sources and
+  do not select a threshold or train a consumer. The experiment validates
+  the benefit of learning local/context features but shows that a
+  classification-pooled 32x32 heatmap remains too coarse and poorly
+  calibrated for sub-1% tumors. The next admissible mechanism is the already
+  reviewed WeCLIP-style dynamic affinity/refinement direction: retain a
+  frozen radiograph encoder, learn a lightweight spatial decoder from image
+  labels, and regularize/refine it using token affinity rather than another
+  post-hoc selector. It requires a new predeclared prediction-first probe
+  before any pseudo-mask or U-Net consumer.
+- Compact audited evidence is stored under
+  `artifacts/kaggle/rad_dino_insight_probe_val_v1/`; reconstructible maps and
+  the 1.10 MB checkpoint remain in the ignored temporary audit directory.
+  Test remains locked.
+
