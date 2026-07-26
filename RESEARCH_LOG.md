@@ -1250,3 +1250,46 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Compact evidence and the four-run decision are stored under
   `artifacts/kaggle/gt_reference_independent_reproduction_v4/`.
 
+## 2026-07-26 — Prompt/source graph selector predeclaration
+
+- The complete prior log was re-audited before choosing the next direction.
+  Repeated scalar selectors (`prompt_hybrid`, classifier-causal,
+  `source_consensus` and related CAM/source weighting) did not recover richer
+  proposal pools. The frozen LayerCAM plus BiomedCLIP gallery is different:
+  its unchanged final selector changes Dice by only `+0.0030049` overall and
+  harms large lesions by `-0.0369836`, while its raw single-candidate oracle
+  improves overall/small/medium/large by
+  `+0.0746499/+0.0370158/+0.1166933/+0.1030096`, with every paired CI95 lower
+  bound positive. This locks proposal selection, not proposal availability, as
+  the immediate bottleneck.
+- A no-GT selector was implemented and isolated in commit
+  `abdcaca482d676b45a902ad3d927c832877a39d4`. It first selects a robust SAM
+  medoid per morphology component using lexicographic cross-prompt agreement,
+  then clusters component medoids at fixed IoU `0.50`, prioritizes clusters
+  supported by both independent proposal sources, and retains single-source
+  clusters as a fallback for lesions missed by one source. No learned or
+  validation-fitted score weights, true lesion size, subgroup identity,
+  segmentation GT or GT-oracle routing are available to the selector.
+- Candidate diagnostics now preserve aligned per-candidate proposal-source
+  provenance in a backward-compatible schema-v2 payload. The frozen LayerCAM
+  support clip and all proposal generation, prompt, SAM, morphology and
+  post-processing settings remain unchanged.
+- Thirteen focused tests pass, including cross-source priority,
+  single-source small-lesion fallback, support clipping, provenance
+  fail-closed behavior and the existing prediction-first/gallery contracts.
+  The full local suite passes 135 tests; two unrelated pre-existing GT
+  stability-audit tests require Python's `zip(..., strict=True)` and cannot run
+  in the available Python 3.9 research environment. This is an environment
+  compatibility issue outside the selector and will be rechecked in Kaggle's
+  runtime before generation.
+- Protocol `prompt_source_graph_selector_val_v1` is physically predeclared
+  before any new prediction at SHA-256
+  `b0a4f49755a3bf3cf316823addb9bf4d7a9cc7109f192bdb23ac69abea5c0bb0`.
+  It locks commit/file/split/checkpoint/saliency/baseline hashes, the
+  `371/184/187` cohort and `94/72/18` fixed subgroups. Predictions and
+  schema-v2 diagnostics must be hash-frozen before validation GT is loaded.
+  Direct promotion requires an overall paired final-Dice CI95 lower bound
+  above zero and no mean degradation in any subgroup. Train pseudo masks and
+  paired U-Net consumer training remain forbidden unless this Gate-C passes;
+  test remains locked.
+
