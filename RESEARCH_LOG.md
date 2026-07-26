@@ -2641,3 +2641,55 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   are recorded there; the 371 PNG masks remain only in the isolated audit
   download.
 
+## 2026-07-27 - RAD-DINO geodesic seed-expansion probe predeclaration
+
+- The next experiment changes representation-to-shape transfer rather than
+  adding another proposal-level scalar selector. The primary UM-CAM paper,
+  journal record and official code were re-inspected at
+  `https://arxiv.org/abs/2306.11490`,
+  `https://doi.org/10.1016/j.patcog.2024.111204`, and official repository
+  commit `1389eddb3858fc1c5793329e68f9794245f8c3a4`. The transferable mechanism
+  is foreground/background seeding plus exponential geodesic-distance fusion.
+  This is not claimed as an exact reproduction: the official script reads GT
+  in its loop and searches a CAM threshold, whereas the BTXRD runner contains
+  no segmentation-dataset/annotation import and performs no threshold search.
+- Source commit `1b5d0cc151530d71b49e1088e20a94a42c25e08a` implements a
+  deterministic 64x64 eight-neighbour feature graph. Foreground and
+  background seeds are the already-frozen exact top 1% and bottom 50%
+  affinity ranks; the remaining 49% stays continuous/ambiguous. Graph costs
+  combine grayscale with a seed-42 frozen 768-to-16 projection of spatial
+  RAD-DINO tokens. Each branch is normalized by its own within-image median
+  local edge magnitude and receives equal energy, so there is no fitted
+  scalar weight. Exact multi-source Dijkstra distances feed a ratio-1
+  exponential foreground/background cue, which is confidence-blended with
+  the source map and reprojected to 320x320. Image-level normal cases remain
+  exact zero maps.
+- This design directly targets the measured failure. The rejected global
+  affinity selector chose top-20-percent support on 122/184 tumors and
+  produced median predicted-to-GT area ratios of `169.83x` small and `10.14x`
+  medium. In the new graph, p99 seeds stay fixed while expansion is local and
+  boundary-sensitive; no whole SAM proposal, union, morphology, true size,
+  subgroup routing, validation-tuned percentile or fitted propagation ratio
+  is available.
+- Protocol `rad_dino_geodesic_seed_expansion_val_v1` is physically
+  predeclared before any new geodesic prediction at SHA-256
+  `fbf49a452664e52e6efe07059282e91f1819cf2fab66baa0d4a1d3025fcfe1b2`.
+  It binds the immutable 371-map affinity input package, RAD-DINO snapshot,
+  split, source commit and canonical Git-blob hashes. All maps, manifests and
+  generation metadata must be frozen before the evaluator can instantiate
+  the validation segmentation dataset. Cohort remains `371/184/187`,
+  subgroup counts `94/72/18`, complete misses are included, paired
+  complete-group bootstrap uses 10,000 replicates, and test remains locked.
+- The all-required gate retains the seven absolute affinity-decoder checks and
+  adds shape-transfer evidence: overall p90-Dice improvement must have paired
+  CI95 lower bound above zero and mean p90 Dice cannot decrease in any
+  subgroup. Passing authorizes only a separate train-map/partial-label
+  consumer protocol; failing rejects the exact graph without changing ranks,
+  ratio, branch weights, graph cost or thresholds after GT. No consumer is
+  trained automatically.
+- Module, prediction runner, post-freeze evaluator, continuous projection,
+  rank seeding, feature normalization, boundary-respecting shortest path,
+  exponential fusion and complete-group bootstrap compile and pass 11 focused
+  tests locally. Heavy inference has not run, validation GT has not been read
+  for this experiment, `consumer_trained=false`, and `test_evaluated=false`.
+

@@ -1,0 +1,233 @@
+{
+  "protocol_id": "rad_dino_geodesic_seed_expansion_val_v1",
+  "status": "predeclared_before_any_geodesic_refinement_prediction",
+  "scientific_role": "prediction-first spatial mechanism probe that transfers a frozen affinity-decoder ranking signal into variable local shape by deterministic image-and-RAD-DINO geodesic propagation; not a pseudo-mask consumer",
+  "scientific_question": "Can fixed high-confidence rank seeds from the image-label-only RAD-DINO affinity decoder be expanded along radiograph and frozen token structure without the anatomy-scale overexpansion caused by global support matching?",
+  "motivation": {
+    "source_affinity_decoder": {
+      "overall_pixel_auroc": 0.8049819853225434,
+      "small_pixel_auroc": 0.8414754089824474,
+      "small_dice_p97": 0.034453835796234844,
+      "interpretation": "continuous localization/ranking is credible but fixed support does not recover extent"
+    },
+    "rejected_raw_proposal_selector": {
+      "final_dice": {
+        "overall": 0.09742940592029915,
+        "small": 0.026619021970039472,
+        "medium": 0.11328909894003503,
+        "large": 0.4037781944704897
+      },
+      "selected_top_20_percent_support_images": 122,
+      "tumor_images": 184,
+      "median_predicted_to_gt_area_ratio": {
+        "overall": 24.438791041082332,
+        "small": 169.83373369938226,
+        "medium": 10.136760507352971,
+        "large": 1.1869604624079333
+      },
+      "interpretation": "global support matching rewards whole anatomy-scale SAM masks; a local variable-area transfer is required"
+    }
+  },
+  "literature_transfer": {
+    "primary": {
+      "paper": "Fu et al., UM-CAM: Uncertainty-weighted Multi-resolution Class Activation Maps for Weakly-supervised Segmentation",
+      "arxiv": "https://arxiv.org/abs/2306.11490",
+      "journal_doi": "https://doi.org/10.1016/j.patcog.2024.111204",
+      "official_code": "https://github.com/HiLab-git/UM-CAM",
+      "official_code_commit_inspected": "1389eddb3858fc1c5793329e68f9794245f8c3a4",
+      "transferred_mechanism": "foreground/background seeds, local geodesic distance, exponential cue fusion, and continuous ambiguity"
+    },
+    "explicit_non_reproduction": [
+      "The official script imports segmentation GT before generation; this protocol separates generation and freezes all maps before any GT loader.",
+      "The official script searches a per-image CAM threshold and uses the largest component centroid/bounding-box corners; this protocol instead reuses the affinity decoder's already-frozen top-1-percent foreground and bottom-50-percent background rank mining.",
+      "FastGeodis is replaced by an exact deterministic 8-neighbour shortest-path graph so the implementation is source-controlled and independently auditable.",
+      "No journal validation-tuned segmentation loss weight, CAM threshold, lesion size, or BTXRD validation metric is transferred."
+    ]
+  },
+  "weak_supervision_contract": {
+    "prediction_inputs_allowed": [
+      "371 frozen clean-validation radiographs",
+      "their binary image-level normal/tumor labels",
+      "frozen externally pretrained RAD-DINO weights",
+      "371 frozen image-label-only affinity-decoder maps and their complete provenance package",
+      "deterministic grayscale intensity derived from each radiograph"
+    ],
+    "prediction_inputs_forbidden": [
+      "BTXRD polygons, masks, boxes, points, scribbles, lesion area, or subgroup identity",
+      "validation GT metrics or per-image oracle routing during map generation",
+      "test images, labels, or metrics"
+    ],
+    "validation_gt": "may be imported only after the 371 output maps, manifest, generation metadata, and prediction_freeze.json are written and hash-bound",
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "data_contract": {
+    "split_manifest": "artifacts/data_audit/split_manifest.csv",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "validation": {
+      "images": 371,
+      "tumor": 184,
+      "normal": 187
+    },
+    "post_freeze_subgroups": {
+      "small": "GT area <1%, n=94",
+      "medium": "GT area 1% to <5%, n=72",
+      "large": "GT area >=5%, n=18"
+    },
+    "complete_misses_included": true
+  },
+  "frozen_affinity_input": {
+    "dataset": "itsthang333/btxrd-rad-dino-affinity-selector-input-v1",
+    "version": 1,
+    "source_commit": "38b5bb4b9d7a846862443b442ff406f0ab41d3bd",
+    "source_protocol_sha256": "53e2bb82ef35862b6c3e20387edbe60776f9d1ba46da516b9d5116db3fa2e7cf",
+    "checkpoint_sha256": "c5f9278de813396628fffe8360f09c786f1b74750861c23192d568405535b0d3",
+    "prediction_manifest_sha256": "c066744a2acf3df3a078f4b25a973ea21bf140adeb88f713c90de8886a53fc42",
+    "prediction_freeze_sha256": "ed8b323dfaddf8fc9b5f7061a49dbc74f67187a45fb55c73ebdb46f36f9ff4ad",
+    "package_manifest_sha256": "f9fb008a19c9f0ed1cb5ffb3f04f4f35227562614ca1dd6655fdaff6373167e9",
+    "maps": 371,
+    "image_size": 320,
+    "contains_validation_gt_derived_metrics": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "frozen_rad_dino": {
+    "model": "microsoft/rad-dino",
+    "revision": "110cbc18d5133582e320b43d53bf5c44e410c936",
+    "config_sha256": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede",
+    "preprocessor_sha256": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56",
+    "weights_sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae",
+    "input": "black square pad then bicubic resize to 448x448 with frozen RAD-DINO normalization",
+    "patch_size": 14,
+    "token_grid": "32x32x768 final-layer patch tokens",
+    "training": "frozen; inference only"
+  },
+  "geodesic_refinement": {
+    "graph_grid": "64x64 in the continuous unpadded image-content frame",
+    "structural_projection": {
+      "method": "seed-42 frozen Gaussian projection followed by per-token L2 normalization",
+      "input_dim": 768,
+      "output_dim": 16,
+      "dataset_fitted": false
+    },
+    "feature_branches": [
+      "grayscale standardized within the image",
+      "frozen projected RAD-DINO spatial tokens"
+    ],
+    "branch_normalization": "divide each branch by its within-image median positive horizontal/vertical neighbour difference, then weight both branches by 1/sqrt(2)",
+    "edge_graph": {
+      "connectivity": 8,
+      "cost": "step_length multiplied by combined feature difference plus the numeric spatial floor 1/max(height,width)",
+      "shortest_path": "exact deterministic multi-source Dijkstra"
+    },
+    "seeds": {
+      "foreground": "exact top 1% rank of the frozen affinity map on the 64x64 content grid",
+      "background": "exact bottom 50% rank of the same map",
+      "ties": "stable row-major order",
+      "disjoint": true,
+      "ambiguous": "remaining 49% stays continuous and is not assigned a hard training label"
+    },
+    "fusion": {
+      "formula": "UM-CAM-inspired exponential foreground/background geodesic cue with ratio 1, confidence blend with the source affinity map, then content-only min-max normalization",
+      "seed_preserving": true,
+      "output": "bilinear 320x320 float16 map with deterministic radiograph background zeroed"
+    },
+    "normal_images": "exact all-zero output from the supplied image-level normal label"
+  },
+  "prediction_freeze": {
+    "maps": 371,
+    "manifest_fields": [
+      "image_id",
+      "group_id",
+      "tumor",
+      "map_path",
+      "map_sha256",
+      "source_map_sha256",
+      "raw_mean",
+      "raw_p99",
+      "raw_max",
+      "seed and ambiguity diagnostics"
+    ],
+    "required_before_gt": [
+      "all physical source-map hashes verified",
+      "all source image hashes verified",
+      "all 371 output-map hashes verified",
+      "generation metadata hash frozen",
+      "prediction manifest hash frozen",
+      "prediction_freeze.json written"
+    ]
+  },
+  "evaluation": {
+    "baseline": {
+      "arm": "frozen RAD-DINO affinity-decoder validation maps before geodesic refinement",
+      "per_image_path": "artifacts/kaggle/rad_dino_affinity_decoder_probe_val_v1/predictions/evaluation/per_image.csv",
+      "per_image_sha256": "facc4405234d33ebb3eeda697d6d232ac35170112fc829bebde48fc955aed8ea"
+    },
+    "continuous": [
+      "image-level AUROC from raw foreground p99 over all 371 images",
+      "per-tumor pixel AP",
+      "per-tumor pixel AUROC",
+      "argmax hit",
+      "saliency mass inside GT"
+    ],
+    "fixed_nonselective_diagnostics": [
+      "p90 Dice",
+      "p95 Dice",
+      "p97 Dice",
+      "p99 Dice"
+    ],
+    "comparison": "geodesic-minus-source for every localization metric with paired complete-group bootstrap, 10000 replicates, seed family 20260727",
+    "threshold_selection": "none"
+  },
+  "predeclared_gate": {
+    "all_checks_required": true,
+    "absolute_minimum": {
+      "image_level_auroc_from_raw_p99": 0.65,
+      "overall_pixel_auroc": 0.75,
+      "small_pixel_auroc": 0.77,
+      "overall_dice_p90": 0.1,
+      "small_dice_p97": 0.03,
+      "medium_dice_p90": 0.12,
+      "large_dice_p90": 0.35
+    },
+    "relative_required": {
+      "overall_dice_p90": "geodesic-minus-source paired complete-group CI95 lower bound >0",
+      "subgroups_dice_p90": "mean delta >=0 separately for small, medium, and large"
+    },
+    "on_pass": "authorize only the creation of a separate immutable train-map and partial-label/consistency consumer protocol; do not train automatically",
+    "on_fail": "reject this fixed geodesic configuration without changing ranks, ratio, feature weights, graph cost, thresholds, or routing after GT"
+  },
+  "relation_to_operational_goal": {
+    "goal_protocol": "artifacts/research_protocols/wsss_feasible_validation_goal_v1.json",
+    "goal_protocol_sha256": "d180dfa25d01515ca7d36902a5e495754ed85ff6b8e3c9bebace99aabc6d5ccf",
+    "consumer_minimum_dice": {
+      "overall": 0.340240391925425,
+      "small": 0.17895493248574226,
+      "medium": 0.5124417783635557,
+      "large": 0.4937033565801355
+    },
+    "interpretation": "this probe cannot satisfy the consumer goal; it tests whether local representation-to-shape transfer is strong enough to justify a separately frozen consumer"
+  },
+  "source": {
+    "commit": "1b5d0cc151530d71b49e1088e20a94a42c25e08a",
+    "files": {
+      "project/run_rad_dino_geodesic_seed_probe.py": "f8ec86cec2340e284dededf197e3ede5a2e916d2c24466e7420ea41b3bf30666",
+      "project/evaluate_rad_dino_geodesic_seed_probe.py": "e4d23ca1de684ee7e63100c6e6afa1707ab7ebdea8b2963fb11646b1fe728c7c",
+      "project/pseudo/geodesic_seed_expansion.py": "e08881615a4bf74b31b16fff813094683bae2cbe92d2763e388707fedbbae16d",
+      "project/pseudo/affinity_selector_input.py": "19f667c7eeef86c40409966d03798e5bebe3db588f0ae13bf2aa811cb6d440c6",
+      "project/mae_reconstruction_io.py": "57d5c3f548037f2b88bda9a64f8353503b5cae96129b8102e422aec785a69a4c",
+      "project/models/mae_reconstruction.py": "80da8e6cae5a8701f4ed5296a21170654141e6d0606e4913c11b923749687c06",
+      "project/models/nominal_patch_memory.py": "f59138491334da5479170b0600f8028c37bac99514a0524b8edb2277e3f1dc8b",
+      "project/datasets/btxrd.py": "dcb509a3a0406d158ecde040a00f5319237817f4409d5ca517061398fe09e3d9",
+      "project/datasets/common.py": "21d5efb20c09cbd69989cb9dfe9b5849707d3aa8000411b9518e3bf5f8fbda96",
+      "tests/test_geodesic_seed_expansion.py": "fac853d56d0b4e68425f47ebfd9faf9ebcf3e13f73cdcff07560363be643cc6f",
+      "tests/test_rad_dino_geodesic_seed_probe.py": "43a71cc1ccfb91a912c91f120d72fdb2f602dee3a8c1aab62aa25037b020e2ed",
+      "tests/test_evaluate_rad_dino_geodesic_seed_probe.py": "4399d1f6a70bcbb7086f20459f4adb4d5abac0eca3e67b5b54917325d96b1823"
+    }
+  },
+  "runtime": {
+    "heavy_compute": "Kaggle GPU only",
+    "transformers": "4.50.2",
+    "test_locked": true
+  }
+}
