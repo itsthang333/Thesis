@@ -71,7 +71,10 @@
     "bootstrap_seed": 42,
     "subgroup_membership_usage": "post-prediction diagnosis only; never used by inference or per-image routing",
     "authoritative_auditor": "../../../project/tools/audit_wsl_gt_pair.py",
-    "required_auditor_argument": "--goal-tolerance 0.10"
+    "required_auditor_arguments": [
+      "--goal-protocol artifacts/reference/gt_resnet18_unet_448_v1/paired_protocol_v2.json",
+      "--expected-goal-protocol-sha256 <canonical-LF hash locked before consumer execution>"
+    ]
   },
   "current_inflight_mae_probe": {
     "protocol": "../../research_protocols/mae_normality_reconstruction_probe_val_v1.json",

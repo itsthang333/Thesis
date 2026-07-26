@@ -168,6 +168,14 @@ class WslGtPairAuditTests(unittest.TestCase):
             )
             self.assertAlmostEqual(lower, reference - 0.10)
             self.assertAlmostEqual(upper, reference + 0.10)
+        validated = AUDIT.validate_goal_protocol(
+            root / "paired_protocol_v2.json",
+            expected_canonical_lf_sha256=(
+                "2f7965b2ece0c00e9db6441562c489f84b5ccb942619a3c6a3d08ca2328359d0"
+            ),
+        )
+        self.assertEqual(validated["goal_tolerance"], 0.10)
+        self.assertFalse(validated["test_evaluated"])
 
 
 if __name__ == "__main__":

@@ -24,7 +24,9 @@ Primary objective:
   `paired_protocol_v2.json`. The earlier `paired_protocol_v1.json` and all
   evidence evaluated at tolerance `0.05` remain immutable historical records.
   The reference, consumer invariants and allowed supervision difference did
-  not change.
+  not change. Protocol v2 canonical-LF SHA-256 is
+  `2f7965b2ece0c00e9db6441562c489f84b5ccb942619a3c6a3d08ca2328359d0`;
+  future pair audits must supply the protocol and this expected hash.
 - Do not use data leakage, redefine metrics, change cohorts, remove complete
   misses, or select on test. Test stays locked until the final WSL pipeline is
   frozen.

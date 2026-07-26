@@ -1444,7 +1444,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   are not rewritten.
 - Future paired consumers must cite
   `artifacts/reference/gt_resnet18_unet_448_v1/paired_protocol_v2.json` and run
-  the authoritative auditor with `--goal-tolerance 0.10`. The in-flight MAE
-  localization probe is unaffected because it trains no paired consumer and
-  has its own already-frozen mechanism gate.
+  the authoritative auditor with the physically locked protocol, canonical-LF
+  SHA-256
+  `2f7965b2ece0c00e9db6441562c489f84b5ccb942619a3c6a3d08ca2328359d0`.
+  An unlocked CLI tolerance is insufficient for future promotion. The
+  in-flight MAE localization probe is unaffected because it trains no paired
+  consumer and has its own already-frozen mechanism gate.
 

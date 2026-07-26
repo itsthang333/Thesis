@@ -248,6 +248,42 @@ def build_audit(
     return result
 
 
+def validate_goal_protocol(
+    protocol_path: Path,
+    *,
+    expected_canonical_lf_sha256: str,
+) -> dict[str, Any]:
+    protocol_path = protocol_path.resolve()
+    actual_hash = sha256_canonical_text(protocol_path)
+    if actual_hash != expected_canonical_lf_sha256:
+        raise ValueError("Paired goal protocol canonical-LF SHA-256 mismatch")
+    protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+    if protocol.get("status") != "effective_for_future_wsl_consumers":
+        raise ValueError("Paired goal protocol is not effective")
+    tolerance = float(protocol.get("goal_tolerance", -1))
+    if not math.isclose(tolerance, 0.10, rel_tol=0.0, abs_tol=1e-15):
+        raise ValueError("Paired goal v2 tolerance must be 0.10")
+    if protocol.get("reference_lock") != "reference_lock.json":
+        raise ValueError("Paired goal protocol references an unexpected GT lock")
+    if protocol["consumer_invariants"].get("test_evaluated") is not False:
+        raise ValueError("Paired goal protocol does not keep test locked")
+    expected_minima = {
+        "small_lt_1pct": 0.22895493248574225,
+        "medium_1_to_5pct": 0.5624417783635557,
+        "large_ge_5pct": 0.5937033565801355,
+    }
+    for subgroup, expected in expected_minima.items():
+        actual = float(protocol["subgroup_contract"][subgroup]["new_minimum_wsl_dice"])
+        if not math.isclose(actual, expected, rel_tol=0.0, abs_tol=1e-15):
+            raise ValueError(f"Paired goal minimum changed: {subgroup}")
+    return {
+        "protocol_id": protocol["protocol_id"],
+        "canonical_lf_sha256": actual_hash,
+        "goal_tolerance": tolerance,
+        "test_evaluated": False,
+    }
+
+
 def verify_reference_lock(lock_path: Path) -> dict[str, Any]:
     lock_path = lock_path.resolve()
     lock = json.loads(lock_path.read_text(encoding="utf-8"))
@@ -332,9 +368,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--goal-tolerance",
         type=float,
-        default=0.05,
-        help="Allowed absolute subgroup mean-Dice gap; historical v1 default is 0.05",
+        default=None,
+        help="Allowed gap. Omit for historical v1=0.05; v2 is loaded from --goal-protocol.",
     )
+    parser.add_argument("--goal-protocol", type=Path)
+    parser.add_argument("--expected-goal-protocol-sha256")
     return parser.parse_args()
 
 
@@ -342,14 +380,41 @@ def main() -> None:
     args = parse_args()
     if args.bootstrap_iterations <= 0:
         raise ValueError("--bootstrap-iterations must be positive")
+    goal_protocol = None
+    if args.goal_protocol is not None:
+        if not args.expected_goal_protocol_sha256:
+            raise ValueError(
+                "--goal-protocol requires --expected-goal-protocol-sha256"
+            )
+        goal_protocol = validate_goal_protocol(
+            args.goal_protocol,
+            expected_canonical_lf_sha256=args.expected_goal_protocol_sha256,
+        )
+        if (
+            args.goal_tolerance is not None
+            and not math.isclose(
+                args.goal_tolerance,
+                float(goal_protocol["goal_tolerance"]),
+                rel_tol=0.0,
+                abs_tol=1e-15,
+            )
+        ):
+            raise ValueError("--goal-tolerance conflicts with locked goal protocol")
+        goal_tolerance = float(goal_protocol["goal_tolerance"])
+    else:
+        goal_tolerance = 0.05 if args.goal_tolerance is None else args.goal_tolerance
     result = build_audit(
         args.split_manifest,
         args.reference_per_image,
         args.candidate_per_image,
         iterations=args.bootstrap_iterations,
         seed=args.bootstrap_seed,
-        goal_tolerance=args.goal_tolerance,
+        goal_tolerance=goal_tolerance,
     )
+    result["goal_protocol"] = goal_protocol or {
+        "protocol_id": "historical_inline_v1",
+        "goal_tolerance": goal_tolerance,
+    }
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
