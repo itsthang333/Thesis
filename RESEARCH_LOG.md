@@ -1773,6 +1773,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   replicates, prediction freeze before validation GT, and
   `test_evaluated=false`. It cannot promote a threshold, create train
   pseudo-masks, or train a consumer on its own.
+- The prelaunch wrapper audit is `PRELAUNCH_PASS` with wrapper SHA-256
+  `5708c75603f838a9b9d753a9cc8a893eb295a2ae8a74a459f80939e766251a42`,
+  source commit
+  `813d6848941ac6a3ebe77538f4c0e34a0ddf7f4a`, protocol SHA-256
+  `12289c77839a2c24d6e9ad92165fb1d95f46cf9c6b51ec8c6b693eba6aded83f`,
+  and head source SHA-256
+  `4897971f74a85f8181e28891d36a2efd9a3449d41ca60e63f95ea6bad66a7a03`.
+  The complete static evidence is
+  `artifacts/research_protocols/rad_dino_insight_probe_val_v1_wrapper_audit.json`.
 - Primary literature links for the transfer record:
   `https://proceedings.mlr.press/v298/zhang25a.html` and
   `https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html`.

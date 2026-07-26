@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "status": "PRELAUNCH_PASS",
+  "wrapper_sha256": "5708c75603f838a9b9d753a9cc8a893eb295a2ae8a74a459f80939e766251a42",
+  "source_commit": "813d6848941ac6a3ebe77538f4c0e34a0ddf7f4a",
+  "protocol_sha256": "12289c77839a2c24d6e9ad92165fb1d95f46cf9c6b51ec8c6b693eba6aded83f",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "model_weight_sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae",
+  "probe_source_sha256": "287da8e6c33ef47db35739901d2e4814d11ef847b780f886096976e96b522d2c",
+  "head_source_sha256": "4897971f74a85f8181e28891d36a2efd9a3449d41ca60e63f95ea6bad66a7a03",
+  "audit_source_sha256": "e45b0acddf52dddb5c32a5278e28cf1dca00f6ea507f81e642144f416760bd7f",
+  "static_checks": {
+    "source_checkout_and_all_declared_hashes": true,
+    "protocol_status_predeclared": true,
+    "split_cohort_2981_371_184": true,
+    "transformers_pin_4_50_2": true,
+    "prediction_freeze_before_validation_gt": true,
+    "test_evaluated": false,
+    "consumer_trained": false
+  },
+  "launch_policy": "Do not launch until RAD-DINO dense-MIL v3 has a terminal result and independent physical audit. This probe remains mechanism-only and cannot authorize a threshold, pseudo-mask generation or a paired U-Net consumer."
+}
