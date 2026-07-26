@@ -2723,4 +2723,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - The wrapper and metadata compile/audit PASS locally. No heavy inference,
   consumer training or test evaluation occurred during this freeze; the
   kernel had not been launched when this evidence was written.
+- After the prelaunch evidence was committed and pushed at `a790067`, private
+  Kaggle kernel
+  `itsthang333/btxrd-rad-dino-geodesic-seed-expansion-val-v1` version 1 was
+  launched successfully and entered `RUNNING`. Exactly one five-minute
+  heartbeat is active with ID `theo-d-i-rad-dino-geodesic`; no duplicate
+  monitor was created. The monitor is required to remove itself on terminal
+  status before output audit or any implementation-only rerun.
 
