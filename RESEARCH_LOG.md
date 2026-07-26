@@ -1729,4 +1729,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `torch.initial_seed()` without invoking CUDA inside forked workers.
   Scientific parameters and the image-label-only supervision contract are
   unchanged.
+- The corrected source is pinned at commit
+  `e0741a9fddca7bf3fdac93e21dee3c8dfb4b6cc1`; the canonical source hash for
+  `run_rad_dino_dense_mil_probe.py` is
+  `88084d9bfb8ec9bae14dfa558d06d113c926a94d2ef7851c0d254e05050f08fe`.
+  The wrapper is being rehashed and relaunched as the next version only after
+  this source lock is recorded.
 
