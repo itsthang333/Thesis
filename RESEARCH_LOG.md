@@ -2082,4 +2082,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   complete misses, paired complete-group bootstrap 10,000,
   `consumer_trained=false` and `test_evaluated=false`. Only the correction
   source/protocol binding and wrapper preflight may change for version 3.
+- The implementation-only protocol amendment is now frozen at canonical
+  SHA-256
+  `391c02cead32cb5708dfcac484478e37fbc499912ff993c0b41ab9885686e109`
+  and bound to repository commit
+  `07fc153a2924e998f4e9cbbd2fca7cf22f8fcf12`. The version-3 wrapper requires
+  the focused Kaggle regression test before either correction arm, retains
+  direct-kernel-output-only discovery and exact original hashes, compiles,
+  passes the static source/protocol/order audit, and has canonical-LF
+  SHA-256
+  `a878d675b659951509c92be78123392a9b029722b2ca05e12d7cacb34a7825dd`.
 
