@@ -1574,3 +1574,72 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   was created. Prelaunch evidence is stored in
   `artifacts/research_protocols/nominal_patch_memory_probe_val_v1_wrapper_audit.json`.
 
+## 2026-07-26 - RAD-DINO nominal patch-memory probe completed
+
+- Kernel `itsthang333/btxrd-rad-dino-nominal-memory-probe-v1` completed on a
+  Tesla T4. The independent physical auditor returned `PASS` and re-hashed
+  the wrapper, source commit, protocol, split, RAD-DINO snapshot, memory
+  evidence, both prediction manifests, all 742 maps, both evaluation files
+  and the paired comparison. Wrapper SHA-256 is
+  `cfe2f5ef9c52f0c3ba22df0470efda53ec487607305a55b1735470a5247c0662`;
+  source commit is `30f62d9475949dd43c9ad19c0590a0cbc854d440`;
+  protocol SHA-256 is
+  `458fee51bef0fa5754be11566db7c5ea7d08cbd8c0d97c2477d267f626494a35`;
+  split SHA-256 is
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  RAD-DINO weights SHA-256 is
+  `dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae`.
+- The image-only contract is intact: all 1,493 clean-train normal images
+  formed the memory; zero tumor train images and zero segmentation
+  annotations were used; leave-one-image-out normal calibration excluded the
+  source normal from its own context; prediction maps for all 371 validation
+  images were frozen before validation GT access; complete misses remain
+  included; `consumer_trained=false` and `test_evaluated=false`.
+  Cohorts are `371/184/187` with fixed subgroups `94/72/18`.
+- The single-scale arm's absolute localization metrics are
+  overall pixel AP/AUROC `0.09333895/0.76755187`, small
+  `0.01796705/0.78714348`, medium `0.10891928/0.72357058`, and large
+  `0.42462648/0.84116532`. Fixed p90 Dice is
+  `0.08465377/0.01298239/0.10669106/0.37078849` for
+  overall/small/medium/large. These are mechanism diagnostics, not a
+  pseudo-mask or segmentation score.
+- The fixed multiscale arm adds four overlapping 280px views with the
+  predeclared `0.5*full + 0.5*tiles` merge. Its absolute pixel AP/AUROC is
+  `0.09828856/0.78238737` overall,
+  `0.02459231/0.80165948` small,
+  `0.11203034/0.73843316` medium, and
+  `0.42817970/0.85756097` large. Fixed p90 Dice is
+  `0.08596578/0.01330257/0.10614308/0.38472003` for
+  overall/small/medium/large. Argmax hit on small remains only `2.13%`
+  (`2/94`), so the map is a ranking signal rather than a usable shape.
+- Independent complete-group bootstrap with exactly 10,000 resamples
+  reproduces the kernel result. Multiscale minus single-scale deltas on the
+  small subgroup are pixel AP `+0.00662526`
+  (95% CI `[-0.00207647,+0.01629728]`), pixel AUROC `+0.01451601`
+  (`[+0.00072478,+0.02888615]`), saliency mass in GT
+  `+0.00007170` (`[+0.00003725,+0.00011346]`), p90 Dice
+  `+0.00032018` (`[-0.00048671,+0.00115653]`) and p99 Dice
+  `+0.00789809` (`[+0.00229802,+0.01439491]`). The AUROC, saliency-mass
+  and p99 signals are coherent, while AP and ordinary fixed-percentile
+  overlap remain weak.
+- Medium and large show no material regression: pixel AUROC improves by
+  `+0.01486258` and `+0.01639565` with CIs excluding zero; medium p90/p95/
+  p97/p99 Dice deltas all have CIs crossing zero, while large p90/p95 gains
+  are positive but imprecise because `n=18`. Image-level raw-p99 AUROC is
+  `0.61500233 -> 0.61352011`, a reminder that the memory is a local
+  localization cue, not a better binary classifier.
+- Decision: do not promote either arm, choose no threshold from validation,
+  and do not train a consumer from this probe. The mechanism is not rejected
+  outright: it supplies complementary small-lesion ranking evidence, but its
+  coarse 32x32 map and low argmax-hit rate cannot form a stand-alone
+  pseudo-mask. A separate predeclared image-label-only fusion experiment is
+  justified. It will use the fixed normal-calibrated RAD-DINO score as an
+  auxiliary local-evidence channel for an already frozen CAM/SAM seed source,
+  with all train pseudo-masks generated before validation GT access and no
+  validation-fitted threshold, selector or per-image routing.
+- Compact audited evidence is stored under
+  `artifacts/kaggle/nominal_patch_memory_probe_val_v1/`; reconstructible
+  742-map payloads remain in the ignored temporary audit directory. The
+  five-minute monitor was deleted after the terminal result. Test remains
+  locked.
+

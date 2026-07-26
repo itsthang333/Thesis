@@ -1,0 +1,67 @@
+{
+  "scientific_role": "context-conditioned nominal patch-memory mechanism feasibility; not final segmentation",
+  "arm": "single_scale",
+  "prediction_manifest_sha256": "ab2d3076b2f9fdc03fe703592311ee0ac145f0a6c7e56abcee7c4d905e67fd12",
+  "generation_metadata_sha256": "56f121a7752aaa6b7118f0a564453ccc9b6e6a51d12b9c105291e6d4acfe50bb",
+  "memory_metadata_sha256": "014856b3e31024744f972419bd968f1df7fe4a047c5707b3502e00651b30bf96",
+  "per_image_sha256": "c7bd20412913157b8d6f17b69ce4ed01495645a1c2a91b17a0a37166737f844c",
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "image_level_auroc_from_raw_p99": 0.6150023250406882,
+  "tumor_localization": {
+    "overall": {
+      "n": 184,
+      "pixel_ap": 0.09333895152154241,
+      "pixel_auroc": 0.7675518698726512,
+      "argmax_hit": 0.07065217391304347,
+      "saliency_mass_in_gt": 0.030131667584419285,
+      "dice_p90": 0.08465376756524086,
+      "dice_p95": 0.076620584320089,
+      "dice_p97": 0.07031590916006339,
+      "dice_p99": 0.0455884263053973
+    },
+    "small": {
+      "n": 94,
+      "pixel_ap": 0.017967049224521987,
+      "pixel_auroc": 0.7871434751138312,
+      "argmax_hit": 0.02127659574468085,
+      "saliency_mass_in_gt": 0.0030765436225522664,
+      "dice_p90": 0.012982386660360406,
+      "dice_p95": 0.01652843787463889,
+      "dice_p97": 0.019660804582472453,
+      "dice_p99": 0.018377953742164454
+    },
+    "medium": {
+      "n": 72,
+      "pixel_ap": 0.1089192761285999,
+      "pixel_auroc": 0.7235705780809728,
+      "argmax_hit": 0.05555555555555555,
+      "saliency_mass_in_gt": 0.03630103985175611,
+      "dice_p90": 0.10669105620207925,
+      "dice_p95": 0.10273910819977751,
+      "dice_p97": 0.0983206446708152,
+      "dice_p99": 0.06725226877796764
+    },
+    "large": {
+      "n": 18,
+      "pixel_ap": 0.4246264761999747,
+      "pixel_auroc": 0.8411653207798685,
+      "argmax_hit": 0.3888888888888889,
+      "saliency_mass_in_gt": 0.14674204809371091,
+      "dice_p90": 0.3707884910767073,
+      "dice_p95": 0.2859610313497966,
+      "dice_p97": 0.22282917991114212,
+      "dice_p99": 0.1010321909119986
+    }
+  },
+  "thresholds": "fixed diagnostic percentiles only; no threshold selected",
+  "consumer_trained": false,
+  "complete_misses_included": true,
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "test_evaluated": false
+}

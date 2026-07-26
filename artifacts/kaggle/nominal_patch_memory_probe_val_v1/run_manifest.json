@@ -1,0 +1,25 @@
+{
+  "run_id": "btxrd_nominal_patch_memory_probe_val_v1",
+  "source_commit": "30f62d9475949dd43c9ad19c0590a0cbc854d440",
+  "protocol_sha256": "458fee51bef0fa5754be11566db7c5ea7d08cbd8c0d97c2477d267f626494a35",
+  "wrapper_sha256": "cfe2f5ef9c52f0c3ba22df0470efda53ec487607305a55b1735470a5247c0662",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "model_weight_sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae",
+  "memory_metadata_sha256": "014856b3e31024744f972419bd968f1df7fe4a047c5707b3502e00651b30bf96",
+  "prediction_freeze_sha256": "e754cccfb1150e78e6d224ee59430d53fbf0e680080a01cda686d4bd3d35a216",
+  "paired_comparison_sha256": "19c821c11c2fcc7335963fd1cc9763e08906bcd5777e43006d9f5cb55258a4a4",
+  "cohort": {
+    "train": 2981,
+    "train_normal": 1493,
+    "val": 371,
+    "val_tumor": 184
+  },
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Linux-6.12.90+-x86_64-with-glibc2.35"
+  },
+  "completed_at_utc": "2026-07-26T09:37:30.322042+00:00"
+}

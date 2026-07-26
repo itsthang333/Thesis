@@ -1020,3 +1020,27 @@ completion, download both 371-map arms plus compact memory evidence, run
 small/medium/large results. No threshold or consumer is authorized by this
 probe.
 
+## 33. RAD-DINO nominal-memory audit result
+
+The RAD-DINO kernel is COMPLETE and its independent physical audit is PASS.
+Wrapper SHA is `cfe2f5ef9c52f0c3ba22df0470efda53ec487607305a55b1735470a5247c0662`;
+source commit `30f62d9475949dd43c9ad19c0590a0cbc854d440`; protocol
+`458fee51bef0fa5754be11566db7c5ea7d08cbd8c0d97c2477d267f626494a35`; split
+`85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`; and
+RAD-DINO weights `dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae`.
+
+All 742 maps and exact 10,000-resample bootstrap were rehashed/recomputed.
+The run used 1,493 clean-train normals only, no tumor train images and no
+segmentation annotations; prediction freeze precedes validation GT; cohorts
+are 371/184/187 and 94/72/18; complete misses are included; test remains
+untouched. Multiscale minus single-scale on small tumors gives AUROC
+`+0.01451601 [+0.00072478,+0.02888615]`, saliency mass
+`+0.00007170 [+0.00003725,+0.00011346]`, and p99 Dice
+`+0.00789809 [+0.00229802,+0.01439491]`, but argmax is only `2/94`.
+
+Decision: keep RAD-DINO as auxiliary local evidence, do not promote a
+standalone map, choose no validation threshold, and do not train a consumer
+from this probe. The next allowed step is a separately predeclared
+image-label-only fusion with the frozen CAM/SAM seed source, generated for
+all train and validation images before any validation-GT read.
+
