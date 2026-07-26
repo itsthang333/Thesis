@@ -1,0 +1,46 @@
+{
+  "gate_id": "rad_dino_affinity_decoder_prediction_gate_v1",
+  "status": "FAIL",
+  "all_checks_required": true,
+  "checks": {
+    "image_level_auroc_from_raw_p99": {
+      "observed": 0.8172518019065335,
+      "minimum": 0.65,
+      "pass": true
+    },
+    "overall_pixel_auroc": {
+      "observed": 0.8049819853225434,
+      "minimum": 0.75,
+      "pass": true
+    },
+    "small_pixel_auroc": {
+      "observed": 0.8414754089824474,
+      "minimum": 0.77,
+      "pass": true
+    },
+    "overall_dice_p90": {
+      "observed": 0.09112393760414447,
+      "minimum": 0.1,
+      "pass": false
+    },
+    "small_dice_p97": {
+      "observed": 0.034453835796234844,
+      "minimum": 0.03,
+      "pass": true
+    },
+    "medium_dice_p90": {
+      "observed": 0.11561626265506872,
+      "minimum": 0.12,
+      "pass": false
+    },
+    "large_dice_p90": {
+      "observed": 0.38334540553875385,
+      "minimum": 0.35,
+      "pass": true
+    }
+  },
+  "on_pass": "mechanism may be retained; pseudo-mask selection or consumer training still requires a separate predeclared protocol",
+  "on_fail": "reject this configuration without threshold fitting",
+  "consumer_trained": false,
+  "test_evaluated": false
+}

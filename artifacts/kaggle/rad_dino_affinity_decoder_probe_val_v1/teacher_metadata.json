@@ -1,0 +1,28 @@
+{
+  "normal_images": 1493,
+  "positive_images": 1488,
+  "projection_dim": 128,
+  "projection_seed": 42,
+  "projection_semantic_sha256": "5cbb6846ca1b185fda50b0843951985422ce7e7782fd897639e3238cf9b567ec",
+  "normal_context_top_k": 8,
+  "normal_context_indices_sha256": "ed88cf9daa3555836c8f5eadcf4efd47ea88b30f6fc0ff8845a181dbbd8c02ac",
+  "normal_context_similarities_sha256": "64e2695150f2aaa0103be739c21c1671c727de5cd46318a2f2908b8eb4ca8b80",
+  "teacher_spatial_radius": 2,
+  "calibration": {
+    "normal_patch_scores": 1528832,
+    "minimum": 2.682209014892578e-06,
+    "median": 0.056640625,
+    "maximum": 0.98046875,
+    "semantic_sha256": "6cd22575a92f1d35e180b6c05b385b65b161315669e432964648e2ceb943d9c8"
+  },
+  "positive_teacher_distribution": {
+    "minimum": 0.001312255859375,
+    "mean": 0.6139367818832397,
+    "p99": 0.99560546875,
+    "maximum": 1.0
+  },
+  "teacher_cache_sha256": "8e340551a012e5bda02fb0a20c71b8b17a699de2d43f31132db3d8e5e192cb5b",
+  "normal_patch_cache_retained": false,
+  "validation_gt_read": false,
+  "test_evaluated": false
+}

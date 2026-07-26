@@ -1,0 +1,98 @@
+[
+  {
+    "epoch": 1,
+    "total_loss": 0.941305050341757,
+    "image_loss": 0.5917506110092909,
+    "pseudo_loss": 0.30943888931188124,
+    "affinity_loss": 0.40115548457560846,
+    "training_accuracy": 0.6940623951694063
+  },
+  {
+    "epoch": 2,
+    "total_loss": 0.7856968804275063,
+    "image_loss": 0.49317121280022663,
+    "pseudo_loss": 0.26503900505462535,
+    "affinity_loss": 0.27486661417614516,
+    "training_accuracy": 0.7745722911774572
+  },
+  {
+    "epoch": 3,
+    "total_loss": 0.7043522622326424,
+    "image_loss": 0.4250512551366484,
+    "pseudo_loss": 0.2539662746837408,
+    "affinity_loss": 0.25334732502888657,
+    "training_accuracy": 0.8161690707816169
+  },
+  {
+    "epoch": 4,
+    "total_loss": 0.6388997544631881,
+    "image_loss": 0.37213034022988967,
+    "pseudo_loss": 0.24413392080578344,
+    "affinity_loss": 0.2263549371714886,
+    "training_accuracy": 0.8463602817846361
+  },
+  {
+    "epoch": 5,
+    "total_loss": 0.5964072990673157,
+    "image_loss": 0.3359893490697679,
+    "pseudo_loss": 0.23772771485729127,
+    "affinity_loss": 0.2269023591327923,
+    "training_accuracy": 0.8604495135860449
+  },
+  {
+    "epoch": 6,
+    "total_loss": 0.5525377081961798,
+    "image_loss": 0.30363688086616447,
+    "pseudo_loss": 0.22733134610064068,
+    "affinity_loss": 0.2156948179366122,
+    "training_accuracy": 0.8829251928882925
+  },
+  {
+    "epoch": 7,
+    "total_loss": 0.5220379481446648,
+    "image_loss": 0.2815447511805606,
+    "pseudo_loss": 0.219791889729992,
+    "affinity_loss": 0.207013072950351,
+    "training_accuracy": 0.889969808788997
+  },
+  {
+    "epoch": 8,
+    "total_loss": 0.4822763676977349,
+    "image_loss": 0.2503570977588441,
+    "pseudo_loss": 0.2120078583385286,
+    "affinity_loss": 0.1991141038439948,
+    "training_accuracy": 0.9003690036900369
+  },
+  {
+    "epoch": 9,
+    "total_loss": 0.4623971438439858,
+    "image_loss": 0.2510242003937509,
+    "pseudo_loss": 0.1923107702944218,
+    "affinity_loss": 0.19062172830224677,
+    "training_accuracy": 0.9074136195907414
+  },
+  {
+    "epoch": 10,
+    "total_loss": 0.406490703130855,
+    "image_loss": 0.21709575646384632,
+    "pseudo_loss": 0.1707761238451458,
+    "affinity_loss": 0.18618821814636283,
+    "training_accuracy": 0.9215028513921503
+  },
+  {
+    "epoch": 11,
+    "total_loss": 0.36605186788390215,
+    "image_loss": 0.19954651154218186,
+    "pseudo_loss": 0.14844578158000518,
+    "affinity_loss": 0.18059574446613444,
+    "training_accuracy": 0.9298892988929889
+  },
+  {
+    "epoch": 12,
+    "total_loss": 0.3088470528116974,
+    "image_loss": 0.16230222372582867,
+    "pseudo_loss": 0.12877382394975057,
+    "affinity_loss": 0.17771004477950267,
+    "training_accuracy": 0.9466621938946662
+  }
+]

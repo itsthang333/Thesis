@@ -1,0 +1,24 @@
+{
+  "id": "itsthang333/btxrd-rad-dino-affinity-decoder-probe-v1",
+  "title": "BTXRD RAD-DINO Affinity Decoder Probe V1",
+  "code_file": "run_rad_dino_affinity_decoder_probe_val_v1.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [
+    "gpu",
+    "medical-imaging",
+    "weakly-supervised",
+    "semantic-segmentation"
+  ],
+  "dataset_sources": [
+    "itsthang333/btxrd-raw"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}

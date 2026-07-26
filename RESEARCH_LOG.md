@@ -2376,3 +2376,59 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   fails, the design is not authorized and no decoder pseudo-mask consumer may
   run.
 
+## 2026-07-27 - RAD-DINO affinity-decoder probe v3 terminal audit and rejection
+
+- Kaggle kernel
+  `itsthang333/btxrd-rad-dino-affinity-decoder-probe-v1` version 3 completed.
+  The first local CLI download was interrupted after 117 maps, so it was not
+  used for acceptance. A fresh download of the immutable version-3 output
+  produced all 371 float16 maps plus checkpoint, teacher metadata, training
+  history, prediction/run manifests, freeze record and wrapper provenance.
+  The downloader emitted a Windows console `charmap` message only after those
+  artifacts were present; no scientific output was regenerated or changed.
+- The independent auditor ran on that fresh direct download and passed at
+  runtime SHA-256
+  `7312982bf8283cead0fdf961937048e505ad7e8f84fb802b8a6f01418677aa4d`.
+  It verified wrapper SHA-256
+  `e8a90a1a1a87affba9ff10fcd8ec6bf66de086485bd3bed3505073ec26724a51`,
+  checkout/scientific commits
+  `a716d059648924b5bb7ccf76f41549d4715ec89c` /
+  `38b5bb4b9d7a846862443b442ff406f0ab41d3bd`, protocol, split,
+  RAD-DINO and frozen-baseline hashes, the 12-epoch final checkpoint
+  (`c5f9278de813396628fffe8360f09c786f1b74750861c23192d568405535b0d3`),
+  371 maps (`76,028,288` bytes), and cohort
+  `371/184/187` with `94/72/18` small/medium/large positives. Validation GT
+  was opened only after prediction freeze; complete misses are included,
+  paired complete-group bootstrap used 10,000 replicates, and
+  `consumer_trained=false`, `test_evaluated=false`.
+- Threshold-free localization improved over the frozen nominal-memory map.
+  Decoder-minus-nominal pixel AUROC was `+0.03743012` overall
+  (95% CI `[0.01795775, 0.05664618]`), `+0.05433193` small
+  (`[0.02462228, 0.08363946]`) and `+0.03054294` medium
+  (`[0.00389523, 0.05671270]`); large was `-0.02328623` with a CI crossing
+  zero. Pixel AP improved `+0.03164879` overall and `+0.04910153` small with
+  positive CIs. Saliency mass inside GT also improved with positive CIs in
+  every subgroup. This supports the spatial-decoder/affinity mechanism as a
+  useful localization signal, but not this fixed configuration as a
+  pseudo-label source.
+- The predeclared all-required gate failed exactly two of seven checks.
+  Image AUROC `0.81725180`, overall/small pixel AUROC
+  `0.80498199/0.84147541`, small Dice@p97 `0.03445384` and large Dice@p90
+  `0.38334541` passed. Overall Dice@p90 was `0.09112394 < 0.10`, and medium
+  Dice@p90 was `0.11561626 < 0.12`; therefore gate status is `FAIL`.
+  Thresholds are not relaxed after seeing validation GT. Per the frozen
+  contract, this exact configuration is rejected and the conditional
+  soft-label consumer is not authorized.
+- The measured bottleneck is now sharper: ranking/localization is credible,
+  especially for small lesions, but the decoder's fixed-percentile support
+  does not recover sufficient variable lesion extent and boundary shape.
+  The next admissible hypothesis must add a prediction-time, GT-independent
+  variable-area shape mechanism rather than merely fit another consumer to
+  the rejected maps or tune percentiles on validation GT.
+- Compact evidence is stored under
+  `artifacts/kaggle/rad_dino_affinity_decoder_probe_val_v1/`. The dense maps
+  and checkpoint remain only in the isolated audit download. The
+  `compact_evidence_manifest.json` records direct-runtime hashes and the
+  canonical LF hashes for the three text files normalized for Git, so the
+  line-ending transformation is explicit rather than hidden.
+

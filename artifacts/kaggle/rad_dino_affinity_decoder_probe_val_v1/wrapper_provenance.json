@@ -1,0 +1,23 @@
+{
+  "run_id": "btxrd_rad_dino_affinity_decoder_probe_val_v1",
+  "checkout_commit": "a716d059648924b5bb7ccf76f41549d4715ec89c",
+  "scientific_source_commit": "38b5bb4b9d7a846862443b442ff406f0ab41d3bd",
+  "protocol_sha256": "53e2bb82ef35862b6c3e20387edbe60776f9d1ba46da516b9d5116db3fa2e7cf",
+  "wrapper_sha256": "e8a90a1a1a87affba9ff10fcd8ec6bf66de086485bd3bed3505073ec26724a51",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "baseline_per_image_sha256": "c7bd20412913157b8d6f17b69ce4ed01495645a1c2a91b17a0a37166737f844c",
+  "model_hashes": {
+    "config.json": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede",
+    "preprocessor_config.json": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56",
+    "model.safetensors": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae"
+  },
+  "run_manifest_sha256": "8038471b2638848439863837be0954ee0263f9dc58902f6951fe36961c784b18",
+  "prediction_maps": 371,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Linux-6.12.90+-x86_64-with-glibc2.35"
+  },
+  "completed_at_utc": "2026-07-26T18:52:17.300560+00:00"
+}
