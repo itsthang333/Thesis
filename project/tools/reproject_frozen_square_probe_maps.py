@@ -187,6 +187,23 @@ def load_evaluation(path: Path) -> list[dict[str, object]]:
     return [dict(row) for row in read_csv(path)]
 
 
+def summarize_aspect_ratios(
+    aspect_ratios: list[float],
+) -> dict[str, int | float]:
+    if not aspect_ratios or any(
+        not np.isfinite(value) or value <= 0.0 or value > 1.0
+        for value in aspect_ratios
+    ):
+        raise ValueError("Aspect ratios must be finite values in (0,1]")
+    return {
+        "square": int(sum(np.isclose(value, 1.0) for value in aspect_ratios)),
+        "below_0_90": int(sum(value < 0.90 for value in aspect_ratios)),
+        "below_0_75": int(sum(value < 0.75 for value in aspect_ratios)),
+        "minimum": float(min(aspect_ratios)),
+        "mean": float(np.mean(aspect_ratios)),
+    }
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -289,13 +306,7 @@ def main() -> None:
         "source_run_manifest_sha256": freeze["source_run_manifest_sha256"],
         "prediction_freeze_sha256": sha256(freeze_path),
         "cohort": {"validation": 371, "tumor": 184, "normal": 187},
-        "aspect_ratio": {
-            "square": sum(np.isclose(value, 1.0) for value in aspect_ratios),
-            "below_0_90": sum(value < 0.90 for value in aspect_ratios),
-            "below_0_75": sum(value < 0.75 for value in aspect_ratios),
-            "minimum": float(min(aspect_ratios)),
-            "mean": float(np.mean(aspect_ratios)),
-        },
+        "aspect_ratio": summarize_aspect_ratios(aspect_ratios),
         "summaries": summaries,
         "geometry_effect": effects,
         "corrected_multiscale_minus_single": corrected_comparison,
