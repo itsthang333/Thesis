@@ -1739,3 +1739,44 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   existing five-minute monitor was updated in place with the new source and
   wrapper hashes.
 
+## 2026-07-26 - INSIGHT mechanism transfer predeclared
+
+- While RAD-DINO dense-MIL version 3 is running, the full INSIGHT paper was
+  read from the primary PMLR version (Zhang, Chen and Kanan, MLHC 2025,
+  PMLR 298) rather than relying on a checkpoint or an abstract. Its useful
+  transferable mechanism is architectural: retain a spatial feature map,
+  use a small-kernel detection branch for fine detail, use a broad-context
+  branch to suppress local false positives, fuse them as
+  `sigmoid((1-sigmoid(context_logits))*detector_logits)`, and train the
+  resulting heatmap with image-level SmoothMax pooling. The paper also
+  reports spectral-decoupling regularization and an Otsu visualization
+  threshold.
+- This is not a reproduction of INSIGHT and no external code, checkpoint or
+  dataset is copied. The BTXRD transfer is predeclared as a separate
+  image-label-only mechanism probe: frozen RAD-DINO 32x32 patch tokens,
+  1x1 projection, a 3x3 local detector, a depthwise-separable 9x9 context
+  suppression branch, bounded SmoothMax pooling, and fixed spectral
+  decoupling. The depthwise context implementation is an explicit
+  parameter-efficient deviation for a T4, and the diagnostic keeps
+  continuous heatmaps rather than selecting an Otsu/validation threshold.
+- The reason for this bounded follow-up is the measured bottleneck: the
+  current dense-MIL probe uses only `LayerNorm -> Linear` per patch, while
+  the literature's strongest small-lesion mechanism adds locality and
+  context suppression inside the trainable head. This changes the learned
+  representation rather than repeating rejected post-hoc selectors.
+- The local implementation is `project/models/rad_dino_insight.py` with
+  CPU-independent shape/backward tests in
+  `tests/test_rad_dino_insight.py`. The probe must not launch until dense-MIL
+  version 3 is physically audited; it will use the same 448/320/280 geometry,
+  2,981 image-level train labels, 371 validation predictions, fixed
+  94/72/18 subgroup evaluation, complete-group bootstrap with 10,000
+  replicates, prediction freeze before validation GT, and
+  `test_evaluated=false`. It cannot promote a threshold, create train
+  pseudo-masks, or train a consumer on its own.
+- Primary literature links for the transfer record:
+  `https://proceedings.mlr.press/v298/zhang25a.html` and
+  `https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html`.
+  The latter independently reinforces the project decision to report
+  small-lesion performance explicitly and to avoid letting large lesions
+  dominate the research conclusion.
+
