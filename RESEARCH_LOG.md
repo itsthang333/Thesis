@@ -1733,6 +1733,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `e0741a9fddca7bf3fdac93e21dee3c8dfb4b6cc1`; the canonical source hash for
   `run_rad_dino_dense_mil_probe.py` is
   `88084d9bfb8ec9bae14dfa558d06d113c926a94d2ef7851c0d254e05050f08fe`.
-  The wrapper is being rehashed and relaunched as the next version only after
-  this source lock is recorded.
+- The corrected wrapper SHA-256 is
+  `58f68c087a43a6cba3cf128ac0f8d31fee15504d7544a04e0d17f415e1f2e37e`.
+  Kernel version 3 was pushed to the same private Kaggle kernel, and the
+  existing five-minute monitor was updated in place with the new source and
+  wrapper hashes.
 
