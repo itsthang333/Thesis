@@ -1,0 +1,44 @@
+{
+  "audit_role": "prelaunch wrapper and implementation lock",
+  "kernel": "itsthang333/btxrd-mae-normality-reconstruction-probe-v1",
+  "kernel_version": 1,
+  "launched_status": "RUNNING",
+  "source_commit": "7292c5d2f7722d273c27eb147b19cbe7b25c9709",
+  "protocol_sha256": "06055700e48980ddab0ab87c9e36dace7c7aab103d5b6fc004fa5dd742f8da06",
+  "wrapper_sha256": "5c250532045fe4344b4f29046f0b49a038c0e7162240445d32d5e30a099ceb6b",
+  "split": {
+    "git_lf_sha256": "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8",
+    "frozen_crlf_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "train_images": 2981,
+    "train_normal_images": 1493,
+    "validation_images": 371,
+    "validation_tumor_images": 184,
+    "validation_normal_images": 187
+  },
+  "base_model": {
+    "id": "facebook/vit-mae-base",
+    "revision": "25b184bea5538bf5c4c852c79d221195fdd2778d",
+    "config_sha256": "1f7a507e1f7f63a262c5500b86470c3b22ff1a9e42de81bbba27105396572dae",
+    "preprocessor_sha256": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea",
+    "weights_sha256": "479dcef4bd5df06259399027b789f21e9d9a1b79f37155a64176d55bc26fdae8"
+  },
+  "source_sha256": {
+    "project/train_mae_reconstruction.py": "a4b1b6db0b3d5db290a6a5099512e94bd8954e58f11dfb60f166440af51f8f05",
+    "project/generate_mae_reconstruction_saliency.py": "3efbd24827905db6a566a0540ed64447ce2afe7c6910448a3df56df30647e61e",
+    "project/evaluate_mae_reconstruction_saliency.py": "2830593328fb9282fb6f35728b1ccf4cb5034eaf83fd51a7b314520e16401824",
+    "project/compare_mae_reconstruction_arms.py": "4fe7e818e53376c2b7b9b1a4408cc815fc4de2df31b27dc3225fae546bb0a25c",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+    "tests/test_mae_reconstruction.py": "add56c2ac0de5e4ffb4f72e856f274772fd8c286f938b0990677ffe70e7a5693"
+  },
+  "ordering_contract": [
+    "train adapted arm using clean-train normal image-level labels only",
+    "generate and hash all 371 validation maps for each arm without GT",
+    "write prediction_freeze.json",
+    "only then construct validation segmentation dataset and read GT",
+    "compare paired tumor images by complete group bootstrap"
+  ],
+  "validation_gt_read_during_generation": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
