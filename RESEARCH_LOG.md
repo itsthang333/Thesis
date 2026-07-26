@@ -1789,3 +1789,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   small-lesion performance explicitly and to avoid letting large lesions
   dominate the research conclusion.
 
+## 2026-07-26 - Frozen CLIP-DINO / WeCLIP+ transfer review
+
+- The primary WeCLIP paper and ablations were inspected from the authors'
+  arXiv record and official code link
+  `https://arxiv.org/abs/2406.11189`. The transferable idea is not merely
+  using a stronger encoder: a lightweight decoder learns spatial features
+  from a frozen backbone, while a refinement module builds decoder affinity
+  (`sigmoid(F_u^T F_u)`) and uses it to filter/refine the frozen-backbone
+  relationships. The decoder and refinement supervise each other through
+  online pseudo-label refinement, avoiding a permanently frozen CAM.
+- The reported ablation isolates the mechanism: decoder-only mIoU is 68.7,
+  decoder plus refinement is 74.9, and the refinement map's affinity,
+  global-evidence and selected-attention terms all contribute. The paper
+  also uses multi-scale inference and DenseCRF, but those components are
+  not evidence for BTXRD and will not be copied without a separate
+  predeclared contract.
+- Transfer assessment: this is a credible second-stage candidate if
+  INSIGHT-style local/context heatmaps remain too coarse. A BTXRD version
+  would use frozen RAD-DINO patch tokens, a small trainable spatial decoder,
+  image-level BCE/SmoothMax, and a fixed token-affinity consistency/refinement
+  loss derived only from the decoder and image labels. It would need a
+  prediction-first localization probe before any pseudo-mask or consumer.
+  No implementation or Kaggle launch is authorized yet; the current
+  dense-MIL result and the predeclared INSIGHT probe must resolve first.
+
