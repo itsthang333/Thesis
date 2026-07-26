@@ -1714,3 +1714,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Kaggle kernel and the existing heartbeat monitor was updated in place to
   use the new wrapper hash at its five-minute interval.
 
+## 2026-07-26 - RAD-DINO dense-MIL probe v2 frozen-encoder autograd error
+
+- Kernel version 2 successfully installed `transformers==4.50.2` and then
+  failed at the first dense-MIL training batch. The direct traceback was
+  `RuntimeError: Inference tensors cannot be saved for backward` at
+  `DenseMILHead.norm`, because frozen RAD-DINO tokens produced inside
+  `torch.inference_mode()` were passed directly to the trainable head.
+  No validation prediction, validation-GT evaluation or test access occurred.
+- The implementation correction clones encoder tokens after leaving
+  `inference_mode`, producing ordinary non-gradient tensors that can safely
+  be consumed by the trainable head while keeping the encoder frozen. The
+  DataLoader worker seeder was also hardened to seed Python/NumPy from
+  `torch.initial_seed()` without invoking CUDA inside forked workers.
+  Scientific parameters and the image-label-only supervision contract are
+  unchanged.
+

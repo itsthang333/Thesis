@@ -11,6 +11,18 @@ from project.models.rad_dino_dense_mil import (
 )
 
 
+def test_dense_head_accepts_cloned_inference_tokens_for_backward():
+    torch.manual_seed(42)
+    head = DenseMILHead(8)
+    with torch.inference_mode():
+        inference_tokens = torch.randn(2, 3, 4, 8)
+    tokens = inference_tokens.clone()
+    logits = head(tokens)
+    loss, _ = dense_mil_loss(logits, torch.tensor([0.0, 1.0]))
+    loss.backward()
+    assert all(parameter.grad is not None for parameter in head.parameters())
+
+
 def test_dense_head_and_mil_loss_are_finite():
     torch.manual_seed(42)
     head = DenseMILHead(8)

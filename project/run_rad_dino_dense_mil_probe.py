@@ -85,6 +85,14 @@ def seed_everything(seed: int) -> None:
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
+def seed_worker(worker_id: int) -> None:
+    """Seed a DataLoader worker without touching CUDA from a forked process."""
+    del worker_id
+    worker_seed = torch.initial_seed() % (2**32)
+    random.seed(worker_seed)
+    np.random.seed(worker_seed)
+
+
 def tensor_from_image(image: Image.Image, size: int) -> torch.Tensor:
     resized = image.resize((size, size), Image.Resampling.BICUBIC)
     values = np.asarray(resized, dtype=np.float32) / 255.0
@@ -151,7 +159,12 @@ def extract_patch_tokens(
     expected = grid_size * grid_size + 1
     if hidden.ndim != 3 or hidden.shape[1] != expected:
         raise RuntimeError(f"Unexpected token shape {tuple(hidden.shape)}; expected {expected}")
-    return hidden[:, 1:].float().reshape(-1, grid_size, grid_size, hidden.shape[-1])
+    # ``inference_mode`` tensors cannot be saved for backward by the
+    # trainable dense head. Clone outside the inference context to restore a
+    # regular tensor while keeping the frozen encoder non-differentiable.
+    return hidden[:, 1:].float().clone().reshape(
+        -1, grid_size, grid_size, hidden.shape[-1]
+    )
 
 
 def train_head(
@@ -172,7 +185,7 @@ def train_head(
         num_workers=args.num_workers,
         pin_memory=True,
         persistent_workers=args.num_workers > 0,
-        worker_init_fn=lambda worker_id: seed_everything(args.seed + worker_id + 1),
+        worker_init_fn=seed_worker,
         generator=generator,
     )
     grid = args.input_size // 14
