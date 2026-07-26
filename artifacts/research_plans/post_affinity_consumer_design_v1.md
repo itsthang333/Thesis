@@ -99,4 +99,3 @@ S2C, dense-MIL, INSIGHT, and nominal-memory evidence.
   validation GT loader;
 - a new protocol frozen before Kaggle execution and a new independent output
   auditor.
-

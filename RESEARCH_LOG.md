@@ -2363,7 +2363,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   bootstrap and metric smoke checks pass locally; it does not access test.
 - A conditional post-gate consumer design is recorded at
   `artifacts/research_plans/post_affinity_consumer_design_v1.md` (SHA-256
-  `34039d6f96ebac6d690edc401e03d80e491fe45856f35b9130d6d39674deebfe`).
+  `a9237d4c117d4593724396487cd814724d292e05f6b31cef8d51bb44347acc8e`).
   This is explicitly a draft, not an executable protocol. It avoids repeating
   the measured Gate-D failure in which the U-Net fit hard pseudo targets to
   train Dice `0.73817` but generalized to only `0.23002`. If the affinity gate
