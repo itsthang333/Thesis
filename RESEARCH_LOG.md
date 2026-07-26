@@ -1898,3 +1898,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Status polling must remain on the exact URL slug above; no test is read
   while the kernel is non-terminal.
 
+## 2026-07-26 - INSIGHT probe v1 canonical-source hash error
+
+- Kernel version 1 terminated after 3.21 seconds in the wrapper's pre-run
+  source audit, before dependency installation, model loading, radiograph
+  access, training, validation prediction or validation-GT evaluation.
+  Direct Kaggle log reports
+  `RuntimeError: Source hash mismatch: datasets/btxrd.py`.
+- Independent comparison against Git bytes at source commit
+  `813d6848941ac6a3ebe77538f4c0e34a0ddf7f4a` shows that all eight new
+  INSIGHT/RAD-DINO sources match. Only the three reused dataset files were
+  recorded from the Windows CRLF worktree rather than canonical LF Git blobs.
+  Their corrected canonical hashes are
+  `d8f0804b...156001`, `1927eb35...3b98a` and
+  `6b478bbb...32784` for `datasets/btxrd.py`, `datasets/common.py` and
+  `datasets/__init__.py`.
+- This is a transport-representation/packaging failure, not a scientific
+  result. The admissible repair changes only those three expected hashes in
+  the frozen protocol and wrapper, then rebinds the wrapper to a new source
+  commit. Model, split, image-label-only supervision, architecture, training
+  schedule, prediction arms, evaluation and test lock remain unchanged.
+
