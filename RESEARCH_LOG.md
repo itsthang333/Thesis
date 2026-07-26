@@ -2348,4 +2348,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   SHA-256 is
   `e8a90a1a1a87affba9ff10fcd8ec6bf66de086485bd3bed3505073ec26724a51`.
   Validation GT and test were not read; consumer training did not begin.
+- The corrected wrapper re-audit passed and kernel version 3 was pushed to
+  the same private kernel; it entered `RUNNING`. The existing single
+  five-minute monitor continues unchanged.
 
