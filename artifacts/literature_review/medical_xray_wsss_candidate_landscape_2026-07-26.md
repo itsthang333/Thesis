@@ -209,29 +209,36 @@ Primary sources for the deferred candidates:
 
 ## Evidence-driven execution order
 
-1. Finish and audit `prompt_source_graph_selector_val_v1` without changing its
-   predeclared protocol.
-2. If its no-GT selector passes direct Gate-C, run the paired U-Net consumer
-   exactly as predeclared before opening a new model branch.
-3. Regardless of pass/fail, use its frozen per-image diagnostics to distinguish
-   missing candidates from wrong selection. Do not use GT to route future
-   predictions.
-4. Run a cheap, prediction-first SAM-Med2D gallery audit under the existing
-   prompts. This isolates whether a medical prompt model improves stability and
-   boundaries. MedSAM is the controlled second refiner only if SAM-Med2D is
-   inconclusive or fails for an implementation-specific reason.
+The earlier prompt/source graph selector is now complete and rejected: its
+whole-mask selection harmed small lesions even though the frozen proposal
+gallery retained positive oracle gains in all size groups. The current order is
+therefore:
+
+1. Finish the already launched SKELEX-inspired MAE normality-reconstruction
+   probe. This compares the same ImageNet MAE before and after normal-only
+   radiograph adaptation; it is a mechanism gate, not a final model.
+2. If reconstruction error contains coherent small-tumor signal, predeclare a
+   separate fusion/proposal protocol before combining it with existing CAMs.
+   No threshold or per-image branch may be chosen from validation GT.
+3. If pixel residual is weak or dominated by acquisition effects, use
+   mid-level frozen radiograph features in a context-conditioned
+   PatchCore-style nominal memory. This tests feature anomaly rather than
+   repeating reconstruction with another checkpoint.
+4. Implement UM-CAM spatial uncertainty across aligned resolutions/views and
+   geodesic expansion as separate ablations. This directly targets the
+   measured over-broad selector failure.
 5. Build the RAD-DINO multi-resolution dense MIL branch. First freeze
    image-label classifier/localizer checkpoints and no-GT maps; then evaluate
    localization/pseudo-mask Dice and subgroup deltas.
-6. If RAD-DINO seed recall improves but boundaries remain weak, apply either
+6. If a new seed source improves recall but boundaries remain weak, apply either
    SAM-Med2D refinement or learned inter-pixel affinity as a separate
    one-variable experiment.
-7. If discriminative localization still misses small lesions, run the
-   anatomy-conditioned normal-only anomaly feasibility study and fuse it only
-   after each source has an independently frozen audit.
-8. Train the direct dense MIL segmenter as an architecture-level alternative,
-   with paired subgroup gaps to the frozen GT reference as the final decision
-   target.
+7. Add Random-View Consensus/uncertainty-ignore supervision to the paired
+   pseudo-mask consumer only after a pseudo source passes its prediction-first
+   gate.
+8. Keep radiograph-compatible NSA/DRAEM synthetic anomaly learning as a
+   controlled fallback. Real validation localization, not synthetic training
+   accuracy, is its gate.
 
 At no point may validation outcomes retroactively change the frozen GT
 reference, split, subgroup definitions, prediction manifests, or thresholds.
