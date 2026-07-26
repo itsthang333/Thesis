@@ -1684,4 +1684,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `a15ec0304e7ec12e8c9c80dd92638cb89bf0816fc7aabdf4d72ddf22af3c55a5`;
   the audit is stored in
   `artifacts/research_protocols/rad_dino_dense_mil_probe_val_v1_wrapper_audit.json`.
+- Private Kaggle kernel
+  `itsthang333/btxrd-rad-dino-dense-mil-probe-v1` version 1 was launched on
+  a Tesla T4 and entered `RUNNING` at 2026-07-26 17:51 ICT. A single
+  five-minute heartbeat monitor
+  `theo-d-i-rad-dino-dense-mil-kaggle` follows it. No duplicate monitor or
+  competing heavy local job was created.
 

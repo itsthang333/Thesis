@@ -1061,3 +1061,7 @@ this mechanism probe. On completion, run
 `project/tools/audit_rad_dino_dense_mil_probe.py` over all 742 maps and
 recompute every 10,000-resample complete-group comparison.
 
+Kernel `itsthang333/btxrd-rad-dino-dense-mil-probe-v1` version 1 is now
+RUNNING on a T4. Exactly one five-minute monitor,
+`theo-d-i-rad-dino-dense-mil-kaggle`, is active.
+
