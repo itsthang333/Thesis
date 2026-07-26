@@ -2541,3 +2541,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   all three promotion gates. Its five focused unit tests plus the 16 selector
   regression tests pass locally. It contains no test-dataset access.
 
+## 2026-07-27 - Affinity-guided selector v2 post-generation audit error
+
+- Kaggle kernel version 2 failed after `583.1` seconds. Direct Kaggle
+  traceback is
+  `RuntimeError: LayerCAM component gallery drift: IMG000001.jpeg` at wrapper
+  line 594. Before the error, all runtime source/input hashes and 16 focused
+  tests passed; generation completed all 371 pseudo-mask rows and all 184
+  tumor candidate galleries with manifest SHA-256 values
+  `8799c2e712889f8a396f61dc854fb863a4bcefedbf6dd60a9fcfea604ebcd1b7`
+  and
+  `35cc3d0275956a4901244ef5815e229ac197afd0ca8a403b42cc64a22f87a99e`.
+  The exception occurred in the wrapper's no-GT post-generation audit before
+  `prediction_freeze.json`, validation evaluation, consumer training or any
+  test access.
+- Root cause is an implementation-only invariant mismatch introduced when
+  the comparison baseline was strengthened from the original LayerCAM run to
+  the same LayerCAM-plus-BiomedCLIP proposal gallery. The inherited check
+  compared candidate `cam_morphology_components` with baseline total
+  `morphology_components`; for `IMG000001.jpeg` these represent different
+  quantities. The same-gallery manifest exposes the correct
+  `cam_morphology_components` field, while separate frozen checks already
+  compare external-component, total-component and SAM-candidate counts.
+  Compact direct evidence is stored in
+  `artifacts/kaggle/affinity_guided_proposal_selector_val_v1/version2_error.json`.
+- Version 3 changes only that field-to-field audit comparison. Proposal
+  generation, affinity selector, masks, source checkout, protocol, metric,
+  gate, cohort and GT/test ordering are unchanged. Compile, JSON, unit and
+  same-gallery schema/accounting re-audits pass. Wrapper v3 SHA-256 is
+  `022369ae92c7818da0e6443fac97b7f2b832d335ee8ad8d5dd84611ed6987192`.
+  The independent auditor is rebound only to that wrapper hash and now has
+  SHA-256
+  `35bb8313c72a881d0ce3cb07cf52af3b0463976edd7cf0bed96f5d462f66a612`.
+  The existing single heartbeat remains the only monitor.
+

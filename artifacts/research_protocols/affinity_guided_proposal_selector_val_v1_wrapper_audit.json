@@ -4,8 +4,8 @@
   "audited_before_launch": true,
   "wrapper": {
     "path": "tmp/kaggle/affinity_guided_proposal_selector_val_v1/run_affinity_guided_proposal_selector_val_v1.py",
-    "bytes": 37838,
-    "sha256": "7a736598a9dd9791dc3271c9176c64ab3cf7f5da59b7c399ae39c4c979ad1190"
+    "bytes": 37842,
+    "sha256": "022369ae92c7818da0e6443fac97b7f2b832d335ee8ad8d5dd84611ed6987192"
   },
   "kernel_metadata": {
     "id": "itsthang333/btxrd-affinity-guided-proposal-selector-val-v1",
@@ -70,10 +70,12 @@
   },
   "implementation_correction": {
     "kernel_version_1": "superseded while running before terminal acceptance",
-    "changed": "preserve the final selected-mask directory in Kaggle output instead of deleting it during compact-output cleanup",
+    "kernel_version_2": "ERROR after all 371 masks and 184 candidate galleries were frozen without GT because the post-generation audit compared candidate cam_morphology_components with the same-gallery baseline total morphology_components",
+    "changed": "version 2 preserved final selected masks; version 3 compares candidate cam_morphology_components with baseline cam_morphology_components while retaining the separate exact checks for external, total and SAM candidate counts",
     "scientific_contract_changed": false,
     "selector_prediction_metric_gate_or_protocol_changed": false,
-    "kernel_version_2_wrapper_reaudit": "PASS"
+    "validation_gt_read_in_failed_version_2": false,
+    "kernel_version_3_wrapper_reaudit": "PASS"
   },
   "consumer_trained": false,
   "test_evaluated": false

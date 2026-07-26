@@ -1,0 +1,31 @@
+{
+  "kernel": "itsthang333/btxrd-affinity-guided-proposal-selector-val-v1",
+  "kernel_version": 2,
+  "status": "ERROR",
+  "runtime_seconds": 583.1,
+  "checkout_commit": "ca9462f13588243c0e490c2f18564038e49fd857",
+  "wrapper_sha256": "7a736598a9dd9791dc3271c9176c64ab3cf7f5da59b7c399ae39c4c979ad1190",
+  "direct_subprocess_log": {
+    "bytes": 6207,
+    "sha256": "8cfbce935d026c239f2f5fb6c01f9b8736f131b4eb9f609a1e20363221f9de65"
+  },
+  "direct_kaggle_traceback": {
+    "script_line": 594,
+    "exception": "RuntimeError",
+    "message": "LayerCAM component gallery drift: IMG000001.jpeg"
+  },
+  "completed_before_error": {
+    "runtime_input_and_source_hash_audits": true,
+    "focused_tests_passed": 16,
+    "pseudo_rows": 371,
+    "pseudo_manifest_sha256": "8799c2e712889f8a396f61dc854fb863a4bcefedbf6dd60a9fcfea604ebcd1b7",
+    "candidate_tumor_rows": 184,
+    "candidate_manifest_sha256": "35cc3d0275956a4901244ef5815e229ac197afd0ca8a403b42cc64a22f87a99e"
+  },
+  "root_cause": "The wrapper inherited the original LayerCAM-baseline audit expression after the scientific baseline was strengthened to the same LayerCAM-plus-BiomedCLIP gallery. It compared candidate cam_morphology_components with baseline total morphology_components instead of baseline cam_morphology_components. Separate external, total and SAM candidate-count checks already exist.",
+  "admissible_correction": "Compare candidate cam_morphology_components with baseline cam_morphology_components. Do not change proposal generation, selector, predictions, masks, metric, gate, source checkout or protocol.",
+  "prediction_freeze_written": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

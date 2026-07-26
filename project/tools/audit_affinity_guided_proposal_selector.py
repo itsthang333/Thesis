@@ -24,7 +24,7 @@ from pseudo.affinity_selector_input import (
 
 
 EXPECTED = {
-    "wrapper_sha256": "7a736598a9dd9791dc3271c9176c64ab3cf7f5da59b7c399ae39c4c979ad1190",
+    "wrapper_sha256": "022369ae92c7818da0e6443fac97b7f2b832d335ee8ad8d5dd84611ed6987192",
     "checkout_commit": "ca9462f13588243c0e490c2f18564038e49fd857",
     "implementation_commit": "56c01f241bda4b80183918517999f7ddbb37fc55",
     "protocol_sha256": "07bd490d309a850daeba1d00590d36968360aa7a70bebe3d418feb7c44ffadf7",
