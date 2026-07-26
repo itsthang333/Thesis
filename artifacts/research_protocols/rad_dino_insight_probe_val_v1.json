@@ -53,6 +53,7 @@
       "models/rad_dino_insight.py": "4897971f74a85f8181e28891d36a2efd9a3449d41ca60e63f95ea6bad66a7a03",
       "run_rad_dino_dense_mil_probe.py": "88084d9bfb8ec9bae14dfa558d06d113c926a94d2ef7851c0d254e05050f08fe",
       "models/rad_dino_dense_mil.py": "ba5ba01d314acfc0727dd4e18a2571b60adc0a2d2d94efa2223e6b1a574649d7",
+      "tools/audit_rad_dino_insight_probe.py": "e45b0acddf52dddb5c32a5278e28cf1dca00f6ea507f81e642144f416760bd7f",
       "models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
       "mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
       "compare_nominal_patch_memory_arms.py": "4ec0b65c33d47dda20317b94d577489038bf87c8c235bb03d6d9a1d0497a035e",
