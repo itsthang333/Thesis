@@ -2319,4 +2319,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `53e2bb82ef35862b6c3e20387edbe60776f9d1ba46da516b9d5116db3fa2e7cf`.
   `consumer_trained=false`, validation GT was not read, and test remains
   locked. Version 2 may rerun only after the corrected wrapper is re-audited.
+- Corrected wrapper re-audit passed against all nine canonical Git blobs.
+  Wrapper SHA-256 is
+  `1892c20f421cb4f183654a3d0e27f700f2b3192794793aba73a510f087722392`;
+  protocol checkout commit is
+  `a716d059648924b5bb7ccf76f41549d4715ec89c`. Kernel version 2 was pushed
+  to the same private kernel and entered `RUNNING`. The existing
+  `theo-d-i-rad-dino-affinity-decoder` five-minute monitor remains the only
+  monitor; no duplicate was created.
 
