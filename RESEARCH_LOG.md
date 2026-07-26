@@ -2693,3 +2693,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tests locally. Heavy inference has not run, validation GT has not been read
   for this experiment, `consumer_trained=false`, and `test_evaluated=false`.
 
+## 2026-07-27 - RAD-DINO geodesic seed-expansion Kaggle wrapper freeze
+
+- The private Kaggle wrapper for
+  `itsthang333/btxrd-rad-dino-geodesic-seed-expansion-val-v1` is frozen at
+  SHA-256
+  `97de7ce759525b45b3186eb7f9c5829f5ca4b9597ea81a8c5abc64d3260b09d5`;
+  kernel metadata SHA-256 is
+  `96787e700be9b5f39e2bd4f30532cb56429896d6a442ab5d3042153fe82b96c4`.
+  Static audit evidence is stored at
+  `artifacts/research_protocols/rad_dino_geodesic_seed_expansion_val_v1_wrapper_audit.json`.
+- The source protocol stores the exact Windows CRLF runtime bytes while the
+  canonical Kaggle Git checkout materializes LF. The wrapper first verifies
+  the 12 canonical LF hashes from source commit
+  `1b5d0cc151530d71b49e1088e20a94a42c25e08a`, deterministically materializes
+  CRLF, and then verifies every executed file against the already-predeclared
+  protocol hashes. No scientific text changes during this conversion.
+- Before prediction the wrapper requires the direct frozen affinity-input
+  mount, audits all 371 physical affinity maps, verifies all 371 raw-image
+  hashes from the split, reconstructs the frozen CRLF split and baseline
+  evidence, pins RAD-DINO revision
+  `110cbc18d5133582e320b43d53bf5c44e410c936`, and reruns all 11 focused tests.
+- Execution order is statically fixed as prediction, prediction freeze,
+  independent verification of all 371 generated maps and source-map bindings,
+  then evaluator construction and validation-GT access. Evaluation must retain
+  cohort `371/184/187`, subgroups `94/72/18`, complete misses, paired
+  complete-group bootstrap with 10,000 replicates and seed family 20260727,
+  `consumer_trained=false`, and `test_evaluated=false`.
+- The wrapper and metadata compile/audit PASS locally. No heavy inference,
+  consumer training or test evaluation occurred during this freeze; the
+  kernel had not been launched when this evidence was written.
+

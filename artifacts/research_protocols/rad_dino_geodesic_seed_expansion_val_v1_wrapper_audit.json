@@ -1,0 +1,67 @@
+{
+  "audit_id": "rad_dino_geodesic_seed_expansion_val_v1_wrapper_audit",
+  "status": "PASS",
+  "audited_at_utc": "2026-07-26T21:24:19.544Z",
+  "kernel": {
+    "id": "itsthang333/btxrd-rad-dino-geodesic-seed-expansion-val-v1",
+    "expected_version": 1,
+    "private": true,
+    "gpu": "NvidiaTeslaT4",
+    "internet_enabled_for_pinned_source_and_model_download": true
+  },
+  "wrapper": {
+    "sha256": "97de7ce759525b45b3186eb7f9c5829f5ca4b9597ea81a8c5abc64d3260b09d5",
+    "kernel_metadata_sha256": "96787e700be9b5f39e2bd4f30532cb56429896d6a442ab5d3042153fe82b96c4",
+    "checkout_commit": "cf72a8aa203fed3dfd9502a428f6ae6af7083f9d",
+    "scientific_source_commit": "1b5d0cc151530d71b49e1088e20a94a42c25e08a",
+    "protocol_sha256": "fbf49a452664e52e6efe07059282e91f1819cf2fab66baa0d4a1d3025fcfe1b2"
+  },
+  "source_materialization": {
+    "files": 12,
+    "git_lf_hashes_verified_before_materialization": true,
+    "protocol_crlf_hashes_verified_after_materialization": true,
+    "reason": "The predeclared protocol records the Windows CRLF runtime bytes, whereas the canonical Git checkout on Kaggle materializes LF bytes. The wrapper verifies both exact representations and executes the protocol-hashed CRLF bytes.",
+    "scientific_text_changed": false
+  },
+  "frozen_inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline_per_image_sha256": "facc4405234d33ebb3eeda697d6d232ac35170112fc829bebde48fc955aed8ea",
+    "affinity_manifest_sha256": "c066744a2acf3df3a078f4b25a973ea21bf140adeb88f713c90de8886a53fc42",
+    "affinity_package_sha256": "f9fb008a19c9f0ed1cb5ffb3f04f4f35227562614ca1dd6655fdaff6373167e9",
+    "affinity_freeze_sha256": "ed8b323dfaddf8fc9b5f7061a49dbc74f67187a45fb55c73ebdb46f36f9ff4ad",
+    "rad_dino_revision": "110cbc18d5133582e320b43d53bf5c44e410c936",
+    "direct_kaggle_mount_enforced_for_affinity_input": true,
+    "all_371_source_image_hashes_verified_before_prediction": true,
+    "all_371_affinity_map_hashes_and_schemas_verified_before_prediction": true
+  },
+  "prediction_first_order": {
+    "static_order_verified": true,
+    "wrapper_lines": {
+      "build_generation_command": 768,
+      "run_generation": 775,
+      "independent_prediction_freeze_audit": 779,
+      "build_evaluation_command": 780,
+      "run_evaluation": 787
+    },
+    "runner_imports_segmentation_dataset": false,
+    "runner_reads_annotation_files": false,
+    "all_371_output_maps_and_hash_bindings_required_before_evaluation": true,
+    "evaluation_instantiates_validation_segmentation_dataset_only_after_freeze": true
+  },
+  "verification": {
+    "wrapper_py_compile": "PASS",
+    "focused_unittest_count": 11,
+    "focused_unittest_status": "PASS",
+    "protocol_and_source_hash_consistency": "PASS",
+    "kernel_metadata_contract": "PASS"
+  },
+  "scientific_contract": {
+    "training_supervision": "image-level labels only",
+    "validation_gt_use": "post-freeze evaluation only",
+    "bootstrap": "paired complete-group, 10000 replicates, seed family 20260727",
+    "complete_misses_included": true,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "kernel_launched_at_audit_time": false
+}
