@@ -13,6 +13,7 @@ SELECTION_METHODS = (
     "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam",
     "coverage_mass_sam_causal", "hybrid", "bone_hybrid", "simple_hybrid",
     "prompt_hybrid", "consistency_hybrid", "source_consensus",
+    "prompt_source_graph",
 )
 
 DEFAULT_PROMPT_HYBRID_WEIGHTS = (0.30, 0.20, 0.15, 0.15, 0.20)
@@ -94,6 +95,199 @@ def _point_consistency(
     return float(sum(terms) / len(terms)) if terms else 0.0
 
 
+def _mask_iou(first: np.ndarray, second: np.ndarray) -> float:
+    first_bool = first.astype(bool)
+    second_bool = second.astype(bool)
+    union = float(np.logical_or(first_bool, second_bool).sum())
+    if union <= 0:
+        return 0.0
+    return float(np.logical_and(first_bool, second_bool).sum()) / union
+
+
+def prompt_source_graph_selection(
+    masks: np.ndarray,
+    sam_scores: np.ndarray,
+    component_ids: np.ndarray,
+    prompt_modes: np.ndarray,
+    proposal_source_ids: np.ndarray,
+    *,
+    component_topk: int,
+    cluster_iou_threshold: float = 0.5,
+) -> tuple[np.ndarray, list[int], dict[str, int]]:
+    """Select prompt-stable medoids from source-consensus proposal clusters.
+
+    This selector deliberately avoids a fitted weighted sum.  It first chooses
+    one robust medoid per morphology component by lexicographically comparing
+    agreement across distinct SAM prompt modes.  Component medoids are then
+    grouped by mask IoU; clusters supported by more independent proposal
+    sources rank first, while single-source clusters remain eligible as a
+    fallback for lesions missed by one source.
+    """
+    count = int(masks.shape[0])
+    scores = np.zeros(count, dtype=np.float32)
+    components = np.asarray(component_ids, dtype=np.int32).reshape(-1)
+    modes = np.asarray(prompt_modes, dtype="U32").reshape(-1)
+    sources = np.asarray(proposal_source_ids, dtype="U32").reshape(-1)
+    qualities = np.asarray(sam_scores, dtype=np.float32).reshape(-1)
+    if any(len(values) != count for values in (components, modes, sources, qualities)):
+        raise ValueError(
+            "prompt_source_graph requires aligned masks, SAM scores, component IDs, "
+            "prompt modes and proposal source IDs"
+        )
+    if count == 0:
+        return scores, [], {"proposal_clusters": 0, "cross_source_clusters": 0}
+    if not 0.0 <= float(cluster_iou_threshold) <= 1.0:
+        raise ValueError("cluster_iou_threshold must be in [0, 1]")
+
+    component_representatives: list[dict[str, object]] = []
+    for component_id in np.unique(components):
+        indices = np.where(components == component_id)[0]
+        available_modes = sorted(set(str(modes[index]) for index in indices))
+        ranked: list[tuple[tuple[float, ...], int, float, float]] = []
+        for index in indices:
+            other_mode_agreements: list[float] = []
+            for other_mode in available_modes:
+                if other_mode == str(modes[index]):
+                    continue
+                peers = [
+                    int(peer)
+                    for peer in indices
+                    if str(modes[peer]) == other_mode
+                ]
+                if peers:
+                    other_mode_agreements.append(
+                        max(_mask_iou(masks[index], masks[peer]) for peer in peers)
+                    )
+            robust = min(other_mode_agreements) if other_mode_agreements else 0.0
+            central = (
+                float(np.median(other_mode_agreements))
+                if other_mode_agreements else 0.0
+            )
+            key = (
+                float(len(other_mode_agreements)),
+                robust,
+                central,
+                float(qualities[index]),
+                float(-int(index)),
+            )
+            ranked.append((key, int(index), robust, central))
+            scores[index] = np.float32(robust)
+        _, representative, robust, central = max(ranked, key=lambda item: item[0])
+        component_representatives.append(
+            {
+                "component_id": int(component_id),
+                "candidate_index": representative,
+                "source": str(sources[representative]),
+                "prompt_robust": robust,
+                "prompt_central": central,
+                "sam_score": float(qualities[representative]),
+            }
+        )
+
+    representative_count = len(component_representatives)
+    adjacency: list[set[int]] = [set() for _ in range(representative_count)]
+    for left in range(representative_count):
+        left_index = int(component_representatives[left]["candidate_index"])
+        for right in range(left + 1, representative_count):
+            right_index = int(component_representatives[right]["candidate_index"])
+            if _mask_iou(masks[left_index], masks[right_index]) >= cluster_iou_threshold:
+                adjacency[left].add(right)
+                adjacency[right].add(left)
+
+    clusters: list[list[int]] = []
+    unseen = set(range(representative_count))
+    while unseen:
+        seed = min(unseen)
+        stack = [seed]
+        unseen.remove(seed)
+        cluster: list[int] = []
+        while stack:
+            node = stack.pop()
+            cluster.append(node)
+            for neighbour in sorted(adjacency[node], reverse=True):
+                if neighbour in unseen:
+                    unseen.remove(neighbour)
+                    stack.append(neighbour)
+        clusters.append(sorted(cluster))
+
+    ranked_clusters: list[tuple[tuple[float, ...], int]] = []
+    cross_source_cluster_count = 0
+    for cluster in clusters:
+        cluster_sources = {
+            str(component_representatives[node]["source"]) for node in cluster
+        }
+        if len(cluster_sources) > 1:
+            cross_source_cluster_count += 1
+        candidate_nodes: list[tuple[tuple[float, ...], int]] = []
+        pairwise_values: list[float] = []
+        for position, left in enumerate(cluster):
+            left_index = int(component_representatives[left]["candidate_index"])
+            for right in cluster[position + 1:]:
+                right_index = int(component_representatives[right]["candidate_index"])
+                pairwise_values.append(_mask_iou(masks[left_index], masks[right_index]))
+        cluster_cohesion = (
+            float(np.median(pairwise_values)) if pairwise_values else 0.0
+        )
+        for node in cluster:
+            record = component_representatives[node]
+            index = int(record["candidate_index"])
+            cross_source_iou = 0.0
+            medoid_agreements: list[float] = []
+            for other in cluster:
+                if other == node:
+                    continue
+                other_record = component_representatives[other]
+                other_index = int(other_record["candidate_index"])
+                agreement = _mask_iou(masks[index], masks[other_index])
+                medoid_agreements.append(agreement)
+                if str(other_record["source"]) != str(record["source"]):
+                    cross_source_iou = max(cross_source_iou, agreement)
+            medoid_centrality = (
+                float(np.mean(medoid_agreements)) if medoid_agreements else 0.0
+            )
+            candidate_nodes.append(
+                (
+                    (
+                        cross_source_iou,
+                        medoid_centrality,
+                        float(record["prompt_robust"]),
+                        float(record["prompt_central"]),
+                        float(record["sam_score"]),
+                        float(-index),
+                    ),
+                    index,
+                )
+            )
+        representative_index = max(candidate_nodes, key=lambda item: item[0])[1]
+        representative_record = next(
+            record
+            for record in component_representatives
+            if int(record["candidate_index"]) == representative_index
+        )
+        cluster_key = (
+            float(len(cluster_sources)),
+            float(len(cluster)),
+            cluster_cohesion,
+            float(representative_record["prompt_robust"]),
+            float(representative_record["prompt_central"]),
+            float(representative_record["sam_score"]),
+            float(-representative_index),
+        )
+        ranked_clusters.append((cluster_key, representative_index))
+
+    ranked_clusters.sort(key=lambda item: item[0], reverse=True)
+    limit = len(ranked_clusters) if component_topk <= 0 else component_topk
+    selected = [index for _, index in ranked_clusters[:limit]]
+    for rank, index in enumerate(selected):
+        # A diagnostic-only ordering code. Selection itself uses the complete
+        # lexicographic keys above, not this scalar.
+        scores[index] = np.float32(2.0 + (len(selected) - rank) / max(1, len(selected)))
+    return scores, selected, {
+        "proposal_clusters": len(clusters),
+        "cross_source_clusters": cross_source_cluster_count,
+    }
+
+
 def score_masks(
     masks: np.ndarray,
     bone_cam: np.ndarray,
@@ -108,6 +302,9 @@ def score_masks(
     negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     proposal_teacher_probability: np.ndarray | None = None,
     proposal_teacher_component_start: int | None = None,
+    prompt_modes: np.ndarray | None = None,
+    proposal_source_ids: np.ndarray | None = None,
+    graph_component_topk: int = 0,
     prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
     prompt_area_target: float = 2.0,
     prompt_area_log_sigma: float = 1.0,
@@ -126,6 +323,26 @@ def score_masks(
         raise ValueError(f"Unknown selection_method '{method}'. Choose from {SELECTION_METHODS}.")
 
     n = masks.shape[0]
+    if method == "prompt_source_graph":
+        if (
+            sam_scores is None
+            or component_ids is None
+            or prompt_modes is None
+            or proposal_source_ids is None
+        ):
+            raise ValueError(
+                "prompt_source_graph requires SAM scores, component IDs, prompt "
+                "modes and proposal source IDs"
+            )
+        graph_scores, _, _ = prompt_source_graph_selection(
+            masks,
+            sam_scores,
+            component_ids,
+            prompt_modes,
+            proposal_source_ids,
+            component_topk=graph_component_topk,
+        )
+        return graph_scores
     scores = np.zeros(n, dtype=np.float32)
     sam_ranks = _within_group_percentile_ranks(sam_scores, component_ids, n)
     causal_ranks = _within_group_percentile_ranks(
@@ -376,6 +593,7 @@ def constrain_to_bone_support(
             "coverage_mass_sam",
             "coverage_mass_sam_causal",
             "source_consensus",
+            "prompt_source_graph",
         }
         or bone_support is None
         or not bone_support.any()
@@ -407,6 +625,8 @@ def select_and_fuse_masks(
     negative_points_by_component: dict[int, tuple[tuple[int, int], ...]] | None = None,
     proposal_teacher_probability: np.ndarray | None = None,
     proposal_teacher_component_start: int | None = None,
+    prompt_modes: np.ndarray | None = None,
+    proposal_source_ids: np.ndarray | None = None,
     prompt_hybrid_weights: tuple[float, float, float, float, float] = DEFAULT_PROMPT_HYBRID_WEIGHTS,
     prompt_area_target: float = 2.0,
     prompt_area_log_sigma: float = 1.0,
@@ -465,6 +685,39 @@ def select_and_fuse_masks(
     def _clip(fused_mask: np.ndarray) -> np.ndarray:
         return constrain_to_bone_support(fused_mask, bone_support, selection_method, support_clip_kernel)
 
+    if selection_method == "prompt_source_graph":
+        if (
+            sam_scores is None
+            or component_ids is None
+            or prompt_modes is None
+            or proposal_source_ids is None
+        ):
+            raise ValueError(
+                "prompt_source_graph requires SAM scores, component IDs, prompt "
+                "modes and proposal source IDs"
+            )
+        graph_scores, selected_indices, graph_details = prompt_source_graph_selection(
+            masks,
+            sam_scores,
+            component_ids,
+            prompt_modes,
+            proposal_source_ids,
+            component_topk=component_topk,
+        )
+        if not selected_indices:
+            return result(np.zeros_like(bone_cam, dtype=np.uint8), [], 0)
+        selected_mask = masks[selected_indices].any(axis=0).astype(np.uint8)
+        output = result(
+            _clip(selected_mask),
+            selected_indices,
+            int(np.count_nonzero(graph_scores > 0)),
+        )
+        if return_details:
+            mask, details = output
+            details.update(graph_details)
+            return mask, details
+        return output
+
     scores = score_masks(
         masks,
         bone_cam,
@@ -479,6 +732,8 @@ def select_and_fuse_masks(
         negative_points_by_component=negative_points_by_component,
         proposal_teacher_probability=proposal_teacher_probability,
         proposal_teacher_component_start=proposal_teacher_component_start,
+        prompt_modes=prompt_modes,
+        proposal_source_ids=proposal_source_ids,
         prompt_hybrid_weights=prompt_hybrid_weights,
         prompt_area_target=prompt_area_target,
         prompt_area_log_sigma=prompt_area_log_sigma,

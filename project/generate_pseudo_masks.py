@@ -286,6 +286,7 @@ def parse_args() -> argparse.Namespace:
                             "coverage_mass_sam", "coverage_mass_sam_causal", "hybrid",
                             "bone_hybrid", "simple_hybrid", "prompt_hybrid",
                             "consistency_hybrid", "source_consensus",
+                            "prompt_source_graph",
                         ],
                         help="CAM-guided mask scoring method")
     parser.add_argument(
@@ -1181,6 +1182,23 @@ def main() -> None:
             "--external-saliency-role proposal_gallery requires the complete "
             "hash-locked external-saliency contract"
         )
+    if args.selection_method == "prompt_source_graph":
+        if (
+            external_saliency_contract is None
+            or args.external_saliency_role != "proposal_gallery"
+        ):
+            raise ValueError(
+                "prompt_source_graph requires the hash-locked external saliency "
+                "proposal gallery"
+            )
+        if not args.sam_prompt_ensemble or args.disable_sam_prompt_ensemble:
+            raise ValueError(
+                "prompt_source_graph requires the fixed multi-prompt SAM ensemble"
+            )
+        if args.component_topk <= 0:
+            raise ValueError(
+                "prompt_source_graph requires a positive component_topk cluster cap"
+            )
 
     run_metadata = {
             "pipeline_profile": args.pipeline_profile,
@@ -1222,8 +1240,16 @@ def main() -> None:
                     "replace_layercam"
                     if args.external_saliency_role == "replace"
                     else (
-                        "append_component_sam_proposals_only; layercam selector, "
-                        "support and post-processing unchanged"
+                        (
+                            "append_component_sam_proposals; prompt-stable "
+                            "source-consensus graph selector; layercam support "
+                            "and post-processing unchanged"
+                        )
+                        if args.selection_method == "prompt_source_graph"
+                        else (
+                            "append_component_sam_proposals_only; layercam selector, "
+                            "support and post-processing unchanged"
+                        )
                     )
                 )
                 if external_saliency_contract is not None else None
@@ -1905,6 +1931,7 @@ def main() -> None:
                 sam_components = bone_components
                 point_prompts: list[tuple[int, int]] = []
                 candidate_prompt_modes: list[str] = []
+                candidate_proposal_sources: list[str] = []
                 prompt_stats = {
                     "sam_prompt_calls": 0,
                     "unique_positive_prompt_points": 0,
@@ -2080,6 +2107,37 @@ def main() -> None:
                     ], axis=0)
                     candidate_prompt_modes.extend(["cam"] * len(cam_masks))
 
+                if component_ids is not None:
+                    external_component_end = (
+                        cam_component_count + len(external_saliency_components)
+                    )
+                    for component_id in component_ids:
+                        component_id_int = int(component_id)
+                        if (
+                            external_saliency_contract is not None
+                            and args.external_saliency_role == "replace"
+                        ):
+                            candidate_proposal_sources.append("external_saliency")
+                        elif component_id_int < cam_component_count:
+                            candidate_proposal_sources.append("layercam")
+                        elif component_id_int < external_component_end:
+                            candidate_proposal_sources.append("external_saliency")
+                        else:
+                            candidate_proposal_sources.append("proposal_teacher")
+                else:
+                    candidate_proposal_sources.extend(["unassigned"] * len(sam_masks))
+                proposal_source_ids = np.asarray(
+                    candidate_proposal_sources, dtype="U32"
+                )
+                prompt_mode_array = np.asarray(candidate_prompt_modes, dtype="U32")
+                if (
+                    len(proposal_source_ids) != len(sam_masks)
+                    or len(prompt_mode_array) != len(sam_masks)
+                ):
+                    raise RuntimeError(
+                        "Candidate source/prompt provenance is not aligned with SAM masks"
+                    )
+
                 classifier_causal_scores = None
                 if args.selection_method == "coverage_mass_sam_causal":
                     if target_columns != ["tumor"] or classifier.classifier.out_features != 1:
@@ -2112,6 +2170,7 @@ def main() -> None:
                             if bone_components else np.zeros((0, args.image_size, args.image_size), dtype=np.uint8)
                         ),
                         prompt_modes=np.asarray(candidate_prompt_modes, dtype="U16"),
+                        proposal_source_ids=proposal_source_ids,
                     )
 
                 # ── 4b. Prompt-quality metrics (optional, pre-SAM diagnostics) ──
@@ -2150,6 +2209,9 @@ def main() -> None:
                     proposal_teacher_component_start=(
                         cam_component_count if teacher_probability is not None else None
                     ),
+                    prompt_modes=prompt_mode_array,
+                    proposal_source_ids=proposal_source_ids,
+                    graph_component_topk=args.component_topk,
                     prompt_hybrid_weights=prompt_score_weights,
                     prompt_area_target=args.prompt_area_target,
                     prompt_area_log_sigma=args.prompt_area_log_sigma,
@@ -2172,6 +2234,8 @@ def main() -> None:
                     proposal_teacher_component_start=(
                         cam_component_count if teacher_probability is not None else None
                     ),
+                    prompt_modes=prompt_mode_array,
+                    proposal_source_ids=proposal_source_ids,
                     prompt_hybrid_weights=prompt_score_weights,
                     prompt_area_target=args.prompt_area_target,
                     prompt_area_log_sigma=args.prompt_area_log_sigma,
@@ -2246,6 +2310,7 @@ def main() -> None:
                         classifier_causal_scores=classifier_causal_scores,
                         component_ids=component_ids,
                         prompt_modes=candidate_prompt_modes,
+                        proposal_source_ids=proposal_source_ids,
                     )
                     candidate_diagnostic_rows.append(
                         {

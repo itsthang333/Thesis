@@ -37,6 +37,7 @@ def save_candidate_diagnostics(
     classifier_causal_scores: np.ndarray | None,
     component_ids: np.ndarray | None,
     prompt_modes: Iterable[str],
+    proposal_source_ids: Iterable[str] | None = None,
 ) -> dict[str, object]:
     """Save one pickle-free NPZ without ever consulting segmentation GT."""
     path = Path(path)
@@ -61,6 +62,14 @@ def save_candidate_diagnostics(
     modes = np.asarray(list(prompt_modes), dtype="U32").reshape(-1)
     if len(modes) != len(candidates):
         raise ValueError("Candidate and prompt-mode counts differ")
+    sources_present = proposal_source_ids is not None
+    sources = (
+        np.asarray(list(proposal_source_ids), dtype="U32").reshape(-1)
+        if sources_present
+        else np.full(len(candidates), "unassigned", dtype="U32")
+    )
+    if len(sources) != len(candidates):
+        raise ValueError("Candidate and proposal-source counts differ")
 
     support_present = bone_support is not None
     support = (
@@ -83,7 +92,7 @@ def save_candidate_diagnostics(
 
     np.savez_compressed(
         path,
-        schema_version=np.asarray([1], dtype=np.int32),
+        schema_version=np.asarray([2 if sources_present else 1], dtype=np.int32),
         sam_masks=candidates,
         refined_mask=np.asarray(refined_mask, dtype=np.uint8),
         final_mask=np.asarray(final_mask, dtype=np.uint8),
@@ -98,6 +107,7 @@ def save_candidate_diagnostics(
         classifier_causal_scores=causal,
         component_ids=components,
         prompt_modes=modes,
+        proposal_source_ids=sources,
     )
     return {
         "diagnostic_path": str(Path("candidate_diagnostics") / path.name),
@@ -230,13 +240,22 @@ def validate_candidate_diagnostics_manifest(
         if not path.is_file() or sha256_file(path) != row["diagnostic_sha256"]:
             raise ValueError(f"Candidate diagnostic file/hash mismatch for {stem}")
         with np.load(path, allow_pickle=False) as payload:
-            if int(payload["schema_version"][0]) != 1:
+            schema_version = int(payload["schema_version"][0])
+            if schema_version not in {1, 2}:
                 raise ValueError(f"Unsupported candidate diagnostic schema for {stem}")
             expected_shape = (int(summary["image_size"]),) * 2
             if tuple(payload["final_mask"].shape) != expected_shape:
                 raise ValueError(f"Candidate diagnostic shape mismatch for {stem}")
             if int(row["candidate_count"]) != int(payload["sam_masks"].shape[0]):
                 raise ValueError(f"Candidate diagnostic count mismatch for {stem}")
+            if schema_version >= 2:
+                if (
+                    "proposal_source_ids" not in payload
+                    or len(payload["proposal_source_ids"]) != len(payload["sam_masks"])
+                ):
+                    raise ValueError(
+                        f"Candidate proposal-source provenance mismatch for {stem}"
+                    )
 
     return indexed, {
         **summary,
