@@ -1,0 +1,70 @@
+{
+  "protocol_id": "rad_dino_dense_mil_probe_val_v1",
+  "status": "predeclared_before_execution",
+  "scientific_role": "image-label-only dense MIL localization mechanism probe; not a final pseudo-mask or consumer run",
+  "hypothesis": "A trainable patch-level Log-Sum-Exp MIL head over frozen radiograph-pretrained RAD-DINO tokens can retain small-lesion evidence that a global classifier CAM or normal-only distance map misses.",
+  "supervision": {
+    "train_source": "binary image-level tumor flag only",
+    "segmentation_annotations_used_for_training": false,
+    "validation_image_labels_used_for_training": false,
+    "validation_gt_read_only_after_prediction_freeze": true,
+    "test_evaluated": false
+  },
+  "data_contract": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "train_images": 2981,
+    "train_tumor": 1488,
+    "train_normal": 1493,
+    "validation_images": 371,
+    "validation_tumor": 184,
+    "validation_normal": 187,
+    "subgroups": {
+      "small": "<1% GT area, n=94 after evaluation",
+      "medium": "1% to <5% GT area, n=72 after evaluation",
+      "large": ">=5% GT area, n=18 after evaluation"
+    }
+  },
+  "model": {
+    "encoder": "microsoft/rad-dino",
+    "revision": "110cbc18d5133582e320b43d53bf5c44e410c936",
+    "config_sha256": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede",
+    "preprocessor_sha256": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56",
+    "weights_sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae",
+    "input_size": 448,
+    "patch_size": 14,
+    "grid": "32x32",
+    "head": "LayerNorm(768) -> Linear(768,1) applied per patch",
+    "pooling": "temperature 0.20 Log-Sum-Exp over all patch logits",
+    "loss": "BCEWithLogits on pooled image logit",
+    "seed": 42,
+    "epochs": 12,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "augmentation": "training-only horizontal flip p=0.5",
+    "gradient_clip_norm": 5.0
+  },
+  "prediction_arms": {
+    "single_scale": "full 448 view, patch probability bilinearly resized to 320",
+    "multiscale": "full plus four fixed 280px corner crops, overlap-averaged on 448 canvas, fixed 0.5 full + 0.5 tiles, then resized to 320",
+    "normalization": "sigmoid probability only; no per-image min-max and no validation fit",
+    "freeze_before_gt": true
+  },
+  "evaluation": {
+    "continuous": [
+      "pixel AP",
+      "pixel AUROC",
+      "argmax hit",
+      "saliency mass in GT"
+    ],
+    "fixed_diagnostics": [
+      "p90 Dice",
+      "p95 Dice",
+      "p97 Dice",
+      "p99 Dice"
+    ],
+    "comparison": "multiscale minus single-scale, paired complete-group bootstrap, 10000 replicates, seed 20260726",
+    "consumer_trained": false,
+    "promotion": "none; a positive mechanism result only authorizes a separately predeclared pseudo-mask protocol"
+  }
+}
