@@ -2574,4 +2574,6 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   SHA-256
   `35bb8313c72a881d0ce3cb07cf52af3b0463976edd7cf0bed96f5d462f66a612`.
   The existing single heartbeat remains the only monitor.
+- Corrected version 3 was pushed to the same private kernel and entered
+  `RUNNING`. No new monitor or local heavy job was created.
 
