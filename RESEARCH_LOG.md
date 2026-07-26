@@ -2731,3 +2731,88 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   monitor was created. The monitor is required to remove itself on terminal
   status before output audit or any implementation-only rerun.
 
+## 2026-07-27 - RAD-DINO geodesic seed-expansion terminal audit and rejection
+
+- Private Kaggle kernel
+  `itsthang333/btxrd-rad-dino-geodesic-seed-expansion-val-v1` version 1
+  completed successfully on a Tesla T4 in `240.8093` seconds. The sole
+  five-minute monitor `theo-d-i-rad-dino-geodesic` removed itself at terminal
+  status, so no Kaggle monitor remains. The direct run contains 371/371
+  output maps. Eleven focused tests passed in-kernel before prediction.
+- Direct provenance and outputs were independently frozen and audited:
+  protocol SHA-256
+  `fbf49a452664e52e6efe07059282e91f1819cf2fab66baa0d4a1d3025fcfe1b2`,
+  wrapper
+  `97de7ce759525b45b3186eb7f9c5829f5ca4b9597ea81a8c5abc64d3260b09d5`,
+  run manifest
+  `dbb18d163f79b2b367c2c6b0010be286eafd5da05b1ced6f13db45f5f488824d`,
+  prediction freeze
+  `3f7c7437347b6587593ef348c307721ef3e02d978405817f04a40874dc432565`,
+  prediction manifest
+  `0e3f02e6a938c8dbeeb2dab7a7eb22e69b8b126bbd4d161f21523bdccfc7ed4d`,
+  summary
+  `1c8a9af13225614fa227d6c1affca988f2cf7bbc26778292af87ab4bdee6b942`,
+  paired comparison
+  `756005b2dd2905324e54e12af2024662200c5494b8a5619729892b4a3bae8de6`
+  and gate
+  `59bd1efa0ea98755c4b779fb8b50fc7b07d05dfb11555dbf98046c8498f8ffca`.
+- A new independent local auditor at
+  `project/tools/audit_rad_dino_geodesic_seed_probe.py` (SHA-256
+  `d66cdb737a80c592fce335a02b822141c51802fd7e325f8e92188d257e0c9ce8`)
+  verified source order and the absence of dataset/annotation/test access in
+  generation; rehashed all 371 source and 371 output maps; then recomputed
+  every metric, complete miss, complete-group paired bootstrap and gate from
+  local validation GT only after the prediction freeze. Its evidence SHA-256
+  is
+  `13d777d19f85f7a9d538b83030623f013c57513fb98bb5de5e5cbd6edc4da8fd`;
+  cohort `371/184/187`, subgroups `94/72/18`, 10,000 bootstrap replicates and
+  every cloud value match.
+- Geodesic overall/small/medium/large p90 Dice is
+  `0.09167708/0.01623404/0.11702251/0.38427568`; pixel AUROC is
+  `0.79697640/0.83400862/0.74582948/0.80817356`. Complete misses at p90
+  are `40/28/11/1`. Against the frozen affinity source, overall pixel AP
+  decreases by `-0.00960391` (CI95
+  `[-0.01907460,-0.00256564]`) and pixel AUROC by `-0.00800559`
+  (`[-0.01157337,-0.00452495]`). Overall p90 Dice changes only
+  `+0.00055315` (`[-0.00020901,+0.00146991]`); small p90 Dice decreases
+  `-0.00017251`.
+- The no-GT mechanistic comparison explains the failure: across 184 tumor
+  maps, median pixel correlation with the source is `0.99437678`, median
+  top-10-percent support Jaccard is `0.94861551`, and median absolute map
+  change is only `0.00771322`. The graph mostly preserves the same support
+  ranking, so it cannot correct the source affinity map's shape error.
+- The predeclared all-required gate fails: overall p90 Dice is below `0.10`,
+  medium p90 Dice is below `0.12`, the overall improvement CI lower bound is
+  not positive, and small mean p90 Dice decreases. Decision:
+  `REJECT_FIXED_GEODESIC_CONFIGURATION`. No pseudo-mask consumer is
+  authorized, `consumer_trained=false`, and `test_evaluated=false`.
+  Compact evidence is stored at
+  `artifacts/kaggle/rad_dino_geodesic_seed_expansion_val_v1/version1_compact_evidence.json`.
+
+## 2026-07-27 - Operational goal retained after post-experiment literature check
+
+- After the geodesic experiment completed, the frozen literature review
+  `artifacts/literature_reviews/wsss_supervision_gap_goal_review_2026-07-27.md`
+  and goal protocol
+  `artifacts/research_protocols/wsss_feasible_validation_goal_v1.json` were
+  rechecked against additional direct comparisons. Chen and Sun's ACM survey
+  identifies image-label-only training as the most challenging WSSS setting
+  and emphasizes incomplete CAM extent. In medical image-label-only studies,
+  EnsembleCAM reports BraTS Dice `0.703` versus fully supervised `0.818`
+  (gap `0.115`) and prostate Decathlon `0.793` versus `0.868` (gap `0.075`);
+  morphology-guided CAM+SAM reports BUSI Dice `0.7439` versus fully
+  supervised U-Net `0.7831` (gap `0.0392`), but depends on strong
+  modality-specific morphology and foundation-model priors.
+- Therefore a weak-versus-full gap of `0.10` is achievable in favorable
+  settings but is not a defensible hard minimum for every BTXRD subgroup.
+  BTXRD has only 3,746 images, small lesions are the weakest current group,
+  and large validation has only 18 images with a `0.14105` supervised-run
+  range. The already-frozen feasible operational goal remains unchanged:
+  overall/small/medium/large Dice at least
+  `0.34024039/0.17895493/0.51244178/0.49370336`. These require absolute
+  gains of `+0.11022052/+0.10795352/+0.09903874/+0.16678648` over the
+  current consumer. The former fully-supervised-minus-0.10 tier remains a
+  stretch goal only. Metric, cohort, complete-miss policy and test lock are
+  unchanged. The post-experiment quantitative addendum is stored at
+  `artifacts/literature_reviews/wsss_supervision_gap_post_experiment_addendum_2026-07-27.md`.
+
