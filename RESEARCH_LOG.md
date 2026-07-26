@@ -1691,3 +1691,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `theo-d-i-rad-dino-dense-mil-kaggle` follows it. No duplicate monitor or
   competing heavy local job was created.
 
+## 2026-07-26 - RAD-DINO dense-MIL probe v1 environment error
+
+- Kaggle kernel `itsthang333/btxrd-rad-dino-dense-mil-probe-v1` version 1
+  terminated before training. The direct wrapper log reports
+  `RuntimeError: transformers must be 4.50.2, got 5.0.0` at the explicit
+  environment-version guard in `run_rad_dino_dense_mil_probe.py`.
+- The failure is an implementation/environment packaging omission in the
+  Kaggle wrapper: unlike the already audited RAD-DINO nominal-memory and MAE
+  wrappers, it did not install the predeclared `transformers==4.50.2`.
+  Therefore no dense-MIL checkpoint, validation prediction, validation-GT
+  evaluation or test access occurred in version 1.
+- The admissible correction is limited to installing
+  `transformers==4.50.2` before model loading and execution, with
+  `TOKENIZERS_PARALLELISM=false`. The frozen source commit, protocol, split,
+  RAD-DINO weights, training schedule, validation arms and evaluation
+  contract remain unchanged.
+
