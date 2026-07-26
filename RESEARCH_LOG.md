@@ -2037,3 +2037,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   provisional until this deterministic correction is audited. No threshold,
   pseudo-mask, consumer or test access is authorized.
 
+## 2026-07-26 - Geometry-correction wrapper v1 duplicate-source error
+
+- Kernel
+  `itsthang333/btxrd-rad-dino-square-geometry-correction-v1` version 1
+  stopped after source checkout and before any map derivation or GT access.
+  Direct log shows that source discovery found two dense-MIL manifests: the
+  real direct kernel output and an identical compact evidence copy embedded
+  under the INSIGHT source checkout at `thesis_source/artifacts/`.
+- This is an implementation-only source-discovery ambiguity. The admissible
+  repair excludes every candidate path containing `thesis_source`, so only
+  direct immutable Kaggle kernel-output mounts can satisfy the already pinned
+  run-manifest/freeze/checkpoint hashes. Geometry, cohorts, metrics, bootstrap,
+  prediction freeze and test lock are unchanged.
+- Corrected wrapper SHA-256 is
+  `76a18a6bc3c2c2f445a670a526d5f928d029008962d6ba7a1b807695732cfba3`;
+  it compiles locally and retains `PRELAUNCH_PASS`.
+
