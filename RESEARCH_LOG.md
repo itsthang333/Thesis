@@ -2230,3 +2230,56 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   remain fixed, and test remains locked. Meeting the operational tier will
   not be reported as clinical equivalence to fully supervised training.
 
+## 2026-07-27 - RAD-DINO affinity-decoder prediction probe predeclaration
+
+- The two user-prepared untracked files
+  `project/models/rad_dino_affinity_decoder.py` and
+  `tests/test_rad_dino_affinity_decoder.py` were audited before use and
+  preserved as the basis of the next mechanism probe. The audit found a
+  material implementation bug in the original absolute
+  `foreground_threshold=0.99`: bilinear teacher resize from `32x32` to
+  `64x64` reduced an isolated `1.0` seed to a maximum of `0.5625`, leaving
+  zero positive pseudo pixels. In addition, `58/184` frozen nominal
+  validation maps have raw maximum below `0.99`, so an absolute threshold
+  was not robust to empirical calibration.
+- The implementation now mines deterministic top/bottom confidence ranks at
+  the native teacher resolution (`top 1%` foreground, `bottom 50%`
+  background), excludes known square padding, guarantees disjoint ranks, and
+  resizes foreground seeds with nearest-neighbor preservation. A regression
+  test confirms that one isolated `4x4` seed produces four foreground
+  gradient pixels at `8x8`, rather than disappearing. Explicit memmap closure
+  and exact prediction-manifest/map-set checks were added for Kaggle
+  reproducibility.
+- Lightweight local validation passed: all three Python files compile;
+  decoder, image BCE, pseudo BCE and affinity BCE jointly backpropagate with
+  finite gradients; propagation never reduces a source seed; padding is
+  excluded from confidence ranks; the mechanistic gate passes exactly at
+  every frozen boundary and fails immediately below one boundary. Static AST
+  order checks confirm all validation maps are generated before the
+  validation GT evaluator is called, the GT dataset import occurs only
+  inside that post-freeze evaluator, and no test split occurs in the runner.
+  Local pytest collected the suite but skipped it because the default local
+  environment lacks Torch; the equivalent Torch checks passed in the
+  existing `btxrd-pseudomask` environment. No heavy compute ran locally.
+- Source was frozen in commit
+  `38b5bb4b9d7a846862443b442ff406f0ab41d3bd`. Protocol
+  `rad_dino_affinity_decoder_probe_val_v1` is predeclared before execution
+  at SHA-256
+  `260f47fbd733f173f1d003ad46c0c5c245bd6bd8612a0549444c0a6a2ff62ee2`.
+  Training uses only the 2,981 clean-train images, binary image labels,
+  frozen RAD-DINO tokens, deterministic image guidance, and a
+  clean-train-normal nominal-memory teacher. The fixed configuration is 12
+  epochs, batch 8, AdamW `3e-4`, image SmoothMax BCE plus `1.0` pseudo loss
+  and `0.1` local-affinity loss; final epoch only, with no validation
+  selection.
+- This is prediction-first and cannot itself meet the final segmentation
+  consumer goal. Its all-required gate is frozen at image AUROC `>=0.65`;
+  overall/small pixel AUROC `>=0.75/0.77`; overall p90 Dice `>=0.10`;
+  small p97 Dice `>=0.03`; medium/large p90 Dice `>=0.12/0.35`. Passing only
+  authorizes a separately predeclared pseudo-mask or consumer experiment;
+  failing rejects this fixed configuration without validation threshold
+  fitting. Evaluation includes all 184 tumor images, fixed `94/72/18`
+  subgroups, paired complete-group bootstrap `10,000` against frozen nominal
+  single-scale evidence, `consumer_trained=false`, and
+  `test_evaluated=false`.
+
