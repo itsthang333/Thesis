@@ -1814,3 +1814,58 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   No implementation or Kaggle launch is authorized yet; the current
   dense-MIL result and the predeclared INSIGHT probe must resolve first.
 
+## 2026-07-26 - RAD-DINO dense-MIL localization probe completed and rejected
+
+- Kaggle kernel `itsthang333/btxrd-rad-dino-dense-mil-probe-v1` version 3
+  completed on a Tesla T4 after the two implementation-only corrections
+  recorded above. The independent physical auditor returned `PASS`.
+  Wrapper SHA-256 is
+  `58f68c087a43a6cba3cf128ac0f8d31fee15504d7544a04e0d17f415e1f2e37e`;
+  source commit is `e0741a9fddca7bf3fdac93e21dee3c8dfb4b6cc1`;
+  probe source SHA-256 is
+  `88084d9bfb8ec9bae14dfa558d06d113c926a94d2ef7851c0d254e05050f08fe`;
+  protocol SHA-256 is
+  `785da0fce22f40ad4863c69368292b0c45b78c7506f386f87fdc73be1154f438`;
+  split SHA-256 is
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  RAD-DINO weights SHA-256 is
+  `dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae`;
+  checkpoint SHA-256 is
+  `945cff3221190014437a0a34dda88935477d6ad6ea07fb03cec54e39c5801d3e`.
+- The image-only contract is intact: 2,981 clean-train image labels train
+  the head; no segmentation annotation, validation label or test image enters
+  optimization; all 742 validation maps are physically hash-checked and
+  frozen before GT access; complete misses are included; cohorts are
+  `371/184/187` with subgroups `94/72/18`; `consumer_trained=false` and
+  `test_evaluated=false`. Compact evidence and the audit are stored under
+  `artifacts/kaggle/rad_dino_dense_mil_probe_val_v1/`.
+- Absolute single-scale localization is weak: overall pixel AP/AUROC
+  `0.01722582/0.32162069`, small `0.00161379/0.32844999`, medium
+  `0.02193040/0.30773659`, large `0.07993705/0.34149299`; small-lesion
+  argmax hit is `0/94`. Fixed p90 Dice is only
+  `0.00855865/0.00089750/0.01289031/0.03124031` for
+  overall/small/medium/large. These are continuous mechanism diagnostics,
+  not segmentation Dice.
+- The fixed multiscale arm is not an improvement: overall pixel AP/AUROC
+  `0.01628222/0.31358044`, small `0.00159403/0.31381836`, medium
+  `0.01966358/0.30227604`, large `0.07946175/0.35755558`; small argmax hit
+  remains `0/94`. Fixed p90 Dice is
+  `0.00654377/0.00061396/0.00885131/0.02828032`.
+- Independent paired complete-group bootstrap with exactly 10,000
+  replicates gives multiscale minus single-scale overall pixel AP
+  `-0.00094361` (95% CI `[-0.00285399,+0.00039675]`) and pixel AUROC
+  `-0.00804025` (CI `[-0.02607627,+0.00994470]`). On small lesions the
+  deltas are pixel AP `-0.00001976` (CI
+  `[-0.00018363,+0.00014127]`), pixel AUROC `-0.01463163` (CI
+  `[-0.04587535,+0.01670747]`), saliency mass `-0.00005748` (CI
+  `[-0.00022129,+0.00011235]`) and p90 Dice `-0.00028353` (CI
+  `[-0.00088184,+0.00025407]`). No small-lesion metric improves coherently;
+  medium is also slightly down and large gains are too imprecise at `n=18`.
+- Decision: reject the plain dense-MIL `LayerNorm -> Linear` head and both
+  scales as standalone pseudo-mask sources; no validation threshold,
+  consumer U-Net, or downstream pseudo-mask is authorized from this run.
+  This is a mechanism failure rather than a contract failure. The result
+  supports moving to the already predeclared INSIGHT-style local-detector
+  plus broad-context-suppression head, while keeping the same frozen
+  RAD-DINO encoder, image-label-only supervision and prediction-first audit.
+

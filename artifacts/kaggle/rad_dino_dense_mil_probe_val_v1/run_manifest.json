@@ -1,0 +1,33 @@
+{
+  "run_id": "btxrd_rad_dino_dense_mil_probe_val_v1",
+  "source_commit": "e0741a9fddca7bf3fdac93e21dee3c8dfb4b6cc1",
+  "protocol_sha256": "785da0fce22f40ad4863c69368292b0c45b78c7506f386f87fdc73be1154f438",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "model_hashes": {
+    "config.json": {
+      "bytes": 879,
+      "sha256": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede"
+    },
+    "preprocessor_config.json": {
+      "bytes": 756,
+      "sha256": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56"
+    },
+    "model.safetensors": {
+      "bytes": 346345912,
+      "sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae"
+    }
+  },
+  "checkpoint_sha256": "945cff3221190014437a0a34dda88935477d6ad6ea07fb03cec54e39c5801d3e",
+  "cohort": {
+    "train": 2981,
+    "val": 371,
+    "val_tumor": 184
+  },
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "completed_at_utc": "2026-07-26T11:44:09.634789+00:00",
+  "elapsed_seconds": 2180.475692,
+  "wrapper_sha256": "58f68c087a43a6cba3cf128ac0f8d31fee15504d7544a04e0d17f415e1f2e37e",
+  "wrapper_source_commit": "e0741a9fddca7bf3fdac93e21dee3c8dfb4b6cc1"
+}
