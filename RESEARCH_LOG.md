@@ -1319,4 +1319,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   proposal inputs, parameters, execution order, cohort, metric and promotion
   gates are unchanged. The repaired protocol SHA-256 is
   `f6fbc130ebd353ac8ba59552dff87ceed04a70895d936bdae648afe45cf8c50e`.
+- Repaired kernel version 2 was launched from source commit
+  `e8233ae48f62a526647ea5dba13a482d50f2c111` and is RUNNING. Before upload,
+  the wrapper independently compared every expected digest with bytes returned
+  by `git show` at that exact commit, rechecked the prediction-freeze ordering,
+  compiled successfully and passed at SHA-256
+  `99a3e058b19286cc99487a4df210773329151bcad31cc30985bd4200acbaffec`.
+  The existing 15-minute monitor was updated in place to version 2; no second
+  monitor or competing heavy run was created.
 
