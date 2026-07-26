@@ -5,7 +5,7 @@
   "wrapper": {
     "path": "tmp/kaggle/rad_dino_affinity_decoder_probe_val_v1/run_rad_dino_affinity_decoder_probe_val_v1.py",
     "bytes": 11540,
-    "sha256": "3756a0b42a5624b4861b8c64b4f5dcb42fddb65b317ef94d0217498c74eee211"
+    "sha256": "1892c20f421cb4f183654a3d0e27f700f2b3192794793aba73a510f087722392"
   },
   "kernel_metadata": {
     "id": "itsthang333/btxrd-rad-dino-affinity-decoder-probe-v1",
@@ -19,9 +19,9 @@
     ]
   },
   "bindings": {
-    "checkout_commit": "2255361986304d047aa1438ee81b6af5dc9fa044",
+    "checkout_commit": "a716d059648924b5bb7ccf76f41549d4715ec89c",
     "scientific_source_commit": "38b5bb4b9d7a846862443b442ff406f0ab41d3bd",
-    "protocol_sha256": "260f47fbd733f173f1d003ad46c0c5c245bd6bd8612a0549444c0a6a2ff62ee2",
+    "protocol_sha256": "53e2bb82ef35862b6c3e20387edbe60776f9d1ba46da516b9d5116db3fa2e7cf",
     "git_split_sha256": "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8",
     "frozen_crlf_split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
     "baseline_per_image_sha256": "c7bd20412913157b8d6f17b69ce4ed01495645a1c2a91b17a0a37166737f844c",
@@ -44,6 +44,13 @@
     "wrapper_verifies_371_map_output": "PASS",
     "consumer_trained_false": "PASS",
     "test_evaluated_false": "PASS"
+  },
+  "implementation_correction": {
+    "kernel_version_1": "ERROR before package installation or data/model access because two Windows CRLF working-tree hashes were compared with canonical LF Git blobs",
+    "changed": "only datasets/btxrd.py and datasets/common.py provenance hashes, protocol hash, checkout commit, and wrapper hash",
+    "scientific_contract_changed": false,
+    "canonical_git_blob_hashes_reproduced_locally": "PASS",
+    "version_2_reaudit": "PASS"
   },
   "launch_contract": {
     "single_kernel": true,
