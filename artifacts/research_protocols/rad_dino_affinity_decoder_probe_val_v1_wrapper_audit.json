@@ -1,0 +1,54 @@
+{
+  "audit_id": "rad_dino_affinity_decoder_probe_val_v1_wrapper_audit",
+  "status": "PASS",
+  "audited_before_launch": true,
+  "wrapper": {
+    "path": "tmp/kaggle/rad_dino_affinity_decoder_probe_val_v1/run_rad_dino_affinity_decoder_probe_val_v1.py",
+    "bytes": 11540,
+    "sha256": "3756a0b42a5624b4861b8c64b4f5dcb42fddb65b317ef94d0217498c74eee211"
+  },
+  "kernel_metadata": {
+    "id": "itsthang333/btxrd-rad-dino-affinity-decoder-probe-v1",
+    "sha256": "7f340b2c2a8eb2fc452c4bc433cc946084522d40bb9e963792d46a9579fb8fa7",
+    "private": true,
+    "gpu": true,
+    "machine_shape": "NvidiaTeslaT4",
+    "internet": true,
+    "dataset_sources": [
+      "itsthang333/btxrd-raw"
+    ]
+  },
+  "bindings": {
+    "checkout_commit": "2255361986304d047aa1438ee81b6af5dc9fa044",
+    "scientific_source_commit": "38b5bb4b9d7a846862443b442ff406f0ab41d3bd",
+    "protocol_sha256": "260f47fbd733f173f1d003ad46c0c5c245bd6bd8612a0549444c0a6a2ff62ee2",
+    "git_split_sha256": "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8",
+    "frozen_crlf_split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline_per_image_sha256": "c7bd20412913157b8d6f17b69ce4ed01495645a1c2a91b17a0a37166737f844c",
+    "rad_dino_weight_sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae"
+  },
+  "checks": {
+    "wrapper_python_compile": "PASS",
+    "wrapper_ast_parse": "PASS",
+    "protocol_json_parse": "PASS",
+    "all_nine_runtime_source_hashes_bound": "PASS",
+    "affinity_decoder_test_blob_hash_bound": "PASS",
+    "source_checkout_and_scientific_commit_separated_explicitly": "PASS",
+    "split_lf_to_frozen_crlf_conversion_bound": "PASS",
+    "baseline_hash_verified_before_run": "PASS",
+    "transformers_4_50_2_installed_and_guarded": "PASS",
+    "torch_tests_run_before_heavy_stage": "PASS",
+    "heavy_cache_and_model_use_kaggle_temp": "PASS",
+    "output_directory_absent_until_runner_freezes_run": "PASS",
+    "runner_order_train_then_predictions_then_freeze_then_gt_evaluation": "PASS",
+    "wrapper_verifies_371_map_output": "PASS",
+    "consumer_trained_false": "PASS",
+    "test_evaluated_false": "PASS"
+  },
+  "launch_contract": {
+    "single_kernel": true,
+    "single_monitor": true,
+    "monitor_interval_minutes": 5,
+    "heavy_compute_local": false
+  }
+}
