@@ -1,0 +1,313 @@
+{
+  "method": "paired complete-group bootstrap",
+  "replicates": 10000,
+  "seed": 20260726,
+  "interpretation": "mechanism feasibility only; no arm/threshold promotion and no downstream consumer without a separate predeclared protocol",
+  "metrics": {
+    "pixel_ap": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": 0.0016312945977417829,
+        "ci95": [
+          -0.00028885425649745604,
+          0.0034517304745853026
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0003666034524204622,
+        "ci95": [
+          -0.00018300077179378565,
+          0.001117906554541771
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.0014860870541987337,
+        "ci95": [
+          -0.0029440232967677398,
+          0.005451302672398825
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": 0.008816622975258655,
+        "ci95": [
+          0.001755727350288787,
+          0.017580086926209385
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "pixel_auroc": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": 0.06534767139687922,
+        "ci95": [
+          0.038317813723636726,
+          0.09291798018665558
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.06840321225420437,
+        "ci95": [
+          0.022185497790834955,
+          0.11322663363410261
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.06313606477821576,
+        "ci95": [
+          0.02843232626173193,
+          0.09657750260490754
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": 0.058237384505501595,
+        "ci95": [
+          0.020398154738923972,
+          0.09535230272727045
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "argmax_hit": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "saliency_mass_in_gt": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": 0.0008633804215726748,
+        "ci95": [
+          -0.0008142832139351355,
+          0.00263485781834462
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0001475654149696858,
+        "ci95": [
+          -7.444810322959743e-05,
+          0.00038096499201446696
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.0017547723429410652,
+        "ci95": [
+          -0.0008857095340005,
+          0.004761621361512905
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": 0.001035957770581391,
+        "ci95": [
+          -0.012313111496236892,
+          0.014498949878310645
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p90": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.0022458611923386793,
+        "ci95": [
+          -0.005452264667783499,
+          0.0008964686688692064
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": -0.00017125489049123,
+        "ci95": [
+          -0.0008607599519638124,
+          0.00040954174501467596
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.0025768460040701824,
+        "ci95": [
+          -0.00927115939058228,
+          0.004364516936533929
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.011755977077282678,
+        "ci95": [
+          -0.030935501544962017,
+          0.0043863240381518225
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p95": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.003526878573403368,
+        "ci95": [
+          -0.006541808777951166,
+          -0.0008494566999089313
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": -0.00026285740581715405,
+        "ci95": [
+          -0.0011298489187030706,
+          0.00048797556418091523
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.005524154089996848,
+        "ci95": [
+          -0.012755787934100262,
+          0.0006490980657848282
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.012583220382201889,
+        "ci95": [
+          -0.025042932979872645,
+          -0.0029634166980674306
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p97": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.002832225537619942,
+        "ci95": [
+          -0.005772885845830654,
+          -0.0003069117345465923
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": -0.00017955092257846577,
+        "ci95": [
+          -0.0010008897787722073,
+          0.0006243674188543798
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.005201411972796106,
+        "ci95": [
+          -0.012372047620065038,
+          0.001025162195800673
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.007208336119909663,
+        "ci95": [
+          -0.013491437773782089,
+          -0.0021255575476717696
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p99": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.001494375567464087,
+        "ci95": [
+          -0.004364402246250607,
+          0.0005681802080131914
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0005314288944531088,
+        "ci95": [
+          -0.00011816257200531732,
+          0.0017321332535084068
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.004162151893013654,
+        "ci95": [
+          -0.01131754814437169,
+          0.0006490804697838977
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.0014024713441667279,
+        "ci95": [
+          -0.0027866098183797604,
+          -0.00031587022246288524
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    }
+  },
+  "test_evaluated": false
+}

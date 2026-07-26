@@ -1,0 +1,140 @@
+{
+  "protocol_id": "wsss_feasible_validation_goal_v1",
+  "status": "frozen_after_literature_and_internal_evidence_review_before_next_architecture_probe",
+  "frozen_at_date": "2026-07-27",
+  "scientific_role": "replace the former FS-minus-0.10 hard minimum with an evidence-calibrated operational validation goal while retaining FS-minus-0.10 as a stretch tier",
+  "scope": {
+    "training_supervision": "BTXRD image-level labels only",
+    "task": "binary bone-tumor semantic segmentation",
+    "model_restriction": "none, provided no task-specific pixel, point, scribble, or box supervision is used for training",
+    "external_pretraining": "permitted only when its provenance is declared and it is not trained on BTXRD validation/test masks",
+    "validation_gt": "evaluation and protocol-valid selection only after each candidate prediction is frozen",
+    "test_evaluated": false
+  },
+  "metric_contract": {
+    "primary_metric": "mean per-image Dice over all positive validation images",
+    "complete_misses_included": true,
+    "validation_images": 371,
+    "tumor_images": 184,
+    "normal_images": 187,
+    "subgroup_definition": {
+      "small": "gt_area_ratio < 0.01",
+      "medium": "0.01 <= gt_area_ratio < 0.05",
+      "large": "gt_area_ratio >= 0.05",
+      "usage": "post-prediction validation diagnostic and gate only; never a training or inference input"
+    },
+    "subgroup_counts": {
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    },
+    "metric_changed_to_reach_goal": false
+  },
+  "frozen_fully_supervised_reference": {
+    "overall": 0.4951316962732512,
+    "small": 0.32895493248574226,
+    "medium": 0.6624417783635557,
+    "large": 0.6937033565801355,
+    "replacement_authorized": false
+  },
+  "current_image_label_only_consumer": {
+    "overall": 0.23001987009320218,
+    "small": 0.07100141707025527,
+    "medium": 0.413403043041036,
+    "large": 0.32691687742170106
+  },
+  "fully_supervised_reference_sensitivity": {
+    "runs": 4,
+    "overall_range": 0.01625874778810049,
+    "small_range": 0.07090844349397435,
+    "medium_range": 0.03306554618776936,
+    "large_range": 0.1410492979105864,
+    "interpretation": "large has only 18 images and is not stable enough to support a hard threshold only 0.10 below one selected supervised run"
+  },
+  "literature_evidence": [
+    {
+      "study": "Chen and Sun, ACM Computing Surveys 2025",
+      "url": "https://doi.org/10.1145/3707447",
+      "role": "image-level labels are the most challenging WSSS setting; refinement and target-domain adaptation remain central"
+    },
+    {
+      "study": "Rao et al., Information 2025",
+      "url": "https://doi.org/10.3390/info16060433",
+      "role": "medical image-level CAM/MIL methods minimize annotation cost but are commonly less accurate than stronger supervision"
+    },
+    {
+      "study": "Liu et al., MIDL/PMLR 2021 GLAM",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8791642/",
+      "matched_comparison": {
+        "malignant_dice_weak": 0.39,
+        "malignant_dice_full": 0.504,
+        "malignant_gap": 0.114,
+        "benign_dice_weak": 0.335,
+        "benign_dice_full": 0.412,
+        "benign_gap": 0.077
+      },
+      "transfer_limit": "more than one million mammograms, far larger than BTXRD"
+    },
+    {
+      "study": "Yang et al., Medical Image Analysis 2024 AGM",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11016376/",
+      "matched_comparison": {
+        "metric": "mIoU",
+        "weak_pseudo_consumer": 0.5387,
+        "fully_supervised_upper_bound": 0.7165,
+        "gap": 0.1778
+      },
+      "transfer_limit": "OCT and mIoU are not directly interchangeable with BTXRD radiograph per-image Dice"
+    },
+    {
+      "study": "Mun et al., WACV 2024",
+      "url": "https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html",
+      "role": "aggregate WSSS metrics can conceal systematic small-object failure"
+    },
+    {
+      "study": "Zhang et al., CVPR 2024 WeCLIP",
+      "url": "https://openaccess.thecvf.com/content/CVPR2024/html/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.html",
+      "role": "mechanism evidence for a frozen strong encoder, trainable spatial decoder, and dynamic affinity refinement",
+      "transfer_limit": "natural images, language supervision, external CLIP pretraining, and mIoU rather than lesion Dice"
+    }
+  ],
+  "operational_goal": {
+    "derivation": {
+      "small_gap_from_frozen_full": 0.15,
+      "medium_gap_from_frozen_full": 0.15,
+      "large_gap_from_frozen_full": 0.2,
+      "overall": "subgroup-count-weighted floor"
+    },
+    "minimum_dice": {
+      "overall": 0.340240391925425,
+      "small": 0.17895493248574226,
+      "medium": 0.5124417783635557,
+      "large": 0.4937033565801355
+    },
+    "absolute_gain_over_current": {
+      "overall": 0.11022052183222282,
+      "small": 0.10795351541548699,
+      "medium": 0.09903873532251975,
+      "large": 0.16678647915843442
+    },
+    "pass_rule": "all four minimum Dice thresholds must be met on the frozen validation cohort under the unchanged complete-miss metric contract"
+  },
+  "stretch_goal": {
+    "status": "retained_not_required_for_operational_success",
+    "derivation": "frozen fully supervised reference minus 0.10 in every subgroup",
+    "minimum_dice": {
+      "overall": 0.3951316962732512,
+      "small": 0.22895493248574226,
+      "medium": 0.5624417783635557,
+      "large": 0.5937033565801355
+    }
+  },
+  "decision": {
+    "is_gap_0_10_feasible_in_principle": true,
+    "is_gap_0_10_a_defensible_current_hard_minimum_for_every_btxrd_subgroup": false,
+    "reason": "million-scale mammography supports approximately 0.10 Dice gaps, but medical OCT retains a 0.1778 mIoU gap, BTXRD small lesions remain a known WSSS failure mode, current internal localization has not produced usable shape, and the large subgroup has only 18 images with 0.14105 supervised-run range",
+    "clinical_equivalence_claimed": false,
+    "test_remains_locked": true
+  },
+  "supporting_review": "artifacts/literature_reviews/wsss_supervision_gap_goal_review_2026-07-27.md"
+}

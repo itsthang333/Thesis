@@ -1,0 +1,12 @@
+{
+  "arm": "single_scale",
+  "operation": "crop the content box from the frozen square-padded map, then bilinear-resize to 320x320",
+  "source_prediction_manifest_sha256": "478d0aad0907c015af3394842aff1a0d63112d5b259eff63a88a84c62a18cc3c",
+  "prediction_manifest_sha256": "8c879262c5efa2643c3976df2a0f594a4ccb290dcc6a1ddaf9792618f6c6bb71",
+  "protocol_sha256": "391c02cead32cb5708dfcac484478e37fbc499912ff993c0b41ab9885686e109",
+  "cohort": 371,
+  "parameters_fitted": false,
+  "threshold_selected": false,
+  "validation_gt_read": false,
+  "test_evaluated": false
+}

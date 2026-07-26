@@ -2100,3 +2100,133 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   version-3 wrapper/protocol/source hashes and the post-terminal literature
   review requested by the user; no duplicate monitor was created.
 
+## 2026-07-27 - RAD-DINO square-geometry correction completed and audited
+
+- Kaggle kernel
+  `itsthang333/btxrd-rad-dino-square-geometry-correction-v1` version 3
+  completed. The independent physical auditor returned `PASS` after
+  re-hashing all 1,484 corrected maps plus every compact artifact and exactly
+  reproducing all six paired complete-group bootstrap comparisons with
+  10,000 replicates. Run-index SHA-256 is
+  `2b6e3f8cab6e568a51d126c5a0e2c95e0ec9364ca276a5d0466fc3ad3e761faa`;
+  execution-log SHA-256 is
+  `f079ef678a0632c144fbc46febc0f155406304f5888f083e6e1ba87df475d3bd`;
+  local-auditor SHA-256 is
+  `1ce11fbfd68a8be24245352bd7c153623bfb280e8f411fecfd1b8ce4078bb473`.
+- Provenance and execution order are intact: wrapper
+  `a878d675...a7825dd`, protocol `391c02ce...6e109`,
+  protocol-bound source commit `07fc153a...fcf12`, correction source
+  `aad0a034...bdc1a`, split `85511ee1...193c8c`, dense checkpoint
+  `945cff32...01d3e` and INSIGHT checkpoint `35bc926b...50286` all match.
+  The focused JSON-serialization regression suite passed 3/3 before either
+  correction command. Source discovery used only direct immutable Kaggle
+  kernel-output mounts; every original run/freeze/manifest/map hash was
+  checked before derivation. Every derived arm contains exactly 371 unique
+  maps frozen before GT; cohorts are `371/184/187`, subgroups `94/72/18`,
+  complete misses are included, `consumer_trained=false` and
+  `test_evaluated=false`.
+- The geometry defect was quantitatively material but did not reverse the
+  dense-MIL decision. Corrected dense-MIL single-scale pixel AP/AUROC is
+  `0.01923622/0.37916193` overall and
+  `0.00251040/0.38752858` on small lesions, versus original
+  `0.01722582/0.32162069` and `0.00161379/0.32844999`.
+  Corrected-minus-original AUROC is `+0.05754124`
+  (CI95 `[+0.02934631,+0.08627798]`) overall and `+0.05907859`
+  (`[+0.01119626,+0.10588987]`) on small. However fixed-p90 Dice remains
+  only `0.00762012` overall and `0.00166766` small, with small argmax hit
+  still `0/94`.
+- Corrected INSIGHT single-scale also improves as a ranking map: pixel
+  AP/AUROC is `0.03498934/0.59483216` overall and
+  `0.00958331/0.63345801` small, versus original
+  `0.03207112/0.53918555` and `0.00553422/0.54775549`.
+  Corrected-minus-original AUROC is `+0.05564661`
+  (CI95 `[+0.02452230,+0.08937409]`) overall and `+0.08570252`
+  (`[+0.03247362,+0.14159730]`) small. Shape localization remains weak:
+  fixed-p90 Dice is `0.02864239` overall,
+  `0.00759779/0.03779363/0.10193701` for small/medium/large, and small
+  argmax hit remains `0/94`.
+- The corrected comparison strengthens the rejection of fixed multiscale
+  INSIGHT. Multiscale minus single-scale pixel AP is `-0.00841763`
+  (CI95 `[-0.01251007,-0.00491510]`) overall and `-0.00554783`
+  (`[-0.01084837,-0.00141125]`) small; pixel AUROC is `-0.03764003`
+  (`[-0.05306757,-0.02166112]`) overall and `-0.03796247`
+  (`[-0.06384525,-0.01095316]`) small; fixed-p90 Dice is
+  `-0.01134452` (`[-0.01657536,-0.00637741]`) overall. Corrected dense-MIL
+  multiscale is essentially tied on AP/AUROC but has lower p90 Dice
+  `-0.00332222` (CI95 `[-0.00686331,-0.00031792]`); it is not promoted.
+- Even after correction, INSIGHT single-scale remains below the already
+  geometry-correct nominal-memory single-scale signal. Overall
+  AP/AUROC/p90 Dice is `0.03498934/0.59483216/0.02864239` versus
+  `0.09333895/0.76755187/0.08465377`; small is
+  `0.00958331/0.63345801/0.00759779` versus
+  `0.01796705/0.78714348/0.01298239`, with small argmax hit
+  `0/94` versus `2/94`.
+- Decision: corrected values supersede the prior absolute dense-MIL and
+  INSIGHT evaluations, but both heads and their multiscale arms remain
+  rejected as standalone pseudo-mask sources. Geometry repair recovers
+  ranking quality, not usable tumor shape. No threshold, pseudo mask or
+  consumer is promoted. Compact evidence, wrapper provenance and the
+  independent audit are retained under
+  `artifacts/kaggle/rad_dino_square_geometry_correction_val_v1/`; the
+  304.1 MB reconstructible map payload remains only in the ignored temporary
+  audit directory. Test remains locked.
+- Per the user's explicit follow-up, the next action before launching the
+  prepared WeCLIP-inspired decoder is a primary-paper/survey review of
+  image-label-only WSSS versus fully supervised segmentation, followed by a
+  dataset-specific feasibility analysis of the current `0.10` subgroup gap
+  and a predeclared revision of subgroup and overall Dice goals.
+
+## 2026-07-27 - Literature-calibrated WSSS validation goal revision
+
+- The requested post-experiment review is frozen in
+  `artifacts/literature_reviews/wsss_supervision_gap_goal_review_2026-07-27.md`
+  (canonical-LF SHA-256
+  `e9c34f65ddb638affbb24786427c5c7d9a9c2b9e245ac942eea9964e062197b7`).
+  It covers the 2025 ACM image-label WSSS survey, two medical limited/non-full
+  supervision reviews, WeCLIP, the WACV small-object analysis, GLAM
+  mammography, anomaly-guided retinal OCT WSSS, INSIGHT, image-label brain
+  tumor segmentation and the BTXRD dataset paper. Evidence using boxes,
+  points, scribbles, task-specific training masks or test-time oracle
+  filtering was excluded from target setting.
+- A `0.10` weak-versus-full Dice gap is feasible in principle but is not a
+  defensible hard minimum for every BTXRD subgroup. The closest
+  modality/problem comparison, GLAM, reports image-label-only versus fully
+  supervised Dice gaps of `0.114` malignant and `0.077` benign, but it uses
+  more than one million mammograms. A matched medical OCT pseudo-label
+  consumer remains `0.1778` mIoU below its fully supervised upper bound
+  (`0.5387` versus `0.7165`); its metric and modality are not converted into
+  BTXRD Dice. WeCLIP shows a `+0.062` mIoU contribution from dynamic
+  refinement on VOC, but uses natural RGB images, language supervision and a
+  CLIP encoder pretrained on 400 million image-text pairs.
+- BTXRD-specific evidence makes the old uniform gap especially brittle.
+  Reaching the previous `FS - 0.10` tier from the current consumer requires
+  gains of `+0.16511/+0.15795/+0.14904/+0.26679` for
+  overall/small/medium/large. The large subgroup contains only 18 images and
+  its four fully supervised sensitivity runs span `0.60722--0.74827`, a
+  `0.14105` range. The corrected dense-MIL/INSIGHT probes recover ranking
+  quality but still do not provide usable tumor shape, and the small-object
+  literature independently confirms that aggregate WSSS metrics can hide
+  small-instance failure.
+- Protocol `wsss_feasible_validation_goal_v1` is therefore frozen before the
+  next architecture probe at canonical-LF SHA-256
+  `d180dfa25d01515ca7d36902a5e495754ed85ff6b8e3c9bebace99aabc6d5ccf`.
+  The revised operational minimum Dice is:
+  `overall >= 0.34024039`, `small >= 0.17895493`,
+  `medium >= 0.51244178`, and `large >= 0.49370336`.
+  Small/medium use a `0.15` gap from the frozen fully supervised anchor;
+  large uses `0.20` because of its sample size and observed reference
+  instability; overall is the exact `94/72/18` subgroup-count-weighted floor.
+  All four gates must pass.
+- The operational tier remains materially above the current image-label-only
+  consumer: required absolute gains are
+  `+0.11022052/+0.10795352/+0.09903874/+0.16678648` for
+  overall/small/medium/large. The former `FS - 0.10` values
+  `0.39513170/0.22895493/0.56244178/0.59370336` are retained unchanged as a
+  stretch tier, not discarded.
+- No scientific evaluation contract changes: training remains image-label
+  only, validation GT is available only after candidate prediction freeze,
+  complete misses remain in mean per-image tumor Dice, subgroup GT is never
+  a model input, all 371 validation images and `94/72/18` positive subgroups
+  remain fixed, and test remains locked. Meeting the operational tier will
+  not be reported as clinical equivalence to fully supervised training.
+

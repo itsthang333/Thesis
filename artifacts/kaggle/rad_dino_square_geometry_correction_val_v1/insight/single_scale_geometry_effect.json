@@ -1,0 +1,313 @@
+{
+  "method": "paired complete-group bootstrap",
+  "replicates": 10000,
+  "seed": 20260726,
+  "interpretation": "mechanism feasibility only; no arm/threshold promotion and no downstream consumer without a separate predeclared protocol",
+  "metrics": {
+    "pixel_ap": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": 0.0029182149466590946,
+        "ci95": [
+          -0.0012350765248006815,
+          0.0071873100791226855
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.004049095736431677,
+        "ci95": [
+          -0.0005299706708418627,
+          0.009699205457578667
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.0023807475059609813,
+        "ci95": [
+          -0.0032958729089102084,
+          0.00824050085107832
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.0008376260815830508,
+        "ci95": [
+          -0.026956165982021683,
+          0.023872279579156445
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "pixel_auroc": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": 0.055646609874220966,
+        "ci95": [
+          0.024522302942711405,
+          0.08937409251962414
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.08570251971627957,
+        "ci95": [
+          0.03247361672490957,
+          0.14159730482893604
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.023406744785467837,
+        "ci95": [
+          -0.016558319333973313,
+          0.059207016154145906
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": 0.02764742994292749,
+        "ci95": [
+          -0.03315391248168487,
+          0.08349608429461405
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "argmax_hit": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.010869565217391304,
+        "ci95": [
+          -0.027472527472527472,
+          0.0
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.1111111111111111,
+        "ci95": [
+          -0.2777777777777778,
+          0.0
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "saliency_mass_in_gt": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": 0.0010797088377339794,
+        "ci95": [
+          -0.0009363463818538017,
+          0.0031592123299985226
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0005944706158387726,
+        "ci95": [
+          5.2198890077274326e-05,
+          0.0012188366675267037
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": 0.0007346000884788169,
+        "ci95": [
+          -0.0024844363671242854,
+          0.003885433315538241
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": 0.0049941656602073775,
+        "ci95": [
+          -0.011012468505559073,
+          0.020712551801136247
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p90": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.0025295961367759147,
+        "ci95": [
+          -0.007985234821544635,
+          0.0028260431283268
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0024583518881433303,
+        "ci95": [
+          -7.998865756533182e-05,
+          0.0056180542608463835
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.0046210120049103715,
+        "ci95": [
+          -0.015124911277684346,
+          0.006405384963063405
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.02021210568326081,
+        "ci95": [
+          -0.05628851138502458,
+          0.00559744686652639
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p95": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.0022414083113410596,
+        "ci95": [
+          -0.0075414165610936,
+          0.002733346185735272
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.002246937595940455,
+        "ci95": [
+          -0.0018479410207432297,
+          0.007140559875241092
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.0035373589044381953,
+        "ci95": [
+          -0.013783113393541891,
+          0.005946951054680411
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.020496745676978203,
+        "ci95": [
+          -0.05010647337821451,
+          0.00282159266548979
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p97": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.0027150629398769296,
+        "ci95": [
+          -0.007573934553653621,
+          0.002195808387006194
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0025966406165169793,
+        "ci95": [
+          -0.0028541319115178224,
+          0.009250276330198004
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.005272593207693078,
+        "ci95": [
+          -0.012382200395683522,
+          0.0012008067133409133
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.020223838218669424,
+        "ci95": [
+          -0.04951762520227602,
+          0.0030811506670727143
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p99": {
+      "overall": {
+        "delta_multiscale_minus_single_scale": -0.0006048008923112509,
+        "ci95": [
+          -0.004787546336039008,
+          0.004180809531389598
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_multiscale_minus_single_scale": 0.0030816174672796915,
+        "ci95": [
+          -0.003844863867131251,
+          0.011625743493932306
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_multiscale_minus_single_scale": -0.0015766667794607538,
+        "ci95": [
+          -0.005262518494789176,
+          0.002363890844399643
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_multiscale_minus_single_scale": -0.01596863322157705,
+        "ci95": [
+          -0.032773309586905434,
+          -0.002492824180063099
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    }
+  },
+  "test_evaluated": false
+}

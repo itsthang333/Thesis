@@ -1,0 +1,24 @@
+{
+  "id": "itsthang333/btxrd-rad-dino-square-geometry-correction-v1",
+  "id_no": 128699788,
+  "title": "BTXRD RAD-DINO Square Geometry Correction V1",
+  "code_file": "btxrd-rad-dino-square-geometry-correction-v1.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [],
+  "dataset_sources": [
+    "itsthang333/btxrd-raw"
+  ],
+  "kernel_sources": [
+    "itsthang333/btxrd-rad-dino-dense-mil-probe-v1",
+    "itsthang333/btxrd-rad-dino-insight-mechanism-probe-v1"
+  ],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-images/python@sha256:dafd4ce5668bbf1ad422e4c109e0f18c9623c3a7c7f48b0235f13142755c40b9",
+  "machine_shape": "None"
+}

@@ -1,0 +1,18 @@
+{
+  "probe_id": "rad_dino_insight_probe_val_v1_geometry_corrected",
+  "protocol_sha256": "391c02cead32cb5708dfcac484478e37fbc499912ff993c0b41ab9885686e109",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "source_run_manifest_sha256": "7d8cec5f1fd84dc93b6e09ad667dfb5a455bccb771ae74fe1e73537d5aec5b39",
+  "source_prediction_freeze_sha256": "8660872582305a0f783711db1ddf06af9cf90215bcd138f373fdc8e3ff130f8c",
+  "source_checkpoint_sha256": "35bc926bb5768e1f2879dd7ae8ce37ac1e8538ed1223bcd65e81424f2f950286",
+  "source_prediction_manifests": {
+    "single_scale": "478d0aad0907c015af3394842aff1a0d63112d5b259eff63a88a84c62a18cc3c",
+    "multiscale": "4074232f546929724c2eaf2c5e5b0b6957b824b2270935762364b9d1e9eb084b"
+  },
+  "derived_prediction_manifests": {
+    "single_scale": "8c879262c5efa2643c3976df2a0f594a4ccb290dcc6a1ddaf9792618f6c6bb71",
+    "multiscale": "986c402375256002c0a48758ffb0843c820326f24bf8cb547115b4f8d5348e3e"
+  },
+  "validation_gt_read": false,
+  "test_evaluated": false
+}
