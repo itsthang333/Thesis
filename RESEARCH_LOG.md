@@ -2092,4 +2092,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   passes the static source/protocol/order audit, and has canonical-LF
   SHA-256
   `a878d675b659951509c92be78123392a9b029722b2ca05e12d7cacb34a7825dd`.
+- The corrected repository state was pushed through commit
+  `9df71e139b7e43c539c8e45a876fb739eb1e5eac`. Kernel version 3 was pushed
+  to the same private Kaggle kernel and entered `RUNNING`; no competing
+  heavy run was launched. The existing single five-minute monitor
+  `theo-d-i-rad-dino-geometry-correction` was updated in place with the
+  version-3 wrapper/protocol/source hashes and the post-terminal literature
+  review requested by the user; no duplicate monitor was created.
 
