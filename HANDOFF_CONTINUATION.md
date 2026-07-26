@@ -1009,3 +1009,14 @@ distance, normal-only calibration, fixed fusion and hash-locked Gaussian
 projection. It must be wired into a Kaggle prediction-first probe and pass a
 new protocol/auditor before any pseudo-mask fusion.
 
+The probe is now launched as
+`itsthang333/btxrd-rad-dino-nominal-memory-probe-v1` version 1. Locked source
+commit is `30f62d9475949dd43c9ad19c0590a0cbc854d440`, protocol SHA is
+`458fee51...94a35`, wrapper SHA is `cfe2f5ef...c0662`, and RAD-DINO weight SHA
+is `dbfb9f54...fb91ae`. One heartbeat,
+`theo-d-i-rad-dino-nominal-memory-kaggle`, checks every five minutes. On
+completion, download both 371-map arms plus compact memory evidence, run
+`project/tools/audit_nominal_patch_memory_probe.py`, and only then interpret
+small/medium/large results. No threshold or consumer is authorized by this
+probe.
+

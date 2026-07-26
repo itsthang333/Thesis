@@ -1,0 +1,56 @@
+{
+  "audit_role": "prelaunch wrapper and implementation lock",
+  "kernel": "itsthang333/btxrd-rad-dino-nominal-memory-probe-v1",
+  "kernel_version": 1,
+  "launched_status": "RUNNING",
+  "source_commit": "30f62d9475949dd43c9ad19c0590a0cbc854d440",
+  "protocol_sha256": "458fee51bef0fa5754be11566db7c5ea7d08cbd8c0d97c2477d267f626494a35",
+  "wrapper_sha256": "cfe2f5ef9c52f0c3ba22df0470efda53ec487607305a55b1735470a5247c0662",
+  "split": {
+    "git_lf_sha256": "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8",
+    "frozen_crlf_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "train_images": 2981,
+    "train_normal_images": 1493,
+    "validation_images": 371,
+    "validation_tumor_images": 184,
+    "validation_normal_images": 187
+  },
+  "model": {
+    "id": "microsoft/rad-dino",
+    "revision": "110cbc18d5133582e320b43d53bf5c44e410c936",
+    "config_sha256": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede",
+    "preprocessor_sha256": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56",
+    "weights_sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae"
+  },
+  "source_sha256": {
+    "project/generate_nominal_patch_memory_saliency.py": "e4a454bbe26f1191f9b077d64affc58563919cc892bde71b585b72ebc140eee3",
+    "project/evaluate_nominal_patch_memory_saliency.py": "2d430684c1da11918ae87a20a59b6b406ad2fb9fee8d1a8abd6071fca65c9594",
+    "project/compare_nominal_patch_memory_arms.py": "4ec0b65c33d47dda20317b94d577489038bf87c8c235bb03d6d9a1d0497a035e",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+    "project/models/nominal_patch_memory.py": "a7fbf3e4042623b1b2817f8bb02a87072db55c21bb5b9380cc259aca3a7dd526",
+    "tests/test_nominal_patch_memory.py": "4e611fcbab816be82b389f9a02031569a4c4583e73839420e185e4aca511b3a0",
+    "tests/test_nominal_patch_memory_gpu.py": "12414514e583af907efae2d40f8d92d59facab58966020991e3ab0c1a4df9115"
+  },
+  "ordering_positions": {
+    "prediction_generation": 7364,
+    "prediction_freeze": 9108,
+    "evaluation": 9350,
+    "comparison": 10108
+  },
+  "ordering_contract": [
+    "build normal-only memory and calibration without annotation access",
+    "generate and hash all 371 validation maps for both arms without GT",
+    "write prediction_freeze.json",
+    "only then construct validation segmentation dataset and read GT",
+    "compare paired tumor images by complete-group bootstrap"
+  ],
+  "local_tests": {
+    "cpu": "14 passed",
+    "cuda": "1 predeclared test; required to pass on Kaggle T4 before feature extraction",
+    "python_compile": "PASS"
+  },
+  "validation_gt_read_during_generation": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

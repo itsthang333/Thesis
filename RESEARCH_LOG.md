@@ -1560,4 +1560,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   lesions without material overall/medium/large regression can only justify
   a new frozen fusion/pseudo-mask protocol. Test stays locked and no consumer
   is trained in this probe.
+- Prelaunch verification passed 14 CPU tests, Python compilation, source/blob
+  hash checks and wrapper ordering audit. Wrapper SHA-256 is
+  `cfe2f5ef9c52f0c3ba22df0470efda53ec487607305a55b1735470a5247c0662`;
+  protocol SHA-256 is
+  `458fee51bef0fa5754be11566db7c5ea7d08cbd8c0d97c2477d267f626494a35`.
+  The CUDA spatial-matching smoke test is required to pass on the T4 before
+  the heavy feature-bank stage begins.
+- Kaggle kernel
+  `itsthang333/btxrd-rad-dino-nominal-memory-probe-v1` version 1 was launched
+  and entered `RUNNING`. A single five-minute heartbeat monitor
+  `theo-d-i-rad-dino-nominal-memory-kaggle` tracks it; no duplicate monitor
+  was created. Prelaunch evidence is stored in
+  `artifacts/research_protocols/nominal_patch_memory_probe_val_v1_wrapper_audit.json`.
 
