@@ -2528,4 +2528,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   setting changed. Re-audited v2 wrapper SHA-256 is
   `7a736598a9dd9791dc3271c9176c64ab3cf7f5da59b7c399ae39c4c979ad1190`.
   The existing single heartbeat remains attached to the same kernel slug.
+- While v2 runs, an independent post-freeze auditor was added at
+  `project/tools/audit_affinity_guided_proposal_selector.py` (SHA-256
+  `26c0b22fdf91d4ce1d115bb899f0fa5380518e492b44e801aba86ad302e064a8`).
+  It first audits the runtime wrapper/order, protocol, all 371 source affinity
+  maps, physical final-mask hashes and both frozen prediction manifests
+  without GT. Only after that complete freeze passes does it instantiate the
+  validation segmentation dataset, recompute Dice directly from all 371
+  retained masks, verify `371/184/187` and `94/72/18`, compare the regenerated
+  proposal gallery per image with the frozen same-gallery baseline, reproduce
+  the 10,000-replicate complete-group bootstrap and independently recompute
+  all three promotion gates. Its five focused unit tests plus the 16 selector
+  regression tests pass locally. It contains no test-dataset access.
 
