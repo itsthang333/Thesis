@@ -1303,4 +1303,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   invoking either validation-GT evaluator. A single 15-minute monitor
   `theo-d-i-prompt-source-graph-kaggle` follows this kernel; no competing
   heavy local task or duplicate monitor was created.
+- Kernel version 1 failed after 8.6 seconds in the pre-generation source audit:
+  `generate_pseudo_masks.py` did not match the wrapper's expected SHA-256.
+  Direct console evidence confirms checkout commit `370f635`; no generation
+  subprocess, prediction manifest, validation-GT evaluator or test access
+  occurred. The cause is that four expected hashes were taken from the
+  Windows CRLF working-tree representation rather than the canonical LF Git
+  blobs that Kaggle checks out.
+- The repair changes only those transport representations in the protocol and
+  wrapper: canonical Git-blob hashes are now
+  `c958a38f...be185` for `generate_pseudo_masks.py`,
+  `21f48976...a965126` for `pseudo/mask_selection.py`,
+  `acae150b...db2d` for `evaluate_pseudo_masks.py`, and
+  `48467c99...d7e404` for `pseudo/manifest.py`. Selector implementation,
+  proposal inputs, parameters, execution order, cohort, metric and promotion
+  gates are unchanged. The repaired protocol SHA-256 is
+  `f6fbc130ebd353ac8ba59552dff87ceed04a70895d936bdae648afe45cf8c50e`.
 
