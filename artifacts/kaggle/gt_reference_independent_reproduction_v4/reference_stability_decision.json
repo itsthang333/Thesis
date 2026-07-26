@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "status": "AUDITED_RETAIN_FROZEN_REFERENCE",
+  "question": "Why can the same fully supervised GT training contract produce different validation results?",
+  "answer": "Four-run evidence confirms optimization/runtime instability under the recorded controls, not split, cohort, source, metric, threshold-selection or test leakage.",
+  "contract_audit": {
+    "protocol_locked_before_launch": true,
+    "same_frozen_validation_population": true,
+    "same_source_hashes_for_fresh_runs": true,
+    "same_split_sha256": true,
+    "same_seed": 42,
+    "same_declared_consumer_contract": true,
+    "complete_misses_included": true,
+    "validation_images": 371,
+    "validation_tumors": 184,
+    "validation_normals": 187,
+    "subgroup_counts": {
+      "small_lt_1pct": 94,
+      "medium_1_to_5pct": 72,
+      "large_ge_5pct": 18
+    },
+    "test_evaluated": false
+  },
+  "audited_results": {
+    "frozen_reference": {
+      "overall": 0.4951316962732512,
+      "small_lt_1pct": 0.32895493248574226,
+      "medium_1_to_5pct": 0.6624417783635557,
+      "large_ge_5pct": 0.6937033565801355
+    },
+    "independent_v2": {
+      "overall": 0.5113904440613517,
+      "small_lt_1pct": 0.3998633759797166,
+      "medium_1_to_5pct": 0.6330372530709371,
+      "large_ge_5pct": 0.6072223413382152
+    },
+    "independent_v3": {
+      "overall": 0.4994012363463918,
+      "small_lt_1pct": 0.35218988579362814,
+      "medium_1_to_5pct": 0.6293762321757863,
+      "large_ge_5pct": 0.7482716392488016
+    },
+    "independent_v4": {
+      "overall": 0.5030822742558044,
+      "small_lt_1pct": 0.35881361294770686,
+      "medium_1_to_5pct": 0.658771489318998,
+      "large_ge_5pct": 0.6337284230564282
+    },
+    "four_run_range": {
+      "overall": 0.01625874778810049,
+      "small_lt_1pct": 0.07090844349397435,
+      "medium_1_to_5pct": 0.03306554618776936,
+      "large_ge_5pct": 0.1410492979105864
+    },
+    "fresh_epoch1_run_range": {
+      "overall": 0.011989207714959926,
+      "small_lt_1pct": 0.04767349018608846,
+      "medium_1_to_5pct": 0.029395257143211673,
+      "large_ge_5pct": 0.1410492979105864
+    }
+  },
+  "v4_against_frozen_reference": {
+    "overall_delta": 0.00795057798255318,
+    "small_delta": 0.0298586804619646,
+    "medium_delta": -0.0036702890445577518,
+    "large_delta": -0.05997493352370717,
+    "large_complete_group_ci95": [
+      -0.14201473841656959,
+      0.006393399840905836
+    ]
+  },
+  "v4_against_v3": {
+    "overall_delta": 0.0036810379094125837,
+    "small_delta": 0.006623727154078666,
+    "medium_delta": 0.02939525714321164,
+    "large_delta": -0.11454321619237318,
+    "large_complete_group_ci95": [
+      -0.23037362693884636,
+      -0.030699119148785113
+    ]
+  },
+  "mechanism_scope": {
+    "confirmed": "V3 and v4 have no audited contract or environment difference, diverge numerically at epoch 1, and select different checkpoint bytes.",
+    "not_proven": "The audit does not isolate one CUDA, AMP, DataLoader-worker or nondeterministic operation as the sole cause.",
+    "known_control_limitations": [
+      "torch.use_deterministic_algorithms was not enabled",
+      "CUBLAS_WORKSPACE_CONFIG was not locked",
+      "DataLoader generators and worker RNG state were not explicitly checkpointed",
+      "automatic mixed precision was enabled",
+      "the historical frozen reference resumed from epoch 10"
+    ]
+  },
+  "decision": {
+    "replace_frozen_reference": false,
+    "reason": "Replacing the predeclared hash-locked anchor after observing validation sensitivity runs would invalidate paired WSL comparability.",
+    "paired_wsl_target_remains": "gt_resnet18_unet_448_v1",
+    "reporting_requirement": "Report the frozen reference together with v2/v3/v4 sensitivity and emphasize that large has only 18 images and a 0.14105 four-run range."
+  }
+}

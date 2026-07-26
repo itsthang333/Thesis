@@ -1183,4 +1183,70 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Fully supervised GT kernel version 2 (scientific role v4) was launched and
   is RUNNING. The single 15-minute monitor was retargeted to this exact rerun;
   the completed proposal-gallery kernel no longer has a monitor.
+- Fully supervised GT reproduction v4 completed on Kaggle after 3,215.81
+  seconds. The run is kernel version 2 at
+  `itsthang333/btxrd-gt-reference-independent-reproduction-v3`; its scientific
+  role remains `gt_reference_independent_reproduction_v4`, not a WSL result.
+  Test was not evaluated.
+- The post-download physical audit passes. The selected checkpoint is
+  230,923,915 bytes with SHA-256
+  `7336b466213550b3bb27fd099c1e5986a60399452204318ad7105dc9abb4373c`.
+  The downloaded ImageNet ResNet-18 encoder weight is 46,830,571 bytes with
+  SHA-256
+  `f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec`.
+  Both large binaries were verified from the kernel output and omitted from
+  compact Git evidence.
+- The exact locked upload wrapper is retained at SHA-256
+  `4080d04f6042ea03ba872b5bbee7ac6c0060f64ce08c3719e8a102e5d25f0193`.
+  Pulling the current Kaggle source changes its byte representation, producing
+  raw SHA-256 `3ba582ea...50ed3`, but a BOM-aware, line-ending-independent
+  comparison proves identical line content. This is recorded as a transport
+  byte limitation, not contract drift.
+- A monitor-text typo contained a 65-character alleged protocol digest
+  (`...b3ddbddcdd247`), which cannot be a SHA-256. The authoritative protocol
+  file was committed before launch in commit `9a2890b` and has the valid
+  64-character SHA-256
+  `f06aad247d505c81d595ea474c960e7ef32816383e4f2656fd50b3ddbdcdd247`.
+  The audit fails closed against this physical pre-launch file.
+- Frozen-source hashes and split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`
+  match. Independent recomputation from the retained training log selects
+  epoch 23, with early stopping at epoch 33; independent threshold
+  recomputation selects 0.25 from the frozen grid. The exact validation cohort
+  is `371/184/187`, fixed size subgroups are `94/72/18`, all 184 tumor images
+  remain in the primary mean, and the 17 selected-threshold complete misses
+  equal the subgroup sum `11+5+1`.
+- V4 selected mean tumor-only Dice is `0.5030822743` overall:
+  small `0.3588136129`, medium `0.6587714893`, and large `0.6337284231`.
+  Against the frozen reference, paired deltas are
+  `+0.00795058/+0.02985868/-0.00367029/-0.05997493` for
+  overall/small/medium/large. Complete-group 10,000-bootstrap CI95 values are
+  `[-0.02091496,+0.03749890]`, `[-0.01739264,+0.07713623]`,
+  `[-0.04280468,+0.03569585]`, and `[-0.14201474,+0.00639340]`.
+  Thus v4 is within 0.05 for overall, small and medium, but not large; it is
+  sensitivity evidence only and does not alter the WSL success target.
+- The four audited GT results are:
+  frozen `0.49513170/0.32895493/0.66244178/0.69370336`,
+  v2 `0.51139044/0.39986338/0.63303725/0.60722234`,
+  v3 `0.49940124/0.35218989/0.62937623/0.74827164`, and
+  v4 `0.50308227/0.35881361/0.65877149/0.63372842`, ordered as
+  overall/small/medium/large. Four-run ranges are
+  `0.01625875/0.07090844/0.03306555/0.14104930`; restricting to the three
+  fresh epoch-1 runs gives
+  `0.01198921/0.04767349/0.02939526/0.14104930`.
+- V3 and v4 have no audited environment difference and use the same
+  wrapper/source/split/seed/consumer contract, yet their numeric trajectories
+  diverge at epoch 1 (`val_positive_dice 0.21135136` versus `0.22591704`) and
+  select different checkpoint bytes. V4 minus v3 is
+  `+0.00368104/+0.00662373/+0.02939526/-0.11454322`; the large-subgroup
+  complete-group CI95 is entirely negative
+  `[-0.23037363,-0.03069912]`. This confirms stochastic/runtime optimization
+  instability rather than contract drift. It does not isolate one CUDA, AMP,
+  DataLoader-worker or other numeric kernel as the sole cause.
+- Decision: retain the hash-locked GT reference
+  `gt_resnet18_unet_448_v1`. Replacing it after observing validation
+  sensitivity would invalidate paired WSL comparability. Report v2/v3/v4 as
+  sensitivity analysis, emphasizing that large contains only 18 images.
+  Compact evidence and the four-run decision are stored under
+  `artifacts/kaggle/gt_reference_independent_reproduction_v4/`.
 
