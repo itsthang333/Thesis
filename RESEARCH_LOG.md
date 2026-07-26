@@ -2328,3 +2328,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `theo-d-i-rad-dino-affinity-decoder` five-minute monitor remains the only
   monitor; no duplicate was created.
 
+## 2026-07-27 - Affinity-decoder probe v2 baseline-binding error
+
+- Kernel version 2 passed the corrected source hash checks, then terminated
+  before package installation, data/model access, training or validation GT
+  with `RuntimeError: Frozen nominal baseline hash mismatch`.
+- This is the same line-ending provenance class, now isolated to the frozen
+  baseline CSV: its canonical LF Git blob is SHA-256
+  `f685e85b22ff5e3e48ecdf659d8f1c0f9f60cf13e9ffa69783305d4819aff8c9`
+  (`31,987` bytes), while the already frozen/evaluated local CRLF artifact is
+  SHA-256
+  `c7bd20412913157b8d6f17b69ce4ed01495645a1c2a91b17a0a37166737f844c`
+  (`32,172` bytes). Parsed CSV values are unchanged.
+- The wrapper now verifies the canonical Git blob, deterministically creates
+  the CRLF frozen baseline in `/kaggle/temp`, verifies the original frozen
+  baseline hash, and passes only that copy to the runner. This mirrors the
+  already audited split-manifest conversion. No protocol, source,
+  architecture, parameter, metric, gate or cohort changes. Wrapper v3
+  SHA-256 is
+  `e8a90a1a1a87affba9ff10fcd8ec6bf66de086485bd3bed3505073ec26724a51`.
+  Validation GT and test were not read; consumer training did not begin.
+
