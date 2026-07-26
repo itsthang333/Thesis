@@ -2351,4 +2351,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - The corrected wrapper re-audit passed and kernel version 3 was pushed to
   the same private kernel; it entered `RUNNING`. The existing single
   five-minute monitor continues unchanged.
+- While version 3 runs, an independent post-run auditor was prepared at
+  `project/tools/audit_rad_dino_affinity_decoder_probe.py` (SHA-256
+  `14331ca1128566fa0e0ef08abe11ef0c995ad41b449e0e27744c7b446874f64c`).
+  It independently verifies wrapper/runner ordering, protocol/source/split/
+  model/baseline bindings, checkpoint and 12-epoch history, teacher
+  metadata, the complete set and hashes of 371 float16 maps, then and only
+  then opens validation GT to recompute every per-image metric and the
+  `94/72/18` subgroups. It also reproduces the complete-group bootstrap
+  `10,000` and mechanistic gate. Compile, static-order, deterministic
+  bootstrap and metric smoke checks pass locally; it does not access test.
 
