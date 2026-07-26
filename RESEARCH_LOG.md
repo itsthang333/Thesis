@@ -2282,4 +2282,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   subgroups, paired complete-group bootstrap `10,000` against frozen nominal
   single-scale evidence, `consumer_trained=false`, and
   `test_evaluated=false`.
+- Prelaunch wrapper audit
+  `rad_dino_affinity_decoder_probe_val_v1_wrapper_audit.json` passed and is
+  committed. The private Tesla-T4 Kaggle kernel
+  `itsthang333/btxrd-rad-dino-affinity-decoder-probe-v1` version 1 was
+  launched and entered `RUNNING`. Wrapper SHA-256 is
+  `3756a0b42a5624b4861b8c64b4f5dcb42fddb65b317ef94d0217498c74eee211`;
+  it checks out protocol commit
+  `2255361986304d047aa1438ee81b6af5dc9fa044`, separately binds scientific
+  source commit `38b5bb4b9d7a846862443b442ff406f0ab41d3bd`, verifies all source/model/
+  split/baseline hashes, runs the Torch regression suite before the heavy
+  stage, and keeps the approximately 4.7 GB feature cache under
+  `/kaggle/temp`. A single five-minute heartbeat monitor
+  `theo-d-i-rad-dino-affinity-decoder` follows the kernel; no duplicate
+  monitor or competing local heavy job was created.
 
