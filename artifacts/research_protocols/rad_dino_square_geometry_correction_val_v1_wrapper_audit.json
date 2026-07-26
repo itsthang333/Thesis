@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "status": "PRELAUNCH_PASS",
+  "protocol_id": "rad_dino_square_geometry_correction_val_v1",
+  "protocol_sha256": "9fb897734fe416b56f3757d8d0973edcbe53e163e4a8f60d37cd2a86c7045977",
+  "source_commit": "e9a2201168af7ac45775e7749f3fec92bb7e9872",
+  "correction_source_commit": "bc3d48fa21c8027721f05635532b279b88fdca3f",
+  "correction_source_sha256": "ee84e2c188792c97c29d8014594bf138b42e27a6bd8af79d7254912aff5347b9",
+  "wrapper_sha256": "0c73f33a2598335a431c9fb272c141e1ffa858322c427de12434298e8bc81ab4",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "checks": {
+    "python_compilation": "PASS",
+    "both_source_kernels_terminal_complete": "PASS",
+    "source_run_manifest_hashes_pinned": "PASS",
+    "source_prediction_freeze_hashes_pinned": "PASS",
+    "source_checkpoint_hashes_pinned": "PASS",
+    "all_source_map_hashes_checked_before_derivation": "enforced_by_source",
+    "derived_prediction_freeze_before_gt": "enforced_by_source_order",
+    "parameters_fitted": false,
+    "threshold_selected": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}

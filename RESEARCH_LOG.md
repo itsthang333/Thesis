@@ -1996,3 +1996,44 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the 1.10 MB checkpoint remain in the ignored temporary audit directory.
   Test remains locked.
 
+## 2026-07-26 - RAD-DINO square-frame evaluation defect predeclared for correction
+
+- A source-level audit found that both the dense-MIL and INSIGHT runners pad
+  every radiograph to a centered square before RAD-DINO, but save the
+  resulting square-frame heatmap directly as 320x320. Their evaluator then
+  compares that square-frame map against a mask resized directly from the
+  original rectangular radiograph. The prediction and GT therefore use
+  different coordinate systems whenever the source image is not square.
+- This is material to the frozen validation cohort: only 9/371 images are
+  square; 322/371 have minor-to-major padding with aspect ratio below 0.90,
+  183/371 are below 0.75, the minimum is 0.35037 and the mean is 0.72415.
+  These counts were obtained from source image dimensions, without consulting
+  corrected GT metrics.
+- Protocol `rad_dino_square_geometry_correction_val_v1` was frozen before
+  corrected evaluation at SHA-256
+  `9fb897734fe416b56f3757d8d0973edcbe53e163e4a8f60d37cd2a86c7045977`.
+  The only admissible transformation is the exact inverse geometry already
+  used by the nominal-memory runner: crop the original-image content box from
+  each frozen square map, then bilinear-resize it to 320x320. No foreground
+  mask, normalization, threshold, learned parameter or fitted parameter is
+  added.
+- The correction applies identically to all 371 frozen maps in both arms of
+  both affected runs. Every original run/checkpoint/freeze/manifest/map hash
+  must pass before derivation; all corrected maps and their manifests must be
+  hash-frozen before validation GT is opened. Corrected-minus-original and
+  corrected multiscale-minus-single comparisons use paired complete-group
+  bootstrap 10,000 with the existing metric contract.
+- Correction source commit is
+  `bc3d48fa21c8027721f05635532b279b88fdca3f`; canonical correction source
+  SHA-256 is
+  `ee84e2c188792c97c29d8014594bf138b42e27a6bd8af79d7254912aff5347b9`.
+  The protocol-bound repository commit is
+  `e9a2201168af7ac45775e7749f3fec92bb7e9872`. The Kaggle wrapper compiles
+  and hashes to
+  `0c73f33a2598335a431c9fb272c141e1ffa858322c427de12434298e8bc81ab4`;
+  prelaunch evidence is
+  `artifacts/research_protocols/rad_dino_square_geometry_correction_val_v1_wrapper_audit.json`.
+- The previous absolute dense-MIL/INSIGHT localization conclusions are now
+  provisional until this deterministic correction is audited. No threshold,
+  pseudo-mask, consumer or test access is authorized.
+
