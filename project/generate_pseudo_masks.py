@@ -1333,8 +1333,15 @@ def main() -> None:
                         )
                         if args.selection_method == "prompt_source_graph"
                         else (
-                            "append_component_sam_proposals_only; layercam selector, "
-                            "support and post-processing unchanged"
+                            (
+                                "append_component_sam_proposals_only; frozen "
+                                "affinity-rank raw single-candidate selector"
+                            )
+                            if args.selection_method == "affinity_rank_single"
+                            else (
+                                "append_component_sam_proposals_only; layercam selector, "
+                                "support and post-processing unchanged"
+                            )
                         )
                     )
                 )
