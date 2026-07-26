@@ -2577,3 +2577,67 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Corrected version 3 was pushed to the same private kernel and entered
   `RUNNING`. No new monitor or local heavy job was created.
 
+## 2026-07-27 - Affinity-guided selector v3 terminal audit and rejection
+
+- Kaggle kernel
+  `itsthang333/btxrd-affinity-guided-proposal-selector-val-v1` version 3
+  completed successfully in `713.63` wrapper seconds (`720.5` seconds in the
+  Kaggle UI). The first two bulk downloads hit transient
+  `kaggleusercontent.com` connection timeouts after partial progress. No
+  partial output was accepted: the immutable version-3 output was downloaded
+  in bounded filename-prefix chunks and reconciled against the frozen split
+  before audit. It contains exactly 371 final PNG masks with no missing or
+  extra validation ID.
+- The independent local verifier passed. Before opening validation GT it
+  verified wrapper SHA-256
+  `022369ae92c7818da0e6443fac97b7f2b832d335ee8ad8d5dd84611ed6987192`,
+  protocol SHA-256
+  `07bd490d309a850daeba1d00590d36968360aa7a70bebe3d418feb7c44ffadf7`,
+  checkout/implementation commits
+  `ca9462f13588243c0e490c2f18564038e49fd857` /
+  `56c01f241bda4b80183918517999f7ddbb37fc55`, the frozen split,
+  all 371 affinity-map hashes, both prediction freezes, both prediction
+  manifests and all 371 physical final-mask hashes. The same-gallery oracle
+  and candidate accounting are invariant with maximum absolute metric delta
+  `0.0`. Only then did it recompute Dice from validation masks. Cohort is
+  `371/184/187`, positive subgroups are `94/72/18`, complete misses are
+  included, paired bootstrap uses 10,000 complete-group resamples with seed
+  42, `consumer_trained=false`, and `test_evaluated=false`.
+- Cloud and independent local results match. Affinity-rank-single final Dice
+  is `0.09742941/0.02661902/0.11328910/0.40377819` for
+  overall/small/medium/large, versus the same-gallery baseline
+  `0.23734410/0.11426187/0.36278908/0.37832694`. Paired deltas and CI95 are
+  `-0.13991469 [-0.19146040,-0.08744420]` overall,
+  `-0.08764285 [-0.13623080,-0.04357934]` small,
+  `-0.24949998 [-0.33670396,-0.15904919]` medium, and
+  `+0.02545126 [-0.22047091,+0.28599635]` large.
+- The regenerated best-single oracle remains high at
+  `0.48372617/0.25976551/0.71084146/0.74483737`, so proposal availability
+  passes its gate. Statistical improvement and halfway-to-operational-quality
+  both fail, making the all-required consumer-authorization gate fail. No
+  pseudo-mask consumer is launched and the thresholds are not altered after
+  seeing validation GT.
+- The failure mode is global-support scale, not gallery drift. The selector
+  chose the broad p80/top-20-percent affinity support on 122/184 tumors.
+  Median predicted-to-GT area ratios are `24.44x` overall, `169.83x` small,
+  `10.14x` medium and `1.19x` large; 50/184 tumors are complete misses.
+  Thus a diffuse global affinity rank can overlap the correct location yet
+  reward anatomy-scale SAM masks. This explains the slight large-lesion point
+  gain and severe small/medium collapse. A further scalar reranker, global
+  percentile sweep, source-consensus selector or classifier-causal selector
+  is not justified: those families have now failed repeatedly under frozen
+  validation gates.
+- Decision: reject `affinity_rank_single` and retain the RAD-DINO decoder only
+  as localization/affinity research evidence. The next admissible hypothesis
+  must change representation-to-shape transfer: use high-confidence
+  image-label-derived seeds, local RAD-DINO token affinities and explicit
+  boundary/region propagation with ambiguous pixels unlabeled, followed by a
+  train-only partial-label/consistency decoder if and only if a new
+  prediction-first spatial gate passes. It must be separately predeclared;
+  current validation metrics cannot tune its thresholds or weights.
+- Compact terminal evidence is stored at
+  `artifacts/kaggle/affinity_guided_proposal_selector_val_v1/version3_compact_evidence.json`.
+  The direct comparison, run, freeze, kernel-log and independent-audit hashes
+  are recorded there; the 371 PNG masks remain only in the isolated audit
+  download.
+
