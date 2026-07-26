@@ -1,0 +1,80 @@
+{
+  "schema_version": 2,
+  "protocol_id": "btxrd_wsl_vs_gt_reference_pair_v2",
+  "status": "effective_for_future_wsl_consumers",
+  "effective_date": "2026-07-26",
+  "revision_reason": "User reduced the required minimum Dice by 0.05 in each frozen lesion-size subgroup.",
+  "historical_protocol": "paired_protocol_v1.json",
+  "historical_protocol_policy": "v1 and all evidence produced under its 0.05 tolerance remain immutable and must continue to be reported as historical results",
+  "reference_lock": "reference_lock.json",
+  "reference_policy": "The frozen GT reference checkpoint, metrics, split and hashes are unchanged.",
+  "primary_objective": "For every frozen lesion-size subgroup, absolute mean tumor-only Dice gap between the image-label-only WSL consumer and GT-trained reference must be <= 0.10.",
+  "goal_tolerance": 0.1,
+  "consumer_invariants": {
+    "architecture": "ResNet18UNet",
+    "encoder_initialization": "ImageNet pretrained ResNet-18",
+    "input_size": 448,
+    "seed": 42,
+    "batch_size": 8,
+    "preprocessing": "RGB resize to 448x448 and ImageNet normalization",
+    "train_augmentation": "paired random horizontal flip p=0.5",
+    "loss": "0.5 * BCEWithLogits(pos_weight=10) + 0.5 * per-image soft Dice loss",
+    "optimizer": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "maximum_epoch": 35,
+    "early_stop_patience": 10,
+    "checkpoint_selection": "maximum validation tumor-only Dice at fixed threshold 0.5; tie-break by normal empty-mask specificity within Dice tolerance 0.0001",
+    "threshold_grid": [0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85],
+    "threshold_selection": "independently per arm on validation: maximize mean tumor-only Dice, then normal empty-prediction rate, then proximity to 0.5",
+    "evaluation_population": "all 371 validation images; primary Dice means include all 184 tumors and every complete miss",
+    "test_evaluated": false
+  },
+  "only_allowed_training_difference": {
+    "gt_reference": "train ground-truth binary masks",
+    "wsl_experimental": "train pseudo-masks produced using radiographs and image-level labels only"
+  },
+  "prohibited_wsl_inputs": [
+    "train ground-truth masks or polygons",
+    "GT-derived lesion size, location, shape or crop",
+    "GT reference checkpoint weights",
+    "GT reference predictions or logits",
+    "validation annotations before prediction",
+    "test images or annotations for model selection"
+  ],
+  "subgroup_contract": {
+    "small_lt_1pct": {
+      "definition": "validation gt_area_ratio < 0.01",
+      "images": 94,
+      "reference_mean_dice": 0.32895493248574226,
+      "new_minimum_wsl_dice": 0.22895493248574225,
+      "absolute_gap_success_interval_inclusive": [0.22895493248574225, 0.42895493248574224]
+    },
+    "medium_1_to_5pct": {
+      "definition": "0.01 <= validation gt_area_ratio < 0.05",
+      "images": 72,
+      "reference_mean_dice": 0.6624417783635557,
+      "new_minimum_wsl_dice": 0.5624417783635557,
+      "absolute_gap_success_interval_inclusive": [0.5624417783635557, 0.7624417783635556]
+    },
+    "large_ge_5pct": {
+      "definition": "validation gt_area_ratio >= 0.05",
+      "images": 18,
+      "reference_mean_dice": 0.6937033565801355,
+      "new_minimum_wsl_dice": 0.5937033565801355,
+      "absolute_gap_success_interval_inclusive": [0.5937033565801355, 0.7937033565801355]
+    }
+  },
+  "statistics": {
+    "paired_unit": "complete frozen validation group",
+    "bootstrap_iterations": 10000,
+    "bootstrap_seed": 42,
+    "subgroup_membership_usage": "post-prediction diagnosis only; never used by inference or per-image routing",
+    "authoritative_auditor": "../../../project/tools/audit_wsl_gt_pair.py",
+    "required_auditor_argument": "--goal-tolerance 0.10"
+  },
+  "current_inflight_mae_probe": {
+    "protocol": "../../research_protocols/mae_normality_reconstruction_probe_val_v1.json",
+    "effect_of_revision": "none; it is a localization mechanism probe with no U-Net consumer and was predeclared before this goal revision"
+  }
+}

@@ -131,7 +131,10 @@ def paired_bootstrap(
     *,
     iterations: int,
     seed: int,
+    goal_tolerance: float = 0.05,
 ) -> dict[str, dict[str, float | int | bool]]:
+    if not 0.0 <= goal_tolerance <= 1.0:
+        raise ValueError("goal_tolerance must lie in [0,1]")
     reference = {row["image_name"]: row for row in reference_rows}
     candidate = {row["image_name"]: row for row in candidate_rows}
     output: dict[str, dict[str, float | int | bool]] = {}
@@ -162,6 +165,8 @@ def paired_bootstrap(
             "signed_gap_candidate_minus_reference": gap,
             "absolute_gap": abs(gap),
             "criterion_abs_gap_le_0_05": abs(gap) <= 0.05,
+            "goal_tolerance": goal_tolerance,
+            "criterion_abs_gap_le_goal_tolerance": abs(gap) <= goal_tolerance,
             "paired_group_bootstrap_ci95_low": percentile(samples, 0.025),
             "paired_group_bootstrap_ci95_high": percentile(samples, 0.975),
         }
@@ -175,6 +180,7 @@ def build_audit(
     *,
     iterations: int = 10_000,
     seed: int = 42,
+    goal_tolerance: float = 0.05,
 ) -> dict[str, Any]:
     split_rows = read_csv(split_manifest)
     reference_rows = read_csv(reference_per_image)
@@ -218,6 +224,7 @@ def build_audit(
             candidate_rows,
             iterations=iterations,
             seed=seed,
+            goal_tolerance=goal_tolerance,
         )
         result.update(
             {
@@ -227,9 +234,10 @@ def build_audit(
                 "candidate_mean_tumor_dice": means_by_size(candidate_rows),
                 "paired_gap": gaps,
                 "primary_success": all(
-                    gaps[subgroup]["criterion_abs_gap_le_0_05"]
+                    gaps[subgroup]["criterion_abs_gap_le_goal_tolerance"]
                     for subgroup in SIZE_ORDER
                 ),
+                "goal_tolerance": goal_tolerance,
                 "bootstrap": {
                     "unit": "complete validation group",
                     "iterations": iterations,
@@ -321,6 +329,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--bootstrap-iterations", type=int, default=10_000)
     parser.add_argument("--bootstrap-seed", type=int, default=42)
+    parser.add_argument(
+        "--goal-tolerance",
+        type=float,
+        default=0.05,
+        help="Allowed absolute subgroup mean-Dice gap; historical v1 default is 0.05",
+    )
     return parser.parse_args()
 
 
@@ -334,6 +348,7 @@ def main() -> None:
         args.candidate_per_image,
         iterations=args.bootstrap_iterations,
         seed=args.bootstrap_seed,
+        goal_tolerance=args.goal_tolerance,
     )
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

@@ -69,6 +69,36 @@ class WslGtPairAuditTests(unittest.TestCase):
         self.assertFalse(result["medium_1_to_5pct"]["criterion_abs_gap_le_0_05"])
         self.assertAlmostEqual(result["large_ge_5pct"]["absolute_gap"], 0.04)
 
+    def test_goal_v2_tolerance_preserves_historical_criterion(self) -> None:
+        reference = [
+            {
+                "image_name": name,
+                "group_id": group,
+                "gt_positive": "True",
+                "gt_area_ratio": area,
+                "dice": "0.70",
+            }
+            for name, group, area in (
+                ("a.jpeg", "g1", "0.005"),
+                ("b.jpeg", "g2", "0.02"),
+                ("c.jpeg", "g3", "0.08"),
+            )
+        ]
+        candidate = [{**row, "dice": "0.62"} for row in reference]
+        result = AUDIT.paired_bootstrap(
+            reference,
+            candidate,
+            iterations=100,
+            seed=42,
+            goal_tolerance=0.10,
+        )
+        for subgroup in AUDIT.SIZE_ORDER:
+            self.assertFalse(result[subgroup]["criterion_abs_gap_le_0_05"])
+            self.assertTrue(
+                result[subgroup]["criterion_abs_gap_le_goal_tolerance"]
+            )
+            self.assertEqual(result[subgroup]["goal_tolerance"], 0.10)
+
     def test_frozen_gt_reference_lock_passes(self) -> None:
         lock = (
             Path(__file__).resolve().parents[1]
@@ -111,6 +141,33 @@ class WslGtPairAuditTests(unittest.TestCase):
                 baseline["paired_gap"][subgroup]["absolute_gap"],
             )
         self.assertFalse(baseline["primary_success"])
+
+    def test_paired_protocol_v2_changes_only_goal_tolerance(self) -> None:
+        root = (
+            Path(__file__).resolve().parents[1]
+            / "artifacts"
+            / "reference"
+            / "gt_resnet18_unet_448_v1"
+        )
+        v1 = json.loads((root / "paired_protocol_v1.json").read_text(encoding="utf-8"))
+        v2 = json.loads((root / "paired_protocol_v2.json").read_text(encoding="utf-8"))
+        self.assertEqual(v2["goal_tolerance"], 0.10)
+        self.assertEqual(v2["consumer_invariants"], v1["consumer_invariants"])
+        self.assertEqual(
+            v2["only_allowed_training_difference"],
+            v1["only_allowed_training_difference"],
+        )
+        self.assertEqual(v2["prohibited_wsl_inputs"], v1["prohibited_wsl_inputs"])
+        for subgroup, values in v2["subgroup_contract"].items():
+            reference = float(values["reference_mean_dice"])
+            self.assertAlmostEqual(
+                float(values["new_minimum_wsl_dice"]), reference - 0.10
+            )
+            lower, upper = map(
+                float, values["absolute_gap_success_interval_inclusive"]
+            )
+            self.assertAlmostEqual(lower, reference - 0.10)
+            self.assertAlmostEqual(upper, reference + 0.10)
 
 
 if __name__ == "__main__":

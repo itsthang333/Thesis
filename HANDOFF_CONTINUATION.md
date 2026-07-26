@@ -10,17 +10,21 @@ Primary objective:
 
 - Build an image-label-only weakly supervised bone-tumor segmentation pipeline.
 - Under the locked paired consumer protocol, the pseudo-mask-trained U-Net must
-  have absolute mean tumor-only Dice gap `<=0.05` from the GT-trained reference
+  have absolute mean tumor-only Dice gap `<=0.10` from the GT-trained reference
   separately for small (`<1%`), medium (`1%` to `<5%`) and large (`>=5%`)
-  validation tumors.
+  validation tumors. This is the user-approved 2026-07-26 goal revision;
+  required minimum WSL Dice is `0.22895493/0.56244178/0.59370336` for
+  small/medium/large.
 - Architecture and WSL technique are unrestricted, but the experimental arm
   may use only radiographs and image-level labels from BTXRD. Train GT masks,
   GT-derived crops/size/location, reference weights/predictions and
   pre-prediction validation annotations are prohibited.
 - The authoritative reference and pair contracts are
   `artifacts/reference/gt_resnet18_unet_448_v1/reference_lock.json` and
-  `paired_protocol_v1.json`. With reference-v1, only the train mask source may
-  differ between arms.
+  `paired_protocol_v2.json`. The earlier `paired_protocol_v1.json` and all
+  evidence evaluated at tolerance `0.05` remain immutable historical records.
+  The reference, consumer invariants and allowed supervision difference did
+  not change.
 - Do not use data leakage, redefine metrics, change cohorts, remove complete
   misses, or select on test. Test stays locked until the final WSL pipeline is
   frozen.

@@ -1425,3 +1425,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prediction-first localization on real tumors; synthetic training Dice is
   explicitly disallowed as promotion evidence.
 
+## 2026-07-26 - User-approved paired-goal revision v2
+
+- The user reduced the required minimum WSL Dice by another `0.05` in each
+  lesion-size subgroup. Operationally, the allowed absolute mean-Dice gap to
+  the unchanged frozen GT reference is now `<=0.10` per subgroup.
+- With reference Dice
+  `0.3289549325/0.6624417784/0.6937033566`, the revised minimum WSL Dice is
+  `0.2289549325/0.5624417784/0.5937033566` for
+  small/medium/large. The corresponding absolute-gap intervals are
+  `[0.2289549325,0.4289549325]`,
+  `[0.5624417784,0.7624417784]`, and
+  `[0.5937033566,0.7937033566]`.
+- This revision changes only the success tolerance. The frozen GT checkpoint,
+  split, subgroup definitions, consumer architecture/training/evaluation
+  contract, WSL supervision restrictions, complete-miss policy and test lock
+  remain unchanged. Historical protocol v1 and results evaluated at `0.05`
+  are not rewritten.
+- Future paired consumers must cite
+  `artifacts/reference/gt_resnet18_unet_448_v1/paired_protocol_v2.json` and run
+  the authoritative auditor with `--goal-tolerance 0.10`. The in-flight MAE
+  localization probe is unaffected because it trains no paired consumer and
+  has its own already-frozen mechanism gate.
+
