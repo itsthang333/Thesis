@@ -1408,3 +1408,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   probe will require a new predeclared fusion/pseudo-mask experiment; this run
   cannot promote a threshold or consumer.
 
+## 2026-07-26 - Normal-only anomaly-localization transfer review
+
+- While the MAE probe runs, the technique audit was extended beyond named
+  medical checkpoints to PatchCore, Reverse Distillation, DRAEM, Natural
+  Synthetic Anomalies, and attention-conditioned augmentation. Detailed
+  mechanism/transfer/risk analysis is recorded in
+  `artifacts/literature_review/technique_transfer_review_2026-07-26.md`.
+- The strongest follow-up if pixel reconstruction is weak is a
+  context-conditioned nominal patch memory: retrieve visually similar normal
+  train radiographs, then score each query patch against their mid-level
+  features. This uses only images plus the normal/tumor train label and avoids
+  the rejected whole-mask selector.
+- Synthetic-anomaly segmentation is lower priority. It remains protocol-valid
+  when synthetic masks are generated from normal images, but it must pass
+  prediction-first localization on real tumors; synthetic training Dice is
+  explicitly disallowed as promotion evidence.
+

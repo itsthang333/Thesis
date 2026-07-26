@@ -392,6 +392,118 @@ Primary source:
 
 - https://papers.miccai.org/miccai-2025/paper/0830_paper.pdf
 
+## Technique 10 - normal-patch memory and synthetic anomaly learning
+
+This family is important because it does not require the source task to be
+bone-tumor segmentation. Its transferable assumption is simply that a local
+pathology patch should differ from the distribution of normal local patches.
+That is compatible with the project contract: clean-train normal images can be
+identified from image-level labels, and no tumor mask is needed.
+
+### PatchCore: compare local features with normal memory
+
+PatchCore keeps mid-level patch embeddings from normal training images and
+scores a query patch by distance to its nearest nominal patch. Mid-level
+features retain more spatial detail than a classifier's final feature map.
+Greedy coreset subsampling makes a broad normal memory feasible without keeping
+every patch.
+
+A direct BTXRD transfer should not use one unconditioned memory bank blindly:
+normal bones, projections and acquisition styles are highly heterogeneous, so
+anatomy differences could dominate tumor anomaly. A safer image-only design is:
+
+1. extract a global embedding and multi-level patch grid from every normal
+   clean-train radiograph;
+2. retrieve the nearest normal images to each query using only global visual
+   embeddings;
+3. calculate local patch distance against this context-conditioned normal
+   memory, with the fixed global coreset as a fallback;
+4. aggregate aligned distances across two feature depths/resolutions;
+5. freeze the continuous anomaly maps before GT evaluation.
+
+No anatomy/view metadata is required for routing. The retrieval is inferred
+from image pixels and therefore remains within the image-label-only contract.
+The first backbone should be the radiograph-adapted MAE from the current probe
+if its representation is stable; a radiograph foundation encoder is a separate
+ablation, not an automatic replacement.
+
+Main risk: k-nearest-neighbour distance can highlight cortical edges, image
+markers or rare normal anatomy. Report false-positive area on all 187 normal
+validation images and inspect whether global retrieval reduces it. Do not
+normalize each heatmap in a way that forces every normal image to contain an
+anomaly.
+
+Primary source:
+
+- https://openaccess.thecvf.com/content/CVPR2022/html/Roth_Towards_Total_Recall_in_Industrial_Anomaly_Detection_CVPR_2022_paper.html
+
+### Reverse distillation: learn only the normal teacher manifold
+
+Reverse Distillation uses a frozen pretrained teacher to emit multi-scale
+features. A bottleneck plus student decoder is trained on normal images to
+recover those teacher features. Normal structure is reconstructed well, while
+unseen anomalous regions create teacher-student discrepancies at several
+scales. Unlike pixel reconstruction, feature discrepancy is less sensitive to
+minor intensity noise and can retain semantic structural deviations.
+
+For BTXRD, the teacher should be fixed and the student trained only on normal
+clean-train images. The transferable comparison is pixel MAE residual versus
+feature residual, using the same prediction-first validation audit. This is
+particularly useful if the current MAE produces high error on exposure,
+markers or bone boundaries but little tumor contrast.
+
+Risk: a high-capacity student can generalize to anomalies and reconstruct their
+features too. The bottleneck, feature depths and training duration must be
+fixed before validation evaluation.
+
+Primary source:
+
+- https://openaccess.thecvf.com/content/CVPR2022/html/Deng_Anomaly_Detection_via_Reverse_Distillation_From_One-Class_Embedding_CVPR_2022_paper.html
+
+### DRAEM/NSA: learn a local anomaly discriminator from synthetic masks
+
+DRAEM does more than subtract a reconstruction. It trains a reconstructive
+network to restore a synthetically corrupted normal image, then gives both the
+input and reconstruction to a U-Net-like discriminator. The discriminator
+learns the anomaly-specific distance function and is trained with the exact
+synthetic corruption mask. Natural Synthetic Anomalies (NSA) improves the
+corruption mechanism by Poisson-blending scaled patches from other normal
+images, creating more natural local irregularities. Neither method needs a
+real lesion mask.
+
+The most defensible BTXRD adaptation is not to paste arbitrary colourful
+textures. It should synthesize radiograph-compatible deviations:
+
+- Poisson-blend a patch from a different normal radiograph inside the
+  radiograph foreground;
+- apply local contrast/density shift, blur/sharpen or elastic displacement
+  within an irregular multi-scale mask;
+- preserve the surrounding black background and avoid text/marker regions;
+- sample many small masks so the discriminator cannot solve the task only from
+  large obvious corruptions;
+- optionally concatenate the frozen MAE normal reconstruction with the
+  corrupted/original image, allowing the discriminator to learn where the
+  residual is meaningful.
+
+This remains weakly/self-supervised because its pixel masks describe synthetic
+corruptions generated from normal images; they are not BTXRD tumor GT.
+Attention-conditioned augmentation offers a medical-X-ray-tested improvement:
+use self-attention to place/mask corruptions on foreground structure rather
+than destroying irrelevant background.
+
+Risks are substantial. Synthetic artifacts may be easier than true bone tumors,
+causing shortcut learning; copy-paste seams may dominate; and a synthetic
+segmenter can overestimate large regions. Before a consumer experiment, require
+prediction-first localization on real validation tumors and false-positive
+audit on normal validation images. Synthetic-mask training Dice is not evidence
+of real localization.
+
+Primary sources:
+
+- https://openaccess.thecvf.com/content/ICCV2021/html/Zavrtanik_DRAEM_-_A_Discriminatively_Trained_Reconstruction_Embedding_for_Surface_Anomaly_ICCV_2021_paper.html
+- https://www.ecva.net/papers/eccv_2022/papers_ECCV/html/7519_ECCV_2022_paper.php
+- https://ojs.aaai.org/index.php/AAAI/article/view/26720
+
 ## Techniques already tested or partially tested here
 
 | Literature mechanism | Project evidence | Decision |
@@ -408,11 +520,13 @@ Primary source:
 
 The order below ranks transferable mechanisms, not named models:
 
-1. Complete the in-flight prompt/source graph selector under its frozen
-   protocol.
-2. Run a bounded SKELEX-inspired MAE reconstruction-error feasibility audit,
+1. Run the already launched bounded SKELEX-inspired MAE reconstruction-error feasibility audit,
    because it is exact-modality, demonstrated on BTXRD, independent of CAM, and
    theoretically favorable to tiny local anomalies.
+2. If MAE pixel residual is weak or dominated by acquisition artifacts, test a
+   normal-patch memory branch using context-conditioned PatchCore-style
+   distances. It can reuse the frozen MAE/radiograph features and directly
+   targets small local deviations without learning another mask selector.
 3. Implement UM-CAM's uncertainty-weighted multi-resolution fusion. If its
    seeds improve, test geodesic expansion separately.
 4. Add RVC/uncertainty-ignore training to the pseudo-mask consumer, addressing
@@ -424,7 +538,11 @@ The order below ranks transferable mechanisms, not named models:
 7. Add learned affinity only after seed recall is high enough.
 8. Evaluate Fourier style/content consistency if a center/acquisition subgroup
    audit shows domain drift.
-9. Keep ACR adversarial reconstruction as a higher-cost fallback.
+9. Test radiograph-compatible NSA/DRAEM synthetic anomaly learning only after a
+   real-tumor prediction-first gate; synthetic training accuracy is not a gate.
+10. Keep reverse distillation and ACR adversarial reconstruction as higher-cost
+    fallbacks when pixel residuals fail but feature-level anomaly remains
+    plausible.
 
 Each numbered item must be predeclared as a controlled experiment. Techniques
 may be composed only after their individual prediction-first audits show
