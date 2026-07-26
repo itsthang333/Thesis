@@ -26,10 +26,11 @@ from torch.utils.data import DataLoader, Dataset
 from mae_reconstruction_io import (
     load_split_rows_without_annotations,
     locate_verified_image,
-    pad_to_square,
     sha256_file,
     verify_model_snapshot,
 )
+from compare_nominal_patch_memory_arms import METRICS, paired_group_bootstrap
+from models.mae_reconstruction import pad_to_square
 from models.rad_dino_dense_mil import (
     DenseMILConfig,
     DenseMILHead,
@@ -409,6 +410,8 @@ def evaluate_arm(
         writer.writeheader()
         writer.writerows(evaluated)
     metrics = ["pixel_ap", "pixel_auroc", "argmax_hit", "saliency_mass_in_gt", "dice_p90", "dice_p95", "dice_p97", "dice_p99"]
+    image_labels = np.asarray([int(row["tumor"]) for row in manifest], dtype=np.uint8)
+    image_scores = np.asarray([float(row["raw_p99"]) for row in manifest], dtype=np.float64)
     overall_metrics = {
         metric: float(np.mean([row[metric] for row in evaluated]))
         for metric in metrics
@@ -416,6 +419,9 @@ def evaluate_arm(
     summary = {
         "arm": arm_dir.name,
         "cohort": {"validation": 371, "tumor": 184, **counts},
+        "image_level_auroc_from_raw_p99": float(
+            roc_auc_score(image_labels, image_scores)
+        ),
         "tumor_localization": {"overall": {"n": 184, **overall_metrics}},
     }
     for name in ("small", "medium", "large"):
@@ -427,27 +433,45 @@ def evaluate_arm(
     return evaluated, summary
 
 
-def bootstrap_compare(left: list[dict[str, object]], right: list[dict[str, object]]) -> dict[str, object]:
+def bootstrap_compare(
+    left: list[dict[str, object]],
+    right: list[dict[str, object]],
+) -> dict[str, object]:
     left_by = {str(row["image_id"]): row for row in left}
     right_by = {str(row["image_id"]): row for row in right}
-    grouped: dict[str, list[float]] = {}
-    for image_id, row in left_by.items():
-        grouped.setdefault(str(row["group_id"]), []).append(
-            float(right_by[image_id]["dice_p99"]) - float(row["dice_p99"])
-        )
-    groups = sorted(grouped)
-    rng = random.Random(20260726)
-    samples = []
-    for _ in range(10000):
-        values: list[float] = []
-        for _group in groups:
-            values.extend(grouped[rng.choice(groups)])
-        samples.append(float(np.mean(values)))
+    if left_by.keys() != right_by.keys() or len(left_by) != 184:
+        raise RuntimeError("Dense-MIL paired cohorts differ")
+    metric_results: dict[str, object] = {}
+    for metric_index, metric in enumerate(METRICS):
+        strata: dict[str, object] = {}
+        for stratum in ("overall", "small", "medium", "large"):
+            names = [
+                name
+                for name, row in left_by.items()
+                if stratum == "overall" or row["size_group"] == stratum
+            ]
+            strata[stratum] = paired_group_bootstrap(
+                [
+                    (
+                        str(left_by[name]["group_id"]),
+                        float(right_by[name][metric]) - float(left_by[name][metric]),
+                    )
+                    for name in names
+                ],
+                replicates=10_000,
+                seed=20260726 + metric_index * 10 + len(stratum),
+            )
+        metric_results[metric] = strata
     return {
-        "metric": "dice_p99",
-        "delta_multiscale_minus_single_scale": float(np.mean([x for values in grouped.values() for x in values])),
-        "ci95": [float(np.percentile(samples, 2.5)), float(np.percentile(samples, 97.5))],
-        "n_images": len(left), "n_groups": len(groups), "replicates": 10000,
+        "method": "paired complete-group bootstrap",
+        "replicates": 10_000,
+        "seed": 20260726,
+        "interpretation": (
+            "mechanism feasibility only; no arm/threshold promotion and no "
+            "downstream consumer without a separate predeclared protocol"
+        ),
+        "metrics": metric_results,
+        "test_evaluated": False,
     }
 
 
