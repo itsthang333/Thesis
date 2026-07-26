@@ -1292,4 +1292,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   above zero and no mean degradation in any subgroup. Train pseudo masks and
   paired U-Net consumer training remain forbidden unless this Gate-C passes;
   test remains locked.
+- Kaggle kernel
+  `itsthang333/btxrd-prompt-source-graph-selector-val-v1`, version 1, was
+  launched from source commit `370f635fbe74f89d2450dfe94d7f88545167f8b3`
+  and is RUNNING. The standalone wrapper compiles and passes its static
+  source/command/freeze-order/schema audit at SHA-256
+  `8c99a03bb46ebc0ae2f510b8be847a80368e4a1368c9060b7e51b053fc8e12ef`.
+  It verifies both proposal sources and required prompt-mode provenance in
+  every schema-v2 tumor diagnostic before freezing prediction hashes and
+  invoking either validation-GT evaluator. A single 15-minute monitor
+  `theo-d-i-prompt-source-graph-kaggle` follows this kernel; no competing
+  heavy local task or duplicate monitor was created.
 
