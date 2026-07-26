@@ -1707,4 +1707,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `TOKENIZERS_PARALLELISM=false`. The frozen source commit, protocol, split,
   RAD-DINO weights, training schedule, validation arms and evaluation
   contract remain unchanged.
+- The corrected wrapper has SHA-256
+  `7464a7c13a2187bed40ffe5c40f16fad4bad66d2e1341e6609e991fb927a6c10`;
+  the prelaunch audit record was updated without changing the scientific
+  source/protocol hashes. Kernel version 2 was pushed to the same private
+  Kaggle kernel and the existing heartbeat monitor was updated in place to
+  use the new wrapper hash at its five-minute interval.
 
