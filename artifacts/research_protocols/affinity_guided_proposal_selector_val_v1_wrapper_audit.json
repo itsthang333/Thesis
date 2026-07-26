@@ -4,8 +4,8 @@
   "audited_before_launch": true,
   "wrapper": {
     "path": "tmp/kaggle/affinity_guided_proposal_selector_val_v1/run_affinity_guided_proposal_selector_val_v1.py",
-    "bytes": 37864,
-    "sha256": "526bf6b32cdbee15a872290ffaa85e0b92950559c0aac63e97fafe2addaf7e47"
+    "bytes": 37838,
+    "sha256": "7a736598a9dd9791dc3271c9176c64ab3cf7f5da59b7c399ae39c4c979ad1190"
   },
   "kernel_metadata": {
     "id": "itsthang333/btxrd-affinity-guided-proposal-selector-val-v1",
@@ -56,6 +56,7 @@
     "four_focused_local_test_modules_16_tests": "PASS",
     "prediction_and_candidate_manifests_freeze_before_gt_evaluation": "PASS",
     "gt_derived_baseline_evaluation_artifacts_are_opened_only_after_freeze": "PASS",
+    "final_selected_masks_are_preserved_for_independent_metric_recomputation": "PASS",
     "paired_complete_group_bootstrap_iterations_10000": "PASS",
     "consumer_protocol_requires_oracle_statistical_and_halfway_quality_gates": "PASS",
     "consumer_trained_false": "PASS",
@@ -66,6 +67,13 @@
     "single_monitor": true,
     "monitor_interval_minutes": 5,
     "heavy_compute_local": false
+  },
+  "implementation_correction": {
+    "kernel_version_1": "superseded while running before terminal acceptance",
+    "changed": "preserve the final selected-mask directory in Kaggle output instead of deleting it during compact-output cleanup",
+    "scientific_contract_changed": false,
+    "selector_prediction_metric_gate_or_protocol_changed": false,
+    "kernel_version_2_wrapper_reaudit": "PASS"
   },
   "consumer_trained": false,
   "test_evaluated": false

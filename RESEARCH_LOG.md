@@ -2519,4 +2519,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   metadata or scientific-contract substitution. Exactly one five-minute
   heartbeat, `theo-d-i-affinity-selector`, follows this kernel. No competing
   local heavy job and no duplicate monitor were created.
+- Before version 1 reached terminal acceptance, a provenance-only output
+  retention issue was found: compact cleanup would delete the selected final
+  masks after cloud evaluation, preventing a local independent auditor from
+  recomputing Dice directly from masks. Version 2 therefore preserves only
+  `pseudo_masks/masks`; large candidate-diagnostic arrays are still removed.
+  No selector, proposal, prediction, metric, gate, source, data or protocol
+  setting changed. Re-audited v2 wrapper SHA-256 is
+  `7a736598a9dd9791dc3271c9176c64ab3cf7f5da59b7c399ae39c4c979ad1190`.
+  The existing single heartbeat remains attached to the same kernel slug.
 
