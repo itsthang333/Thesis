@@ -2054,3 +2054,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `76a18a6bc3c2c2f445a670a526d5f928d029008962d6ba7a1b807695732cfba3`;
   it compiles locally and retains `PRELAUNCH_PASS`.
 
+## 2026-07-27 - Geometry-correction v2 JSON serialization error
+
+- Kernel
+  `itsthang333/btxrd-rad-dino-square-geometry-correction-v1` version 2
+  terminated after deriving and evaluating the dense-MIL corrected maps.
+  The direct nested execution log reports
+  `TypeError: Object of type int64 is not JSON serializable` while writing
+  the dense-MIL correction `run_manifest.json`. The INSIGHT correction was
+  not started, the top-level run index was not written, and no terminal
+  scientific result is accepted from this version.
+- The failure is confined to the audit summary: `sum(np.isclose(...))`
+  returned a NumPy integer for the count of square images. Map reprojection,
+  prediction freezing, GT evaluation, cohorts, metrics and bootstrap had
+  already executed, but their partial output cannot be promoted without the
+  complete fail-closed manifests and independent audit.
+- The admissible repair converts every aspect-ratio count and statistic to a
+  JSON-native `int` or `float` through a validated helper. A regression test
+  requires exact counts and successful `json.dumps`. The corrected source is
+  commit `63139fd5168f3114420674b629d1a83caee4fa1e`; canonical source SHA-256 is
+  `aad0a03404721e32513b8675226e8586003aca493fe548ffe9ce9bd8837bdc1a`.
+  Python compilation passes. The local environment lacks NumPy and Torch, so
+  the real regression test remains mandatory in the Kaggle wrapper before
+  rerunning the correction.
+- The scientific contract is unchanged: exact inverse square geometry only,
+  no parameter fit or threshold selection, prediction freeze before GT,
+  complete misses, paired complete-group bootstrap 10,000,
+  `consumer_trained=false` and `test_evaluated=false`. Only the correction
+  source/protocol binding and wrapper preflight may change for version 3.
+
