@@ -2432,3 +2432,69 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   canonical LF hashes for the three text files normalized for Git, so the
   line-ending transformation is explicit rather than hidden.
 
+## 2026-07-27 - Affinity-guided raw single-proposal selector predeclaration
+
+- The rejected affinity decoder is not promoted as a mask source. Its
+  statistically credible ranking signal is instead assigned one narrower,
+  prediction-time role: select exactly one raw SAM proposal from the already
+  frozen LayerCAM plus BiomedCLIP proposal gallery. This targets the observed
+  selection bottleneck without fitting another consumer to rejected masks.
+  The existing gallery's best-single oracle Dice is
+  `0.48372617/0.25976551/0.71084146/0.74483737` for
+  overall/small/medium/large, above the operational consumer goals
+  `0.34024039/0.17895493/0.51244178/0.49370336` in every subgroup.
+- Source commit
+  `56c01f241bda4b80183918517999f7ddbb37fc55` adds
+  `affinity_rank_single`: six fixed top-rank supports
+  `20/15/10/5/3/1%`, followed by a deterministic lexicographic selector over
+  support overlap, captured affinity mass, inside/outside contrast, frozen
+  SAM rank, candidate area and stable index. It retains exactly one
+  variable-area raw proposal. Candidate union, support clipping, fitted
+  weights, morphology and every other boundary-changing operation are
+  disabled. The LayerCAM, BiomedCLIP and SAM proposal-generation contract is
+  unchanged and will fail closed unless every per-image component and
+  candidate count matches the frozen same-gallery baseline.
+- The sanitized private Kaggle dataset
+  `itsthang333/btxrd-rad-dino-affinity-selector-input-v1`, version 1, contains
+  exactly 374 files: 371 frozen float16 `320x320` affinity maps plus the
+  direct prediction manifest, prediction freeze and sanitized package
+  manifest. Their SHA-256 values are respectively
+  `c066744a2acf3df3a078f4b25a973ea21bf140adeb88f713c90de8886a53fc42`,
+  `ed8b323dfaddf8fc9b5f7061a49dbc74f67187a45fb55c73ebdb46f36f9ff4ad`
+  and
+  `f9fb008a19c9f0ed1cb5ffb3f04f4f35227562614ca1dd6655fdaff6373167e9`.
+  A local package audit reverified all 371 manifest-indexed map hashes,
+  schemas, finite `[0,1]` range, cohort `371/184/187` and total map bytes
+  `76,028,288`. The owner-authenticated Kaggle page independently displays
+  version 1, private visibility, 374 files and the same three top-level
+  artifacts. Kaggle CLI `status` reports `ready`, but its current OAuth
+  context returns HTTP 403 for private file listing/download; this is treated
+  as a tooling-auth read error, not scientific evidence. The kernel wrapper
+  therefore audits the direct Kaggle dataset mount byte-for-byte before any
+  prediction and fails closed if access or any artifact differs.
+- Protocol `affinity_guided_proposal_selector_val_v1` is predeclared before
+  any affinity-guided selector prediction. Its scientific baseline is the
+  frozen same-gallery `coverage_mass_sam` run, with final per-image,
+  prompt-quality and pseudo-manifest hashes
+  `59bead9162ff90851087c67ecac7f1bc8d9133e7c6a8aebb2f3db6e6606d7b05`,
+  `200dbc4172dcd7e5bd7c2c0a23734725925e3153d73b52a2796c4f3fcda5ab9a`
+  and
+  `6962bb4b92a0311f2f8d0f5e68e14a4aac0e4199994868c6eb0d5626f08790ba`.
+  All 371 masks and all 184 complete candidate galleries must be frozen
+  before validation GT is imported. Evaluation uses the unchanged
+  `94/72/18` subgroups, includes complete misses and uses 10,000 paired
+  complete-group bootstrap replicates.
+- A future consumer protocol is authorized only if all three frozen gates
+  pass: the regenerated gallery oracle remains above every operational
+  consumer target; overall final-Dice improvement over the same-gallery
+  baseline has paired CI95 lower bound above zero with no subgroup mean
+  decrease; and pseudo-mask Dice reaches the halfway-to-goal floors
+  `0.28879224/0.14660840/0.43761543/0.43601515`. Passing does not train a
+  consumer automatically. Failing does not permit post-hoc adjustment of
+  rank supports, thresholds, weights, routing or morphology.
+- Protocol JSON, wrapper compile, full sanitized-input audit and the four
+  focused selector/input/gallery/diagnostic test modules pass locally in the
+  existing `btxrd-pseudomask` environment (16 tests). Heavy computation has
+  not run locally, validation GT has not been read for the new selector,
+  `consumer_trained=false`, and `test_evaluated=false`.
+

@@ -1,0 +1,245 @@
+{
+  "protocol_id": "affinity_guided_proposal_selector_val_v1",
+  "status": "predeclared_before_any_affinity_guided_selector_prediction",
+  "scientific_role": "prediction-first validation probe of a frozen affinity-map selector over an unchanged LayerCAM plus BiomedCLIP SAM proposal gallery; not a pseudo-mask consumer training run",
+  "scientific_question": "Can the frozen RAD-DINO affinity-decoder map solve the proposal-selection bottleneck by selecting one variable-area raw SAM proposal from the already frozen LayerCAM plus BiomedCLIP gallery, without validation-GT input or boundary-changing post-processing?",
+  "hypothesis": "Although the fixed affinity-decoder configuration failed its absolute shape gate, its affinity arm improved nominal localization ranking and saliency mass. Fixed rank supports from that map may therefore rank the existing high-oracle SAM gallery more accurately than the frozen coverage-mass selector while allowing candidate area to follow the selected proposal.",
+  "mechanism_evidence": {
+    "affinity_decoder_probe": {
+      "protocol": "rad_dino_affinity_decoder_probe_val_v1",
+      "decision": "REJECT_FIXED_CONFIGURATION",
+      "image_auroc": 0.8172518019,
+      "overall_pixel_auroc": 0.8049819853,
+      "small_pixel_auroc": 0.841475409,
+      "failed_absolute_shape_checks": [
+        "overall Dice at p90 0.0911239376 < 0.10",
+        "medium Dice at p90 0.1156162627 < 0.12"
+      ],
+      "retained_evidence": "paired affinity-minus-nominal pixel AUROC improved overall, small and medium; pixel AP improved overall and small; saliency mass improved in every subgroup"
+    },
+    "frozen_proposal_gallery": {
+      "protocol": "biomedclip_layercam_proposal_gallery_val_v1",
+      "selector_decision": "SELECTOR_RESEARCH_ONLY",
+      "raw_best_single_oracle_dice": {
+        "overall": 0.4837261731750971,
+        "small": 0.25976551415627286,
+        "medium": 0.7108414553356078,
+        "large": 0.7448373749646916
+      },
+      "interpretation": "every frozen subgroup oracle is above the operational consumer goal; proposal availability is sufficient and selector quality is the current bottleneck"
+    }
+  },
+  "weak_supervision_contract": {
+    "training_used_to_create_affinity_maps": [
+      "2981 clean-train radiographs",
+      "binary image-level normal/tumor labels",
+      "frozen externally pretrained RAD-DINO weights",
+      "pseudo evidence reconstructed only from clean-train normal RAD-DINO features",
+      "deterministic image-derived grayscale and gradient guidance"
+    ],
+    "selector_inputs": [
+      "binary validation image-level label",
+      "frozen flip-TTA LayerCAM proposal source",
+      "frozen BiomedCLIP tiled saliency proposal source",
+      "frozen RAD-DINO affinity-decoder map",
+      "raw SAM proposal masks and their deterministic ordering"
+    ],
+    "forbidden_inputs": [
+      "BTXRD train polygons, masks, boxes, points or scribbles",
+      "validation segmentation GT before prediction and candidate manifests are hash-frozen",
+      "validation subgroup or lesion-size routing",
+      "test images, labels, predictions or metrics"
+    ],
+    "validation_gt": "may be imported only after all 371 final masks, all 184 complete candidate galleries, their manifests and prediction_freeze.json are written and hash-bound",
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "source_lock": {
+    "implementation_commit": "56c01f241bda4b80183918517999f7ddbb37fc55",
+    "generate_pseudo_masks.py": "4498e12d4771479f4ee2631f9529743a86cec6bf3ed18e2ccd053d33cd9a0b5f",
+    "evaluate_saved_candidate_diagnostics.py": "a746da95b0e8bb6e8afde24d8ddee95d0b04692a4ee725aa4c57d0e627173f6a",
+    "pseudo/candidate_diagnostics.py": "e65c7402f9934e4a3cea918f4d5c707a759f1f78ef66a5a793c2c60ec51e6cc2",
+    "tools/compare_candidate_diagnostics.py": "ef5e07b7cc8e5495aa22f8b2de877d83040bd89a908d1c609876de205a6c2ad8",
+    "evaluate_pseudo_masks.py": "acae150b0932ab54290f93d98849d63e71de1c996eb8d12fe305ee5f0672db2d",
+    "pseudo/manifest.py": "48467c99dd7257722ea08f1012fa723ce4bd19221965a453bbee682df0f7e404",
+    "pseudo/mask_selection.py": "447e3ff78fa85011e63c848bb7b051ffeff6144480a47ae049a267bebd2e9cd7",
+    "pseudo/affinity_selector_input.py": "64a606c30dec33a5d7cfc3770d33be5483220ed41671c08b41194c20c3792566",
+    "tests/test_external_saliency_proposal_gallery.py": "94dda50ccd5155451a4c803fc28fdb939796fedb4b4ad3db1731068331491dfe",
+    "tests/test_candidate_diagnostics.py": "ac11884d0999d47346b3b06c1a716d5c2792633a0882a4be10b39ab89237f456",
+    "tests/test_affinity_rank_selector.py": "58b83616d243a0a724c524b659f8d8f6fee5d3c5c81cd48c0601e707f01b3f75",
+    "tests/test_affinity_selector_input.py": "46cb7ae8297866402738938d0e23725417852999faecd05e3561522f24fdec44"
+  },
+  "population": {
+    "split": "val",
+    "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "images": 371,
+    "tumor_images": 184,
+    "normal_images": 187,
+    "tumor_groups": 167,
+    "subgroups": {
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    },
+    "complete_misses_included": true
+  },
+  "affinity_selector_input_lock": {
+    "dataset": "itsthang333/btxrd-rad-dino-affinity-selector-input-v1",
+    "dataset_version": 1,
+    "visibility": "private",
+    "expected_files": 374,
+    "expected_maps": 371,
+    "expected_map_dtype": "float16",
+    "expected_map_shape": [
+      320,
+      320
+    ],
+    "expected_map_value_range": [
+      0.0,
+      1.0
+    ],
+    "expected_map_bytes": 76028288,
+    "prediction_manifest_sha256": "c066744a2acf3df3a078f4b25a973ea21bf140adeb88f713c90de8886a53fc42",
+    "selector_input_manifest_sha256": "f9fb008a19c9f0ed1cb5ffb3f04f4f35227562614ca1dd6655fdaff6373167e9",
+    "prediction_freeze_sha256": "ed8b323dfaddf8fc9b5f7061a49dbc74f67187a45fb55c73ebdb46f36f9ff4ad",
+    "source_commit": "38b5bb4b9d7a846862443b442ff406f0ab41d3bd",
+    "source_protocol_sha256": "53e2bb82ef35862b6c3e20387edbe60776f9d1ba46da516b9d5116db3fa2e7cf",
+    "checkpoint_sha256": "c5f9278de813396628fffe8360f09c786f1b74750861c23192d568405535b0d3",
+    "contains_validation_gt_derived_metrics": false,
+    "validation_gt_read_at_prediction_freeze": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "runtime_audit": "fail closed unless the mounted root contains exactly the three locked metadata files and the exact 371 manifest-indexed physical maps with matching SHA-256, schema, value range and byte total"
+  },
+  "proposal_gallery_lock": {
+    "classifier_checkpoint_sha256": "f62d3702541ec3e6571751ddda22dab4c723943397471d3897500da1620304c5",
+    "sam_checkpoint_sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
+    "biomedclip_saliency_manifest_sha256": "72360237a12802c06ea5da8cecde7dbb87d4fef7a9dbf358f09e080384267bf1",
+    "biomedclip_saliency_metadata_sha256": "06109965042b9c433126101f7e32c609c8069312af58b2d0e6693ad4e77ccc4b",
+    "biomedclip_independent_audit_sha256": "9afafa07681a83f7b31b08c9cceb79635d2dd58af53c7a8a9561f7ae01de21cf",
+    "biomedclip_source_commit": "95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68",
+    "biomedclip_weight_sha256": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+    "image_size": 320,
+    "sam_image_size": 512,
+    "cam_tta_flip": true,
+    "cam_percentile_ensemble": [
+      85,
+      90,
+      95
+    ],
+    "min_component_area": 100,
+    "max_components_per_percentile": 3,
+    "points_per_component": 5,
+    "bbox_padding_ratio": 0.02,
+    "negative_points_per_component": 4,
+    "sam_prompt_ensemble": [
+      "box_point",
+      "point",
+      "box"
+    ],
+    "max_box_area_ratio": 0.35,
+    "baseline_layercam_component_counts_preserved": true,
+    "baseline_external_component_counts_preserved": true,
+    "baseline_sam_candidate_counts_preserved": true
+  },
+  "baseline_lock": {
+    "method": "frozen LayerCAM plus BiomedCLIP proposal gallery using coverage_mass_sam",
+    "kernel": "itsthang333/btxrd-biomedclip-layercam-proposal-gallery-val-v1",
+    "final_per_image_sha256": "59bead9162ff90851087c67ecac7f1bc8d9133e7c6a8aebb2f3db6e6606d7b05",
+    "prompt_quality_sha256": "200dbc4172dcd7e5bd7c2c0a23734725925e3153d73b52a2796c4f3fcda5ab9a",
+    "pseudo_manifest_sha256": "6962bb4b92a0311f2f8d0f5e68e14a4aac0e4199994868c6eb0d5626f08790ba",
+    "final_dice": {
+      "overall": 0.23734409786916316,
+      "small": 0.11426186911342542,
+      "medium": 0.36278907576185615,
+      "large": 0.37832693646724375
+    }
+  },
+  "single_changed_mechanism": {
+    "candidate_gallery": "unchanged and runtime-audited against every frozen per-image component and SAM-candidate count",
+    "old_selector": "coverage_mass_sam with up to three-candidate fusion and LayerCAM support clipping",
+    "new_selector": "affinity_rank_single",
+    "rank_support_percentiles": [
+      80,
+      85,
+      90,
+      95,
+      97,
+      99
+    ],
+    "support_family_interpretation": "fixed top 20, 15, 10, 5, 3 and 1 percent of the frozen affinity map",
+    "selection_order": [
+      "largest support Dice between raw SAM candidate and each fixed affinity support",
+      "largest median support Dice",
+      "largest captured affinity mass",
+      "largest inside-versus-outside affinity contrast",
+      "largest frozen SAM score rank",
+      "smaller raw candidate area",
+      "stable candidate index"
+    ],
+    "selected_candidates": 1,
+    "mask_score_threshold": 0.0,
+    "support_clipping": false,
+    "union_or_fusion": false,
+    "morphological_closing": false,
+    "morphological_opening": false,
+    "small_component_removal": false,
+    "hole_filling": false,
+    "scalar_weight_fitting": false,
+    "boundary": "exact raw selected SAM candidate"
+  },
+  "execution_order": [
+    "Verify exact source, protocol, split, checkpoints, prior-gallery artifacts, all three affinity metadata files and all 371 physical affinity-map hashes without segmentation GT",
+    "Run the four frozen focused test modules",
+    "Regenerate the unchanged LayerCAM plus BiomedCLIP SAM gallery for all 371 validation images and select exactly one raw proposal for each image-level-positive image without segmentation GT",
+    "Audit exact proposal-gallery counts and affinity-map provenance for all 371 image rows and all 184 complete candidate galleries",
+    "Freeze pseudo-mask and candidate-diagnostic manifest hashes in prediction_freeze.json",
+    "Only then load validation GT in separate evaluators",
+    "Include all complete misses and compare against the frozen same-gallery coverage-mass baseline with 10000-iteration paired complete-group bootstrap overall and for all fixed subgroups"
+  ],
+  "promotion_gates": {
+    "all_required_for_consumer_protocol": true,
+    "candidate_oracle_above_operational_consumer_goals": {
+      "overall": 0.340240391925425,
+      "small": 0.17895493248574226,
+      "medium": 0.5124417783635557,
+      "large": 0.4937033565801355
+    },
+    "statistical_improvement": "final Dice affinity selector minus frozen same-gallery coverage-mass selector has paired complete-group bootstrap CI95 lower bound > 0 overall, with nonnegative mean delta in small, medium and large",
+    "halfway_to_operational_goal_quality": {
+      "overall": 0.2887922448972941,
+      "small": 0.14660840079958384,
+      "medium": 0.43761542706270595,
+      "large": 0.4360151465236896
+    },
+    "on_all_pass": "authorize only a separate predeclared train-pseudo-mask and consumer-training protocol; do not train a consumer in this run",
+    "on_fail": "reject this fixed selector or retain selector research only according to the frozen gate results; do not fit rank supports, thresholds, weights, morphology or routing to the observed validation GT"
+  },
+  "relation_to_validation_goal": {
+    "goal_protocol": "wsss_feasible_validation_goal_v1",
+    "operational_consumer_dice_minimum": {
+      "overall": 0.340240391925425,
+      "small": 0.17895493248574226,
+      "medium": 0.5124417783635557,
+      "large": 0.4937033565801355
+    },
+    "interpretation": "passing this selector probe is necessary evidence for a separate pseudo-mask consumer experiment but does not itself satisfy the final consumer goal"
+  },
+  "forbidden": [
+    "train polygons or masks",
+    "validation segmentation GT before both prediction manifests are hash-frozen",
+    "test images, labels, predictions or metrics",
+    "GT-oracle candidate selection or per-image source routing",
+    "lesion-size or subgroup routing",
+    "pixelwise saliency-map blending into the final mask",
+    "candidate union or morphology that changes the selected raw SAM boundary",
+    "post-hoc support-percentile, threshold, weight, prompt, selector or morphology tuning",
+    "dropping complete misses or changing cohort, split, group IDs, subgroup definitions or Dice metric"
+  ],
+  "runtime": {
+    "heavy_compute": "Kaggle GPU only",
+    "test_locked": true
+  },
+  "consumer_trained": false,
+  "test_evaluated": false
+}
