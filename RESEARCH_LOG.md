@@ -2512,4 +2512,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   GT-derived baseline metric artifacts after freeze. Kernel metadata
   SHA-256 is
   `183dc06f9cbb853531ae7a6f9786b0b8637e2bf8e10d7d02fd3bc144c51a5f5c`.
+- Private Kaggle T4 kernel
+  `itsthang333/btxrd-affinity-guided-proposal-selector-val-v1` version 1 was
+  launched from that audited wrapper and entered `RUNNING`. Kaggle rejected
+  only the optional hyphenated tags; the kernel itself was accepted without
+  metadata or scientific-contract substitution. Exactly one five-minute
+  heartbeat, `theo-d-i-affinity-selector`, follows this kernel. No competing
+  local heavy job and no duplicate monitor were created.
 
