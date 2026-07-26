@@ -59,6 +59,10 @@ from pseudo.candidate_diagnostics import (
     save_candidate_diagnostics,
     write_candidate_diagnostics_manifest,
 )
+from pseudo.affinity_selector_input import (
+    load_affinity_selector_contract,
+    load_affinity_selector_map,
+)
 from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
@@ -121,6 +125,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--external-saliency-expected-metadata-sha256", default=None)
     parser.add_argument("--external-saliency-expected-source-commit", default=None)
     parser.add_argument("--external-saliency-expected-model-weight-sha256", default=None)
+    parser.add_argument("--affinity-selector-manifest", type=Path, default=None)
+    parser.add_argument("--affinity-selector-package-metadata", type=Path, default=None)
+    parser.add_argument("--affinity-selector-prediction-freeze", type=Path, default=None)
+    parser.add_argument("--affinity-selector-expected-manifest-sha256", default=None)
+    parser.add_argument("--affinity-selector-expected-package-metadata-sha256", default=None)
+    parser.add_argument("--affinity-selector-expected-prediction-freeze-sha256", default=None)
+    parser.add_argument("--affinity-selector-expected-source-commit", default=None)
+    parser.add_argument("--affinity-selector-expected-protocol-sha256", default=None)
+    parser.add_argument("--affinity-selector-expected-checkpoint-sha256", default=None)
     parser.add_argument(
         "--proposal-teacher-segmentation-checkpoint",
         type=Path,
@@ -286,7 +299,7 @@ def parse_args() -> argparse.Namespace:
                             "coverage_mass_sam", "coverage_mass_sam_causal", "hybrid",
                             "bone_hybrid", "simple_hybrid", "prompt_hybrid",
                             "consistency_hybrid", "source_consensus",
-                            "prompt_source_graph",
+                            "prompt_source_graph", "affinity_rank_single",
                         ],
                         help="CAM-guided mask scoring method")
     parser.add_argument(
@@ -1162,6 +1175,39 @@ def main() -> None:
         if external_saliency_contract is not None
         else None
     )
+    affinity_selector_rows, affinity_selector_contract = (
+        load_affinity_selector_contract(
+            manifest_path=args.affinity_selector_manifest,
+            package_metadata_path=args.affinity_selector_package_metadata,
+            prediction_freeze_path=args.affinity_selector_prediction_freeze,
+            expected_manifest_sha256=(
+                args.affinity_selector_expected_manifest_sha256
+            ),
+            expected_package_metadata_sha256=(
+                args.affinity_selector_expected_package_metadata_sha256
+            ),
+            expected_prediction_freeze_sha256=(
+                args.affinity_selector_expected_prediction_freeze_sha256
+            ),
+            expected_source_commit=args.affinity_selector_expected_source_commit,
+            expected_protocol_sha256=args.affinity_selector_expected_protocol_sha256,
+            expected_checkpoint_sha256=(
+                args.affinity_selector_expected_checkpoint_sha256
+            ),
+            split=args.split,
+            split_manifest_sha256=(
+                sha256_file(args.split_manifest.resolve())
+                if args.split_manifest
+                else None
+            ),
+            image_size=args.image_size,
+        )
+    )
+    affinity_selector_root = (
+        args.affinity_selector_manifest.resolve().parent
+        if affinity_selector_contract is not None
+        else None
+    )
     if external_saliency_contract is not None:
         if args.split == "test":
             raise ValueError("External-saliency test generation remains locked")
@@ -1199,6 +1245,46 @@ def main() -> None:
             raise ValueError(
                 "prompt_source_graph requires a positive component_topk cluster cap"
             )
+    if args.selection_method == "affinity_rank_single":
+        if affinity_selector_contract is None:
+            raise ValueError(
+                "affinity_rank_single requires the complete frozen affinity "
+                "selector input contract"
+            )
+        if (
+            external_saliency_contract is None
+            or args.external_saliency_role != "proposal_gallery"
+        ):
+            raise ValueError(
+                "affinity_rank_single requires the frozen LayerCAM plus "
+                "external-saliency proposal gallery"
+            )
+        if args.split == "test":
+            raise ValueError("Affinity-selector test generation remains locked")
+        if target_columns != ["tumor"] or args.cam_target_class != "ground_truth":
+            raise ValueError(
+                "affinity_rank_single requires supplied binary image labels"
+            )
+        if (
+            args.fusion_topk != 1
+            or not args.disable_best_per_component
+            or args.support_clip_kernel >= 0
+            or abs(float(args.mask_score_threshold)) > 1e-12
+            or args.closing_kernel != 0
+            or args.opening_kernel != 0
+            or args.min_size != 1
+            or args.max_hole_area != 0
+            or abs(float(args.guidance_threshold)) > 1e-12
+        ):
+            raise ValueError(
+                "affinity_rank_single requires one raw global candidate with "
+                "no clipping or morphology"
+            )
+    elif affinity_selector_contract is not None:
+        raise ValueError(
+            "Frozen affinity selector input is valid only with "
+            "selection_method=affinity_rank_single"
+        )
 
     run_metadata = {
             "pipeline_profile": args.pipeline_profile,
@@ -1253,6 +1339,17 @@ def main() -> None:
                     )
                 )
                 if external_saliency_contract is not None else None
+            ),
+            "affinity_selector": affinity_selector_contract,
+            "affinity_selector_semantics": (
+                (
+                    "fixed top-20/15/10/5/3/1-percent rank supports; "
+                    "lexicographic variable-area raw single-candidate selection; "
+                    "no validation-GT input, scalar-weight fitting, union, support "
+                    "clipping or boundary-changing post-processing"
+                )
+                if affinity_selector_contract is not None
+                else None
             ),
             "auxiliary_binary_checkpoint": (
                 str(args.auxiliary_binary_checkpoint.resolve())
@@ -1362,6 +1459,15 @@ def main() -> None:
         ) != len(external_saliency_rows):
             raise ValueError(
                 "External saliency cohort differs from the exact pseudo-mask dataset cohort"
+            )
+    if affinity_selector_contract is not None:
+        dataset_names = [str(sample["image_id"]) for sample in dataset.samples]
+        if set(dataset_names) != set(affinity_selector_rows) or len(
+            dataset_names
+        ) != len(affinity_selector_rows):
+            raise ValueError(
+                "Affinity selector cohort differs from the exact pseudo-mask "
+                "dataset cohort"
             )
     loader = DataLoader(
         dataset,
@@ -1486,6 +1592,19 @@ def main() -> None:
                 sample_record = samples_by_name[str(image_name)]
                 true_tumor = int(bool(sample_record.get("tumor", 0)))
                 true_tumor_type = int(sample_record.get("tumor_type", true_tumor))
+                affinity_selector_record = None
+                affinity_selector_map = None
+                if affinity_selector_contract is not None:
+                    assert affinity_selector_root is not None
+                    affinity_selector_record = affinity_selector_rows[str(image_name)]
+                    affinity_selector_map = load_affinity_selector_map(
+                        affinity_selector_record,
+                        root=affinity_selector_root,
+                        expected_image_id=str(image_name),
+                        expected_group_id=str(sample_record.get("group_id", "")),
+                        expected_image_label=true_tumor,
+                        image_size=args.image_size,
+                    )
 
                 should_skip = (
                     (
@@ -1517,6 +1636,11 @@ def main() -> None:
                         {
                             "image_name": str(image_name),
                             "group_id": str(sample_record.get("group_id", "")),
+                            "affinity_selector_map_sha256": (
+                                affinity_selector_record["map_sha256"]
+                                if affinity_selector_record is not None
+                                else ""
+                            ),
                             "true_tumor": true_tumor,
                             "true_tumor_type": true_tumor_type,
                             "selected_class": selected_class,
@@ -1573,6 +1697,11 @@ def main() -> None:
                         candidate_diagnostic_rows.append(
                             {
                                 "image_name": str(image_name),
+                                "affinity_selector_map_sha256": (
+                                    affinity_selector_record["map_sha256"]
+                                    if affinity_selector_record is not None
+                                    else ""
+                                ),
                                 "tumor_type": tumor_type_by_name.get(str(image_name), ""),
                                 "generation_status": "empty_by_image_gate",
                                 **diagnostic_row,
@@ -2171,6 +2300,12 @@ def main() -> None:
                         ),
                         prompt_modes=np.asarray(candidate_prompt_modes, dtype="U16"),
                         proposal_source_ids=proposal_source_ids,
+                        selector_map=np.asarray(
+                            affinity_selector_map
+                            if affinity_selector_map is not None
+                            else fused_cam,
+                            dtype=np.float32,
+                        ),
                     )
 
                 # ── 4b. Prompt-quality metrics (optional, pre-SAM diagnostics) ──
@@ -2193,9 +2328,14 @@ def main() -> None:
                     }
                     if bone_components else None
                 )
+                selection_map = (
+                    affinity_selector_map
+                    if affinity_selector_map is not None
+                    else fused_cam
+                )
                 selection_scores = score_masks(
                     sam_masks,
-                    fused_cam,
+                    selection_map,
                     method=args.selection_method,
                     bone_likelihood=bone_likelihood,
                     bone_support=bone_support,
@@ -2218,7 +2358,7 @@ def main() -> None:
                 )
                 refined, selection_details = select_and_fuse_masks(
                     sam_masks,
-                    fused_cam,
+                    selection_map,
                     mask_score_threshold=args.mask_score_threshold,
                     selection_method=args.selection_method,
                     fusion_topk=args.fusion_topk,
@@ -2253,7 +2393,11 @@ def main() -> None:
                     closing_kernel=args.closing_kernel,
                     opening_kernel=args.opening_kernel,
                     min_size=args.min_size,
-                    guidance_map=bone_likelihood,
+                    guidance_map=(
+                        selection_map
+                        if args.selection_method == "affinity_rank_single"
+                        else bone_likelihood
+                    ),
                     guidance_threshold=args.guidance_threshold,
                     max_hole_area=args.max_hole_area,
                 )
@@ -2315,6 +2459,11 @@ def main() -> None:
                     candidate_diagnostic_rows.append(
                         {
                             "image_name": str(image_name),
+                            "affinity_selector_map_sha256": (
+                                affinity_selector_record["map_sha256"]
+                                if affinity_selector_record is not None
+                                else ""
+                            ),
                             "tumor_type": tumor_type_by_name.get(str(image_name), ""),
                             "generation_status": (
                                 "ok" if final_mask.any() else "empty_after_localization"
@@ -2328,6 +2477,11 @@ def main() -> None:
                     {
                         "image_name": str(image_name),
                         "group_id": str(sample_record.get("group_id", "")),
+                        "affinity_selector_map_sha256": (
+                            affinity_selector_record["map_sha256"]
+                            if affinity_selector_record is not None
+                            else ""
+                        ),
                         "true_tumor": true_tumor,
                         "true_tumor_type": true_tumor_type,
                         "selected_class": selected_class,

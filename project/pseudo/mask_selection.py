@@ -13,10 +13,11 @@ SELECTION_METHODS = (
     "mean", "sum", "mean_area", "coverage", "coverage_mass", "coverage_mass_sam",
     "coverage_mass_sam_causal", "hybrid", "bone_hybrid", "simple_hybrid",
     "prompt_hybrid", "consistency_hybrid", "source_consensus",
-    "prompt_source_graph",
+    "prompt_source_graph", "affinity_rank_single",
 )
 
 DEFAULT_PROMPT_HYBRID_WEIGHTS = (0.30, 0.20, 0.15, 0.15, 0.20)
+AFFINITY_RANK_PERCENTILES = (80, 85, 90, 95, 97, 99)
 
 
 def _binary_dilation(mask: np.ndarray, kernel_size: int = 9) -> np.ndarray:
@@ -102,6 +103,112 @@ def _mask_iou(first: np.ndarray, second: np.ndarray) -> float:
     if union <= 0:
         return 0.0
     return float(np.logical_and(first_bool, second_bool).sum()) / union
+
+
+def _fixed_rank_support(values: np.ndarray, percentile: int) -> np.ndarray:
+    """Return an exact top-rank support with deterministic row-major ties."""
+    if not 0 < int(percentile) < 100:
+        raise ValueError("Affinity support percentiles must be integers in (0, 100)")
+    flat = np.asarray(values, dtype=np.float32).reshape(-1)
+    keep = max(1, int(round(flat.size * (100 - int(percentile)) / 100.0)))
+    order = np.argsort(-flat, kind="mergesort")
+    support = np.zeros(flat.size, dtype=bool)
+    support[order[:keep]] = True
+    return support.reshape(values.shape)
+
+
+def affinity_rank_single_selection(
+    masks: np.ndarray,
+    affinity_map: np.ndarray,
+    sam_scores: np.ndarray | None = None,
+    component_ids: np.ndarray | None = None,
+    *,
+    percentiles: tuple[int, ...] = AFFINITY_RANK_PERCENTILES,
+) -> tuple[np.ndarray, list[int], dict[str, int]]:
+    """Choose one variable-area proposal using only frozen affinity ranks.
+
+    Candidate shape determines which member of a fixed nested support family
+    it matches best. The selector contains no fitted scalar weights: exact
+    lexicographic keys resolve candidates by best support Dice, median support
+    Dice, captured affinity mass, inside/outside contrast, within-component
+    SAM rank, smaller area, and finally stable input order.
+    """
+    values = np.asarray(affinity_map, dtype=np.float32)
+    candidates = np.asarray(masks)
+    if candidates.ndim != 3:
+        raise ValueError("affinity_rank_single requires masks shaped [N, H, W]")
+    if values.shape != tuple(candidates.shape[1:]):
+        raise ValueError("Affinity selector map and candidate-mask grids differ")
+    if not np.isfinite(values).all() or float(values.min()) < 0.0 or float(values.max()) > 1.0:
+        raise ValueError("Affinity selector map must be finite and bounded in [0, 1]")
+    if float(values.max() - values.min()) <= 1e-6:
+        raise ValueError("Affinity selector map must be non-constant")
+    if not percentiles or len(set(int(value) for value in percentiles)) != len(percentiles):
+        raise ValueError("Affinity support percentiles must be non-empty and unique")
+
+    count = int(candidates.shape[0])
+    scores = np.zeros(count, dtype=np.float32)
+    if count == 0:
+        return scores, [], {
+            "affinity_supports": len(percentiles),
+            "affinity_selected_percentile": -1,
+        }
+    if sam_scores is not None and len(sam_scores) != count:
+        raise ValueError("Affinity selector SAM scores are not aligned with masks")
+    if component_ids is not None and len(component_ids) != count:
+        raise ValueError("Affinity selector component IDs are not aligned with masks")
+
+    supports = [
+        _fixed_rank_support(values, int(percentile))
+        for percentile in percentiles
+    ]
+    sam_ranks = _within_group_percentile_ranks(sam_scores, component_ids, count)
+    total_mass = max(float(values.sum()), 1e-8)
+    ranked: list[tuple[tuple[float, ...], int, int]] = []
+    for index in range(count):
+        mask = candidates[index].astype(bool)
+        area = int(mask.sum())
+        if area == 0:
+            ranked.append(
+                (
+                    (0.0, 0.0, 0.0, -1.0, float(sam_ranks[index]), 0.0, float(-index)),
+                    index,
+                    -1,
+                )
+            )
+            continue
+        support_dice: list[float] = []
+        for support in supports:
+            intersection = float(np.logical_and(mask, support).sum())
+            support_dice.append(
+                (2.0 * intersection) / max(float(area + support.sum()), 1.0)
+            )
+        best_support = int(np.argmax(np.asarray(support_dice, dtype=np.float32)))
+        best_dice = float(support_dice[best_support])
+        scores[index] = np.float32(best_dice)
+        captured_mass = float(values[mask].sum()) / total_mass
+        inside_mean = float(values[mask].mean())
+        outside = ~mask
+        outside_mean = float(values[outside].mean()) if outside.any() else 0.0
+        contrast = inside_mean - outside_mean
+        key = (
+            best_dice,
+            float(np.median(np.asarray(support_dice, dtype=np.float32))),
+            captured_mass,
+            contrast,
+            float(sam_ranks[index]),
+            float(-area),
+            float(-index),
+        )
+        ranked.append((key, index, best_support))
+
+    _, selected, support_index = max(ranked, key=lambda item: item[0])
+    return scores, [int(selected)], {
+        "affinity_supports": len(percentiles),
+        "affinity_selected_percentile": (
+            int(percentiles[support_index]) if support_index >= 0 else -1
+        ),
+    }
 
 
 def prompt_source_graph_selection(
@@ -343,6 +450,14 @@ def score_masks(
             component_topk=graph_component_topk,
         )
         return graph_scores
+    if method == "affinity_rank_single":
+        affinity_scores, _, _ = affinity_rank_single_selection(
+            masks,
+            bone_cam,
+            sam_scores,
+            component_ids,
+        )
+        return affinity_scores
     scores = np.zeros(n, dtype=np.float32)
     sam_ranks = _within_group_percentile_ranks(sam_scores, component_ids, n)
     causal_ranks = _within_group_percentile_ranks(
@@ -715,6 +830,38 @@ def select_and_fuse_masks(
         if return_details:
             mask, details = output
             details.update(graph_details)
+            return mask, details
+        return output
+
+    if selection_method == "affinity_rank_single":
+        if (
+            best_per_component
+            or fusion_topk != 1
+            or support_clip_kernel >= 0
+            or abs(float(mask_score_threshold)) > 1e-12
+        ):
+            raise ValueError(
+                "affinity_rank_single requires global top-1, no per-component "
+                "fusion, disabled support clipping and mask_score_threshold=0"
+            )
+        affinity_scores, selected_indices, affinity_details = (
+            affinity_rank_single_selection(
+                masks,
+                bone_cam,
+                sam_scores,
+                component_ids,
+            )
+        )
+        if not selected_indices:
+            return result(np.zeros_like(bone_cam, dtype=np.uint8), [], 0)
+        output = result(
+            masks[selected_indices[0]].astype(np.uint8),
+            selected_indices,
+            int(np.count_nonzero(affinity_scores >= 0.0)),
+        )
+        if return_details:
+            mask, details = output
+            details.update(affinity_details)
             return mask, details
         return output
 
