@@ -1,0 +1,38 @@
+{
+  "baseline_layercam_component_counts_preserved": true,
+  "baseline_sam_candidate_counts_not_reduced": true,
+  "candidate_diagnostic_schema": 2,
+  "candidate_manifest_sha256": "c96dc7660b7badcc23fb1b5e572d5025cec165ddc28594acc33e449aaf5752ee",
+  "candidate_per_image_sha256": "7a15bf7423ca51db8d58e3165df10574801fa5a498c1e48c4cd5a07d003324d5",
+  "candidate_prompt_quality_sha256": "3720d18c783cbcaec11760b59b52dd904322bb74098db2bc99512bd2cf593ac3",
+  "cohort": {
+    "images": 371,
+    "normal": 187,
+    "tumor": 184
+  },
+  "complete_misses_included": true,
+  "decision": "REJECT_NO_CONSUMER",
+  "diagnostic_prediction_first_audit_sha256": "c400e4a1543f64915f53f1da6bc2d29017eed8003b43cd734e0f494b511b8f1f",
+  "prediction_artifacts_verified_before_gt_load": true,
+  "prediction_freeze_sha256": "3310bc59193929d750bc60ea0c8ece6be549fe9c89b64ebfd6a21167897f159c",
+  "prompt_label_image_counts": {
+    "box": 184,
+    "box_point": 184,
+    "point": 184
+  },
+  "prompt_source_provenance_verified_before_gt": true,
+  "proposal_source_label_image_counts": {
+    "external_saliency": 184,
+    "layercam": 184
+  },
+  "pseudo_manifest_sha256": "4c8c69922d224fcb185aa4000579313468d0f19d9d6f43f611f75a564ab767fd",
+  "status": "PASS",
+  "subgroups": {
+    "large": 18,
+    "medium": 72,
+    "small": 94
+  },
+  "test_evaluated": false,
+  "tumor_images_with_external_components": 184,
+  "validation_gt_read_only_after_prediction_freeze": true
+}

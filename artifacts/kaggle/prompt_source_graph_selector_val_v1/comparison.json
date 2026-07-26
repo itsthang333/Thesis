@@ -1,0 +1,135 @@
+{
+  "artifact_hashes": {
+    "/kaggle/input/notebooks/itsthang333/btxrd-binary-cam-sam-tta-flip/btxrd_binary_cam_sam_tta_flip/ground_truth/evaluation/per_image.csv": "fe5cf247cd236799de9e279db342314c11ff65fdb065cda26986c302efd05540",
+    "/kaggle/input/notebooks/itsthang333/btxrd-binary-cam-sam-tta-flip/btxrd_binary_cam_sam_tta_flip/ground_truth/pseudo_masks/prompt_quality.csv": "d1b570ae3a6287fdaf7fc5c28aea864d6883e5c57037542b39b17c4c6ea995e4",
+    "/kaggle/working/btxrd_prompt_source_graph_selector_val_v1/diagnostic_evaluation/prompt_quality.csv": "3720d18c783cbcaec11760b59b52dd904322bb74098db2bc99512bd2cf593ac3",
+    "/kaggle/working/btxrd_prompt_source_graph_selector_val_v1/final_evaluation/per_image.csv": "7a15bf7423ca51db8d58e3165df10574801fa5a498c1e48c4cd5a07d003324d5"
+  },
+  "cohort": {
+    "images": 371,
+    "subgroups": {
+      "large": 18,
+      "medium": 72,
+      "small": 94
+    },
+    "tumor_images": 184
+  },
+  "decision": "REJECT_NO_CONSUMER",
+  "metrics": {
+    "final_dice": {
+      "overall": {
+        "baseline_mean": 0.23433922219069755,
+        "candidate_mean": 0.20341410399432408,
+        "ci95_high": 0.001451400984651569,
+        "ci95_low": -0.06408515310473202,
+        "groups": 167,
+        "images": 184,
+        "iterations": 10000,
+        "mean_delta": -0.030925118196373474,
+        "resampling_unit": "complete frozen validation group",
+        "seed": 42
+      },
+      "subgroups": {
+        "large": {
+          "baseline_mean": 0.4153105265301879,
+          "candidate_mean": 0.47892331779022246,
+          "ci95_high": 0.17909894943193455,
+          "ci95_low": -0.027100937666798,
+          "groups": 17,
+          "images": 18,
+          "iterations": 10000,
+          "mean_delta": 0.06361279126003455,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "medium": {
+          "baseline_mean": 0.34860371437700266,
+          "candidate_mean": 0.3605223534599764,
+          "ci95_high": 0.06673432611864408,
+          "ci95_low": -0.04021521656652435,
+          "groups": 61,
+          "images": 72,
+          "iterations": 10000,
+          "mean_delta": 0.011918639082973748,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "small": {
+          "baseline_mean": 0.1121634039404338,
+          "candidate_mean": 0.03031878686822685,
+          "ci95_high": -0.043205396800986146,
+          "ci95_low": -0.12568469424044,
+          "groups": 92,
+          "images": 94,
+          "iterations": 10000,
+          "mean_delta": -0.08184461707220694,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        }
+      }
+    },
+    "oracle_best_single_dice": {
+      "overall": {
+        "baseline_mean": 0.40907629052253885,
+        "candidate_mean": 0.4837261731750971,
+        "ci95_high": 0.09896129155519946,
+        "ci95_low": 0.05248871044794649,
+        "groups": 167,
+        "images": 184,
+        "iterations": 10000,
+        "mean_delta": 0.07464988265255823,
+        "resampling_unit": "complete frozen validation group",
+        "seed": 42
+      },
+      "subgroups": {
+        "large": {
+          "baseline_mean": 0.6418277713548849,
+          "candidate_mean": 0.7448373749646916,
+          "ci95_high": 0.18598153914812604,
+          "ci95_low": 0.037395605550836895,
+          "groups": 17,
+          "images": 18,
+          "iterations": 10000,
+          "mean_delta": 0.10300960360980671,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "medium": {
+          "baseline_mean": 0.5941481658893992,
+          "candidate_mean": 0.7108414553356078,
+          "ci95_high": 0.16811860693373312,
+          "ci95_low": 0.07099629071020036,
+          "groups": 61,
+          "images": 72,
+          "iterations": 10000,
+          "mean_delta": 0.1166932894462086,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "small": {
+          "baseline_mean": 0.22274967689066472,
+          "candidate_mean": 0.25976551415627286,
+          "ci95_high": 0.05428631964963672,
+          "ci95_low": 0.02248886764557952,
+          "groups": 92,
+          "images": 94,
+          "iterations": 10000,
+          "mean_delta": 0.03701583726560814,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        }
+      }
+    }
+  },
+  "promotion_gates": {
+    "direct_train_pseudo_mask_generation": "FAIL",
+    "localization_source_to_selector_research": "PASS"
+  },
+  "protocol_promotion_gates": {
+    "direct_train_pseudo_mask_generation": "FAIL",
+    "paired_unet_consumer_training": "FORBIDDEN"
+  },
+  "split": "val",
+  "status": "PASS",
+  "test_evaluated": false
+}

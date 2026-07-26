@@ -1327,4 +1327,61 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `99a3e058b19286cc99487a4df210773329151bcad31cc30985bd4200acbaffec`.
   The existing 15-minute monitor was updated in place to version 2; no second
   monitor or competing heavy run was created.
+- Repaired version 2 completed in 653.70 seconds on a Tesla T4. Local
+  acceptance re-hashed the protocol and wrapper, compared every frozen source
+  digest with `git show` bytes at commit `e8233ae...`, verified schema-v2
+  provenance for all 184 tumor diagnostics, and verified that the 371-row
+  prediction manifest was frozen before validation GT was loaded. Cohort is
+  exactly `371/184/187`; subgroups are `94/72/18`; complete misses are
+  included; `test_evaluated=false`.
+- Independent complete-group bootstrap with 10,000 resamples reproduces the
+  kernel result exactly. Prompt/source graph final Dice is `0.20341410` versus
+  the frozen flip-TTA baseline `0.23433922`, delta `-0.03092512`, CI95
+  `[-0.06408515,+0.00145140]`. Small falls by `-0.08184462`, while medium and
+  large change by `+0.01191864/+0.06361279`. Direct Gate-C therefore fails and
+  paired U-Net consumer training is forbidden.
+- The richer gallery remains mechanistically valuable: raw best-single
+  candidate oracle improves overall/small/medium/large by
+  `+0.07464988/+0.03701584/+0.11669329/+0.10300960`, with every oracle CI95
+  lower bound positive. The selector failure is more severe for small tumors:
+  choosing whole SAM masks via prompt/source consensus still favors
+  over-broad components. This rejects the graph selector, not the independent
+  proposal sources.
+- Compact evidence and the local acceptance audit are stored under
+  `artifacts/kaggle/prompt_source_graph_selector_val_v1/`. Prediction-freeze
+  SHA-256 is `3310bc59...f159c`; pseudo/candidate manifests are
+  `4c8c6992...67fd` and `c96dc766...2ee`; independent local comparison SHA-256
+  is `d0d45135...a78a`.
+
+## 2026-07-26 - Technique-first literature transfer audit
+
+- The literature search was broadened beyond deployable medical checkpoints.
+  Methods were decomposed into transferable mechanisms and cross-checked
+  against every prior experiment in this log. The resulting audit is stored in
+  `artifacts/literature_review/technique_transfer_review_2026-07-26.md`;
+  checkpoint/model availability remains separately documented in
+  `medical_xray_wsss_candidate_landscape_2026-07-26.md`.
+- Highest-priority new mechanism is a SKELEX-inspired masked-reconstruction
+  anomaly map. The full paper, not only its abstract, was inspected. SKELEX
+  initializes a ViT-Large MAE from ImageNet, adapts it to 1,296,540 unlabeled
+  musculoskeletal radiographs with 75% patch masking and normalized pixel loss
+  disabled, then averages pixel reconstruction errors from ten random masks.
+  The paper explicitly demonstrates this zero-shot localization mechanism on
+  BTXRD. The transferable hypothesis is that a completely masked small tumor
+  is reconstructed as normal bone, creating a local residual independent of a
+  global classification CAM.
+- The proposed bounded adaptation does not claim to reproduce SKELEX and does
+  not require its unpublished checkpoint. It will first test an open
+  ImageNet-pretrained ViT-MAE adapted only on the clean BTXRD training
+  partition, with all heavy learning/inference on Kaggle. A normal-only
+  reconstruction arm may use the binary image label but no polygon/mask.
+  Reconstruction maps must be hash-frozen before validation GT is loaded.
+- Other high-potential transferable mechanisms are UM-CAM's spatial
+  uncertainty-weighted multi-resolution fusion, geodesic seed expansion, and
+  Random-View Consensus for a noise-robust consumer; progressive
+  prototype/affinity expansion; token contrast using intermediate ViT
+  features; and direct dense MIL with learnable LSE/probabilistic pooling.
+  AdvCAM, tested S2C SSC/CPM, generic SAM grids, direct BiomedCLIP localization,
+  blind tiling, and scalar selection are explicitly marked closed to prevent
+  repetition under a new name.
 

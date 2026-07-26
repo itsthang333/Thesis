@@ -1,0 +1,177 @@
+$ /usr/bin/python3 -m pip install --disable-pip-version-check --no-input --no-deps git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588
+Collecting git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588
+  Cloning https://github.com/facebookresearch/segment-anything.git (to revision 6fdee8f2727f4506cfbbe553e23b895e27956588) to /tmp/pip-req-build-bcnv_wpk
+  Running command git clone --filter=blob:none --quiet https://github.com/facebookresearch/segment-anything.git /tmp/pip-req-build-bcnv_wpk
+  Running command git rev-parse -q --verify 'sha^6fdee8f2727f4506cfbbe553e23b895e27956588'
+  Running command git fetch -q https://github.com/facebookresearch/segment-anything.git 6fdee8f2727f4506cfbbe553e23b895e27956588
+  Running command git checkout -q 6fdee8f2727f4506cfbbe553e23b895e27956588
+  Resolved https://github.com/facebookresearch/segment-anything.git to commit 6fdee8f2727f4506cfbbe553e23b895e27956588
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+$ /usr/bin/python3 -m unittest discover -s tests -p test_external_saliency_proposal_gallery.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+$ /usr/bin/python3 -m unittest discover -s tests -p test_candidate_diagnostics.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.023s
+
+OK
+$ /usr/bin/python3 -m unittest discover -s tests -p test_prompt_source_graph_selector.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.028s
+
+OK
+$ /usr/bin/python3 /kaggle/working/thesis_source/project/generate_pseudo_masks.py --pipeline-profile default --data-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split val --split-manifest /kaggle/working/frozen_split_manifest.csv --classifier-checkpoint /kaggle/input/notebooks/itsthang333/btxrd-clean-binary-classifier/btxrd_clean_binary_classifier/training/best_classifier.pt --sam-checkpoint /kaggle/input/datasets/itsthang333/btxrd-model-checkpoints/btxrd-model-checkpoints/sam_vit_b_01ec64.pth --external-saliency-manifest /kaggle/input/notebooks/itsthang333/btxrd-biomedclip-tiled-saliency-val-v1/btxrd_biomedclip_tiled_saliency_val_v1/saliency/saliency_manifest.csv --external-saliency-run-metadata /kaggle/input/notebooks/itsthang333/btxrd-biomedclip-tiled-saliency-val-v1/btxrd_biomedclip_tiled_saliency_val_v1/saliency/run_metadata.json --external-saliency-expected-manifest-sha256 72360237a12802c06ea5da8cecde7dbb87d4fef7a9dbf358f09e080384267bf1 --external-saliency-expected-metadata-sha256 06109965042b9c433126101f7e32c609c8069312af58b2d0e6693ad4e77ccc4b --external-saliency-expected-source-commit 95fc1c24ce8387c3ef211b4a0b71f6275f4e8b68 --external-saliency-expected-model-weight-sha256 52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be --external-saliency-role proposal_gallery --classifier-device cuda --sam-device cuda --target-columns tumor --image-size 320 --sam-image-size 512 --batch-size 1 --num-workers 2 --output-dir /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/pseudo_masks --process-all --save-visuals-limit 0 --confidence-threshold 0.5 --cam-tta-flip --cam-percentile 90 --cam-percentile-ensemble --cam-percentile-values 85,90,95 --max-points 5 --min-component-area 100 --mask-score-threshold 0.4 --seed-percentile 82 --support-percentile 55 --morphology-fusion-mode components --sam-prompt-mode box_point --sam-prompt-ensemble --max-components 3 --all-cam-components --points-per-component 5 --bbox-padding-ratio 0.02 --negative-points-per-component 4 --prompt-border-margin 2 --max-box-area-ratio 0.35 --selection-method prompt_source_graph --fusion-topk 1 --component-topk 3 --support-clip-kernel 5 --closing-kernel 0 --opening-kernel 0 --min-size 40 --max-hole-area 0 --guidance-threshold 0.4 --preprocessing-mode none --low-score-policy empty --cam-target-class ground_truth --save-candidate-diagnostics
+Loaded classifier checkpoint task=multi-label normalization=imagenet
+/kaggle/working/thesis_source/project/models/classifier.py:64: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+
+Done: full dataset. Masks saved to /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/pseudo_masks/masks (skipped 187 normal/low-confidence images)
+Saved list of 187 skipped image names to /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/pseudo_masks/skipped_low_confidence.txt
+Pseudo-mask completeness: 371/371 rows; manifest_sha256=4c8c69922d224fcb185aa4000579313468d0f19d9d6f43f611f75a564ab767fd
+Prediction-first candidate diagnostics frozen: 184/184 tumor cases; manifest_sha256=c96dc7660b7badcc23fb1b5e572d5025cec165ddc28594acc33e449aaf5752ee
+$ /usr/bin/python3 /kaggle/working/thesis_source/project/evaluate_saved_candidate_diagnostics.py --data-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split val --split-manifest /kaggle/working/frozen_split_manifest.csv --pseudo-output-dir /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/pseudo_masks --expected-pseudo-manifest-sha256 4c8c69922d224fcb185aa4000579313468d0f19d9d6f43f611f75a564ab767fd --expected-candidate-manifest-sha256 c96dc7660b7badcc23fb1b5e572d5025cec165ddc28594acc33e449aaf5752ee --output-dir /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/diagnostic_evaluation
+PASS: evaluated 184 frozen tumor predictions; mean final Dice=0.203414; output=/kaggle/working/btxrd_prompt_source_graph_selector_val_v1/diagnostic_evaluation
+$ /usr/bin/python3 /kaggle/working/thesis_source/project/evaluate_pseudo_masks.py --data-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split val --split-manifest /kaggle/working/frozen_split_manifest.csv --pred-mask-root /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/pseudo_masks/masks --image-size 320 --batch-size 8 --num-workers 2 --output-csv /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/final_evaluation/per_image.csv --output-json /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/final_evaluation/summary.json --bootstrap-iterations 2000 --bootstrap-seed 42
+Validated pseudo-mask manifest: 4c8c69922d224fcb185aa4000579313468d0f19d9d6f43f611f75a564ab767fd
+Pseudo-mask protocol: ground_truth
+Loaded 187 low-confidence-skipped image names
+btxrd val: tumor images=184 (image-gate skips=0) conditional Dice=0.2034 end-to-end Dice=0.2034 | normal empty_prediction_rate=1.0000 | missing=0
+Saved separate per-image, summary, subgroup, bootstrap, confusion and run-manifest artifacts
+$ /usr/bin/python3 /kaggle/working/thesis_source/project/tools/compare_candidate_diagnostics.py --baseline-per-image /kaggle/input/notebooks/itsthang333/btxrd-binary-cam-sam-tta-flip/btxrd_binary_cam_sam_tta_flip/ground_truth/evaluation/per_image.csv --baseline-prompt-quality /kaggle/input/notebooks/itsthang333/btxrd-binary-cam-sam-tta-flip/btxrd_binary_cam_sam_tta_flip/ground_truth/pseudo_masks/prompt_quality.csv --candidate-per-image /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/final_evaluation/per_image.csv --candidate-prompt-quality /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/diagnostic_evaluation/prompt_quality.csv --expected-baseline-per-image-sha256 fe5cf247cd236799de9e279db342314c11ff65fdb065cda26986c302efd05540 --expected-baseline-prompt-quality-sha256 d1b570ae3a6287fdaf7fc5c28aea864d6883e5c57037542b39b17c4c6ea995e4 --expected-candidate-per-image-sha256 7a15bf7423ca51db8d58e3165df10574801fa5a498c1e48c4cd5a07d003324d5 --expected-candidate-prompt-quality-sha256 3720d18c783cbcaec11760b59b52dd904322bb74098db2bc99512bd2cf593ac3 --iterations 10000 --seed 42 --output-json /kaggle/working/btxrd_prompt_source_graph_selector_val_v1/comparison.json
+{
+  "artifact_hashes": {
+    "/kaggle/input/notebooks/itsthang333/btxrd-binary-cam-sam-tta-flip/btxrd_binary_cam_sam_tta_flip/ground_truth/evaluation/per_image.csv": "fe5cf247cd236799de9e279db342314c11ff65fdb065cda26986c302efd05540",
+    "/kaggle/input/notebooks/itsthang333/btxrd-binary-cam-sam-tta-flip/btxrd_binary_cam_sam_tta_flip/ground_truth/pseudo_masks/prompt_quality.csv": "d1b570ae3a6287fdaf7fc5c28aea864d6883e5c57037542b39b17c4c6ea995e4",
+    "/kaggle/working/btxrd_prompt_source_graph_selector_val_v1/diagnostic_evaluation/prompt_quality.csv": "3720d18c783cbcaec11760b59b52dd904322bb74098db2bc99512bd2cf593ac3",
+    "/kaggle/working/btxrd_prompt_source_graph_selector_val_v1/final_evaluation/per_image.csv": "7a15bf7423ca51db8d58e3165df10574801fa5a498c1e48c4cd5a07d003324d5"
+  },
+  "cohort": {
+    "images": 371,
+    "subgroups": {
+      "large": 18,
+      "medium": 72,
+      "small": 94
+    },
+    "tumor_images": 184
+  },
+  "decision": "SELECTOR_RESEARCH_ONLY",
+  "metrics": {
+    "final_dice": {
+      "overall": {
+        "baseline_mean": 0.23433922219069755,
+        "candidate_mean": 0.20341410399432408,
+        "ci95_high": 0.001451400984651569,
+        "ci95_low": -0.06408515310473202,
+        "groups": 167,
+        "images": 184,
+        "iterations": 10000,
+        "mean_delta": -0.030925118196373474,
+        "resampling_unit": "complete frozen validation group",
+        "seed": 42
+      },
+      "subgroups": {
+        "large": {
+          "baseline_mean": 0.4153105265301879,
+          "candidate_mean": 0.47892331779022246,
+          "ci95_high": 0.17909894943193455,
+          "ci95_low": -0.027100937666798,
+          "groups": 17,
+          "images": 18,
+          "iterations": 10000,
+          "mean_delta": 0.06361279126003455,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "medium": {
+          "baseline_mean": 0.34860371437700266,
+          "candidate_mean": 0.3605223534599764,
+          "ci95_high": 0.06673432611864408,
+          "ci95_low": -0.04021521656652435,
+          "groups": 61,
+          "images": 72,
+          "iterations": 10000,
+          "mean_delta": 0.011918639082973748,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "small": {
+          "baseline_mean": 0.1121634039404338,
+          "candidate_mean": 0.03031878686822685,
+          "ci95_high": -0.043205396800986146,
+          "ci95_low": -0.12568469424044,
+          "groups": 92,
+          "images": 94,
+          "iterations": 10000,
+          "mean_delta": -0.08184461707220694,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        }
+      }
+    },
+    "oracle_best_single_dice": {
+      "overall": {
+        "baseline_mean": 0.40907629052253885,
+        "candidate_mean": 0.4837261731750971,
+        "ci95_high": 0.09896129155519946,
+        "ci95_low": 0.05248871044794649,
+        "groups": 167,
+        "images": 184,
+        "iterations": 10000,
+        "mean_delta": 0.07464988265255823,
+        "resampling_unit": "complete frozen validation group",
+        "seed": 42
+      },
+      "subgroups": {
+        "large": {
+          "baseline_mean": 0.6418277713548849,
+          "candidate_mean": 0.7448373749646916,
+          "ci95_high": 0.18598153914812604,
+          "ci95_low": 0.037395605550836895,
+          "groups": 17,
+          "images": 18,
+          "iterations": 10000,
+          "mean_delta": 0.10300960360980671,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "medium": {
+          "baseline_mean": 0.5941481658893992,
+          "candidate_mean": 0.7108414553356078,
+          "ci95_high": 0.16811860693373312,
+          "ci95_low": 0.07099629071020036,
+          "groups": 61,
+          "images": 72,
+          "iterations": 10000,
+          "mean_delta": 0.1166932894462086,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        },
+        "small": {
+          "baseline_mean": 0.22274967689066472,
+          "candidate_mean": 0.25976551415627286,
+          "ci95_high": 0.05428631964963672,
+          "ci95_low": 0.02248886764557952,
+          "groups": 92,
+          "images": 94,
+          "iterations": 10000,
+          "mean_delta": 0.03701583726560814,
+          "resampling_unit": "complete frozen validation group",
+          "seed": 42
+        }
+      }
+    }
+  },
+  "promotion_gates": {
+    "direct_train_pseudo_mask_generation": "FAIL",
+    "localization_source_to_selector_research": "PASS"
+  },
+  "split": "val",
+  "status": "PASS",
+  "test_evaluated": false
+}
