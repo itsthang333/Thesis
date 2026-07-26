@@ -1,0 +1,27 @@
+{
+  "source_commit": "7292c5d2f7722d273c27eb147b19cbe7b25c9709",
+  "protocol_sha256": "06055700e48980ddab0ab87c9e36dace7c7aab103d5b6fc004fa5dd742f8da06",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "arms": {
+    "base": {
+      "model_hashes": {
+        "config.json": "1f7a507e1f7f63a262c5500b86470c3b22ff1a9e42de81bbba27105396572dae",
+        "preprocessor_config.json": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea",
+        "model.safetensors": "479dcef4bd5df06259399027b789f21e9d9a1b79f37155a64176d55bc26fdae8"
+      },
+      "prediction_manifest_sha256": "7bdef3a491f5c797c705ce2d60bbc5ccf750439baf87f18a5b0468321c1ab52a",
+      "generation_metadata_sha256": "39c07cd73b7058fdcf4d1675673147d7847858bb0e3a9fe72a40929ebbde6fc8"
+    },
+    "normal_adapted": {
+      "model_hashes": {
+        "config.json": "89c3055d65e17ad4dd895d9525fb6b75d6dc02c75d0c6f742239aee4d5ee8ebb",
+        "preprocessor_config.json": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea",
+        "model.safetensors": "f64a74ca802bf9c5e97797e1c8d03db82cd39496884a3ebad1be38b502a8b020"
+      },
+      "prediction_manifest_sha256": "c68b2c477caf4445f4103237e3b230cb75da4ad9ebd73eb031eae4a5274666e3",
+      "generation_metadata_sha256": "525b59e7c0bb5f6ee438be02655546387a6f319e57738cde8ceffc4a78f65f34"
+    }
+  },
+  "validation_gt_read": false,
+  "test_evaluated": false
+}

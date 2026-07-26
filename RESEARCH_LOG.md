@@ -1451,3 +1451,113 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   in-flight MAE localization probe is unaffected because it trains no paired
   consumer and has its own already-frozen mechanism gate.
 
+## 2026-07-26 - MAE normality-reconstruction probe completed and rejected
+
+- Kaggle kernel
+  `itsthang333/btxrd-mae-normality-reconstruction-probe-v1` completed under
+  the predeclared protocol. The run binds source commit
+  `7292c5d2f7722d273c27eb147b19cbe7b25c9709`, wrapper SHA-256
+  `5c250532045fe4344b4f29046f0b49a038c0e7162240445d32d5e30a099ceb6b`,
+  protocol SHA-256
+  `06055700e48980ddab0ab87c9e36dace7c7aab103d5b6fc004fa5dd742f8da06`
+  and split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`.
+  It used 1,493 clean-train normal images, zero tumor images and zero
+  segmentation annotations for the 20-epoch adaptation arm.
+- Prediction generation physically produced 371 base maps and 371
+  normal-adapted maps, each arm totaling 76,028,288 bytes. Both arms share
+  the same ten seed-42 masks and noise-bank SHA-256
+  `22020f1b455daca7bc1b88391225374daadf659c99c16bb1282bfa3d0f741b50`.
+  The adapted checkpoint is 447,670,680 bytes with SHA-256
+  `f64a74ca802bf9c5e97797e1c8d03db82cd39496884a3ebad1be38b502a8b020`.
+  Prediction-freeze SHA-256 is
+  `997d325db94dafed3913c4af984ce2e7aebac225f9faf053103d61f49ca3b894`;
+  the wrapper order independently verifies base/adapted generation before
+  freeze, evaluation, then paired comparison.
+- The independent local auditor returned `PASS`. It re-hashed all 742 maps,
+  the adapted checkpoint, metadata/manifests/evaluations, and exactly
+  reproduced the complete-group bootstrap with 10,000 resamples. Cohorts are
+  371 validation images, 184 tumors, 187 normals and fixed subgroups
+  94/72/18. Complete misses are included, no consumer was trained, validation
+  GT was read only after prediction freeze, and `test_evaluated=false`.
+- Absolute localization quality is far below a useful pseudo-mask mechanism.
+  Base versus adapted overall pixel AP is `0.0338572 -> 0.0348382`, pixel
+  AUROC `0.6392444 -> 0.6423162`, saliency mass in GT
+  `0.0291108 -> 0.0297702`, and fixed-p90 Dice
+  `0.0409011 -> 0.0422803`. Image-level p99 AUROC worsens
+  `0.4418449 -> 0.4392002`.
+- The target 94-case small subgroup does not improve coherently. Base versus
+  adapted pixel AP is `0.00334690 -> 0.00333345`, saliency mass in GT
+  `0.00239732 -> 0.00231582`, argmax hit remains `0/94`, and fixed-p90 Dice
+  is `0.00439892 -> 0.00427730`. Paired deltas and 95% CIs are respectively
+  AP `-0.00001345 [-0.00024674,+0.00023024]`, saliency mass
+  `-0.00008150 [-0.00027920,+0.00008434]`, and p90 Dice
+  `-0.00012162 [-0.00083533,+0.00058581]`.
+- The only coherent gain is on the 18 large tumors: pixel AP delta
+  `+0.00897512 [95% CI +0.00248353,+0.01623120]`, saliency-mass delta
+  `+0.00845876 [+0.00204250,+0.01483683]`, p90 Dice delta
+  `+0.01686208 [+0.00686339,+0.02769057]`, and p95 Dice delta
+  `+0.01064547 [+0.00347519,+0.01831977]`. This repeats the earlier failure
+  pattern where coarse/global anomaly evidence helps conspicuous large
+  lesions but does not resolve sub-1% tumors.
+- Decision: reject both raw MAE reconstruction residual and normal-only MAE
+  adaptation as standalone pseudo-mask or fusion arms. Do not select a
+  percentile threshold and do not train a consumer from this result. The
+  failure is mechanistic, not a selector failure: a 16x16-patch reconstruction
+  loss plus ten random masks provides insufficient spatial and contrast
+  sensitivity for tiny lesions, while exposure/anatomy reconstruction error
+  dominates the map.
+- Compact evidence is stored under
+  `artifacts/kaggle/mae_normality_reconstruction_probe_val_v1/`; the
+  independent audit is `local_acceptance_audit.json`, and the paired
+  comparison SHA-256 is
+  `eb1d20f8115beaa6a2bcf414802e3b56e71f37f69c3de9c552472e386b9b70b7`.
+  The reconstructible 447 MB checkpoint and 152 MB map payload remain only in
+  the ignored temporary audit directory.
+- Next bounded direction: context-conditioned nominal patch memory. It will
+  compare mid-level local features against visually similar clean-train
+  normal radiographs, use a frozen normal-only calibration rather than
+  per-image normalization, freeze all validation anomaly maps before GT, and
+  use the same continuous/fixed diagnostic gate before any fusion or
+  consumer is permitted.
+
+## 2026-07-26 - Predeclared context-conditioned nominal patch-memory probe
+
+- Protocol `nominal_patch_memory_probe_val_v1` is frozen before execution.
+  This is a RAD-DINO/PatchCore-inspired transfer experiment, not a PatchCore
+  reproduction, final pseudo-mask pipeline, threshold-selection run or
+  authorization to train a U-Net.
+- The frozen feature extractor is `microsoft/rad-dino` at immutable revision
+  `110cbc18d5133582e320b43d53bf5c44e410c936`; model SHA-256 is
+  `dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae`.
+  RAD-DINO is selected because its official model card explicitly exposes
+  dense patch tokens for radiograph segmentation/retrieval; no fine-tuning is
+  performed.
+- The normal memory uses all 1,493 eligible clean-train normal radiographs
+  selected by the binary image label, zero tumor training images and zero
+  segmentation annotations. Images are black-square-padded at 448 px. Frozen
+  final-layer 32x32 patch tokens are projected 768 to 128 by a seed-42
+  Gaussian matrix and L2-normalized.
+- Every query first retrieves the top eight normal images by CLS cosine
+  similarity. Each query patch is then scored as one minus its best cosine
+  match within a fixed plus/minus-two-patch coordinate window in those
+  context images. This prevents anatomically unrelated regions from becoming
+  nominal matches.
+- Calibration is a leave-one-image-out empirical CDF fitted only on normal
+  train distances; the source normal is explicitly excluded from its own
+  context. Full-view and pooled-tile calibrations are separate and frozen.
+  There is no validation fit and no per-image min-max normalization.
+- Two and only two predeclared prediction arms are generated for all 371
+  validation images before GT access: `single_scale` uses the full 448 view;
+  `multiscale` adds four fixed overlapping 280 px corner crops, overlap-averages
+  their maps, then uses the fixed formula `0.5*full + 0.5*tiles`. No parameter
+  sweep is permitted.
+- After the 742 maps and manifests are hash-frozen, both arms are evaluated on
+  the unchanged 184-tumor cohort and 94/72/18 subgroups using continuous
+  localization metrics plus fixed p90/p95/p97/p99 diagnostics. Multiscale
+  minus single-scale is compared by complete-group bootstrap 10,000.
+- Promotion is deliberately non-automatic. A coherent improvement on small
+  lesions without material overall/medium/large regression can only justify
+  a new frozen fusion/pseudo-mask protocol. Test stays locked and no consumer
+  is trained in this probe.
+

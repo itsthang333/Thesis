@@ -981,3 +981,31 @@ mathematically equivalent to rerunning the frozen encoder each epoch; CPM
 still recomputes CAM peaks and the SAM prompt decoder online. Bind the cache
 to the clean split/image hashes and do not process validation/test images.
 
+## 32. MAE normality probe rejection and nominal-memory transition
+
+`itsthang333/btxrd-mae-normality-reconstruction-probe-v1` is COMPLETE and its
+independent physical auditor passes.
+
+- Source/wrapper/protocol/split hashes match the frozen declarations.
+- All 371 base plus 371 adapted maps and the 447,670,680-byte adapted
+  checkpoint were re-hashed; prediction freeze precedes every validation-GT
+  read; cohort/subgroups are 371/184/187 and 94/72/18; complete misses are
+  included and test is untouched.
+- Normal-only adaptation is neutral on small lesions: AP delta
+  `-0.00001345`, saliency-mass delta `-0.00008150`, p90-Dice delta
+  `-0.00012162`, all CIs crossing zero; small argmax hit is `0/94`.
+- Statistically coherent gains appear only in large lesions, including AP
+  `+0.00897512` and p90 Dice `+0.01686208`, but absolute large p90 Dice is
+  still only `0.13453951`.
+- Reject MAE residuals as a standalone or automatically fused source; no
+  threshold and no consumer are authorized.
+- Compact evidence:
+  `artifacts/kaggle/mae_normality_reconstruction_probe_val_v1/`.
+
+The next experiment is a separately frozen, context-conditioned nominal patch
+memory probe. Infrastructure in `project/models/nominal_patch_memory.py`
+already provides deterministic global-context retrieval, global/spatial patch
+distance, normal-only calibration, fixed fusion and hash-locked Gaussian
+projection. It must be wired into a Kaggle prediction-first probe and pass a
+new protocol/auditor before any pseudo-mask fusion.
+

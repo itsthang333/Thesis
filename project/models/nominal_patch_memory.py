@@ -111,6 +111,31 @@ def retrieve_normal_context(
     return indices.astype(np.int64), similarities[indices].astype(np.float32)
 
 
+def retrieve_normal_context_matrix(
+    normal_global_bank: np.ndarray,
+    *,
+    top_k: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Retrieve leave-one-image-out normal contexts for calibration.
+
+    The diagonal is excluded explicitly so a normal patch cannot match the
+    identical source image when fitting the frozen normal score distribution.
+    """
+    bank = np.asarray(normal_global_bank, dtype=np.float32)
+    if bank.ndim != 2 or bank.shape[0] < 2:
+        raise ValueError("Normal global bank must contain at least two images")
+    if not 1 <= top_k < bank.shape[0]:
+        raise ValueError("top_k must be smaller than the normal-image bank")
+    bank = l2_normalize_rows(bank)
+    similarities = bank @ bank.T
+    np.fill_diagonal(similarities, -np.inf)
+    indices = np.argsort(-similarities, axis=1, kind="stable")[:, :top_k]
+    selected = np.take_along_axis(similarities, indices, axis=1)
+    if not np.isfinite(selected).all():
+        raise RuntimeError("Leave-one-out context retrieval selected an invalid image")
+    return indices.astype(np.int64), selected.astype(np.float32)
+
+
 def flatten_context_patch_bank(
     normal_patch_bank: np.ndarray,
     context_indices: np.ndarray,
@@ -250,3 +275,63 @@ class FrozenNormalCalibration:
             "median": float(np.median(self.sorted_normal_scores)),
             "maximum": float(self.sorted_normal_scores[-1]),
         }
+
+
+def calibration_sha256(calibration: FrozenNormalCalibration) -> str:
+    values = np.asarray(calibration.sorted_normal_scores, dtype="<f4")
+    payload = {
+        "dtype": "float32",
+        "shape": list(values.shape),
+        "bytes_sha256": hashlib.sha256(values.tobytes(order="C")).hexdigest(),
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def fixed_tile_layout(
+    *,
+    image_size: int,
+    tile_size: int,
+) -> tuple[tuple[int, int, int, int], ...]:
+    """Return four deterministic overlapping corner tiles.
+
+    The two positions per axis are zero and ``image_size - tile_size``.
+    Requiring overlap prevents a lesion centered on a quadrant boundary from
+    being split across disjoint crops.
+    """
+    if image_size <= 0 or tile_size <= 0 or tile_size >= image_size:
+        raise ValueError("Tile layout requires 0 < tile_size < image_size")
+    end = image_size - tile_size
+    return (
+        (0, 0, tile_size, tile_size),
+        (end, 0, image_size, tile_size),
+        (0, end, tile_size, image_size),
+        (end, end, image_size, image_size),
+    )
+
+
+def merge_overlapping_tile_maps(
+    tile_maps: np.ndarray,
+    *,
+    image_size: int,
+    layout: tuple[tuple[int, int, int, int], ...],
+) -> np.ndarray:
+    """Average already-resized tile maps on their deterministic canvas."""
+    values = np.asarray(tile_maps, dtype=np.float32)
+    if values.ndim != 3 or values.shape[0] != len(layout):
+        raise ValueError("Tile maps must have shape [tiles,height,width]")
+    if image_size <= 0 or not np.isfinite(values).all():
+        raise ValueError("Tile maps and image size must be valid")
+    result = np.zeros((image_size, image_size), dtype=np.float32)
+    coverage = np.zeros_like(result)
+    for tile, (x0, y0, x1, y1) in zip(values, layout):
+        if not (0 <= x0 < x1 <= image_size and 0 <= y0 < y1 <= image_size):
+            raise ValueError("Tile lies outside the image canvas")
+        if tile.shape != (y1 - y0, x1 - x0):
+            raise ValueError("Tile map shape differs from its layout box")
+        result[y0:y1, x0:x1] += tile
+        coverage[y0:y1, x0:x1] += 1.0
+    if np.any(coverage <= 0):
+        raise ValueError("Tile layout does not cover the full image")
+    return result / coverage

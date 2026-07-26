@@ -1,0 +1,656 @@
+$ /usr/bin/python3 -m pip install --quiet --no-cache-dir transformers==4.50.2
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.2/10.2 MB 110.4 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.4/566.4 kB 388.6 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.1/3.1 MB 363.8 MB/s eta 0:00:00
+$ /usr/bin/python3 -m pytest tests/test_mae_reconstruction.py -q
+........                                                                 [100%]
+8 passed in 11.29s
+$ /usr/bin/python3 train_mae_reconstruction.py --dataset-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split-manifest /kaggle/working/frozen_split_manifest.csv --expected-split-sha256 85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c --model-dir /kaggle/working/vit-mae-base --expected-config-sha256 1f7a507e1f7f63a262c5500b86470c3b22ff1a9e42de81bbba27105396572dae --expected-preprocessor-sha256 a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea --expected-weight-sha256 479dcef4bd5df06259399027b789f21e9d9a1b79f37155a64176d55bc26fdae8 --output-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/adapted_training --source-commit 7292c5d2f7722d273c27eb147b19cbe7b25c9709
+/kaggle/working/thesis_source/project/train_mae_reconstruction.py:212: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=True)
+/kaggle/working/thesis_source/project/train_mae_reconstruction.py:224: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+{"epoch": 1, "mean_reconstruction_loss": 0.050223952337690274, "optimizer_steps": 12, "learning_rate": 7.5e-05, "samples": 1493}
+{"epoch": 2, "mean_reconstruction_loss": 0.04938070145944022, "optimizer_steps": 24, "learning_rate": 7.448854887760208e-05, "samples": 1493}
+{"epoch": 3, "mean_reconstruction_loss": 0.04654484606994851, "optimizer_steps": 36, "learning_rate": 7.296814656377378e-05, "samples": 1493}
+{"epoch": 4, "mean_reconstruction_loss": 0.04631935629172766, "optimizer_steps": 48, "learning_rate": 7.048026567024334e-05, "samples": 1493}
+{"epoch": 5, "mean_reconstruction_loss": 0.04502922792314525, "optimizer_steps": 60, "learning_rate": 6.709276910236476e-05, "samples": 1493}
+{"epoch": 6, "mean_reconstruction_loss": 0.04636800568737963, "optimizer_steps": 72, "learning_rate": 6.289805893596529e-05, "samples": 1493}
+{"epoch": 7, "mean_reconstruction_loss": 0.04451212789476597, "optimizer_steps": 84, "learning_rate": 5.801055592959101e-05, "samples": 1493}
+{"epoch": 8, "mean_reconstruction_loss": 0.04467939411034859, "optimizer_steps": 96, "learning_rate": 5.256357842448635e-05, "samples": 1493}
+{"epoch": 9, "mean_reconstruction_loss": 0.0446928606929391, "optimizer_steps": 108, "learning_rate": 4.670570576777997e-05, "samples": 1493}
+{"epoch": 10, "mean_reconstruction_loss": 0.04427300612407887, "optimizer_steps": 120, "learning_rate": 4.0596725455212466e-05, "samples": 1493}
+{"epoch": 11, "mean_reconstruction_loss": 0.04313152869795284, "optimizer_steps": 132, "learning_rate": 3.4403274544787535e-05, "samples": 1493}
+{"epoch": 12, "mean_reconstruction_loss": 0.042172573312208785, "optimizer_steps": 144, "learning_rate": 2.829429423222003e-05, "samples": 1493}
+{"epoch": 13, "mean_reconstruction_loss": 0.04230690979799886, "optimizer_steps": 156, "learning_rate": 2.243642157551365e-05, "samples": 1493}
+{"epoch": 14, "mean_reconstruction_loss": 0.04073403414391226, "optimizer_steps": 168, "learning_rate": 1.6989444070408998e-05, "samples": 1493}
+{"epoch": 15, "mean_reconstruction_loss": 0.04171662319798399, "optimizer_steps": 180, "learning_rate": 1.2101941064034716e-05, "samples": 1493}
+{"epoch": 16, "mean_reconstruction_loss": 0.042753952472393976, "optimizer_steps": 192, "learning_rate": 7.907230897635244e-06, "samples": 1493}
+{"epoch": 17, "mean_reconstruction_loss": 0.04108696581380366, "optimizer_steps": 204, "learning_rate": 4.5197343297566634e-06, "samples": 1493}
+{"epoch": 18, "mean_reconstruction_loss": 0.04208272225700683, "optimizer_steps": 216, "learning_rate": 2.031853436226201e-06, "samples": 1493}
+{"epoch": 19, "mean_reconstruction_loss": 0.039910209219845366, "optimizer_steps": 228, "learning_rate": 5.114511223979128e-07, "samples": 1493}
+{"epoch": 20, "mean_reconstruction_loss": 0.04111295916659075, "optimizer_steps": 240, "learning_rate": 0.0, "samples": 1493}
+{
+  "stage": "normal-only BTXRD ViT-MAE adaptation",
+  "scientific_role": "SKELEX-inspired mechanism feasibility, not SKELEX reproduction",
+  "supervision": "clean-train images and binary image-level normal/tumor labels only",
+  "source_commit": "7292c5d2f7722d273c27eb147b19cbe7b25c9709",
+  "source_files": {
+    "train_mae_reconstruction.py": "a4b1b6db0b3d5db290a6a5099512e94bd8954e58f11dfb60f166440af51f8f05",
+    "mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9"
+  },
+  "split": "train",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "population": {
+    "all_train_images": 2981,
+    "normal_training_images": 1493,
+    "tumor_training_images_used": 0
+  },
+  "initial_snapshot": {
+    "config.json": {
+      "bytes": 676,
+      "sha256": "1f7a507e1f7f63a262c5500b86470c3b22ff1a9e42de81bbba27105396572dae"
+    },
+    "preprocessor_config.json": {
+      "bytes": 217,
+      "sha256": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea"
+    },
+    "model.safetensors": {
+      "bytes": 447670680,
+      "sha256": "479dcef4bd5df06259399027b789f21e9d9a1b79f37155a64176d55bc26fdae8"
+    }
+  },
+  "training": {
+    "epochs": 20,
+    "selected_checkpoint": "fixed final epoch; no validation selection",
+    "batch_size": 8,
+    "effective_batch_size": 128,
+    "gradient_accumulation_steps": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 7.5e-05,
+    "weight_decay": 0.05,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "schedule": "linear warmup then cosine decay",
+    "warmup_ratio": 0.05,
+    "image_size": 224,
+    "mask_ratio": 0.75,
+    "normalized_pixel_loss": false,
+    "augmentation": {
+      "square_black_pad": true,
+      "random_resized_crop_scale": [
+        0.2,
+        1.0
+      ],
+      "horizontal_flip_probability": 0.5
+    },
+    "seed": 42
+  },
+  "final_checkpoint": {
+    "weight_file": "model/model.safetensors",
+    "weight_bytes": 447670680,
+    "weight_sha256": "f64a74ca802bf9c5e97797e1c8d03db82cd39496884a3ebad1be38b502a8b020",
+    "config_sha256": "89c3055d65e17ad4dd895d9525fb6b75d6dc02c75d0c6f742239aee4d5ee8ebb",
+    "preprocessor_sha256": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea"
+  },
+  "training_history_sha256": "c496bd951cbfdfa905f2d6b0989b742b2c70b07604700cd078f316be3ef9f149",
+  "annotation_contract": "segmentation annotation paths were never enumerated or opened",
+  "validation_images_read": false,
+  "validation_gt_read": false,
+  "test_evaluated": false,
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "transformers": "4.50.2",
+    "cuda": "12.8",
+    "gpu": "Tesla T4"
+  },
+  "completed_at_utc": "2026-07-26T08:36:20.230406+00:00"
+}
+$ /usr/bin/python3 generate_mae_reconstruction_saliency.py --dataset-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split-manifest /kaggle/working/frozen_split_manifest.csv --expected-split-sha256 85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c --model-dir /kaggle/working/vit-mae-base --expected-config-sha256 1f7a507e1f7f63a262c5500b86470c3b22ff1a9e42de81bbba27105396572dae --expected-preprocessor-sha256 a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea --expected-weight-sha256 479dcef4bd5df06259399027b789f21e9d9a1b79f37155a64176d55bc26fdae8 --model-role base --source-commit 7292c5d2f7722d273c27eb147b19cbe7b25c9709 --output-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/base_prediction
+{
+  "stage": "validation prediction generation before GT access",
+  "model_role": "base",
+  "source_commit": "7292c5d2f7722d273c27eb147b19cbe7b25c9709",
+  "source_files": {
+    "generator": "3efbd24827905db6a566a0540ed64447ce2afe7c6910448a3df56df30647e61e",
+    "mae_reconstruction_io": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "mae_reconstruction": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9"
+  },
+  "split": "val",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "cohort": 371,
+  "model_snapshot": {
+    "config.json": {
+      "bytes": 676,
+      "sha256": "1f7a507e1f7f63a262c5500b86470c3b22ff1a9e42de81bbba27105396572dae"
+    },
+    "preprocessor_config.json": {
+      "bytes": 217,
+      "sha256": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea"
+    },
+    "model.safetensors": {
+      "bytes": 447670680,
+      "sha256": "479dcef4bd5df06259399027b789f21e9d9a1b79f37155a64176d55bc26fdae8"
+    }
+  },
+  "inference": {
+    "input_size": 448,
+    "output_size": 320,
+    "patch_size": 16,
+    "mask_ratio": 0.75,
+    "num_masks": 10,
+    "mask_seed": 42,
+    "noise_bank_sha256": "22020f1b455daca7bc1b88391225374daadf659c99c16bb1282bfa3d0f741b50",
+    "minimum_patch_coverage": 3,
+    "normalization": "foreground pixelwise p5-p99"
+  },
+  "prediction_manifest_sha256": "7bdef3a491f5c797c705ce2d60bbc5ccf750439baf87f18a5b0468321c1ab52a",
+  "validation_gt_read": false,
+  "test_evaluated": false,
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "transformers": "4.50.2",
+    "gpu": "Tesla T4"
+  },
+  "completed_at_utc": "2026-07-26T08:39:23.978012+00:00"
+}
+$ /usr/bin/python3 generate_mae_reconstruction_saliency.py --dataset-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split-manifest /kaggle/working/frozen_split_manifest.csv --expected-split-sha256 85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c --model-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/adapted_training/model --expected-config-sha256 89c3055d65e17ad4dd895d9525fb6b75d6dc02c75d0c6f742239aee4d5ee8ebb --expected-preprocessor-sha256 a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea --expected-weight-sha256 f64a74ca802bf9c5e97797e1c8d03db82cd39496884a3ebad1be38b502a8b020 --model-role normal_adapted --source-commit 7292c5d2f7722d273c27eb147b19cbe7b25c9709 --output-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/normal_adapted_prediction
+{
+  "stage": "validation prediction generation before GT access",
+  "model_role": "normal_adapted",
+  "source_commit": "7292c5d2f7722d273c27eb147b19cbe7b25c9709",
+  "source_files": {
+    "generator": "3efbd24827905db6a566a0540ed64447ce2afe7c6910448a3df56df30647e61e",
+    "mae_reconstruction_io": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "mae_reconstruction": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9"
+  },
+  "split": "val",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "cohort": 371,
+  "model_snapshot": {
+    "config.json": {
+      "bytes": 671,
+      "sha256": "89c3055d65e17ad4dd895d9525fb6b75d6dc02c75d0c6f742239aee4d5ee8ebb"
+    },
+    "preprocessor_config.json": {
+      "bytes": 217,
+      "sha256": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea"
+    },
+    "model.safetensors": {
+      "bytes": 447670680,
+      "sha256": "f64a74ca802bf9c5e97797e1c8d03db82cd39496884a3ebad1be38b502a8b020"
+    }
+  },
+  "inference": {
+    "input_size": 448,
+    "output_size": 320,
+    "patch_size": 16,
+    "mask_ratio": 0.75,
+    "num_masks": 10,
+    "mask_seed": 42,
+    "noise_bank_sha256": "22020f1b455daca7bc1b88391225374daadf659c99c16bb1282bfa3d0f741b50",
+    "minimum_patch_coverage": 3,
+    "normalization": "foreground pixelwise p5-p99"
+  },
+  "prediction_manifest_sha256": "c68b2c477caf4445f4103237e3b230cb75da4ad9ebd73eb031eae4a5274666e3",
+  "validation_gt_read": false,
+  "test_evaluated": false,
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "transformers": "4.50.2",
+    "gpu": "Tesla T4"
+  },
+  "completed_at_utc": "2026-07-26T08:42:23.318053+00:00"
+}
+$ /usr/bin/python3 evaluate_mae_reconstruction_saliency.py --dataset-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split-manifest /kaggle/working/frozen_split_manifest.csv --prediction-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/base_prediction --expected-manifest-sha256 7bdef3a491f5c797c705ce2d60bbc5ccf750439baf87f18a5b0468321c1ab52a --output-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/base_evaluation
+{
+  "scientific_role": "SKELEX-inspired reconstruction mechanism feasibility; not final segmentation",
+  "prediction_manifest_sha256": "7bdef3a491f5c797c705ce2d60bbc5ccf750439baf87f18a5b0468321c1ab52a",
+  "generation_metadata_sha256": "39c07cd73b7058fdcf4d1675673147d7847858bb0e3a9fe72a40929ebbde6fc8",
+  "per_image_sha256": "2d9cc1b79116f87ea7a1445bde03b5e21228e5df934a0cb6f90abd90ce9fb6c5",
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "image_level_auroc_from_raw_p99": 0.44184491978609625,
+  "tumor_localization": {
+    "overall": {
+      "n": 184,
+      "pixel_ap": 0.03385716482937729,
+      "pixel_auroc": 0.6392443567096326,
+      "argmax_hit": 0.005434782608695652,
+      "saliency_mass_in_gt": 0.029110849024673018,
+      "dice_p90": 0.04090105756940154,
+      "dice_p95": 0.026352798181128602,
+      "dice_p97": 0.017504558693902696,
+      "dice_p99": 0.005026474377851506
+    },
+    "small": {
+      "n": 94,
+      "pixel_ap": 0.003346895589355555,
+      "pixel_auroc": 0.6232125497166111,
+      "argmax_hit": 0.0,
+      "saliency_mass_in_gt": 0.0023973172895830263,
+      "dice_p90": 0.004398919797362968,
+      "dice_p95": 0.002664703479583595,
+      "dice_p97": 0.0014449792312970849,
+      "dice_p99": 0.00036547214612827716
+    },
+    "medium": {
+      "n": 72,
+      "pixel_ap": 0.04819953727299742,
+      "pixel_auroc": 0.6632224825357222,
+      "argmax_hit": 0.0,
+      "saliency_mass_in_gt": 0.0401409995039215,
+      "dice_p90": 0.06936253387747764,
+      "dice_p95": 0.044948671623372405,
+      "dice_p97": 0.030927719037846364,
+      "dice_p99": 0.009178002509162378
+    },
+    "large": {
+      "n": 18,
+      "pixel_ap": 0.1358190810861214,
+      "pixel_auroc": 0.6270535121466084,
+      "argmax_hit": 0.05555555555555555,
+      "saliency_mass_in_gt": 0.12449424616870466,
+      "dice_p90": 0.11767742736885421,
+      "dice_p95": 0.07567379896466628,
+      "dice_p97": 0.04767861006729064,
+      "dice_p99": 0.012761151284940434
+    }
+  },
+  "thresholds": "fixed diagnostic percentiles only; no threshold selected",
+  "consumer_trained": false,
+  "complete_misses_included": true,
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "test_evaluated": false
+}
+$ /usr/bin/python3 evaluate_mae_reconstruction_saliency.py --dataset-root /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD --split-manifest /kaggle/working/frozen_split_manifest.csv --prediction-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/normal_adapted_prediction --expected-manifest-sha256 c68b2c477caf4445f4103237e3b230cb75da4ad9ebd73eb031eae4a5274666e3 --output-dir /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/normal_adapted_evaluation
+{
+  "scientific_role": "SKELEX-inspired reconstruction mechanism feasibility; not final segmentation",
+  "prediction_manifest_sha256": "c68b2c477caf4445f4103237e3b230cb75da4ad9ebd73eb031eae4a5274666e3",
+  "generation_metadata_sha256": "525b59e7c0bb5f6ee438be02655546387a6f319e57738cde8ceffc4a78f65f34",
+  "per_image_sha256": "27708b7354c311efa036fe4ae5f15f289296bd71c6ed6aa9a334d8e116ad3142",
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "image_level_auroc_from_raw_p99": 0.43920018600325506,
+  "tumor_localization": {
+    "overall": {
+      "n": 184,
+      "pixel_ap": 0.03483818411277243,
+      "pixel_auroc": 0.6423161654994426,
+      "argmax_hit": 0.005434782608695652,
+      "saliency_mass_in_gt": 0.029770210141512057,
+      "dice_p90": 0.04228028017879016,
+      "dice_p95": 0.027613092542745674,
+      "dice_p97": 0.018240251751796922,
+      "dice_p99": 0.005135449910281802
+    },
+    "small": {
+      "n": 94,
+      "pixel_ap": 0.0033334500595813945,
+      "pixel_auroc": 0.6266788919977876,
+      "argmax_hit": 0.0,
+      "saliency_mass_in_gt": 0.0023158190280288117,
+      "dice_p90": 0.004277303514898587,
+      "dice_p95": 0.002659965316002624,
+      "dice_p97": 0.0014757818809120941,
+      "dice_p99": 0.00044906365538965404
+    },
+    "medium": {
+      "n": 72,
+      "pixel_ap": 0.0484803609226183,
+      "pixel_auroc": 0.6639632152796087,
+      "argmax_hit": 0.013888888888888888,
+      "saliency_mass_in_gt": 0.03981774503638084,
+      "dice_p90": 0.06883046978304935,
+      "dice_p95": 0.045514243318078504,
+      "dice_p97": 0.031017814346765402,
+      "dice_p99": 0.008835818577439156
+    },
+    "large": {
+      "n": 18,
+      "pixel_ap": 0.14479419915116432,
+      "pixel_auroc": 0.637389283554088,
+      "argmax_hit": 0.0,
+      "saliency_mass_in_gt": 0.13295300193244947,
+      "dice_p90": 0.1345395110065205,
+      "dice_p95": 0.08631926495885024,
+      "dice_p97": 0.05467778847543266,
+      "dice_p99": 0.01480732568386693
+    }
+  },
+  "thresholds": "fixed diagnostic percentiles only; no threshold selected",
+  "consumer_trained": false,
+  "complete_misses_included": true,
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "test_evaluated": false
+}
+$ /usr/bin/python3 compare_mae_reconstruction_arms.py --base-per-image /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/base_evaluation/per_image.csv --adapted-per-image /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/normal_adapted_evaluation/per_image.csv --output /kaggle/working/btxrd_mae_normality_reconstruction_probe_val_v1/paired_comparison.json
+{
+  "method": "paired complete-group bootstrap",
+  "replicates": 10000,
+  "seed": 20260726,
+  "interpretation": "mechanism feasibility only; results cannot select a segmentation threshold or authorize a downstream consumer",
+  "metrics": {
+    "pixel_ap": {
+      "overall": {
+        "delta_adapted_minus_base": 0.0009810192833951364,
+        "ci95": [
+          -0.0002376205761638145,
+          0.0023228675273352316
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": -1.344552977416083e-05,
+        "ci95": [
+          -0.00024674171792339,
+          0.00023024049141148783
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": 0.00028082364962087953,
+        "ci95": [
+          -0.001982816649340579,
+          0.0027991556040186413
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": 0.008975118065042937,
+        "ci95": [
+          0.002483532083346641,
+          0.01623120449948838
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "pixel_auroc": {
+      "overall": {
+        "delta_adapted_minus_base": 0.00307180878980992,
+        "ci95": [
+          -0.0025023675690324524,
+          0.00876614088509454
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": 0.0034663422811763308,
+        "ci95": [
+          -0.006511716306254555,
+          0.013289287807326607
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": 0.0007407327438863245,
+        "ci95": [
+          -0.005149581024640335,
+          0.00654206246907487
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": 0.01033577140747971,
+        "ci95": [
+          -0.002049624199503713,
+          0.02172102363930453
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "argmax_hit": {
+      "overall": {
+        "delta_adapted_minus_base": 0.0,
+        "ci95": [
+          -0.016216216216216217,
+          0.016216216216216217
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": 0.013888888888888888,
+        "ci95": [
+          0.0,
+          0.04411764705882353
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": -0.05555555555555555,
+        "ci95": [
+          -0.17647058823529413,
+          0.0
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "saliency_mass_in_gt": {
+      "overall": {
+        "delta_adapted_minus_base": 0.0006593611168390345,
+        "ci95": [
+          -0.0003999542702571239,
+          0.0018311228150873335
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": -8.149826155421462e-05,
+        "ci95": [
+          -0.00027919713579694575,
+          8.434184291280893e-05
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": -0.00032325446754065775,
+        "ci95": [
+          -0.002171116531105299,
+          0.0015861115905407197
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": 0.00845875576374477,
+        "ci95": [
+          0.0020424989539258526,
+          0.01483683027443793
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p90": {
+      "overall": {
+        "delta_adapted_minus_base": 0.0013792226093886184,
+        "ci95": [
+          -0.0009178289690366065,
+          0.0037792742953349
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": -0.00012161628246438009,
+        "ci95": [
+          -0.000835329943264694,
+          0.0005858144080096529
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": -0.0005320640944282834,
+        "ci95": [
+          -0.005203052766045906,
+          0.004448909907752028
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": 0.016862083637666322,
+        "ci95": [
+          0.006863386541615779,
+          0.02769056858286295
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p95": {
+      "overall": {
+        "delta_adapted_minus_base": 0.0012602943616170658,
+        "ci95": [
+          -0.0009556752132665428,
+          0.0037284491431653476
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": -4.7381635809706416e-06,
+        "ci95": [
+          -0.0005806856857112931,
+          0.0006634405012041583
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": 0.0005655716947061069,
+        "ci95": [
+          -0.004557210107435888,
+          0.006319661037955548
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": 0.010645465994183985,
+        "ci95": [
+          0.0034751861998225334,
+          0.018319773099580595
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p97": {
+      "overall": {
+        "delta_adapted_minus_base": 0.0007356930578942247,
+        "ci95": [
+          -0.0012805619081100088,
+          0.0029251039924592746
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": 3.080264961500912e-05,
+        "ci95": [
+          -0.0004796856297319585,
+          0.0006660511398640592
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": 9.00953089190309e-05,
+        "ci95": [
+          -0.004942471271185489,
+          0.00514779496936421
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": 0.006999178408142013,
+        "ci95": [
+          0.0024260157129786255,
+          0.01160659884450353
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    },
+    "dice_p99": {
+      "overall": {
+        "delta_adapted_minus_base": 0.00010897553243029594,
+        "ci95": [
+          -0.0007633365105900148,
+          0.0011108331070153342
+        ],
+        "n_images": 184,
+        "n_groups": 167
+      },
+      "small": {
+        "delta_adapted_minus_base": 8.359150926137689e-05,
+        "ci95": [
+          -0.00016635400921964757,
+          0.00032284104949204467
+        ],
+        "n_images": 94,
+        "n_groups": 92
+      },
+      "medium": {
+        "delta_adapted_minus_base": -0.0003421839317232203,
+        "ci95": [
+          -0.002346011861745031,
+          0.0020996935280135054
+        ],
+        "n_images": 72,
+        "n_groups": 61
+      },
+      "large": {
+        "delta_adapted_minus_base": 0.002046174398926493,
+        "ci95": [
+          -0.0011156411036756459,
+          0.005020426896920824
+        ],
+        "n_images": 18,
+        "n_groups": 17
+      }
+    }
+  },
+  "test_evaluated": false
+}

@@ -1,0 +1,17 @@
+{
+  "id": "itsthang333/btxrd-mae-normality-reconstruction-probe-v1",
+  "title": "BTXRD MAE Normality Reconstruction Probe V1",
+  "code_file": "run_mae_normality_reconstruction_probe_val_v1.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": ["gpu", "medical-imaging", "weakly-supervised"],
+  "dataset_sources": ["itsthang333/btxrd-raw"],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}
