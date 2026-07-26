@@ -1,0 +1,83 @@
+{
+  "protocol_id": "mae_normality_reconstruction_probe_val_v1",
+  "status": "predeclared_before_execution",
+  "scientific_question": "Does normal-only musculoskeletal-radiograph MAE adaptation improve frozen reconstruction-error localization, especially for tumors below 1% image area, relative to the identical ImageNet MAE?",
+  "scientific_role": "mechanism feasibility probe; not a final pseudo-mask pipeline and not a SKELEX reproduction",
+  "weak_supervision_contract": {
+    "allowed_training_information": [
+      "clean train radiographs",
+      "binary image-level normal/tumor labels used only to form the normal-only adaptation cohort"
+    ],
+    "forbidden_training_information": [
+      "polygon masks",
+      "boxes",
+      "points",
+      "validation masks",
+      "test data"
+    ]
+  },
+  "arms": {
+    "base": {
+      "model": "facebook/vit-mae-base",
+      "revision": "25b184bea5538bf5c4c852c79d221195fdd2778d",
+      "weights_sha256": "479dcef4bd5df06259399027b789f21e9d9a1b79f37155a64176d55bc26fdae8",
+      "training": "none"
+    },
+    "normal_adapted": {
+      "initial_model": "same immutable base arm",
+      "cohort": "all eligible clean-train normal images only",
+      "checkpoint_selection": "fixed final epoch; no validation selection",
+      "epochs": 20,
+      "input_size": 224,
+      "batch_size": 8,
+      "effective_batch_size": 128,
+      "optimizer": "AdamW",
+      "learning_rate": 0.000075,
+      "weight_decay": 0.05,
+      "betas": [0.9, 0.999],
+      "schedule": "5% linear warmup then cosine",
+      "mask_ratio": 0.75,
+      "normalized_pixel_loss": false,
+      "augmentation": "black square pad; random resized crop scale 0.20-1.00; horizontal flip p=0.5",
+      "seed": 42
+    }
+  },
+  "frozen_inference": {
+    "split": "validation only",
+    "cohort": 371,
+    "input_size": 448,
+    "output_size": 320,
+    "random_masks_per_image": 10,
+    "mask_seed": 42,
+    "same_noise_bank_for_all_images_and_arms": true,
+    "score": "mean RGB squared reconstruction error on masked pixels only",
+    "normalization": "foreground p5-p99",
+    "prediction_freeze_before_gt": true
+  },
+  "diagnostics": {
+    "tumor_cohort": 184,
+    "subgroups": {
+      "small_lt_1pct": 94,
+      "medium_1_to_lt_5pct": 72,
+      "large_ge_5pct": 18
+    },
+    "continuous_localization": [
+      "pixel average precision",
+      "pixel AUROC",
+      "argmax hit",
+      "saliency mass inside GT"
+    ],
+    "fixed_nonselective_thresholds": ["p90", "p95", "p97", "p99"],
+    "comparison": "adapted minus base, paired complete-group bootstrap 10000",
+    "promotion_rule": "No automatic promotion. Require coherent continuous-metric gain in small lesions without material overall/medium/large regression before designing a separate pseudo-mask protocol."
+  },
+  "data_policy": {
+    "validation_gt": "opened only after all prediction maps and hashes are frozen",
+    "complete_misses_included": true,
+    "test_evaluated": false
+  },
+  "runtime": {
+    "heavy_compute": "Kaggle GPU only",
+    "transformers": "4.50.2"
+  }
+}

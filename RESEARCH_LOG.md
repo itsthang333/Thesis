@@ -1385,3 +1385,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   blind tiling, and scalar selection are explicitly marked closed to prevent
   repetition under a new name.
 
+## 2026-07-26 - Predeclared MAE normality-reconstruction mechanism probe
+
+- Protocol `mae_normality_reconstruction_probe_val_v1` was frozen before
+  execution. This is a bounded mechanism probe, not a SKELEX reproduction,
+  pseudo-mask candidate, final segmentation result, or permission to train a
+  downstream U-Net.
+- Two arms use the identical immutable `facebook/vit-mae-base` snapshot:
+  (A) the untouched ImageNet MAE and (B) a fixed-final-epoch checkpoint adapted
+  for 20 epochs on clean-train normal radiographs only. The normal/tumor
+  image-level flag is the only task label used; annotation paths are not
+  enumerated or opened in adaptation or prediction generation.
+- Both arms use the same ten seed-42 masks per validation image at 448 px.
+  Masked-pixel reconstruction error maps for all 371 validation images must be
+  physically present and hash-frozen before any validation GT is opened.
+  Diagnostics are continuous pixel AP/AUROC, argmax hit and saliency mass in
+  GT, plus non-selective fixed percentile Dice at p90/p95/p97/p99. Adapted
+  minus base is compared with complete-group bootstrap 10,000 for
+  overall/small/medium/large. Test remains locked.
+- The decision target is specifically whether normality modeling supplies
+  complementary localization for the 94 small-tumor cases. Even a positive
+  probe will require a new predeclared fusion/pseudo-mask experiment; this run
+  cannot promote a threshold or consumer.
+
