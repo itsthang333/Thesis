@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "wrapper_sha256": "a15ec0304e7ec12e8c9c80dd92638cb89bf0816fc7aabdf4d72ddf22af3c55a5",
+  "source_commit": "2ce616ccd90650869fb7f820836d236213f8f1f9",
+  "protocol_sha256": "785da0fce22f40ad4863c69368292b0c45b78c7506f386f87fdc73be1154f438",
+  "protocol_actual_sha256": "785da0fce22f40ad4863c69368292b0c45b78c7506f386f87fdc73be1154f438",
+  "source_hashes": {
+    "run_rad_dino_dense_mil_probe.py": {
+      "expected": "e6cc19db206e6b46d991313c415c570283709cba5e11eef4712a7f57b4520e08",
+      "actual": "e6cc19db206e6b46d991313c415c570283709cba5e11eef4712a7f57b4520e08",
+      "match": true
+    },
+    "models/rad_dino_dense_mil.py": {
+      "expected": "ba5ba01d314acfc0727dd4e18a2571b60adc0a2d2d94efa2223e6b1a574649d7",
+      "actual": "ba5ba01d314acfc0727dd4e18a2571b60adc0a2d2d94efa2223e6b1a574649d7",
+      "match": true
+    },
+    "models/mae_reconstruction.py": {
+      "expected": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+      "actual": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+      "match": true
+    },
+    "mae_reconstruction_io.py": {
+      "expected": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+      "actual": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+      "match": true
+    },
+    "compare_nominal_patch_memory_arms.py": {
+      "expected": "4ec0b65c33d47dda20317b94d577489038bf87c8c235bb03d6d9a1d0497a035e",
+      "actual": "4ec0b65c33d47dda20317b94d577489038bf87c8c235bb03d6d9a1d0497a035e",
+      "match": true
+    },
+    "datasets/btxrd.py": {
+      "expected": "d8f0804be4e81cdb4d58e4673708c1067eb7d9b49b42bb78cb6051188c156001",
+      "actual": "d8f0804be4e81cdb4d58e4673708c1067eb7d9b49b42bb78cb6051188c156001",
+      "match": true
+    },
+    "datasets/common.py": {
+      "expected": "1927eb358a9db1a0e9c2571be5e222c3edd9d69814dfb4bc3375bd3f8593b98a",
+      "actual": "1927eb358a9db1a0e9c2571be5e222c3edd9d69814dfb4bc3375bd3f8593b98a",
+      "match": true
+    },
+    "datasets/__init__.py": {
+      "expected": "6b478bbb7af1b77f31e1aa96f197aee1138623b0c87e9385b4b4323542432784",
+      "actual": "6b478bbb7af1b77f31e1aa96f197aee1138623b0c87e9385b4b4323542432784",
+      "match": true
+    }
+  },
+  "ordering_positions": {
+    "training": 1880,
+    "prediction_generation": 2318,
+    "prediction_freeze": 2751,
+    "evaluation": 2898,
+    "comparison": 3098
+  },
+  "test_evaluated": false,
+  "consumer_trained": false
+}

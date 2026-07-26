@@ -1044,3 +1044,20 @@ from this probe. The next allowed step is a separately predeclared
 image-label-only fusion with the frozen CAM/SAM seed source, generated for
 all train and validation images before any validation-GT read.
 
+## 34. RAD-DINO dense-MIL probe prepared
+
+The next experiment uses a frozen RAD-DINO encoder plus a trainable
+patch-level `LayerNorm -> Linear` MIL head. It is supervised on all 2,981
+clean-train binary image labels, uses fixed-final-epoch training, and reads no
+training annotations or validation data. Protocol SHA is
+`785da0fce22f40ad4863c69368292b0c45b78c7506f386f87fdc73be1154f438`;
+source commit is `2ce616ccd90650869fb7f820836d236213f8f1f9`; prelaunch wrapper SHA is
+`a15ec0304e7ec12e8c9c80dd92638cb89bf0816fc7aabdf4d72ddf22af3c55a5`.
+
+The two fixed prediction arms are full 448 and fixed
+`0.5*full + 0.5*four overlapping 280px tiles`. Both 371-map sets must freeze
+before validation GT; no threshold, pseudo-mask or consumer is authorized by
+this mechanism probe. On completion, run
+`project/tools/audit_rad_dino_dense_mil_probe.py` over all 742 maps and
+recompute every 10,000-resample complete-group comparison.
+

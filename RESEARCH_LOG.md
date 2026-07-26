@@ -1643,3 +1643,45 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   five-minute monitor was deleted after the terminal result. Test remains
   locked.
 
+## 2026-07-26 - Predeclared RAD-DINO dense-MIL localization probe
+
+- The nominal-memory result retained statistically coherent small-lesion
+  ranking signal but failed as a shape source. The next bounded experiment
+  therefore changes the learning mechanism rather than choosing a
+  validation threshold: a trainable dense MIL head is applied to frozen
+  RAD-DINO patch tokens and supervised only by the clean-train binary
+  image-level tumor flag.
+- Protocol `rad_dino_dense_mil_probe_val_v1` was frozen before execution at
+  SHA-256
+  `785da0fce22f40ad4863c69368292b0c45b78c7506f386f87fdc73be1154f438`.
+  The frozen encoder is the same immutable RAD-DINO snapshot and weight hash
+  `dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae`.
+  The only trainable module is `LayerNorm(768) -> Linear(768,1)` on the
+  32x32 patch grid. Image logits use temperature-`0.20` Log-Sum-Exp pooling,
+  optimized for exactly 12 epochs, batch 8, AdamW `1e-3`, weight decay
+  `1e-4`, seed 42 and training-only horizontal flip.
+- Training uses all 2,981 clean-train images and their binary image labels;
+  no annotation path, validation label, validation image or test image enters
+  optimization/checkpoint selection. The fixed final epoch is used, so no
+  validation-fit early stopping is possible.
+- Two and only two validation prediction arms are declared. `single_scale`
+  uses the full 448 view. `multiscale` adds the same four fixed overlapping
+  280px corner views and merges them by the fixed
+  `0.5*full + 0.5*overlap-averaged tiles` formula. Maps are sigmoid
+  probabilities with no per-image min-max, no threshold selection and no
+  validation calibration.
+- All 371 maps in both arms must be physically present and hash-frozen before
+  validation GT is opened. Evaluation is limited to continuous AP/AUROC,
+  argmax hit and saliency mass plus fixed p90/p95/p97/p99 diagnostics on the
+  unchanged 184 tumors and 94/72/18 subgroups. Every metric is compared by
+  paired complete-group bootstrap with 10,000 resamples. The run cannot
+  promote a threshold, generate train pseudo-masks or train a consumer.
+- Source commit is
+  `2ce616ccd90650869fb7f820836d236213f8f1f9`. Prelaunch CPU/Torch smoke and
+  Python compilation pass. The wrapper independently matches every canonical
+  Git source hash and verifies the execution order train -> predictions ->
+  freeze -> validation-GT evaluation -> comparison. Wrapper SHA-256 is
+  `a15ec0304e7ec12e8c9c80dd92638cb89bf0816fc7aabdf4d72ddf22af3c55a5`;
+  the audit is stored in
+  `artifacts/research_protocols/rad_dino_dense_mil_probe_val_v1_wrapper_audit.json`.
+
