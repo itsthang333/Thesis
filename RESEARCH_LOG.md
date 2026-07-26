@@ -1918,4 +1918,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the frozen protocol and wrapper, then rebinds the wrapper to a new source
   commit. Model, split, image-label-only supervision, architecture, training
   schedule, prediction arms, evaluation and test lock remain unchanged.
+- The corrected protocol is bound to source commit
+  `da676c9e862d36792fcbe8fdea268a557ecafe2c` with canonical protocol
+  SHA-256
+  `a7aa1adfd99237193f1cb7ea61a049e7195d60fb73994bcd71a51cdadab0918a`.
+  An independent local comparison confirms all 11 declared project-source
+  hashes exactly match `git show` bytes at that commit. The corrected wrapper
+  compiles and hashes to
+  `839a1256e6a1c602d28dca9379f861e567d8deafa0adaab04b52f3c5323afd1e`;
+  the prelaunch audit remains `PRELAUNCH_PASS`.
+- Kernel version 2 was pushed to the same private Kaggle kernel and entered
+  `RUNNING`. The existing single five-minute monitor was updated in place
+  with the corrected hashes; no duplicate monitor or competing heavy job was
+  created.
 
