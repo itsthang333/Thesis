@@ -3206,3 +3206,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `PRELAUNCH_PASS`; no new prediction, consumer training or test evaluation
   has occurred at this point.
 
+## 2026-07-27 - Global-local MIL v1 Kaggle launch
+
+- Private Kaggle kernel
+  `itsthang333/btxrd-rad-dino-global-local-mil-probe-v1` version 1 was
+  launched from the pre-audited wrapper. Its status after launch was
+  `KernelWorkerStatus.RUNNING`. The launch did not change the scientific
+  contract: protocol SHA-256
+  `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`,
+  scientific source commit
+  `9a62bb7b91632f624b3d188d1fba499c3170e046`, wrapper SHA-256
+  `00022389d6bd24bf4732a5e0dcf893fa281b97312adc2a3d0e9c7204d3477dc8`,
+  and metadata SHA-256
+  `3a96403dbc825f0a8a6f731cb5b345095ff90a87f99a92ab6c28b61bd3c79399`
+  remain frozen.
+- Exactly one five-minute heartbeat monitor is active:
+  `theo-d-i-rad-dino-global-local-mil`. It watches only this kernel and must
+  be deleted before terminal output download/audit. No duplicate monitor or
+  heavy local job was created. Test remains locked, and no consumer may be
+  trained before the predeclared validation gate is audited.
+- Research-log citation policy is now explicit for all subsequent work: each
+  investigated or adopted technique must be recorded with its primary paper
+  or authoritative survey, bibliographic identity, DOI and/or stable official
+  URL, plus a concise statement of which mechanism was transferred, adapted,
+  deferred or rejected for BTXRD. This preserves traceability for the thesis
+  report and does not by itself justify a method unless the frozen protocol
+  and leakage constraints are also satisfied.
+
