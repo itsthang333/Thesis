@@ -35,7 +35,7 @@ def _comparison() -> dict[str, object]:
         "metrics": {
             "dice_p90": {
                 "overall": {
-                    "ci95_low": 0.001,
+                    "ci95": [0.001, 0.02],
                     "delta_candidate_minus_affinity": 0.01,
                 },
                 "small": {

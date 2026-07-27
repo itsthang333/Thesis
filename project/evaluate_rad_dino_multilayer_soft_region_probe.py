@@ -327,7 +327,10 @@ def apply_gate(
         for name, minimum in GATE_THRESHOLDS.items()
     }
     dice_comparison = comparison["metrics"]["dice_p90"]
-    overall_ci_low = float(dice_comparison["overall"]["ci95_low"])
+    overall_ci = dice_comparison["overall"]["ci95"]
+    if not isinstance(overall_ci, list) or len(overall_ci) != 2:
+        raise ValueError("Overall Dice bootstrap CI must be [low, high]")
+    overall_ci_low = float(overall_ci[0])
     subgroup_deltas = {
         name: float(
             dice_comparison[name]["delta_candidate_minus_affinity"]
