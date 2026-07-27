@@ -3958,4 +3958,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
      pseudo-mask consumer. Neither a high oracle nor image AUROC alone is a
      pass. Operational targets, complete misses, bootstrap, cohort and locked
      test remain unchanged.
+- A further no-GT audit of the frozen version-5 candidate manifests confirms
+  the selector's actual search burden before version-6 results are known.
+  Train has `2,981` bags with mean/median/p90/max candidate counts
+  `58.59/63/81/81`; validation has `371` bags with
+  `56.51/60/81/81`. Candidate counts range from `27` to `81`. Image-label
+  populations reproduce `1,493/1,488` normal/tumor in train and `187/184` in
+  validation. This audit reads neither masks nor validation subgroup/GT.
+  It supports retaining normalized SmoothMax, which subtracts the log of the
+  valid bag count, and cautions that a high oracle with low selected Dice
+  would be a genuine approximately-one-of-sixty ranking problem rather than
+  proof that the proposal shapes are absent.
 
