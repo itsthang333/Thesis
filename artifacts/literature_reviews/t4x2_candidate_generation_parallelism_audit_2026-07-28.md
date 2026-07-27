@@ -27,6 +27,34 @@ https://docs.pytorch.org/docs/stable/generated/torch.nn.DataParallel.html
 No GPU-utilization trace is available from the compact v6 evidence yet.
 Therefore this note does not fabricate a measured speedup or utilization.
 
+## Static memory-feasibility lower bound
+
+The dual-replica design is plausible on two T4s, but static model size is not
+the same as peak runtime memory:
+
+- NVIDIA specifies 16 GB GDDR6 per T4:
+  https://www.nvidia.com/en-us/data-center/tesla-t4/
+- The official TorchVision DenseNet-121 entry reports 7,978,856 parameters
+  and a 30.8 MB pretrained weight file:
+  https://docs.pytorch.org/vision/main/models/generated/torchvision.models.densenet121.html
+- Meta's official SAM repository identifies the employed checkpoint as the
+  ViT-B variant and links its immutable public checkpoint:
+  https://github.com/facebookresearch/segment-anything
+- A direct HTTP HEAD request to that official checkpoint URL on 2026-07-28
+  reported `Content-Length: 375042383` bytes (357.67 MiB):
+  https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+
+One classifier checkpoint plus one SAM ViT-B checkpoint is therefore well
+below 1 GiB of serialized weights per replica. This is only a lower bound:
+loaded tensors, CAM hooks, 1024-square activations, CUDA kernels/workspaces,
+allocator fragmentation and image buffers can dominate peak memory. It does
+not prove that a full classifier+SAM worker fits safely, much less establish
+throughput. The 32-image benchmark must record
+`torch.cuda.max_memory_allocated()` and `max_memory_reserved()` separately on
+both GPUs. Promotion requires a predeclared 14 GiB peak-reserved ceiling per
+T4, leaving at least 2 GiB for runtime variance; an out-of-memory retry with
+scientific settings changed is forbidden.
+
 ## Fastest plausible T4x2 design for independent images
 
 Candidate generation is embarrassingly parallel by image. The preferred

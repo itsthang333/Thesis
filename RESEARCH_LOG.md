@@ -4702,3 +4702,65 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   requires spawn/forkserver for CUDA and warns against CPU oversubscription.
   No speedup or utilization number is claimed without measurement.
 
+## 2026-07-28 - Small/medium mechanism synthesis during v6 wait
+
+- The T4x2 audit was extended with a static memory lower bound; its new
+  canonical-LF SHA-256 is
+  `05cbe82188489390f90412bc71e860818af71f63e29a8be2586636e8d9c9606a`.
+  NVIDIA specifies 16 GB GDDR6 per T4. TorchVision reports DenseNet-121 as
+  7,978,856 parameters and a 30.8 MB weight file. Meta's official SAM
+  repository binds the employed ViT-B checkpoint, whose official URL
+  returned `Content-Length: 375042383` bytes on a direct HEAD request.
+  Serialized classifier+SAM weights are therefore well below 1 GiB per
+  replica, making one full replica per T4 plausible but not proving peak
+  runtime fit. Activations, CAM hooks, CUDA workspaces and allocator
+  fragmentation remain unmeasured. The frozen 32-image benchmark must record
+  peak allocated/reserved memory and enforce a 14 GiB peak-reserved ceiling
+  per T4 before the parallel path can be promoted.
+- Primary hardware/model sources:
+  https://www.nvidia.com/en-us/data-center/tesla-t4/;
+  https://docs.pytorch.org/vision/main/models/generated/torchvision.models.densenet121.html;
+  https://github.com/facebookresearch/segment-anything; and
+  https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth.
+  No runtime-memory or speed claim is inferred from checkpoint size.
+- A broader mechanism synthesis is frozen at
+  `artifacts/literature_reviews/small_medium_wsss_combination_strategy_2026-07-28.md`
+  (canonical-LF SHA-256
+  `e2ce5b637dfc567f5fe25512fcfb91b41111fd06254cf6b33ad072eaa8a423a4`).
+  It separates the likely bottlenecks: small is most exposed to geometry,
+  sub-token proposal-mass attenuation and insufficient local resolution;
+  medium has the highest selector recovery burden and is primarily a
+  proposal-ranking problem; large must be protected from indiscriminate mask
+  expansion.
+- The staged research order is now explicit: terminal v6 audit; geometry-v3
+  alone; true weighted-mean pooling only if the GT-blind fractional-mass audit
+  is material and v3 still misses small; global-plus-deterministic-crop
+  RAD-DINO descriptors only for an isolated small failure; relational MIL for
+  an oracle-pass/medium-selection failure; and confidence-aware
+  multi-scale/boundary consumer only after the frozen entry gate. These
+  mechanisms may not be bundled into one experiment.
+- Literature and transfer boundaries recorded in the synthesis:
+  Mun et al., WACV 2024, size-specific WSSS evaluation and size-balanced
+  training,
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html;
+  Hwang et al., Neurocomputing 2025, zoom/global-local consistency for
+  small-object weak localization,
+  https://doi.org/10.1016/j.neucom.2025.130494;
+  Li et al., DSMIL, CVPR 2021, relational critical-instance evidence,
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_CVPR_2021_paper.html;
+  Shen et al., CVPR 2021, arbitrary-mask proposal pooling,
+  https://openaccess.thecvf.com/content/CVPR2021/html/Shen_Toward_Joint_Thing-and-Stuff_Mining_for_Weakly_Supervised_Panoptic_Segmentation_CVPR_2021_paper.html;
+  Saeed et al., Medical Image Analysis 2025, image-level-guided tumor
+  superpixels, https://pubmed.ncbi.nlm.nih.gov/39695438/;
+  Gu et al., IEEE TMI 2022, local-feature aggregation for weakly supervised
+  chest-radiograph segmentation,
+  https://pubmed.ncbi.nlm.nih.gov/35721071/; and Zhang et al., WeCLIP,
+  CVPR 2024, frozen foundation features with a lightweight decoder and
+  affinity refinement,
+  https://openaccess.thecvf.com/content/CVPR2024/html/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.html.
+  None of their reported natural-image/other-modality metrics, size labels or
+  dense annotations are transferred to BTXRD.
+- No Kaggle status poll, wrapper mutation, GT read, consumer training or new
+  experiment occurred during this literature pass. The operational goal and
+  all v6/v3 gates remain unchanged pending terminal evidence.
+
