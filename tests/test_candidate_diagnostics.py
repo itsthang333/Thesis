@@ -115,10 +115,39 @@ class CandidateDiagnosticsTests(unittest.TestCase):
                     expected_manifest_sha256=str(summary["manifest_sha256"]),
                 )
 
+    def test_complete_image_cohort_is_explicit_and_auditable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rows = [_save(root, "positive.png", 2), _save(root, "normal.png", 1)]
+            summary = write_candidate_diagnostics_manifest(
+                root,
+                rows,
+                expected_image_names=["positive.png", "normal.png"],
+                split="train",
+                image_size=8,
+                pseudo_manifest_sha256="b" * 64,
+                selection_method="mask_bag_mil_input",
+                support_clip_kernel=-1,
+                cam_percentile=90.0,
+                cohort="all",
+            )
+            self.assertEqual(summary["cohort"], "all")
+            self.assertEqual(summary["expected_images"], 2)
+            self.assertIsNone(summary["expected_tumor_images"])
+            _rows, audit = validate_candidate_diagnostics_manifest(
+                root,
+                expected_image_names=["positive.png", "normal.png"],
+                split="train",
+                expected_manifest_sha256=str(summary["manifest_sha256"]),
+            )
+            self.assertEqual(audit["cohort"], "all")
+
     def test_generator_has_no_segmentation_gt_loader(self) -> None:
         source = (PROJECT / "generate_pseudo_masks.py").read_text(encoding="utf-8")
         self.assertNotIn("build_segmentation_dataset", source)
         self.assertIn("--save-candidate-diagnostics", source)
+        self.assertIn("--candidate-diagnostics-cohort", source)
+        self.assertIn("--force-normal-candidate-gallery", source)
 
     def test_evaluator_verifies_frozen_artifacts_before_gt_dataset(self) -> None:
         source = (PROJECT / "evaluate_saved_candidate_diagnostics.py").read_text(

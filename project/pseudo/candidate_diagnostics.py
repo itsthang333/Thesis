@@ -132,7 +132,10 @@ def write_candidate_diagnostics_manifest(
     selection_method: str,
     support_clip_kernel: int,
     cam_percentile: float,
+    cohort: str = "tumor",
 ) -> dict[str, object]:
+    if cohort not in {"tumor", "all"}:
+        raise ValueError("Candidate diagnostic cohort must be 'tumor' or 'all'")
     output_dir = Path(output_dir)
     expected = {Path(str(name)).stem for name in expected_image_names}
     indexed: dict[str, dict[str, object]] = {}
@@ -144,8 +147,9 @@ def write_candidate_diagnostics_manifest(
     missing = sorted(expected - set(indexed))
     unexpected = sorted(set(indexed) - expected)
     if missing or unexpected:
+        cohort_label = "tumor cohort" if cohort == "tumor" else "image cohort"
         raise RuntimeError(
-            "Candidate diagnostics do not cover the complete tumor cohort: "
+            f"Candidate diagnostics do not cover the complete {cohort_label}: "
             f"missing={missing[:5]}, unexpected={unexpected[:5]}"
         )
 
@@ -167,7 +171,9 @@ def write_candidate_diagnostics_manifest(
         "prediction_first": True,
         "ground_truth_loaded_during_generation": False,
         "split": split,
-        "expected_tumor_images": len(expected),
+        "cohort": cohort,
+        "expected_images": len(expected),
+        "expected_tumor_images": len(expected) if cohort == "tumor" else None,
         "manifest_rows": len(rows),
         "image_size": int(image_size),
         "pseudo_manifest_sha256": pseudo_manifest_sha256,
@@ -207,6 +213,8 @@ def validate_candidate_diagnostics_manifest(
         raise ValueError("Candidate diagnostic summary is not a complete prediction-first artifact")
     if summary.get("split") != split:
         raise ValueError(f"Candidate diagnostics split={summary.get('split')!r}, expected {split!r}")
+    if summary.get("cohort", "tumor") not in {"tumor", "all"}:
+        raise ValueError("Candidate diagnostics contain an unsupported cohort")
     if summary.get("manifest_sha256") != actual_manifest_hash:
         raise ValueError("Candidate diagnostic manifest hash differs from its frozen summary")
     if expected_manifest_sha256 and actual_manifest_hash != expected_manifest_sha256:
@@ -232,7 +240,14 @@ def validate_candidate_diagnostics_manifest(
         raise ValueError(
             f"Candidate diagnostic cohort mismatch: missing={missing[:5]}, unexpected={unexpected[:5]}"
         )
-    if int(summary.get("manifest_rows", -1)) != len(rows) or len(rows) != len(expected):
+    expected_count = int(
+        summary.get("expected_images", summary.get("expected_tumor_images", -1))
+    )
+    if (
+        int(summary.get("manifest_rows", -1)) != len(rows)
+        or expected_count != len(expected)
+        or len(rows) != len(expected)
+    ):
         raise ValueError("Candidate diagnostic summary counts are inconsistent")
 
     for stem, row in indexed.items():

@@ -375,6 +375,26 @@ def parse_args() -> argparse.Namespace:
             "case. No segmentation GT is loaded; evaluate them only after the manifests freeze."
         ),
     )
+    parser.add_argument(
+        "--candidate-diagnostics-cohort",
+        choices=["tumor", "all"],
+        default="tumor",
+        help=(
+            "Save proposal bags for only image-level-positive cases (legacy) or "
+            "for the complete split. The all mode is intended for image-label MIL "
+            "and still never loads segmentation annotations."
+        ),
+    )
+    parser.add_argument(
+        "--force-normal-candidate-gallery",
+        action="store_true",
+        help=(
+            "With binary ground-truth CAM targeting, generate tumor-class CAM/SAM "
+            "proposals for image-level-normal cases instead of an empty bag. This "
+            "is only for negative bags in image-label MIL; resulting pseudo masks "
+            "must not be used as foreground supervision."
+        ),
+    )
     parser.add_argument("--force-non-normal-cam", action="store_true",
                         help="Predicted-protocol A/B: if argmax is normal, condition CAM on the strongest "
                              "non-normal class instead of skipping. Default keeps normal images empty.")
@@ -1076,6 +1096,18 @@ def main() -> None:
     else:
         target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
+    if args.force_normal_candidate_gallery and (
+        not args.save_candidate_diagnostics
+        or args.candidate_diagnostics_cohort != "all"
+        or args.cam_target_class != "ground_truth"
+        or target_columns != ["tumor"]
+    ):
+        raise ValueError(
+            "--force-normal-candidate-gallery is restricted to prediction-first "
+            "full-cohort diagnostics with binary image-label ground-truth CAM "
+            "targeting"
+        )
+
     if target_columns == ["tumor_type"]:
         from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
         class_names = list(TUMOR_TYPE_CLASS_NAMES)
@@ -1291,6 +1323,14 @@ def main() -> None:
             "target_columns": target_columns,
             "cam_target_class": args.cam_target_class,
             "force_non_normal_cam": args.force_non_normal_cam,
+            "candidate_diagnostics_cohort": args.candidate_diagnostics_cohort,
+            "force_normal_candidate_gallery": args.force_normal_candidate_gallery,
+            "force_normal_candidate_gallery_semantics": (
+                "tumor-class proposals are retained only as negative MIL bag "
+                "instances; saved normal pseudo masks remain empty"
+                if args.force_normal_candidate_gallery
+                else None
+            ),
             "low_score_policy": args.low_score_policy,
             "classifier_task": classifier_task,
             "classifier_checkpoint": str(args.classifier_checkpoint.resolve()),
@@ -1580,7 +1620,14 @@ def main() -> None:
                     elif use_ground_truth_class and target_columns == ["tumor"]:
                         is_tumor = bool(float(targets[idx].item()) > 0.5)
                         gt_class = 0
-                        class_weights = np.asarray([1.0 if is_tumor else 0.0], dtype=np.float32)
+                        class_weights = np.asarray(
+                            [
+                                1.0
+                                if is_tumor or args.force_normal_candidate_gallery
+                                else 0.0
+                            ],
+                            dtype=np.float32,
+                        )
                     else:
                         class_weights = predicted_class_weights.copy()
 
@@ -1621,6 +1668,7 @@ def main() -> None:
                         use_ground_truth_class
                         and target_columns == ["tumor"]
                         and float(class_weights[0]) < 0.5
+                        and not args.force_normal_candidate_gallery
                     )
                     or (
                         not use_ground_truth_class
@@ -1679,7 +1727,9 @@ def main() -> None:
                             "final_area_ratio": 0.0,
                         }
                     )
-                    if args.save_candidate_diagnostics and true_tumor:
+                    if args.save_candidate_diagnostics and (
+                        true_tumor or args.candidate_diagnostics_cohort == "all"
+                    ):
                         diagnostic_path = candidate_diagnostic_dir / f"{Path(image_name).stem}.npz"
                         diagnostic_row = save_candidate_diagnostics(
                             diagnostic_path,
@@ -2408,7 +2458,9 @@ def main() -> None:
                 )
 
                 # ── 7. Save ───────────────────────────────────────────────────
-                if args.save_candidate_diagnostics and true_tumor:
+                if args.save_candidate_diagnostics and (
+                    true_tumor or args.candidate_diagnostics_cohort == "all"
+                ):
                     all_points = (
                         [
                             point
@@ -2476,6 +2528,12 @@ def main() -> None:
                             **diagnostic_row,
                         }
                     )
+
+                # Normal-image proposals are negative MIL instances, never
+                # foreground pseudo-labels. Preserve the frozen diagnostic bag
+                # above while keeping the ordinary pseudo-mask artifact empty.
+                if args.force_normal_candidate_gallery and not true_tumor:
+                    final_mask = np.zeros_like(final_mask, dtype=bool)
 
                 save_mask(final_mask, mask_path)
                 pseudo_manifest_rows.append(
@@ -2578,26 +2636,32 @@ def main() -> None:
     )
 
     if args.save_candidate_diagnostics:
-        expected_tumor_names = [
-            str(sample["image_id"])
-            for sample in dataset.samples[: len(expected_names)]
-            if bool(sample.get("tumor", 0))
-        ]
+        expected_diagnostic_names = (
+            list(expected_names)
+            if args.candidate_diagnostics_cohort == "all"
+            else [
+                str(sample["image_id"])
+                for sample in dataset.samples[: len(expected_names)]
+                if bool(sample.get("tumor", 0))
+            ]
+        )
         diagnostic_summary = write_candidate_diagnostics_manifest(
             args.output_dir,
             candidate_diagnostic_rows,
-            expected_image_names=expected_tumor_names,
+            expected_image_names=expected_diagnostic_names,
             split=args.split,
             image_size=args.image_size,
             pseudo_manifest_sha256=str(pseudo_summary["manifest_sha256"]),
             selection_method=args.selection_method,
             support_clip_kernel=args.support_clip_kernel,
             cam_percentile=args.cam_percentile,
+            cohort=args.candidate_diagnostics_cohort,
         )
         print(
             "Prediction-first candidate diagnostics frozen: "
             f"{diagnostic_summary['manifest_rows']}/"
-            f"{diagnostic_summary['expected_tumor_images']} tumor cases; "
+            f"{diagnostic_summary['expected_images']} "
+            f"{args.candidate_diagnostics_cohort} cases; "
             f"manifest_sha256={diagnostic_summary['manifest_sha256']}"
         )
 

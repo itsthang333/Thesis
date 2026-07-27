@@ -3498,3 +3498,90 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   confidence as a fusion gate, retune v4 after GT, or train a consumer before
   passing that gate.
 
+## 2026-07-27 - Pre-protocol decision: class-agnostic mask-bag MIL
+
+- Source audit after the rejected global-local residual shows that another
+  free pixel decoder would repeat the same shortcut: image BCE can become very
+  good while the hottest location is unrelated to the lesion. The next
+  prediction-first probe therefore constrains every spatial output to a
+  class-agnostic SAM proposal. Frozen RAD-DINO layers `4/8/12` provide
+  inside-mask, local-context and inside-minus-context descriptors; a small MIL
+  scorer learns which proposal explains the binary image label. All proposals
+  from normal images are reliable negative instances, while only the detached
+  current winner in a positive bag is treated as positive and the uncertain
+  remainder is ignored. A horizontally flipped, coordinate-aligned version of
+  the same proposal receives a score-consistency penalty. The final map is the
+  winner-take-all SAM shape multiplied by the image-bag probability. This is a
+  selector probe only; it cannot launch a pseudo-mask consumer automatically.
+- Seibold et al., *Self-Guided Multiple Instance Learning for Weakly
+  Supervised Thoracic Disease Classification and Localization in Chest
+  Radiographs*, ACCV 2020, official CVF record:
+  https://openaccess.thecvf.com/content/ACCV2020/html/Seibold_Self-Guided_Multiple_Instance_Learning_for_Weakly_Supervised_Thoracic_DiseaseClassification_and_ACCV_2020_paper.html.
+  The paper explicitly uses image- and patch-level predictions to construct
+  auxiliary supervision while accounting for uncertain instances. BTXRD
+  adapts that uncertainty rule to arbitrary SAM-mask instances: normal-bag
+  masks are negative, the positive winner is positive, and other positive-bag
+  masks are ignored rather than falsely labelled background.
+- Shen et al., *Toward Joint Thing-and-Stuff Mining for Weakly Supervised
+  Panoptic Segmentation*, CVPR 2021, official CVF record:
+  https://openaccess.thecvf.com/content/CVPR2021/html/Shen_Toward_Joint_Thing-and-Stuff_Mining_for_Weakly_Supervised_Panoptic_Segmentation_CVPR_2021_paper.html.
+  Its MoIPool mechanism pools features from arbitrary-shape masks and applies
+  MIL under image-level labels. BTXRD transfers the arbitrary-mask pooling
+  principle, but uses area-resampled SAM masks over frozen radiology tokens
+  and does not copy its panoptic branches or self-training consumer.
+- Yang and Gong, *Foundation Model Assisted Weakly Supervised Semantic
+  Segmentation*, WACV 2024, official CVF record:
+  https://openaccess.thecvf.com/content/WACV2024/html/Yang_Foundation_Model_Assisted_Weakly_Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+  The supported transfer is using SAM only for boundary-aware class-agnostic
+  proposal shapes and learning lesion semantics from image labels. Its
+  CLIP/prompt architecture and direct downstream pseudo-label training are not
+  copied, because RAD-DINO is the frozen domain encoder and the BTXRD consumer
+  remains locked behind a separate gate.
+- Liu et al., *Weakly-supervised High-resolution Segmentation of Mammography
+  Images for Breast Cancer Diagnosis (GLAM)*, MIDL/PMLR 143, 2021, official
+  PMLR record: https://proceedings.mlr.press/v143/liu21b.html. GLAM identifies
+  low-resolution saliency as especially harmful when lesions are small and
+  uses coarse ROI localization followed by fine-grained analysis. BTXRD
+  transfers the coarse-candidate/fine-descriptor separation; it rejects the
+  v4 practice of adding unconstrained high-confidence local pixels.
+- Mun et al., *Small Objects Matters in Weakly-Supervised Semantic
+  Segmentation*, WACV 2024, official CVF record:
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+  This is retained as direct literature support for a separate small-object
+  failure mode. The mask-bag design preserves fractional occupancy with area
+  interpolation onto the token grid instead of thresholding small masks away.
+- Feasibility was checked against the already frozen flip-TTA SAM gallery,
+  before this scorer is trained. Recomputing `oracle_best_single_dice` with
+  the immutable subgroup rule `<1% / 1--5% / >=5%` gives candidate-oracle Dice
+  overall/small/medium/large
+  `0.40907629 / 0.22274968 / 0.59414817 / 0.64182777` on
+  `184/94/72/18` positive images. These exceed the active operational goals
+  `0.34024039 / 0.17895493 / 0.51244178 / 0.49370336`; therefore proposal
+  support does not make the gate impossible. Same-gallery selected Dice is
+  only `0.23366822 / 0.11152529 / 0.34768577 / 0.41545552`, confirming that
+  selection, especially for small lesions, has measurable headroom. These
+  frozen prior values justify protocol design only and will not be used for
+  post-result retuning.
+- The same immutable validation pseudo-mask manifest shows a maximum of `81`
+  SAM candidates per image (`21/371` images reach that maximum). The initial
+  draft cap `64` is therefore rejected before protocol freeze because it would
+  cause an implementation-only failure or silently require truncation. V1
+  fail-closes at exactly `81`, which is the complete-gallery bound produced by
+  the frozen three-percentile/three-component prompt ensemble; no proposal is
+  ranked or discarded to satisfy memory limits.
+- Supervision/safety boundary: candidate generation may use the binary image
+  label to target the tumor CAM for both positive and normal images, but it
+  never opens segmentation GT. Normal-image candidate masks are retained only
+  as negative MIL instances and their ordinary pseudo-mask artifact is forced
+  empty. Candidate manifests for all `2,981` train and `371` validation images
+  must be hash-frozen before scorer training; validation annotations can be
+  opened only after all `371` prediction-map hashes and the prediction freeze
+  are verified. Test remains locked and every gate check is required.
+- Runtime policy is fail-closed on Kaggle T4 x2: exactly two visible Tesla T4
+  devices are required, the frozen RAD-DINO feature pass uses
+  `torch.nn.DataParallel` on device IDs `0/1`, and the wrapper must prove real
+  convolutions on both devices. The SAM/classifier proposal stage may place
+  the classifier on T4-0 and SAM on T4-1, but this is device separation rather
+  than a claim of synchronous data parallelism. No five-minute monitor is
+  created until a kernel is actually launched, and only one monitor may exist.
+
