@@ -1,17 +1,19 @@
 {
   "protocol_id": "rad_dino_multilayer_soft_region_probe_val_v1",
-  "status": "predeclared_before_any_v2_prediction_after_gate_schema_fix",
+  "status": "predeclared_before_any_v3_prediction_after_implementation_fixes",
   "scientific_role": "prediction-first mechanism probe for a multi-layer frozen RAD-DINO spatial decoder with train-normal-calibrated variable-area soft supervision; not a pseudo-mask consumer",
   "scientific_question": "Can intermediate and final RAD-DINO spatial tokens plus absolute normal-calibrated soft regions and bidirectional local affinity transfer improve variable tumor extent over the rejected fixed-top-1-percent affinity decoder?",
   "hypothesis": "Final-layer-only fixed-rank supervision preserves localization but imposes nearly fixed support. Fusing layers 4, 8 and 12, supervising variable-area absolute anomaly evidence, refining foreground and background symmetrically, and enforcing flip consistency will improve p90 shape without task-specific spatial labels.",
   "implementation_amendment": {
-    "scope": "evaluator gate-schema compatibility only",
-    "reason": "the frozen bootstrap helper returns ci95 as a two-element [low, high] list, while the v1 gate attempted to read a nonexistent ci95_low key",
+    "scope": "evaluator gate-schema compatibility and ambiguous-only positive-teacher handling",
+    "reason": "the bootstrap helper returns ci95 as [low, high], while the v1 gate read a nonexistent ci95_low key; version 2 then showed one positive training image with no calibrated foreground or background region, which the protocol assigns only image-level SmoothMax supervision but the loss incorrectly rejected",
     "scientific_contract_change": false,
     "prediction_change": false,
     "metric_or_bootstrap_change": false,
     "threshold_or_gate_change": false,
-    "v1_state_when_detected": "kernel running; no v1 result accepted"
+    "v1_state_when_detected": "kernel running; no v1 result accepted",
+    "v2_state_when_detected": "teacher cache frozen with exactly one ambiguous-only positive; no checkpoint, prediction, validation GT evaluation or result accepted",
+    "ambiguous_only_behavior": "omit only the unavailable pseudo-region term; retain image-level SmoothMax and do not inject a foreground rank"
   },
   "literature_transfer": [
     {
@@ -237,11 +239,11 @@
     "interpretation": "this prediction probe does not itself satisfy the final consumer goal; it tests whether a stronger variable-area spatial signal justifies a separately frozen consumer"
   },
   "source": {
-    "commit": "bb767b05f665886d27d7fb50abd8701fa44d2da6",
+    "commit": "0ea383e48bcd91f7235d1e1130e77d80f099cbc4",
     "canonical_git_lf_sha256": {
       "project/run_rad_dino_multilayer_soft_region_probe.py": "3e016ad4c5d31befa89d1ae266480b31c739358ed85744447c6aa25e40522bfa",
       "project/evaluate_rad_dino_multilayer_soft_region_probe.py": "9eae91da9753e20d5f84fc5575b31ce0b6b2c95ad54f902fcf0ea96e02775f08",
-      "project/models/rad_dino_multilayer_soft_region_decoder.py": "bfafa89e5dde03e4fcd59be29f5eb9bd7db3d1bf48674b9422e5c737cbde6f7c",
+      "project/models/rad_dino_multilayer_soft_region_decoder.py": "d93986255d31e3b65e7bb1f2176079a67fcda35d10629737decf916a5048d481",
       "project/models/nominal_patch_memory.py": "a7fbf3e4042623b1b2817f8bb02a87072db55c21bb5b9380cc259aca3a7dd526",
       "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
       "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
@@ -249,7 +251,7 @@
       "project/compare_nominal_patch_memory_arms.py": "4ec0b65c33d47dda20317b94d577489038bf87c8c235bb03d6d9a1d0497a035e",
       "project/datasets/btxrd.py": "d8f0804be4e81cdb4d58e4673708c1067eb7d9b49b42bb78cb6051188c156001",
       "project/datasets/common.py": "1927eb358a9db1a0e9c2571be5e222c3edd9d69814dfb4bc3375bd3f8593b98a",
-      "tests/test_rad_dino_multilayer_soft_region_decoder.py": "743f7e0844ae8fdd0497b42c8d19cc1442284b318e0cf428e64aec2f80d06004",
+      "tests/test_rad_dino_multilayer_soft_region_decoder.py": "14e8660b1c89e557af9a8d031237534d02d2968b804f893d8b253e63087b33b3",
       "tests/test_rad_dino_multilayer_soft_region_probe.py": "f54b12b8d68029df283a21f13ad530624d20d602e17595033ad7bcbe721b14a9"
     }
   },

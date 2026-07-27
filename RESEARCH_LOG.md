@@ -2984,6 +2984,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `bb767b05...2da6` and unchanged prediction/training contract. Exactly one
   five-minute heartbeat, `theo-d-i-rad-dino-multilayer-soft-region`, follows
   version 2; no duplicate monitor or heavy job exists.
+
+## 2026-07-27 - Multi-layer soft-region v2 ambiguous-only teacher error
+
+- Kernel version 2 terminated after `622.30` wrapper seconds. The single
+  heartbeat was deleted before inspection. The hardened direct log provides
+  the exact nested traceback: after all `2981` feature caches, `1493` normal
+  calibration maps and `1488` positive teacher maps completed, the first
+  training epoch raised
+  `RuntimeError: Positive image has no calibrated soft-region evidence` in
+  `soft_region_pseudo_loss`. No checkpoint, validation prediction, prediction
+  freeze, validation-GT evaluation, consumer or test access occurred.
+- The retained teacher metadata had already declared exactly one positive
+  image without foreground weight. Its teacher contains neither foreground
+  evidence above `0.90` nor background evidence below `0.50`; all available
+  pixels are ambiguous. The protocol explicitly says such an image retains
+  image-level SmoothMax supervision with no artificial foreground rank, so
+  rejecting it is an implementation error, not a scientific failure.
+- The corrected loss omits only the unavailable pseudo-region term for an
+  ambiguous-only positive; image-level BCE remains active and no pseudo pixel
+  is injected. If an entire batch has no pseudo-region evidence, it returns a
+  differentiable zero for that loss only. A regression test verifies zero
+  pseudo-region gradient for this case, while the existing normal dense
+  background and positive variable-region tests remain intact. All ten focused
+  tests pass.
+- Corrected source commit is
+  `0ea383e48bcd91f7235d1e1130e77d80f099cbc4`; decoder/test canonical hashes
+  are `d93986255d31e3b65e7bb1f2176079a67fcda35d10629737decf916a5048d481`
+  and `14e8660b1c89e557af9a8d031237534d02d2968b804f893d8b253e63087b33b3`.
+  The implementation-only amended protocol is frozen before version-3
+  prediction at SHA-256
+  `4093521cacdabea003273c3ec1274bc6c169fbf647a6b5eafe96925b1e36202e`.
+  Architecture, train data, thresholds, loss weights, prediction, metric,
+  bootstrap and gate are unchanged; no version-2 result is accepted.
 - An independent post-download auditor is committed at
   `0fea848256b8286ab80ad6eb7aa0d584c4c7c0ed`. Auditor SHA-256 is
   `e36d3a661e0e495877dc583f070f037d71a2f8be2f0f3383cd83c1f5c8062ca4`;
