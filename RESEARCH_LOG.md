@@ -4789,3 +4789,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   experiment occurred during this literature pass. The operational goal and
   all v6/v3 gates remain unchanged pending terminal evidence.
 
+## 2026-07-28 - Conditional relational-MIL design for medium selection
+
+- A conditional design audit is recorded at
+  `artifacts/literature_reviews/relational_mil_medium_selection_design_2026-07-28.md`
+  (canonical-LF SHA-256
+  `456014a1d05c8d8b2ef7bfed7f37037088c1bce1926a79c99801b1295253fab1`).
+  It is not an execution protocol and authorizes no job. Eligibility requires
+  terminal v6 audit, completed geometry v3, oracle support for every goal and
+  corrected independent selection still below entry, especially medium.
+- The smallest causal arm reuses immutable v3 descriptors. It preserves the
+  independent score, selects its detached critical instance, computes
+  DSMIL-style normalized affinity to that critical instance, and predicts a
+  zero-initialized per-candidate residual from self/critical/difference/product
+  features plus normalized affinity. Final WTA logits remain instance-level;
+  all existing BCE, self-guided negative/positive handling, flip consistency,
+  optimizer and epochs remain unchanged.
+- This design explicitly rejects bag-AUROC-only promotion. Jang and Kwon,
+  NeurIPS 2024, show that deep-MIL bag learnability does not automatically
+  imply instance learnability:
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html.
+  The critical-instance relation is transferred from Li, Li and Eliceiri,
+  DSMIL, CVPR 2021:
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html.
+  Their WSI metrics and contrastive pipeline are not transferred.
+- Required GT-blind diagnostics include candidate-count distribution,
+  original/flip critical agreement, affinity entropy/effective neighbors,
+  finite/order checks and proof that zero-initialized relational logits equal
+  the independent logits. Post-freeze evaluation must report complete
+  localization cohorts, subgroup Dice/misses, paired bootstrap and
+  recovered/lost overlaps against v3. Candidate-count loss normalization and
+  soft-critical selection remain separate contingencies, not bundled changes.
+- No Kaggle status poll beyond the single separate-task snapshot, source
+  mutation, GT read, test access or experiment launch occurred.
+
