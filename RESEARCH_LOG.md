@@ -4237,3 +4237,41 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Kaggle-only. The branch is not implemented or launched before terminal v6
   evidence activates it.
 
+## 2026-07-28 - Conditional noise-robust consumer research
+
+- During the ten-minute mask-bag MIL monitor interval, the prior downstream
+  evidence and consumer source were audited. The measured failure remains
+  pseudo-label memorization: hard-mask train positive Dice reached
+  `0.73817187`, while frozen validation Dice was only `0.23001987`
+  (`0.07100142/0.41340304/0.32691688` small/medium/large). The same U-Net
+  family reaches `0.49513170` with real masks, so repeating hard resized masks
+  plus BCE/Dice is not a justified next experiment.
+- A conditional design is recorded in
+  `artifacts/literature_reviews/noise_robust_consumer_feasibility_addendum_2026-07-28.md`
+  (canonical-LF SHA-256
+  `8c14f8447da7ad284946fd50855f43491b574b45d8e83a9d2fbf1e165bc86088`).
+  It combines family/view consensus, partial soft labels, image-level
+  SmoothMax, uncertainty-masked EMA equivariance, local affinity, and
+  train-only proposal-area-balanced sampling. On tumor images, ambiguous
+  pixels remain unlabeled instead of being converted into false background;
+  a whole-image hard Dice loss is excluded from the first arm. High-resolution
+  crops may receive aligned partial supervision and full-to-crop consistency,
+  but never inherit the full-image positive label automatically.
+- Primary sources and transfer boundaries are recorded in that addendum:
+  Fu et al.'s image-label medical UM-CAM/Random-View Consensus
+  (Pattern Recognition 2025, DOI
+  `10.1016/j.patcog.2024.111204`), SEAM (CVPR 2020), Mean Teacher
+  (NeurIPS 2017), uncertainty-aware Mean Teacher for medical segmentation
+  (MICCAI 2019), Cross Pseudo Supervision (CVPR 2021), Pseudo-mask Matters
+  (ICCV 2021), Small Objects Matters (WACV 2024), and cross-model mutual
+  learning for medical segmentation (AISTATS 2024). Semi-supervised papers
+  that use some real masks are treated as mechanistic inspiration only, not
+  evidence that their reported gains transfer to image-label-only BTXRD.
+- The staged contingency is `C1a` partial-consensus soft BCE plus image BCE,
+  then `C1b` adds EMA random-view consistency; proposal-area balancing and
+  aligned high-resolution crops are deferred to `C1c`. A consumer is still
+  forbidden unless the prediction-first source passes every frozen gate. If
+  the oracle passes but selection fails, the relational selector comes first;
+  if the oracle fails, proposal support comes first. No validation mask, test
+  record, new consumer implementation, or heavy local computation was used.
+
