@@ -3374,3 +3374,127 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `local_encoder_data_parallel=true`. Test remains locked and no consumer is
   authorized before the unchanged all-checks-required gate.
 
+## 2026-07-27 - Global-local MIL version 4 terminal audit and rejection
+
+- Kaggle kernel
+  `itsthang333/btxrd-rad-dino-global-local-mil-probe-v1` version 4 completed.
+  The sole five-minute heartbeat `theo-d-i-rad-dino-global-local-mil` was
+  deleted before output download. Terminal artifacts were downloaded into the
+  isolated directory
+  `tmp/kaggle/rad_dino_global_local_mil_probe_val_v1_output_v4_complete_20260727_0915`.
+  The Kaggle CLI ended its local download command with a Windows console
+  encoding error only after writing the artifacts; an independent file audit
+  established that the scientific output itself is complete.
+- Runtime evidence passes the T4 x2 correction contract. Execution log
+  SHA-256 is
+  `c685c232d3632e4c10c85fcf01a2f1519197cd15fc260484fa5cef7b4b5b39db`.
+  Its real convolution preflight records PyTorch `2.5.1+cu121`, CUDA `12.1`,
+  exactly two `Tesla T4` devices at capability `sm_75`, and convolution sums
+  `324.0/324.0`; focused tests pass `35/35`. `run_manifest.json` SHA-256
+  `0be4e34f9fe60210185ab33f161737f68007681964837a76421226b8e6d614c8`
+  independently records two T4 devices and
+  `local_encoder_data_parallel=true`.
+- Provenance is exact. Downloaded wrapper/protocol SHA-256 are
+  `fb62f8c3254ed20ec3c4d6042510ca17c5c4bced2b0dc4a267fb661bf6066add`
+  and
+  `3d948dd11ac46c09ce84e8de04034255a11be0182bfb17b44216c8d4c2172bf8`,
+  byte-identical to the staged wrapper and frozen correction protocol. The
+  inherited base protocol remains
+  `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`.
+  All correction-protocol source hashes match the current checkout and those
+  files are unchanged from scientific commit
+  `bc34a892cbdbe2eb0a8b3df9a365426d54e07af1`. The wrapper found exactly one
+  direct global kernel-output mount under `/kaggle/input/notebooks`, excluding
+  `thesis_source`; its checkpoint/freeze/manifest/per-image hashes match the
+  frozen v3 evidence
+  `33ff0188...642f / 8d6225af...c0c2 / 3647fefb...fc63 /
+  84b3dca0...eb2e`. Split SHA-256 remains
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`.
+- Prediction freeze is valid before GT access. The independent audit found
+  exactly `371` unique validation rows, `371` fused maps and `371` local-only
+  maps. Every map hash matches `prediction_manifest.csv`; all global reference
+  map hashes also match the independently downloaded v3 maps. All `1,113`
+  global/local/fused arrays are finite `320x320` float16 arrays bounded in
+  `[0,1]`. Important freeze hashes are: checkpoint
+  `3cf2ba2f...56d3`, training proposals `f285a922...460`, training history
+  `83ba9684...3798`, train-normal calibration `27381e0d...3018`, prediction
+  manifest `01048705...82c`, prediction freeze `467e1ba3...fb5d`, and pre-GT
+  audit `2394c899...8e38`. The pre-GT records state
+  `validation_gt_read=false`, `consumer_trained=false`, and
+  `test_evaluated=false`.
+- Post-freeze evaluation also passes the audit contract: cohort
+  validation/tumor/normal is `371/184/187`, tumor subgroup counts are
+  small/medium/large `94/72/18`, complete misses are included, and paired
+  complete-group bootstrap uses `10,000` replicates. Summary, paired
+  comparison, gate and evaluation-audit SHA-256 are respectively
+  `2c46d93b...94c36`, `e3487740...ddf7`, `92b0fa0c...91156`, and
+  `e2628c4b...a5ffc`. Consumer and test flags remain false.
+- The predeclared fused arm **fails**. Frozen-global v3 Dice p90
+  overall/small/medium/large was
+  `0.14317068 / 0.01445152 / 0.21741629 / 0.51838823`; fused v4 is
+  `0.14308632 / 0.01438807 / 0.21727784 / 0.51841118`; local-only diagnostic
+  is `0.04528690 / 0.00507460 / 0.06639630 / 0.17084688`. Fused image-level
+  AUROC is `0.80847477` versus global `0.81024762`. Fused-minus-global p90
+  deltas are `-0.00008435 / -0.00006346 / -0.00013846 / +0.00002295`, and
+  small p90 95% paired-bootstrap CI is
+  `[-0.00012262, -0.00001797]`. Absolute overall p90, small p90 and small p99
+  (`0.04528470`) fail; the required positive small CI and no-decrease checks
+  fail. Although small p90 complete misses decrease from `35` to `34`, this
+  isolated count does not override the all-checks-required gate.
+- The bottleneck is spatial shortcut learning, not ROI proposal recall or
+  accelerator execution. On small tumors the local branch has pixel AP
+  `0.00516770`, Dice p90 `0.00507460`, and local argmax hit exactly `0/94`,
+  even though its median local confidence is `0.98055` and `62/94` small cases
+  have confidence above `0.5`. Median small fusion gate is `0.53670`.
+  Training image BCE falls from `0.64210` to `0.17340`, so the decoder learns
+  the bag label while its hottest pixels are systematically not the lesion.
+  The fixed fusion promotes only the top `2%` local values; it improves only
+  `3/94` small p90 cases, degrades `23/94`, and is float16-identical in the
+  remaining `68/94`. Thus local classification confidence is not a valid
+  surrogate for localization fidelity. The exact global-local configuration
+  is rejected without post-GT retuning. No pseudo-mask consumer is authorized,
+  test remains locked, and the operational Dice goal remains active.
+
+### Literature follow-up after the failed local-residual mechanism
+
+- Jiang, Yang, Hou and Wei, *L2G: A Simple Local-to-Global Knowledge Transfer
+  Framework for Weakly Supervised Semantic Segmentation*, CVPR 2022,
+  pp. 16886-16896,
+  https://openaccess.thecvf.com/content/CVPR2022/papers/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.pdf.
+  L2G uses attention from multiple local crops to teach a global network
+  online. The transferable mechanism is coordinate-aligned local-to-global
+  distillation; the failed BTXRD practice of independently classifying local
+  bags and directly adding their peaks is rejected.
+- Wang, Zhang, Kan, Shan and Chen, *Self-Supervised Equivariant Attention
+  Mechanism for Weakly Supervised Semantic Segmentation (SEAM)*, CVPR 2020,
+  pp. 12275-12284,
+  https://openaccess.thecvf.com/content_CVPR_2020/papers/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.pdf.
+  SEAM constrains CAMs from transformed views and refines them through pixel
+  correlation. BTXRD should transfer overlap-coordinate cross-scale/view
+  equivariance; the current same-grid horizontal-flip penalty is empirically
+  too weak and is not retained as the sole spatial constraint.
+- Ru, Zheng, Zhan and Du, *Token Contrast for Weakly-Supervised Semantic
+  Segmentation (ToCo)*, CVPR 2023, pp. 3093-3102,
+  https://openaccess.thecvf.com/content/CVPR2023/papers/Ru_Token_Contrast_for_Weakly-Supervised_Semantic_Segmentation_CVPR_2023_paper.pdf.
+  ToCo uses diverse intermediate ViT tokens to supervise final-token relations
+  and contrasts uncertain local regions with global semantics. The relevant
+  adaptation is contrastive relational guidance from frozen RAD-DINO layers
+  4/8/12, rather than treating a saturated MIL scalar as spatial evidence.
+- Ru, Zhan, Yu and Du, *Learning Affinity From Attention: End-to-End
+  Weakly-Supervised Semantic Segmentation With Transformers (AFA)*, CVPR 2022,
+  pp. 16846-16855,
+  https://openaccess.thecvf.com/content/CVPR2022/papers/Ru_Learning_Affinity_From_Attention_End-to-End_Weakly-Supervised_Semantic_Segmentation_With_Transformers_CVPR_2022_paper.pdf.
+  AFA learns symmetric semantic affinity from transformer attention using
+  reliable foreground/background/ignore pseudo-relations, then propagates
+  seeds. For BTXRD, raw frozen attention or unrestricted propagation remains
+  rejected; only confidence-masked, local-window affinity anchored to frozen
+  global seeds is a candidate.
+- Together with the previously recorded Chen--Sun survey, WACV small-object
+  analysis, GLAM, WeCLIP and medical anomaly-guidance evidence, these papers
+  support a distinct next probe: frozen-global-seed-anchored, coordinate-aware
+  local-to-global transfer with cross-view equivariance and intermediate-token
+  affinity/contrast. It must receive a new prediction-first protocol and gate
+  before any validation prediction. It must not reuse the failed local scalar
+  confidence as a fusion gate, retune v4 after GT, or train a consumer before
+  passing that gate.
+
