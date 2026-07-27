@@ -3083,3 +3083,87 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   dense maps and the checkpoint remain outside Git in the isolated temporary
   download. Test remains locked.
 
+## 2026-07-27 - Small-tumor bottleneck diagnosis and literature-grounded next mechanism
+
+- Post-freeze validation diagnostics explain why the multi-layer decoder can
+  improve medium/large while failing small. Small tumors have mean/median GT
+  area ratios `0.001748 / 0.000942` (median approximately 96 pixels at
+  320x320), with range `0.000068--0.009473`. The frozen RAD-DINO input is
+  448x448 with 14-pixel patches, and the decoder predicts first on a 64x64
+  grid before interpolation. A median small tumor therefore occupies only a
+  few decoder cells; the smallest tumors are sub-cell at this resolution.
+  This resolution mismatch is a project inference from frozen BTXRD geometry,
+  not a claim copied from the papers below.
+- A fixed post-freeze percentile diagnostic confirms that thresholding alone
+  cannot solve the missing spatial signal. Small mean Dice rises from
+  `0.01445152` at p90 to `0.05822649` at p99.75, but complete misses worsen
+  from `35/94` to `71/94`. Even an oracle choosing the best member of the
+  precomputed p90/p95/p97/p98/p99/p99.25/p99.5/p99.75/p99.9 grid per image
+  reaches only `0.07040377` mean Dice and retains `35` complete misses. These
+  values are diagnostic only and are not adopted as a new metric or tuned
+  prediction rule.
+- Coarse saliency is nevertheless useful for ROI proposal. A deterministic
+  GLAM-style greedy window diagnostic on the already frozen maps, without
+  using GT to choose the windows, found that three 160x160 top-mass windows
+  intersect a small tumor in `92/94` cases and fully contain it in `85/94`;
+  six windows reach `93/94` and `88/94`. Thus the next mechanism should reuse
+  the global map for proposal/context but perform local high-resolution weak
+  learning inside the selected regions.
+- Literature sources consulted on 2026-07-27 and their concrete influence:
+  - Chen and Sun, *Weakly-supervised Semantic Segmentation with Image-level
+    Labels: From Traditional Models to Foundation Models*, ACM Computing
+    Surveys 57(5), 2025, DOI `10.1145/3707447`,
+    https://doi.org/10.1145/3707447. This survey supports organizing the
+    design as image-label localization, seed/refinement and optional
+    pseudo-mask consumer stages; it does not justify reading training masks.
+  - Mun, Lee, Uh, Choe and Byun, *Small Objects Matters in
+    Weakly-supervised Semantic Segmentation*, WACV 2024, pp. 413-422, DOI
+    `10.1109/WACV57701.2024.00048`,
+    https://openaccess.thecvf.com/content/WACV2024/papers/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.pdf.
+    The paper shows that aggregate WSSS metrics hide poor small-instance
+    behavior. It weights pixels inversely by pseudo-mask connected-component
+    size and then uses elastic weight consolidation (EWC) to preserve the
+    previously learned large-object task. For BTXRD, the directly transferable
+    principle is explicit per-size evaluation and preservation of the frozen
+    global path; component weighting is deferred until trustworthy local
+    pseudo-components exist, because applying it to current noisy components
+    could amplify false positives.
+  - Liu, Shen, Wu, Chledowski, Fernandez-Granda and Geras,
+    *Weakly-supervised High-resolution Segmentation of Mammography Images for
+    Breast Cancer Diagnosis*, PMLR 143:268-285, 2021, PMID `35088055`,
+    https://pmc.ncbi.nlm.nih.gov/articles/PMC8791642/ and
+    https://arxiv.org/abs/2106.07049. Their GLAM framework uses a coarse global
+    saliency map to select high-resolution patches, trains a local module with
+    bag-level image labels/top-fraction pooling, and fuses global/local maps.
+    It explicitly targets medical ROIs at or below 1% of image area. GLAM used
+    six patches during training for recall and fewer at inference to limit
+    false positives; this is the primary basis for the proposed BTXRD 6-train,
+    3-inference ROI contract.
+  - Zhang, Yu, Wei, Zhao and Xiao, *Frozen CLIP: A Strong Backbone for
+    Weakly Supervised Semantic Segmentation (WeCLIP)*, CVPR 2024,
+    pp. 3796-3806,
+    https://openaccess.thecvf.com/content/CVPR2024/papers/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.pdf.
+    WeCLIP supports retaining a frozen foundation backbone, training a light
+    spatial decoder and refining frozen guidance dynamically. The BTXRD design
+    transfers that mechanism to frozen RAD-DINO rather than copying CLIP or
+    using text prompts.
+  - Yang et al., *Anomaly-guided weakly supervised lesion segmentation on
+    retinal OCT images*, Medical Image Analysis 94:103139, 2024, DOI
+    `10.1016/j.media.2024.103139`,
+    https://pmc.ncbi.nlm.nih.gov/articles/PMC11016376/. The method combines
+    normal/anomaly evidence, self-attention and iterative refinement to improve
+    small medical-lesion localization. It motivates retaining normal-image
+    dense suppression and confidence calibration in the local MIL branch,
+    while avoiding its modality-specific GAN synthesis.
+- The selected next probe is therefore a controlled global-local transfer:
+  freeze the audited v3 global checkpoint, use its saliency only to propose
+  content-aligned 160x160 ROIs, extract frozen RAD-DINO local tokens, and train
+  one shared local decoder with image-level MIL BCE/top-fraction pooling,
+  dense normal suppression, positive sparsity and flip consistency. Training
+  uses six ROI instances per bag; prediction uses three. A confidence-gated,
+  sparse local residual is fused into the unchanged global map. No size label,
+  segmentation mask or validation GT enters proposal, training or prediction;
+  prediction must freeze before the separate GT evaluator. Test remains
+  locked and no pseudo-mask consumer is authorized unless the predeclared
+  small-improvement and medium/large-preservation gate passes.
+
