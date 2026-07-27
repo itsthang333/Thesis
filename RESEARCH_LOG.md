@@ -2950,4 +2950,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `rad_dino_multilayer_soft_region_probe_val_v1_wrapper_audit_v2.json`.
   The existing heartbeat remains attached to version 1 until it is terminal;
   no duplicate monitor or second heavy job is created.
+- An independent post-download auditor is committed at
+  `0fea848256b8286ab80ad6eb7aa0d584c4c7c0ed`. Auditor SHA-256 is
+  `e36d3a661e0e495877dc583f070f037d71a2f8be2f0f3383cd83c1f5c8062ca4`;
+  its focused test SHA-256 is
+  `12d905040ede17fdfce8dcc8c256b05251f6b8f35cb9061bc623ce7c3547eb54`.
+  It verifies wrapper/protocol/Git-source bindings, training evidence and all
+  371 physical map hashes/ranges before importing validation GT, then
+  independently recomputes every per-image metric, complete miss, 10,000
+  complete-group bootstrap comparison and gate and requires exact agreement
+  with cloud artifacts. Eleven combined decoder/evaluator/auditor tests pass;
+  the auditor contains no test-split call.
 
