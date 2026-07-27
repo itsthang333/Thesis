@@ -2905,4 +2905,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   no validation GT has been read for this candidate, `consumer_trained=false`,
   and `test_evaluated=false`. The kernel may launch only after this wrapper
   audit is committed and pushed.
+- After the wrapper evidence was committed and pushed at `f9d6fe0`, private
+  Tesla-T4 Kaggle kernel
+  `itsthang333/btxrd-rad-dino-multi-layer-soft-region-probe-v1` version 1 was
+  launched and entered `RUNNING`. Kaggle normalized `multilayer` in the
+  requested metadata ID to `multi-layer` in the authoritative URL slug and
+  rejected only the optional hyphenated tags; neither changed the uploaded
+  wrapper or scientific contract. Exactly one five-minute heartbeat,
+  `theo-d-i-rad-dino-multilayer-soft-region`, follows this exact slug. No
+  duplicate monitor, competing heavy local job, consumer training or test
+  evaluation was created.
 
