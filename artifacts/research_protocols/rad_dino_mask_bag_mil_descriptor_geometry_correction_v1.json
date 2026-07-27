@@ -1,0 +1,103 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_correction_v1",
+  "frozen_utc": "2026-07-27T17:44:33Z",
+  "status": "PREDECLARED_AFTER_SOURCE_GEOMETRY_AUDIT_AND_BEFORE_ANY_CORRECTED_PREDICTION_OR_V6_TERMINAL_RESULT_WAS_DELIVERED_TO_THE_MAIN_TASK",
+  "scientific_role": "implementation-only coordinate correction of the mask-conditioned RAD-DINO descriptor extraction in rad_dino_mask_bag_mil_probe_val_v1; it does not change candidate masks, MIL losses, architecture, training horizon, output rule, evaluator, gate or operational goals",
+  "source_commit": "3cec3bac021088a036482854a64e4619b7af384f",
+  "parent_protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1.json",
+    "canonical_lf_sha256": "a8f3101be461a1bdc007f442f60e8e3b50ccd6abf015f81f084c004829b7c4b9"
+  },
+  "bug_evidence": {
+    "candidate_gallery_frame": {
+      "source": "project/datasets/common.py::make_classification_transform and project/generate_pseudo_masks.py",
+      "operation": "the classifier/CAM image is resized directly to 320x320; SAM proposals are returned/resampled to the same 320x320 direct-resize frame"
+    },
+    "rad_dino_frame": {
+      "source": "project/run_rad_dino_multilayer_soft_region_probe.py::_raw_and_normalized_square",
+      "operation": "the original radiograph is centered in a max(width,height) square, then resized to 448x448; tokens are a 32x32 grid in this square frame"
+    },
+    "incorrect_v6_operation": {
+      "source": "parent source commit 1567c2a05e77fcb5f514f9094f9e12791d8dd882",
+      "operation": "project/run_rad_dino_mask_bag_mil_probe.py::_pool_one_bag passed the direct-resize 320x320 candidate mask directly to mask_pool_descriptors, which area-resampled it as if it already occupied the complete square token frame"
+    },
+    "affected_population_evidence": {
+      "only_square_images": 9,
+      "validation_images": 371,
+      "aspect_ratio_lt_0_90": 322,
+      "aspect_ratio_lt_0_75": 183,
+      "interpretation": "the coordinate difference is widespread and is most damaging when a small proposal is shifted or compressed onto a few 32x32 tokens"
+    },
+    "prediction_metric_boundary": "The v6 WTA output remains an original frozen 320x320 proposal, so its post-freeze Dice is a valid deployable prediction metric. The bug compromises the causal test of correctly mask-conditioned RAD-DINO descriptors; it is not permission to hide or replace the v6 terminal result."
+  },
+  "single_changed_variable": {
+    "name": "candidate-mask coordinate projection before RAD-DINO mask pooling",
+    "old": "direct area interpolation from the 320x320 unpadded image frame to the 32x32 square token grid",
+    "new": [
+      "map every output-square sample center through the exact source content_box and padded_side returned by the frozen square-pad transform",
+      "sample the direct-resize proposal continuously with bilinear grid sampling and zero outside the content box",
+      "use four samples per token axis, then retain the existing area interpolation to the 32x32 token grid",
+      "construct the original square-frame proposal once and horizontally flip that projected square mask for the flip-TTA descriptor"
+    ],
+    "unchanged": [
+      "all train and validation rows, group IDs and image labels",
+      "classifier, SAM and RAD-DINO checkpoints",
+      "candidate generation, candidate ordering and complete galleries",
+      "candidate metadata and minimum-grid-mass rule",
+      "RAD-DINO layers, random projection, descriptor content and scorer",
+      "16 final-only epochs, seed, optimizer and every loss weight",
+      "mean original/flip candidate-logit TTA",
+      "winner-take-all original proposal output",
+      "all 371 predictions, complete misses, evaluator, bootstrap and gate",
+      "consumer_trained=false and test_evaluated=false"
+    ]
+  },
+  "source_hashes_canonical_git_lf": {
+    "project/models/rad_dino_mask_bag_mil.py": "a8a82d4c0b96e55827b9614f3a071cb26add23499268d94f412154576a4927a5",
+    "project/run_rad_dino_mask_bag_mil_probe.py": "a36d539eb168c4a219f7c0ab352ecce1f7bc5d9f14926456aa8bf4dc54242105",
+    "tests/test_rad_dino_mask_bag_mil.py": "243f257dbdaced8ec059e88dab03370a5737c157aae68dce7f670486149a396f",
+    "tests/test_rad_dino_mask_bag_mil_probe.py": "606a6a4b1097fe41e7dae56812e8e7347c552e6fcc9993cd2968a81c27b37c66"
+  },
+  "required_tests": [
+    "square-content projection places a direct-resize mask only inside the exact square content box",
+    "horizontal flip is applied after square projection and respects asymmetric one-pixel padding",
+    "fractional small-mask support survives projection and token-grid area pooling",
+    "original and flip retained-candidate indices remain identical",
+    "every unchanged image-only, T4x2, prediction-freeze and GT-import-boundary test passes"
+  ],
+  "execution_and_decision": {
+    "launch_condition": "first complete and audit mask-bag MIL v6; a corrected rerun is eligible only if the v6 selected predictor does not already meet every operational goal and the immutable candidate oracle still meets every operational goal",
+    "heavy_compute": "Kaggle only",
+    "accelerator": "two real Tesla T4 GPUs",
+    "monitor": "one separate-task monitor at ten-minute cadence; no main-task polling",
+    "prediction_first": "freeze source/protocol/split/checkpoints/candidate manifests/final checkpoint/history/all 371 physical maps and manifests before validation segmentation GT import",
+    "comparison": "corrected-minus-v6 paired complete-group bootstrap with 10000 replicates, plus both arms versus the promoted flip-TTA baseline",
+    "gate": "identical all-checks-required gate from the parent protocol; no post-result relaxation",
+    "consumer": "forbidden unless the corrected source also satisfies the separately frozen post_prediction_consumer_entry_gate_v1",
+    "test": "locked"
+  },
+  "forbidden": [
+    "changing any candidate proposal or using validation GT to route projection",
+    "tuning oversampling, interpolation, content box, loss, epoch, seed, threshold or gate after seeing corrected GT metrics",
+    "suppressing the v6 result because the geometry flaw was found",
+    "training a consumer before the prediction-first and consumer-entry gates pass",
+    "reading BTXRD test"
+  ],
+  "literature_context": [
+    {
+      "citation": "Choe et al., Evaluating Weakly Supervised Object Localization Methods Right, CVPR 2020",
+      "url": "https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html",
+      "role": "evaluation and model-development protocols must be separated; the correction is frozen before corrected predictions"
+    },
+    {
+      "citation": "Yang and Gong, Foundation Model Assisted Weakly Supervised Semantic Segmentation, WACV 2024",
+      "url": "https://openaccess.thecvf.com/content/WACV2024/html/Yang_Foundation_Model_Assisted_Weakly_Supervised_Semantic_Segmentation_WACV_2024_paper.html",
+      "role": "SAM proposal geometry and class-semantic evidence are complementary only when their spatial coordinates are aligned"
+    },
+    {
+      "citation": "Mun et al., Small Objects Matters in Weakly-Supervised Semantic Segmentation, WACV 2024",
+      "url": "https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html",
+      "role": "motivates explicit preservation and audit of small-object fractional support"
+    }
+  ]
+}

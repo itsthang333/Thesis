@@ -4452,3 +4452,56 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   unchanged/worse small complete misses. T4x2 runs one independent proposal
   source per GPU when feasible; no DDP is used for independent models.
 
+## 2026-07-28 - Mask-bag descriptor square-geometry defect and correction freeze
+
+- A source audit performed while v6 was still isolated behind its separate
+  ten-minute monitor found a second coordinate-frame defect. The candidate
+  gallery is generated from the classification transform
+  `Resize((320,320))` in `project/datasets/common.py`; SAM masks are likewise
+  resampled to that direct-resize frame in `project/generate_pseudo_masks.py`.
+  RAD-DINO instead consumes the original radiograph centered in a
+  `max(width,height)` square and then resized to 448, through
+  `_raw_and_normalized_square`. The v6 runner passed each direct-resize mask
+  directly to `mask_pool_descriptors`, treating it as if it occupied the
+  complete square token grid.
+- This mismatch affects far more than edge cases: only 9/371 validation images
+  are square, 322/371 have aspect ratio below 0.90 and 183/371 below 0.75.
+  Small lesions are especially sensitive because their median support was
+  already only about 3.86 cells at 64x64; v6 uses a still coarser 32x32 token
+  grid. The WTA output is nevertheless an original frozen 320x320 SAM mask, so
+  v6's post-freeze Dice remains a valid deployable prediction result. The
+  defect invalidates a clean causal interpretation of v6 as correctly
+  mask-conditioned RAD-DINO evidence; it does not authorize hiding v6.
+- Implementation commit
+  `3cec3bac021088a036482854a64e4619b7af384f` adds the continuous coordinate
+  transform. Proposal sample centers are mapped through the exact
+  `content_box/padded_side`, sampled bilinearly with zeros in square padding at
+  four samples per token axis, and then area-pooled by the unchanged
+  descriptor code. Flip descriptors now flip the already projected square
+  mask, preserving possible one-pixel asymmetric padding. Candidate masks,
+  ordering, metadata, model, losses, 16-epoch final-only rule, WTA output,
+  evaluator and gates are unchanged.
+- Before any corrected prediction or v6 terminal result was delivered to the
+  main task, correction protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_correction_v1.json`
+  was frozen (canonical-LF SHA-256
+  `1e2fa9904583d487114e1c5b028781946ec3c94e2a10d079b536cd4a7f097ecd`).
+  It allows a corrected T4x2 rerun only after the v6 audit, only if v6 has not
+  already met all operational goals and the immutable proposal oracle still
+  meets every goal. Corrected-minus-v6 and both arms versus baseline use the
+  same complete-group paired bootstrap and unchanged all-checks gate.
+- Local `py_compile` passed. Focused pytest reported `5 passed, 1 skipped`;
+  the tensor geometry test module was skipped because the local Python
+  environment lacks Torch, so the complete Torch test must pass on Kaggle
+  before any corrected heavy run.
+- Literature context recorded in the protocol: Choe et al., *Evaluating
+  Weakly Supervised Object Localization Methods Right*, CVPR 2020,
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html;
+  Yang and Gong, *Foundation Model Assisted Weakly Supervised Semantic
+  Segmentation*, WACV 2024,
+  https://openaccess.thecvf.com/content/WACV2024/html/Yang_Foundation_Model_Assisted_Weakly_Supervised_Semantic_Segmentation_WACV_2024_paper.html;
+  and Mun et al., *Small Objects Matters in Weakly-Supervised Semantic
+  Segmentation*, WACV 2024,
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+  Their metrics are not transferred to BTXRD.
+
