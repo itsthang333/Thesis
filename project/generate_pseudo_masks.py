@@ -65,6 +65,32 @@ from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
 
+def parse_device_spec(value: str) -> str:
+    """Accept generic or explicitly indexed CUDA devices."""
+    normalized = value.strip().lower()
+    if normalized in {"auto", "cpu", "cuda"}:
+        return normalized
+    if normalized.startswith("cuda:") and normalized[5:].isdigit():
+        return normalized
+    raise argparse.ArgumentTypeError(
+        "device must be one of auto, cpu, cuda, or an indexed CUDA device "
+        "such as cuda:0"
+    )
+
+
+def validate_runtime_device(device: torch.device, option: str) -> None:
+    """Fail clearly when an explicitly selected CUDA device is unavailable."""
+    if device.type != "cuda":
+        return
+    if not torch.cuda.is_available():
+        raise RuntimeError(f"{option} {device} requested but CUDA is unavailable")
+    if device.index is not None and device.index >= torch.cuda.device_count():
+        raise RuntimeError(
+            f"{option} {device} requested but only "
+            f"{torch.cuda.device_count()} CUDA device(s) are available"
+        )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate BTXRD pseudo masks via LayerCAM + SAM")
     parser.set_defaults(dataset="btxrd")
@@ -171,10 +197,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sam-checkpoint", type=Path, required=True,
                         help="Path to an attached local SAM checkpoint. Runtime downloads are disabled "
                         "so that the run is reproducible and works with Kaggle Internet off.")
-    parser.add_argument("--sam-device", type=str, default="auto", choices=["auto", "cpu", "cuda"],
-                        help="Device for SAM. 'auto' follows the classifier; use 'cpu' on 4GB GPUs so DenseNet and SAM do not compete for VRAM.")
-    parser.add_argument("--classifier-device", type=str, default="auto", choices=["auto", "cpu", "cuda"],
-                        help="Device for DenseNet/LayerCAM. Set cpu when SAM must use the GPU on a 4GB card.")
+    parser.add_argument(
+        "--sam-device",
+        type=parse_device_spec,
+        default="auto",
+        help=(
+            "Device for SAM. 'auto' follows the classifier; indexed CUDA devices "
+            "such as cuda:1 are supported for multi-GPU execution."
+        ),
+    )
+    parser.add_argument(
+        "--classifier-device",
+        type=parse_device_spec,
+        default="auto",
+        help=(
+            "Device for DenseNet/LayerCAM. Use cpu for constrained GPUs or an "
+            "indexed CUDA device such as cuda:0 for multi-GPU execution."
+        ),
+    )
     parser.add_argument("--target-columns", type=str, default=None,
                         help="BTXRD target column; defaults to 'tumor'")
     parser.add_argument("--image-size", type=int, default=512)
@@ -1125,10 +1165,8 @@ def main() -> None:
     default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = default_device if args.classifier_device == "auto" else torch.device(args.classifier_device)
     sam_device = device if args.sam_device == "auto" else torch.device(args.sam_device)
-    if device.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError("--classifier-device cuda requested but CUDA is unavailable")
-    if sam_device.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError("--sam-device cuda requested but CUDA is unavailable")
+    validate_runtime_device(device, "--classifier-device")
+    validate_runtime_device(sam_device, "--sam-device")
     canonical_profile = {
         BTXRD_BEST_PIPELINE.name: BTXRD_BEST_PIPELINE,
         BTXRD_HYBRID_PIPELINE.name: BTXRD_HYBRID_PIPELINE,

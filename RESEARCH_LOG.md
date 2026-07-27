@@ -3743,3 +3743,40 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prediction freeze, the BTXRD test split remains locked, and no consumer is
   authorized before the predeclared gate passes.
 
+### Mask-bag MIL version 3 indexed-device CLI error
+
+- Version 3 reached terminal `ERROR` after the prescribed one-check-per-five-
+  minute monitoring cadence. The sole heartbeat
+  `theo-d-i-rad-dino-mask-bag-mil` was deleted before logs were retrieved.
+  Downloaded evidence is isolated under
+  `tmp/kaggle/rad_dino_mask_bag_mil_probe_val_v1_error_v3_20260727`.
+- Provenance passed exactly: wrapper SHA-256
+  `3f902bb9f7c26992bc8aaa00e093483266f06300e15e82d886a12688336b5c5e`,
+  base protocol `a8f3101b...`, correction v1 `cbcb28c2...`, correction v2
+  `5c611c99...`, checkout commit `d6c60665...`, reconstructed split
+  `85511ee1...`, and all three RAD-DINO files including physical weights
+  `dbfb9f54...`. Execution-log SHA-256 is
+  `206726cfd3239132708e7c653760040928b1b134826551146f62db7494f4157b`;
+  a compact direct-console traceback excerpt hashes to
+  `e2ec7710fc7a2078e67f392713d5a5597c5648c11cd677e6c20b1f1741ee225e`.
+- Both preflights now pass: `17/17` focused tests and the exact expected whole
+  suite `199 passed, 1 skipped`. Failure occurs at argument parsing of the
+  first train candidate-generation command: the wrapper intentionally routes
+  DenseNet/LayerCAM to `cuda:0` and SAM to `cuda:1`, but
+  `generate_pseudo_masks.py` restricted each CLI option to the literal choices
+  `auto`, `cpu`, or `cuda`. `argparse` rejected `cuda:0` before dataset/model
+  construction with exit status 2.
+- Classification: implementation-only multi-GPU device-routing interface
+  error. RAD-DINO download completed, but no `train_candidates`,
+  `val_candidates`, optimizer, prediction freeze, validation prediction,
+  evaluation or scientific metric exists. Validation GT and BTXRD test were
+  not read; no consumer was trained.
+- The bounded repair accepts only `auto`, `cpu`, `cuda`, or `cuda:<nonnegative
+  integer>` for the existing two device arguments, converts them through the
+  already-used `torch.device`, and fails clearly if an explicit index is beyond
+  `torch.cuda.device_count()`. It does not change candidate construction,
+  model weights, image preprocessing, training, prediction, evaluation, gate,
+  cohort or supervision semantics. A parser integration test locks the exact
+  `cuda:0`/`cuda:1` route, invalid specifications are rejected, and unavailable
+  indices fail closed.
+
