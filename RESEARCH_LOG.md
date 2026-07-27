@@ -2816,3 +2816,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   unchanged. The post-experiment quantitative addendum is stored at
   `artifacts/literature_reviews/wsss_supervision_gap_post_experiment_addendum_2026-07-27.md`.
 
+## 2026-07-27 - Multi-layer soft-region RAD-DINO source preparation
+
+- The rejected fixed geodesic configuration is not reused. The next
+  prediction-first source changes the trainable representation and supervision
+  together: frozen RAD-DINO patch tokens from layers `4/8/12` are projected
+  by the seed-42 frozen `768-to-128` map and fused by a lightweight spatial
+  decoder. This transfers the intermediate-token mechanism motivated by ToCo
+  and the frozen multi-layer decoder mechanism from WeCLIP without importing
+  CLIP text supervision or natural-image pseudo masks.
+- The previous affinity decoder used exactly the top 1% teacher ranks as
+  foreground for every positive image. The new soft-region loss instead uses
+  the absolute empirical train-normal calibration: teacher evidence above
+  `0.90` receives a linearly increasing foreground weight, evidence below
+  `0.50` receives a linearly increasing background weight, and the interval
+  remains unlabeled. Foreground support is therefore variable-area and tied
+  to normal-tail evidence rather than validation lesion size or a per-image
+  rank quota. Normal training images retain exact dense background
+  supervision.
+- Decoder affinity is filtered by frozen final-layer token cosine and refines
+  foreground and background evidence symmetrically for three steps before a
+  soft ratio is formed. Training combines image-level alpha-12 SmoothMax BCE,
+  soft-region BCE, confident soft-pair affinity BCE and aligned horizontal
+  flip consistency with fixed weights `1.0/1.0/0.1/0.2`. Prediction averages
+  original and aligned horizontal-flip decoder probabilities. No validation
+  epoch, threshold, support fraction or loss weight is selected.
+- Focused local checks pass in the Torch research environment: all five new
+  files compile; the full loss backpropagates through every decoder parameter;
+  absolute calibration produces different foreground counts for different
+  maps; bidirectional refinement is bounded; flip alignment is exact; and
+  normal-image gradients are dense background gradients. AST/order checks
+  confirm that the runner has no segmentation-dataset or test access and the
+  evaluator verifies the physical prediction freeze before importing
+  validation GT. Heavy training has not run, `consumer_trained=false`, and
+  `test_evaluated=false`. The source will be committed before an immutable
+  protocol binds its hashes and scientific gate.
+
