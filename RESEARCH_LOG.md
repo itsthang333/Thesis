@@ -3510,9 +3510,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   from normal images are reliable negative instances, while only the detached
   current winner in a positive bag is treated as positive and the uncertain
   remainder is ignored. A horizontally flipped, coordinate-aligned version of
-  the same proposal receives a score-consistency penalty. The final map is the
-  winner-take-all SAM shape multiplied by the image-bag probability. This is a
-  selector probe only; it cannot launch a pseudo-mask consumer automatically.
+  the same proposal receives a score-consistency penalty. At frozen validation
+  inference, candidate logits are the arithmetic mean of original and aligned
+  horizontal-flip logits, followed by the same SmoothMax MIL pool. The final
+  map is the winner-take-all SAM shape multiplied by the image-bag probability.
+  This is a selector probe only; it cannot launch a pseudo-mask consumer
+  automatically.
 - Seibold et al., *Self-Guided Multiple Instance Learning for Weakly
   Supervised Thoracic Disease Classification and Localization in Chest
   Radiographs*, ACCV 2020, official CVF record:

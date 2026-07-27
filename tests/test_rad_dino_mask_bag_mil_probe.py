@@ -27,6 +27,8 @@ def test_runner_has_image_only_surface_and_t4x2_encoder_parallelism() -> None:
     assert "nn.DataParallel(encoder, device_ids=[0, 1]" in source
     assert 'default=81' in source
     assert 'args.maximum_candidates != 81' in source
+    assert "logits = 0.5 * (original_logits + flipped_logits)" in source
+    assert '"candidate_logit_tta": "mean_original_aligned_horizontal_flip"' in source
     assert '"validation_gt_read": False' in source
     assert '"consumer_trained": False' in source
     assert '"test_evaluated": False' in source

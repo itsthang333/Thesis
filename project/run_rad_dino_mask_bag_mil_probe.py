@@ -39,6 +39,7 @@ from models.rad_dino_mask_bag_mil import (
     image_bag_loss,
     mask_pool_descriptors,
     self_guided_instance_loss,
+    smooth_mil_pool,
     winner_take_all_map,
 )
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
@@ -398,9 +399,25 @@ def write_validation_predictions(
         descriptors = torch.from_numpy(
             np.asarray(record["descriptors"], dtype=np.float32)
         )[None].to(device)
+        flipped_descriptors = torch.from_numpy(
+            np.asarray(record["flipped_descriptors"], dtype=np.float32)
+        )[None].to(device)
+        if flipped_descriptors.shape != descriptors.shape:
+            raise RuntimeError("Original/flip validation descriptor shapes differ")
         valid = torch.ones(descriptors.shape[:2], dtype=torch.bool, device=device)
         with torch.inference_mode():
-            logits, bag_logits = model.score_descriptors(descriptors, valid)
+            original_logits, _original_bag_logits = model.score_descriptors(
+                descriptors, valid
+            )
+            flipped_logits, _flipped_bag_logits = model.score_descriptors(
+                flipped_descriptors, valid
+            )
+            logits = 0.5 * (original_logits + flipped_logits)
+            bag_logits = smooth_mil_pool(
+                logits,
+                valid,
+                temperature=model.config.bag_temperature,
+            )
         manifest_row = candidate_rows[Path(str(record["image_id"])).stem]
         masks, _metadata, _sam_scores, _fallback_flags = _load_candidate_payload(
             candidate_root,
@@ -425,6 +442,7 @@ def write_validation_predictions(
                 "candidate_count": len(kept),
                 "selected_candidate_index": original_winner,
                 "selected_candidate_logit": float(logits[0, local_winner].item()),
+                "candidate_logit_tta": "mean_original_aligned_horizontal_flip",
                 "bag_logit": float(bag_logits[0].item()),
                 "bag_probability": float(torch.sigmoid(bag_logits[0]).item()),
                 "selected_area_ratio": float(masks[original_winner].mean()),
