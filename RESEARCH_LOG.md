@@ -4189,3 +4189,51 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   if version-6 oracle passes but selected localization fails; use proposal
   repair if oracle fails; add nothing if the full gate passes.
 
+### High-resolution proposal-only repair feasibility audit
+
+- A separate implementation-readiness addendum for the proposal-support branch
+  is recorded at
+  `artifacts/literature_reviews/high_resolution_proposal_repair_feasibility_addendum_2026-07-28.md`,
+  SHA-256
+  `8d9ad6e76298dae16510c0b0a72a3c06396df25ccbe11005ca3e41a7bd78b20a`.
+  It changes neither version 6 nor any current prediction and reads no BTXRD
+  segmentation annotation/test data.
+- The design explicitly incorporates the rejected global-local v4 evidence
+  rather than repeating it. Its frozen global ROIs intersected `93/94` small
+  tumors, but the learned local branch achieved small AP `0.00516770`, p90
+  Dice `0.00507460` and argmax hit `0/94` despite median small confidence
+  `0.98055` and training BCE falling from `0.64210` to `0.17340`. Therefore the
+  new branch forbids a learned local pixel decoder, local bag-confidence gate
+  and residual fusion.
+- The conditional hypothesis is narrower: use the frozen global map only to
+  select deterministic high-resolution windows, crop original radiograph
+  pixels, generate class-agnostic SAM multimask candidates, map them back
+  through exact inverse geometry, and append them to the old immutable
+  gallery. The same window/prompt path is applied to tumor and normal images;
+  random normal-only windows are rejected because they create a
+  label-correlated generation shortcut.
+- This transfers resolution hierarchy from Liu et al., GLAM,
+  https://proceedings.mlr.press/v143/liu21b.html; local-detail transfer from
+  Jiang et al., L2G,
+  https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html;
+  transform alignment from Wang et al., SEAM,
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html;
+  small-object zoom consistency from Hwang, Oh and Choe,
+  https://doi.org/10.1016/j.neucom.2025.130494; and SAM-based weak seeding from
+  Kweon and Yoon, *From SAM to CAMs*, CVPR 2024,
+  https://openaccess.thecvf.com/content/CVPR2024/html/Kweon_From_SAM_to_CAMs_Exploring_Segment_Anything_Model_for_Weakly_CVPR_2024_paper.html,
+  plus Yang and Gong, *Foundation Model Assisted WSSS*, WACV 2024,
+  https://openaccess.thecvf.com/content/WACV2024/html/Yang_Foundation_Model_Assisted_Weakly_Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+- Evaluation is deliberately two-stage. P1 freezes the expanded gallery before
+  GT and tests raw best-single-candidate support, complete misses and 10,000
+  paired bootstrap replicates; it is never a deployed result. Only a P1 pass
+  can authorize the family-balanced relational selector as P2. Retaining every
+  old candidate makes union-oracle Dice mathematically nondecreasing per image,
+  while old payload hashes must remain exact.
+- For T4x2, the branch no longer needs a classifier forward pass. The proposed
+  execution replicates one hash-verified SAM checkpoint on each T4 and
+  deterministically shards whole images/ROIs across devices, with real-work
+  preflights and deterministic manifest merge. Heavy generation remains
+  Kaggle-only. The branch is not implemented or launched before terminal v6
+  evidence activates it.
+
