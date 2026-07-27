@@ -4726,7 +4726,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - A broader mechanism synthesis is frozen at
   `artifacts/literature_reviews/small_medium_wsss_combination_strategy_2026-07-28.md`
   (canonical-LF SHA-256
-  `39baf53f91532e16dd418b4bae2b536a8cde45d41aec6901ae6e19e8e70bb443`).
+  `f61b58f820a3e4e4a96e26560f5fa47721f41d34385d7c559ecd969ebb96d4ec`).
   It separates the likely bottlenecks: small is most exposed to geometry,
   sub-token proposal-mass attenuation and insufficient local resolution;
   medium has the highest selector recovery burden and is primarily a
@@ -4774,6 +4774,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   label is applied after MIL bag aggregation. Weighted-mean normalization,
   crop-view evidence and relational selection have separate audited insertion
   points and may not silently alter the frozen v3 arm.
+- Proposal-specific RAD-DINO crops were rejected as the preferred local-view
+  implementation because the frozen 81-candidate cap would require up to 82
+  encoder views per image before flip augmentation. The bounded alternative
+  is a fixed global-plus-four-overlapping-tile bank: every proposal uses the
+  local tile retaining the greatest projected mask mass, with deterministic
+  tie-breaking, and retains the global descriptor. This is exactly five views
+  per image, 16.4x fewer than the worst-case proposal-specific view count.
+  Tile geometry and local-validity rules remain deliberately unfrozen until a
+  train-only/image-label and compute preflight; they cannot be tuned using
+  subgroup Dice. The future arm must preserve gallery/order/WTA masks and
+  audit square-frame coverage plus original/flip tile alignment.
 - No Kaggle status poll, wrapper mutation, GT read, consumer training or new
   experiment occurred during this literature pass. The operational goal and
   all v6/v3 gates remain unchanged pending terminal evidence.

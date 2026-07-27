@@ -93,6 +93,38 @@ Source: Wang et al., *Self-Supervised Equivariant Attention Mechanism for
 Weakly Supervised Semantic Segmentation*, CVPR 2020:
 https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html
 
+#### Resource-aware local view
+
+Encoding one crop per proposal is rejected as the default design. With the
+frozen cap of 81 candidates, it would require up to 82 RAD-DINO views per
+image (global plus every proposal crop), before flip augmentation. It also
+makes runtime depend strongly on bag size.
+
+The preferred bounded design is a fixed **global-plus-four-tile bank**:
+
+- retain the current 448-square global view;
+- cover the same square frame with four deterministic overlapping tiles;
+- resize each tile to the same frozen 448 input;
+- for every proposal, choose the tile retaining the greatest fraction of its
+  projected mask mass, with a fixed row-major tie break;
+- pool the local descriptor in that tile and concatenate it with the unchanged
+  global descriptor, retained-mass fraction and a local-validity bit;
+- retain the global-only descriptor when a proposal has no valid local support.
+
+This costs exactly five encoder views per image rather than up to 82, a
+16.4-fold reduction in the worst-case view count relative to proposal-specific
+crops. Tile side length/overlap, local validity and descriptor fusion remain
+unfrozen design variables; they must be fixed before any validation-GT
+evaluation using train-only/image-label and compute evidence. They may not be
+tuned by subgroup Dice.
+
+The global branch protects medium/large extent, while the tile branch increases
+the effective token density for small candidates. The proposal geometry and
+final WTA mask are unchanged; only evidence used to rank the same candidates
+changes. A future wrapper must audit original/flip tile alignment, exact
+coverage of the square frame, deterministic best-tile assignment and identical
+candidate ordering.
+
 ### Stage C — relational selection for medium
 
 If the corrected gallery oracle passes all goals but WTA remains below the
@@ -185,10 +217,11 @@ have precise boundaries:
   protocol-bound mode, not silently replace the frozen v3 behavior.
 - `project/run_rad_dino_mask_bag_mil_probe.py::build_descriptor_cache`
   projects each direct-resize candidate into the square encoder frame and
-  caches original/flip descriptors. A crop-view arm belongs here: derive the
-  crop solely from each frozen candidate mask, encode it with frozen RAD-DINO,
-  restore candidate order, and concatenate/fuse descriptors before the
-  selector. Candidate masks and final WTA maps remain unchanged.
+  caches original/flip descriptors. A local-view arm belongs here: construct a
+  fixed global-plus-four-tile batch, project masks into each tile, select the
+  greatest-retained-mass tile deterministically, restore candidate order and
+  concatenate/fuse descriptors before the selector. Candidate masks and final
+  WTA maps remain unchanged.
 - `RadDinoMaskBagMIL.score_descriptors` is an independent selector boundary.
   Relational MIL belongs here or in a separate selector class operating on
   the same immutable descriptor cache. It must not regenerate proposals or
