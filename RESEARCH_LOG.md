@@ -4823,3 +4823,46 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - No Kaggle status poll beyond the single separate-task snapshot, source
   mutation, GT read, test access or experiment launch occurred.
 
+## 2026-07-28 - SKELEX musculoskeletal-foundation transfer audit
+
+- A new source/provenance audit is recorded at
+  `artifacts/literature_reviews/skelex_btxrd_transfer_audit_2026-07-28.md`
+  (canonical-LF SHA-256
+  `6acec816f1f0aab0d42b3445856fce87744ef82fbc8363d1868c35ee8c0d4056`).
+  SKELEX is a ViT-MAE model pretrained without manual labels on 1,296,540
+  musculoskeletal radiographs. The authors explicitly excluded public
+  datasets from pretraining to avoid external-evaluation leakage. Primary
+  sources:
+  https://doi.org/10.1038/s41746-026-02826-9 and
+  https://arxiv.org/pdf/2602.03076.
+- The public Hugging Face artifact
+  https://huggingface.co/skhoha/SKELEX was inspected read-only at revision
+  `368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e`. It exposes
+  `ViTMAEForPreTraining`, ViT-Large `24x1024`, 224 input, patch 16, 75% masking
+  and a 1,318,230,232-byte safetensors checkpoint with LFS SHA-256
+  `81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8`.
+  The model card is nearly empty and the license metadata is
+  CC-BY-NC-ND-4.0, so use must not redistribute modified weights or infer an
+  unsupported intended use.
+- A crucial transfer limitation was identified in the paper's Methods. Its
+  BTXRD anomaly-map study cropped the anatomical region containing the tumor
+  to suppress text/metal/clothing artifacts and compared it with
+  anatomy-matched normal regions. That tumor-containing crop is localization
+  information unavailable to image-label-only WSSS and is forbidden here.
+  Consequently, the published BTXRD anomaly visualization is not deployable
+  evidence for our full-image pipeline.
+- Two non-bundled conditional arms remain admissible. Under
+  oracle-pass/selection-fail, use the frozen SKELEX encoder as a descriptor
+  replacement on the immutable geometry-v3 gallery. Under oracle-fail, test
+  the paper's generic ten-mask reconstruction error only on the complete
+  square-padded image, with deterministic masks, no anatomy/tumor crop, exact
+  inverse geometry and map freeze before GT. The latter must first audit
+  artifact/border concentration, mask coverage and normal-image false
+  activation without GT.
+- SKELEX's 14x14 token grid is coarser than RAD-DINO's 32x32 grid, so its
+  musculoskeletal semantics may help medium selection while harming small
+  spatial support. Descriptor replacement, reconstruction proposals, tiling,
+  relational MIL and pooling changes must remain separate causal arms.
+- No checkpoint was downloaded, source/protocol was mutated, Kaggle job was
+  launched, validation GT was opened or test was accessed.
+
