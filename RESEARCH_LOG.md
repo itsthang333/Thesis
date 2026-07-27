@@ -4505,3 +4505,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
   Their metrics are not transferred to BTXRD.
 
+### Geometry-correction v2: exclude square padding from local context
+
+- A second source-level review before any corrected heavy run found that v1
+  aligned proposal support but still allowed its radius-two local-context ring
+  to include black square-padding tokens. This can create an aspect/border
+  shortcut and contaminate proposal-minus-context contrast, particularly for a
+  small candidate near the edge of the real radiograph.
+- Commit `1a6a9ae3b481b2ecc022bd0dc3b53520ca9ada83` projects an all-one source
+  mask through the same content-box transform to obtain fractional real-image
+  occupancy. Both proposal occupancy and its dilated context are multiplied by
+  this validity map. Original/flip paths flip both projected proposal and
+  content validity. A tensor test injects value `100` only in padding tokens
+  and requires the inside/context means to remain at the real-content value
+  `2`, with zero contrast.
+- Future execution is now governed by
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_correction_v2.json`
+  (canonical-LF SHA-256
+  `9931a349195f25b1968c2d735bec203a9fe1a5b110eccb91f2c8a51d94979756`).
+  It supersedes correction v1 only for future execution; v1 remains immutable
+  provenance. V2 still changes only descriptor coordinate handling relative
+  to running v6. Proposals, model/loss/seed/epochs, evaluator, gates, consumer
+  lock and test lock remain unchanged. Local `py_compile` and the non-Torch
+  focused suite pass (`5 passed, 1 skipped`); the complete Torch suite remains
+  a mandatory Kaggle preflight.
+
