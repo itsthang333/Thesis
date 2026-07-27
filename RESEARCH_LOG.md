@@ -3710,3 +3710,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   JSON files and scientific hashes remain unchanged. No production auditor,
   model, candidate generation, training, metric, gate or goal is modified.
 
+### Mask-bag MIL version 3 launch after correction addendum v2
+
+- The final fixture repair passed 10 focused historical-contract tests,
+  `compileall`, and `git diff --check`. A local whole-suite attempt could not
+  collect because the bundled Windows runtime lacks `torch` and `sklearn`;
+  this is an already-known local environment limitation, so the unchanged
+  whole-repository suite remains a fail-closed Kaggle preflight rather than a
+  locally claimed pass. Repair commit
+  `ea7376ba155c164ea6520d944927b42c82d1c333` is pushed.
+- Correction addendum v2 was frozen before the rerun at
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1_wrapper_correction_v2.json`,
+  SHA-256
+  `5c611c993893ae0957e99e0dde5df33d73e5199dfaad4bf80aa1591aa477f6e1`,
+  commit `d6c60665acf3671e099e45a3bdb82988885bf43d`. It binds the exact
+  version-2 error evidence, correction-v1 hash, repair commit and expected
+  version-3 full-suite result `199 passed, 1 skipped`; the base scientific
+  protocol remains authoritative and unchanged.
+- Kaggle accepted private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1`, version 3, at
+  `2026-07-27T13:56:50Z`. Wrapper SHA-256 is
+  `3f902bb9f7c26992bc8aaa00e093483266f06300e15e82d886a12688336b5c5e`;
+  unchanged metadata SHA-256 is
+  `3086b5fa9bc1598831c45efd48a42dc8447447b290f5bc0c48d5b300e221caed`.
+  The wrapper independently verifies the base protocol plus both correction
+  addenda and checks out `d6c60665...`; the scientific source remains pinned
+  to `1567c2a0...`. The accelerator contract remains T4 x2, including a real
+  convolution on each device and RAD-DINO encoder `DataParallel` over both.
+- Exactly one five-minute heartbeat was created only after Kaggle acceptance:
+  `theo-d-i-rad-dino-mask-bag-mil`. No status poll was performed after launch.
+  Heavy compute remains Kaggle-only; validation GT is still inaccessible until
+  prediction freeze, the BTXRD test split remains locked, and no consumer is
+  authorized before the predeclared gate passes.
+
