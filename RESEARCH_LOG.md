@@ -4294,3 +4294,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   https://proceedings.mlr.press/v202/kim23a.html. Both are mechanistic
   transfers; neither reported metric is converted into a BTXRD Dice claim.
 
+## 2026-07-28 - Image-level model selection and cross-fit compute feasibility
+
+- A conditional compute/protocol analysis is recorded at
+  `artifacts/literature_reviews/image_level_model_selection_and_crossfit_compute_addendum_2026-07-28.md`
+  (canonical-LF SHA-256
+  `b0da8fd8a71844a100c4add7aa41d96caa55f79a34a50a82ceb32398b2a23d7f`).
+  It addresses a second leakage path: choosing a segmentation checkpoint from
+  spatial validation Dice would silently exceed the image-label-only training
+  claim. Choe et al., *Evaluating Weakly Supervised Object Localization
+  Methods Right*, CVPR 2020,
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html,
+  is cited for this protocol failure mode.
+- The first conditional consumer must therefore use a fixed horizon and final
+  EMA checkpoint. Image-level AUROC, normal/positive separation, output area,
+  transform consistency and teacher agreement are collapse diagnostics only;
+  they cannot be presented as evidence that an epoch has the best spatial
+  Dice. All 371 predictions are frozen before the single spatial evaluation.
+- Five-fold out-of-fold train-teacher generation is practical if the frozen
+  encoder runs once. For approximately `174,657` train and `20,965` validation
+  candidates, the complete original/flip float16 1,156-D descriptor cache is
+  about `862.65 MiB`; logits from six heads require only about `4.48 MiB`.
+  The current selector has about `331,529` parameters (`~1.27 MiB` float32).
+  Therefore descriptor extraction/serialization dominates, not fold-head
+  training.
+- The fastest admissible T4x2 plan shards immutable RAD-DINO descriptor
+  extraction across two identical model replicas, then schedules three of the
+  six independent fold/full heads per GPU over the shared read-only cache.
+  This stage is not DDP because the heads must not synchronize. A later single
+  consumer model may use two-process DDP. No implementation, Kaggle launch,
+  validation mask or test access occurred.
+
