@@ -4530,3 +4530,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   focused suite pass (`5 passed, 1 skipped`); the complete Torch suite remains
   a mandatory Kaggle preflight.
 
+### Geometry-correction v3: preserve fractional proposal boundary once
+
+- A final mathematical audit before any corrected execution found that v2
+  multiplied the projected proposal by fractional content occupancy even
+  though bilinear projection with zero padding had already applied that
+  boundary support. At the image boundary a weight of `0.5` could therefore
+  become `0.25`, disproportionately threatening the small candidates the
+  correction is intended to preserve.
+- Commit `cb2c269394959ce04377a48b51971f1304f96c05` removes this double
+  attenuation. The projected proposal is used exactly once; fractional
+  content validity masks only the dilated context ring. A regression test
+  requires a projected boundary proposal of mass `0.5` to remain valid and
+  retain weight `0.5`. The parent's minimum-grid-mass and denominator rules
+  remain unchanged, so this is still a coordinate-only correction.
+- Future execution is governed by final correction protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_correction_v3.json`
+  (canonical-LF SHA-256
+  `3248b37b8f60da2b3c7b6e4009f76967876bef6d498ac781e29f779a57351a91`).
+  V1/v2 remain immutable provenance but are forbidden for a future job. The
+  protocol also records that candidate manifests without physical NPZ
+  payloads are insufficient for reuse; absent a direct hash-verifiable
+  payload mount, the unchanged gallery must be regenerated.
+
