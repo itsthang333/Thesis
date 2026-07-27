@@ -4696,7 +4696,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   safe memory and at least 30% steady-state speedup. Otherwise the sequential
   generator remains.
 - PyTorch primary documentation is recorded for DataParallel batch sharding
-  and CUDA multiprocessing: 
+  and CUDA multiprocessing:
   https://docs.pytorch.org/docs/stable/generated/torch.nn.DataParallel.html and
   https://docs.pytorch.org/docs/stable/notes/multiprocessing.html. The latter
   requires spawn/forkserver for CUDA and warns against CPU oversubscription.
