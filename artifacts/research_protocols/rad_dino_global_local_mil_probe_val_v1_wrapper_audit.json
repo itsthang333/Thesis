@@ -1,0 +1,49 @@
+{
+  "audit_id": "rad_dino_global_local_mil_probe_val_v1_wrapper_audit",
+  "status": "PRELAUNCH_PASS",
+  "scientific_source_commit": "9a62bb7b91632f624b3d188d1fba499c3170e046",
+  "checkout_commit": "0c7d371ab81f4fa0e4ea325ff8f1a3bbc4a90bd3",
+  "protocol_sha256": "f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572",
+  "wrapper_sha256": "00022389d6bd24bf4732a5e0dcf893fa281b97312adc2a3d0e9c7204d3477dc8",
+  "kernel_metadata_sha256": "3a96403dbc825f0a8a6f731cb5b345095ff90a87f99a92ab6c28b61bd3c79399",
+  "kernel_slug": "itsthang333/btxrd-rad-dino-global-local-mil-probe-v1",
+  "direct_kernel_source": "itsthang333/btxrd-rad-dino-multi-layer-soft-region-probe-v1",
+  "global_bindings": {
+    "checkpoint_sha256": "33ff0188894553ac5936511cd2aecf1369388665d569ff636cd06e1f7f09642f",
+    "prediction_freeze_sha256": "8d6225af82ab826992f93c799ad0d62844b5b9fbdb0a584dac77f45febb8c0c2",
+    "prediction_manifest_sha256": "3647fefb9046f1982d20510eb2a0d5a8ce8ecaa91c85e0922c4b9a66e6b2fc63",
+    "evaluation_per_image_sha256": "84b3dca01096a504cd1f9725752c314f0e63c69ddbfaee39e58c8d130e35eb2e"
+  },
+  "checks": {
+    "protocol_json_valid": true,
+    "protocol_source_hashes_match_checkout": true,
+    "wrapper_py_compile": true,
+    "wrapper_ruff": true,
+    "focused_tests": "13 passed",
+    "full_tests_before_protocol": "232 passed",
+    "real_global_checkpoint_load": true,
+    "real_global_map_count_and_hashes": 371,
+    "real_global_map_shape": [320, 320],
+    "direct_mount_discovery_excludes_thesis_source": true,
+    "runner_has_no_segmentation_dataset_import": true,
+    "runner_has_no_annotation_path": true,
+    "runner_has_no_test_split": true,
+    "prediction_freeze_precedes_gt_evaluator": true,
+    "pre_gt_wrapper_audit_precedes_gt_evaluator": true,
+    "local_only_arm_is_diagnostic_not_selectable": true,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "execution_order": [
+    "checkout and hash-bind source/protocol/split",
+    "discover one exact direct global v3 kernel output",
+    "install pinned runtime and run focused tests",
+    "download and hash-bind frozen RAD-DINO",
+    "build image-label-only local feature cache and train local MIL decoder",
+    "freeze checkpoint, proposals, calibration and 371 fused plus 371 local maps",
+    "verify all no-GT physical artifacts",
+    "delete only ephemeral feature cache",
+    "run separate validation-GT evaluator and 10000 paired bootstrap gate",
+    "retain consumer_trained=false and test_evaluated=false"
+  ]
+}

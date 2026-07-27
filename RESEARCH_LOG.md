@@ -3167,3 +3167,42 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   locked and no pseudo-mask consumer is authorized unless the predeclared
   small-improvement and medium/large-preservation gate passes.
 
+## 2026-07-27 - Global-local MIL v1 protocol and prelaunch audit
+
+- The literature-grounded small-tumor mechanism is implemented in
+  `project/models/rad_dino_global_local_mil.py`,
+  `project/run_rad_dino_global_local_mil_probe.py` and
+  `project/evaluate_rad_dino_global_local_mil_probe.py`. Source/evaluator
+  commit `9a62bb7b91632f624b3d188d1fba499c3170e046` is pushed. The full suite had
+  `232` passing tests before protocol freeze; the final focused model/runner/
+  evaluator suite has `13` passing tests, and all new files pass `py_compile`
+  and Ruff.
+- Protocol
+  `artifacts/research_protocols/rad_dino_global_local_mil_probe_val_v1.json`
+  was frozen before any new prediction at SHA-256
+  `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`
+  and committed at `0c7d371ab81f4fa0e4ea325ff8f1a3bbc4a90bd3`. It includes the full
+  bibliographic/URL basis already recorded above, source hashes, the
+  image-level-only supervision contract, fixed 6-train/3-inference 160x160 ROI
+  geometry, losses, fusion, metrics, bootstrap and all-checks-required gate.
+- The gate requires absolute fused Dice p90 overall/small/medium/large of at
+  least `0.145/0.025/0.217/0.518`, small p99 at least `0.060`, a strictly
+  positive lower 95% paired-bootstrap bound for small p90, no negative mean
+  p90 delta in any overall/small/medium/large stratum, and fewer than `35`
+  small p90 complete misses. Local-only maps are diagnostic and cannot replace
+  the predeclared fused primary arm after GT is seen.
+- The Kaggle wrapper binds checkout `0c7d371...`, scientific source
+  `9a62bb7...`, protocol `f5941a20...a572`, and the direct v3 global
+  checkpoint/freeze/manifest/per-image hashes
+  `33ff0188...642f / 8d6225af...c0c2 / 3647fefb...fc63 /
+  84b3dca0...eb2e`. It explicitly excludes any `thesis_source` evidence
+  duplicate when discovering the one direct kernel-output mount. Wrapper and
+  metadata SHA-256 are
+  `00022389d6bd24bf4732a5e0dcf893fa281b97312adc2a3d0e9c7204d3477dc8`
+  and
+  `3a96403dbc825f0a8a6f731cb5b345095ff90a87f99a92ab6c28b61bd3c79399`.
+  A real no-GT local smoke audit loaded all 371 global maps and the 364,324-
+  parameter frozen global checkpoint. Static wrapper audit is
+  `PRELAUNCH_PASS`; no new prediction, consumer training or test evaluation
+  has occurred at this point.
+
