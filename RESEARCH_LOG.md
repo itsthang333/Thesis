@@ -2944,12 +2944,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   checkout commit `648a439a74c7f5087eb9812d98f00380c2455e62`, corrected scientific source
   `bb767b05f665886d27d7fb50abd8701fa44d2da6` and amended protocol
   `4fc754c9...1bef5`. Static source/order/metadata audit remains
-  `PRELAUNCH_PASS`; wrapper SHA-256 is
-  `f4564e5130b744c7eea2b8e3208b68874fa46572f464f047246f28bf7c2203b7`.
+  `PRELAUNCH_PASS`. After version 1 exposed that its nested execution log was
+  kept only under ephemeral `/kaggle/temp`, the wrapper-only observability
+  path was hardened to stream subprocess output to the direct Kaggle log and
+  retain the nested log, wrapper and protocol in partial output on failure.
+  The final version-2 wrapper SHA-256 is
+  `40b87ecc5b7838efd996fb13a7ca9e8b12aa951d8012a5e6e59d4368639dd69f`.
   Evidence is stored in
   `rad_dino_multilayer_soft_region_probe_val_v1_wrapper_audit_v2.json`.
   The existing heartbeat remains attached to version 1 until it is terminal;
   no duplicate monitor or second heavy job is created.
+- Version 1 reached terminal `ERROR` after `614.23` seconds and the sole
+  heartbeat was deleted before output inspection. Direct Kaggle logs show the
+  prediction runner subprocess returned exit code 1; the nested traceback was
+  unavailable because the v1 wrapper redirected it only to ephemeral
+  `/kaggle/temp`. The retained partial output contains only
+  `teacher_metadata.json`, proving failure occurred after feature/teacher cache
+  construction but before any checkpoint, validation map, prediction freeze,
+  validation-GT evaluator or gate.
+- Partial teacher evidence is internally coherent: `1493` normal and `1488`
+  positive training images, layers `4/8/12`, projection dimension/seed
+  `128/42`, variable positive foreground counts `0/154/951` for
+  minimum/median/maximum, exactly one positive image without foreground
+  weight, `validation_gt_read=false` and `test_evaluated=false`. A full-shape
+  CPU batch-8 forward/backward smoke test passes, so the exact Kaggle runner
+  failure remains unobserved rather than guessed. No version-1 scientific
+  result is accepted.
 - An independent post-download auditor is committed at
   `0fea848256b8286ab80ad6eb7aa0d584c4c7c0ed`. Auditor SHA-256 is
   `e36d3a661e0e495877dc583f070f037d71a2f8be2f0f3383cd83c1f5c8062ca4`;

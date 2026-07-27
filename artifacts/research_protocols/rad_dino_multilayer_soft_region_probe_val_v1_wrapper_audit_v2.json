@@ -1,8 +1,8 @@
 {
   "status": "PRELAUNCH_PASS",
   "kernel_version": 2,
-  "implementation_amendment": "bootstrap ci95 list compatibility only",
-  "wrapper_sha256": "f4564e5130b744c7eea2b8e3208b68874fa46572f464f047246f28bf7c2203b7",
+  "implementation_amendment": "bootstrap ci95 list compatibility plus wrapper-only subprocess log streaming and failure retention",
+  "wrapper_sha256": "40b87ecc5b7838efd996fb13a7ca9e8b12aa951d8012a5e6e59d4368639dd69f",
   "metadata_sha256": "2424aa7110116343d8a9d1211be3891e9fc55ebf39a35d9ba78a808a0fc88c68",
   "protocol_sha256": "4fc754c9b9046aff0220d94b54022facbaa679924590bb119e4957af4ff1bef5",
   "checkout_commit": "648a439a74c7f5087eb9812d98f00380c2455e62",
@@ -16,6 +16,8 @@
     "post-GT contract verification"
   ],
   "scientific_contract_change": false,
+  "nested_subprocess_log_streamed": true,
+  "partial_failure_evidence_retained": true,
   "consumer_trained": false,
   "test_evaluated": false
 }
