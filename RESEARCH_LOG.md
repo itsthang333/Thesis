@@ -3026,6 +3026,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   order remains prediction, no-GT physical freeze verification, separate GT
   evaluator, post-GT verification. Version 3 has not launched at the time of
   this freeze.
+- After the version-3 audit was committed and pushed at `ec00214`, kernel
+  version 3 was launched on the same private Tesla-T4 slug and entered
+  `RUNNING`. Exactly one five-minute heartbeat,
+  `theo-d-i-rad-dino-multilayer-soft-region`, follows version 3. No competing
+  heavy job, duplicate monitor, consumer training or test evaluation exists.
 - An independent post-download auditor is committed at
   `0fea848256b8286ab80ad6eb7aa0d584c4c7c0ed`. Auditor SHA-256 is
   `e36d3a661e0e495877dc583f070f037d71a2f8be2f0f3383cd83c1f5c8062ca4`;
