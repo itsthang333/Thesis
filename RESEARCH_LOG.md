@@ -3780,3 +3780,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `cuda:0`/`cuda:1` route, invalid specifications are rejected, and unavailable
   indices fail closed.
 
+### Mask-bag MIL version 4 launch after indexed-device correction
+
+- The bounded implementation repair is commit
+  `f66f585318d54ace73b6602dd895a608c0d68c79`. Correction addendum v3 was
+  frozen before rerun at
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1_wrapper_correction_v3.json`,
+  SHA-256
+  `b655fb806e69138684aa26b02a255acacf91a6b2e145e26320a8275aeffdfc30`,
+  commit `d8baabc0ef3cc919af847fc89a68f46b850969c0`. It authorizes one and
+  only one base-source hash override, `project/generate_pseudo_masks.py` =
+  `2adc57cd...`, and binds the new device-routing test `d38f9999...`.
+- Kaggle accepted private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1`, version 4, at
+  `2026-07-27T14:08:41Z`. Wrapper SHA-256 is
+  `00a438637b98bc9541379f99263a3caa2d8245d142cd67542add721ff5699c3b`;
+  metadata remains `3086b5fa...`. The expected focused/full preflights are
+  `23 passed` and `205 passed, 1 skipped`; any mismatch fails before candidate
+  generation. Classifier/LayerCAM remains explicitly on `cuda:0`, SAM on
+  `cuda:1`, and later RAD-DINO encoding remains `DataParallel([0,1])`.
+- Exactly one new five-minute heartbeat was created after version-4 acceptance:
+  `theo-d-i-rad-dino-mask-bag-mil`. No launch-time status poll was performed.
+  Validation GT remains inaccessible before prediction freeze, BTXRD test is
+  locked, and no consumer is authorized before all prediction-first gate checks
+  pass.
+
