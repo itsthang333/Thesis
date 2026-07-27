@@ -1,0 +1,233 @@
+{
+  "protocol_id": "rad_dino_global_local_mil_probe_val_v1",
+  "frozen_utc": "2026-07-27T18:20:00+07:00",
+  "status": "PREDECLARED_BEFORE_NEW_PREDICTIONS",
+  "scientific_source_commit": "9a62bb7b91632f624b3d188d1fba499c3170e046",
+  "question": "Can a high-resolution local RAD-DINO MIL branch recover small bone tumors while a frozen audited global branch preserves medium and large localization?",
+  "supervision_contract": {
+    "training_spatial_supervision": "none",
+    "allowed_training_labels": [
+      "frozen train image-level tumor/normal label"
+    ],
+    "allowed_training_inputs": [
+      "clean train radiographs",
+      "frozen RAD-DINO weights and spatial tokens",
+      "frozen global v3 decoder checkpoint",
+      "frozen global saliency generated without segmentation masks"
+    ],
+    "forbidden_before_prediction_freeze": [
+      "train segmentation masks",
+      "validation segmentation masks",
+      "validation size subgroup labels",
+      "test images or labels",
+      "manual ROI, box, point, scribble or mask annotation"
+    ],
+    "validation_gt_use": "read-only evaluation after both fused and local-only prediction maps, checkpoint, manifests and prediction_freeze.json are immutable",
+    "test_locked": true,
+    "consumer_trained": false
+  },
+  "cohort": {
+    "split_manifest": "artifacts/data_audit/split_manifest.csv",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "train": 2981,
+    "validation": 371,
+    "validation_tumor": 184,
+    "validation_normal": 187,
+    "validation_subgroups_evaluation_only": {
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    }
+  },
+  "frozen_global_source": {
+    "kaggle_kernel": "itsthang333/btxrd-rad-dino-multi-layer-soft-region-probe-v1",
+    "kernel_version": 3,
+    "mount_contract": "direct immutable kernel output; no copied or rediscovered duplicate evidence tree",
+    "checkpoint_sha256": "33ff0188894553ac5936511cd2aecf1369388665d569ff636cd06e1f7f09642f",
+    "prediction_freeze_sha256": "8d6225af82ab826992f93c799ad0d62844b5b9fbdb0a584dac77f45febb8c0c2",
+    "prediction_manifest_sha256": "3647fefb9046f1982d20510eb2a0d5a8ce8ecaa91c85e0922c4b9a66e6b2fc63",
+    "evaluation_per_image_sha256": "84b3dca01096a504cd1f9725752c314f0e63c69ddbfaee39e58c8d130e35eb2e",
+    "global_checkpoint_trainable": false,
+    "global_maps_trainable": false
+  },
+  "diagnostic_basis": {
+    "small_gt_area_ratio_mean": 0.001748,
+    "small_gt_area_ratio_median": 0.000942,
+    "global_decoder_grid": "64x64 before interpolation to 320x320",
+    "fixed_threshold_grid_oracle_small_mean_dice": 0.07040377,
+    "fixed_threshold_grid_oracle_small_complete_misses": 35,
+    "frozen_global_160px_roi_coverage": {
+      "top3_intersect": "92/94",
+      "top3_fully_contain": "85/94",
+      "top6_intersect": "93/94",
+      "top6_fully_contain": "88/94"
+    },
+    "interpretation": "global saliency is adequate for proposing local regions but its 64x64 prediction grid is inadequate for direct masks of many small tumors"
+  },
+  "method": {
+    "encoder": {
+      "name": "microsoft/rad-dino",
+      "trainable": false,
+      "input_size": 448,
+      "patch_size": 14,
+      "hidden_layers": [4, 8, 12],
+      "local_projection": "seeded Gaussian 768->64",
+      "projection_seed": 42
+    },
+    "global_branch": {
+      "checkpoint": "frozen v3 multi-layer soft-region decoder",
+      "trainable": false,
+      "use_on_train_positive": "generate content-aligned coarse saliency for ROI proposal",
+      "use_on_train_normal": "none; normal ROI windows are deterministic seeded random windows",
+      "use_on_validation": "load and hash-verify all 371 already frozen global maps"
+    },
+    "roi_proposals": {
+      "geometry": "content-aligned 320x320 coordinates mapped proportionally to the original radiograph before local crop padding",
+      "window_size": 160,
+      "stride": 8,
+      "maximum_pairwise_iou": 0.25,
+      "positive_train_selection": "six greedy highest-saliency-mass diverse windows from frozen global map",
+      "normal_train_selection": "six deterministic seeded-random diverse windows",
+      "validation_selection": "three greedy highest-saliency-mass diverse windows from each frozen global map",
+      "train_patches": 6,
+      "inference_patches": 3
+    },
+    "local_decoder": {
+      "shared_across_all_patches": true,
+      "hidden_dim": 128,
+      "affinity_dim": 64,
+      "decoder_scale": 2,
+      "native_local_map_grid": "64x64 per 160x160 ROI",
+      "bag_pool": "mean of top 1% valid logits across all patches and pixels",
+      "loss": {
+        "image_level_bce": 1.0,
+        "dense_normal_softplus": 0.5,
+        "positive_probability_sparsity": 0.05,
+        "horizontal_flip_consistency": 0.2
+      },
+      "optimizer": "AdamW",
+      "epochs": 12,
+      "batch_size_images": 4,
+      "learning_rate": 0.0003,
+      "weight_decay": 0.0001,
+      "seed": 42
+    },
+    "train_normal_confidence_calibration": {
+      "cohort": 1493,
+      "statistic": "p99 of local bag probability over clean-train normal images",
+      "validation_distribution_used": false
+    },
+    "prediction": {
+      "local_tta": "mean of original and aligned horizontal flip",
+      "local_stitch": "bilinear ROI resize with arithmetic mean in overlap",
+      "local_invalid_and_nonradiograph_pixels": 0.0,
+      "primary_arm": "frozen global map plus confidence-gated sparse local residual",
+      "local_only_arm": "diagnostic only; cannot be selected as primary after GT",
+      "local_keep_fraction_within_covered_radiograph": 0.02,
+      "residual_weight": 0.35,
+      "confidence_gate": "sigmoid((local_bag_probability - train_normal_p99) / 0.10)",
+      "global_values_never_decreased_before percentile ranking": true,
+      "output_size": 320
+    }
+  },
+  "prediction_freeze": {
+    "required_before_gt": [
+      "local checkpoint hash",
+      "training proposal manifest hash",
+      "training history hash",
+      "train-normal confidence calibration hash",
+      "371 fused map hashes",
+      "371 local-only map hashes",
+      "prediction manifest hash",
+      "prediction_freeze.json hash",
+      "run_manifest.json"
+    ],
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "evaluation": {
+    "primary_arm": "global-local fused",
+    "diagnostic_arm": "local-only",
+    "fixed_metrics": [
+      "image-level AUROC from fused raw foreground p99 over all 371 images",
+      "per-tumor pixel AP",
+      "per-tumor pixel AUROC",
+      "argmax hit",
+      "saliency mass inside GT",
+      "Dice at p90, p95, p97 and p99",
+      "complete misses at every Dice threshold"
+    ],
+    "baseline": "frozen multi-layer soft-region global v3 evaluation/per_image.csv",
+    "comparison": "paired complete-group bootstrap, 10000 replicates, seed family 20260901",
+    "no_metric_substitution": true
+  },
+  "gate": {
+    "all_checks_required": true,
+    "absolute_minimums": {
+      "image_level_auroc_from_raw_p99": 0.75,
+      "overall_dice_p90": 0.145,
+      "small_dice_p90": 0.025,
+      "small_dice_p99": 0.06,
+      "medium_dice_p90": 0.217,
+      "large_dice_p90": 0.518
+    },
+    "relative_requirements": {
+      "small_dice_p90_paired_ci95_low": "> 0",
+      "mean_dice_p90_delta_overall_small_medium_large": ">= 0 for every stratum",
+      "small_p90_complete_misses": "< 35"
+    },
+    "pass_action": "authorize only design of a separately predeclared size-balanced pseudo-mask consumer; do not train automatically",
+    "fail_action": "reject this exact global-local configuration without post-hoc retuning"
+  },
+  "operational_goal_unchanged": {
+    "overall": 0.34024039,
+    "small": 0.17895493,
+    "medium": 0.51244178,
+    "large": 0.49370336
+  },
+  "literature_basis": [
+    {
+      "citation": "Chen and Sun, Weakly-supervised Semantic Segmentation with Image-level Labels: From Traditional Models to Foundation Models, ACM Computing Surveys 57(5), 2025",
+      "doi": "10.1145/3707447",
+      "url": "https://doi.org/10.1145/3707447",
+      "transferred_principle": "separate image-label localization, refinement and consumer stages"
+    },
+    {
+      "citation": "Mun et al., Small Objects Matters in Weakly-supervised Semantic Segmentation, WACV 2024, 413-422",
+      "doi": "10.1109/WACV57701.2024.00048",
+      "url": "https://openaccess.thecvf.com/content/WACV2024/papers/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.pdf",
+      "transferred_principle": "per-size evaluation and preservation of large-object knowledge; component weighting deferred until pseudo-components are trustworthy"
+    },
+    {
+      "citation": "Liu et al., Weakly-supervised High-resolution Segmentation of Mammography Images for Breast Cancer Diagnosis, PMLR 143:268-285, 2021",
+      "pmid": "35088055",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8791642/",
+      "transferred_principle": "global proposal, local high-resolution image-label MIL, six train patches and fewer inference patches"
+    },
+    {
+      "citation": "Zhang et al., Frozen CLIP: A Strong Backbone for Weakly Supervised Semantic Segmentation, CVPR 2024, 3796-3806",
+      "url": "https://openaccess.thecvf.com/content/CVPR2024/papers/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.pdf",
+      "transferred_principle": "frozen foundation backbone plus lightweight spatial decoder and refinement"
+    },
+    {
+      "citation": "Yang et al., Anomaly-guided weakly supervised lesion segmentation on retinal OCT images, Medical Image Analysis 94:103139, 2024",
+      "doi": "10.1016/j.media.2024.103139",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11016376/",
+      "transferred_principle": "normal/anomaly evidence for small medical-lesion localization"
+    }
+  ],
+  "source_hashes": {
+    "project/run_rad_dino_global_local_mil_probe.py": "7a897ffbbdd037771be83e30efcbb50a5bea4062e1fd154756fef78f1b898dd7",
+    "project/evaluate_rad_dino_global_local_mil_probe.py": "e6f9ebce5a0735e83b2b1cb1d01194c78b29be3b04265f3d829e9163bcea732d",
+    "project/models/rad_dino_global_local_mil.py": "a9cc9b1888e644f304d71f61694d77c13b30bad9d84cd7a920e9967f43e31e7a",
+    "project/run_rad_dino_multilayer_soft_region_probe.py": "3e016ad4c5d31befa89d1ae266480b31c739358ed85744447c6aa25e40522bfa",
+    "project/evaluate_rad_dino_multilayer_soft_region_probe.py": "9eae91da9753e20d5f84fc5575b31ce0b6b2c95ad54f902fcf0ea96e02775f08",
+    "project/models/rad_dino_multilayer_soft_region_decoder.py": "d93986255d31e3b65e7bb1f2176079a67fcda35d10629737decf916a5048d481",
+    "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+    "project/models/nominal_patch_memory.py": "a7fbf3e4042623b1b2817f8bb02a87072db55c21bb5b9380cc259aca3a7dd526",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/compare_nominal_patch_memory_arms.py": "4ec0b65c33d47dda20317b94d577489038bf87c8c235bb03d6d9a1d0497a035e",
+    "tests/test_rad_dino_global_local_mil.py": "8aa2c03d54a164b1b4aee3f308c0e956ec1afc39cb61f393f80f0d59f2cd7476"
+  }
+}
