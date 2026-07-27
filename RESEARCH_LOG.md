@@ -3304,3 +3304,54 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Terminal audit must still verify that the runtime device is actually H100
   from the wrapper's CUDA preflight/provenance before making any speed claim.
 
+## 2026-07-27 - Global-local MIL v1 version 3 terminal error and T4 x2 correction
+
+- Terminal evidence disproved the earlier hardware assumption: although the
+  CLI accepted `--accelerator NvidiaH100`, version 3 actually ran on
+  `Tesla P100-PCIE-16GB`. The account owner confirmed that only Tesla P100 and
+  T4 x2 are available. Therefore no H100 speed claim is retained. Direct
+  execution log SHA-256 is
+  `d8e6771ae53789a6d3cc6d047ed8755803a17ce4eb72bc7656a6e83c007bae90`;
+  its CUDA preflight records PyTorch `2.5.1+cu121`, capability `sm_60`, the
+  expected architecture support and a successful real convolution.
+- Version 3 then failed before the first proposal row, prediction or GT read:
+  the one-pass greedy selector could not extend its highest-mass 160x160
+  starting window to six windows with pairwise IoU at most `0.25`. A complete
+  geometry audit of all `441` stride-8 candidates found that the six-window
+  contract is feasible, but `367/441` individual first positions cannot occur
+  in any complete six-window set. Thus the protocol geometry was not
+  impossible; the one-pass algorithm was incomplete.
+- Scientific source commit
+  `bc34a892cbdbe2eb0a8b3df9a365426d54e07af1` corrects selection without
+  relaxing any scientific value. Positive candidates retain descending
+  frozen-global saliency-mass order; normal candidates retain their seeded
+  random order. Deterministic exact backtracking now returns the
+  lexicographically first complete feasible set in that order, retaining a
+  candidate only if the requested count can still be completed. Counts remain
+  six train/three validation, with the same 160 window, stride 8 and IoU 0.25.
+- The same source is prepared for the account-available T4 x2 shape. Frozen
+  RAD-DINO local forwards return only projected layer-4/8/12 32x32x64 tokens,
+  which `torch.nn.DataParallel` splits across both GPUs and gathers on device
+  0. Six training ROIs therefore split 3+3; the single-image global proposal
+  branch remains on device 0, and the small trainable decoder remains
+  scientifically unchanged. Float32 projection is explicitly preserved after
+  FP16 encoder inference.
+- The correction is frozen before any new prediction in
+  `artifacts/research_protocols/rad_dino_global_local_mil_probe_val_v1_t4x2_correction_v1.json`
+  at SHA-256
+  `3d948dd11ac46c09ce84e8de04034255a11be0182bfb17b44216c8d4c2172bf8`.
+  It inherits the immutable base protocol
+  `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`
+  and changes neither supervision, losses, seed, fusion, metrics nor gate.
+  Tests are `35` focused and `256` full-suite passes; Ruff and `py_compile`
+  pass. Validation GT and test were not read, and no consumer was trained.
+- Runtime/tool references retained for reporting are Kaggle,
+  *Kernels Commands - kaggle kernels push*,
+  https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md, for explicit
+  `NvidiaTeslaT4` machine-shape selection, and PyTorch,
+  *Previous PyTorch Versions*,
+  https://pytorch.org/get-started/previous-versions/, for the official
+  PyTorch 2.5.1 CUDA 12.1 wheel family. Version 4 must fail before prediction
+  unless exactly two visible CUDA device names contain `T4` and a real
+  convolution succeeds on each device.
+
