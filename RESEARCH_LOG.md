@@ -3017,6 +3017,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `4093521cacdabea003273c3ec1274bc6c169fbf647a6b5eafe96925b1e36202e`.
   Architecture, train data, thresholds, loss weights, prediction, metric,
   bootstrap and gate are unchanged; no version-2 result is accepted.
+- Version-3 wrapper static audit is `PRELAUNCH_PASS`. It binds checkout
+  `2b5e541b7c5239e34de4500975e21d2986ff3e42`, scientific source
+  `0ea383e48bcd91f7235d1e1130e77d80f099cbc4`, amended protocol
+  `4093521c...36202e` and all 12 canonical source hashes. Wrapper SHA-256 is
+  `1a2cd414ba15a798cc7c595882b50bafcde09c4560973ee0c891d0e41613dec3`;
+  metadata remains `5db776ac...5b95ef`. Ten focused tests pass and execution
+  order remains prediction, no-GT physical freeze verification, separate GT
+  evaluator, post-GT verification. Version 3 has not launched at the time of
+  this freeze.
 - An independent post-download auditor is committed at
   `0fea848256b8286ab80ad6eb7aa0d584c4c7c0ed`. Auditor SHA-256 is
   `e36d3a661e0e495877dc583f070f037d71a2f8be2f0f3383cd83c1f5c8062ca4`;
