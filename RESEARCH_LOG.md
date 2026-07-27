@@ -3233,3 +3233,43 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   report and does not by itself justify a method unless the frozen protocol
   and leakage constraints are also satisfied.
 
+## 2026-07-27 - Global-local MIL v1 Kaggle version 1 implementation error
+
+- Kernel version 1 terminated with `KernelWorkerStatus.ERROR`; the sole
+  five-minute heartbeat `theo-d-i-rad-dino-global-local-mil` was deleted
+  before terminal artifacts were downloaded. Direct Kaggle output was saved
+  under the isolated local audit directory
+  `tmp/kaggle/rad_dino_global_local_mil_probe_val_v1_output_v1_error_20260727`.
+- This is an implementation/runtime error, not a scientific result. Kaggle
+  allocated a Tesla P100 with CUDA capability `sm_60`, whereas the current
+  base-image PyTorch binary reported support only for `sm_70` and newer. The
+  first RAD-DINO convolution raised `cudaErrorNoKernelImageForDevice` while
+  building the cache. Focused tests had already passed `13/13`, but there were
+  zero rows in `training_proposals.csv`, no prediction freeze, no validation
+  GT evaluation, no consumer training and no test access.
+- Direct error-evidence hashes are: execution log
+  `8f779535fddee494a26348bc632ffe82e0353c4362de59d8a0773a9fa8063bc0`,
+  exact frozen protocol
+  `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`,
+  failed wrapper
+  `00022389d6bd24bf4732a5e0dcf893fa281b97312adc2a3d0e9c7204d3477dc8`,
+  and empty proposal manifest
+  `9212f3c02dcf9e712caa978bd4f5fe850e0886e81244906883ef1d0ee783ec3e`.
+- The version 2 wrapper correction pins the official PyTorch `2.5.1`,
+  TorchVision `0.20.1` and TorchAudio `2.5.1` CUDA 12.1 wheel family, then
+  requires the allocated device capability to occur in
+  `torch.cuda.get_arch_list()` and executes a real CUDA convolution before
+  tests or training. The official version/install matrix is PyTorch,
+  *Previous PyTorch Versions*,
+  https://pytorch.org/get-started/previous-versions/. This operational change
+  does not alter the model, data, supervision, seed, hyperparameters,
+  scientific source, protocol or gate.
+- Corrected wrapper SHA-256 is
+  `156a72fe8e8422d602bac701d1dac64ecfe22e0fcf0f29239d8bd5041578f995`;
+  metadata remains
+  `3a96403dbc825f0a8a6f731cb5b345095ff90a87f99a92ab6c28b61bd3c79399`.
+  The only wrapper diff is the pinned official CUDA runtime installation and
+  the architecture/convolution preflight. It passes `py_compile`, Ruff and
+  JSON/hash audit. The protocol remains byte-identical at
+  `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`.
+
