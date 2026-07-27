@@ -4139,3 +4139,53 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   establishes complementary errors, and validation GT cannot select their
   internal hyperparameters.
 
+### Relational mask-bag implementation-feasibility audit
+
+- The conditional ranking design is refined into an implementation-readiness
+  addendum at
+  `artifacts/literature_reviews/relational_mask_bag_mil_feasibility_addendum_2026-07-28.md`,
+  SHA-256
+  `f6dfa2d73ecd4da5270db3543723b65f4c98b50dd207ad8a9cf01fd3359cfadd`.
+  It does not change or launch version 6 and reads no segmentation annotation
+  or BTXRD test data.
+- The proposal hierarchy follows the frozen generator rather than treating the
+  bag as unstructured. Multimask variants sharing component/prompt/source are
+  normalized first, prompt modes within a component second, and components at
+  bag level third; every raw proposal remains eligible for final WTA output.
+  A DSMIL-like critical-instance stream then supplies learned
+  candidate-to-candidate comparison. Source: Li, Li and Eliceiri, *Dual-stream
+  Multiple Instance Learning Network*, CVPR 2021,
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html.
+- Same-model detached argmax supervision is replaced conditionally by a
+  deterministic group-preserving train-only cross-fitting contract. Each
+  training image's soft instance target comes from a model fitted without its
+  group, the complete OOF manifest is frozen, and one final full-train model is
+  then fitted. This directly transfers the anti-lock-in mechanism of Cinbis,
+  Verbeek and Schmid, *Multi-fold MIL Training for Weakly Supervised Object
+  Localization*, CVPR 2014,
+  https://openaccess.thecvf.com/content_cvpr_2014/html/Cinbis_Multi-fold_MIL_Training_2014_CVPR_paper.html.
+- Candidate representation retains the existing RAD-DINO mask/ring/contrast
+  descriptor and adds only prediction-derived provenance/geometry plus
+  proposal-pooled statistics from the hash-bound nominal-memory map. Absolute
+  position is explicitly ablated and made flip-equivariant because
+  Krishnamoorthy and Wiens, *Multiple Instance Learning with Absolute Position
+  Information*, CHIL/PMLR 248 (2024),
+  https://proceedings.mlr.press/v248/krishnamoorthy24a.html, show radiograph
+  MIL can benefit from position, while heterogeneous BTXRD anatomy creates a
+  shortcut risk.
+- Static capacity arithmetic confirms T4x2 feasibility. The frozen manifests
+  imply about `174,657` train and `20,965` validation candidates. One fp16
+  1,156-D descriptor view is approximately `431.33 MiB`; original plus flip is
+  approximately `862.66 MiB`. At batch 16, 81 proposals and 256 dimensions,
+  embeddings are approximately `1.27 MiB` fp32 and a four-head attention
+  tensor approximately `1.60 MiB`. The relational head is below roughly one
+  million trainable parameters, so RAD-DINO caching remains the dominant work;
+  fold heads reuse one cache. These are arithmetic estimates, not a runtime
+  claim, and heavy execution remains Kaggle-only.
+- The addendum enumerates fail-closed provenance alignment, duplicate-family
+  invariance, flip-coordinate mapping, OOF group isolation, complete OOF
+  coverage, nominal-input hash, prediction freeze, consumer/test lock and
+  cohort tests. Its go/no-go remains terminal-evidence-dependent: launch only
+  if version-6 oracle passes but selected localization fails; use proposal
+  repair if oracle fails; add nothing if the full gate passes.
+
