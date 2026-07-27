@@ -4726,7 +4726,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - A broader mechanism synthesis is frozen at
   `artifacts/literature_reviews/small_medium_wsss_combination_strategy_2026-07-28.md`
   (canonical-LF SHA-256
-  `e2ce5b637dfc567f5fe25512fcfb91b41111fd06254cf6b33ad072eaa8a423a4`).
+  `39baf53f91532e16dd418b4bae2b536a8cde45d41aec6901ae6e19e8e70bb443`).
   It separates the likely bottlenecks: small is most exposed to geometry,
   sub-token proposal-mass attenuation and insufficient local resolution;
   medium has the highest selector recovery burden and is primarily a
@@ -4760,6 +4760,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   https://openaccess.thecvf.com/content/CVPR2024/html/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.html.
   None of their reported natural-image/other-modality metrics, size labels or
   dense annotations are transferred to BTXRD.
+- The synthesis was then extended with an audited source-boundary map and two
+  direct image-label-WSSS precedents. Jiang et al., L2G, CVPR 2022, show that
+  local crops can reveal finer object evidence and transfer it to a global
+  view:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html.
+  Wang et al., SEAM, CVPR 2020, use transformed-view equivariance and
+  context correlation:
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html.
+  The safe BTXRD transfer does not label every positive-image crop as
+  positive, because many crops need not contain the lesion. Instead, each
+  proposal-defined crop supplies only its candidate descriptor and the image
+  label is applied after MIL bag aggregation. Weighted-mean normalization,
+  crop-view evidence and relational selection have separate audited insertion
+  points and may not silently alter the frozen v3 arm.
 - No Kaggle status poll, wrapper mutation, GT read, consumer training or new
   experiment occurred during this literature pass. The operational goal and
   all v6/v3 gates remain unchanged pending terminal evidence.

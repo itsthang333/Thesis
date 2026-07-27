@@ -72,6 +72,27 @@ Transfer source: Hwang, Oh and Choe, *Small object matters in weakly
 supervised object localization*, Neurocomputing 2025:
 https://doi.org/10.1016/j.neucom.2025.130494
 
+The stronger image-label-WSSS precedent is L2G: local patches reveal finer
+object details and transfer them to a global network. Directly assigning a
+positive image label to every BTXRD crop would, however, create false-positive
+supervision whenever the crop misses the lesion. The safe adaptation is
+proposal-instance based: a crop contributes only a descriptor for its
+corresponding candidate, and image-level BCE is applied after MIL bag
+aggregation. No crop receives an independent positive target.
+
+Source: Jiang et al., *L2G: A Simple Local-to-Global Knowledge Transfer
+Framework for Weakly Supervised Semantic Segmentation*, CVPR 2022:
+https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html
+
+The current original/flip loss already implements one equivariance axis.
+Scale/crop consistency is a later, separate ablation—not part of geometry v3.
+SEAM provides the image-label-only precedent for transformed-view attention
+consistency and context-based pixel correlation.
+
+Source: Wang et al., *Self-Supervised Equivariant Attention Mechanism for
+Weakly Supervised Semantic Segmentation*, CVPR 2020:
+https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html
+
 ### Stage C — relational selection for medium
 
 If the corrected gallery oracle passes all goals but WTA remains below the
@@ -151,3 +172,32 @@ Medical transfer sources:
 This ladder can improve small without surrendering medium/large because
 resolution repair is isolated from ranking repair, and every promotion is
 judged on all frozen subgroups with complete misses included.
+
+## Audited source insertion points
+
+No source was changed in this literature pass. The smallest future changes
+have precise boundaries:
+
+- `project/models/rad_dino_mask_bag_mil.py::mask_pool_descriptors` currently
+  computes `mask_denominator = grid_mass.clamp_min(1.0)`. A weighted-mean arm
+  changes only that denominator to `clamp_min(epsilon)` after the unchanged
+  `minimum_grid_mass` validity test. It must be implemented as a new
+  protocol-bound mode, not silently replace the frozen v3 behavior.
+- `project/run_rad_dino_mask_bag_mil_probe.py::build_descriptor_cache`
+  projects each direct-resize candidate into the square encoder frame and
+  caches original/flip descriptors. A crop-view arm belongs here: derive the
+  crop solely from each frozen candidate mask, encode it with frozen RAD-DINO,
+  restore candidate order, and concatenate/fuse descriptors before the
+  selector. Candidate masks and final WTA maps remain unchanged.
+- `RadDinoMaskBagMIL.score_descriptors` is an independent selector boundary.
+  Relational MIL belongs here or in a separate selector class operating on
+  the same immutable descriptor cache. It must not regenerate proposals or
+  alter geometry.
+
+This separation permits reuse of one hash-bound candidate gallery and makes
+the causal questions auditable:
+
+1. geometry changes coordinates only;
+2. weighted mean changes sub-token feature normalization only;
+3. crop view changes spatial evidence resolution only;
+4. relational MIL changes proposal interaction/ranking only.
