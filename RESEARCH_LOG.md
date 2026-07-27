@@ -4397,3 +4397,58 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Validation masks, test data, consumer training and new Kaggle compute were
   not used.
 
+## 2026-07-28 - External medical foundation proposal-source feasibility
+
+- While mask-bag MIL version 6 remained under the separate ten-minute
+  monitor, a wider proposal-source review was recorded at
+  `artifacts/literature_reviews/external_medical_foundation_proposal_feasibility_addendum_2026-07-28.md`
+  (canonical-LF SHA-256
+  `e5476f913e8c9cdf5add3f43d84003025d3c52423ff64860cd5fbd570188aea6`).
+  This is literature analysis only; no Kaggle job, checkpoint download,
+  validation-mask access or test access occurred.
+- The supervision claim is bounded explicitly. A frozen MedSAM/SAM-Med2D
+  proposal source that never sees a BTXRD mask is compatible with
+  image-label-only **BTXRD adaptation**, but these models used external dense
+  masks. Results must be disclosed as image-label-only WSSS with externally
+  mask-pretrained proposal foundations and reported separately from a
+  generic-SAM-only arm and fully supervised BTXRD training.
+- Priority is MedSAM, then SAM-Med2D. MedSAM is an Apache-2.0 SAM ViT-B
+  derivative trained on 1,570,263 image-mask pairs across ten modalities,
+  including X-ray; source:
+  Ma et al., *Segment Anything in Medical Images*, Nature Communications
+  2024, https://www.nature.com/articles/s41467-024-44824-z, and official
+  repository https://github.com/bowang-lab/MedSAM. SAM-Med2D reports 4.6
+  million images/19.7 million masks, ten modalities, box/point prompting and a
+  256x256 default; sources:
+  https://arxiv.org/abs/2308.16184 and
+  https://github.com/openmedlab/SAM-Med2D.
+- BiomedParse is deferred because its text vocabulary contains general
+  biomedical targets and an X-ray infection example but no established
+  primary-bone-tumor target; post-GT prompt sweeping would be invalid. Sources:
+  https://microsoft.github.io/BiomedParse/,
+  https://github.com/microsoft/BiomedParse, and
+  https://huggingface.co/microsoft/BiomedParse. FluoroSAM is lower priority
+  because its three-million synthetic-X-ray pretraining targets organs/tools,
+  not bone lesions; source: Seibold et al., MICCAI 2025,
+  https://papers.miccai.org/miccai-2025/0344-Paper5042.html.
+- Medical adaptation is not assumed to transfer. A broad SAM medical study
+  reported strongly dataset-dependent performance, supporting an oracle-first
+  audit rather than an expected BTXRD gain:
+  https://www.sciencedirect.com/science/article/pii/S1361841523001780.
+- The BTXRD Scientific Data paper is from 2025
+  (https://www.nature.com/articles/s41597-024-04311-y), whereas MedSAM and
+  SAM-Med2D were published/released in 2024 and 2023. This is chronological
+  evidence against intentional BTXRD pretraining overlap, not proof of no
+  source-image duplication. Repository revision, license, checkpoint SHA,
+  available corpus manifest and any possible duplicate audit must be frozen
+  before use; missing corpus provenance remains a stated limitation.
+- The combined conditional branch is frozen conceptually as
+  `medical proposal geometry -> provenance-preserving union -> cross-fitted
+  RAD-DINO relational selector -> optional robust consumer after entry gate`.
+  It is eligible only after v6 selects the oracle-fail/narrow-small-headroom
+  branch. MedSAM and SAM-Med2D use identical frozen boxes and geometry;
+  bit-exact duplicates only are removed; all 371 maps and proposal identities
+  freeze before a single oracle audit. A positive overall result cannot rescue
+  unchanged/worse small complete misses. T4x2 runs one independent proposal
+  source per GPU when feasible; no DDP is used for independent models.
+
