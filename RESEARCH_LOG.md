@@ -2880,3 +2880,29 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   bootstrap uses 10,000 replicates, `consumer_trained=false`, and test remains
   locked.
 
+## 2026-07-27 - Multi-layer soft-region Kaggle wrapper freeze
+
+- The protocol was committed and pushed at
+  `149c32d9cd747e1cf43528add6d7dea4268ab965`; its canonical Git-blob
+  SHA-256 remains
+  `5d0c5f8c96f32aa9e49b5bef96c2aa026ed3559a6dc639dc20929608d3a475c9`.
+  All 12 declared scientific-source hashes were independently recomputed from
+  Git bytes at source commit `5cb7e81434742f7bf1b796018239c97ca1731d87`.
+- The private Kaggle wrapper compiles and has SHA-256
+  `d92df6a8d398f6067e2024ceba23b63a7fe27b0f51afc25a0ed1882f695af98b`;
+  kernel metadata SHA-256 is
+  `2424aa7110116343d8a9d1211be3891e9fc55ebf39a35d9ba78a808a0fc88c68`.
+  Static prelaunch evidence is stored at
+  `artifacts/research_protocols/rad_dino_multilayer_soft_region_probe_val_v1_wrapper_audit.json`.
+- The wrapper reconstructs and verifies the frozen CRLF split and affinity-v3
+  baseline, pins the RAD-DINO revision and three model-file hashes, and reruns
+  all nine focused Torch/AST tests before heavy execution. Its fixed order is
+  prediction runner, independent physical verification of the checkpoint,
+  teacher/history, manifest and all 371 maps without GT, separate validation-GT
+  evaluator, then post-GT cohort/gate verification. The evaluator cannot run
+  until the no-GT verification passes.
+- The prelaunch audit is `PRELAUNCH_PASS`. Heavy training has not run yet,
+  no validation GT has been read for this candidate, `consumer_trained=false`,
+  and `test_evaluated=false`. The kernel may launch only after this wrapper
+  audit is committed and pushed.
+

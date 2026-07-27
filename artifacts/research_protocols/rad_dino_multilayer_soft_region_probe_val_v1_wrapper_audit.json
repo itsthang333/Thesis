@@ -1,0 +1,20 @@
+{
+  "status": "PRELAUNCH_PASS",
+  "wrapper_sha256": "d92df6a8d398f6067e2024ceba23b63a7fe27b0f51afc25a0ed1882f695af98b",
+  "metadata_sha256": "2424aa7110116343d8a9d1211be3891e9fc55ebf39a35d9ba78a808a0fc88c68",
+  "protocol_sha256": "5d0c5f8c96f32aa9e49b5bef96c2aa026ed3559a6dc639dc20929608d3a475c9",
+  "checkout_commit": "149c32d9cd747e1cf43528add6d7dea4268ab965",
+  "scientific_source_commit": "5cb7e81434742f7bf1b796018239c97ca1731d87",
+  "canonical_source_bindings": 12,
+  "ordering": [
+    "prediction runner",
+    "independent no-GT freeze verification",
+    "separate validation-GT evaluator",
+    "post-GT contract verification"
+  ],
+  "split_runtime_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "baseline_runtime_sha256": "facc4405234d33ebb3eeda697d6d232ac35170112fc829bebde48fc955aed8ea",
+  "focused_tests": 9,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
