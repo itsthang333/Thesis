@@ -119,7 +119,7 @@ post-freeze v3-minus-v6 comparator:
 - `project/compare_mask_bag_evaluated_arms.py`, canonical-LF SHA-256
   `24c625cfc50740d9cb633906d60ae81089e3960d3eec4b3ead6f3ce89ebaffad`;
 - `tests/test_compare_mask_bag_evaluated_arms.py`, canonical-LF SHA-256
-  `e761c249da8b36445b28fb73b7578f9d5c7e2b728d1edb3e2730c2b393373661`.
+  `1466be0ebe917e93a04914914d0f09e6f065257b95b32a4b9f9f5111a553298d`.
 
 It accepts only two already evaluated and hash-bound `per_image.csv` files; it
 does not import a dataset, open an image or reopen a segmentation mask. It
@@ -128,6 +128,12 @@ requires identical image/group/subgroup/GT-area/oracle fields, the frozen
 20261101. Outputs include paired Dice CI, complete misses, recovered misses
 and lost overlaps. The unchanged evaluator remains responsible for each arm
 versus the promoted baseline.
+
+Commit `011f479a4668dced2f943f85cb5929d850a68172` adds a numerical
+end-to-end fixture with the complete frozen 184/94/72/18 cohort, repeated
+group IDs, fixed `+0.1` Dice delta and known miss recovery. Using the bundled
+NumPy runtime, all three comparator tests pass and verify the four subgroup
+deltas, 12-to-2 miss change, ten recovered misses and zero lost overlaps.
 
 ## Finalization gate
 

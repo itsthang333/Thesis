@@ -4613,7 +4613,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - The conditional wrapper plan is recorded at
   `artifacts/literature_reviews/mask_bag_geometry_v3_wrapper_readiness_2026-07-28.md`
   (canonical-LF SHA-256
-  `14319072137f5a6b400381f1b9970cb8965ad7c5c9d2e89a96640a803badf044`).
+  `265c4ca254fbf68f175781189674cdf9f67723ef6a18c5b97ec04a1dab94e3ae`).
   No wrapper was finalized, no Kaggle kernel was changed/launched and no extra
   status poll occurred.
 - The audited v6 wrapper canonical-LF SHA-256 is
@@ -4638,11 +4638,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   (canonical-LF SHA-256
   `24c625cfc50740d9cb633906d60ae81089e3960d3eec4b3ead6f3ce89ebaffad`)
   with static boundary test SHA-256
-  `e761c249da8b36445b28fb73b7578f9d5c7e2b728d1edb3e2730c2b393373661`.
+  `1466be0ebe917e93a04914914d0f09e6f065257b95b32a4b9f9f5111a553298d`.
   It reads only two hash-bound evaluator CSVs and never imports the dataset or
   reopens GT. It fails unless image/group/subgroup/GT-area/oracle fields and
   184/94/72/18 cohorts agree, then reports Dice CI, complete misses, recovered
   misses and lost overlaps with fixed complete-group bootstrap
   `10000/20261101`. The unchanged evaluator still provides each arm versus the
   promoted baseline.
+- Commit `011f479a4668dced2f943f85cb5929d850a68172` adds a numerical
+  end-to-end comparator fixture using the complete 184/94/72/18 cohort,
+  repeated group IDs, a known `+0.1` paired Dice delta and 12-to-2 miss
+  transition. The bundled NumPy runtime reports `3 passed`; all four subgroup
+  deltas, ten recovered misses and zero lost overlaps match the constructed
+  truth. This verifies execution rather than only source structure and still
+  does not open BTXRD GT.
 
