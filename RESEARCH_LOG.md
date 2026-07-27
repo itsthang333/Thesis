@@ -3630,3 +3630,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   deleted before direct output/log download. Test remains locked and no
   consumer is authorized.
 
+### Mask-bag MIL version 1 implementation-only preflight error
+
+- Version 1 reached terminal `ERROR`; the sole five-minute heartbeat was
+  deleted before direct output retrieval. Compact error evidence is isolated
+  under
+  `tmp/kaggle/rad_dino_mask_bag_mil_probe_val_v1_error_v1_20260727`.
+  Execution log, downloaded wrapper and protocol SHA-256 are respectively
+  `5b12b77086213e628a620756a85e216a337ecafff108e002d21b9869e400dc45`,
+  `e819c46339d4f04f6feebd8d85bf17c2ddb57b240693e6aba4cad0b970e1dc2c`
+  and
+  `a8f3101be461a1bdc007f442f60e8e3b50ccd6abf015f81f084c004829b7c4b9`.
+  The wrapper installed official PyTorch `2.5.1+cu121`, torchvision
+  `0.20.1+cu121`, transformers `4.50.2` and pinned Segment Anything, then the
+  exact mask-bag/candidate focused suite passed `17/17`.
+- Failure occurred in the subsequent whole-repository test command, before
+  RAD-DINO download, candidate generation, optimizer construction, validation
+  prediction or GT access. The result was `196 passed`, `4 failed`, `4 errors`.
+  Four errors came from a stale BiomedCLIP wrapper test whose only input was an
+  ignored `tmp/kaggle/.../run_biomedclip_tiled_saliency_val.py` file already
+  removed by the authorized cleanup. Three failures used a canonical LF Git
+  split where the historical lock correctly expects the frozen Windows CRLF
+  byte hash. The remaining failure required the fully supervised reference
+  `best_unet.pt`, a `230,924,939`-byte file deliberately excluded by
+  `.gitignore`. These are fixture portability/obsolete-test failures, not
+  evidence about mask-bag learning, T4 execution or validation performance.
+- Implementation-only repair: delete the orphaned BiomedCLIP wrapper auditor
+  and its test because no tracked wrapper remains to audit; make the two split
+  tests construct an exact temporary CRLF copy; and skip only the physical
+  GT-checkpoint lock test when that explicitly untracked checkpoint is absent.
+  All other GT-reference logic tests remain. No model, input, candidate,
+  training, prediction, evaluator, bootstrap, gate or operational goal changes.
+  A correction addendum must be frozen before rerunning version 2.
+

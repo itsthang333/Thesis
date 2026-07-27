@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -28,41 +29,48 @@ class GridGalleryAuditTests(unittest.TestCase):
             / "pro2sam_grid_full_v1"
             / "btxrd_pro2sam_grid_gallery_full_v1"
         )
-        result = AUDIT.audit_grid_gallery(
-            candidate,
+        source_split = (
             ROOT
             / "artifacts"
             / "best_pipeline"
             / "fs_resnet18_pw10_full_448_e20"
             / "data"
-            / "split_manifest.csv",
-            ROOT
-            / "artifacts"
-            / "kaggle"
-            / "wsss_binary_cam_sam_tta_flip_v1"
-            / "btxrd_binary_cam_sam_tta_flip"
-            / "ground_truth"
-            / "evaluation"
-            / "per_image.csv",
-            ROOT
-            / "artifacts"
-            / "kaggle"
-            / "s2c_cpm_gate_c_v1"
-            / "btxrd_s2c_cpm_gate_c_v1"
-            / "ground_truth"
-            / "evaluation"
-            / "per_image.csv",
-            ROOT
-            / "artifacts"
-            / "kaggle"
-            / "s2c_cpm_gate_c_v1"
-            / "btxrd_s2c_cpm_gate_c_v1"
-            / "ground_truth"
-            / "pseudo_masks"
-            / "prompt_quality.csv",
-            iterations=100,
-            seed=42,
+            / "split_manifest.csv"
         )
+        with tempfile.TemporaryDirectory() as directory:
+            runtime_split = Path(directory) / "frozen_split_manifest.csv"
+            canonical = source_split.read_bytes().replace(b"\r\n", b"\n")
+            runtime_split.write_bytes(canonical.replace(b"\n", b"\r\n"))
+            result = AUDIT.audit_grid_gallery(
+                candidate,
+                runtime_split,
+                ROOT
+                / "artifacts"
+                / "kaggle"
+                / "wsss_binary_cam_sam_tta_flip_v1"
+                / "btxrd_binary_cam_sam_tta_flip"
+                / "ground_truth"
+                / "evaluation"
+                / "per_image.csv",
+                ROOT
+                / "artifacts"
+                / "kaggle"
+                / "s2c_cpm_gate_c_v1"
+                / "btxrd_s2c_cpm_gate_c_v1"
+                / "ground_truth"
+                / "evaluation"
+                / "per_image.csv",
+                ROOT
+                / "artifacts"
+                / "kaggle"
+                / "s2c_cpm_gate_c_v1"
+                / "btxrd_s2c_cpm_gate_c_v1"
+                / "ground_truth"
+                / "pseudo_masks"
+                / "prompt_quality.csv",
+                iterations=100,
+                seed=42,
+            )
         self.assertEqual(result["status"], "PASS")
         self.assertEqual(result["decision"], "REJECT")
         self.assertFalse(result["test_evaluated"])

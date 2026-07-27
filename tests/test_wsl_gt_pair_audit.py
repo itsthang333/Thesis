@@ -105,6 +105,18 @@ class WslGtPairAuditTests(unittest.TestCase):
             / "gt_resnet18_unet_448_v1"
             / "reference_lock.json"
         )
+        checkpoint = (
+            Path(__file__).resolve().parents[1]
+            / "artifacts"
+            / "best_pipeline"
+            / "fs_resnet18_pw10_full_448_e20"
+            / "model"
+            / "best_unet.pt"
+        )
+        if not checkpoint.is_file():
+            self.skipTest(
+                "frozen 230 MB GT-reference checkpoint is intentionally not tracked by Git"
+            )
         result = AUDIT.verify_reference_lock(lock)
         self.assertEqual(result["status"], "PASS")
         self.assertFalse(result["test_evaluated"])

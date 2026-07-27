@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from argparse import Namespace
 from pathlib import Path
@@ -67,24 +68,42 @@ def valid_args() -> Namespace:
 
 
 class PairedReferenceContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._temporary_directory = tempfile.TemporaryDirectory()
+        cls.runtime_split = (
+            Path(cls._temporary_directory.name) / "frozen_split_manifest.csv"
+        )
+        canonical = SPLIT.read_bytes().replace(b"\r\n", b"\n")
+        cls.runtime_split.write_bytes(canonical.replace(b"\n", b"\r\n"))
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._temporary_directory.cleanup()
+
+    def valid_args(self) -> Namespace:
+        args = valid_args()
+        args.split_manifest = self.runtime_split
+        return args
+
     def test_exact_wsl_consumer_contract_passes(self) -> None:
-        result = CONTRACT.validate_paired_wsl_contract(LOCK, valid_args())
+        result = CONTRACT.validate_paired_wsl_contract(LOCK, self.valid_args())
         self.assertEqual(result["reference_id"], "gt_resnet18_unet_448_v1")
         self.assertEqual(result["allowed_training_difference"], "train mask source only")
         self.assertFalse(result["test_evaluated"])
 
     def test_consumer_change_fails_closed(self) -> None:
-        args = valid_args()
+        args = self.valid_args()
         args.lr = 0.0002
         with self.assertRaisesRegex(ValueError, "fixes lr"):
             CONTRACT.validate_paired_wsl_contract(LOCK, args)
 
     def test_missing_pseudo_masks_or_gt_validation_override_fails(self) -> None:
-        args = valid_args()
+        args = self.valid_args()
         args.train_pred_mask_root = None
         with self.assertRaisesRegex(ValueError, "train-pred-mask-root"):
             CONTRACT.validate_paired_wsl_contract(LOCK, args)
-        args = valid_args()
+        args = self.valid_args()
         args.val_pred_mask_root = Path("pseudo/val")
         with self.assertRaisesRegex(ValueError, "validation"):
             CONTRACT.validate_paired_wsl_contract(LOCK, args)
