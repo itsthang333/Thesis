@@ -515,8 +515,8 @@ def main() -> None:
         raise RuntimeError(f"Mask-bag v1 requires T4 x2, got {device_names}")
     device = torch.device("cuda:0")
     projection = make_seeded_random_projection(
-        768,
-        args.projection_dim,
+        input_dim=768,
+        output_dim=args.projection_dim,
         seed=args.projection_seed,
     )
     backbone = AutoModel.from_pretrained(args.model_dir, local_files_only=True)

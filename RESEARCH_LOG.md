@@ -3849,3 +3849,46 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   performed. T4 x2 routing, image-level-only supervision, prediction-first GT
   boundary, locked BTXRD test and no-consumer-before-gate rules are unchanged.
 
+### Mask-bag MIL version 5 keyword-only projection-call error
+
+- Version 5 reached terminal `ERROR`; the separate five-minute monitor was
+  deleted before audit and is confirmed absent. Direct compact output is
+  isolated under
+  `tmp/rad_dino_mask_bag_mil_v5_error_20260727-232828`. Execution-log and
+  downloaded-wrapper SHA-256 are
+  `f8f0c8a99404febf36a5f5cfd723fe9865a66dd8887349287b22969058fe38f1`
+  and
+  `975abd8262a57885962ccf73c7731381ab2cf20740fa42401c42f9e2390b427a`.
+  The downloaded base protocol and correction v1-v4 exactly reproduce
+  `a8f3101b...`, `cbcb28c2...`, `5c611c99...`, `b655fb80...` and
+  `dab9f073...`. Reaching candidate generation proves that the wrapper's
+  checkout/source/split/checkpoint guards, exact two-T4 device preflight and a
+  real `324.0` convolution on each device passed. Focused and full preflights
+  passed exactly `23/23` and `205 passed, 1 skipped`.
+- Candidate generation completed prediction-first without GT for all `2981`
+  train and `371` validation images. Frozen train candidate/pseudo hashes are
+  `e43c06e...` / `0890aff5...`; validation hashes are
+  `f391b7dc...` / `ef72225c...`. The independent input audit verified all
+  `3352` physical candidate payloads, zero empty bags, zero nonempty ordinary
+  pseudo masks for normal images, `validation_gt_read=false`,
+  `consumer_trained=false`, and `test_evaluated=false`.
+- The run then stopped before descriptor caching, optimizer construction,
+  training, prediction freeze or GT evaluation. Root cause is a Python
+  interface error: `make_seeded_random_projection` declares `input_dim` and
+  `output_dim` keyword-only, but the new mask-bag runner passed both
+  positionally. The traceback is
+  `TypeError: make_seeded_random_projection() takes 0 positional arguments
+  but 2 positional arguments ... were given`. Therefore no Dice/AUROC/gate
+  result exists and this is an implementation-only failure, not evidence
+  against the scientific hypothesis.
+- The bounded repair changes only those two arguments to explicit keywords and
+  adds an AST regression test that requires an argument-free positional list
+  and the exact `input_dim`, `output_dim`, `seed` keyword set. The local
+  mask-bag static suite passes `5/5`, `compileall` and diff-check pass. The
+  NumPy-dependent primitive test remains deferred because the bundled local
+  Python lacks NumPy; the unchanged Kaggle whole-suite preflight covers it.
+  Model, candidates, frozen candidate hashes, training hyperparameters,
+  prediction, evaluator, bootstrap, gate, goals, split and supervision
+  semantics are unchanged. A new correction addendum must bind this repair
+  before any rerun.
+

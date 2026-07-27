@@ -34,6 +34,27 @@ def test_runner_has_image_only_surface_and_t4x2_encoder_parallelism() -> None:
     assert '"test_evaluated": False' in source
 
 
+def test_runner_calls_keyword_only_random_projection_contract() -> None:
+    source = (PROJECT / "run_rad_dino_mask_bag_mil_probe.py").read_text(
+        encoding="utf-8"
+    )
+    tree = ast.parse(source)
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "make_seeded_random_projection"
+    ]
+    assert len(calls) == 1
+    assert calls[0].args == []
+    assert {keyword.arg for keyword in calls[0].keywords} == {
+        "input_dim",
+        "output_dim",
+        "seed",
+    }
+
+
 def test_evaluator_verifies_every_prediction_input_before_gt_loader() -> None:
     source = (PROJECT / "evaluate_rad_dino_mask_bag_mil_probe.py").read_text(
         encoding="utf-8"
