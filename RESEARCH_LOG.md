@@ -3913,3 +3913,49 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the already frozen version-5 hashes. No launch-time status poll was made;
   validation GT, consumer training and BTXRD test remain locked.
 
+### Mask-bag terminal decision tree and deferred cleanup audit
+
+- A read-only source/workspace audit was performed while version 6 is
+  monitored in its separate five-minute task; the main task did not poll
+  Kaggle. The removable local bulk is concentrated in ignored runtime
+  material: approximately `457 MB` under `tmp/kaggle`, `118 MB` under
+  `tmp/literature`, Python bytecode/cache directories, and the isolated
+  version-5 download. None was deleted before terminal audit because the
+  staged version-6 wrapper and historical source/hash evidence still depend
+  on exact files there. No tracked `.pyc` exists. Cleanup remains deferred
+  until terminal evidence is secured, with frozen compact artifacts and Git
+  history retained.
+- Static review of the repaired mask-bag runner found no second occurrence of
+  the positional/keyword-only error. Its direct project calls now match the
+  declared keyword-only interfaces for split loading, model verification,
+  candidate-manifest validation, square preprocessing, random projection and
+  SmoothMax pooling. The local environment still lacks NumPy/Torch/Ruff, so
+  this is not claimed as a dynamic GPU proof; version 6 remains fail-closed on
+  its `24` focused and `206 passed, 1 skipped` Kaggle preflights.
+- The post-terminal next action is frozen as a diagnosis tree, not as a new
+  experiment or a way to change the current gate:
+  1. If the complete proposal oracle meets the operational goals but selected
+     Dice fails, the bottleneck is proposal ranking. The next admissible
+     hypothesis is cross-image/normal-prototype relational scoring over the
+     same frozen masks, not more unconstrained pixel expansion. Ahn and Kwak,
+     *Learning Pixel-Level Semantic Affinity With Image-Level Supervision for
+     Weakly Supervised Semantic Segmentation*, CVPR 2018, pp. 4981-4990,
+     https://openaccess.thecvf.com/content_cvpr_2018/html/Ahn_Learning_Pixel-Level_Semantic_CVPR_2018_paper.html,
+     supports learning local affinity from reliable weak seeds; Seibold et
+     al., *Self-Guided Multiple Instance Learning for Weakly Supervised
+     Thoracic Disease Classification and Localization in Chest Radiographs*,
+     ACCV 2020,
+     https://openaccess.thecvf.com/content/ACCV2020/html/Seibold_Self-Guided_Multiple_Instance_Learning_for_Weakly_Supervised_Thoracic_DiseaseClassification_and_ACCV_2020_paper.html,
+     supports treating uncertain positive-bag instances differently from
+     reliable normal-bag negatives. For BTXRD these mechanisms must remain
+     proposal-constrained and image-label-only.
+  2. If the oracle itself fails, especially on small tumors, the bottleneck is
+     proposal support. The next admissible mechanism is prediction-first
+     high-resolution local proposal generation driven by frozen global
+     evidence, following the already recorded GLAM coarse-to-fine principle,
+     without GT-derived crop choice or size routing.
+  3. Only a full gate pass authorizes design of a separately predeclared
+     pseudo-mask consumer. Neither a high oracle nor image AUROC alone is a
+     pass. Operational targets, complete misses, bootstrap, cohort and locked
+     test remain unchanged.
+
