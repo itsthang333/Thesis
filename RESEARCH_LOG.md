@@ -4007,3 +4007,135 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   and should use predeclared count-robust training such as proposal dropout or
   normal-prototype instance contrast rather than tune against validation GT.
 
+### Count-robust MIL and small-object contingency literature addendum
+
+- A new literature-only addendum is frozen at
+  `artifacts/literature_reviews/mask_bag_count_robust_small_object_addendum_2026-07-28.md`,
+  SHA-256
+  `741af83833b2492a9d6e493f3ab3a5d9f46099f4be61d2c765c62980d988bd61`.
+  It does not modify the running version-6 protocol or inspect BTXRD masks/test.
+  It separates two causal branches that aggregate Dice or image AUROC cannot
+  distinguish: adequate proposals ranked incorrectly versus missing small
+  lesion support.
+- Zhu et al., *How Effective Can Dropout Be in Multiple Instance Learning?*,
+  ICML 2025, PMLR 267:80090-80106,
+  https://proceedings.mlr.press/v267/zhu25q.html, report that dropping top-k
+  important MIL instances and feature-similar neighbours can improve
+  generalization and robustness. If version 6 proves that proposal oracle
+  coverage passes but selected localization fails, this motivates a
+  train-image-label-only, cross-fitted attention/relational selector with
+  train-time-only MIL-Dropout. It is not treated as proof of Dice improvement:
+  exact dropout parameters must be predeclared, the small-lesion risk of
+  dropping the sole true proposal must be controlled, and score/count
+  association plus the complete localization gate remain mandatory.
+- Lin et al., *Interventional Bag Multi-Instance Learning on Whole-Slide
+  Pathological Images*, CVPR 2023, pp. 19830-19839,
+  https://openaccess.thecvf.com/content/CVPR2023/html/Lin_Interventional_Bag_Multi-Instance_Learning_on_Whole-Slide_Pathological_Images_CVPR_2023_paper.html,
+  support treating bag-context priors as potential confounders. IBMIL is
+  deferred as a second-line mechanism because it is designed for whole-slide
+  pathology and adds a confounder dictionary/interventional stage; it becomes
+  justified only if a simpler cross-fitted count-robust selector retains
+  material score/count dependence.
+- Mun et al., *Small Objects Matters in Weakly-Supervised Semantic
+  Segmentation*, WACV 2024, pp. 413-422,
+  DOI 10.1109/WACV57701.2024.00048,
+  https://openaccess.thecvf.com/content/WACV2024/papers/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.pdf,
+  show that aggregate metrics conceal small-object WSSS failures and motivate
+  size-balanced evaluation/loss. This supports retaining the explicit BTXRD
+  subgroup gate; their dense loss is deferred until a pseudo-mask consumer is
+  authorized and cannot use true validation sizes.
+- Hwang, Oh, and Choe, *Small object matters in weakly supervised object
+  localization*, Neurocomputing 648 (2025), 130494,
+  DOI 10.1016/j.neucom.2025.130494,
+  https://www.sciencedirect.com/science/article/pii/S092523122501166X,
+  report image-label-only zoomed foreground/background consistency targeted at
+  small objects. If the version-6 oracle itself fails on small tumors, the
+  admissible next branch is therefore a separately frozen, prediction-driven
+  high-resolution/zoom-consistency proposal probe, with identical routing for
+  all images and no GT-derived crop or size selection. If oracle support is
+  adequate, this branch is rejected in advance in favor of ranking repair.
+
+### Deep WSSS research synthesis while version 6 is monitored separately
+
+- The broader research synthesis requested during the ten-minute monitor
+  intervals is recorded at
+  `artifacts/literature_reviews/btxrd_wsss_deep_research_synthesis_2026-07-28.md`,
+  SHA-256
+  `34138778897d66b98b504fb0ed2830f55d7d5a4dd23dc2237dcbd040fcb31d7f`.
+  It reviews proposal MIL, cross-fitting, radiographic position, shortcut
+  control, high-resolution local/global consistency, foundation-model
+  refinement and consumer robustness. It is a contingency artifact only:
+  version 6, its frozen protocol, validation predictions and gate are
+  unchanged; no segmentation annotation or BTXRD test sample was read.
+- Source inspection exposed a concrete limitation in the running model.
+  `RadDinoMaskBagMIL` scores every candidate independently; normalized
+  LogSumExp is their only bag interaction. The frozen NPZ schema already stores
+  `component_ids`, `prompt_modes`, and `proposal_source_ids`, but the runner
+  discards them and retains only SAM score, log area, prompt-map mass coverage
+  and prompt-map mean. Because candidates are produced in correlated
+  component/prompt families, this explains how the measured candidate-count
+  shortcut can survive exact LogSumExp count normalization. After warm-up,
+  the same model also trains on its own detached positive-bag argmax, creating
+  a plausible confirmation-lock-in route.
+- Cinbis, Verbeek and Schmid, *Multi-fold MIL Training for Weakly Supervised
+  Object Localization*, CVPR 2014,
+  https://openaccess.thecvf.com/content_cvpr_2014/html/Cinbis_Multi-fold_MIL_Training_2014_CVPR_paper.html,
+  directly motivate group-preserving train-only cross-fitting so an image's
+  positive instance target is generated by a selector that did not train on
+  that image. Li, Li and Eliceiri, *Dual-stream Multiple Instance Learning
+  Network*, CVPR 2021,
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html,
+  motivate comparing every proposal with a critical instance. Lu et al.,
+  *Data-efficient and weakly supervised computational pathology on whole-slide
+  images*, Nature Biomedical Engineering 5 (2021),
+  https://www.nature.com/articles/s41551-020-00682-w, motivate attention plus
+  conservative instance-feature constraints. These mechanisms are transferred,
+  not their pathology encoders or datasets.
+- Krishnamoorthy and Wiens, *Multiple Instance Learning with Absolute Position
+  Information*, CHIL/PMLR 248 (2024),
+  https://proceedings.mlr.press/v248/krishnamoorthy24a.html, report that adding
+  positional encoding improved standard MIL on chest radiographs from AUROC
+  `0.782` to `0.799` while matching a transformer at much lower cost. A BTXRD
+  transfer may add normalized candidate centroid/bounding-box geometry with
+  flip equivariance, but must ablate it because heterogeneous bone anatomy can
+  turn absolute position into another shortcut.
+- The preferred post-terminal ranking design is now specified more precisely.
+  If the proposal oracle passes but selected Dice fails, retain the exact
+  gallery, RAD-DINO mask/ring descriptors and flip consistency; restore frozen
+  component/prompt/source provenance; aggregate within proposal families
+  before across families; use a small DSMIL-like relational head; generate
+  positive-instance targets with group-preserving out-of-fold models; and add
+  per-proposal statistics from the already frozen nominal-memory map as an
+  orthogonal normality signal. This is distinct from the rejected hand-written
+  prompt-source graph because the semantics are learned from image labels and
+  the family structure controls multiplicity rather than choosing a mask by a
+  fixed rule.
+- Zhu et al., *How Effective Can Dropout Be in Multiple Instance Learning?*,
+  ICML 2025, https://proceedings.mlr.press/v267/zhu25q.html, remains a
+  conditional regularizer, not the first repair. MIL-Dropout is added only if
+  cross-fitted relational learning retains winner concentration or count
+  dependence; begin conservatively because dropping the sole true small-lesion
+  proposal can be destructive. Du et al., *Rethinking Multiple-Instance
+  Learning From Feature Space to Probability Space*, ICLR 2025,
+  https://proceedings.iclr.cc/paper_files/paper/2025/hash/463a91da3c832bd28912cd0d1b8d9974-Abstract-Conference.html,
+  is a second-line option if selection drift persists. IBMIL remains deferred
+  to demonstrated residual bag-context confounding.
+- If oracle support fails instead, the synthesis combines Liu et al. GLAM
+  (MIDL/PMLR 143, https://proceedings.mlr.press/v143/liu21b.html), Jiang et al.
+  L2G (CVPR 2022,
+  https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html),
+  Wang et al. SEAM (CVPR 2020,
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html),
+  and Hwang et al. zoom consistency into one prediction-conditioned
+  high-resolution proposal design. A fixed number of global-evidence windows
+  is processed for every tumor/normal image; local proposals are mapped back
+  through exact geometry and must agree across local/global and flipped views.
+  A positive image label is never copied blindly to unsupported crops.
+- The composition order is frozen at the conceptual level: independently prove
+  proposal support, then ranking, then consumer robustness. A successful
+  high-resolution proposal branch may feed the family-balanced relational
+  selector; a successful selector may feed an uncertainty-aware consumer.
+  Methods are not combined before their individual prediction-first evidence
+  establishes complementary errors, and validation GT cannot select their
+  internal hyperparameters.
+
