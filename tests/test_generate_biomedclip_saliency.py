@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import tempfile
 import unittest
 from pathlib import Path

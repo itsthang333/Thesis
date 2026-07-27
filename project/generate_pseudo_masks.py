@@ -36,8 +36,6 @@ from config import (
     BTXRD_BEST_PIPELINE,
     BTXRD_HYBRID_PIPELINE,
     DATASET_TARGET_COLUMNS,
-    DEFAULT_DATASET,
-    SUPPORTED_DATASETS,
 )
 from progress import should_disable_tqdm
 from datasets.factory import build_classification_dataset

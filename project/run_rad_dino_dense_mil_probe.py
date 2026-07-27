@@ -9,7 +9,6 @@ and their manifests have been hash-frozen.
 
 import argparse
 import csv
-import hashlib
 import json
 import os
 import random
@@ -32,7 +31,6 @@ from mae_reconstruction_io import (
 from compare_nominal_patch_memory_arms import METRICS, paired_group_bootstrap
 from models.mae_reconstruction import pad_to_square
 from models.rad_dino_dense_mil import (
-    DenseMILConfig,
     DenseMILHead,
     dense_mil_loss,
     resize_probability_map,

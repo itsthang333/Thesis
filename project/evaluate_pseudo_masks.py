@@ -7,7 +7,6 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader
@@ -18,7 +17,7 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import DEFAULT_DATASET, SUPPORTED_DATASETS, SegmentationConfig
+from config import SegmentationConfig
 from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
 from datasets.factory import build_segmentation_dataset
 from progress import should_disable_tqdm

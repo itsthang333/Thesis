@@ -20,7 +20,6 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import DEFAULT_DATASET, SUPPORTED_DATASETS
 from datasets.btxrd import TUMOR_TYPE_CLASS_NAMES
 from datasets.factory import build_classification_dataset
 from progress import should_disable_tqdm

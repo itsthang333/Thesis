@@ -11,7 +11,6 @@ mechanism comparison remains hashable and independently auditable.
 import argparse
 import csv
 import json
-import random
 from pathlib import Path
 
 import numpy as np

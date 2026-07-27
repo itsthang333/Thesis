@@ -23,8 +23,6 @@ from config import (
     BTXRD_HYBRID_PIPELINE,
     ClassifierConfig,
     DATASET_TARGET_COLUMNS,
-    DEFAULT_DATASET,
-    SUPPORTED_DATASETS,
 )
 from datasets.factory import build_classification_dataset
 from models.classifier import DenseNet121AnatomyClassifier

@@ -11,7 +11,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 
 if __package__:
@@ -120,7 +119,6 @@ def main() -> None:
         seed=args.mask_seed,
     )
     args.output_dir.mkdir(parents=True, exist_ok=False)
-    maps_dir = args.output_dir / "maps"
     manifest_rows: list[dict[str, object]] = []
     observed_masks: list[torch.Tensor] = []
 
