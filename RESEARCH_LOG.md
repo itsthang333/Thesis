@@ -4653,3 +4653,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   truth. This verifies execution rather than only source structure and still
   does not open BTXRD GT.
 
+## 2026-07-28 - Proposal-oracle recovery burden
+
+- Frozen selector/oracle, consumer-entry and operational-goal values were
+  combined arithmetically at
+  `artifacts/literature_reviews/proposal_oracle_recovery_burden_2026-07-28.md`
+  (canonical-LF SHA-256
+  `b5b9c3392b07a9b1483c95d3c8c808263717cfd2227fc415489e377ff1b8ade3`).
+  No per-image file, validation mask or test record was opened.
+- Required current-to-oracle gap recovery for the operational goals is
+  overall/small/medium/large
+  `60.76% / 60.62% / 66.85% / 34.57%`; goal as a fraction of oracle is
+  `83.17% / 80.34% / 86.25% / 76.92%`. Small has the narrowest absolute
+  oracle headroom (`0.04379`), but medium is the hardest WTA selection burden.
+- Entry-tier recovery is
+  `29.34% / 12.10% / 46.76% / -2.27%`. This supports the frozen staged
+  decision: geometry correction first; relational selection only after an
+  oracle-pass/entry-fail; robust consumer only after entry. A small-only gain
+  cannot compensate for medium failure, and subgroup identities remain
+  forbidden for training/routing.
+- The note cites Choe et al. (CVPR 2020) for correct WSOL evaluation, Shen et
+  al. (CVPR 2021) for arbitrary-mask proposal MIL, and Li et al. (DSMIL,
+  CVPR 2021) for relational critical-instance evidence. Their metrics are not
+  transferred to BTXRD.
+
