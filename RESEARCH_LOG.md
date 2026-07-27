@@ -3969,4 +3969,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   valid bag count, and cautions that a high oracle with low selected Dice
   would be a genuine approximately-one-of-sixty ranking problem rather than
   proof that the proposal shapes are absent.
+- A focused selector literature review is frozen at
+  `artifacts/literature_reviews/mask_bag_selector_contingency_2026-07-27.md`.
+  It records Ilse et al. gated-attention MIL (ICML 2018), Cinbis et al.
+  multi-fold MIL against premature localization lock-in, Li et al. DSMIL
+  relational critical-instance aggregation (CVPR 2021), and Seibold et al.
+  uncertainty-aware radiograph MIL (ACCV 2020), with official/stable URLs and
+  explicit adapt/reject decisions. If and only if version 6 proves adequate
+  oracle support but poor ranking, the preferred next study is deterministic
+  group-preserving train-only cross-validation of a soft attention/relational
+  selector, followed by one fixed full-train model. Validation GT cannot choose
+  its architecture, epoch or loss weight. If oracle support fails, the study
+  is rejected in advance and proposal generation must be repaired instead.
 
