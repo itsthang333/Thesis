@@ -99,6 +99,24 @@ when the true lesion is small.
    Dice. A second model is justified only after a single EMA consumer shows
    residual confirmation lock-in.
 
+9. Ramazan Gokberk Cinbis, Jakob Verbeek and Cordelia Schmid, *Multi-fold MIL
+   Training for Weakly Supervised Object Localization*, CVPR 2014:
+   https://openaccess.thecvf.com/content_cvpr_2014/html/Cinbis_Multi-fold_MIL_Training_2014_CVPR_paper.html
+
+   Multi-fold MIL prevents a localizer from selecting instances in an image
+   using a model that was trained on those same instances. This directly
+   motivates out-of-fold train pseudo maps when a high-capacity RAD-DINO
+   proposal selector becomes the teacher of a second model.
+
+10. Jihye Kim et al., *CrossSplit: Mitigating Label Noise Memorization through
+    Data Splitting*, ICML 2023:
+    https://proceedings.mlr.press/v202/kim23a.html
+
+    CrossSplit uses disjoint data partitions so a peer cannot merely memorize
+    and return the same noisy example-label pair. Its classification results
+    do not transfer numerically, but they reinforce that in-sample correction
+    is not independent evidence.
+
 ## What can be combined safely
 
 The smallest coherent combination is:
@@ -131,6 +149,63 @@ The source checkpoint, train and validation candidate galleries, per-candidate
 scores/provenance, and every resulting teacher map must be frozen and hashed
 before consumer construction. Validation masks are still unopened at this
 point.
+
+## Source-level feasibility audit
+
+The current version-6 runner is sufficient for its frozen prediction-first
+question but not yet sufficient to supervise a reliability-aware consumer:
+
+- `_load_candidate_payload` reads only `sam_masks`, `prompt_map` and
+  `sam_scores`; it discards the already-frozen `component_ids`,
+  `prompt_modes` and `proposal_source_ids`;
+- the feature cache retains only descriptors, flipped descriptors and kept
+  indices;
+- the validation manifest saves only the winning candidate index, winning
+  mean-TTA logit, bag logit/probability and WTA map;
+- no complete vector of original/flip candidate logits is persisted;
+- no train prediction manifest or out-of-fold train map is generated.
+
+Consequently, a version-6 pass would prove that the selector mechanism is
+promising, but its compact WTA outputs cannot by themselves define the
+family/view consensus proposed here. The bag probability is an image-level MIL
+quantity, and multiplying it uniformly inside one binary mask does not create
+calibrated pixel uncertainty.
+
+If version 6 passes, a separate predeclared source-freeze job must:
+
+1. bind the unchanged candidate galleries and all proposal provenance arrays;
+2. train a fixed group-preserving K-fold selector family using image labels
+   only, with every group confined to one fold;
+3. score each clean-train image only with a selector that excluded its group,
+   producing out-of-fold candidate logits and maps;
+4. train the final full-data selector separately for frozen validation
+   inference;
+5. save original and aligned-flip logits for every kept candidate, their
+   ordering/provenance, selector fold, checkpoint hash, and physical map hash;
+6. freeze all 2,981 train teacher records before consumer training and all 371
+   validation predictions before any validation GT loader.
+
+Cross-fitting is not a new supervision source and uses no mask. It removes the
+most direct path by which an image-level MIL selector could memorize a
+train-image proposal and then present that same overconfident proposal as
+independent dense supervision to the consumer. The number of folds, group
+assignment, seeds, temperature/rank rule and final full-data model must be
+predeclared; validation Dice cannot choose them.
+
+Within each out-of-fold bag, reliability should use ranks and stability before
+raw sigmoid values:
+
+- compare original and flip candidate ranks/logits;
+- normalize duplicate prompt variants within
+  `(component_id, proposal_source_id)` before combining families;
+- treat the intersection of stable top-family masks as confident foreground;
+- treat their symmetric difference and boundary band as ambiguous;
+- preserve complete uncertainty on positive-image regions unsupported by all
+  families rather than declaring them background.
+
+This rule avoids calling highly correlated prompt variants independent votes.
+It also preserves multi-component candidates: consensus is formed within a
+component/source hierarchy and only then unioned across distinct components.
 
 ## Consumer C1: partial-consensus EMA U-Net
 
@@ -242,4 +317,3 @@ unresolved. At terminal audit:
 - if proposal oracle fails, improve high-resolution proposal support first;
 - if the source fails, do not use EMA, robust loss, or a second decoder to
   disguise rejected pseudo supervision.
-

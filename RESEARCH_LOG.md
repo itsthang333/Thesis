@@ -4249,7 +4249,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - A conditional design is recorded in
   `artifacts/literature_reviews/noise_robust_consumer_feasibility_addendum_2026-07-28.md`
   (canonical-LF SHA-256
-  `8c14f8447da7ad284946fd50855f43491b574b45d8e83a9d2fbf1e165bc86088`).
+  `22bb188591ab933d7a9927c8e8bc9a2e5a652dc39f281a8d463a8c3a468d843d`).
   It combines family/view consensus, partial soft labels, image-level
   SmoothMax, uncertainty-masked EMA equivariance, local affinity, and
   train-only proposal-area-balanced sampling. On tumor images, ambiguous
@@ -4274,4 +4274,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the oracle passes but selection fails, the relational selector comes first;
   if the oracle fails, proposal support comes first. No validation mask, test
   record, new consumer implementation, or heavy local computation was used.
+- A subsequent source audit found that version 6 deliberately persists only
+  the WTA candidate, its mean-TTA logit, bag probability and output map. Its
+  loader discards the frozen `component_ids`, `prompt_modes` and
+  `proposal_source_ids`; it does not save every original/flip candidate logit
+  or any train prediction. Therefore a passing v6 compact output is mechanism
+  evidence, not yet a calibrated reliability teacher.
+- Any authorized consumer source must first run a separately predeclared
+  group-preserving multi-fold freeze: each clean-train image is scored only by
+  a selector whose training excluded that group, while a distinct full-data
+  selector produces validation predictions. Every candidate logit,
+  provenance array, fold/checkpoint and physical map is frozen before consumer
+  training. This transfers the anti-lock-in principle from Cinbis, Verbeek and
+  Schmid, *Multi-fold MIL Training for Weakly Supervised Object Localization*,
+  CVPR 2014,
+  https://openaccess.thecvf.com/content_cvpr_2014/html/Cinbis_Multi-fold_MIL_Training_2014_CVPR_paper.html,
+  and the disjoint-partition noise-memorization argument from Kim et al.,
+  *CrossSplit*, ICML 2023,
+  https://proceedings.mlr.press/v202/kim23a.html. Both are mechanistic
+  transfers; neither reported metric is converted into a BTXRD Dice claim.
 
