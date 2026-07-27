@@ -4325,3 +4325,41 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer model may use two-process DDP. No implementation, Kaggle launch,
   validation mask or test access occurred.
 
+## 2026-07-28 - Paired diagnosis of the small-only regression
+
+- The user's cited pattern—large overall/medium/large p90 gains but a small
+  decrease and small p97 `0.02912824 < 0.03`—was re-audited from the frozen
+  multi-layer decoder and affinity-decoder per-image rows. The detailed
+  diagnostic is recorded at
+  `artifacts/literature_reviews/small_failure_paired_diagnostic_addendum_2026-07-28.md`
+  (canonical-LF SHA-256
+  `331f8a81107634616e7d83b3b36c46d5e58bd0bd6129462286b2e822ae51beba`).
+  This is post-freeze analysis of already rejected outputs, not model
+  selection or retuning; test remains untouched.
+- The small decrease is structurally distributed. P90 improves on `31/94`,
+  decreases on `43/94` and ties on 20; p97 improves on 21, decreases on 39
+  and ties on 34. The candidate recovers ten p90 complete misses but loses
+  fifteen previous overlaps, increasing misses `30 -> 35`; argmax hits change
+  by four recovered versus five lost. All four within-small GT-area quartiles
+  have negative mean p90 and p97 deltas, so the result is not caused only by
+  the very smallest outliers.
+- The median small lesion is about `96.5` pixels at `320x320` but `3.86`
+  cells at the decoder's native `64x64` grid. Fixed-percentile ties add a
+  second distortion: small p97 selects mean support `0.03697`, not nominal
+  `0.03`, and 14/94 images exceed 4.5%; p99 selects mean `0.01915`, and 17/94
+  exceed 1.5%. The frozen metrics remain valid for the rejected gate, but
+  changing the tie operator or percentile after GT is forbidden.
+- Sources and transfer limits are recorded: Mun et al., WACV 2024, for
+  small-object size balance; Liu et al., GLAM/MIDL 2021, for global-to-local
+  high-resolution medical localization; Redekop et al., MIDL 2022, for
+  image-label global/patch medical MIL; and Seibold et al., ACCV 2020, for
+  uncertainty-aware radiograph instances. Their numerical results are not
+  converted to BTXRD Dice.
+- The repair remains adaptive proposal geometry rather than a post-hoc small
+  threshold: family-normalized, area-stratified, cross-fitted relational
+  candidate scoring; full/zoom consistency only after the base selector; and
+  original-resolution SAM proposal expansion only if frozen oracle support is
+  inadequate. Anatomy-specific routing and another free local dense decoder
+  are rejected. No new experiment is launched before version-6 terminal
+  evidence selects the branch.
+
