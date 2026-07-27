@@ -3892,3 +3892,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   semantics are unchanged. A new correction addendum must bind this repair
   before any rerun.
 
+### Mask-bag MIL version 6 launch after projection-call correction
+
+- Correction addendum v5 was frozen before execution at
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1_wrapper_correction_v5.json`,
+  SHA-256
+  `036d4c7adadd6551367783f90377d3424dc42a3f1b974122b646018e648abd40`,
+  commit `689e96616ef04a692193b5e253d0c0c91450822b`. It binds the exact
+  version-5 error evidence, repair commit `c0228af...`, corrected canonical
+  runner/test hashes and expected version-6 preflights `24 passed` /
+  `206 passed, 1 skipped`; the base scientific protocol remains authoritative.
+- Kaggle accepted private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1` version `6`. Wrapper and
+  unchanged metadata SHA-256 are
+  `6293b040ce25109e6c4bb167a32fcc635bfbeef38e82a23c18c28ba9d8aaf1ff`
+  and
+  `3086b5fa9bc1598831c45efd48a42dc8447447b290f5bc0c48d5b300e221caed`.
+  The wrapper checks out `689e966...`, validates correction v1-v5, preserves
+  T4 x2 routing and requires regenerated candidate manifests to exactly match
+  the already frozen version-5 hashes. No launch-time status poll was made;
+  validation GT, consumer training and BTXRD test remain locked.
+
