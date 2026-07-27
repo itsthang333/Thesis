@@ -4608,3 +4608,29 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   candidate payload is currently retained locally, so no mass result was
   fabricated.
 
+## 2026-07-28 - Geometry-v3 wrapper readiness audit
+
+- The conditional wrapper plan is recorded at
+  `artifacts/literature_reviews/mask_bag_geometry_v3_wrapper_readiness_2026-07-28.md`
+  (canonical-LF SHA-256
+  `40faa93556238a16c5a0b234019376de2b3b739aa3acfcbbae77041d7e6fc171`).
+  No wrapper was finalized, no Kaggle kernel was changed/launched and no extra
+  status poll occurred.
+- The audited v6 wrapper canonical-LF SHA-256 is
+  `6293b040ce25109e6c4bb167a32fcc635bfbeef38e82a23c18c28ba9d8aaf1ff`.
+  Its sequencing, T4x2 routing, candidate generation, prediction freeze and
+  separate evaluator are retained. V3 adds only final geometry source/protocol
+  binding and the GT-blind fractional-mass diagnostic before optimizer
+  construction.
+- A future corrected wrapper must require regenerated candidate/pseudo
+  manifests to equal the four direct terminal v6 hashes. Those hashes are not
+  guessed. The current compact wrapper keeps manifests/summaries but deletes
+  physical NPZ payloads, so regeneration is expected unless terminal evidence
+  exposes an immutable full-payload mount. Manifest-only reuse is forbidden.
+- Finalization remains conditional: do not launch if v6 already meets every
+  operational goal or if its immutable candidate oracle fails any goal.
+  Otherwise, fill only terminal evidence hashes, run complete Torch and
+  repository tests, freeze all corrected predictions, and compare
+  corrected-v3/v6/baseline with complete-group bootstrap 10,000. Consumer and
+  test remain locked.
+
