@@ -4677,3 +4677,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   CVPR 2021) for relational critical-instance evidence. Their metrics are not
   transferred to BTXRD.
 
+## 2026-07-28 - T4x2 candidate-generation concurrency audit
+
+- A source/performance audit is recorded at
+  `artifacts/literature_reviews/t4x2_candidate_generation_parallelism_audit_2026-07-28.md`
+  (canonical-LF SHA-256
+  `2a46e64b64bad3edf75dcf773508610ddfebafe2843b60d64cb72ff796bf91ae`).
+  No benchmark, wrapper mutation or Kaggle launch occurred.
+- Version 6 assigns classifier/LayerCAM to T4-0 and SAM to T4-1, but one
+  process invokes them sequentially for each image at batch size 1. This is
+  device separation, not evidence of concurrent throughput. The later
+  RAD-DINO stage does genuinely shard encoder batches with DataParallel.
+- If correction v3 is authorized and must regenerate payloads, the preferred
+  bounded optimization is two spawned independent processes, each loading the
+  full classifier+SAM stack on one T4 and processing deterministic even/odd
+  image-ID shards. A frozen 32-train-image, no-GT benchmark must prove exact
+  per-image and merged-manifest byte identity, no provenance/count change,
+  safe memory and at least 30% steady-state speedup. Otherwise the sequential
+  generator remains.
+- PyTorch primary documentation is recorded for DataParallel batch sharding
+  and CUDA multiprocessing: 
+  https://docs.pytorch.org/docs/stable/generated/torch.nn.DataParallel.html and
+  https://docs.pytorch.org/docs/stable/notes/multiprocessing.html. The latter
+  requires spawn/forkserver for CUDA and warns against CPU oversubscription.
+  No speedup or utilization number is claimed without measurement.
+
