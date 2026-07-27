@@ -4558,7 +4558,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - A separate method audit is recorded at
   `artifacts/literature_reviews/fractional_mask_pooling_small_object_contingency_2026-07-28.md`
   (canonical-LF SHA-256
-  `5084f7be7b2faf45c0e34f61229598670dc0c2cf972f0ab6c75f5bb8e77a51bb`).
+  `9a5c6943949becf6f40ee3057a36e82265951c7ffc0ab31d522a057f6360aee1`).
   It identifies a non-coordinate small-proposal hypothesis and deliberately
   does not modify geometry-correction v3.
 - The current proposal descriptor divides its weighted token sum by
@@ -4585,19 +4585,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
   Their reported metrics and size-aware training labels are not transferred to
   BTXRD.
-- Commit `ec4a773b10d9a51b8cb56977fc9e560709ae8a30` prepares the GT-blind
+- Commits `ec4a773b10d9a51b8cb56977fc9e560709ae8a30` and
+  `057ba9f1b819d440aaf0d3eb8fc1ac58e9740744` prepare and harden the GT-blind
   diagnostic. `project/audit_mask_bag_fractional_grid_mass.py`
   (canonical-LF SHA-256
-  `25a694fb2a38fa0cf8c7e4601493a1d55d4dd5d40c1a1f1d820968e9a55dfa44`)
+  `aa684de20407d0934bb8c4d32f5293eac1ed56e341e28eab0ecce78fd2757c79`)
   verifies split/source/candidate/pseudo-manifest and every physical NPZ hash,
   reproduces fallback bags, applies the exact v3 projection, and saves every
   candidate mass plus fixed overall/image-label/prompt/source/fallback
   summaries. It is hard-limited to train/validation and the frozen
   `32/4/0.25/81` grid/oversampling/minimum/cap contract.
+- It now saves original and square-frame-flipped mass per candidate, fails if
+  retained indices differ, and requires absolute mass agreement within
+  `1e-5`, matching the runner's original/flip validity invariant.
 - Static boundary tests at
   `tests/test_mask_bag_fractional_grid_mass_audit.py` (canonical-LF SHA-256
-  `0c8eb0b8cdc7e00705c21b6c0bc26f882619f357ee304c8d0da7e0f576a1e047`)
+  `15cd00183d6e6ef38228863a513e17b3c67a4cd84dbfc48c3e4b7312a73c77e6`)
   passed with the existing probe tests (`7 passed`); `py_compile` passed. The
-  numerical Torch path remains a mandatory Kaggle preflight. No candidate
-  payload is currently retained locally, so no mass result was fabricated.
+  numerical path remains a mandatory Kaggle preflight. A full local pytest
+  collection is unavailable because the current Python lacks NumPy and Torch
+  and stops on missing-dependency imports, not source-test assertions. No
+  candidate payload is currently retained locally, so no mass result was
+  fabricated.
 

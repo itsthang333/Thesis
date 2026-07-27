@@ -127,23 +127,29 @@ proposals or a consumer, so its causal effect remains identifiable.
 
 ## Prepared GT-blind audit
 
-Commit `ec4a773b10d9a51b8cb56977fc9e560709ae8a30` adds:
+Commits `ec4a773b10d9a51b8cb56977fc9e560709ae8a30` and
+`057ba9f1b819d440aaf0d3eb8fc1ac58e9740744` add and harden:
 
 - `project/audit_mask_bag_fractional_grid_mass.py`, canonical-LF SHA-256
-  `25a694fb2a38fa0cf8c7e4601493a1d55d4dd5d40c1a1f1d820968e9a55dfa44`;
+  `aa684de20407d0934bb8c4d32f5293eac1ed56e341e28eab0ecce78fd2757c79`;
 - `tests/test_mask_bag_fractional_grid_mass_audit.py`, canonical-LF SHA-256
-  `0c8eb0b8cdc7e00705c21b6c0bc26f882619f357ee304c8d0da7e0f576a1e047`.
+  `15cd00183d6e6ef38228863a513e17b3c67a4cd84dbfc48c3e4b7312a73c77e6`.
 
 The tool verifies the split, every source-image hash, candidate manifest,
 summary, pseudo-manifest binding and every physical NPZ hash. It reproduces
 fallback bags, projects proposals using the v3 content-box transform, and
 writes every candidate's grid mass plus a hash-bound summary. Fixed summaries
 cover overall, image label, prompt mode, proposal source and fallback strata.
+Original and square-frame-flipped masses are both saved; the audit fails if
+their retained indices differ or if their absolute mass difference exceeds
+`1e-5`.
 It accepts only train/validation, fixes grid/oversampling/minimum mass/candidate
 cap to `32/4/0.25/81`, and records
 `ground_truth_loaded=false`, `consumer_trained=false`, and
 `test_evaluated=false`.
 
 Local `py_compile` passed and the static GT-boundary suite reported `7 passed`.
-The numerical Torch path remains a required Kaggle preflight because local
-Python has no Torch.
+The complete numerical suite remains a required Kaggle preflight because the
+current local Python lacks both NumPy and Torch; a full local pytest collection
+therefore stops on missing-dependency import errors rather than source-test
+failures.
