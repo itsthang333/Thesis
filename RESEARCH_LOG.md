@@ -3828,3 +3828,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   this repair; only the wrapper's expected canonical hash will be corrected in
   a new immutable addendum.
 
+### Mask-bag MIL version 5 launch after canonical-hash correction
+
+- Correction addendum v4 was frozen at
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1_wrapper_correction_v4.json`,
+  SHA-256
+  `dab9f073db1223938ab61b1f8bc5efdc29f331ae100f2a9bce1cff4f68a5b4a3`,
+  commit `9c5b2902a1638fe9b5d7fa0a2f5508753ec153be`. It records both the
+  erroneous CRLF hash and corrected canonical LF hash; source and test bytes
+  remain unchanged from version 4.
+- Before launch, wrapper constants were independently checked against the
+  exact bytes from `git show HEAD:<path>` for the base protocol, correction
+  v1-v4, corrected generator and device test: all seven canonical hashes pass.
+  The wrapper compiles and hashes to
+  `975abd8262a57885962ccf73c7731381ab2cf20740fa42401c42f9e2390b427a`.
+- Kaggle accepted version 5 of
+  `itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1` at
+  `2026-07-27T14:13:41Z`. Exactly one five-minute heartbeat was created after
+  acceptance: `theo-d-i-rad-dino-mask-bag-mil`; no launch-time status poll was
+  performed. T4 x2 routing, image-level-only supervision, prediction-first GT
+  boundary, locked BTXRD test and no-consumer-before-gate rules are unchanged.
+
