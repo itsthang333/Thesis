@@ -2,7 +2,8 @@
   "audit_id": "rad_dino_global_local_mil_probe_val_v1_wrapper_audit",
   "status": "PRELAUNCH_PASS",
   "audit_revision": 2,
-  "kaggle_kernel_version": 2,
+  "kaggle_kernel_version": 3,
+  "requested_machine_shape": "NvidiaH100",
   "scientific_source_commit": "9a62bb7b91632f624b3d188d1fba499c3170e046",
   "checkout_commit": "0c7d371ab81f4fa0e4ea325ff8f1a3bbc4a90bd3",
   "protocol_sha256": "f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572",
@@ -22,6 +23,17 @@
     "protocol_changed": false,
     "source_changed": false,
     "gate_changed": false
+  },
+  "accelerator_selection": {
+    "reason": "RAD-DINO encoder inference already uses CUDA FP16 autocast; a single H100 is preferable to adding multi-GPU synchronization and new source behavior for T4 x2",
+    "official_cli_reference": "https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md",
+    "launch_argument": "--accelerator NvidiaH100",
+    "api_acceptance": "kernel version 3 successfully pushed",
+    "runtime_device_must_be_verified_from_terminal_log": true,
+    "scientific_contract_changed": false,
+    "protocol_changed": false,
+    "source_changed": false,
+    "wrapper_changed_since_version_2": false
   },
   "global_bindings": {
     "checkpoint_sha256": "33ff0188894553ac5936511cd2aecf1369388665d569ff636cd06e1f7f09642f",

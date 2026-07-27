@@ -3273,3 +3273,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   JSON/hash audit. The protocol remains byte-identical at
   `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`.
 
+## 2026-07-27 - Global-local MIL v1 H100 accelerator selection
+
+- The official Kaggle CLI supports an explicit accelerator argument and lists
+  `NvidiaTeslaP100`, `NvidiaTeslaT4`, `NvidiaTeslaA100`, `NvidiaL4`,
+  `NvidiaH100` and other permission-dependent shapes. Source: Kaggle,
+  *Kernels Commands - kaggle kernels push*,
+  https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md. The installed
+  CLI also maps `--accelerator` directly to the API `machine_shape` field.
+- For this exact workload, `NvidiaH100` was selected ahead of T4 x2. The
+  dominant workload is frozen RAD-DINO Transformer inference, and the runner
+  already executes encoder forwards under CUDA FP16 autocast. A single H100
+  can exploit that path without introducing data-parallel replication,
+  inter-device gathers or a new numerical/source branch. T4 x2 would require
+  source changes to distribute each six-ROI batch, while all single-image
+  global proposal forwards would still occupy only one device.
+- Kernel version 2 was superseded while still `RUNNING` solely to apply the
+  user-requested faster accelerator; it is not a scientific result and no
+  partial output will be used. The same staged wrapper was pushed with
+  `--accelerator NvidiaH100`; Kaggle accepted kernel version 3, which entered
+  `KernelWorkerStatus.RUNNING`. Exactly one existing five-minute heartbeat was
+  retargeted from version 2 to version 3; no second kernel or monitor was
+  created.
+- No code or scientific setting changed between versions 2 and 3. Wrapper,
+  metadata and protocol SHA-256 remain respectively
+  `156a72fe8e8422d602bac701d1dac64ecfe22e0fcf0f29239d8bd5041578f995`,
+  `3a96403dbc825f0a8a6f731cb5b345095ff90a87f99a92ab6c28b61bd3c79399`
+  and
+  `f5941a203a7f003b9f534ede793ca9ce07dffee9a0e9c74049f68ee02f26a572`.
+  Terminal audit must still verify that the runtime device is actually H100
+  from the wrapper's CUDA preflight/provenance before making any speed claim.
+
