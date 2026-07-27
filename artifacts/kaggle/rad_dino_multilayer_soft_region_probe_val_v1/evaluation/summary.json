@@ -1,0 +1,93 @@
+{
+  "arm": "rad_dino_multilayer_soft_region_decoder",
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "normal": 187
+  },
+  "subgroups": {
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "image_level_auroc_from_raw_p99": 0.8102476168332945,
+  "tumor_localization": {
+    "overall": {
+      "n": 184,
+      "pixel_ap": 0.19542876442057858,
+      "pixel_auroc": 0.8477694806423943,
+      "argmax_hit": 0.23369565217391305,
+      "saliency_mass_in_gt": 0.04011239077063428,
+      "dice_p90": 0.1431706754974187,
+      "dice_p95": 0.1634471292728106,
+      "dice_p97": 0.1726705924240193,
+      "dice_p99": 0.1635963852547
+    },
+    "small": {
+      "n": 94,
+      "pixel_ap": 0.05152455199902599,
+      "pixel_auroc": 0.8306082325178966,
+      "argmax_hit": 0.0425531914893617,
+      "saliency_mass_in_gt": 0.004541933551227066,
+      "dice_p90": 0.01445152136562991,
+      "dice_p95": 0.021234153994309408,
+      "dice_p97": 0.02912823920690907,
+      "dice_p99": 0.04616056150300787
+    },
+    "medium": {
+      "n": 72,
+      "pixel_ap": 0.29648034807238405,
+      "pixel_auroc": 0.8562751496390432,
+      "argmax_hit": 0.3472222222222222,
+      "saliency_mass_in_gt": 0.05122956495697466,
+      "dice_p90": 0.21741629248028146,
+      "dice_p95": 0.2762191759401761,
+      "dice_p97": 0.3056196292563373,
+      "dice_p99": 0.2860156045697655
+    },
+    "large": {
+      "n": 18,
+      "pixel_ap": 0.5427222057925758,
+      "pixel_auroc": 0.9033666559726188,
+      "argmax_hit": 0.7777777777777778,
+      "saliency_mass_in_gt": 0.18140052617106603,
+      "dice_p90": 0.5183882346986425,
+      "dice_p95": 0.4550267023910773,
+      "dice_p97": 0.39048451189521216,
+      "dice_p99": 0.287195476475497
+    }
+  },
+  "complete_misses": {
+    "dice_p90": {
+      "overall": 39,
+      "small": 35,
+      "medium": 4,
+      "large": 0
+    },
+    "dice_p95": {
+      "overall": 59,
+      "small": 51,
+      "medium": 8,
+      "large": 0
+    },
+    "dice_p97": {
+      "overall": 65,
+      "small": 55,
+      "medium": 10,
+      "large": 0
+    },
+    "dice_p99": {
+      "overall": 81,
+      "small": 64,
+      "medium": 17,
+      "large": 0
+    }
+  },
+  "prediction_manifest_sha256": "3647fefb9046f1982d20510eb2a0d5a8ce8ecaa91c85e0922c4b9a66e6b2fc63",
+  "per_image_sha256": "84b3dca01096a504cd1f9725752c314f0e63c69ddbfaee39e58c8d130e35eb2e",
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "complete_misses_included": true,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
+

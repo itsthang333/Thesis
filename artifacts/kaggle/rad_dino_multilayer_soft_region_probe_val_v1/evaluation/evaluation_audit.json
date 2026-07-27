@@ -1,0 +1,25 @@
+{
+  "source_commit": "0ea383e48bcd91f7235d1e1130e77d80f099cbc4",
+  "protocol_sha256": "4093521cacdabea003273c3ec1274bc6c169fbf647a6b5eafe96925b1e36202e",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "prediction_freeze_sha256": "8d6225af82ab826992f93c799ad0d62844b5b9fbdb0a584dac77f45febb8c0c2",
+  "prediction_manifest_sha256": "3647fefb9046f1982d20510eb2a0d5a8ce8ecaa91c85e0922c4b9a66e6b2fc63",
+  "summary_sha256": "34e636ea5b2dd1d9230d893e7f8d6b002ef568aef88b24bc052ebcdb3e5b1b74",
+  "per_image_sha256": "84b3dca01096a504cd1f9725752c314f0e63c69ddbfaee39e58c8d130e35eb2e",
+  "paired_comparison_sha256": "1599b51235f2754bccbc039bc8400632ee6f2f72bb2a502214b30c3f3d084bde",
+  "gate_decision_sha256": "d36398a3ae8fcd92ac4c9e8878d7d114990d5b2007ce20f3bc4404d85703c20c",
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "normal": 187,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "complete_misses_included": true,
+  "bootstrap_replicates": 10000,
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
+

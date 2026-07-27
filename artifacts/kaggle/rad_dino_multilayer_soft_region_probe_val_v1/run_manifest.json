@@ -1,0 +1,57 @@
+{
+  "run_id": "btxrd_rad_dino_multilayer_soft_region_probe_val_v1",
+  "source_commit": "0ea383e48bcd91f7235d1e1130e77d80f099cbc4",
+  "protocol_sha256": "4093521cacdabea003273c3ec1274bc6c169fbf647a6b5eafe96925b1e36202e",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "model_snapshot": {
+    "config.json": {
+      "bytes": 879,
+      "sha256": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede"
+    },
+    "preprocessor_config.json": {
+      "bytes": 756,
+      "sha256": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56"
+    },
+    "model.safetensors": {
+      "bytes": 346345912,
+      "sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae"
+    }
+  },
+  "selected_hidden_layers": [
+    4,
+    8,
+    12
+  ],
+  "source_files": {
+    "runner": "3e016ad4c5d31befa89d1ae266480b31c739358ed85744447c6aa25e40522bfa",
+    "decoder": "d93986255d31e3b65e7bb1f2176079a67fcda35d10629737decf916a5048d481",
+    "nominal_memory": "a7fbf3e4042623b1b2817f8bb02a87072db55c21bb5b9380cc259aca3a7dd526",
+    "mae_reconstruction": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9"
+  },
+  "checkpoint_sha256": "33ff0188894553ac5936511cd2aecf1369388665d569ff636cd06e1f7f09642f",
+  "teacher_metadata_sha256": "a3382e800098848c6d3171f72c8cacd31600f0eb87fcb769c3b9137d50e9ce3e",
+  "training_history_sha256": "c2eb02e13d2ca133da1cf3b1a0cf4075bab63107165b26febf8f583b57dad91d",
+  "prediction_freeze_sha256": "8d6225af82ab826992f93c799ad0d62844b5b9fbdb0a584dac77f45febb8c0c2",
+  "cohort": {
+    "train": 2981,
+    "train_normal": 1493,
+    "train_tumor": 1488,
+    "validation": 371,
+    "validation_tumor": 184,
+    "validation_normal": 187
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "transformers": "4.50.2",
+    "cuda": "12.8",
+    "gpu": "Tesla T4"
+  },
+  "prediction_tta": "mean of original and aligned horizontal flip",
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "completed_at_utc": "2026-07-27T09:21:15.791795+00:00",
+  "elapsed_seconds": 1160.356702
+}
+

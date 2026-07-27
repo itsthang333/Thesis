@@ -1,0 +1,171 @@
+[
+  {
+    "epoch": 1,
+    "total_loss": 1.0105621604593447,
+    "image_loss": 0.6332006137268793,
+    "soft_region_loss": 0.32488272282177577,
+    "soft_affinity_loss": 0.5226142994919667,
+    "flip_consistency_loss": 0.0010869795783537118,
+    "training_accuracy": 0.6427373364642738,
+    "layer_weights": [
+      0.3302515745162964,
+      0.33358317613601685,
+      0.33616524934768677
+    ]
+  },
+  {
+    "epoch": 2,
+    "total_loss": 0.8314118064121011,
+    "image_loss": 0.5388533006005248,
+    "soft_region_loss": 0.2577411090560637,
+    "soft_affinity_loss": 0.3455696830041607,
+    "flip_consistency_loss": 0.001302137691121868,
+    "training_accuracy": 0.7376719221737672,
+    "layer_weights": [
+      0.32913339138031006,
+      0.33441898226737976,
+      0.3364475667476654
+    ]
+  },
+  {
+    "epoch": 3,
+    "total_loss": 0.7468213304757433,
+    "image_loss": 0.48131645329036915,
+    "soft_region_loss": 0.23278301376999225,
+    "soft_affinity_loss": 0.32401797685762196,
+    "flip_consistency_loss": 0.0016003091159559433,
+    "training_accuracy": 0.7802750754780275,
+    "layer_weights": [
+      0.32936039566993713,
+      0.334395170211792,
+      0.3362443447113037
+    ]
+  },
+  {
+    "epoch": 4,
+    "total_loss": 0.6712782853570125,
+    "image_loss": 0.42191144647251505,
+    "soft_region_loss": 0.21730644507058983,
+    "soft_affinity_loss": 0.31678202586503196,
+    "flip_consistency_loss": 0.0019109529008010237,
+    "training_accuracy": 0.809459912780946,
+    "layer_weights": [
+      0.327484130859375,
+      0.3356124758720398,
+      0.3369034230709076
+    ]
+  },
+  {
+    "epoch": 5,
+    "total_loss": 0.6085930264107983,
+    "image_loss": 0.3745104167061101,
+    "soft_region_loss": 0.2030046668762576,
+    "soft_affinity_loss": 0.30661618195214474,
+    "flip_consistency_loss": 0.0020816223718501856,
+    "training_accuracy": 0.8373029184837303,
+    "layer_weights": [
+      0.32822728157043457,
+      0.3367649018764496,
+      0.33500781655311584
+    ]
+  },
+  {
+    "epoch": 6,
+    "total_loss": 0.5485601426768878,
+    "image_loss": 0.3240447849954101,
+    "soft_region_loss": 0.19372914550231704,
+    "soft_affinity_loss": 0.3028075283358308,
+    "flip_consistency_loss": 0.0025272881212296595,
+    "training_accuracy": 0.8658168399865817,
+    "layer_weights": [
+      0.32893580198287964,
+      0.33668723702430725,
+      0.3343769311904907
+    ]
+  },
+  {
+    "epoch": 7,
+    "total_loss": 0.493999275041809,
+    "image_loss": 0.28571645167453996,
+    "soft_region_loss": 0.17990029782765912,
+    "soft_affinity_loss": 0.2782194830537162,
+    "flip_consistency_loss": 0.002802881178597173,
+    "training_accuracy": 0.8913116403891311,
+    "layer_weights": [
+      0.3293777108192444,
+      0.33780211210250854,
+      0.33282017707824707
+    ]
+  },
+  {
+    "epoch": 8,
+    "total_loss": 0.4391741615997243,
+    "image_loss": 0.24940714099252193,
+    "soft_region_loss": 0.1607046230214251,
+    "soft_affinity_loss": 0.2839190956135218,
+    "flip_consistency_loss": 0.0033524363037107023,
+    "training_accuracy": 0.9067427037906742,
+    "layer_weights": [
+      0.33004340529441833,
+      0.3374561369419098,
+      0.33250048756599426
+    ]
+  },
+  {
+    "epoch": 9,
+    "total_loss": 0.4269907805299631,
+    "image_loss": 0.24980877170054586,
+    "soft_region_loss": 0.1488094421592978,
+    "soft_affinity_loss": 0.27682419654591156,
+    "flip_consistency_loss": 0.003450729245463999,
+    "training_accuracy": 0.908419993290842,
+    "layer_weights": [
+      0.32992953062057495,
+      0.33841389417648315,
+      0.3316565454006195
+    ]
+  },
+  {
+    "epoch": 10,
+    "total_loss": 0.3508772737778543,
+    "image_loss": 0.20429509713366908,
+    "soft_region_loss": 0.11952426811884939,
+    "soft_affinity_loss": 0.26244874759989195,
+    "flip_consistency_loss": 0.00406516746337895,
+    "training_accuracy": 0.9251928882925193,
+    "layer_weights": [
+      0.32996347546577454,
+      0.3395080268383026,
+      0.33052846789360046
+    ]
+  },
+  {
+    "epoch": 11,
+    "total_loss": 0.29571064436763284,
+    "image_loss": 0.17126040224075798,
+    "soft_region_loss": 0.09769913138092642,
+    "soft_affinity_loss": 0.2571878076278812,
+    "flip_consistency_loss": 0.005161650571457158,
+    "training_accuracy": 0.940959409594096,
+    "layer_weights": [
+      0.32993462681770325,
+      0.3415697515010834,
+      0.3284956216812134
+    ]
+  },
+  {
+    "epoch": 12,
+    "total_loss": 0.2569393692513174,
+    "image_loss": 0.14776389066119935,
+    "soft_region_loss": 0.08261735253810043,
+    "soft_affinity_loss": 0.25247924117716003,
+    "flip_consistency_loss": 0.006551011746248197,
+    "training_accuracy": 0.9533713518953372,
+    "layer_weights": [
+      0.33084022998809814,
+      0.34151849150657654,
+      0.32764124870300293
+    ]
+  }
+]
+

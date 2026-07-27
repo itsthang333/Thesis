@@ -1,0 +1,14 @@
+{
+  "source_commit": "0ea383e48bcd91f7235d1e1130e77d80f099cbc4",
+  "protocol_sha256": "4093521cacdabea003273c3ec1274bc6c169fbf647a6b5eafe96925b1e36202e",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "checkpoint_sha256": "33ff0188894553ac5936511cd2aecf1369388665d569ff636cd06e1f7f09642f",
+  "teacher_metadata_sha256": "a3382e800098848c6d3171f72c8cacd31600f0eb87fcb769c3b9137d50e9ce3e",
+  "training_history_sha256": "c2eb02e13d2ca133da1cf3b1a0cf4075bab63107165b26febf8f583b57dad91d",
+  "prediction_manifest_sha256": "3647fefb9046f1982d20510eb2a0d5a8ce8ecaa91c85e0922c4b9a66e6b2fc63",
+  "validation_predictions": 371,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
+

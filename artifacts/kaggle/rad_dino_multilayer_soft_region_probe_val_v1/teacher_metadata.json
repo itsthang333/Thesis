@@ -1,0 +1,42 @@
+{
+  "normal_images": 1493,
+  "positive_images": 1488,
+  "selected_hidden_layers": [
+    4,
+    8,
+    12
+  ],
+  "projection_dim": 128,
+  "projection_seed": 42,
+  "projection_semantic_sha256": "5cbb6846ca1b185fda50b0843951985422ce7e7782fd897639e3238cf9b567ec",
+  "normal_context_top_k": 8,
+  "normal_context_indices_sha256": "53b8986249023550b4f7ef6f58e4c23916fe53eb5a450694084099d1cb3489e0",
+  "normal_context_similarities_sha256": "3511b777108449cf31d219ec261b9e236d4ada512a1fecf50a961825ce15534a",
+  "teacher_spatial_radius": 2,
+  "calibration": {
+    "normal_patch_scores": 1528832,
+    "minimum": 6.556510925292969e-07,
+    "median": 0.0198822021484375,
+    "maximum": 0.368896484375,
+    "semantic_sha256": "45b261100f8ad8953d5e8a920e1cd46ffebb906955c5781a337f7ad3a412c9d5"
+  },
+  "soft_region_contract": {
+    "foreground_start": 0.9,
+    "background_end": 0.5,
+    "variable_foreground_count_minimum": 0,
+    "variable_foreground_count_median": 154.0,
+    "variable_foreground_count_maximum": 951,
+    "positive_images_without_foreground_weight": 1
+  },
+  "positive_teacher_distribution": {
+    "minimum": 0.0012073516845703125,
+    "mean": 0.6234615445137024,
+    "p90": 0.95654296875,
+    "p99": 0.99560546875,
+    "maximum": 1.0
+  },
+  "teacher_cache_sha256": "ef65b090ba28570408e83232e570533a14e6230c44e28b9a1eda796ffd0be8f4",
+  "validation_gt_read": false,
+  "test_evaluated": false
+}
+

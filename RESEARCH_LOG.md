@@ -3043,3 +3043,43 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   with cloud artifacts. Eleven combined decoder/evaluator/auditor tests pass;
   the auditor contains no test-split call.
 
+## 2026-07-27 - Multi-layer soft-region v3 terminal audit and gate decision
+
+- Kernel version 3 reached terminal `COMPLETE`; the sole five-minute
+  heartbeat was deleted before artifact inspection, leaving no active or
+  duplicate monitor. Bulk Kaggle output transport timed out once and a later
+  bounded retry was interrupted by Windows socket error 10053. Completeness
+  was recovered by downloading only validation IDs missing from the frozen
+  split. Two previously downloaded maps (`IMG002099.npy` and
+  `IMG003204.npy`) were zero-byte transport artifacts; both were re-fetched
+  with `--force` and matched their frozen prediction-manifest SHA-256 values.
+  No prediction was regenerated or altered.
+- The independent auditor then verified all `371` physical maps and hashes,
+  `76,028,288` prediction bytes, wrapper/protocol/Git-source/split/baseline
+  bindings, 12-epoch history, teacher metadata, checkpoint, prediction freeze,
+  direct Kaggle output provenance, cohort `371/184/187`, subgroup counts
+  `94/72/18`, complete misses and exact cloud/local agreement. Its initial
+  local invocation lacked `PYTHONPATH` and stopped at the dataset import; the
+  corrected invocation used `PYTHONPATH=D:\thesis\project` without source or
+  protocol changes. Validation GT was read only after the no-GT physical
+  audit; `consumer_trained=false` and `test_evaluated=false` throughout.
+- Integrity/protocol audit status is `PASS`, while the frozen scientific gate
+  is `FAIL`. The candidate achieved image-level AUROC `0.81024762`; p90 Dice
+  overall/small/medium/large was
+  `0.14317068 / 0.01445152 / 0.21741629 / 0.51838823`. Relative to frozen
+  affinity-decoder v3, p90 Dice changed by
+  `+0.05204674 / -0.00195504 / +0.10180003 / +0.13504283`; the paired
+  10,000-replicate overall 95% CI was `[+0.03570832, +0.06939177]`.
+  Medium and large localization improved materially, but the small subgroup
+  did not: small Dice p97 was `0.02912824`, below the predeclared `0.03`, and
+  the no-subgroup-decrease check also failed. Complete p90 misses were
+  overall/small/medium/large `39/35/4/0`.
+- Therefore this exact multi-layer soft-region mechanism is rejected for
+  pseudo-mask/consumer training despite its overall, medium and large gains.
+  It does not meet the operational Dice goals and cannot be promoted under the
+  all-checks-required gate. Compact auditable evidence is frozen under
+  `artifacts/kaggle/rad_dino_multilayer_soft_region_probe_val_v1/`, including
+  prediction/evaluation manifests, cloud outputs and the independent audit;
+  dense maps and the checkpoint remain outside Git in the isolated temporary
+  download. Test remains locked.
+
