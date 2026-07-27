@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import sys
 import tempfile
 import unittest
@@ -38,12 +39,23 @@ class GridGalleryAuditTests(unittest.TestCase):
             / "split_manifest.csv"
         )
         with tempfile.TemporaryDirectory() as directory:
-            runtime_split = Path(directory) / "frozen_split_manifest.csv"
-            canonical = source_split.read_bytes().replace(b"\r\n", b"\n")
-            runtime_split.write_bytes(canonical.replace(b"\n", b"\r\n"))
-            result = AUDIT.audit_grid_gallery(
-                candidate,
-                runtime_split,
+            runtime_root = Path(directory)
+
+            def crlf_copy(source: Path, destination: Path) -> Path:
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                canonical = source.read_bytes().replace(b"\r\n", b"\n")
+                destination.write_bytes(canonical.replace(b"\n", b"\r\n"))
+                return destination
+
+            runtime_split = crlf_copy(
+                source_split, runtime_root / "frozen_split_manifest.csv"
+            )
+            runtime_candidate = runtime_root / "candidate"
+            shutil.copytree(candidate, runtime_candidate)
+            for csv_path in runtime_candidate.rglob("*.csv"):
+                canonical = csv_path.read_bytes().replace(b"\r\n", b"\n")
+                csv_path.write_bytes(canonical.replace(b"\n", b"\r\n"))
+            baseline_per_image = crlf_copy(
                 ROOT
                 / "artifacts"
                 / "kaggle"
@@ -52,6 +64,9 @@ class GridGalleryAuditTests(unittest.TestCase):
                 / "ground_truth"
                 / "evaluation"
                 / "per_image.csv",
+                runtime_root / "baseline_per_image.csv",
+            )
+            cpm_per_image = crlf_copy(
                 ROOT
                 / "artifacts"
                 / "kaggle"
@@ -60,6 +75,9 @@ class GridGalleryAuditTests(unittest.TestCase):
                 / "ground_truth"
                 / "evaluation"
                 / "per_image.csv",
+                runtime_root / "cpm_per_image.csv",
+            )
+            cpm_prompt_quality = crlf_copy(
                 ROOT
                 / "artifacts"
                 / "kaggle"
@@ -68,6 +86,14 @@ class GridGalleryAuditTests(unittest.TestCase):
                 / "ground_truth"
                 / "pseudo_masks"
                 / "prompt_quality.csv",
+                runtime_root / "cpm_prompt_quality.csv",
+            )
+            result = AUDIT.audit_grid_gallery(
+                runtime_candidate,
+                runtime_split,
+                baseline_per_image,
+                cpm_per_image,
+                cpm_prompt_quality,
                 iterations=100,
                 seed=42,
             )

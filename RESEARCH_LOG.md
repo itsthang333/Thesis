@@ -3682,3 +3682,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `theo-d-i-rad-dino-mask-bag-mil` was created after acceptance; no duplicate
   monitor exists.
 
+### Mask-bag MIL version 2 second fixture-only preflight error
+
+- Version 2 reached `ERROR`; the sole heartbeat was again deleted before
+  direct log retrieval. Compact evidence is isolated under
+  `tmp/kaggle/rad_dino_mask_bag_mil_probe_val_v1_error_v2_20260727`.
+  Kaggle kernel log, execution log, downloaded wrapper, base protocol and
+  correction-v1 SHA-256 are respectively
+  `8f84b17692f8aef4e15a1ace2f43ff4e70608068a498a08550d6da8eb95a9605`,
+  `0dd3e31498868333d5c7fbaf44a20ddbc4f398f97defc99985104afe89f1a5d8`,
+  `a18f5ea4ab406e9b7eee9cb0aa01907c2cdf04d796f637e39a2fe8140bf00c61`,
+  `a8f3101be461a1bdc007f442f60e8e3b50ccd6abf015f81f084c004829b7c4b9`
+  and
+  `cbcb28c2ac2e4b1f61e18b28c01868aa16f9177d96db9b3fc5d6d1acf3867cad`.
+- The focused suite again passed `17/17`. Whole-repository tests improved to
+  `198 passed, 1 skipped, 1 failed`. The only remaining failure is the same
+  historical grid-gallery integration test: the split CSV was correctly
+  reconstructed as CRLF, but its promoted-baseline, CPM-control, candidate
+  per-image and pseudo-manifest CSVs still came from canonical LF Git bytes
+  while their immutable runtime manifests require CRLF byte hashes. This is a
+  second incomplete portability repair, not a repeated scientific failure.
+  The error again occurred before RAD-DINO download, candidate generation,
+  optimizer construction, validation prediction or GT access.
+- Final fixture repair for a version-3 addendum: copy the compact grid-gallery
+  evidence tree to a temporary test directory and convert every CSV to exact
+  CRLF bytes; likewise copy the external baseline/CPM CSV inputs as CRLF.
+  JSON files and scientific hashes remain unchanged. No production auditor,
+  model, candidate generation, training, metric, gate or goal is modified.
+
