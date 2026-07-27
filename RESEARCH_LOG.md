@@ -2852,3 +2852,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `test_evaluated=false`. The source will be committed before an immutable
   protocol binds its hashes and scientific gate.
 
+## 2026-07-27 - Multi-layer soft-region prediction probe predeclaration
+
+- Source commit `5cb7e81434742f7bf1b796018239c97ca1731d87` is now
+  immutably bound by protocol
+  `rad_dino_multilayer_soft_region_probe_val_v1` at SHA-256
+  `5d0c5f8c96f32aa9e49b5bef96c2aa026ed3559a6dc639dc20929608d3a475c9`.
+  The protocol verifies canonical Git hashes for the runner, separate
+  post-freeze evaluator, decoder, all imported scientific helpers, dataset
+  loader and focused tests. No prediction from this mechanism existed when
+  the protocol was frozen.
+- The frozen scientific configuration is RAD-DINO layers `4/8/12`, a shared
+  seed-42 `768-to-128` projection, 12 final-epoch-only training epochs,
+  batch 8 and AdamW `3e-4`. The total loss is image-level SmoothMax BCE plus
+  `1.0` soft-region BCE, `0.1` soft affinity-pair BCE and `0.2` aligned flip
+  consistency. Absolute train-normal-calibrated evidence thresholds are
+  `0.90` foreground start and `0.50` background end; no per-image support
+  quota or validation-tuned scalar exists.
+- All 371 candidate maps and their manifest must be physically hash-frozen
+  before the separate evaluator can import validation GT. The comparison arm
+  is the frozen affinity-decoder v3 per-image evidence. The all-required gate
+  retains the seven absolute localization checks and additionally requires
+  the candidate-minus-affinity overall p90-Dice complete-group CI95 lower
+  bound to be positive with no negative mean p90-Dice delta in small, medium
+  or large. Passing authorizes only a separately predeclared consumer;
+  failure rejects the exact configuration. Complete misses remain included,
+  bootstrap uses 10,000 replicates, `consumer_trained=false`, and test remains
+  locked.
+
