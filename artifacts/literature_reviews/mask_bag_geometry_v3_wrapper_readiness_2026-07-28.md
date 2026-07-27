@@ -113,6 +113,22 @@ predictions.
   complete-group paired bootstrap intervals.
 - Consumer and BTXRD test remain locked.
 
+Commit `5e548fc61cdf50d7b7774e6001849b247ba0eee6` prepares the
+post-freeze v3-minus-v6 comparator:
+
+- `project/compare_mask_bag_evaluated_arms.py`, canonical-LF SHA-256
+  `24c625cfc50740d9cb633906d60ae81089e3960d3eec4b3ead6f3ce89ebaffad`;
+- `tests/test_compare_mask_bag_evaluated_arms.py`, canonical-LF SHA-256
+  `e761c249da8b36445b28fb73b7578f9d5c7e2b728d1edb3e2730c2b393373661`.
+
+It accepts only two already evaluated and hash-bound `per_image.csv` files; it
+does not import a dataset, open an image or reopen a segmentation mask. It
+requires identical image/group/subgroup/GT-area/oracle fields, the frozen
+184/94/72/18 cohort, 10,000 group-bootstrap replicates and seed family
+20261101. Outputs include paired Dice CI, complete misses, recovered misses
+and lost overlaps. The unchanged evaluator remains responsible for each arm
+versus the promoted baseline.
+
 ## Finalization gate
 
 The wrapper is ready to finalize only after the separate monitor delivers a
