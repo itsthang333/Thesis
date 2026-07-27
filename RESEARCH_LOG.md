@@ -2970,6 +2970,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   CPU batch-8 forward/backward smoke test passes, so the exact Kaggle runner
   failure remains unobserved rather than guessed. No version-1 scientific
   result is accepted.
+- The first version-2 upload attempt returned HTTP `409 Conflict` before a new
+  version was created because metadata still contained the originally
+  requested `multilayer` ID while Kaggle's authoritative v1 URL uses
+  `multi-layer`. Metadata alone was corrected to the existing exact slug;
+  metadata SHA-256 is now
+  `5db776ac222209c112beddd135a97a6bd91b485d7838b56fa0839cf7da5b95ef`.
+  Wrapper, protocol, source and scientific settings are unchanged, and no
+  concurrent heavy job or monitor resulted from the rejected upload.
 - An independent post-download auditor is committed at
   `0fea848256b8286ab80ad6eb7aa0d584c4c7c0ed`. Auditor SHA-256 is
   `e36d3a661e0e495877dc583f070f037d71a2f8be2f0f3383cd83c1f5c8062ca4`;
