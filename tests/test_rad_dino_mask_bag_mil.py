@@ -73,6 +73,30 @@ def test_mask_pool_excludes_square_padding_from_local_context() -> None:
     assert torch.allclose(contrast, torch.tensor(0.0))
 
 
+def test_fractional_projected_proposal_is_not_attenuated_twice() -> None:
+    config = MaskBagMILConfig(
+        token_dim=1,
+        token_layers=1,
+        hidden_dim=4,
+        minimum_grid_mass=0.25,
+    )
+    tokens = torch.ones(1, 1, 1, 1, 1)
+    projected_mask = torch.tensor([[[[0.5]]]])
+    fractional_content = torch.tensor([[[0.5]]])
+    metadata = torch.zeros(1, 1, 4)
+    valid = torch.ones(1, 1, dtype=torch.bool)
+    descriptor, pooled_valid = mask_pool_descriptors(
+        tokens,
+        projected_mask,
+        metadata,
+        valid,
+        config,
+        content_masks=fractional_content,
+    )
+    assert pooled_valid.item()
+    assert torch.allclose(descriptor[0, 0, 0], torch.tensor(0.5))
+
+
 def test_direct_resize_mask_projection_recovers_square_content_box() -> None:
     masks = torch.zeros(2, 4, 8)
     masks[0, 1:3, 2:6] = 1

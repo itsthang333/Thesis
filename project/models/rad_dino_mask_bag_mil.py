@@ -186,7 +186,6 @@ def mask_pool_descriptors(
             size=(grid_h, grid_w),
             mode="area",
         )[:, 0].clamp(0.0, 1.0)
-    masks = masks * content[:, None]
     valid = candidate_valid.bool() & (
         masks.sum(dim=(-2, -1)) >= config.minimum_grid_mass
     )
