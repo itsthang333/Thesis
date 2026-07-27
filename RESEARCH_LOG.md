@@ -2916,3 +2916,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   duplicate monitor, competing heavy local job, consumer training or test
   evaluation was created.
 
+## 2026-07-27 - Multi-layer soft-region v1 gate-schema defect found in flight
+
+- While kernel version 1 was still `RUNNING`, preparation of the independent
+  result auditor exposed a deterministic evaluator-only schema mismatch. The
+  frozen `paired_group_bootstrap` helper returns confidence bounds as
+  `ci95: [low, high]`, but `apply_gate` attempted to read a nonexistent
+  `ci95_low` field. A direct local reproduction raises `KeyError: 'ci95_low'`.
+  The original focused gate test had hand-built the nonexistent field and
+  therefore failed to cover the real helper-to-gate interface.
+- The correction reads element zero from the validated two-element `ci95`
+  list and changes the focused test to the helper's physical output schema.
+  All nine focused Torch/AST tests pass. Prediction generation, checkpoint,
+  training inputs, architecture, losses, validation metrics, 10,000-replicate
+  bootstrap values, gate thresholds and decision logic are unchanged.
+- Corrected evaluator/test source is committed and pushed at
+  `bb767b05f665886d27d7fb50abd8701fa44d2da6`; canonical hashes are
+  `9eae91da9753e20d5f84fc5575b31ce0b6b2c95ad54f902fcf0ea96e02775f08`
+  and
+  `f54b12b8d68029df283a21f13ad530624d20d602e17595033ad7bcbe721b14a9`.
+  The implementation-only amended protocol is frozen before any version-2
+  prediction at SHA-256
+  `4fc754c9b9046aff0220d94b54022facbaa679924590bb119e4957af4ff1bef5`.
+  No version-1 result will be accepted; version 2 cannot launch while version
+  1 is still the active heavy job. Test remains locked.
+
