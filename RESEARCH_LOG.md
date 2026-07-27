@@ -3588,3 +3588,45 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   than a claim of synchronous data parallelism. No five-minute monitor is
   created until a kernel is actually launched, and only one monitor may exist.
 
+### Mask-bag MIL protocol freeze and Kaggle launch
+
+- Scientific source was committed and pushed in two pre-protocol commits:
+  `b1a93b5805857a2abbd5ac92bef7ae75b793857d` adds the mask-bag scorer,
+  prediction-first runner/evaluator, full-cohort candidate provenance and
+  tests; `1567c2a05e77fcb5f514f9094f9e12791d8dd882` adds aligned
+  original/flip candidate-logit TTA before SmoothMax pooling. Local
+  `compileall`, diff-check and four static safety tests pass. Seven Torch
+  model tests and candidate-diagnostic dynamic tests are deferred to the
+  Kaggle preflight because both local Python environments lack Torch; the
+  wrapper also runs the full repository test suite before the experiment.
+- Protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1.json`
+  was frozen in separate commit
+  `03b97e7200a646e890c80e20d759099f4b375696`; its SHA-256 is
+  `a8f3101be461a1bdc007f442f60e8e3b50ccd6abf015f81f084c004829b7c4b9`.
+  An independent pre-commit audit reproduced all `11` canonical Git source
+  hashes from scientific commit `1567c2a...`. The all-checks-required gate is
+  image AUROC `>=0.75`; selected-proposal Dice
+  overall/small/medium/large `>=0.25/0.13/0.37/0.38`; proposal-oracle support
+  at least the operational goals; overall paired CI95 lower bound positive;
+  no subgroup mean decrease; and no complete-miss increase. Passing only
+  authorizes a separately predeclared consumer protocol.
+- Private Kaggle kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1` version `1` was accepted
+  at
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1.
+  Wrapper and metadata SHA-256 are
+  `e819c46339d4f04f6feebd8d85bf17c2ddb57b240693e6aba4cad0b970e1dc2c`
+  and
+  `3086b5fa9bc1598831c45efd48a42dc8447447b290f5bc0c48d5b300e221caed`.
+  The kernel requests `NvidiaTeslaT4`, fails unless exactly two actual T4s and
+  real `324.0/324.0` device convolutions are observed, separates classifier
+  and SAM onto `cuda:0/1`, and data-parallelizes the RAD-DINO encoder across
+  both devices. Proposal generation itself is device-separated, not falsely
+  reported as synchronous data parallelism.
+- Exactly one heartbeat `theo-d-i-rad-dino-mask-bag-mil` was created only
+  after version 1 was accepted. It checks once every five minutes and must not
+  poll between heartbeats or create a duplicate. At terminal state it must be
+  deleted before direct output/log download. Test remains locked and no
+  consumer is authorized.
+
