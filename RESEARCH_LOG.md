@@ -3663,3 +3663,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   training, prediction, evaluator, bootstrap, gate or operational goal changes.
   A correction addendum must be frozen before rerunning version 2.
 
+- The repair was verified locally with `10/10` affected tests, `compileall`
+  and diff-check, then committed/pushed as
+  `15efcc7c4feb44ec841e7bb22ebebe97c0f6ff10`. Correction addendum
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1_wrapper_correction_v1.json`
+  was frozen separately in commit
+  `7040f33dee9b6b53689eab673035cd3584418b10`; SHA-256 is
+  `cbcb28c2ac2e4b1f61e18b28c01868aa16f9177d96db9b3fc5d6d1acf3867cad`.
+  It requires the unchanged focused suite plus an unchanged whole-repository
+  `pytest -q` result of exactly `199 passed, 1 skipped`; any other failure,
+  error or skip stops before candidate generation.
+- Kernel version `2` was accepted with corrected wrapper SHA-256
+  `a18f5ea4ab406e9b7eee9cb0aa01907c2cdf04d796f637e39a2fe8140bf00c61`;
+  metadata SHA-256 remains
+  `3086b5fa9bc1598831c45efd48a42dc8447447b290f5bc0c48d5b300e221caed`.
+  Base scientific protocol/hash, model, candidates, training, prediction,
+  evaluation and gate are unchanged. Exactly one new five-minute heartbeat
+  `theo-d-i-rad-dino-mask-bag-mil` was created after acceptance; no duplicate
+  monitor exists.
+
