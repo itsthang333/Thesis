@@ -1,0 +1,76 @@
+{
+  "correction_id": "rad_dino_mask_bag_mil_probe_val_v1_wrapper_correction_v2",
+  "frozen_utc": "2026-07-27T13:54:09Z",
+  "status": "PREDECLARED_AFTER_VERSION_2_PREFLIGHT_ERROR_AND_BEFORE_VERSION_3_EXECUTION",
+  "base_protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1.json",
+    "sha256": "a8f3101be461a1bdc007f442f60e8e3b50ccd6abf015f81f084c004829b7c4b9",
+    "scientific_source_commit": "1567c2a05e77fcb5f514f9094f9e12791d8dd882"
+  },
+  "prior_correction": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_probe_val_v1_wrapper_correction_v1.json",
+    "sha256": "cbcb28c2ac2e4b1f61e18b28c01868aa16f9177d96db9b3fc5d6d1acf3867cad"
+  },
+  "version_2_evidence": {
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1",
+    "version": 2,
+    "terminal_status": "ERROR",
+    "wrapper_sha256": "a18f5ea4ab406e9b7eee9cb0aa01907c2cdf04d796f637e39a2fe8140bf00c61",
+    "kernel_log_sha256": "8f84b17692f8aef4e15a1ace2f43ff4e70608068a498a08550d6da8eb95a9605",
+    "execution_log_sha256": "0dd3e31498868333d5c7fbaf44a20ddbc4f398f97defc99985104afe89f1a5d8",
+    "downloaded_base_protocol_sha256": "a8f3101be461a1bdc007f442f60e8e3b50ccd6abf015f81f084c004829b7c4b9",
+    "downloaded_correction_v1_sha256": "cbcb28c2ac2e4b1f61e18b28c01868aa16f9177d96db9b3fc5d6d1acf3867cad",
+    "focused_tests": "17 passed",
+    "whole_repository_tests": "198 passed, 1 skipped, 1 failed",
+    "failure_stage": "whole-repository test preflight",
+    "rad_dino_downloaded": false,
+    "candidate_generation_started": false,
+    "optimizer_constructed": false,
+    "validation_predictions_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "root_cause": {
+    "classification": "implementation-only incomplete historical test-fixture portability repair",
+    "detail": "The version-2 temporary split had exact CRLF runtime bytes, but the promoted-baseline, CPM-control, candidate per-image and pseudo-manifest CSV inputs still used canonical LF Git bytes while their frozen runtime manifests require CRLF byte hashes.",
+    "scientific_result_available": false
+  },
+  "repair": {
+    "commit": "ea7376ba155c164ea6520d944927b42c82d1c333",
+    "changed_file": "tests/test_grid_gallery_audit.py",
+    "changed_file_sha256": "2ec555ee9fc6f430df4c2950da6d5d3f72dc049929e6c9cdbb727264cb6d75b6",
+    "changes": [
+      "copy the compact frozen grid-gallery evidence tree into a temporary test directory",
+      "reconstruct exact CRLF runtime bytes for every copied CSV while preserving JSON bytes",
+      "reconstruct exact CRLF runtime bytes for the external promoted-baseline, CPM per-image and CPM prompt-quality CSV inputs",
+      "pass only those temporary runtime copies to the unchanged production auditor"
+    ],
+    "local_verification": "10 focused historical-contract tests passed; compileall and diff-check passed",
+    "local_full_suite_limitation": "The bundled local runtime lacks torch and sklearn, so the repository-wide suite cannot collect locally; the unchanged full suite remains a fail-closed Kaggle preflight."
+  },
+  "version_3_test_contract": {
+    "focused_command_unchanged": true,
+    "whole_repository_command_unchanged": "python -m pytest -q",
+    "expected_whole_repository_result": "199 passed and exactly 1 documented skip for the absent ignored GT-reference checkpoint",
+    "unexpected_failure_or_error": "fail closed before candidate generation",
+    "unexpected_skip": "fail closed before candidate generation"
+  },
+  "scientific_invariance": {
+    "model_source_changed": false,
+    "candidate_generation_changed": false,
+    "training_configuration_changed": false,
+    "prediction_changed": false,
+    "evaluation_or_bootstrap_changed": false,
+    "gate_or_operational_goal_changed": false,
+    "cohort_or_split_changed": false,
+    "supervision_contract_changed": false,
+    "base_protocol_remains_authoritative": true,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "runtime": {
+    "accelerator": "T4 x2 unchanged",
+    "monitor": "create exactly one five-minute heartbeat only after version 3 is accepted; no polling between heartbeats"
+  }
+}
