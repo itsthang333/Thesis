@@ -2978,6 +2978,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `5db776ac222209c112beddd135a97a6bd91b485d7838b56fa0839cf7da5b95ef`.
   Wrapper, protocol, source and scientific settings are unchanged, and no
   concurrent heavy job or monitor resulted from the rejected upload.
+- Corrected kernel version 2 was then pushed successfully to the same private
+  authoritative slug and entered `RUNNING`. It uses wrapper
+  `40b87ecc...9dd69f`, amended protocol `4fc754c9...1bef5`, corrected source
+  `bb767b05...2da6` and unchanged prediction/training contract. Exactly one
+  five-minute heartbeat, `theo-d-i-rad-dino-multilayer-soft-region`, follows
+  version 2; no duplicate monitor or heavy job exists.
 - An independent post-download auditor is committed at
   `0fea848256b8286ab80ad6eb7aa0d584c4c7c0ed`. Auditor SHA-256 is
   `e36d3a661e0e495877dc583f070f037d71a2f8be2f0f3383cd83c1f5c8062ca4`;
