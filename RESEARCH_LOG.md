@@ -3805,3 +3805,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   locked, and no consumer is authorized before all prediction-first gate checks
   pass.
 
+### Mask-bag MIL version 4 canonical-Git hash error
+
+- Version 4 reached terminal `ERROR` on the first five-minute check. The sole
+  heartbeat was deleted before evidence retrieval. Direct Kaggle console log
+  and wrapper were downloaded under
+  `tmp/kaggle/rad_dino_mask_bag_mil_probe_val_v1_error_v4_20260727`; their
+  SHA-256 values are respectively
+  `c06592460806fef523daed6d492188c59231c4074a2e388ec57844691c61e6d9`
+  and `00a438637b98bc9541379f99263a3caa2d8245d142cd67542add721ff5699c3b`.
+- Failure occurred 2.52 seconds after checkout, inside the source-hash guard:
+  `Scientific source SHA-256 mismatch: project/generate_pseudo_masks.py`.
+  No runtime installation, unit test, model download, dataset access,
+  candidate generation, optimizer, prediction, GT evaluation or scientific
+  metric occurred. Consumer/test flags therefore remain false.
+- Root cause is a correction-provenance line-ending mistake. Correction v3
+  recorded SHA-256 `2adc57cd...` from the Windows CRLF working-tree bytes.
+  The immutable Git blob checked out on Kaggle is LF and hashes to
+  `028ca4b8c0f1445178043bf9726c3ef4092df1ee39669938ed7f475c1bfa0ba7`
+  (140,329 bytes). The device-routing test already used its correct canonical
+  Git hash `d38f9999...`. The source commit and source bytes are not changed by
+  this repair; only the wrapper's expected canonical hash will be corrected in
+  a new immutable addendum.
+
