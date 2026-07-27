@@ -409,9 +409,10 @@ def soft_region_pseudo_loss(
                 (dense_background * background_weight).sum()
                 / background_weight.sum().clamp_min(1.0e-6)
             )
-        if not components:
-            raise RuntimeError("Positive image has no calibrated soft-region evidence")
-        losses.append(torch.stack(components).mean())
+        if components:
+            losses.append(torch.stack(components).mean())
+    if not losses:
+        return values.sum() * 0.0
     return torch.stack(losses).mean()
 
 

@@ -138,6 +138,20 @@ def test_normal_soft_region_loss_is_dense_background_supervision() -> None:
     assert int((logits.grad > 0).sum()) == 16
 
 
+def test_positive_without_calibrated_region_uses_only_image_loss() -> None:
+    logits = torch.zeros(1, 1, 4, 4, requires_grad=True)
+    ambiguous_teacher = torch.full((1, 1, 2, 2), 0.75)
+    loss = soft_region_pseudo_loss(
+        logits,
+        ambiguous_teacher,
+        torch.ones(1),
+    )
+    loss.backward()
+    assert float(loss) == pytest.approx(0.0)
+    assert logits.grad is not None
+    assert int(torch.count_nonzero(logits.grad)) == 0
+
+
 def test_config_rejects_overlapping_soft_regions() -> None:
     with pytest.raises(ValueError):
         MultiLayerSoftRegionConfig(
