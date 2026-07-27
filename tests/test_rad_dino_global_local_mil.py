@@ -18,6 +18,7 @@ from models.rad_dino_global_local_mil import (  # noqa: E402
     top_fraction_pool,
 )
 from run_rad_dino_global_local_mil_probe import (  # noqa: E402
+    LocalProjectedEncoder,
     crop_from_output_box,
     proposal_boxes,
 )
@@ -36,6 +37,34 @@ def test_decoder_preserves_bag_axes() -> None:
     logits, features = model(tokens, guidance)
     assert logits.shape == (2, 3, 1, 8, 8)
     assert features.shape[:2] == (2, 3)
+
+
+def test_projected_encoder_returns_gatherable_tensor() -> None:
+    class FakeEncoder(torch.nn.Module):
+        def forward(
+            self,
+            pixel_values: torch.Tensor,
+            *,
+            output_hidden_states: bool,
+        ) -> object:
+            assert output_hidden_states
+            batch = pixel_values.shape[0]
+            hidden = tuple(
+                torch.full((batch, 5, 768), float(index))
+                for index in range(13)
+            )
+            return type("Output", (), {"hidden_states": hidden})()
+
+    projection = torch.eye(768, 4)
+    encoder = LocalProjectedEncoder(
+        FakeEncoder(),
+        projection,
+        grid_size=2,
+    )
+    result = encoder(torch.zeros((6, 3, 8, 8)))
+    assert result.shape == (6, 3, 2, 2, 4)
+    assert result.dtype == torch.float32
+    assert torch.isfinite(result).all()
 
 
 def test_top_fraction_pool_uses_all_patches_in_one_bag() -> None:
@@ -86,6 +115,28 @@ def test_greedy_windows_are_deterministic_and_diverse() -> None:
     assert first[1] == (22, 22, 30, 30)
 
 
+def test_six_half_image_windows_use_feasibility_aware_ranking() -> None:
+    saliency = np.zeros((320, 320), dtype=np.float32)
+    saliency[80:240, 80:240] = 10.0
+    windows = greedy_saliency_windows(
+        saliency,
+        window_size=160,
+        count=6,
+        stride=8,
+        iou_limit=0.25,
+    )
+    assert len(windows) == 6
+    for index, first in enumerate(windows):
+        for second in windows[index + 1 :]:
+            ax0, ay0, ax1, ay1 = first
+            bx0, by0, bx1, by1 = second
+            intersection = max(0, min(ax1, bx1) - max(ax0, bx0)) * max(
+                0, min(ay1, by1) - max(ay0, by0)
+            )
+            union = 2 * 160 * 160 - intersection
+            assert intersection / union <= 0.25
+
+
 def test_random_windows_are_seeded() -> None:
     kwargs = dict(
         output_shape=(32, 32),
@@ -100,6 +151,19 @@ def test_random_windows_are_seeded() -> None:
     assert random_diverse_windows(**kwargs, seed=9) != random_diverse_windows(
         **kwargs, seed=10
     )
+
+
+@pytest.mark.parametrize("seed", range(20))
+def test_six_random_half_image_windows_are_always_feasible(seed: int) -> None:
+    windows = random_diverse_windows(
+        output_shape=(320, 320),
+        window_size=160,
+        count=6,
+        stride=8,
+        iou_limit=0.25,
+        seed=seed,
+    )
+    assert len(windows) == 6
 
 
 def test_stitch_local_maps_averages_overlap() -> None:

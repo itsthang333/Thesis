@@ -9,6 +9,7 @@ segmentation-annotation dependency.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 import torch
@@ -200,6 +201,88 @@ def _box_iou(
     return float(intersection) / max(float(union), 1.0)
 
 
+@lru_cache(maxsize=32)
+def _window_geometry(
+    height: int,
+    width: int,
+    window_size: int,
+    stride: int,
+    iou_limit: float,
+) -> tuple[
+    tuple[tuple[int, int, int, int], ...],
+    tuple[int, ...],
+]:
+    """Cache candidate boxes and pairwise-compatible bitsets."""
+
+    xs = list(range(0, width - window_size + 1, stride))
+    ys = list(range(0, height - window_size + 1, stride))
+    if xs[-1] != width - window_size:
+        xs.append(width - window_size)
+    if ys[-1] != height - window_size:
+        ys.append(height - window_size)
+    boxes = tuple(
+        (x0, y0, x0 + window_size, y0 + window_size)
+        for y0 in ys
+        for x0 in xs
+    )
+    compatible: list[int] = []
+    for index, box in enumerate(boxes):
+        bits = 0
+        for other_index, other in enumerate(boxes):
+            if index != other_index and _box_iou(box, other) <= iou_limit:
+                bits |= 1 << other_index
+        compatible.append(bits)
+    return boxes, tuple(compatible)
+
+
+def _first_ranked_feasible_windows(
+    boxes: tuple[tuple[int, int, int, int], ...],
+    compatible: tuple[int, ...],
+    order: list[int],
+    *,
+    count: int,
+) -> list[tuple[int, int, int, int]]:
+    """Keep each ranked candidate only when a full set remains feasible."""
+
+    if len(order) != len(boxes) or sorted(order) != list(range(len(boxes))):
+        raise ValueError("order must be a permutation of all candidate boxes")
+    suffix_bits = [0] * (len(order) + 1)
+    for rank in range(len(order) - 1, -1, -1):
+        suffix_bits[rank] = suffix_bits[rank + 1] | (1 << order[rank])
+
+    @lru_cache(maxsize=None)
+    def search(
+        start_rank: int,
+        available_bits: int,
+        needed: int,
+    ) -> tuple[int, ...] | None:
+        if needed == 0:
+            return ()
+        if bin(available_bits).count("1") < needed:
+            return None
+        for rank in range(start_rank, len(order)):
+            candidate = order[rank]
+            candidate_bit = 1 << candidate
+            if not available_bits & candidate_bit:
+                continue
+            remaining = (
+                available_bits
+                & compatible[candidate]
+                & suffix_bits[rank + 1]
+            )
+            if bin(remaining).count("1") < needed - 1:
+                continue
+            completion = search(rank + 1, remaining, needed - 1)
+            if completion is not None:
+                return (candidate, *completion)
+        return None
+
+    selected = search(0, suffix_bits[0], count)
+    if selected is None:
+        raise RuntimeError("Proposal constraints cannot supply requested windows")
+    return [boxes[index] for index in selected]
+
+
 def greedy_saliency_windows(
     saliency: np.ndarray,
     *,
@@ -219,34 +302,32 @@ def greedy_saliency_windows(
     if count <= 0 or stride <= 0 or not 0 <= iou_limit < 1:
         raise ValueError("Invalid proposal selection parameters")
     integral = np.pad(values.cumsum(0).cumsum(1), ((1, 0), (1, 0)))
-    xs = list(range(0, width - window_size + 1, stride))
-    ys = list(range(0, height - window_size + 1, stride))
-    if xs[-1] != width - window_size:
-        xs.append(width - window_size)
-    if ys[-1] != height - window_size:
-        ys.append(height - window_size)
+    boxes, compatible = _window_geometry(
+        height,
+        width,
+        window_size,
+        stride,
+        iou_limit,
+    )
     candidates: list[tuple[float, tuple[int, int, int, int]]] = []
-    for y0 in ys:
-        y1 = y0 + window_size
-        for x0 in xs:
-            x1 = x0 + window_size
-            mass = (
-                integral[y1, x1]
-                - integral[y0, x1]
-                - integral[y1, x0]
-                + integral[y0, x0]
-            )
-            candidates.append((float(mass), (x0, y0, x1, y1)))
+    for box in boxes:
+        x0, y0, x1, y1 = box
+        mass = (
+            integral[y1, x1]
+            - integral[y0, x1]
+            - integral[y1, x0]
+            + integral[y0, x0]
+        )
+        candidates.append((float(mass), box))
     candidates.sort(key=lambda item: (-item[0], item[1]))
-    selected: list[tuple[int, int, int, int]] = []
-    for _mass, box in candidates:
-        if all(_box_iou(box, other) <= iou_limit for other in selected):
-            selected.append(box)
-            if len(selected) == count:
-                break
-    if len(selected) != count:
-        raise RuntimeError("Proposal constraints cannot supply requested windows")
-    return selected
+    index_by_box = {box: index for index, box in enumerate(boxes)}
+    order = [index_by_box[box] for _mass, box in candidates]
+    return _first_ranked_feasible_windows(
+        boxes,
+        compatible,
+        order,
+        count=count,
+    )
 
 
 def random_diverse_windows(
@@ -265,28 +346,22 @@ def random_diverse_windows(
         raise ValueError("window_size must fit inside output geometry")
     if count <= 0 or stride <= 0 or not 0 <= iou_limit < 1:
         raise ValueError("Invalid random proposal parameters")
-    xs = list(range(0, width - window_size + 1, stride))
-    ys = list(range(0, height - window_size + 1, stride))
-    if xs[-1] != width - window_size:
-        xs.append(width - window_size)
-    if ys[-1] != height - window_size:
-        ys.append(height - window_size)
-    candidates = [
-        (x0, y0, x0 + window_size, y0 + window_size)
-        for y0 in ys
-        for x0 in xs
-    ]
+    boxes, compatible = _window_geometry(
+        height,
+        width,
+        window_size,
+        stride,
+        iou_limit,
+    )
+    order = list(range(len(boxes)))
     rng = np.random.default_rng(seed)
-    rng.shuffle(candidates)
-    selected: list[tuple[int, int, int, int]] = []
-    for box in candidates:
-        if all(_box_iou(box, other) <= iou_limit for other in selected):
-            selected.append(box)
-            if len(selected) == count:
-                break
-    if len(selected) != count:
-        raise RuntimeError("Random proposal constraints cannot supply windows")
-    return selected
+    rng.shuffle(order)
+    return _first_ranked_feasible_windows(
+        boxes,
+        compatible,
+        order,
+        count=count,
+    )
 
 
 def stitch_local_maps(

@@ -263,11 +263,60 @@ def crop_from_output_box(
     return image.crop((left, top, right, bottom))
 
 
+class LocalProjectedEncoder(nn.Module):
+    """Return only projected local tokens, suitable for two-GPU gathering."""
+
+    def __init__(
+        self,
+        encoder: nn.Module,
+        projection: torch.Tensor,
+        *,
+        grid_size: int,
+    ) -> None:
+        super().__init__()
+        self.encoder = encoder
+        self.register_buffer("projection", projection.detach().clone())
+        self.grid_size = grid_size
+
+    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
+        output = self.encoder(
+            pixel_values=pixel_values,
+            output_hidden_states=True,
+        )
+        hidden_states = output.hidden_states
+        if hidden_states is None or len(hidden_states) != 13:
+            raise RuntimeError(
+                "RAD-DINO must expose embedding plus 12 hidden states"
+            )
+        expected = self.grid_size * self.grid_size + 1
+        selected: list[torch.Tensor] = []
+        with torch.autocast(
+            device_type=pixel_values.device.type,
+            enabled=False,
+        ):
+            for layer_index in SELECTED_HIDDEN_LAYERS:
+                hidden = hidden_states[layer_index]
+                if hidden.ndim != 3 or hidden.shape[1:] != (expected, 768):
+                    raise RuntimeError(
+                        f"Unexpected local layer-{layer_index} shape "
+                        f"{tuple(hidden.shape)}"
+                    )
+                patches = hidden[:, 1:].reshape(
+                    hidden.shape[0],
+                    self.grid_size,
+                    self.grid_size,
+                    768,
+                ).float()
+                selected.append(
+                    F.normalize(patches @ self.projection.float(), dim=-1)
+                )
+        return torch.stack(selected, dim=1)
+
+
 def local_patch_feature_batch(
     image: Image.Image,
     boxes: list[tuple[int, int, int, int]],
-    encoder: nn.Module,
-    projection: torch.Tensor,
+    local_encoder: nn.Module,
     *,
     input_size: int,
     output_size: int,
@@ -304,23 +353,19 @@ def local_patch_feature_batch(
     with torch.inference_mode(), torch.autocast(
         device_type="cuda", dtype=torch.float16
     ):
-        output = encoder(pixel_values=pixels, output_hidden_states=True)
-    hidden_states = output.hidden_states
-    if hidden_states is None or len(hidden_states) != 13:
-        raise RuntimeError("RAD-DINO must expose embedding plus 12 hidden states")
-    expected = grid_size * grid_size + 1
-    selected: list[torch.Tensor] = []
-    for layer_index in SELECTED_HIDDEN_LAYERS:
-        hidden = hidden_states[layer_index]
-        if hidden.shape != (len(boxes), expected, 768):
-            raise RuntimeError(
-                f"Unexpected local layer-{layer_index} shape {tuple(hidden.shape)}"
-            )
-        patches = hidden[:, 1:].reshape(
-            len(boxes), grid_size, grid_size, 768
-        ).float()
-        selected.append(F.normalize(patches @ projection, dim=-1))
-    tokens = torch.stack(selected, dim=1).cpu().numpy().astype(np.float16)
+        projected = local_encoder(pixel_values=pixels)
+    expected_shape = (
+        len(boxes),
+        len(SELECTED_HIDDEN_LAYERS),
+        grid_size,
+        grid_size,
+        64,
+    )
+    if projected.shape != expected_shape:
+        raise RuntimeError(
+            f"Unexpected projected local shape {tuple(projected.shape)}"
+        )
+    tokens = projected.cpu().numpy().astype(np.float16)
     guidance = make_guidance(
         torch.stack(raw_rows), output_size=guidance_size
     ).numpy().astype(np.float32)
@@ -415,11 +460,11 @@ def open_local_cache(
 
 
 def build_local_cache(
-    encoder: nn.Module,
+    global_encoder: nn.Module,
+    local_encoder: nn.Module,
     global_decoder: RadDinoMultiLayerSoftRegionDecoder,
     train_rows: list[dict[str, str]],
     global_projection: torch.Tensor,
-    local_projection: torch.Tensor,
     config: GlobalLocalMILConfig,
     args: argparse.Namespace,
     *,
@@ -447,7 +492,7 @@ def build_local_cache(
             if row["tumor"] == "1":
                 global_map = predict_global_map(
                     image,
-                    encoder,
+                    global_encoder,
                     global_decoder,
                     global_projection,
                     input_size=args.input_size,
@@ -466,8 +511,7 @@ def build_local_cache(
             tokens, guidance, valid = local_patch_feature_batch(
                 image,
                 boxes,
-                encoder,
-                local_projection,
+                local_encoder,
                 input_size=args.input_size,
                 output_size=args.output_size,
                 grid_size=grid_size,
@@ -662,9 +706,8 @@ def calibrate_normal_confidence(
 def predict_local_bag(
     image: Image.Image,
     boxes: list[tuple[int, int, int, int]],
-    encoder: nn.Module,
+    local_encoder: nn.Module,
     decoder: RadDinoGlobalLocalMILDecoder,
-    projection: torch.Tensor,
     config: GlobalLocalMILConfig,
     args: argparse.Namespace,
     *,
@@ -675,8 +718,7 @@ def predict_local_bag(
     token_rows, guidance_rows, valid_rows = local_patch_feature_batch(
         image,
         boxes,
-        encoder,
-        projection,
+        local_encoder,
         input_size=args.input_size,
         output_size=args.output_size,
         grid_size=grid_size,
@@ -706,9 +748,8 @@ def predict_local_bag(
 
 
 def write_validation_predictions(
-    encoder: nn.Module,
+    local_encoder: nn.Module,
     decoder: RadDinoGlobalLocalMILDecoder,
-    local_projection: torch.Tensor,
     val_rows: list[dict[str, str]],
     global_rows: dict[str, dict[str, str]],
     calibration: dict[str, object],
@@ -740,9 +781,8 @@ def write_validation_predictions(
         local_map, coverage, local_confidence = predict_local_bag(
             image,
             boxes,
-            encoder,
+            local_encoder,
             decoder,
-            local_projection,
             config,
             args,
             grid_size=grid_size,
@@ -886,13 +926,25 @@ def main() -> None:
         output_dim=args.local_projection_dim,
         seed=args.projection_seed,
     )
-    local_projection = torch.from_numpy(local_projection_np).to(device)
+    local_encoder_base = LocalProjectedEncoder(
+        encoder,
+        torch.from_numpy(local_projection_np),
+        grid_size=grid_size,
+    ).eval().to(device)
+    cuda_device_count = torch.cuda.device_count()
+    if cuda_device_count > 1:
+        local_encoder: nn.Module = nn.DataParallel(
+            local_encoder_base,
+            device_ids=list(range(cuda_device_count)),
+        ).eval()
+    else:
+        local_encoder = local_encoder_base
     caches, proposal_path = build_local_cache(
         encoder,
+        local_encoder,
         global_decoder,
         train_rows,
         global_projection,
-        local_projection,
         config,
         args,
         grid_size=grid_size,
@@ -938,9 +990,8 @@ def main() -> None:
         checkpoint_path,
     )
     prediction_manifest_sha = write_validation_predictions(
-        encoder,
+        local_encoder,
         decoder,
-        local_projection,
         val_rows,
         global_rows,
         calibration,
@@ -1022,6 +1073,12 @@ def main() -> None:
             "torch": torch.__version__,
             "cuda": torch.version.cuda,
             "transformers": transformers.__version__,
+            "cuda_device_count": cuda_device_count,
+            "cuda_device_names": [
+                torch.cuda.get_device_name(index)
+                for index in range(cuda_device_count)
+            ],
+            "local_encoder_data_parallel": cuda_device_count > 1,
         },
     }
     (args.output_dir / "run_manifest.json").write_text(
