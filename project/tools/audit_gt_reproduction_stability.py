@@ -47,7 +47,7 @@ def _pearson(left: list[float], right: list[float]) -> float:
         return float("nan")
     return sum(
         l_value * r_value
-        for l_value, r_value in zip(centered_left, centered_right, strict=True)
+        for l_value, r_value in zip(centered_left, centered_right)
     ) / denominator
 
 
@@ -69,9 +69,7 @@ def per_image_stability(left_path: Path, right_path: Path) -> dict[str, Any]:
         right_values = [float(right[name]["dice"]) for name in names]
         deltas = [
             right_value - left_value
-            for left_value, right_value in zip(
-                left_values, right_values, strict=True
-            )
+            for left_value, right_value in zip(left_values, right_values)
         ]
         abs_deltas = [abs(value) for value in deltas]
         output[subgroup] = {
