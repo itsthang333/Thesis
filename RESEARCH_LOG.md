@@ -3981,4 +3981,29 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   selector, followed by one fixed full-train model. Validation GT cannot choose
   its architecture, epoch or loss weight. If oracle support fails, the study
   is rejected in advance and proposal generation must be repaired instead.
+- A no-GT shortcut audit is frozen separately from the prior selector review
+  at
+  `artifacts/literature_reviews/mask_bag_count_shortcut_addendum_2026-07-27.md`,
+  SHA-256
+  `eff23e9f0b0bd888f759b7e28f0a70e7769d2084655b6050dd4f087b5a61f6b9`.
+  It adds an important interpretation constraint. Normal
+  bags contain substantially more tumor-targeted proposals than tumor bags:
+  train means `71.745` versus `45.399`, and validation means `63.674` versus
+  `49.239`. Candidate count alone, with lower count interpreted as tumor,
+  reaches direction-corrected image AUROC `0.86726993` on train and
+  `0.71207277` on validation; box/positive-point/negative-point counts yield
+  approximately `0.86--0.87` train and `0.70--0.71` validation AUROC.
+  Diagnostic bytes alone yield `0.75822026/0.64566380`. This uses only frozen
+  manifests and image labels, not validation masks or test.
+- The difference is permitted image-level supervision rather than leakage:
+  all bags use the tumor classifier target and normal bags are valid negative
+  instances. However, it is a real bag-construction shortcut that can inflate
+  image AUROC without identifying a lesion proposal. Normalized SmoothMax
+  removes an exact equal-logit count offset but cannot erase distributional
+  differences. Therefore version-6 image AUROC will not be interpreted as
+  localization evidence on its own; the already frozen proposal-Dice,
+  subgroup, CI and complete-miss checks remain decisive. Any ranking fallback
+  must additionally report count-only AUROC and bag-score/count association,
+  and should use predeclared count-robust training such as proposal dropout or
+  normal-prototype instance contrast rather than tune against validation GT.
 
