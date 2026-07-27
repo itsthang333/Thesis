@@ -104,7 +104,7 @@ def _projected_grid_mass(
     image_height: int,
     token_grid_size: int,
     oversampling: int,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     side = max(image_width, image_height)
     left = (side - image_width) // 2
     top = (side - image_height) // 2
@@ -120,10 +120,23 @@ def _projected_grid_mass(
         size=(token_grid_size, token_grid_size),
         mode="area",
     )[:, 0]
+    flipped_grid = F.interpolate(
+        projected.flip(-1)[:, None],
+        size=(token_grid_size, token_grid_size),
+        mode="area",
+    )[:, 0]
     masses = grid.sum(dim=(-2, -1)).cpu().numpy().astype(np.float64)
-    if not np.isfinite(masses).all() or (masses < 0).any():
+    flipped_masses = (
+        flipped_grid.sum(dim=(-2, -1)).cpu().numpy().astype(np.float64)
+    )
+    if (
+        not np.isfinite(masses).all()
+        or not np.isfinite(flipped_masses).all()
+        or (masses < 0).any()
+        or (flipped_masses < 0).any()
+    ):
         raise RuntimeError("Projected grid masses are invalid")
-    return masses
+    return masses, flipped_masses
 
 
 def _summarize(values: np.ndarray, *, minimum_grid_mass: float) -> dict[str, object]:
@@ -185,15 +198,40 @@ def main() -> None:
         image_path = locate_verified_image(args.dataset_root, row)
         with Image.open(image_path) as image:
             width, height = image.size
-        masses = _projected_grid_mass(
+        masses, flipped_masses = _projected_grid_mass(
             masks,
             image_width=width,
             image_height=height,
             token_grid_size=args.token_grid_size,
             oversampling=args.oversampling,
         )
-        for index, (mask, mode, source, is_fallback, mass) in enumerate(
-            zip(masks, modes, sources, fallback, masses, strict=True)
+        retained = masses >= args.minimum_grid_mass
+        flipped_retained = flipped_masses >= args.minimum_grid_mass
+        if not np.array_equal(retained, flipped_retained):
+            raise RuntimeError(
+                f"Original/flip candidate validity differs for {row['image_id']}"
+            )
+        if not np.allclose(masses, flipped_masses, rtol=0.0, atol=1.0e-5):
+            raise RuntimeError(
+                f"Original/flip grid mass differs for {row['image_id']}"
+            )
+        for index, (
+            mask,
+            mode,
+            source,
+            is_fallback,
+            mass,
+            flipped_mass,
+        ) in enumerate(
+            zip(
+                masks,
+                modes,
+                sources,
+                fallback,
+                masses,
+                flipped_masses,
+                strict=True,
+            )
         ):
             output_rows.append(
                 {
@@ -206,6 +244,8 @@ def main() -> None:
                     "fallback": int(is_fallback),
                     "raw_area_pixels_320": int((mask > 0.5).sum()),
                     "grid_mass": float(mass),
+                    "flip_grid_mass": float(flipped_mass),
+                    "absolute_flip_mass_delta": float(abs(mass - flipped_mass)),
                     "retained": int(mass >= args.minimum_grid_mass),
                 }
             )
@@ -234,6 +274,10 @@ def main() -> None:
         "candidate_manifest_sha256": candidate_audit["manifest_sha256"],
         "candidate_summary_sha256": candidate_audit["summary_sha256"],
         "csv_sha256": sha256_file(csv_path),
+        "maximum_absolute_flip_mass_delta": float(
+            max(float(row["absolute_flip_mass_delta"]) for row in output_rows)
+        ),
+        "original_flip_validity_aligned": True,
         "overall": _summarize(masses, minimum_grid_mass=args.minimum_grid_mass),
         "by_image_label": {
             str(label): _summarize(

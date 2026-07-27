@@ -38,3 +38,8 @@ def test_fractional_mass_audit_uses_v3_projection_contract() -> None:
     assert "args.token_grid_size != 32" in text
     assert "args.oversampling != 4" in text
     assert "retained_below_one_fraction" in text
+    assert '"flip_grid_mass"' in text
+    assert '"absolute_flip_mass_delta"' in text
+    assert "np.array_equal(retained, flipped_retained)" in text
+    assert "np.allclose(masses, flipped_masses" in text
+    assert '"original_flip_validity_aligned": True' in text
