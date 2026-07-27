@@ -4553,3 +4553,51 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   payloads are insufficient for reuse; absent a direct hash-verifiable
   payload mount, the unchanged gallery must be regenerated.
 
+## 2026-07-28 - Fractional mask-pooling small-object contingency
+
+- A separate method audit is recorded at
+  `artifacts/literature_reviews/fractional_mask_pooling_small_object_contingency_2026-07-28.md`
+  (canonical-LF SHA-256
+  `5084f7be7b2faf45c0e34f61229598670dc0c2cf972f0ab6c75f5bb8e77a51bb`).
+  It identifies a non-coordinate small-proposal hypothesis and deliberately
+  does not modify geometry-correction v3.
+- The current proposal descriptor divides its weighted token sum by
+  `max(grid_mass,1)` while retaining candidates down to grid mass `0.25`.
+  Thus an accepted proposal with mass `0.25/0.50/0.75` scales its apparent
+  feature mean by `0.25/0.50/0.75`. This may be an intentional confidence
+  penalty, but it duplicates size information already present in log-area
+  metadata and may suppress semantically useful sub-token small proposals.
+- The next wrapper should save a GT-blind, hash-frozen grid-mass audit before
+  optimizer construction, with fixed mass bins and only image-label,
+  fallback/prompt/source strata. If almost no proposal has mass below one, the
+  hypothesis is rejected without training. If the fraction is material and v3
+  still fails small, a separate future protocol may compare the unchanged
+  floor with a true weighted mean after the same minimum-mass filter. It may
+  not be bundled with relational MIL, proposal changes or a consumer.
+- Sources and transfer boundaries: Shen et al., MoIPool for arbitrary-shaped
+  proposal MIL, CVPR 2021,
+  https://openaccess.thecvf.com/content/CVPR2021/html/Shen_Toward_Joint_Thing-and-Stuff_Mining_for_Weakly_Supervised_Panoptic_Segmentation_CVPR_2021_paper.html;
+  Ilse et al., normalized attention MIL, ICML 2018,
+  https://proceedings.mlr.press/v80/ilse18a.html; Ren et al., proposal
+  inner/outer contrast, CVPR 2023,
+  https://openaccess.thecvf.com/content/CVPR2023/html/Ren_Proposal-Based_Multiple_Instance_Learning_for_Weakly-Supervised_Temporal_Action_Localization_CVPR_2023_paper.html;
+  and Mun et al., explicit small-object WSSS audit, WACV 2024,
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+  Their reported metrics and size-aware training labels are not transferred to
+  BTXRD.
+- Commit `ec4a773b10d9a51b8cb56977fc9e560709ae8a30` prepares the GT-blind
+  diagnostic. `project/audit_mask_bag_fractional_grid_mass.py`
+  (canonical-LF SHA-256
+  `25a694fb2a38fa0cf8c7e4601493a1d55d4dd5d40c1a1f1d820968e9a55dfa44`)
+  verifies split/source/candidate/pseudo-manifest and every physical NPZ hash,
+  reproduces fallback bags, applies the exact v3 projection, and saves every
+  candidate mass plus fixed overall/image-label/prompt/source/fallback
+  summaries. It is hard-limited to train/validation and the frozen
+  `32/4/0.25/81` grid/oversampling/minimum/cap contract.
+- Static boundary tests at
+  `tests/test_mask_bag_fractional_grid_mass_audit.py` (canonical-LF SHA-256
+  `0c8eb0b8cdc7e00705c21b6c0bc26f882619f357ee304c8d0da7e0f576a1e047`)
+  passed with the existing probe tests (`7 passed`); `py_compile` passed. The
+  numerical Torch path remains a mandatory Kaggle preflight. No candidate
+  payload is currently retained locally, so no mass result was fabricated.
+
