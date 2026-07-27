@@ -586,10 +586,11 @@ def train_local_decoder(
             flipped_logits, _features = decoder(
                 tokens.flip(4), guidance.flip(-1)
             )
-            flip = F.mse_loss(
-                torch.sigmoid(logits),
-                torch.sigmoid(flipped_logits).flip(-1),
-            )
+            flip_error = (
+                torch.sigmoid(logits)
+                - torch.sigmoid(flipped_logits).flip(-1)
+            ).square()
+            flip = flip_error[valid.unsqueeze(2)].mean()
             loss = mil + config.flip_consistency_weight * flip
             loss.backward()
             torch.nn.utils.clip_grad_norm_(decoder.parameters(), max_norm=5.0)
@@ -691,6 +692,7 @@ def predict_local_bag(
         probabilities = 0.5 * (
             torch.sigmoid(logits) + torch.sigmoid(flipped).flip(-1)
         )
+        probabilities = probabilities * valid.unsqueeze(2)
         confidence = torch.sigmoid(
             top_fraction_pool(logits, valid, fraction=config.top_fraction)
         ).item()
@@ -747,6 +749,13 @@ def write_validation_predictions(
             guidance_size=guidance_size,
             device=device,
         )
+        foreground = radiograph_foreground_mask(
+            image,
+            output_height=args.output_size,
+            output_width=args.output_size,
+        )
+        local_map[~foreground] = 0.0
+        coverage &= foreground
         fused_map, gate = confidence_gated_rank_fusion(
             global_map,
             local_map,
@@ -757,12 +766,6 @@ def write_validation_predictions(
             residual_weight=config.residual_weight,
             temperature=config.confidence_temperature,
         )
-        foreground = radiograph_foreground_mask(
-            image,
-            output_height=args.output_size,
-            output_width=args.output_size,
-        )
-        local_map[~foreground] = 0.0
         fused_map[~foreground] = 0.0
         stem = Path(row["image_id"]).stem
         local_relative = Path("local_maps") / f"{stem}.npy"

@@ -21,6 +21,7 @@ from run_rad_dino_global_local_mil_probe import (  # noqa: E402
     crop_from_output_box,
     proposal_boxes,
 )
+from evaluate_rad_dino_global_local_mil_probe import apply_gate  # noqa: E402
 
 
 def test_config_rejects_invalid_patch_contract() -> None:
@@ -177,3 +178,50 @@ def test_positive_and_negative_proposals_use_different_sources() -> None:
     assert len(positive) == len(negative) == 3
     assert positive_source == "frozen_global_top_mass"
     assert negative_source == "seeded_random_negative"
+
+
+def _passing_gate_inputs() -> tuple[dict[str, object], dict[str, object]]:
+    summary = {
+        "image_level_auroc_from_raw_p99": 0.80,
+        "tumor_localization": {
+            "overall": {"dice_p90": 0.16},
+            "small": {"dice_p90": 0.04, "dice_p99": 0.08},
+            "medium": {"dice_p90": 0.23},
+            "large": {"dice_p90": 0.53},
+        },
+        "complete_misses": {"dice_p90": {"small": 30}},
+    }
+    comparison = {
+        "metrics": {
+            "dice_p90": {
+                name: {
+                    "ci95": [0.001, 0.02],
+                    "delta_candidate_minus_global": 0.01,
+                }
+                for name in ("overall", "small", "medium", "large")
+            }
+        }
+    }
+    return summary, comparison
+
+
+def test_global_local_gate_requires_small_statistical_improvement() -> None:
+    summary, comparison = _passing_gate_inputs()
+    assert apply_gate(summary, comparison)["status"] == "PASS"
+    comparison["metrics"]["dice_p90"]["small"]["ci95"][0] = -0.001
+    gate = apply_gate(summary, comparison)
+    assert gate["status"] == "FAIL"
+    assert not gate["relative_checks"][
+        "small_dice_p90_ci95_low_above_zero"
+    ]["pass"]
+
+
+def test_evaluator_orders_freeze_verification_before_gt_loading() -> None:
+    source = (
+        __import__("pathlib").Path(__file__).parents[1]
+        / "project/evaluate_rad_dino_global_local_mil_probe.py"
+    ).read_text(encoding="utf-8")
+    main = source[source.index("def main()") :]
+    assert main.index("verify_prediction_freeze(args)") < main.index(
+        "evaluate_frozen_predictions(args, manifest)"
+    )
