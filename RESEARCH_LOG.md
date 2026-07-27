@@ -3355,3 +3355,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   unless exactly two visible CUDA device names contain `T4` and a real
   convolution succeeds on each device.
 
+## 2026-07-27 - Global-local MIL version 4 T4 x2 launch
+
+- Kaggle accepted kernel version 4 with both metadata `machine_shape` and CLI
+  override set to `NvidiaTeslaT4`; initial status is
+  `KernelWorkerStatus.RUNNING`. Wrapper/metadata SHA-256 are
+  `fb62f8c3254ed20ec3c4d6042510ca17c5c4bced2b0dc4a267fb661bf6066add`
+  and
+  `8d0d416e2ef3a9f3467de49000f9ca8cbfc5da39375f432b29b7b440c70df29d`.
+  Checkout commit is `2148c76c2fb38283be7c2a1550cc315d904c6ca4`,
+  scientific source is
+  `bc34a892cbdbe2eb0a8b3df9a365426d54e07af1`, and correction protocol is
+  `3d948dd11ac46c09ce84e8de04034255a11be0182bfb17b44216c8d4c2172bf8`.
+- Exactly one five-minute heartbeat
+  `theo-d-i-rad-dino-global-local-mil` watches version 4. The terminal audit
+  must treat API acceptance as insufficient and verify two actual T4 names,
+  two successful device convolutions, `cuda_device_count=2` and
+  `local_encoder_data_parallel=true`. Test remains locked and no consumer is
+  authorized before the unchanged all-checks-required gate.
+
