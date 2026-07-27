@@ -10,6 +10,7 @@ from project.models.rad_dino_mask_bag_mil import (
     aligned_candidate_consistency_loss,
     image_bag_loss,
     mask_pool_descriptors,
+    project_direct_resize_masks_to_square,
     self_guided_instance_loss,
     smooth_mil_pool,
     winner_take_all_map,
@@ -39,6 +40,42 @@ def test_mask_pool_descriptors_preserve_small_fractional_masks() -> None:
     assert pooled_valid.tolist() == valid.tolist()
     assert torch.isfinite(descriptors).all()
     assert torch.count_nonzero(descriptors[:, 2]) == 0
+
+
+def test_direct_resize_mask_projection_recovers_square_content_box() -> None:
+    masks = torch.zeros(2, 4, 8)
+    masks[0, 1:3, 2:6] = 1
+    masks[1] = 1
+    projected = project_direct_resize_masks_to_square(
+        masks,
+        padded_side=8,
+        content_box=(0, 2, 8, 6),
+        output_size=8,
+    )
+    assert projected.shape == (2, 8, 8)
+    assert torch.equal(projected[0, 2:6], masks[0])
+    assert torch.equal(projected[1, 2:6], masks[1])
+    assert torch.count_nonzero(projected[:, :2]) == 0
+    assert torch.count_nonzero(projected[:, 6:]) == 0
+
+
+def test_project_then_square_flip_preserves_asymmetric_padding_geometry() -> None:
+    mask = torch.zeros(1, 3, 6)
+    mask[:, :, :2] = 1
+    projected = project_direct_resize_masks_to_square(
+        mask,
+        padded_side=6,
+        content_box=(0, 1, 6, 4),
+        output_size=12,
+    )
+    flipped_content_box = (0, 6 - 4, 6, 6 - 1)
+    expected = project_direct_resize_masks_to_square(
+        mask.flip(-1),
+        padded_side=6,
+        content_box=flipped_content_box,
+        output_size=12,
+    )
+    assert torch.allclose(projected.flip(-1), expected)
 
 
 def test_smooth_pool_ignores_padding_and_fails_closed_on_empty_bag() -> None:

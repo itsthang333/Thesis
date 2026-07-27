@@ -29,6 +29,9 @@ def test_runner_has_image_only_surface_and_t4x2_encoder_parallelism() -> None:
     assert 'args.maximum_candidates != 81' in source
     assert "logits = 0.5 * (original_logits + flipped_logits)" in source
     assert '"candidate_logit_tta": "mean_original_aligned_horizontal_flip"' in source
+    assert "project_direct_resize_masks_to_square(" in source
+    assert "descriptor_masks[..., ::-1].copy()" in source
+    assert '"candidate_descriptor_geometry"' in source
     assert '"validation_gt_read": False' in source
     assert '"consumer_trained": False' in source
     assert '"test_evaluated": False' in source

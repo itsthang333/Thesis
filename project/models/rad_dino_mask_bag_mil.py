@@ -44,6 +44,53 @@ class MaskBagMILConfig:
         return 3 * self.token_layers * self.token_dim + self.metadata_dim
 
 
+def project_direct_resize_masks_to_square(
+    candidate_masks: torch.Tensor,
+    *,
+    padded_side: int,
+    content_box: tuple[int, int, int, int],
+    output_size: int,
+) -> torch.Tensor:
+    """Map direct-resize proposal masks into a square-padded encoder frame.
+
+    Candidate-gallery masks use normalized coordinates of the unpadded source
+    radiograph, whereas RAD-DINO tokens use a centered square-padded source.
+    This function performs the exact continuous coordinate change before mask
+    pooling. Bilinear sampling preserves fractional support at the content
+    boundary; pixels outside the source-image content box are zero.
+    """
+
+    if candidate_masks.ndim != 3:
+        raise ValueError("candidate_masks must have shape [N,H,W]")
+    if not torch.isfinite(candidate_masks).all():
+        raise ValueError("candidate_masks must be finite")
+    if int(padded_side) <= 0 or int(output_size) <= 0:
+        raise ValueError("padded_side and output_size must be positive")
+    x0, y0, x1, y1 = (int(value) for value in content_box)
+    if not (0 <= x0 < x1 <= int(padded_side)):
+        raise ValueError("content_box has invalid horizontal bounds")
+    if not (0 <= y0 < y1 <= int(padded_side)):
+        raise ValueError("content_box has invalid vertical bounds")
+
+    device = candidate_masks.device
+    coordinates = (
+        torch.arange(output_size, dtype=torch.float32, device=device) + 0.5
+    ) * (float(padded_side) / float(output_size))
+    source_x = (coordinates - float(x0)) / float(x1 - x0)
+    source_y = (coordinates - float(y0)) / float(y1 - y0)
+    grid_y, grid_x = torch.meshgrid(source_y, source_x, indexing="ij")
+    grid = torch.stack((2.0 * grid_x - 1.0, 2.0 * grid_y - 1.0), dim=-1)
+    grid = grid[None].expand(candidate_masks.shape[0], -1, -1, -1)
+    projected = F.grid_sample(
+        candidate_masks[:, None].float(),
+        grid,
+        mode="bilinear",
+        padding_mode="zeros",
+        align_corners=False,
+    )[:, 0]
+    return projected.clamp_(0.0, 1.0)
+
+
 def _validate_inputs(
     token_maps: torch.Tensor,
     candidate_masks: torch.Tensor,
@@ -324,6 +371,7 @@ __all__ = [
     "aligned_candidate_consistency_loss",
     "image_bag_loss",
     "mask_pool_descriptors",
+    "project_direct_resize_masks_to_square",
     "self_guided_instance_loss",
     "smooth_mil_pool",
     "winner_take_all_map",

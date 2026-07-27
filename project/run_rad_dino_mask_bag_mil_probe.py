@@ -38,6 +38,7 @@ from models.rad_dino_mask_bag_mil import (
     aligned_candidate_consistency_loss,
     image_bag_loss,
     mask_pool_descriptors,
+    project_direct_resize_masks_to_square,
     self_guided_instance_loss,
     smooth_mil_pool,
     winner_take_all_map,
@@ -236,14 +237,16 @@ def build_descriptor_cache(
         batch_rows = rows[start : start + args.encoder_batch_size]
         pixels: list[torch.Tensor] = []
         payloads: list[tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = []
+        projections = []
         for row in batch_rows:
             image_path = locate_verified_image(args.dataset_root, row)
             with Image.open(image_path) as image:
-                _raw, normalized, _projection = _raw_and_normalized_square(
+                _raw, normalized, projection = _raw_and_normalized_square(
                     image,
                     input_size=args.input_size,
                 )
             pixels.append(normalized)
+            projections.append(projection)
             payloads.append(
                 _load_candidate_payload(
                     candidate_root,
@@ -259,13 +262,24 @@ def build_descriptor_cache(
             token_batch = encoder(augmented.to(device, non_blocking=True))
         token_batch = token_batch.float().cpu()
         count = len(batch_rows)
-        for offset, (row, payload) in enumerate(zip(batch_rows, payloads, strict=True)):
+        for offset, (row, payload, projection) in enumerate(
+            zip(batch_rows, payloads, projections, strict=True)
+        ):
             masks, metadata, _sam_scores, fallback_flags = payload
+            descriptor_masks = project_direct_resize_masks_to_square(
+                torch.from_numpy(masks),
+                padded_side=projection.padded_side,
+                content_box=projection.content_box,
+                output_size=int(token_batch.shape[-2]) * 4,
+            ).numpy()
             descriptors, kept = _pool_one_bag(
-                token_batch[offset], masks, metadata, config
+                token_batch[offset], descriptor_masks, metadata, config
             )
             flipped_descriptors, flipped_kept = _pool_one_bag(
-                token_batch[count + offset], masks[..., ::-1].copy(), metadata, config
+                token_batch[count + offset],
+                descriptor_masks[..., ::-1].copy(),
+                metadata,
+                config,
             )
             if not np.array_equal(kept, flipped_kept):
                 raise RuntimeError("Original/flip candidate validity differs")
@@ -587,6 +601,13 @@ def main() -> None:
         "split_sha256": args.expected_split_sha256,
         "model_snapshot": model_snapshot,
         "projection_sha256": projection_sha256(projection),
+        "candidate_descriptor_geometry": {
+            "candidate_frame": "direct-resize source-image coordinates",
+            "encoder_frame": "centered square-padded source-image coordinates",
+            "projection": "continuous content-box transform with bilinear sampling",
+            "oversampling_per_token_axis": 4,
+            "flip": "horizontal flip of the projected square mask",
+        },
         "train_candidate_manifest_sha256": args.train_candidate_manifest_sha256,
         "train_pseudo_manifest_sha256": args.train_pseudo_manifest_sha256,
         "val_candidate_manifest_sha256": args.val_candidate_manifest_sha256,
