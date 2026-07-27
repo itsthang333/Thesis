@@ -42,6 +42,37 @@ def test_mask_pool_descriptors_preserve_small_fractional_masks() -> None:
     assert torch.count_nonzero(descriptors[:, 2]) == 0
 
 
+def test_mask_pool_excludes_square_padding_from_local_context() -> None:
+    config = MaskBagMILConfig(
+        token_dim=1,
+        token_layers=1,
+        hidden_dim=4,
+        context_radius=1,
+    )
+    tokens = torch.zeros(1, 1, 4, 4, 1)
+    tokens[:, :, :1] = 100.0
+    tokens[:, :, 1:] = 2.0
+    masks = torch.zeros(1, 1, 4, 4)
+    masks[:, :, 1, 1] = 1.0
+    metadata = torch.zeros(1, 1, 4)
+    valid = torch.ones(1, 1, dtype=torch.bool)
+    content = torch.zeros(1, 4, 4)
+    content[:, 1:] = 1.0
+    descriptor, pooled_valid = mask_pool_descriptors(
+        tokens,
+        masks,
+        metadata,
+        valid,
+        config,
+        content_masks=content,
+    )
+    assert pooled_valid.item()
+    inside, context_mean, contrast = descriptor[0, 0, :3]
+    assert torch.allclose(inside, torch.tensor(2.0))
+    assert torch.allclose(context_mean, torch.tensor(2.0))
+    assert torch.allclose(contrast, torch.tensor(0.0))
+
+
 def test_direct_resize_mask_projection_recovers_square_content_box() -> None:
     masks = torch.zeros(2, 4, 8)
     masks[0, 1:3, 2:6] = 1

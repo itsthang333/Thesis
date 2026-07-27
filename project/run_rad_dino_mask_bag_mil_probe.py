@@ -200,6 +200,7 @@ def _pool_one_bag(
     token_maps: torch.Tensor,
     masks: np.ndarray,
     metadata: np.ndarray,
+    content_mask: np.ndarray,
     config: MaskBagMILConfig,
 ) -> tuple[np.ndarray, np.ndarray]:
     mask_tensor = torch.from_numpy(masks)[None]
@@ -211,6 +212,7 @@ def _pool_one_bag(
         metadata_tensor,
         validity,
         config,
+        content_masks=torch.from_numpy(content_mask)[None],
     )
     kept = torch.nonzero(pooled_valid[0], as_tuple=False).reshape(-1)
     if not len(kept):
@@ -272,13 +274,24 @@ def build_descriptor_cache(
                 content_box=projection.content_box,
                 output_size=int(token_batch.shape[-2]) * 4,
             ).numpy()
+            descriptor_content = project_direct_resize_masks_to_square(
+                torch.ones((1, masks.shape[-2], masks.shape[-1])),
+                padded_side=projection.padded_side,
+                content_box=projection.content_box,
+                output_size=int(token_batch.shape[-2]) * 4,
+            )[0].numpy()
             descriptors, kept = _pool_one_bag(
-                token_batch[offset], descriptor_masks, metadata, config
+                token_batch[offset],
+                descriptor_masks,
+                metadata,
+                descriptor_content,
+                config,
             )
             flipped_descriptors, flipped_kept = _pool_one_bag(
                 token_batch[count + offset],
                 descriptor_masks[..., ::-1].copy(),
                 metadata,
+                descriptor_content[..., ::-1].copy(),
                 config,
             )
             if not np.array_equal(kept, flipped_kept):
@@ -607,6 +620,7 @@ def main() -> None:
             "projection": "continuous content-box transform with bilinear sampling",
             "oversampling_per_token_axis": 4,
             "flip": "horizontal flip of the projected square mask",
+            "padding_exclusion": "fractional content occupancy excludes square padding from proposal and local-context pooling",
         },
         "train_candidate_manifest_sha256": args.train_candidate_manifest_sha256,
         "train_pseudo_manifest_sha256": args.train_pseudo_manifest_sha256,

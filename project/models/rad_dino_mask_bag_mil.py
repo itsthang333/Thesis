@@ -97,6 +97,7 @@ def _validate_inputs(
     candidate_metadata: torch.Tensor,
     candidate_valid: torch.Tensor,
     config: MaskBagMILConfig,
+    content_masks: torch.Tensor | None,
 ) -> None:
     if token_maps.ndim != 5:
         raise ValueError("token_maps must have shape [B,L,H,W,D]")
@@ -116,6 +117,19 @@ def _validate_inputs(
         raise ValueError("Candidate metadata shape differs from the configuration")
     if candidate_valid.shape != (batch, candidates):
         raise ValueError("Candidate-valid shape differs from candidate masks")
+    if content_masks is not None:
+        if content_masks.ndim != 3 or content_masks.shape != (
+            batch,
+            candidate_masks.shape[-2],
+            candidate_masks.shape[-1],
+        ):
+            raise ValueError(
+                "content_masks must have shape [B,H,W] matching candidate masks"
+            )
+        if not torch.isfinite(content_masks).all():
+            raise ValueError("content_masks must be finite")
+        if not (content_masks > 0).flatten(start_dim=1).any(dim=1).all():
+            raise ValueError("Every content mask must contain valid image support")
     if not torch.isfinite(token_maps).all():
         raise ValueError("token_maps must be finite")
     if not torch.isfinite(candidate_masks).all():
@@ -130,6 +144,8 @@ def mask_pool_descriptors(
     candidate_metadata: torch.Tensor,
     candidate_valid: torch.Tensor,
     config: MaskBagMILConfig,
+    *,
+    content_masks: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Pool proposal, local-context and contrast features from token grids.
 
@@ -144,6 +160,7 @@ def mask_pool_descriptors(
         candidate_metadata,
         candidate_valid,
         config,
+        content_masks,
     )
     batch, layers, grid_h, grid_w, channels = token_maps.shape
     candidates = candidate_masks.shape[1]
@@ -157,6 +174,19 @@ def mask_pool_descriptors(
         size=(grid_h, grid_w),
         mode="area",
     ).reshape(batch, candidates, grid_h, grid_w)
+    if content_masks is None:
+        content = torch.ones(
+            (batch, grid_h, grid_w),
+            dtype=masks.dtype,
+            device=masks.device,
+        )
+    else:
+        content = F.interpolate(
+            content_masks[:, None].float(),
+            size=(grid_h, grid_w),
+            mode="area",
+        )[:, 0].clamp(0.0, 1.0)
+    masks = masks * content[:, None]
     valid = candidate_valid.bool() & (
         masks.sum(dim=(-2, -1)) >= config.minimum_grid_mass
     )
@@ -169,7 +199,7 @@ def mask_pool_descriptors(
         stride=1,
         padding=config.context_radius,
     ).reshape(batch, candidates, grid_h, grid_w)
-    context = (dilated - masks).clamp_min(0.0)
+    context = (dilated - masks).clamp_min(0.0) * content[:, None]
 
     tokens = token_maps.reshape(batch, layers, grid_h * grid_w, channels)
     mask_weights = masks.reshape(batch, candidates, grid_h * grid_w)
@@ -353,6 +383,7 @@ class RadDinoMaskBagMIL(nn.Module):
         candidate_masks: torch.Tensor,
         candidate_metadata: torch.Tensor,
         candidate_valid: torch.Tensor,
+        content_masks: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         descriptors, valid = mask_pool_descriptors(
             token_maps,
@@ -360,6 +391,7 @@ class RadDinoMaskBagMIL(nn.Module):
             candidate_metadata,
             candidate_valid,
             self.config,
+            content_masks=content_masks,
         )
         candidate_logits, bag_logits = self.score_descriptors(descriptors, valid)
         return candidate_logits, bag_logits, valid
