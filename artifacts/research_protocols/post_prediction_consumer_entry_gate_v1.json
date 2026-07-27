@@ -1,0 +1,104 @@
+{
+  "protocol_id": "post_prediction_consumer_entry_gate_v1",
+  "frozen_utc": "2026-07-27T17:34:01Z",
+  "status": "PREDECLARED_BEFORE_ANY_VERSION_6_TERMINAL_RESULT_WAS_DELIVERED_TO_THE_MAIN_TASK_AND_BEFORE_ANY_CROSSFIT_TEACHER_OR_CONSUMER",
+  "purpose": "Prevent a barely passing localization source from launching a dense consumer that would need to invent an implausibly large fraction of the remaining BTXRD spatial gap.",
+  "scope": {
+    "changes_running_mask_bag_v6_protocol": false,
+    "authorizes_crossfit_teacher_automatically": false,
+    "authorizes_consumer_automatically": false,
+    "test_evaluated": false
+  },
+  "frozen_reference": {
+    "current_image_label_only_consumer_dice": {
+      "overall": 0.2300198701,
+      "small": 0.0710014171,
+      "medium": 0.4134030430,
+      "large": 0.3269168774
+    },
+    "operational_goal_dice": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    },
+    "cohort": {
+      "validation_images": 371,
+      "positive_images": 184,
+      "normal_images": 187,
+      "small_medium_large": [94, 72, 18],
+      "complete_misses_included": true
+    }
+  },
+  "entry_tier_derivation": {
+    "rule": "arithmetic midpoint between the frozen current WSL consumer and the operational goal, applied separately to every subgroup; overall is rounded to the same eight-decimal reporting precision",
+    "uses_new_validation_result": false,
+    "uses_segmentation_gt_for_derivation": false,
+    "consumer_entry_minimum_dice": {
+      "overall": 0.28513013,
+      "small": 0.12497817,
+      "medium": 0.46292241,
+      "large": 0.41031012
+    },
+    "absolute_gain_already_closed_from_current_wsl": {
+      "overall": 0.05511026,
+      "small": 0.05397676,
+      "medium": 0.04951937,
+      "large": 0.08339324
+    },
+    "absolute_gain_remaining_for_consumer": {
+      "overall": 0.05511026,
+      "small": 0.05397676,
+      "medium": 0.04951937,
+      "large": 0.08339324
+    },
+    "interpretation": "This midpoint is a pragmatic risk boundary, not a claim that consumers universally recover half a supervision gap or that reaching it guarantees the final goal."
+  },
+  "required_preconditions": [
+    "The upstream prediction-first mechanism passes every check in its own immutable gate.",
+    "A separate group-preserving crossfit protocol freezes all 2981 out-of-fold train teacher records before consumer training.",
+    "A distinct full-data selector freezes all 371 validation reliability-teacher predictions before validation GT is opened.",
+    "Every candidate logit, original/flip view, kept index, proposal-family provenance, checkpoint and physical map is hash-bound.",
+    "The reliability-teacher evaluator uses the unchanged mean per-positive-image Dice and includes every complete miss."
+  ],
+  "all_required_consumer_entry_gate": {
+    "dice_at_least_entry_tier_for_all_four_groups": true,
+    "paired_overall_delta_vs_current_wsl_consumer_ci95_low": ">0",
+    "mean_dice_delta_vs_current_wsl_consumer": ">=0 separately for small, medium and large",
+    "complete_misses_vs_current_wsl_consumer": "no increase overall or in any subgroup",
+    "image_level_auroc_minimum": 0.75,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "decision_tree": {
+    "source_meets_operational_goals": "Report that frozen prediction source as meeting the operational validation tier; a consumer is optional and needs a separate value proposition.",
+    "source_passes_entry_tier_but_not_operational_goals": "A separately predeclared partial-consensus consumer C1a/C1b may be launched.",
+    "candidate_oracle_passes_but_source_fails_entry_tier": "Repair family-balanced relational selection before consumer training.",
+    "candidate_oracle_fails_any_operational_goal": "Improve immutable high-resolution proposal support before selector or consumer training.",
+    "upstream_gate_fails": "Reject the exact upstream mechanism without post-GT rescue."
+  },
+  "scientific_basis": [
+    {
+      "source": "Li et al., Pseudo-mask Matters in Weakly-supervised Semantic Segmentation, ICCV 2021",
+      "url": "https://openaccess.thecvf.com/content/ICCV2021/html/Li_Pseudo-Mask_Matters_in_Weakly-Supervised_Semantic_Segmentation_ICCV_2021_paper.html",
+      "influence": "Pseudo-label noise must be suppressed during consumer training; it does not justify training on a source that still has large measured localization deficits."
+    },
+    {
+      "source": "Fu et al., UM-CAM, Pattern Recognition 2025",
+      "url": "https://doi.org/10.1016/j.patcog.2024.111204",
+      "influence": "Random-view consensus motivates reliability-aware learning from image-label-derived medical pseudo labels."
+    },
+    {
+      "source": "Choe et al., Evaluating Weakly Supervised Object Localization Methods Right, CVPR 2020",
+      "url": "https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html",
+      "influence": "Spatial validation feedback cannot be hidden inside model, threshold or branch selection."
+    }
+  ],
+  "forbidden": [
+    "Lowering the entry tier after seeing a terminal result.",
+    "Using image AUROC alone to authorize a consumer.",
+    "Training a consumer from in-sample selector predictions.",
+    "Substituting candidate oracle Dice for deployable teacher Dice.",
+    "Reading BTXRD test or using validation subgroup identity as a model input."
+  ]
+}

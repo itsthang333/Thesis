@@ -4363,3 +4363,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   are rejected. No new experiment is launched before version-6 terminal
   evidence selects the branch.
 
+## 2026-07-28 - Predeclared consumer-entry tier
+
+- Before any mask-bag version-6 terminal result was delivered to the main
+  task, protocol `post_prediction_consumer_entry_gate_v1` was frozen at
+  `artifacts/research_protocols/post_prediction_consumer_entry_gate_v1.json`
+  (canonical-LF SHA-256
+  `3eda9b91a367ebc1b5b97733959a8b256c4a435afcc64fefbce98c478d8a262e`).
+  It does not alter the running v6 gate or automatically authorize another
+  job. It prevents a barely passing prediction source from launching a dense
+  consumer that would need to invent most of the remaining spatial gap.
+- The all-subgroup entry tier is the arithmetic midpoint from the frozen
+  current WSL consumer to the operational goal:
+  `overall 0.28513013`, `small 0.12497817`,
+  `medium 0.46292241`, `large 0.41031012`. This closes exactly half of each
+  frozen subgroup deficit before consumer training and leaves remaining gaps
+  of approximately `0.05511/0.05398/0.04952/0.08339`. It is a pragmatic risk
+  boundary, not a claim that a consumer is guaranteed to recover the other
+  half.
+- Entry additionally requires the upstream all-checks gate, group-preserving
+  out-of-fold train teacher freeze, a distinct full-data validation teacher
+  frozen before GT, overall paired CI95 lower bound above zero versus the
+  current WSL consumer, no subgroup mean decrease, no complete-miss increase,
+  and image AUROC at least `0.75`. Candidate oracle or image AUROC alone cannot
+  authorize training.
+- The decision is now fixed before outcome inspection: a source already at
+  the operational goals is directly reportable; an entry-tier pass may
+  authorize separately predeclared C1a/C1b; oracle-pass but entry-fail returns
+  to relational selection; oracle-fail returns to high-resolution proposal
+  support. Sources recorded in the protocol are Li et al., *Pseudo-mask
+  Matters* (ICCV 2021), Fu et al., UM-CAM/Random-View Consensus (Pattern
+  Recognition 2025), and Choe et al., correct WSOL evaluation (CVPR 2020).
+  Validation masks, test data, consumer training and new Kaggle compute were
+  not used.
+
