@@ -2940,4 +2940,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `4fc754c9b9046aff0220d94b54022facbaa679924590bb119e4957af4ff1bef5`.
   No version-1 result will be accepted; version 2 cannot launch while version
   1 is still the active heavy job. Test remains locked.
+- The corrected version-2 wrapper is prepared but not launched. It binds
+  checkout commit `648a439a74c7f5087eb9812d98f00380c2455e62`, corrected scientific source
+  `bb767b05f665886d27d7fb50abd8701fa44d2da6` and amended protocol
+  `4fc754c9...1bef5`. Static source/order/metadata audit remains
+  `PRELAUNCH_PASS`; wrapper SHA-256 is
+  `f4564e5130b744c7eea2b8e3208b68874fa46572f464f047246f28bf7c2203b7`.
+  Evidence is stored in
+  `rad_dino_multilayer_soft_region_probe_val_v1_wrapper_audit_v2.json`.
+  The existing heartbeat remains attached to version 1 until it is terminal;
+  no duplicate monitor or second heavy job is created.
 
