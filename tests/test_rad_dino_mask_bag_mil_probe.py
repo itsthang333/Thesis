@@ -34,6 +34,16 @@ def test_runner_has_image_only_surface_and_t4x2_encoder_parallelism() -> None:
     assert '"candidate_descriptor_geometry"' in source
     assert '"padding_exclusion"' in source
     assert "content_masks=torch.from_numpy(content_mask)[None]" in source
+    assert '"--descriptor-geometry"' in source
+    assert 'choices=["legacy_direct_resize", "square_corrected_v3"]' in source
+    assert "required=True" in source
+    assert 'args.descriptor_geometry == "square_corrected_v3"' in source
+    assert 'args.descriptor_geometry == "legacy_direct_resize"' in source
+    assert "descriptor_masks = masks" in source
+    assert "descriptor_content = np.ones(" in source
+    assert '"descriptor_geometry": args.descriptor_geometry' in source
+    assert '"mode": "legacy_direct_resize"' in source
+    assert '"mode": "square_corrected_v3"' in source
     assert '"validation_gt_read": False' in source
     assert '"consumer_trained": False' in source
     assert '"test_evaluated": False' in source

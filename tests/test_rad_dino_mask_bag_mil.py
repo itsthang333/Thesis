@@ -73,6 +73,28 @@ def test_mask_pool_excludes_square_padding_from_local_context() -> None:
     assert torch.allclose(contrast, torch.tensor(0.0))
 
 
+def test_legacy_control_with_all_valid_content_matches_original_pooling() -> None:
+    config = MaskBagMILConfig(token_dim=8, token_layers=3, hidden_dim=16)
+    tokens, masks, metadata, valid = _inputs()
+    original, original_valid = mask_pool_descriptors(
+        tokens,
+        masks,
+        metadata,
+        valid,
+        config,
+    )
+    explicit_legacy, explicit_valid = mask_pool_descriptors(
+        tokens,
+        masks,
+        metadata,
+        valid,
+        config,
+        content_masks=torch.ones(masks.shape[0], *masks.shape[-2:]),
+    )
+    assert torch.equal(explicit_valid, original_valid)
+    assert torch.equal(explicit_legacy, original)
+
+
 def test_fractional_projected_proposal_is_not_attenuated_twice() -> None:
     config = MaskBagMILConfig(
         token_dim=1,

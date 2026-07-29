@@ -82,6 +82,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--instance-warmup-epochs", type=int, default=2)
     parser.add_argument("--maximum-candidates", type=int, default=81)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--descriptor-geometry",
+        choices=["legacy_direct_resize", "square_corrected_v3"],
+        required=True,
+    )
     return parser.parse_args()
 
 
@@ -268,18 +273,29 @@ def build_descriptor_cache(
             zip(batch_rows, payloads, projections, strict=True)
         ):
             masks, metadata, _sam_scores, fallback_flags = payload
-            descriptor_masks = project_direct_resize_masks_to_square(
-                torch.from_numpy(masks),
-                padded_side=projection.padded_side,
-                content_box=projection.content_box,
-                output_size=int(token_batch.shape[-2]) * 4,
-            ).numpy()
-            descriptor_content = project_direct_resize_masks_to_square(
-                torch.ones((1, masks.shape[-2], masks.shape[-1])),
-                padded_side=projection.padded_side,
-                content_box=projection.content_box,
-                output_size=int(token_batch.shape[-2]) * 4,
-            )[0].numpy()
+            if args.descriptor_geometry == "square_corrected_v3":
+                descriptor_masks = project_direct_resize_masks_to_square(
+                    torch.from_numpy(masks),
+                    padded_side=projection.padded_side,
+                    content_box=projection.content_box,
+                    output_size=int(token_batch.shape[-2]) * 4,
+                ).numpy()
+                descriptor_content = project_direct_resize_masks_to_square(
+                    torch.ones((1, masks.shape[-2], masks.shape[-1])),
+                    padded_side=projection.padded_side,
+                    content_box=projection.content_box,
+                    output_size=int(token_batch.shape[-2]) * 4,
+                )[0].numpy()
+            elif args.descriptor_geometry == "legacy_direct_resize":
+                descriptor_masks = masks
+                descriptor_content = np.ones(
+                    masks.shape[-2:],
+                    dtype=np.float32,
+                )
+            else:  # pragma: no cover - argparse and the preflight guard fail closed.
+                raise RuntimeError(
+                    f"Unsupported descriptor geometry: {args.descriptor_geometry}"
+                )
             descriptors, kept = _pool_one_bag(
                 token_batch[offset],
                 descriptor_masks,
@@ -494,6 +510,11 @@ def main() -> None:
         raise ValueError("The v1 mask-bag protocol requires input 448/projection 128")
     if args.encoder_batch_size < 2 or args.maximum_candidates != 81:
         raise ValueError("Mask-bag v1 requires encoder batch >=2 and candidate cap 81")
+    if args.descriptor_geometry not in {
+        "legacy_direct_resize",
+        "square_corrected_v3",
+    }:
+        raise ValueError("Descriptor geometry must be explicitly frozen")
     seed_everything(args.seed)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     started = datetime.now(timezone.utc)
@@ -590,6 +611,7 @@ def main() -> None:
             "protocol_sha256": args.protocol_sha256,
             "split_sha256": args.expected_split_sha256,
             "final_epoch": args.epochs,
+            "descriptor_geometry": args.descriptor_geometry,
             "validation_gt_read": False,
             "consumer_trained": False,
             "test_evaluated": False,
@@ -608,20 +630,33 @@ def main() -> None:
         args,
         device,
     )
-    freeze = {
-        "source_commit": args.source_commit,
-        "protocol_sha256": args.protocol_sha256,
-        "split_sha256": args.expected_split_sha256,
-        "model_snapshot": model_snapshot,
-        "projection_sha256": projection_sha256(projection),
-        "candidate_descriptor_geometry": {
+    if args.descriptor_geometry == "square_corrected_v3":
+        descriptor_geometry = {
+            "mode": "square_corrected_v3",
             "candidate_frame": "direct-resize source-image coordinates",
             "encoder_frame": "centered square-padded source-image coordinates",
             "projection": "continuous content-box transform with bilinear sampling",
             "oversampling_per_token_axis": 4,
             "flip": "horizontal flip of the projected square mask",
             "padding_exclusion": "fractional content occupancy excludes square padding from proposal and local-context pooling",
-        },
+        }
+    else:
+        descriptor_geometry = {
+            "mode": "legacy_direct_resize",
+            "candidate_frame": "direct-resize source-image coordinates",
+            "encoder_frame": "centered square-padded source-image coordinates",
+            "projection": "none; legacy direct resize to the token grid",
+            "oversampling_per_token_axis": 1,
+            "flip": "horizontal flip of the direct-resize mask",
+            "padding_exclusion": "none; legacy control includes square padding in local context",
+        }
+    freeze = {
+        "source_commit": args.source_commit,
+        "protocol_sha256": args.protocol_sha256,
+        "split_sha256": args.expected_split_sha256,
+        "model_snapshot": model_snapshot,
+        "projection_sha256": projection_sha256(projection),
+        "candidate_descriptor_geometry": descriptor_geometry,
         "train_candidate_manifest_sha256": args.train_candidate_manifest_sha256,
         "train_pseudo_manifest_sha256": args.train_pseudo_manifest_sha256,
         "val_candidate_manifest_sha256": args.val_candidate_manifest_sha256,
@@ -654,6 +689,7 @@ def main() -> None:
             "instance_warmup_epochs": args.instance_warmup_epochs,
             "final_epoch_only": True,
         },
+        "descriptor_geometry": descriptor_geometry,
         "candidate_inputs": {"train": train_audit, "validation": val_audit},
         "cohort": {"train": len(train_rows), "validation": len(val_rows)},
         "fallback_bags": {
