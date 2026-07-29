@@ -5855,3 +5855,63 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `py_compile`. The current frozen geometry-v3 output contract remains
   untouched.
 
+### R1 objective and train-only finite-selection contract
+
+- The source audit confirmed that the baseline runner's positive-instance term
+  uses the current model's detached argmax as its own positive target. Reusing
+  it to train the R1 adapter would preserve the confirmation mechanism that R1
+  is intended to escape. R1 therefore freezes the complete accepted v3 scorer
+  and trains only a zero-initialized auxiliary residual with image-level
+  SmoothMax BCE, aligned original/flip consistency and a small residual-drift
+  penalty. It generates no positive candidate target. This remains standard
+  bag-label MIL: Ilse et al. formulate MIL learning from a single label assigned
+  to a bag of instances, while the already logged self-guided radiograph and
+  ItS2CLR work explain why uncertain inferred instances require particular
+  caution. Sources:
+  https://proceedings.mlr.press/v80/ilse18a.html,
+  https://openaccess.thecvf.com/content/ACCV2020/html/Seibold_Self-Guided_Multiple_Instance_Learning_for_Weakly_Supervised_Thoracic_DiseaseClassification_and_ACCV_2020_paper.html,
+  and
+  https://openaccess.thecvf.com/content/CVPR2023/html/Liu_Multiple_Instance_Learning_via_Iterative_Self-Paced_Supervised_Contrastive_Learning_CVPR_2023_paper.html.
+- The executable objective is
+  `project/models/mask_bag_residual_objective.py`, canonical-LF SHA-256
+  `7b176c955408fb14b59e0c901243be12791f1d68540484ab06e99f2ba14b92df`.
+  It detaches both original and flip base logits inside the objective, so the
+  v3 freeze is enforced even if a caller accidentally includes the base scorer
+  in an optimizer. Invalid candidates contribute to neither pooling,
+  consistency nor drift. Its source contains no argmax, inferred instance
+  target, segmentation loader or candidate-quality input.
+- Tests at `tests/test_mask_bag_residual_objective.py`, canonical-LF SHA-256
+  `a439ff2a1c26e926160beb2b3354e0bbda59bb88c05f154366ec82fc97f0d826`,
+  verify the source boundary, zero-residual identity term, invalid-candidate
+  exclusion, residual gradients and absence of a base-logit gradient. Local
+  `py_compile` passes and the no-Torch runtime reports
+  `1 passed, 3 skipped`; the three numerical Torch tests are mandatory in the
+  post-v3 Kaggle preflight.
+- R1 keeps the already frozen finite set `K={8,16,32}` and selects it using
+  five group-held-out clean-train folds only. To reduce model-selection
+  overfitting, the chosen value is the smallest K whose mean OOF image BCE is
+  within one standard error of the lowest-BCE K. Cawley and Talbot show that
+  model-selection overfitting can be comparable to apparent differences
+  between algorithms, motivating this conservative finite rule:
+  https://www.jmlr.org/papers/v11/cawley10a.html. The one-standard-error rule
+  explicitly prefers the simpler model when cross-validated errors are not
+  clearly separated. It is used here only for image-label training selection,
+  never for reporting validation localization.
+- Because the terminal v6 audit exposed a candidate-count shortcut, K is
+  ineligible if the magnitude of its all-OOF candidate-count versus
+  bag-probability Spearman correlation exceeds the frozen baseline magnitude
+  by more than `0.02`. If all K values fail, R1 is rejected without reading a
+  validation mask. The rule is implemented at
+  `project/models/mask_bag_oof_selection.py`, canonical-LF SHA-256
+  `4f3bacb75ad10b6751f90fbe8b4321d48db7ec03192382de0fe7eff82b460ff9`.
+  Tests at `tests/test_mask_bag_oof_selection.py`, canonical-LF SHA-256
+  `bcc106f96f5392931896bdfb8422699abe200fe516d7056d067d2db53628f856`,
+  cover the one-SE choice, count guard, clear improvement, fail-closed
+  behavior, order independence and absence of segmentation/subgroup inputs;
+  all six tests pass under the bundled NumPy runtime.
+- This prepares R1's causal loss and model-selection boundary but does not
+  select K or fit a prototype before the accepted post-v3 cache exists. It
+  changes neither the running geometry-v3 checkout nor its frozen protocol.
+  No Kaggle poll, validation GT/test access, selector fit or consumer training
+  occurred.
+
