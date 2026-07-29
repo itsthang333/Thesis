@@ -1,0 +1,47 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v2",
+  "frozen_utc": "2026-07-29T14:30:06Z",
+  "status": "PREDECLARED_AFTER_VERSION_2_DUPLICATE_SOURCE_HASH_GUARD_ERROR_AND_BEFORE_VERSION_3_EXECUTION",
+  "prior_execution_correction": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v1.json",
+    "canonical_lf_sha256": "da2037a57769435b0dc74bb74c08c9c0de90051b2a421c76a9a9ea99c018086e"
+  },
+  "failed_execution": {
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-geometry-v3",
+    "version": 2,
+    "wrapper_canonical_lf_sha256": "4592bffeecd3064f6d7a8eb699555af913de91fd12fc2ba942bc00ca2fe67a80",
+    "terminal_status": "ERROR",
+    "checkout_commit_verified": "55a2305ee143ae7f9232ac8542103475e890fb60",
+    "error": "Geometry-v3 source SHA-256 mismatch: tests/test_rad_dino_mask_bag_mil.py",
+    "runtime_seconds_before_error": 3.06,
+    "runtime_installed": false,
+    "candidate_generation_started": false,
+    "optimizer_constructed": false,
+    "validation_predictions_generated": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "root_cause": {
+    "type": "wrapper_guard_only",
+    "description": "The wrapper correctly authorized and checked the repaired test hash in the parent-protocol source loop, but a second source loop over the immutable geometry-v3 protocol still compared the same test against its pre-repair hash.",
+    "production_geometry_defect": false,
+    "test_fixture_defect_remaining": false
+  },
+  "repair": {
+    "only_wrapper_change": "Apply the already correction-authorized test hash override in the second geometry-v3 source-hash loop.",
+    "production_source_changed": false,
+    "test_source_changed_from_version_2": false,
+    "next_execution_version": 3
+  },
+  "scientific_invariance": {
+    "production_model_sha256": "44cd6ff052a38f9e87c1d93ce71d2aad2105c4b11083354d06b835409c517407",
+    "production_runner_sha256": "1bf56d0d9bc238aafd37988bcd767352065f89a160744b3a837d68127c7e9a71",
+    "corrected_test_sha256": "fed558ea04298bbafdcf922d36f43c176ca733d688815231ca90900d79dc9428",
+    "gallery_projection_loss_optimizer_epochs_seed_unchanged": true,
+    "metric_goals_subgroups_unchanged": true,
+    "prediction_first_contract_unchanged": true,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}
