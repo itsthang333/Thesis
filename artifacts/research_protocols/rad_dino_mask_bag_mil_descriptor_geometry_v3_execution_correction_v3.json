@@ -1,0 +1,169 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v3",
+  "frozen_utc": "2026-07-29T17:05:00Z",
+  "status": "PREDECLARED_PAIRED_RECOVERY_AFTER_VERSION3_ERROR_AND_BEFORE_ANY_RECOVERY_KERNEL_PUSH",
+  "base_execution_protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_v1.json",
+    "canonical_lf_sha256": "24a967744f63b0bd0e3b24342b04d7c43ae532e58943c257e0b568c58c4932ee"
+  },
+  "prior_execution_correction": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v2.json",
+    "canonical_lf_sha256": "9527deb8c6507da73a35d933224ab130e1303c310b897bd3e7a6a3204bd5360d"
+  },
+  "version3_error_evidence": {
+    "path": "artifacts/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/version3_error_audit.json",
+    "canonical_lf_sha256": "db4b29054719960abfed97d6380ff7cb8388d0b86f3f574e662f9f1311110702",
+    "direct_execution_log_sha256": "044f552ac983225c26c324dda0befbc79212925cda8023845336807f06836718",
+    "failure": "Regenerated train candidate/pseudo manifests differ from terminal v6",
+    "scientific_result": false
+  },
+  "reason_for_recovery": {
+    "problem": "Terminal v6 compacted away its physical NPZ candidate payloads. Regeneration preserved all candidate structure fields and all 2981 final pseudo-mask hashes but changed NPZ byte hashes and small CUDA-derived floating summaries, so whole-file manifest equality cannot prove causal gallery identity.",
+    "forbidden_shortcut": "Do not substitute the observed version-3 hashes for terminal-v6 hashes and attribute a resulting v3-minus-v6 delta solely to descriptor geometry.",
+    "valid_design": "Run a legacy direct-resize control and square-corrected-v3 arm against the exact same newly frozen physical candidate gallery, with descriptor coordinate geometry as the sole scientific difference."
+  },
+  "scientific_source": {
+    "commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+    "project/models/rad_dino_mask_bag_mil.py": "44cd6ff052a38f9e87c1d93ce71d2aad2105c4b11083354d06b835409c517407",
+    "project/run_rad_dino_mask_bag_mil_probe.py": "6e0280e67f3e04fa62bbe4bcece6f3c7094bab7fc5668228d4ff557a4207cb23",
+    "tests/test_rad_dino_mask_bag_mil.py": "5f83a7c46f71a41dc53146cc16188031520599975f1617d9810e6611a13531f7",
+    "tests/test_rad_dino_mask_bag_mil_probe.py": "975411b05e86176fbc599faea07b67dc3eaba868b748cd1b9f33b46fd72e968f"
+  },
+  "candidate_gallery": {
+    "train_source": "direct immutable mount of geometry-v3 version-3 failed output; fail before heavy work if the physical mount is unavailable",
+    "train_images": 2981,
+    "train_candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "train_pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "train_physical_payloads_required": 2981,
+    "validation_source": "one fresh prediction-first regeneration with the unchanged terminal-v6 recipe",
+    "validation_images": 371,
+    "validation_physical_payloads_required": 371,
+    "both_arms_share_exact_physical_payload_paths_and_hashes": true,
+    "candidate_cap": 81,
+    "normal_pseudo_masks_must_be_empty": true,
+    "ground_truth_loaded_during_generation": false
+  },
+  "terminal_v6_semantic_reference_guard": {
+    "purpose": "comparability audit only; causal attribution is supplied by the same-gallery paired control",
+    "candidate_manifest_exact_fields": [
+      "image_name",
+      "tumor_type",
+      "generation_status",
+      "bone_support_present",
+      "box_count",
+      "candidate_count",
+      "positive_point_count",
+      "negative_point_count",
+      "diagnostic_path",
+      "affinity_selector_map_sha256"
+    ],
+    "candidate_manifest_ignored_byte_fields": [
+      "diagnostic_sha256",
+      "diagnostic_bytes"
+    ],
+    "pseudo_exact_requirements": [
+      "same image set and order-independent one-to-one join",
+      "mask_sha256 mismatch count equals zero",
+      "status mismatch count equals zero",
+      "sam_candidate_count mismatch count equals zero",
+      "mask_foreground_pixels mismatch count equals zero",
+      "selected_candidates mismatch count equals zero",
+      "selected_components mismatch count equals zero"
+    ],
+    "maximum_absolute_numeric_delta": {
+      "cam_max": 2e-07,
+      "cam_mean": 2e-07,
+      "cam_std": 1e-07,
+      "selection_score_min": 0.003,
+      "selection_score_mean": 0.003,
+      "selection_score_max": 2e-07,
+      "support_area_ratio": 2e-05,
+      "selected_area_ratio": 0.006
+    },
+    "maximum_changed_row_fraction": {
+      "unique_prompt_points": 0.01,
+      "unique_positive_prompt_points": 0.01,
+      "above_threshold_candidates": 0.01,
+      "selected_area_ratio": 0.01
+    },
+    "unlisted_field_mismatch_count": 0
+  },
+  "paired_arms": {
+    "legacy_control": {
+      "descriptor_geometry_argument": "legacy_direct_resize",
+      "candidate_mask_geometry": "unchanged direct-resize proposal interpreted directly on the RAD-DINO token grid",
+      "content_geometry": "all token positions treated as real image content, reproducing the pre-correction pooling contract"
+    },
+    "square_corrected": {
+      "descriptor_geometry_argument": "square_corrected_v3",
+      "candidate_mask_geometry": "continuous content-box projection into the centered square frame before token pooling",
+      "content_geometry": "fractional square-frame real-image occupancy excludes padding only from local context"
+    },
+    "matched_variables": [
+      "physical train and validation candidate payloads",
+      "image-level-only labels",
+      "RAD-DINO snapshot and random projection",
+      "scorer architecture and initialization seed",
+      "bag, instance and flip-consistency losses",
+      "16 final-only epochs",
+      "batch size, optimizer, learning rate and weight decay",
+      "winner-take-all map writer",
+      "prediction evaluator, subgroup definitions and goals"
+    ],
+    "sole_changed_scientific_variable": "legacy_direct_resize versus square_corrected_v3 descriptor coordinate geometry",
+    "execution": "sequential isolated processes; each process requires the same two physical Tesla T4 GPUs and RAD-DINO DataParallel encoder",
+    "paired_control_selected_by_validation_gt": false,
+    "square_corrected_remains_canonical_independent_of_result": true
+  },
+  "prediction_first_boundary": {
+    "legacy_prediction_maps": 371,
+    "corrected_prediction_maps": 371,
+    "verify_every_map_hash_before_pair_freeze": true,
+    "write_pair_freeze_before_either_evaluator_imports_validation_segmentation": true,
+    "validation_gt_read_before_pair_freeze": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "evaluation": {
+    "cohort": {
+      "validation": 371,
+      "tumor": 184,
+      "normal": 187,
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    },
+    "complete_misses_included": true,
+    "paired_complete_group_bootstrap_replicates": 10000,
+    "required_comparisons": [
+      "square_corrected minus same-gallery legacy control",
+      "legacy control minus promoted flip-TTA baseline",
+      "square_corrected minus promoted flip-TTA baseline",
+      "legacy control minus terminal v6 as a descriptive regeneration check",
+      "square_corrected minus terminal v6 as descriptive only"
+    ],
+    "terminal_v6_comparisons_are_causal_geometry_evidence": false,
+    "no_result_suppression_if_any_gate_fails": true,
+    "operational_goals": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    }
+  },
+  "runtime": {
+    "heavy_compute": "Kaggle only",
+    "machine_shape": "NvidiaTeslaT4",
+    "required_physical_devices": 2,
+    "monitor_created_by_protocol": false
+  },
+  "forbidden": [
+    "BTXRD test access",
+    "consumer training before an independently predeclared consumer protocol",
+    "validation-GT tuning or geometry selection",
+    "using different physical candidate payloads between paired arms",
+    "changing seed, optimizer, loss, scorer, epoch budget or WTA output between arms",
+    "claiming terminal-v6 comparison as the causal geometry estimate",
+    "silently falling back to train candidate regeneration when the version-3 physical mount is unavailable"
+  ]
+}
