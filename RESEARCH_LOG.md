@@ -5754,3 +5754,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   mechanisms. No geometry-v3 poll or mutation, validation GT/test access,
   descriptor extraction, selector training or consumer training occurred.
 
+### Baseline-preserving auxiliary-descriptor residual
+
+- To prevent a descriptor arm from becoming an uncontrolled full-selector
+  retrain, a common residual adapter was added at
+  `project/models/mask_bag_descriptor_residual.py`, canonical-LF SHA-256
+  `9bb062d4ee1a100ab3bd108dfe52e846bf0df69aca29d58f2cdd2d8adb9eade9`.
+  It independently projects the accepted v3 descriptor and one auxiliary
+  descriptor, models their self/auxiliary/difference/product/cosine relation,
+  and adds a scalar residual to the frozen baseline candidate logit.
+  The last layer is exactly zero-initialized, so initial valid logits are
+  bit-identical to the v3 scorer and invalid candidates remain zero.
+- The first causal runs for normal prototypes (`4` auxiliary values),
+  DINO-affinity (`24`) and local-view evidence must use separate instances of
+  this adapter with the v3 scorer frozen. This both protects the large subgroup
+  from gratuitous scorer drift and makes any learned correction attributable
+  to the new representation. Unfreezing or composing adapters is a later arm
+  requiring independent complementary evidence.
+- Tests at `tests/test_mask_bag_descriptor_residual.py`, canonical-LF SHA-256
+  `b8f36b70f679a419b089e529657e1e6f9436dfa2537c2160e1084e02c32ef6ac`,
+  specify exact initialization identity, the expected zero gradient to earlier
+  layers on the first step while the final layer becomes trainable, invalid
+  candidate masking and a GT/subgroup-free API. `py_compile` passes; the local
+  no-Torch runtime reports `1 passed, 3 skipped`. The three numerical Torch
+  tests are mandatory on Kaggle before any auxiliary arm.
+- Adapter training still uses only clean-train image labels and the frozen MIL
+  loss contract; validation GT cannot choose an epoch, adapter size or
+  optimizer. No geometry-v3 poll/mutation, BTXRD descriptor fit, validation
+  GT/test access, selector training or consumer training occurred.
+
