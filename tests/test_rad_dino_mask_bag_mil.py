@@ -115,15 +115,18 @@ def test_direct_resize_mask_projection_recovers_square_content_box() -> None:
 
 
 def test_project_then_square_flip_preserves_asymmetric_padding_geometry() -> None:
-    mask = torch.zeros(1, 3, 6)
-    mask[:, :, :2] = 1
+    # A tall source image has asymmetric horizontal square padding when the
+    # side-length difference is odd.  Horizontal flip must mirror that content
+    # box; vertical padding would be unchanged by the transform being tested.
+    mask = torch.zeros(1, 6, 3)
+    mask[:, :, :1] = 1
     projected = project_direct_resize_masks_to_square(
         mask,
         padded_side=6,
-        content_box=(0, 1, 6, 4),
+        content_box=(1, 0, 4, 6),
         output_size=12,
     )
-    flipped_content_box = (0, 6 - 4, 6, 6 - 1)
+    flipped_content_box = (6 - 4, 0, 6 - 1, 6)
     expected = project_direct_resize_masks_to_square(
         mask.flip(-1),
         padded_side=6,
