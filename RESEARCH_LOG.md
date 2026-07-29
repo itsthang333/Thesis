@@ -5520,3 +5520,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   selector is trained. This preparation did not poll or modify geometry-v3,
   load validation GT/test, fit a prototype or train a consumer.
 
+### Group-preserving cross-fit preparation for confirmation control
+
+- The present mask-bag runner confirms a positive instance with the argmax of
+  the same selector being optimized. This is precisely the confirmation path
+  identified by the radiograph self-guided-MIL and ItS2CLR audit. A source-only
+  cross-fit primitive was added at `project/models/mask_bag_crossfit.py`,
+  canonical-LF SHA-256
+  `4f7b27d98250c00db5ed42bbd707d02bb2ae81e7d19beed74070189228e52bd6`.
+  It assigns complete `group_id` units to folds while greedily balancing image
+  counts separately for image-label normal/tumor, creates an order-independent
+  assignment hash summary and fails closed if a target-producing fold
+  checkpoint reports any held-out/training group overlap.
+- A label-only read of the frozen training split found `2981` images in `984`
+  heuristic groups, with no mixed tumor label in a group. Normal has
+  `1493` images in `203` groups and tumor has `1488` images in `781` groups;
+  balancing group counts would therefore badly imbalance images. The
+  predeclared five-fold, seed-42 row-balanced assignment produces:
+  `(596,298,298,196)`, `(596,298,298,196)`,
+  `(596,299,297,197)`, `(596,299,297,197)` and
+  `(597,299,298,198)`, where each tuple is
+  `(images,normal,tumor,groups)`. Thus the requested OOF separation is feasible
+  without changing the frozen outer train/validation split.
+- Tests at `tests/test_mask_bag_crossfit.py`, canonical-LF SHA-256
+  `ec2c026882fe565dc38e60fccb6e464865e206a7c2f57c82ab4b0a633b6536f1`,
+  verify source isolation, deterministic group integrity, per-class image
+  balance, order-independent manifest hashing and rejection of training/
+  held-out overlap. `py_compile` and all five numerical/source tests pass.
+- Only the fold/provenance layer is frozen now. Candidate soft-target
+  confidence and curriculum thresholds are intentionally not chosen before the
+  terminal v3 cache exposes GT-blind original/flip score distributions.
+  Whatever train-only rule is later predeclared must serialize every admitted
+  target, weight, source checkpoint, excluded fold and original/flip rank.
+  Validation masks cannot select that rule. No Kaggle status poll, validation
+  GT/test access, prototype fit, selector training or consumer training
+  occurred.
+
