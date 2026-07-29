@@ -5707,3 +5707,50 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   mutation, validation GT/test access, BTXRD feature extraction, selector
   training or consumer training occurred.
 
+### Compact DINO-affinity descriptor preparation
+
+- AffinityNet demonstrates that local semantic affinity can propagate weak
+  discriminative evidence using only image-level supervision, and DINO-ECA
+  shows that self-supervised ViT affinity can guide WSSS. TokenCut provides a
+  complementary unsupervised result: cosine relations between self-supervised
+  transformer tokens form a useful object graph, but it also documents a bias
+  toward the largest salient object. These strengths and weaknesses motivate
+  using affinity as a **candidate descriptor only**, not allowing it to grow or
+  replace a mask. Primary sources:
+  https://openaccess.thecvf.com/content_cvpr_2018/html/Ahn_Learning_Pixel-Level_Semantic_CVPR_2018_paper.html;
+  https://openreview.net/forum?id=qipYQAcvVG; and
+  https://openaccess.thecvf.com/content/CVPR2022/html/Wang_Self-Supervised_Transformers_for_Unsupervised_Object_Discovery_Using_Normalized_Cut_CVPR_2022_paper.html.
+- A dataset-agnostic source primitive was added at
+  `project/models/mask_bag_affinity_features.py`, canonical-LF SHA-256
+  `9334d41a8d426fadad8281cd5a6e6af70fa9a8b9cd3a47c2d6334013faa9b38a`.
+  For every frozen candidate and RAD-DINO layer it computes eight explicit
+  statistics: inclusive and off-diagonal proposal cohesion, the corresponding
+  two context statistics, proposal-context cosine affinity, cohesion-minus-
+  boundary affinity, and normalized effective token counts for proposal and
+  context. The output is `24` values for the current three layers.
+- The pairwise mean cosine is computed exactly from the squared norm of a
+  weighted token sum and the squared weights, so the implementation does not
+  materialize a `1024x1024` affinity matrix for each image. Off-diagonal
+  cohesion removes self-similarity; it is zero when a candidate contains only
+  one effective token rather than falsely claiming perfect multi-token
+  coherence. Inclusive cohesion and cross-boundary affinity remain available
+  for precisely that small-candidate case.
+- This is not a reproduction of DINO-ECA. ECA derives a class-aware graph from
+  a natural-image WSSS pipeline, whereas this arm uses frozen RAD-DINO hidden
+  token cosine statistics inside the immutable BTXRD proposal/context
+  geometry. Healthy bone may also be highly coherent, so the affinity arm must
+  be evaluated alone first and may combine with normal prototypes only after
+  complementary frozen recoveries are proven.
+- Tests at `tests/test_mask_bag_affinity_features.py`, canonical-LF SHA-256
+  `87c242e4db7529ae4e9661bd6e31deacb3ff5a47abdbde733d08c27dd00f5805`,
+  specify maximal coherent-token affinity, reduced cohesion for orthogonal
+  tokens, empty-context/invalid-candidate behavior and a GT/subgroup-free API.
+  `py_compile` passes; the local no-Torch runtime reports
+  `1 passed, 3 skipped`. These three numerical Torch tests are mandatory on
+  Kaggle before R2 execution.
+- R2 will append these statistics to the accepted v3 descriptor cache without
+  changing candidate validity, ordering, WTA masks or pooling. Its first
+  evaluation is separate from local tiles, prototypes and relational
+  mechanisms. No geometry-v3 poll or mutation, validation GT/test access,
+  descriptor extraction, selector training or consumer training occurred.
+
