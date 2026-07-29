@@ -52,6 +52,10 @@ def _arrays() -> dict[str, object]:
         "flipped_descriptors": descriptors + 1,
         "candidate_indices": np.asarray([0, 2, 5]),
         "family_ids": np.asarray([0, 0, 1]),
+        "component_ids": np.asarray([4, 4, 9]),
+        "prompt_modes": np.asarray(["point", "point", "box"]),
+        "proposal_source_ids": np.asarray(["cam", "cam", "teacher"]),
+        "fallback_flags": np.asarray([0, 0, 0]),
         "shape_features": np.ones((3, 4), dtype=np.float32),
         "pairwise_iou": iou,
         "pairwise_containment": containment,
@@ -79,6 +83,10 @@ class SelectorCacheIOTests(unittest.TestCase):
             )
             self.assertTrue(
                 np.array_equal(loaded["candidate_indices"], np.asarray([0, 2, 5]))
+            )
+            self.assertEqual(loaded["prompt_modes"].tolist(), ["point", "point", "box"])
+            self.assertEqual(
+                loaded["proposal_source_ids"].tolist(), ["cam", "cam", "teacher"]
             )
             self.assertIsInstance(loaded["packed_masks"], PackedCandidateMasks)
 

@@ -57,6 +57,10 @@ def save_selector_cache_record(
     flipped_descriptors: np.ndarray,
     candidate_indices: np.ndarray,
     family_ids: np.ndarray,
+    component_ids: np.ndarray,
+    prompt_modes: np.ndarray,
+    proposal_source_ids: np.ndarray,
+    fallback_flags: np.ndarray,
     shape_features: np.ndarray,
     pairwise_iou: np.ndarray,
     pairwise_containment: np.ndarray,
@@ -69,6 +73,10 @@ def save_selector_cache_record(
     flipped = np.asarray(flipped_descriptors, dtype=np.float16)
     indices = np.asarray(candidate_indices, dtype=np.int32)
     families = np.asarray(family_ids, dtype=np.int32)
+    components = np.asarray(component_ids, dtype=np.int32)
+    modes = np.asarray(prompt_modes, dtype="U64")
+    sources = np.asarray(proposal_source_ids, dtype="U64")
+    fallback = np.asarray(fallback_flags, dtype=np.uint8)
     shapes = np.asarray(shape_features, dtype=np.float32)
     if (
         original.ndim != 2
@@ -86,6 +94,13 @@ def save_selector_cache_record(
         or np.any(np.diff(indices) <= 0)
         or families.shape != (count,)
         or np.any(families < 0)
+        or components.shape != (count,)
+        or modes.shape != (count,)
+        or sources.shape != (count,)
+        or fallback.shape != (count,)
+        or np.any(modes == "")
+        or np.any(sources == "")
+        or np.any(fallback > 1)
         or shapes.shape != (count, 4)
         or not np.isfinite(shapes).all()
     ):
@@ -110,6 +125,10 @@ def save_selector_cache_record(
         "flipped_descriptors": flipped,
         "candidate_indices": indices,
         "family_ids": families,
+        "component_ids": components,
+        "prompt_modes": modes,
+        "proposal_source_ids": sources,
+        "fallback_flags": fallback,
         "shape_features": shapes,
         "pairwise_iou": iou,
         "pairwise_containment": containment,
@@ -170,6 +189,10 @@ def load_selector_cache_record(
                 "flipped_descriptors",
                 "candidate_indices",
                 "family_ids",
+                "component_ids",
+                "prompt_modes",
+                "proposal_source_ids",
+                "fallback_flags",
                 "shape_features",
                 "pairwise_iou",
                 "pairwise_containment",
@@ -193,6 +216,10 @@ def load_selector_cache_record(
     flipped = np.asarray(result["flipped_descriptors"])
     indices = np.asarray(result["candidate_indices"])
     families = np.asarray(result["family_ids"])
+    components = np.asarray(result["component_ids"])
+    modes = np.asarray(result["prompt_modes"])
+    sources = np.asarray(result["proposal_source_ids"])
+    fallback = np.asarray(result["fallback_flags"])
     shapes = np.asarray(result["shape_features"])
     count = int(original.shape[0])
     if (
@@ -210,6 +237,17 @@ def load_selector_cache_record(
         or families.dtype != np.int32
         or families.shape != (count,)
         or np.any(families < 0)
+        or components.dtype != np.int32
+        or components.shape != (count,)
+        or modes.shape != (count,)
+        or modes.dtype.kind != "U"
+        or np.any(modes == "")
+        or sources.shape != (count,)
+        or sources.dtype.kind != "U"
+        or np.any(sources == "")
+        or fallback.dtype != np.uint8
+        or fallback.shape != (count,)
+        or np.any(fallback > 1)
         or shapes.dtype != np.float32
         or shapes.shape != (count, 4)
         or not np.isfinite(shapes).all()

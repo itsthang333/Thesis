@@ -5922,13 +5922,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   geometry. Otherwise a changed cache could masquerade as a better selector.
   The cache format is now implemented at
   `project/models/mask_bag_selector_cache_io.py`, canonical-LF SHA-256
-  `81904e18e8985b2c4b7ec33f012ecfc15295a6f50c3874020d1709ec9bc328db`.
+  `b66a456123a84e78d20d503bc5168b9ebd558eacdd8befcb22e63e2426138028`.
   This is provenance/infrastructure rather than a new scientific mechanism; it
   operationalizes the already sourced representation/relational campaign.
 - Each physical NPZ contains aligned original/flip fp16 descriptors, ascending
   immutable candidate-gallery indices, exact family IDs, four position-free
-  shape features and symmetric float32 IoU/containment/relative-distance
-  matrices. Training records are forbidden from retaining candidate masks
+  shape features, the original component/prompt/source/fallback provenance,
+  and symmetric float32 IoU/containment/relative-distance matrices. Training
+  records are forbidden from retaining candidate masks
   after this graph geometry has been computed. Validation records retain only
   exact bit-packed immutable WTA masks, because future frozen candidate logits
   must still be converted into prediction maps before post-freeze evaluation.
@@ -5939,7 +5940,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   geometry symmetry/range and packed-mask byte count. Thus even a hash-valid
   but structurally malformed record fails closed.
 - Tests at `tests/test_mask_bag_selector_cache_io.py`, canonical-LF SHA-256
-  `351a6936f89d56999ea8ed2bad4b6d76eda643b61360c570cc08cb2f595a0779`,
+  `868b0622e38a0927d10f8f5f2848e1dfa36445edff1496e948a7863dcd1d423d`,
   cover validation round-trip, mandatory train mask deletion, physical
   tampering, structurally malformed payloads, split-specific manifest
   boundaries, candidate ordering and absence of GT/subgroup APIs. All seven
@@ -5950,4 +5951,42 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `371` selected indices and final map hashes before writing the cache freeze.
   No cache was produced, Kaggle status polled, validation GT/test accessed or
   selector/consumer trained during this source preparation.
+
+### Post-v3 cache-builder source readiness
+
+- The cache production runner is now prepared at
+  `project/build_mask_bag_selector_cache.py`, canonical-LF SHA-256
+  `cf2b88ff57e1e956ed1575d1dc020b202767d28b993449fb2972a375921a4611`.
+  Before RAD-DINO extraction it verifies the split, every physical candidate
+  payload through both manifests, the frozen model snapshot, the direct
+  geometry-v3 prediction freeze, checkpoint, prediction manifest and all `371`
+  physical prediction-map hashes. It is hard-bound to input `448`, projection
+  `128/seed42`, three frozen layers, candidate cap `81`, the baseline random
+  projection hash and two actual Tesla T4 devices.
+- After extracting the corrected descriptors once, the runner loads the
+  accepted v3 checkpoint and invokes the same prediction writer on the rebuilt
+  validation cache. Cache serialization cannot begin until all `371` selected
+  gallery indices and final fp16 map SHA-256 values match exactly; selected
+  candidate logits, bag logits and probabilities must additionally agree
+  within the fixed `5e-6` numerical tolerance. This detects changes in
+  geometry, candidate validity/order, TTA alignment, scorer state or WTA map
+  construction before selector development can proceed.
+- Only after reproduction does it save train/validation cache records.
+  Component IDs, prompt modes, proposal-source IDs and fallback flags are
+  reopened from the already hash-verified candidate NPZs and sliced by the
+  exact reproduced kept indices. Train masks are discarded after graph/shape
+  construction; validation masks are bit-packed. The final cache freeze binds
+  the terminal v3 freeze/checkpoint, source/protocol/split/model/projection,
+  four candidate/pseudo manifests, all cache records and reproduction audit.
+- Static tests at `tests/test_build_mask_bag_selector_cache.py`, canonical-LF
+  SHA-256
+  `9af425de0afedaaa4050c52625f1a0b96f45cdcfab9e89d3059f9469a27c5417`,
+  verify annotation/test isolation, pre-extraction input verification,
+  reproduce-before-serialize ordering, complete provenance, split-specific
+  mask handling and T4x2/frozen-geometry constraints. All six static tests and
+  seven cache-I/O numerical tests pass; all four files pass `py_compile`.
+- The runner remains source-only until the monitor reports terminal
+  geometry-v3 and that output passes its independent audit. No cache was
+  generated, Kaggle status polled, validation GT/test accessed, selector fit or
+  consumer trained here.
 
