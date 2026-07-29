@@ -28,7 +28,7 @@
     "commit": "3c852f0a3a3847f1190f452cc2b7ace5558a0312",
     "only_changed_scientific_checkout_file": "tests/test_rad_dino_mask_bag_mil.py",
     "old_test_canonical_lf_sha256": "b563dd7c91aa47c939dce1c95db23344548799ba85af1dd53be13bf30643df0c",
-    "new_test_canonical_lf_sha256": "f31650c477bf22758a6e4a70c2a87f0118168979d5a0750898d766526a13454b",
+    "new_test_canonical_lf_sha256": "fed558ea04298bbafdcf922d36f43c176ca733d688815231ca90900d79dc9428",
     "corrected_fixture": {
       "source_shape_hw": [6, 3],
       "original_content_box_xyxy": [1, 0, 4, 6],
