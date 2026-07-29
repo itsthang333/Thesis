@@ -5430,11 +5430,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   4. **S1/S2/S3 selection:** family-balanced SmoothMax, zero-initialized
      critical-relation residual, and same-family overlap-graph logit smoothing
      are frozen as separate arms against the identical descriptor cache.
-  5. **T1 confirmation:** out-of-fold original/flip soft targets followed by a
+  5. **S4 proposal-cluster refinement:** a group-excluded OOF teacher seeds
+     mask-overlap/containment clusters, which are optimized as normalized small
+     bags with a smooth-to-sharp continuation schedule. Tumor-bag candidates
+     outside a cluster remain unlabeled.
+  6. **T1 confirmation:** out-of-fold original/flip soft targets followed by a
      conservative ItS2CLR-style self-paced contrastive stage. This arm is
      allowed only after its target producer and consumer folds are disjoint and
      every candidate target/provenance is serialized.
-  6. **C1 composition:** combine the best representation arm with the best
+  7. **C1 composition:** combine the best representation arm with the best
      relational arm only when their frozen per-image recovered/lost cases show
      complementary corrections. Add T1 only if it independently reduces
      selected-to-oracle regret without increasing count dependence.
@@ -5555,4 +5559,98 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Validation masks cannot select that rule. No Kaggle status poll, validation
   GT/test access, prototype fit, selector training or consumer training
   occurred.
+
+### Proposal-ranking research from weakly supervised object detection
+
+- BTXRD mask-bag selection is also structurally a weakly supervised object
+  detection problem: an image contains a frozen set of region proposals and
+  only an image class is available for learning which region is positive. This
+  literature supplies mechanisms more directly matched to the observed
+  selected-versus-oracle gap than another dense CAM generator.
+- Bilen and Vedaldi's WSDDN jointly learns region classification and region
+  selection streams from image labels. Its strength is end-to-end proposal
+  scoring, but its documented failure modes include selecting discriminative
+  object parts and merging instances. A raw detection-softmax stream would
+  also reintroduce proposal-count competition already observed in BTXRD, so
+  WSDDN is not copied as a new primary arm. The transferable element is the
+  separation between candidate evidence and within-bag selection, which is
+  already represented by descriptor arms plus family-balanced pooling. Source:
+  https://openaccess.thecvf.com/content_cvpr_2016/html/Bilen_Weakly_Supervised_Deep_CVPR_2016_paper.html.
+- Tang et al.'s OICR refines an instance classifier by propagating the inferred
+  label of a top proposal to spatially overlapping proposals. This directly
+  addresses proposal ranking, but its online preceding-stream teacher can
+  reinforce a wrong early winner--the exact same-model confirmation path seen
+  in the current runner. The admissible transfer therefore forbids online
+  same-model labels: only a group-excluded OOF teacher with original/flip
+  agreement may seed an overlap cluster. Source:
+  https://openaccess.thecvf.com/content_cvpr_2017/html/Tang_Multiple_Instance_Detection_CVPR_2017_paper.html.
+- Tang et al.'s PCL improves OICR by grouping spatially adjacent proposals
+  associated with one hypothesized object and treating a proposal cluster as a
+  smaller bag, reducing the ambiguity of assigning hard labels to every
+  proposal. This is highly compatible with the immutable BTXRD gallery and
+  complements, rather than replaces, DSMIL: DSMIL relates candidates in
+  descriptor space, whereas PCL restricts the positive ambiguity spatially.
+  Its weakness remains dependence on the initial cluster center and its natural
+  image box-overlap assumptions. The BTXRD transfer will use mask IoU or
+  containment, retain the seed candidate even when isolated, and never label
+  every out-of-cluster candidate in a tumor image as background. Source:
+  https://arxiv.org/abs/1807.03342 and DOI
+  `10.1109/TPAMI.2018.2876304`.
+- Wan et al.'s C-MIL views early hard instance selection as a non-convex local
+  minimum and optimizes a sequence of smoother losses over spatially and
+  class-related proposal subsets. This supports a continuation schedule inside
+  the PCL-like arm: begin with normalized soft pooling over the OOF-seeded
+  overlap cluster and sharpen only after original/flip cluster stability,
+  rather than introduce a fixed hard-positive threshold at epoch one. It is not
+  a separate unconstrained architecture search. Source:
+  https://openaccess.thecvf.com/content_CVPR_2019/papers/Wan_C-MIL_Continuation_Multiple_Instance_Learning_for_Weakly_Supervised_Object_Detection_CVPR_2019_paper.pdf.
+- Kosugi et al. show that naive top-proposal propagation can select only an
+  object part and can incorrectly label other objects as negative; their
+  context-based and spatially restricted labeling improves OICR. For BTXRD,
+  this justifies preserving uncertain tumor-bag candidates instead of treating
+  them as background. A proposal-versus-context completeness descriptor is a
+  bounded contingency, but no natural-image box context loss or unverified
+  claim of complete tumor coverage is transferred. Source:
+  https://openaccess.thecvf.com/content_ICCV_2019/html/Kosugi_Object-Aware_Instance_Labeling_for_Weakly_Supervised_Object_Detection_ICCV_2019_paper.html.
+- The selector matrix gains one causal row after the independent relational
+  arms and before general self-paced contrastive learning:
+  **S4 OOF proposal-cluster refinement**. A fold-excluded teacher seeds at most
+  the train-only predeclared number of clusters; membership uses frozen mask
+  overlap/containment and teacher-view agreement; each cluster is a normalized
+  small bag with a smooth-to-sharp continuation schedule. S4 must be tested
+  alone on the same cache. Outside-cluster candidates in positive bags remain
+  unlabeled. Only if S4 and a descriptor/relational arm show complementary
+  frozen recoveries may they be combined.
+- S4 remains subject to the same mechanism gate: selected-to-oracle regret must
+  fall in at least two tumor subgroups, overall selected Dice cannot regress,
+  and absolute count/miss association cannot increase. A failure rejects S4
+  but leaves descriptor/selector as the active bottleneck and advances to the
+  next finite row. No proposal, prediction, validation GT/test sample or
+  consumer was produced during this literature audit, and geometry-v3 was not
+  polled or changed.
+
+### OOF proposal-cluster primitive preparation
+
+- Dataset-agnostic S4 primitives were added at
+  `project/models/mask_bag_proposal_clusters.py`, canonical-LF SHA-256
+  `3fe2cab3054156256c03f1887fb3d38c9daf74dc7dc631192afd228c1a637721`.
+  Given externally audited OOF teacher logits, validity and a frozen symmetric
+  overlap matrix, the module greedily seeds a bounded number of disjoint
+  overlap clusters, pools candidates with normalized SmoothMax inside each
+  small bag and then across clusters, and supplies a geometric
+  smooth-to-sharp temperature schedule. Every isolated seed remains a valid
+  singleton cluster; no out-of-cluster negative label is generated.
+- Tests at `tests/test_mask_bag_proposal_clusters.py`, canonical-LF SHA-256
+  `b523bb0a6ce76c8590e86ed0319aef2ec9646dbb7476f7e1382744f315fe8f2d`,
+  specify score/overlap seed behavior, invariance to an identical member
+  duplicate, monotonic continuation and a GT/subgroup-free API.
+  `py_compile` passes; the local no-Torch runtime reports
+  `1 passed, 3 skipped`. These three numerical Torch tests are mandatory on
+  Kaggle before S4 may run.
+- The primitive deliberately cannot assert that teacher logits are cross-fitted
+  by itself. The future runner must first pass
+  `audit_crossfit_training_exclusion`, bind every teacher checkpoint and fold
+  manifest, and serialize cluster seeds/members before optimizer construction.
+  It is not imported by geometry-v3 and no BTXRD prototype, selector,
+  validation prediction or consumer was trained here.
 
