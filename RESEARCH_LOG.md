@@ -4879,16 +4879,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   task `019fadba-49a7-7112-b3a0-f11481e10cd8`; its cadence remains exactly
   `10` minutes, status `ACTIVE`, and notifications remain failed-runs-only.
   The errored monitor task was archived. No duplicate automation was created.
-- A literature-bound branch table was frozen at
-  `artifacts/literature_reviews/post_v6_mechanism_decision_matrix_2026-07-29.md`
-  (canonical-LF SHA-256
-  `f1968e87c76a37598554bf27dc4033791174efb79299f80f1fccb2a2bf29f22d`).
+- The post-v6 literature-bound decision matrix is recorded directly here.
   It keeps candidate support, selector quality and consumer readiness
-  separate, and orders the smallest causal arms after terminal v6 evidence:
-  descriptor geometry correction; fractional-mass pooling only if its
-  GT-blind audit is material; local views for an isolated small failure;
-  relational MIL for an oracle-feasible medium-selection failure; and a
-  consumer only after the frozen entry gate.
+  separate:
+  - if any corrected-gallery oracle subgroup fails, use a proposal-support
+    arm because no selector can recover a mask absent from its gallery;
+  - if the oracle passes, the selector misses and fractional projected mass is
+    materially common, test true weighted-mean descriptor pooling alone;
+  - if the oracle passes and small alone remains below goal after corrected
+    pooling, test the fixed global-plus-four-local-view descriptor bank;
+  - if the oracle passes and medium retains selector headroom, test the
+    zero-initialized relational-MIL residual alone;
+  - train a confidence-aware segmentation consumer only after the frozen
+    prediction-first consumer-entry gate passes.
+  The current frozen current/oracle Dice are respectively
+  `0.23366822/0.11152529/0.34768577/0.41545552` and
+  `0.40907629/0.22274968/0.59414817/0.64182777`; medium has the largest
+  selector-recovery burden while small has the least absolute oracle
+  headroom. Aggregate improvement alone cannot choose a branch.
 - Additional primary literature was screened rather than copied wholesale:
   Mun et al. (WACV 2024) confirms the need for size-complete WSSS evaluation,
   but its size-balanced loss is inadmissible because BTXRD size groups come
@@ -4917,4 +4925,48 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - No Kaggle status poll, wrapper/protocol mutation, validation GT read, test
   access, consumer training or new heavy experiment occurred in this pass.
   Cleanup remains deferred until terminal v6 evidence is preserved.
+
+## 2026-07-29 - Centralized log policy and geometry-v3 readiness re-audit
+
+- Per user direction, subsequent research notes, source citations, decisions
+  and experiment/error records are written into `RESEARCH_LOG.md`. If this
+  file becomes impractically long, continuation moves to
+  `RESEARCH_LOG_v1.md`. Separate JSON protocols, machine-readable evidence and
+  executable audit artifacts remain separate because they are reproducibility
+  inputs rather than narrative logs. No new standalone literature-note file
+  is created under this policy.
+- Geometry-v3 readiness was re-audited without polling Kaggle. Canonical-LF
+  SHA-256 values exactly match the frozen protocol:
+  - protocol:
+    `3248b37b8f60da2b3c7b6e4009f76967876bef6d498ac781e29f779a57351a91`;
+  - model:
+    `44cd6ff052a38f9e87c1d93ce71d2aad2105c4b11083354d06b835409c517407`;
+  - runner:
+    `1bf56d0d9bc238aafd37988bcd767352065f89a160744b3a837d68127c7e9a71`;
+  - model/runner tests:
+    `b563dd7c91aa47c939dce1c95db23344548799ba85af1dd53be13bf30643df0c`
+    and
+    `7aab3c2073dbb170c08aaeef931442f97e930c2f67e509b3a976e91fe74a0001`;
+  - fractional-mass audit/test:
+    `aa684de20407d0934bb8c4d32f5293eac1ed56e341e28eab0ecce78fd2757c79`
+    and
+    `15cd00183d6e6ef38228863a513e17b3c67a4cd84dbfc48c3e4b7312a73c77e6`;
+  - evaluated-arm comparator/test:
+    `24c625cfc50740d9cb633906d60ae81089e3960d3eec4b3ead6f3ce89ebaffad`
+    and
+    `1466be0ebe917e93a04914914d0f09e6f065257b95b32a4b9f9f5111a553298d`.
+- Source inspection confirms v3 projects direct-resize proposals once into
+  the exact square content box, supplies the independently projected content
+  occupancy only to the context ring, flips both maps in square coordinates,
+  and requires identical original/flip retained-candidate indices. This
+  avoids v2's double multiplication of fractional proposal boundaries.
+- The bundled local runtime has NumPy and pytest but no Torch. The GT-free
+  static runner/fractional-audit tests and the numerical complete-cohort
+  comparator fixture ran successfully: `10 passed in 2.08s`. Torch geometry
+  tests remain mandatory in the future Kaggle preflight; their local absence
+  is not reported as execution evidence.
+- The geometry-v3 wrapper is still intentionally unfinalized: terminal v6
+  must first supply audited candidate/pseudo-manifest hashes and prove both
+  that v6 misses at least one operational goal and that its immutable-gallery
+  oracle passes every goal. No new job is authorized before those conditions.
 
