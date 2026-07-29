@@ -5343,3 +5343,146 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prediction freezes before any complementary combination. No Kaggle status
   poll, validation GT read, test access or consumer training occurred.
 
+### Radiograph-specific selector research and persistent-bottleneck commitment
+
+- The selector conclusion is now a **campaign-level falsifiable hypothesis**,
+  not a label that can be changed after one or two negative experiments. Under
+  the immutable v6 gallery, every subgroup oracle passes its operational goal
+  while the learned selection fails it. Consequently, all post-v3 work remains
+  inside descriptor/selector improvement until either (a) the operational goals
+  pass, or (b) the finite representation, relation and confirmation campaign
+  below is exhausted. Reassigning the main bottleneck requires new gallery
+  evidence, such as an oracle falling below a goal after a contractually valid
+  gallery change; a failed selector arm alone is insufficient.
+- Seibold et al.'s *Self-Guided Multiple Instance Learning for Weakly
+  Supervised Disease Classification and Localization in Chest Radiographs*
+  trains with both image and patch predictions and deliberately avoids making
+  every uncertain patch a hard binary target. Its transferable lesson is that
+  the current same-model detached winner is an unsafe teacher: initialization
+  errors and uncertain small findings can be reinforced. The admissible BTXRD
+  adaptation is a soft target produced by group-preserving out-of-fold
+  selectors and original/flip agreement. The model generating a target may not
+  have trained on that image. Source:
+  https://openaccess.thecvf.com/content/ACCV2020/html/Seibold_Self-Guided_Multiple_Instance_Learning_for_Weakly_Supervised_Thoracic_DiseaseClassification_and_ACCV_2020_paper.html.
+- Liu et al.'s *Iterative Self-Paced Supervised Contrastive Learning* improves
+  MIL instance representations by admitting only sufficiently reliable
+  pseudo-labelled instances at each stage and reports both bag- and
+  instance-level evaluation on medical datasets. This supports a late
+  **cross-fitted self-paced contrastive** arm, not immediate hard pseudo-mask
+  training. All candidates from image-level-normal training bags are reliable
+  negatives; positive candidates enter the contrastive set only when an
+  out-of-fold selector is confident and original/flip ranks agree. The
+  curriculum starts with the most reliable subset and never treats all
+  candidates in a positive bag as tumor. Its weakness is confirmation bias, so
+  it follows rather than precedes independently tested prototype and relational
+  arms. Source:
+  https://openaccess.thecvf.com/content/CVPR2023/html/Liu_Multiple_Instance_Learning_via_Iterative_Self-Paced_Supervised_Contrastive_Learning_CVPR_2023_paper.html.
+- Yang et al.'s *Trainable Prototype Enhanced Multiple Instance Learning*
+  softly assigns all instances to prototypes instead of refining only a few
+  selected patches and uses prototype distance as an alternative to raw
+  attention for instance interpretation. The BTXRD transfer will be more
+  conservative: fit a **normal-only multi-prototype bank** from corrected
+  candidate descriptors using clean-train image labels, give every normal
+  image equal total weight, every family within an image equal weight and every
+  candidate within a family equal weight, then append nearest/soft-min normal
+  distance, assignment entropy and prototype margin to each candidate. This is
+  not the rejected nominal pixel-memory/INSIGHT map: it neither generates a new
+  dense map nor changes candidate support; it changes only the representation
+  used to rank the already frozen gallery. Source:
+  https://proceedings.mlr.press/v227/yang24d.html.
+- Qi et al.'s GREN shows that intra-image and inter-image relationships can
+  improve weak X-ray localization. The inter-image comparison motivates a
+  normal prototype bank, but its pretrained lung-lobe U-Net and lobe graph are
+  not transferable to BTXRD's many anatomies without auxiliary localization
+  supervision. Only descriptor-space cross-image relation is retained; no lung
+  mask, anatomical segmenter or extra annotation is introduced. Source:
+  https://pubmed.ncbi.nlm.nih.gov/35895637/ and DOI
+  `10.1109/JBHI.2022.3193108`.
+- Krishnamoorthy and Wiens show that absolute position can help MIL when
+  medical images share a stable global alignment. BTXRD does not meet that
+  premise: it contains many bone anatomies and views, highly variable aspect
+  ratios and incomplete anatomy metadata. Therefore absolute coordinates or a
+  chest-specific positional prior will not be a primary arm. The relational
+  selector may use only normalized candidate size, centroid difference and
+  overlap within an image, with no anatomy label. Source:
+  https://proceedings.mlr.press/v248/krishnamoorthy24a.html.
+- Choe et al. formalize why localization from image labels alone is
+  underdetermined and why localization evaluation must be separated from
+  classification/model fitting. This reinforces the existing prediction-first
+  contract: validation masks remain unavailable to descriptor fitting,
+  prototype fitting, selector training, arm choice and prediction freezing;
+  they are read only by the frozen evaluator. Source:
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html.
+
+### Finite selector resolution matrix after geometry-v3
+
+- The campaign is explicitly partitioned so a negative result identifies which
+  selector submechanism failed without changing the main bottleneck:
+  1. **R0 geometry/fractional pooling:** finish v3; if its GT-blind mass audit
+     activates the predeclared condition, test exact fractional weighted means.
+  2. **R1 normal representation:** candidate-level normal multi-prototype
+     features alone. A finite train-only choice `K in {8,16,32}` is made by
+     group-preserving out-of-fold image-label loss, with count association as a
+     diagnostic and the smaller `K` winning a tie. Validation masks cannot
+     select `K`.
+  3. **R2 local representation:** DINO within-mask cohesion and across-boundary
+     affinity contrast alone. It cannot expand, erode or introduce a proposal.
+  4. **S1/S2/S3 selection:** family-balanced SmoothMax, zero-initialized
+     critical-relation residual, and same-family overlap-graph logit smoothing
+     are frozen as separate arms against the identical descriptor cache.
+  5. **T1 confirmation:** out-of-fold original/flip soft targets followed by a
+     conservative ItS2CLR-style self-paced contrastive stage. This arm is
+     allowed only after its target producer and consumer folds are disjoint and
+     every candidate target/provenance is serialized.
+  6. **C1 composition:** combine the best representation arm with the best
+     relational arm only when their frozen per-image recovered/lost cases show
+     complementary corrections. Add T1 only if it independently reduces
+     selected-to-oracle regret without increasing count dependence.
+- Each arm keeps the same gallery, candidate maps, validation cohort, evaluator
+  and goals. The mechanism gate is predeclared as: reduce complete-group
+  selected-to-oracle regret in at least two tumor subgroups, do not worsen
+  overall selected Dice, and do not increase the absolute count/miss
+  association; promotion still requires the already frozen paired bootstrap
+  and subgroup reporting. Failing this gate rejects that mechanism but advances
+  to the next row of this matrix. It does not authorize switching to a new
+  proposal generator, dense support model or consumer.
+- The reusable post-v3 cache is what makes this matrix practical: RAD-DINO
+  extraction and candidate construction occur once on T4x2, while the
+  lightweight selector arms reuse hash-bound descriptors and masks. This
+  supports enough controlled selector trials to resolve the observed cause
+  without repeated expensive end-to-end jobs or an unbounded hyperparameter
+  search.
+- These additions are research/protocol preparation only. The running
+  geometry-v3 kernel was not polled or modified, no validation segmentation
+  annotation or BTXRD test sample was read, and no consumer was trained.
+
+### Normal-prototype descriptor primitive preparation
+
+- A dataset-agnostic source primitive was added at
+  `project/models/mask_bag_normal_prototypes.py`, canonical-LF SHA-256
+  `d20be292be6a4828f337c6f3348998e56d7c51245bb4e6d8a2d193b5e914c876`.
+  It implements:
+  - hierarchical weights with equal total mass per image, then per family,
+    then per candidate, preventing large normal bags or duplicated proposals
+    from dominating the bank;
+  - seeded weighted spherical k-means for a finite, hashable prototype bank;
+  - four candidate features: nearest normal-prototype cosine distance,
+    temperature-softened distance, assignment entropy and top-two prototype
+    margin.
+  The module accepts only descriptor arrays and opaque image/family IDs. It has
+  no dataset, image-label lookup, GT, subgroup or evaluation interface.
+- Tests at `tests/test_mask_bag_normal_prototypes.py`, canonical-LF SHA-256
+  `076827d1f7ff34f4cd95c75307b435381fc4bdf83aaf333ad77fd56c0b75a713`,
+  check source isolation, equal image/family weights, invariance of the
+  weighted mean to an identical within-family duplicate, deterministic
+  normalized prototypes and increased normal-prototype distance for an unseen
+  direction. `py_compile` passes. The default local Python lacks NumPy and the
+  bundled dependency Python lacks pytest, so the five test functions were
+  executed directly under the bundled NumPy runtime and all five passed.
+- This is readiness code only. It is not imported by geometry-v3 and has not
+  fitted a BTXRD prototype. After the terminal v3 cache is frozen, the caller
+  must prove that its inputs contain clean-train normal bags selected only by
+  image labels, serialize the hierarchical weights/prototypes/assignments and
+  bind their hashes before producing validation logits. No Kaggle status poll,
+  validation GT access, test access or consumer training occurred.
+
