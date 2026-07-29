@@ -5171,3 +5171,72 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   while queued/running. No launch-time status poll or duplicate monitor was
   created.
 
+### Selector campaign mechanism audit and ordered post-v3 arms
+
+- A new read-only join of the terminal v6 prediction manifest and frozen
+  post-freeze evaluation rows quantified why the campaign must address both
+  representation and selection. On tumor images, selected-minus-oracle regret
+  is `0.14455/0.24716/0.21074` for small/medium/large. Medium therefore has the
+  largest pure ranking loss, while small has less oracle headroom and needs a
+  descriptor that can resolve approximately one-token lesions. Candidate count
+  still correlates with bag probability across all 371 images at Pearson
+  `-0.48118` and Spearman `-0.48864`; within tumors, count correlates with
+  complete miss at `+0.37808/+0.37607`. Within medium the count-versus-selected
+  Dice Spearman correlation is `-0.34799`, and within small the
+  count-versus-miss correlation is `+0.43403`. Thus normalized LogSumExp removes
+  the exact log-count offset but not the learned bag-construction shortcut or
+  the harder one-of-many ranking problem.
+- Candidate order is not the dominant shortcut: the normalized selected-index
+  median is `0.61414`, with `21.74%` in the first and `28.80%` in the last
+  candidate quartile; index zero is selected in only `4.89%` of tumor bags.
+  The campaign should preserve order audits but focus on feature separability,
+  proposal relations and winner concentration.
+- The ordered post-v3 campaign is pre-scoped as follows. These are distinct
+  causal arms; none is launched before terminal geometry-v3 audit.
+  1. **Fractional weighted-mean normalization.** If the GT-blind v3 audit shows
+     a material retained population with projected grid mass below one, replace
+     the current denominator floor of `1.0` with the exact retained fractional
+     mass (epsilon only for numerical safety). This directly tests small-mask
+     attenuation without changing proposals, token maps or the selector head.
+  2. **Normal-prototype plus DINO-affinity representation.** Keep the corrected
+     means and append train-normal-only prototype distance, within-mask token
+     affinity/cohesion and across-boundary affinity contrast. Negative bags
+     provide reliable instance negatives; no positive proposal is declared
+     correct. DINO/ECA motivates pairwise semantic affinity, while CLAM
+     motivates constraining the proposal feature space. This arm changes
+     descriptors, not gallery support.
+  3. **Family-balanced relational selector.** Restore immutable component,
+     prompt-mode and proposal-source IDs; normalize within a proposal family
+     before the bag; add a zero-initialized DSMIL-like residual comparing each
+     proposal with the detached critical proposal; and add a proposal graph
+     whose local edges use mask IoU/containment and normalized centroid
+     distance rather than absolute anatomy. DSMIL supplies global critical
+     relations and SmMIL supplies localization-oriented local dependency.
+  4. **Confirmation/count robustness.** Generate positive-instance soft targets
+     by group-preserving train-only out-of-fold selectors instead of the same
+     model's detached argmax. If winner concentration/count association remains,
+     add one conservative stochastic top-k/family dropout schedule based on
+     ACMIL/MIL-Dropout. It is training-only and may not drop the sole family or
+     sole retained small proposal.
+  5. **Complementary composition.** Combine the best representation and
+     relational selector only if their frozen per-image corrections are
+     complementary; add robustness only if its own mechanism gate passes.
+     There is no unbounded architecture search and no switch to consumer or
+     proposal generation while the immutable oracle remains above every goal.
+- Every future selector arm must freeze additional GT-blind outputs before
+  evaluation: all candidate logits, proposal family/geometry, attention or
+  affinity entropy, effective candidate count, original/flip ranks, score/count
+  association and prediction maps. The post-freeze evaluator must add oracle
+  candidate index, oracle rank under the selector, top-`1/3/5/10` oracle reach,
+  selected-to-oracle regret, recovered/lost misses and score-versus-candidate
+  Dice rank correlation for the complete `184/94/72/18` cohort. These
+  diagnostics may explain a result but cannot tune the already frozen arm.
+- Primary affinity source added for the representation arm: Wu et al.,
+  *DINO is Also a Semantic Guider: Exploiting Class-aware Affinity for Weakly
+  Supervised Semantic Segmentation*, ACM Multimedia 2024,
+  https://openreview.net/forum?id=qipYQAcvVG. The transferable idea is
+  class-agnostic DINO affinity seeded/refined by weak evidence; its natural
+  image benchmark, CAM architecture and metric are not transferred. No
+  validation mask, BTXRD test sample or new prediction was read for this
+  design.
+
