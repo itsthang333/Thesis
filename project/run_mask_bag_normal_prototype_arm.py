@@ -202,11 +202,12 @@ def _initial_adapter_state(
     descriptor_dim: int,
     hidden_dim: int,
     seed: int,
+    auxiliary_dim: int = 4,
 ) -> dict[str, torch.Tensor]:
     torch.manual_seed(seed)
     adapter = AuxiliaryDescriptorResidual(
         base_descriptor_dim=descriptor_dim,
-        auxiliary_dim=4,
+        auxiliary_dim=auxiliary_dim,
         hidden_dim=hidden_dim,
     )
     return {

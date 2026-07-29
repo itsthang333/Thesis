@@ -6119,7 +6119,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - The complete R1 execution runner is prepared at
   `project/run_mask_bag_normal_prototype_arm.py`, canonical-LF SHA-256
-  `99289fdab2edc941e9351af64a3e3e1420fe8ebef002999759e45353851c53c7`.
+  `5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f`.
   It verifies the terminal selector-cache freeze, baseline checkpoint, frozen
   train/validation split and every physical cache record before assigning a
   fold or fitting any prototype. The exact known five-fold cohort
@@ -6315,4 +6315,51 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   adapter, validation prediction or consumer was produced; validation GT and
   BTXRD test were not accessed, and Kaggle status was not polled outside the
   scheduled monitor.
+
+### Complete R2 prediction-first runner readiness
+
+- The isolated R2 runner is prepared at
+  `project/run_mask_bag_affinity_residual_arm.py`, canonical-LF SHA-256
+  `cfec06dd97d18156347fcea7079be6c9b9d9246d1b2647751e721119bfbe1d9d`.
+  It reuses the physically verified cache/baseline loading and all-candidate
+  evidence writer from the R1 runner, but it does not fit a normal prototype
+  or import any R1 scientific feature. Before training it verifies the cache
+  freeze, split, baseline checkpoint, all physical train/validation records and
+  exact 24-value affinity alignment for every candidate.
+- R2 has one predeclared final-only fit: 16 epochs, batch 16, AdamW
+  `3e-4/1e-4`, hidden dimension 128, seed 42, bag temperature 0.20,
+  original/flip consistency 0.10 and residual drift `1e-3`. There is no epoch
+  search, early stopping, validation loss or alternate hyperparameter arm.
+  The complete v3 scorer is frozen; the only learned parameters are the
+  zero-initialized affinity residual. This avoids converting one scientific
+  mechanism into an implicit validation architecture search.
+- Runtime requires exactly two real Tesla T4 devices and deterministic CUDA
+  controls. The small adapter fit uses one T4, where multi-device gradient
+  synchronization would add more overhead and nondeterministic surface than
+  useful throughput. After the fixed fit, two independent frozen
+  baseline/adapter replicas score interleaved validation shards of `186/185`
+  images concurrently. Results are joined back to the immutable 371-row cache
+  order and fail closed on a missing or duplicated image.
+- The arm writes a hash-bound adapter checkpoint, final-only history, all 371
+  candidate-logit payloads, score manifest, WTA probability maps, prediction
+  manifest and prediction freeze before the common evaluator may import
+  validation segmentation. The freeze explicitly records
+  `training_labels=image_level_only`,
+  `epoch_selection=fixed_final_epoch_only`,
+  `validation_gt_read=false`, `consumer_trained=false` and
+  `test_evaluated=false`.
+- Static tests at
+  `tests/test_run_mask_bag_affinity_residual_arm.py`, canonical-LF SHA-256
+  `4ab40011239ffc18c9972e969152b6cc38cda5f85ad76330f3c26a050d8ed38a`,
+  verify source isolation, cache-before-fit ordering, the single finite fit,
+  T4x2 complete scoring and prediction-before-evaluation freeze. Together with
+  the R1/R2 core suites they report `13 passed, 5 skipped`; skipped numerical
+  Torch paths remain mandatory in Kaggle preflight. All files pass
+  `py_compile`.
+- The runner is not launched before terminal geometry-v3 audit and acceptance
+  of the shared reproducible cache. Its eventual result is judged only by the
+  common selected-to-oracle regret mechanism gate; a failure rejects affinity
+  cohesion as a mechanism and advances to S1/S2, without changing the
+  descriptor/selector bottleneck. No Kaggle status poll, validation GT/test
+  access or consumer training occurred here.
 
