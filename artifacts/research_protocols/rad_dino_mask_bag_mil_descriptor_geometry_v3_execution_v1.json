@@ -1,0 +1,73 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_v1",
+  "frozen_utc": "2026-07-29T12:31:45Z",
+  "status": "PREDECLARED_AFTER_TERMINAL_V6_AUDIT_AND_BEFORE_GEOMETRY_V3_KAGGLE_PUSH",
+  "scientific_protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_correction_v3.json",
+    "canonical_lf_sha256": "3248b37b8f60da2b3c7b6e4009f76967876bef6d498ac781e29f779a57351a91",
+    "scientific_source_commit": "cb2c269394959ce04377a48b51971f1304f96c05"
+  },
+  "terminal_v6_evidence": {
+    "path": "artifacts/kaggle/rad_dino_mask_bag_mil_probe_val_v1/version6_compact_evidence.json",
+    "canonical_lf_sha256": "8fc23707f217e1b2df1ace8b4b17d0d683b8784c5ff57be8845f8a8cd209f5b4",
+    "selected_goals_all_pass": false,
+    "candidate_oracle_goals_all_pass": true,
+    "evaluation_per_image_sha256": "94f19a3b7944706573fea03617196ff9a75b592c2b7d00f253ecfccd2253cc51",
+    "paired_comparison_vs_promoted_baseline_sha256": "5fde4512169a906d64f622ee6bb0426b5ea3294ebe9706a96a4ff6103a3d8716"
+  },
+  "execution_source": {
+    "checkout_commit": "6e0b50cbf38fec42a228a0f3f34285e7dd6a12f3",
+    "wrapper_path": "tmp/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/run_rad_dino_mask_bag_mil_descriptor_geometry_v3.py",
+    "wrapper_canonical_lf_sha256": "216bcbd236978b2678b3b2aa8909a3eb9e56006e783a4048bfed462c8a5d806b",
+    "metadata_path": "tmp/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/kernel-metadata.json",
+    "metadata_canonical_lf_sha256": "f1aef4c1e0ee32b17a2daaf0979faf5617e90d92654d7a5e61004f91ab8d24c2",
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-geometry-v3",
+    "machine_shape": "NvidiaTeslaT4",
+    "required_physical_devices": 2
+  },
+  "candidate_invariance": {
+    "regenerate_physical_payloads": true,
+    "train_candidate_manifest_sha256": "7dfe43cc90585c58c48bff95dfe6884b84ae3e304c52b8f3bab3f18ea09d6a28",
+    "train_pseudo_manifest_sha256": "5d50bd39619e3e8859e86fdcbb80b8d9bcfc3de8b6d0a88d0011fc35ccb1dc77",
+    "validation_candidate_manifest_sha256": "59b7828389aee2454460ad2c3733c18c3b1c486266635ae480969c8249693251",
+    "validation_pseudo_manifest_sha256": "11779008871c53afe863173c526b5e2687394cdd37a04d3914287c77eeab458f",
+    "physical_payloads_required_before_optimizer": 3352
+  },
+  "preflight": {
+    "focused_tests": [
+      "tests/test_rad_dino_mask_bag_mil.py",
+      "tests/test_rad_dino_mask_bag_mil_probe.py",
+      "tests/test_candidate_diagnostics.py",
+      "tests/test_generate_pseudo_masks_devices.py",
+      "tests/test_mask_bag_fractional_grid_mass_audit.py",
+      "tests/test_compare_mask_bag_evaluated_arms.py"
+    ],
+    "whole_repository_expected": "219 passed, 1 skipped",
+    "whole_repository_count_derivation": "v6 checkout reported 206 passed, 1 skipped; the execution checkout adds exactly thirteen test functions and no removed test",
+    "two_device_nontrivial_convolution_required": true
+  },
+  "prediction_first_contract": {
+    "fractional_grid_mass_audit_before_optimizer": true,
+    "prediction_maps": 371,
+    "prediction_freeze_before_validation_gt": true,
+    "comparison_v3_minus_v6": true,
+    "comparison_v3_minus_promoted_baseline": true,
+    "v6_minus_promoted_baseline_hash_bound": true,
+    "paired_complete_group_bootstrap_replicates": 10000,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "monitoring": {
+    "location": "current_main_task",
+    "cadence_minutes": 10,
+    "running_or_queued_output": "DONT_NOTIFY",
+    "external_monitor_task": false
+  },
+  "single_scientific_change": "coordinate-frame correction of proposal and context weights before frozen RAD-DINO mask pooling",
+  "forbidden": [
+    "changing gallery, ordering, WTA output, loss, optimizer, epoch budget, seed, evaluator, goal or subgroup",
+    "validation-GT tuning or selector selection",
+    "consumer training before prediction-first gate",
+    "BTXRD test access"
+  ]
+}

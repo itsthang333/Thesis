@@ -5094,3 +5094,71 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   evaluator after prediction freeze. No consumer was trained and no metric,
   threshold, subgroup definition or goal was changed.
 
+## 2026-07-29 - Selector/descriptor anti-loop research policy and geometry-v3 execution freeze
+
+- The terminal v6 mechanism conclusion is now treated as a persistent research
+  constraint, not a one-experiment guess: every immutable-gallery oracle
+  subgroup exceeds its operational goal, whereas selected Dice fails all four.
+  Therefore the active bottleneck remains proposal descriptor/selector. A
+  failed selector ablation does not by itself authorize relabelling proposal
+  support, the consumer or another stage as the main cause. Such a change
+  requires new mechanism evidence, especially an oracle regression or proof
+  that the gallery contract changed.
+- The improvement program is a campaign rather than a loop of isolated guesses:
+  1. correct the descriptor coordinate frame with geometry-v3;
+  2. improve proposal representation while keeping the gallery immutable,
+     including fractional pooling and normal/tumor contrast;
+  3. model candidate-to-candidate and local spatial relations rather than score
+     each proposal independently;
+  4. control count, winner-concentration and same-model confirmation shortcuts;
+  5. combine only mechanisms whose prediction-first errors are complementary.
+  Each arm must report selected-minus-oracle gap, rank of the oracle proposal,
+  selected/oracle Dice and misses by subgroup, count association, flip
+  agreement and paired complete-group bootstrap. Image AUROC alone cannot
+  promote an instance selector.
+- The design draws on complementary strengths rather than copying one method.
+  Ilse et al.'s attention MIL supplies permutation-invariant soft instance
+  weighting; DSMIL supplies a critical-instance relational stream; CLAM
+  supplies feature-space constraints around representative instances; ACMIL
+  and MIL-Dropout address excessive winner concentration; SmMIL adds explicit
+  local-dependency smoothing for medical-image localization; PSMIL addresses
+  feature-space selection drift through probability-space alignment. Jang and
+  Kwon's instance-learnability analysis is the reason bag classification
+  performance is never accepted as localization evidence.
+- Primary sources:
+  https://proceedings.mlr.press/v80/ilse18a.html;
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html;
+  https://www.nature.com/articles/s41551-020-00682-w;
+  https://www.ecva.net/papers/eccv_2024/papers_ECCV/html/6954_ECCV_2024_paper.php;
+  https://proceedings.mlr.press/v267/zhu25q.html;
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/8db9279f593652ee9bb2223b4a2c43fa-Abstract-Conference.html;
+  https://proceedings.iclr.cc/paper_files/paper/2025/hash/463a91da3c832bd28912cd0d1b8d9974-Abstract-Conference.html;
+  and
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html.
+  These sources motivate mechanisms only; their pathology/natural-image
+  encoders, metrics and performance numbers are not transferred to BTXRD.
+- Geometry-v3 is the first campaign arm because it changes the descriptor
+  coordinate frame and nothing else. Execution protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_v1.json`
+  (canonical-LF SHA-256
+  `24a967744f63b0bd0e3b24342b04d7c43ae532e58943c257e0b568c58c4932ee`)
+  binds checkout `6e0b50c`, wrapper canonical-LF SHA-256
+  `216bcbd236978b2678b3b2aa8909a3eb9e56006e783a4048bfed462c8a5d806b`,
+  metadata SHA-256
+  `f1aef4c1e0ee32b17a2daaf0979faf5617e90d92654d7a5e61004f91ab8d24c2`,
+  the exact four terminal-v6 candidate/pseudo-manifest hashes, the terminal v6
+  evaluation hashes and new kernel identity
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-v3`.
+- The wrapper regenerates and physically verifies all 3352 candidate payloads,
+  runs train/validation GT-blind fractional-grid-mass audits before optimizer
+  construction, requires two real T4 devices and a nontrivial convolution on
+  each, freezes 371 maps before GT evaluation, and computes v3-minus-v6 plus
+  both arms versus the promoted baseline. Static wrapper/source/hash audit and
+  `py_compile` pass locally. The whole Kaggle preflight is fixed at
+  `219 passed, 1 skipped`, derived from the audited v6 count plus exactly 13
+  newly added tests.
+- Per the user's monitoring direction, the next running kernel will be observed
+  only in this main task every ten minutes; RUNNING/QUEUED heartbeats produce
+  `DONT_NOTIFY`. No external monitor task will be created. Consumer training
+  and BTXRD test remain locked.
+
