@@ -6043,7 +6043,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - R1 now has one shared fit/score implementation at
   `project/models/mask_bag_normal_residual_training.py`, canonical-LF SHA-256
-  `68a5588a1aea5b68db5f836a4ad67340039cfab12906884df115ba035904f07a`.
+  `300039ccae28ba5962f4747dadf890a90542602523fa70dd1961d0b8f16c695d`.
   The same functions will be used inside every group-held-out K-selection fold
   and for the final clean-train fit, preventing an implementation change
   between model selection and the frozen arm.
@@ -6071,7 +6071,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   evidence and common evaluator contracts.
 - Tests at `tests/test_mask_bag_normal_residual_training.py`, canonical-LF
   SHA-256
-  `5254777d8751760bc44c15ef23c3a6c4bc4f4911142d341d8597e7227f37bf55`,
+  `ae36fe80615571ddecad18aed09a1d6a05e31bf69a013c59f109b162101d046f`,
   cover the no-confirmation/no-GT source boundary, flip-symmetric prototype
   weighting, bit-identical frozen scorer parameters with a learned residual,
   and complete ordered candidate scoring. Local `py_compile` passes and the
@@ -6084,7 +6084,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - The fold-level R1 orchestration is implemented at
   `project/models/mask_bag_normal_crossfit.py`, canonical-LF SHA-256
-  `12f35f3daf3ac8bd6d03adc1cd4b518c3873ba5254a4ad48ede42b12d5027afd`.
+  `30ea542734f9223942faf9f8ba29a4629089af2c2c3fb22e42b43e1adc1cb9f4`.
   Each invocation fits exactly one `(K, heldout_fold)` unit: it first proves
   that the training and held-out group sets are disjoint, fits the normal bank
   only on the training folds, enriches training and held-out descriptors using
@@ -6105,7 +6105,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumed by the already frozen one-standard-error/count-guard K selector.
   Thus no in-fold prediction can enter model selection.
 - Tests at `tests/test_mask_bag_normal_crossfit.py`, canonical-LF SHA-256
-  `a8c97449f4011809dfc610d0bae33343519708538ddf0ebc8b11a9c1b8521e07`,
+  `15636584eea0b8e651931858f66b3666b3f6b3ba997bbd372e08d3bb532c37f1`,
   cover the group-exclusion/no-GT source boundary, complete two-fold OOF
   coverage with a bit-identical base scorer, and missing-fold rejection.
   Local `py_compile` passes and the no-Torch runtime reports
@@ -6114,4 +6114,137 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - This module only prepares the group-safe computation. No fold, prototype,
   adapter or OOF prediction was fitted; geometry-v3 was not polled and no
   validation GT/test or consumer was accessed.
+
+### Complete R1 T4x2 runner readiness
+
+- The complete R1 execution runner is prepared at
+  `project/run_mask_bag_normal_prototype_arm.py`, canonical-LF SHA-256
+  `02700e36d0aecf4dcc82885fadf4dc1ed1b9950905c36ad76c6b6d6235c66707`.
+  It verifies the terminal selector-cache freeze, baseline checkpoint, frozen
+  train/validation split and every physical cache record before assigning a
+  fold or fitting any prototype. The exact known five-fold cohort
+  `596/596/596/596/597` with normal/tumor counts
+  `298/298`, `298/298`, `299/297`, `299/297`, `299/298` and group counts
+  `196/196/197/197/198` is required.
+- All `15` finite `(K in {8,16,32}, fold in {0..4})` jobs are assigned
+  deterministically across two real T4 devices as `8/7` independent jobs.
+  Adapter initial states are created sequentially on CPU with the exact
+  derived seeds before two worker threads start; workers only load those states
+  and therefore cannot race through the global RNG. CUDA deterministic
+  algorithms and `CUBLAS_WORKSPACE_CONFIG=:4096:8` are required. Each worker
+  owns an independent frozen v3 scorer on its device.
+- Every fold writes its prototype bank, adapter checkpoint, train/held-out
+  group inventories, fit history and held-out image predictions with physical
+  hashes. The assembled all-OOF evidence for each K is passed to the frozen
+  one-standard-error and `baseline absolute count-probability Spearman + 0.02`
+  guard. The baseline magnitude is a required protocol-bound scalar from the
+  accepted geometry-v3 GT-blind prediction manifest; it cannot be recomputed
+  from validation masks.
+- Only the selected K is refit on the complete clean-train split. The runner
+  then freezes all `371` validation all-candidate logits, exact gallery
+  indices, prediction maps and manifests. It saves the final prototype and
+  residual checkpoints plus a prediction freeze binding source/protocol,
+  split/cache/baseline, every OOF artifact, K selection, final fit and score/
+  map manifests. It imports no segmentation dataset and contains no validation
+  target, candidate quality, consumer or test path.
+- Static/core tests at
+  `tests/test_run_mask_bag_normal_prototype_arm.py`, canonical-LF SHA-256
+  `4bc3b870fe7bb4799b1ba19ebca0df9bf0c4107c85ef2898b9e24f57cec195f8`,
+  plus the two updated core suites report `8 passed, 5 skipped` locally.
+  The skipped tests require Torch and are mandatory on Kaggle before execution;
+  all six changed/new files pass `py_compile`.
+- The runner is not launched until geometry-v3 is terminal, independently
+  audited, and its reproducible selector cache is accepted. No R1 fit,
+  validation prediction, Kaggle poll, validation GT/test access or consumer
+  training occurred here.
+
+### Persistent descriptor/selector campaign contract
+
+- The descriptor/selector diagnosis is now a campaign-level conclusion, not a
+  disposable explanation for one arm. The frozen gallery oracle reaches
+  `0.4090755342/0.2227494852/0.5941470844/0.6418253674`
+  overall/small/medium/large and exceeds every current goal, whereas the v6
+  selected result is only
+  `0.2178991820/0.0781967787/0.3469906970/0.4310901171`.
+  Therefore candidate support is sufficient under the present goal and the
+  active causal target remains candidate representation, scoring, aggregation
+  and selection. A failed selector arm rejects only its mechanism; it does not
+  reopen proposal generation or replace the bottleneck hypothesis.
+- The common endpoint for every remaining arm is the same selected-to-oracle
+  regret on the immutable gallery, accompanied by top-k oracle reach,
+  score-versus-candidate-Dice rank correlation, complete misses and
+  candidate-count/miss association. This makes the experiments cumulative:
+  each row must explain which part of the same regret it can reduce. An arm
+  with a small-lesion regression is never accepted as a standalone solution;
+  at most it can be retained as an orthogonal component for the predeclared C1
+  composition, which must itself prove no subgroup decrease.
+- The finite mechanism sequence remains fixed unless an earlier arm achieves
+  the full operational gate:
+  1. **R1 normal prototypes** exploits the reliable MIL fact that every
+     instance in an image-label-negative bag is negative. Soft assignment to
+     several normal prototypes can expose candidates that resemble normal
+     anatomy without inventing positive instance labels. Its strength is
+     conservative negative evidence; its weakness is that normal anatomy is
+     diverse and a prototype bank can still encode acquisition/anatomy
+     shortcuts. TPMIL supports soft assignment of all instances to prototypes
+     and distance-based interpretability:
+     https://proceedings.mlr.press/v227/yang24d.html.
+  2. **R2 frozen RAD-DINO local affinity** changes representation rather than
+     proposals. Local token correspondence and within-mask/near-boundary
+     contrast are intended to separate a small lesion mask from a
+     visually-similar anatomical mask. Its strength is dense self-supervised
+     structure; its weakness is natural-image-to-radiograph domain shift, so
+     the v3 scorer remains a frozen residual baseline rather than being
+     replaced. DINOv2 reports transferable patch-level features:
+     https://arxiv.org/abs/2304.07193. WeCLIP independently supports a frozen
+     foundation backbone plus a lightweight trainable decoder/refinement
+     design in image-label-only WSSS:
+     https://openaccess.thecvf.com/content/CVPR2024/html/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.html.
+  3. **S1 family-balanced SmoothMax** changes aggregation only. Equalizing
+     proposal-family mass directly targets the measured candidate-count
+     shortcut and prevents a prolific prompt family from winning merely by
+     multiplicity. Its strength is causal specificity and low capacity; its
+     weakness is that it cannot repair an inseparable descriptor.
+  4. **S2 critical-instance relation** uses both an instance-scoring stream and
+     similarity from the critical instance to all other candidates. This can
+     recover support distributed over related proposals, but an incorrect
+     critical instance can propagate confirmation error. The mechanism is
+     adapted from DSMIL, not treated as an architecture-name guarantee:
+     https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_CVPR_2021_paper.html.
+  5. **S3 same-family graph smoothing** tests whether overlap/containment and
+     descriptor agreement provide useful relational consensus. Its strength
+     is explicit candidate dependence; its weakness is over-smoothing between
+     nested anatomical distractors. TransMIL motivates correlated rather than
+     independent-instance MIL, while the BTXRD arm stays a smaller,
+     provenance-constrained graph:
+     https://proceedings.neurips.cc/paper/2021/hash/10c272d06794d3e5785d5e7c5356e9ff-Abstract.html.
+  6. **S4 group-excluded OOF proposal clusters** learns recurring proposal
+     types from clean-train descriptors only. It can distinguish stable lesion
+     and anatomy modes that one image cannot reveal; its main risk is learning
+     group/acquisition shortcuts, hence all cluster features and selection are
+     group-held-out before the final fit.
+  7. **T1 self-paced confirmation** is delayed until R/S evidence yields a
+     stable, cross-fitted high-confidence seed. It may refine the descriptor
+     beyond fixed negative prototypes, but has the highest confirmation-bias
+     risk and therefore cannot be the first repair. ItS2CLR reports
+     self-paced pseudo-instance refinement for medical MIL and explicitly
+     motivates controlling pseudo-label reliability:
+     https://openaccess.thecvf.com/content/CVPR2023/html/Liu_Multiple_Instance_Learning_via_Iterative_Self-Paced_Supervised_Contrastive_Learning_CVPR_2023_paper.html.
+- Small lesions remain a required selector diagnostic rather than a reason to
+  jump back to proposal generation. The WACV study *Small Objects Matters in
+  Weakly-Supervised Semantic Segmentation* independently finds that standard
+  aggregate WSSS evaluation hides pronounced small-object failures and
+  motivates size-stratified evaluation:
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+  In this project the immutable gallery already proves small-goal support
+  (`0.2227494852 > 0.17895493`); the next question is specifically whether the
+  selector ranks those supported small masks, not whether another gallery can
+  be generated.
+- `C1` may combine only mechanisms that independently satisfy the common
+  mechanism gate and improve different regret slices; there is no unbounded
+  architecture search. Proposal generation is reconsidered only if a future
+  predeclared goal exceeds the frozen gallery oracle, or an independently
+  audited gallery change raises the oracle under a separate protocol. Neither
+  condition currently holds. This contract prevents one- or two-arm failures
+  from causing another diagnostic loop.
 

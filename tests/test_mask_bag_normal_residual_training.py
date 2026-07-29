@@ -42,6 +42,7 @@ def test_source_has_no_inferred_positive_or_segmentation_path() -> None:
     assert re.search(r"\bdice\b", source) is None
     assert "frozen_base_scorer.requires_grad_(false).eval()" in source
     assert "residual_arm_objective(" in source
+    assert "initial_adapter_state" in source
 
 
 @pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch unavailable locally")

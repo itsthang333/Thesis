@@ -189,20 +189,24 @@ def train_normal_residual_adapter(
     objective_config: ResidualObjectiveConfig,
     training_config: NormalResidualTrainingConfig,
     device: torch.device,
+    initial_adapter_state: Mapping[str, torch.Tensor] | None = None,
 ) -> tuple[AuxiliaryDescriptorResidual, list[dict[str, float]]]:
     """Fit only the residual adapter; the independent scorer stays frozen."""
 
     if not records:
         raise ValueError("adapter training records cannot be empty")
     frozen_base_scorer.requires_grad_(False).eval()
-    torch.manual_seed(training_config.seed)
-    if device.type == "cuda":
-        torch.cuda.manual_seed_all(training_config.seed)
+    if initial_adapter_state is None:
+        torch.manual_seed(training_config.seed)
+        if device.type == "cuda":
+            torch.cuda.manual_seed_all(training_config.seed)
     adapter = AuxiliaryDescriptorResidual(
         base_descriptor_dim=descriptor_dim,
         auxiliary_dim=4,
         hidden_dim=training_config.adapter_hidden_dim,
     ).to(device)
+    if initial_adapter_state is not None:
+        adapter.load_state_dict(initial_adapter_state, strict=True)
     optimizer = torch.optim.AdamW(
         adapter.parameters(),
         lr=training_config.learning_rate,

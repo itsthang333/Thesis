@@ -60,6 +60,7 @@ def fit_normal_oof_fold(
     objective_config: ResidualObjectiveConfig,
     training_config: NormalResidualTrainingConfig,
     device: torch.device,
+    initial_adapter_state: Mapping[str, torch.Tensor] | None = None,
 ) -> dict[str, Any]:
     """Fit one fold with complete held-out-group exclusion."""
 
@@ -104,6 +105,7 @@ def fit_normal_oof_fold(
         objective_config=objective_config,
         training_config=fold_training_config,
         device=device,
+        initial_adapter_state=initial_adapter_state,
     )
     scored = score_normal_residual_records(
         enriched_heldout,

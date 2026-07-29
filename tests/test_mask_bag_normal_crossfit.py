@@ -31,6 +31,7 @@ def test_crossfit_source_is_group_excluded_and_gt_free() -> None:
     assert "audit_crossfit_training_exclusion(" in source
     assert "set(training_groups) & set(heldout_groups)" in source
     assert "validation_segmentation_quality_used" in source
+    assert "initial_adapter_state=initial_adapter_state" in source
     for forbidden in (
         "segmentation_dataset",
         "mask_tensor",
