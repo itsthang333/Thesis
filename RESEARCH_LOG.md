@@ -4866,3 +4866,55 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - No checkpoint was downloaded, source/protocol was mutated, Kaggle job was
   launched, validation GT was opened or test was accessed.
 
+## 2026-07-29 - Monitor recovery and post-v6 mechanism decision matrix
+
+- The complete research log was reread before resuming. The repository was
+  clean on branch `research-wsss-improvement` at commit `0080ac9`; the active
+  operational goal remains overall/small/medium/large
+  `0.34024039 / 0.17895493 / 0.51244178 / 0.49370336`.
+- The former separate monitor task had entered a task-level `systemError`.
+  This is not evidence that Kaggle version 6 failed. Without polling Kaggle
+  from the main task, the existing heartbeat automation
+  `theo-d-i-rad-dino-mask-bag-mil-v6-m-i-10-ph-t` was retargeted in place to
+  task `019fadba-49a7-7112-b3a0-f11481e10cd8`; its cadence remains exactly
+  `10` minutes, status `ACTIVE`, and notifications remain failed-runs-only.
+  The errored monitor task was archived. No duplicate automation was created.
+- A literature-bound branch table was frozen at
+  `artifacts/literature_reviews/post_v6_mechanism_decision_matrix_2026-07-29.md`
+  (canonical-LF SHA-256
+  `f1968e87c76a37598554bf27dc4033791174efb79299f80f1fccb2a2bf29f22d`).
+  It keeps candidate support, selector quality and consumer readiness
+  separate, and orders the smallest causal arms after terminal v6 evidence:
+  descriptor geometry correction; fractional-mass pooling only if its
+  GT-blind audit is material; local views for an isolated small failure;
+  relational MIL for an oracle-feasible medium-selection failure; and a
+  consumer only after the frozen entry gate.
+- Additional primary literature was screened rather than copied wholesale:
+  Mun et al. (WACV 2024) confirms the need for size-complete WSSS evaluation,
+  but its size-balanced loss is inadmissible because BTXRD size groups come
+  from dense validation truth;
+  Choi et al. (FSAE, WACV 2025) motivates activation/boundary expansion but is
+  deferred because it can confound support and regress large masks;
+  Qiu et al. (BRNF, ICCV 2025) motivates modelling dataset-level foreground
+  and background feature distributions but is not a minimal candidate-ranking
+  change;
+  Yang and Gong (FMA-WSSS, WACV 2024) supports frozen-foundation proposal
+  assistance already represented by the current SAM/RAD-DINO design; and
+  Yang et al. (ExCEL, CVPR 2025) supports dense patch alignment but is a
+  lower-priority domain-gap contingency than radiology/MSK encoders.
+  Medical precedents from Kuang et al. (Computers in Biology and Medicine,
+  2024) and Viniavskyi et al. (2020) support affinity/relation refinement and
+  an ordered seed-to-relation-to-consumer pipeline.
+- Primary sources:
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html;
+  https://openaccess.thecvf.com/content/WACV2025/html/Choi_Feature-Level_and_Spatial-Level_Activation_Expansion_for_Weakly-Supervised_Semantic_Segmentation_WACV_2025_paper.html;
+  https://openaccess.thecvf.com/content/ICCV2025/html/Qiu_Bias-Resilient_Weakly_Supervised_Semantic_Segmentation_Using_Normalizing_Flows_ICCV_2025_paper.html;
+  https://arxiv.org/abs/2312.03585;
+  https://arxiv.org/abs/2503.20826;
+  https://pubmed.ncbi.nlm.nih.gov/38422964/; and
+  https://arxiv.org/abs/2007.00748.
+  No external metric is transferred to BTXRD.
+- No Kaggle status poll, wrapper/protocol mutation, validation GT read, test
+  access, consumer training or new heavy experiment occurred in this pass.
+  Cleanup remains deferred until terminal v6 evidence is preserved.
+
