@@ -5018,3 +5018,79 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   heavy local computation occurred. The v6 result remains pending delivery
   from the separate ten-minute monitor.
 
+## 2026-07-29 - Mask-bag MIL v6 terminal audit and geometry-v3 eligibility
+
+- Kaggle kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-mil-probe-v1`, version `6`, completed.
+  The external monitor deleted its heartbeat before retrieval. At the user's
+  direction, the external monitor task was subsequently canceled and archived;
+  future active-kernel monitoring will occur in this main task at ten-minute
+  intervals, with no waiting messages. Because v6 is already terminal, no
+  status automation is needed before the next launch.
+- Direct compact evidence is summarized at
+  `artifacts/kaggle/rad_dino_mask_bag_mil_probe_val_v1/version6_compact_evidence.json`.
+  Its canonical-LF SHA-256 is
+  `8fc23707f217e1b2df1ace8b4b17d0d683b8784c5ff57be8845f8a8cd209f5b4`.
+  The fail-closed local auditor passed after verifying the exact wrapper,
+  protocol/source/split/checkpoints, two real Tesla T4s, all 3352 pre-training
+  candidate payload checks, 371 physical prediction maps, cohort
+  `371/184/187`, subgroup `94/72/18`, complete misses, 10,000 group-bootstrap
+  replicates and `consumer_trained=false`, `test_evaluated=false`.
+- Retrieval exposed two implementation-only issues, neither scientific:
+  - two Kaggle-CLI downloads had briefly written the same temp directory; the
+    older duplicate process tree was stopped and only the paginated download
+    was retained;
+  - the first local auditor revision expected `probe/checkpoint.pt`, while the
+    frozen runner emits `probe/rad_dino_mask_bag_mil.pt`. The real checkpoint
+    SHA `28f7248939bf70cac0834e6676b5e2f7aeadc34fe60747663a8c9a3557865f9a`
+    matched `prediction_freeze.json`; the auditor and synthetic test were
+    corrected.
+  A full 371-map rescan found exactly one hash-corrupted partial download,
+  `IMG002729.npy`. The overwritten partial file's complete bad hash was not
+  preserved (only prefix `e3b` was displayed), so no full digest is inferred.
+  Targeted recovery produced the manifest-bound hash
+  `451cb22181ad43a20fca3b291297467eb22ba2754806e18e03ad3cdf4b493003`.
+  The complete auditor then passed. No result was interpreted before that pass.
+- Exact selected Dice overall/small/medium/large is
+  `0.21789918 / 0.07819678 / 0.34699070 / 0.43109012`; complete misses are
+  `51 / 34 / 16 / 1`. All four operational goals fail. Image-level AUROC is
+  `0.81338642`, so bag classification works but does not imply instance
+  localization.
+- The immutable candidate oracle is
+  `0.40907553 / 0.22274949 / 0.59414708 / 0.64182537` and exceeds all four
+  goals. Thus candidate support is adequate and the causal bottleneck is
+  proposal descriptor/ranking rather than absent proposal masks.
+- Versus the promoted flip-TTA selector, paired complete-group Dice deltas
+  overall/small/medium/large are
+  `-0.01644004 / -0.03396663 / -0.00161302 / +0.01577959`; 95% CIs are
+  `[-0.05208244,+0.01796097]`,
+  `[-0.08207393,+0.01232199]`,
+  `[-0.05986178,+0.05523774]`, and
+  `[-0.08060216,+0.14332592]`. The exact v6 configuration is rejected; it
+  reduces complete misses but does not improve Dice reliably and harms small
+  on mean.
+- The predeclared geometry-v3 launch condition is now satisfied: v6 misses the
+  operational goals while the immutable oracle passes every goal.
+  Geometry-v3 remains a coordinate-only correction with unchanged gallery,
+  scoring, loss, optimizer, epochs, seed, evaluator and WTA output. Consumer
+  training remains forbidden.
+- A supplementary GT-blind position-prior audit found 29 anatomy metadata
+  values across the complete 3352 train/validation images, with 1680 missing
+  anatomy values and frontal/lateral/oblique view counts
+  `1932/1150/270`. Aspect ratio is below `0.90` for 2887 images and below
+  `0.75` for 1749. Together with Krishnamoorthy and Wiens (CHIL/PMLR 2024),
+  https://proceedings.mlr.press/v248/krishnamoorthy24a.html, this argues
+  against prioritizing absolute-position MIL: their benefit assumes common
+  alignment, whereas BTXRD is multi-anatomy/multi-view and anatomy/view
+  metadata cannot be used as training supervision. Explicit position remains
+  a separate low-priority contingency, not bundled with geometry-v3 or
+  relational MIL.
+- Corrected local auditor/test canonical-LF SHA-256 values are respectively
+  `efc29bb07d6ead3e687ca7348deec336e4951cf9b24351fa8fa2eeaebc1b85be`
+  and
+  `764099c3e59bc92eb66bde3b546fdfde8b593b4d025acd73c9b582e389b94a73`;
+  its focused synthetic suite reports `4 passed in 1.76s`.
+- No BTXRD test access occurred. Validation GT was read only by the frozen
+  evaluator after prediction freeze. No consumer was trained and no metric,
+  threshold, subgroup definition or goal was changed.
+

@@ -165,7 +165,7 @@ def test_complete_synthetic_compact_contract_and_tamper_detection(
         ["image_id", "map_path", "map_sha256"],
         prediction_rows,
     )
-    checkpoint = probe / "checkpoint.pt"
+    checkpoint = probe / "rad_dino_mask_bag_mil.pt"
     checkpoint.write_bytes(b"checkpoint")
     history = probe / "training_history.json"
     _write_json(history, {"epochs": 16})

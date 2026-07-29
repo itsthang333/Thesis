@@ -223,7 +223,8 @@ def _verify_predictions(root: Path, independent: dict[str, Any]) -> dict[str, An
     for key in ("validation_gt_read", "consumer_trained", "test_evaluated"):
         _require(freeze.get(key) is False, f"Prediction freeze lock violated: {key}")
     _require(
-        sha256_file(probe / "checkpoint.pt") == freeze["checkpoint_sha256"],
+        sha256_file(probe / "rad_dino_mask_bag_mil.pt")
+        == freeze["checkpoint_sha256"],
         "Checkpoint hash mismatch",
     )
     _require(
