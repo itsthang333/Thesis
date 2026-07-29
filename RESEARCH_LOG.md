@@ -6586,3 +6586,59 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   maximum numeric deltas, execution boundary and locks:
   `consumer_trained=false`, `test_evaluated=false`.
 
+### Same-gallery paired geometry recovery freeze
+
+- The recovery is now fully frozen before launch rather than weakening the
+  failed equality assertion. Protocol
+  `rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v3`
+  has canonical-LF SHA-256
+  `4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555`.
+  It requires a direct immutable mount of the `2,981` physical train payloads
+  already produced by version `3` (`ad3b52d...` candidate manifest,
+  `5aec58ce...` pseudo manifest); the job fails before further heavy work if
+  that failed-version output cannot be mounted. Validation candidates are
+  generated exactly once with the unchanged recipe, and both geometry arms
+  consume the same physical train/validation paths and hashes.
+- Scientific runner commit
+  `fda732941664e67d4b87a8c3cba071b6979b2214` adds one mandatory,
+  explicit execution argument only:
+  `legacy_direct_resize` or `square_corrected_v3`. The legacy arm supplies the
+  original direct-resize mask and all-valid content map to the same pooling
+  implementation; a new Torch test proves this is exactly equal to the
+  original no-content-mask contract. The corrected arm retains the frozen
+  continuous content-box projection. Both isolated processes reseed to `42`
+  and otherwise use identical RAD-DINO snapshot, random projection, scorer,
+  image-level BCE/self-guided MIL/flip losses, optimizer and 16 final-only
+  epochs. Canonical-LF runner/model hashes are `6e0280e6...` and
+  `44cd6ff0...`.
+- Implementation commit
+  `75efd2b77776d15ce07cee52e14122b182390167` adds a fail-closed paired
+  orchestrator. It verifies every candidate payload and also records a
+  deterministic semantic hash of the boolean SAM-mask tensor stream. It
+  freezes and physically checks `371` legacy plus `371` corrected maps, then
+  writes a pair freeze before either evaluator imports validation
+  segmentation. Required post-freeze comparisons are corrected-minus-legacy,
+  each arm versus the promoted baseline, and descriptive-only comparisons
+  versus terminal v6, all with complete misses and `10,000` paired
+  complete-group bootstrap replicates. Current operational goal checks use
+  `0.34024039/0.17895493/0.51244178/0.49370336`; the corrected coordinate
+  contract remains canonical independently of validation performance.
+- The new recovery/static suites report `8 passed`; the broader focused local
+  group reports `12 passed, 1 skipped`. Torch numerical coverage remains
+  mandatory on Kaggle and is bound to expected preflight counts `34 passed`
+  and whole repository `223 passed, 1 skipped`. The execution checkout
+  verifies two real Tesla T4 devices and uses RAD-DINO DataParallel in both
+  arms. No consumer or BTXRD test path is available to the orchestrator.
+- Kernel wrapper SHA-256 is
+  `d1d7d9de819f5f49967d526f7fa0f1058938f1cabc2882078e51c4e094536b8d`;
+  metadata SHA-256 is
+  `d7f720d3bfe33fc46e4a2e4fcfe533f8b3a63ebf46cca9581f4592344c491790`.
+  Prelaunch audit
+  `rad_dino_mask_bag_mil_descriptor_geometry_paired_v1_wrapper_audit.json`,
+  SHA-256
+  `56632559c69683d5f2b47352c90443c4d2d4a3d392d5d0192a7a1c3def1f09f2`,
+  reports `PRELAUNCH_PASS`. It binds the recovery kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1` to the prior
+  geometry-v3 output as a kernel source; no monitor is created by this
+  protocol.
+
