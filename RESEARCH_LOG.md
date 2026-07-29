@@ -6458,14 +6458,43 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `(2,0,5,6)`. This now tests the intended odd-padding horizontal
   flip-equivariance contract. The production model, projection arithmetic,
   gallery, loss, optimizer, epoch budget, seed, evaluator, goals and subgroup
-  definitions are unchanged. Canonical-LF test SHA-256 changes from
+  definitions are unchanged. In the isolated geometry-v3 execution lineage,
+  canonical-LF test SHA-256 changes from
   `b563dd7c91aa47c939dce1c95db23344548799ba85af1dd53be13bf30643df0c`
   to
-  `f31650c477bf22758a6e4a70c2a87f0118168979d5a0750898d766526a13454b`.
+  `fed558ea04298bbafdcf922d36f43c176ca733d688815231ca90900d79dc9428`.
+  The current research branch also contains later R2 cache tests, so its
+  complete combined test-file hash is intentionally different and is not used
+  by this isolated rerun.
 - Local `git diff --check` passes. The local environment still lacks Torch, so
   the corrected numerical fixture remains mandatory in the next Kaggle
   preflight rather than being claimed as locally executed evidence. A
   hash-bound implementation-only correction addendum and wrapper revision
   must be frozen before version `2` can launch. No scientific result exists
   for version `1`, no consumer was trained and BTXRD test remains locked.
+- To avoid importing later R1/R2/S1 source changes into this causal geometry
+  arm, the rerun checkout is isolated from the original execution commit
+  `6e0b50c`. Repair commit `3c852f0a3a3847f1190f452cc2b7ace5558a0312`
+  changes only the invalid fixture; checkout
+  `55a2305ee143ae7f9232ac8542103475e890fb60` adds only its correction
+  addendum. The production model/runner hashes remain exactly
+  `44cd6ff0...` and `1bf56d0d...`.
+- Correction protocol
+  `rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v1`
+  is frozen at canonical-LF SHA-256
+  `da2037a57769435b0dc74bb74c08c9c0de90051b2a421c76a9a9ea99c018086e`.
+  Version-2 wrapper and metadata hashes are
+  `4592bffeecd3064f6d7a8eb699555af913de91fd12fc2ba942bc00ca2fe67a80`
+  and
+  `ed2a289cdcf028038451a6fe256249608486f891f5867c042057cc1a11782a2d`.
+  The wrapper verifies that the repair is an ancestor, binds the corrected
+  fixture hash, copies the addendum to output provenance and records its own
+  physical hash. Prelaunch audit
+  `rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_v2_wrapper_audit.json`
+  reports `PRELAUNCH_PASS`.
+- Per the user's updated direction, the ten-minute heartbeat
+  `theo-d-i-geometry-v3-m-i-10-ph-t-trong-task-ch-nh` was deleted. The
+  version-2 preflight will be followed at a short cadence so an implementation
+  error can be diagnosed immediately; this monitoring change does not alter
+  the experiment.
 
