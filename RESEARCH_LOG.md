@@ -5094,3 +5094,1494 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   evaluator after prediction freeze. No consumer was trained and no metric,
   threshold, subgroup definition or goal was changed.
 
+## 2026-07-29 - Selector/descriptor anti-loop research policy and geometry-v3 execution freeze
+
+- The terminal v6 mechanism conclusion is now treated as a persistent research
+  constraint, not a one-experiment guess: every immutable-gallery oracle
+  subgroup exceeds its operational goal, whereas selected Dice fails all four.
+  Therefore the active bottleneck remains proposal descriptor/selector. A
+  failed selector ablation does not by itself authorize relabelling proposal
+  support, the consumer or another stage as the main cause. Such a change
+  requires new mechanism evidence, especially an oracle regression or proof
+  that the gallery contract changed.
+- The improvement program is a campaign rather than a loop of isolated guesses:
+  1. correct the descriptor coordinate frame with geometry-v3;
+  2. improve proposal representation while keeping the gallery immutable,
+     including fractional pooling and normal/tumor contrast;
+  3. model candidate-to-candidate and local spatial relations rather than score
+     each proposal independently;
+  4. control count, winner-concentration and same-model confirmation shortcuts;
+  5. combine only mechanisms whose prediction-first errors are complementary.
+  Each arm must report selected-minus-oracle gap, rank of the oracle proposal,
+  selected/oracle Dice and misses by subgroup, count association, flip
+  agreement and paired complete-group bootstrap. Image AUROC alone cannot
+  promote an instance selector.
+- The design draws on complementary strengths rather than copying one method.
+  Ilse et al.'s attention MIL supplies permutation-invariant soft instance
+  weighting; DSMIL supplies a critical-instance relational stream; CLAM
+  supplies feature-space constraints around representative instances; ACMIL
+  and MIL-Dropout address excessive winner concentration; SmMIL adds explicit
+  local-dependency smoothing for medical-image localization; PSMIL addresses
+  feature-space selection drift through probability-space alignment. Jang and
+  Kwon's instance-learnability analysis is the reason bag classification
+  performance is never accepted as localization evidence.
+- Primary sources:
+  https://proceedings.mlr.press/v80/ilse18a.html;
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html;
+  https://www.nature.com/articles/s41551-020-00682-w;
+  https://www.ecva.net/papers/eccv_2024/papers_ECCV/html/6954_ECCV_2024_paper.php;
+  https://proceedings.mlr.press/v267/zhu25q.html;
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/8db9279f593652ee9bb2223b4a2c43fa-Abstract-Conference.html;
+  https://proceedings.iclr.cc/paper_files/paper/2025/hash/463a91da3c832bd28912cd0d1b8d9974-Abstract-Conference.html;
+  and
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html.
+  These sources motivate mechanisms only; their pathology/natural-image
+  encoders, metrics and performance numbers are not transferred to BTXRD.
+- Geometry-v3 is the first campaign arm because it changes the descriptor
+  coordinate frame and nothing else. Execution protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_v1.json`
+  (canonical-LF SHA-256
+  `24a967744f63b0bd0e3b24342b04d7c43ae532e58943c257e0b568c58c4932ee`)
+  binds checkout `6e0b50c`, wrapper canonical-LF SHA-256
+  `216bcbd236978b2678b3b2aa8909a3eb9e56006e783a4048bfed462c8a5d806b`,
+  metadata SHA-256
+  `f1aef4c1e0ee32b17a2daaf0979faf5617e90d92654d7a5e61004f91ab8d24c2`,
+  the exact four terminal-v6 candidate/pseudo-manifest hashes, the terminal v6
+  evaluation hashes and new kernel identity
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-v3`.
+- The wrapper regenerates and physically verifies all 3352 candidate payloads,
+  runs train/validation GT-blind fractional-grid-mass audits before optimizer
+  construction, requires two real T4 devices and a nontrivial convolution on
+  each, freezes 371 maps before GT evaluation, and computes v3-minus-v6 plus
+  both arms versus the promoted baseline. Static wrapper/source/hash audit and
+  `py_compile` pass locally. The whole Kaggle preflight is fixed at
+  `219 passed, 1 skipped`, derived from the audited v6 count plus exactly 13
+  newly added tests.
+- Per the user's monitoring direction, the next running kernel will be observed
+  only in this main task every ten minutes; RUNNING/QUEUED heartbeats produce
+  `DONT_NOTIFY`. No external monitor task will be created. Consumer training
+  and BTXRD test remain locked.
+- Kaggle accepted private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-v3`, version `1`, using
+  `NvidiaTeslaT4` (`T4 x2` required by fail-closed runtime preflight). Invalid
+  free-form Kaggle tags were ignored by Kaggle, which does not affect code,
+  inputs or scientific execution. The sole same-task heartbeat is
+  `theo-d-i-geometry-v3-m-i-10-ph-t-trong-task-ch-nh`, active at exactly ten
+  minutes with failed-run-only notifications and exact `DONT_NOTIFY` behavior
+  while queued/running. No launch-time status poll or duplicate monitor was
+  created.
+
+### Selector campaign mechanism audit and ordered post-v3 arms
+
+- A new read-only join of the terminal v6 prediction manifest and frozen
+  post-freeze evaluation rows quantified why the campaign must address both
+  representation and selection. On tumor images, selected-minus-oracle regret
+  is `0.14455/0.24716/0.21074` for small/medium/large. Medium therefore has the
+  largest pure ranking loss, while small has less oracle headroom and needs a
+  descriptor that can resolve approximately one-token lesions. Candidate count
+  still correlates with bag probability across all 371 images at Pearson
+  `-0.48118` and Spearman `-0.48864`; within tumors, count correlates with
+  complete miss at `+0.37808/+0.37607`. Within medium the count-versus-selected
+  Dice Spearman correlation is `-0.34799`, and within small the
+  count-versus-miss correlation is `+0.43403`. Thus normalized LogSumExp removes
+  the exact log-count offset but not the learned bag-construction shortcut or
+  the harder one-of-many ranking problem.
+- Candidate order is not the dominant shortcut: the normalized selected-index
+  median is `0.61414`, with `21.74%` in the first and `28.80%` in the last
+  candidate quartile; index zero is selected in only `4.89%` of tumor bags.
+  The campaign should preserve order audits but focus on feature separability,
+  proposal relations and winner concentration.
+- The ordered post-v3 campaign is pre-scoped as follows. These are distinct
+  causal arms; none is launched before terminal geometry-v3 audit.
+  1. **Fractional weighted-mean normalization.** If the GT-blind v3 audit shows
+     a material retained population with projected grid mass below one, replace
+     the current denominator floor of `1.0` with the exact retained fractional
+     mass (epsilon only for numerical safety). This directly tests small-mask
+     attenuation without changing proposals, token maps or the selector head.
+  2. **Normal-prototype plus DINO-affinity representation.** Keep the corrected
+     means and append train-normal-only prototype distance, within-mask token
+     affinity/cohesion and across-boundary affinity contrast. Negative bags
+     provide reliable instance negatives; no positive proposal is declared
+     correct. DINO/ECA motivates pairwise semantic affinity, while CLAM
+     motivates constraining the proposal feature space. This arm changes
+     descriptors, not gallery support.
+  3. **Family-balanced relational selector.** Restore immutable component,
+     prompt-mode and proposal-source IDs; normalize within a proposal family
+     before the bag; add a zero-initialized DSMIL-like residual comparing each
+     proposal with the detached critical proposal; and add a proposal graph
+     whose local edges use mask IoU/containment and normalized centroid
+     distance rather than absolute anatomy. DSMIL supplies global critical
+     relations and SmMIL supplies localization-oriented local dependency.
+  4. **Confirmation/count robustness.** Generate positive-instance soft targets
+     by group-preserving train-only out-of-fold selectors instead of the same
+     model's detached argmax. If winner concentration/count association remains,
+     add one conservative stochastic top-k/family dropout schedule based on
+     ACMIL/MIL-Dropout. It is training-only and may not drop the sole family or
+     sole retained small proposal.
+  5. **Complementary composition.** Combine the best representation and
+     relational selector only if their frozen per-image corrections are
+     complementary; add robustness only if its own mechanism gate passes.
+     There is no unbounded architecture search and no switch to consumer or
+     proposal generation while the immutable oracle remains above every goal.
+- Every future selector arm must freeze additional GT-blind outputs before
+  evaluation: all candidate logits, proposal family/geometry, attention or
+  affinity entropy, effective candidate count, original/flip ranks, score/count
+  association and prediction maps. The post-freeze evaluator must add oracle
+  candidate index, oracle rank under the selector, top-`1/3/5/10` oracle reach,
+  selected-to-oracle regret, recovered/lost misses and score-versus-candidate
+  Dice rank correlation for the complete `184/94/72/18` cohort. These
+  diagnostics may explain a result but cannot tune the already frozen arm.
+- Primary affinity source added for the representation arm: Wu et al.,
+  *DINO is Also a Semantic Guider: Exploiting Class-aware Affinity for Weakly
+  Supervised Semantic Segmentation*, ACM Multimedia 2024,
+  https://openreview.net/forum?id=qipYQAcvVG. The transferable idea is
+  class-agnostic DINO affinity seeded/refined by weak evidence; its natural
+  image benchmark, CAM architecture and metric are not transferred. No
+  validation mask, BTXRD test sample or new prediction was read for this
+  design.
+
+### Technique-strength audit and reusable selector-development cache
+
+- The literature mechanisms are not interchangeable, and their failure modes
+  are now explicit before implementation:
+  - exact fractional normalization can restore the amplitude of sub-token
+    proposals, but it can amplify a noisy `0.25`-mass candidate; it is tested
+    alone and remains protected by the existing minimum-mass threshold;
+  - a train-normal prototype uses genuinely reliable negative instances and
+    directly attacks tumor-versus-normal separability, but normal bags contain
+    more proposals. Prototype estimation must therefore give equal total weight
+    to every normal image and cap every proposal family, rather than allowing
+    large bags to dominate;
+  - DINO affinity captures pairwise semantic cohesion that the current
+    inside/outside means discard, but class-agnostic affinity may strongly
+    connect healthy bone. It is appended as an instance feature and cannot
+    expand or replace the frozen candidate mask;
+  - DSMIL's critical-instance relation can recover medium candidates that are
+    individually ambiguous, but an incorrect early critical instance can
+    spread error. Its residual is zero-initialized and the independent v3 logit
+    remains an explicit skip connection;
+  - SmMIL directly optimizes localization-relevant smooth instance scores and
+    can complement global relations. Its original “neighboring patches share a
+    label” assumption does not automatically hold for alternative SAM masks.
+    The BTXRD graph may connect only same-component/source proposals with
+    sufficient mask overlap/containment; the normalized-Laplacian smoothing
+    acts on candidate logits themselves, not merely on a bag embedding;
+  - ACMIL/MIL-Dropout can break winner concentration, but their WSI setting has
+    many truly positive patches. BTXRD can have one useful small-tumor proposal,
+    so top-k masking is forbidden until measured within-family redundancy is
+    adequate, and it must preserve at least one proposal in every family;
+  - PSMIL's probability-space alignment is relevant to the observed
+    same-model selection drift, but its paper also reports benchmark code where
+    the untrimmed input contains an instance-label feature and provides a
+    trimmed sensitivity version. No headline performance or label-bearing
+    feature is transferable. Only augmentation-consistent probabilities from
+    out-of-fold image-label-only models are admissible here.
+- Primary details supporting those limits:
+  SmMIL derives a fidelity-preserving normalized-Laplacian smoother from
+  Dirichlet energy and applies it directly to attention/localization values:
+  https://proceedings.neurips.cc/paper_files/paper/2024/file/8db9279f593652ee9bb2223b4a2c43fa-Paper-Conference.pdf.
+  ACMIL uses multiple attention branches plus stochastic top-k masking to
+  counter attention concentration:
+  https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/06954.pdf.
+  PSMIL moves attention/alignment into probability space but documents both
+  untrimmed label-feature and trimmed benchmark variants:
+  https://proceedings.iclr.cc/paper_files/paper/2025/file/463a91da3c832bd28912cd0d1b8d9974-Paper-Conference.pdf.
+- To make the campaign broad enough without paying for candidate generation
+  and RAD-DINO extraction for every selector, the first post-v3 infrastructure
+  job will be a reusable **GT-blind selector-development cache**, launched only
+  after terminal v3 audit. It will mechanically reproduce the exact four
+  candidate-manifest hashes and corrected v3 descriptors, then store:
+  original/flip fp16 descriptors, retained indices, metadata, component/prompt/
+  source IDs, normalized proposal geometry, family IDs, sparse proposal-graph
+  edges and bit-packed validation WTA masks. Train masks are discarded after
+  graph construction. The cache may read radiographs and image labels but no
+  segmentation annotation.
+- The cache is valid only if the frozen v3 checkpoint rescored from it
+  reproduces all 371 v3 selected indices, logits within a predeclared numerical
+  tolerance, and exact final map hashes. This makes subsequent selector arms
+  inexpensive and causally comparable while preserving the immutable gallery.
+  Each arm receives an independent prediction directory and protocol; one arm
+  cannot overwrite another.
+- The relational family is further separated for causal evidence:
+  `family-balanced SmoothMax`, `DSMIL-like global critical relation`, and
+  `SmMIL-like local proposal-graph smoothing` are three individual arms. Their
+  combinations are authorized only after individual frozen maps show
+  complementary recoveries. The same rule separates normal-prototype and DINO
+  affinity descriptors before combining them. This yields a finite campaign,
+  not an unbounded hyperparameter search, while ensuring a failure of one
+  technique does not terminate work on the established selector bottleneck.
+
+### Relational-selector primitive preparation while geometry-v3 runs
+
+- Lightweight, dataset-agnostic primitives were prepared at
+  `project/models/mask_bag_relational_selector.py`, canonical-LF SHA-256
+  `3cae8adbdf0a11384a891926570069ceefb0cda2de6dc9b5476ae19a1f17f790`.
+  This is source readiness only: it is not imported by the running v3 pipeline,
+  does not alter its frozen wrapper/checkout and authorizes no additional job.
+- The module implements three deliberately separable mechanisms:
+  - hierarchical normalized SmoothMax, first within immutable proposal family
+    and then across families, making an identical within-family duplicate
+    neutral to the bag score;
+  - a symmetric local graph that connects only same-family proposals satisfying
+    fixed mask IoU or containment, followed by fidelity-preserving normalized
+    graph smoothing directly on candidate logits;
+  - a DSMIL-inspired critical-proposal relation residual with a detached
+    independent critical index and exactly zero-initialized final layer, so its
+    initial logits equal the independent selector bit-for-bit.
+  The code accepts only descriptors, masks, validity and family IDs; it has no
+  dataset, annotation, lesion-size, subgroup or GT API.
+- Tests at `tests/test_mask_bag_relational_selector.py`, canonical-LF SHA-256
+  `b3bb46a7e37562c2bc780e10480f1bcc358072adf9ac0037497a2fb06b30e1d8`,
+  verify family-duplicate invariance, cross-family edge exclusion, isolated-node
+  fidelity, decreased connected contrast, `alpha=0` identity, critical-index
+  selection and zero-residual identity. Local `py_compile` passed; the local
+  no-Torch runtime reports `1 passed, 4 skipped`. All four numerical Torch
+  tests remain mandatory on Kaggle before any arm can execute.
+- The primitives are intentionally not combined into one opaque model. The
+  terminal v3 audit will determine the fixed baseline cache, after which
+  family balance, global critical relation and local smoothing receive separate
+  prediction freezes before any complementary combination. No Kaggle status
+  poll, validation GT read, test access or consumer training occurred.
+
+### Radiograph-specific selector research and persistent-bottleneck commitment
+
+- The selector conclusion is now a **campaign-level falsifiable hypothesis**,
+  not a label that can be changed after one or two negative experiments. Under
+  the immutable v6 gallery, every subgroup oracle passes its operational goal
+  while the learned selection fails it. Consequently, all post-v3 work remains
+  inside descriptor/selector improvement until either (a) the operational goals
+  pass, or (b) the finite representation, relation and confirmation campaign
+  below is exhausted. Reassigning the main bottleneck requires new gallery
+  evidence, such as an oracle falling below a goal after a contractually valid
+  gallery change; a failed selector arm alone is insufficient.
+- Seibold et al.'s *Self-Guided Multiple Instance Learning for Weakly
+  Supervised Disease Classification and Localization in Chest Radiographs*
+  trains with both image and patch predictions and deliberately avoids making
+  every uncertain patch a hard binary target. Its transferable lesson is that
+  the current same-model detached winner is an unsafe teacher: initialization
+  errors and uncertain small findings can be reinforced. The admissible BTXRD
+  adaptation is a soft target produced by group-preserving out-of-fold
+  selectors and original/flip agreement. The model generating a target may not
+  have trained on that image. Source:
+  https://openaccess.thecvf.com/content/ACCV2020/html/Seibold_Self-Guided_Multiple_Instance_Learning_for_Weakly_Supervised_Thoracic_DiseaseClassification_and_ACCV_2020_paper.html.
+- Liu et al.'s *Iterative Self-Paced Supervised Contrastive Learning* improves
+  MIL instance representations by admitting only sufficiently reliable
+  pseudo-labelled instances at each stage and reports both bag- and
+  instance-level evaluation on medical datasets. This supports a late
+  **cross-fitted self-paced contrastive** arm, not immediate hard pseudo-mask
+  training. All candidates from image-level-normal training bags are reliable
+  negatives; positive candidates enter the contrastive set only when an
+  out-of-fold selector is confident and original/flip ranks agree. The
+  curriculum starts with the most reliable subset and never treats all
+  candidates in a positive bag as tumor. Its weakness is confirmation bias, so
+  it follows rather than precedes independently tested prototype and relational
+  arms. Source:
+  https://openaccess.thecvf.com/content/CVPR2023/html/Liu_Multiple_Instance_Learning_via_Iterative_Self-Paced_Supervised_Contrastive_Learning_CVPR_2023_paper.html.
+- Yang et al.'s *Trainable Prototype Enhanced Multiple Instance Learning*
+  softly assigns all instances to prototypes instead of refining only a few
+  selected patches and uses prototype distance as an alternative to raw
+  attention for instance interpretation. The BTXRD transfer will be more
+  conservative: fit a **normal-only multi-prototype bank** from corrected
+  candidate descriptors using clean-train image labels, give every normal
+  image equal total weight, every family within an image equal weight and every
+  candidate within a family equal weight, then append nearest/soft-min normal
+  distance, assignment entropy and prototype margin to each candidate. This is
+  not the rejected nominal pixel-memory/INSIGHT map: it neither generates a new
+  dense map nor changes candidate support; it changes only the representation
+  used to rank the already frozen gallery. Source:
+  https://proceedings.mlr.press/v227/yang24d.html.
+- Qi et al.'s GREN shows that intra-image and inter-image relationships can
+  improve weak X-ray localization. The inter-image comparison motivates a
+  normal prototype bank, but its pretrained lung-lobe U-Net and lobe graph are
+  not transferable to BTXRD's many anatomies without auxiliary localization
+  supervision. Only descriptor-space cross-image relation is retained; no lung
+  mask, anatomical segmenter or extra annotation is introduced. Source:
+  https://pubmed.ncbi.nlm.nih.gov/35895637/ and DOI
+  `10.1109/JBHI.2022.3193108`.
+- Krishnamoorthy and Wiens show that absolute position can help MIL when
+  medical images share a stable global alignment. BTXRD does not meet that
+  premise: it contains many bone anatomies and views, highly variable aspect
+  ratios and incomplete anatomy metadata. Therefore absolute coordinates or a
+  chest-specific positional prior will not be a primary arm. The relational
+  selector may use only normalized candidate size, centroid difference and
+  overlap within an image, with no anatomy label. Source:
+  https://proceedings.mlr.press/v248/krishnamoorthy24a.html.
+- Choe et al. formalize why localization from image labels alone is
+  underdetermined and why localization evaluation must be separated from
+  classification/model fitting. This reinforces the existing prediction-first
+  contract: validation masks remain unavailable to descriptor fitting,
+  prototype fitting, selector training, arm choice and prediction freezing;
+  they are read only by the frozen evaluator. Source:
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html.
+
+### Finite selector resolution matrix after geometry-v3
+
+- The campaign is explicitly partitioned so a negative result identifies which
+  selector submechanism failed without changing the main bottleneck:
+  1. **R0 geometry/fractional pooling:** finish v3; if its GT-blind mass audit
+     activates the predeclared condition, test exact fractional weighted means.
+  2. **R1 normal representation:** candidate-level normal multi-prototype
+     features alone. A finite train-only choice `K in {8,16,32}` is made by
+     group-preserving out-of-fold image-label loss, with count association as a
+     diagnostic and the smaller `K` winning a tie. Validation masks cannot
+     select `K`.
+  3. **R2 local representation:** DINO within-mask cohesion and across-boundary
+     affinity contrast alone. It cannot expand, erode or introduce a proposal.
+  4. **S1/S2/S3 selection:** family-balanced SmoothMax, zero-initialized
+     critical-relation residual, and same-family overlap-graph logit smoothing
+     are frozen as separate arms against the identical descriptor cache.
+  5. **S4 proposal-cluster refinement:** a group-excluded OOF teacher seeds
+     mask-overlap/containment clusters, which are optimized as normalized small
+     bags with a smooth-to-sharp continuation schedule. Tumor-bag candidates
+     outside a cluster remain unlabeled.
+  6. **T1 confirmation:** out-of-fold original/flip soft targets followed by a
+     conservative ItS2CLR-style self-paced contrastive stage. This arm is
+     allowed only after its target producer and consumer folds are disjoint and
+     every candidate target/provenance is serialized.
+  7. **C1 composition:** combine the best representation arm with the best
+     relational arm only when their frozen per-image recovered/lost cases show
+     complementary corrections. Add T1 only if it independently reduces
+     selected-to-oracle regret without increasing count dependence.
+- Each arm keeps the same gallery, candidate maps, validation cohort, evaluator
+  and goals. The mechanism gate is predeclared as: reduce complete-group
+  selected-to-oracle regret in at least two tumor subgroups, do not worsen
+  overall selected Dice, and do not increase the absolute count/miss
+  association; promotion still requires the already frozen paired bootstrap
+  and subgroup reporting. Failing this gate rejects that mechanism but advances
+  to the next row of this matrix. It does not authorize switching to a new
+  proposal generator, dense support model or consumer.
+- The reusable post-v3 cache is what makes this matrix practical: RAD-DINO
+  extraction and candidate construction occur once on T4x2, while the
+  lightweight selector arms reuse hash-bound descriptors and masks. This
+  supports enough controlled selector trials to resolve the observed cause
+  without repeated expensive end-to-end jobs or an unbounded hyperparameter
+  search.
+- These additions are research/protocol preparation only. The running
+  geometry-v3 kernel was not polled or modified, no validation segmentation
+  annotation or BTXRD test sample was read, and no consumer was trained.
+
+### Normal-prototype descriptor primitive preparation
+
+- A dataset-agnostic source primitive was added at
+  `project/models/mask_bag_normal_prototypes.py`, canonical-LF SHA-256
+  `d20be292be6a4828f337c6f3348998e56d7c51245bb4e6d8a2d193b5e914c876`.
+  It implements:
+  - hierarchical weights with equal total mass per image, then per family,
+    then per candidate, preventing large normal bags or duplicated proposals
+    from dominating the bank;
+  - seeded weighted spherical k-means for a finite, hashable prototype bank;
+  - four candidate features: nearest normal-prototype cosine distance,
+    temperature-softened distance, assignment entropy and top-two prototype
+    margin.
+  The module accepts only descriptor arrays and opaque image/family IDs. It has
+  no dataset, image-label lookup, GT, subgroup or evaluation interface.
+- Tests at `tests/test_mask_bag_normal_prototypes.py`, canonical-LF SHA-256
+  `076827d1f7ff34f4cd95c75307b435381fc4bdf83aaf333ad77fd56c0b75a713`,
+  check source isolation, equal image/family weights, invariance of the
+  weighted mean to an identical within-family duplicate, deterministic
+  normalized prototypes and increased normal-prototype distance for an unseen
+  direction. `py_compile` passes. The default local Python lacks NumPy and the
+  bundled dependency Python lacks pytest, so the five test functions were
+  executed directly under the bundled NumPy runtime and all five passed.
+- This is readiness code only. It is not imported by geometry-v3 and has not
+  fitted a BTXRD prototype. After the terminal v3 cache is frozen, the caller
+  must prove that its inputs contain clean-train normal bags selected only by
+  image labels, serialize the hierarchical weights/prototypes/assignments and
+  bind their hashes before producing validation logits. No Kaggle status poll,
+  validation GT access, test access or consumer training occurred.
+
+### Selector-cache provenance and geometry preparation
+
+- A read-only source audit of `run_rad_dino_mask_bag_mil_probe.py` and the
+  candidate-diagnostic schema found that the runner currently retains masks,
+  four numeric metadata values and kept indices, but discards already frozen
+  `component_ids`, `prompt_modes` and `proposal_source_ids`. Those arrays are
+  present in every schema-v2 candidate NPZ and are integrity-covered by the
+  existing per-payload and manifest hashes. Therefore family-balanced and
+  proposal-graph arms need neither a new gallery nor new proposal generation:
+  the post-v3 cache can restore provenance mechanically from the exact
+  candidate payloads and slice it with the same `kept_indices`.
+- Dataset-agnostic cache helpers were added at
+  `project/models/mask_bag_selector_cache.py`, canonical-LF SHA-256
+  `f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5`.
+  They define a family as the exact immutable tuple
+  `(proposal_source_id, prompt_mode, component_id)`, with a separate explicit
+  fallback family; IDs are assigned from sorted unique tuples and cannot depend
+  on candidate order. The same module derives position-free proposal shape
+  features, pairwise IoU/containment/normalized centroid distance and an exact
+  bit-packed mask representation. Absolute centroid coordinates are not
+  exposed as candidate features.
+- Tests at `tests/test_mask_bag_selector_cache.py`, canonical-LF SHA-256
+  `8e57b638cca17a0e282464ce8be0b9c83c795d678ef99d7fab69e2da514bb3f5`,
+  verify source isolation, all-three-field family identity, same-family
+  duplicates, position-free shape features, symmetric overlap geometry and
+  exact bit-pack round trip. `py_compile` and all six numerical/source tests
+  pass under the bundled NumPy runtime.
+- The eventual cache acceptance gate remains stricter than these unit tests:
+  it must bind the terminal v3 source/protocol/candidate hashes, cover exactly
+  all train/validation rows, and rescore the frozen v3 checkpoint to reproduce
+  every validation selected index, logit tolerance and map hash before any new
+  selector is trained. This preparation did not poll or modify geometry-v3,
+  load validation GT/test, fit a prototype or train a consumer.
+
+### Group-preserving cross-fit preparation for confirmation control
+
+- The present mask-bag runner confirms a positive instance with the argmax of
+  the same selector being optimized. This is precisely the confirmation path
+  identified by the radiograph self-guided-MIL and ItS2CLR audit. A source-only
+  cross-fit primitive was added at `project/models/mask_bag_crossfit.py`,
+  canonical-LF SHA-256
+  `4f7b27d98250c00db5ed42bbd707d02bb2ae81e7d19beed74070189228e52bd6`.
+  It assigns complete `group_id` units to folds while greedily balancing image
+  counts separately for image-label normal/tumor, creates an order-independent
+  assignment hash summary and fails closed if a target-producing fold
+  checkpoint reports any held-out/training group overlap.
+- A label-only read of the frozen training split found `2981` images in `984`
+  heuristic groups, with no mixed tumor label in a group. Normal has
+  `1493` images in `203` groups and tumor has `1488` images in `781` groups;
+  balancing group counts would therefore badly imbalance images. The
+  predeclared five-fold, seed-42 row-balanced assignment produces:
+  `(596,298,298,196)`, `(596,298,298,196)`,
+  `(596,299,297,197)`, `(596,299,297,197)` and
+  `(597,299,298,198)`, where each tuple is
+  `(images,normal,tumor,groups)`. Thus the requested OOF separation is feasible
+  without changing the frozen outer train/validation split.
+- Tests at `tests/test_mask_bag_crossfit.py`, canonical-LF SHA-256
+  `ec2c026882fe565dc38e60fccb6e464865e206a7c2f57c82ab4b0a633b6536f1`,
+  verify source isolation, deterministic group integrity, per-class image
+  balance, order-independent manifest hashing and rejection of training/
+  held-out overlap. `py_compile` and all five numerical/source tests pass.
+- Only the fold/provenance layer is frozen now. Candidate soft-target
+  confidence and curriculum thresholds are intentionally not chosen before the
+  terminal v3 cache exposes GT-blind original/flip score distributions.
+  Whatever train-only rule is later predeclared must serialize every admitted
+  target, weight, source checkpoint, excluded fold and original/flip rank.
+  Validation masks cannot select that rule. No Kaggle status poll, validation
+  GT/test access, prototype fit, selector training or consumer training
+  occurred.
+
+### Proposal-ranking research from weakly supervised object detection
+
+- BTXRD mask-bag selection is also structurally a weakly supervised object
+  detection problem: an image contains a frozen set of region proposals and
+  only an image class is available for learning which region is positive. This
+  literature supplies mechanisms more directly matched to the observed
+  selected-versus-oracle gap than another dense CAM generator.
+- Bilen and Vedaldi's WSDDN jointly learns region classification and region
+  selection streams from image labels. Its strength is end-to-end proposal
+  scoring, but its documented failure modes include selecting discriminative
+  object parts and merging instances. A raw detection-softmax stream would
+  also reintroduce proposal-count competition already observed in BTXRD, so
+  WSDDN is not copied as a new primary arm. The transferable element is the
+  separation between candidate evidence and within-bag selection, which is
+  already represented by descriptor arms plus family-balanced pooling. Source:
+  https://openaccess.thecvf.com/content_cvpr_2016/html/Bilen_Weakly_Supervised_Deep_CVPR_2016_paper.html.
+- Tang et al.'s OICR refines an instance classifier by propagating the inferred
+  label of a top proposal to spatially overlapping proposals. This directly
+  addresses proposal ranking, but its online preceding-stream teacher can
+  reinforce a wrong early winner--the exact same-model confirmation path seen
+  in the current runner. The admissible transfer therefore forbids online
+  same-model labels: only a group-excluded OOF teacher with original/flip
+  agreement may seed an overlap cluster. Source:
+  https://openaccess.thecvf.com/content_cvpr_2017/html/Tang_Multiple_Instance_Detection_CVPR_2017_paper.html.
+- Tang et al.'s PCL improves OICR by grouping spatially adjacent proposals
+  associated with one hypothesized object and treating a proposal cluster as a
+  smaller bag, reducing the ambiguity of assigning hard labels to every
+  proposal. This is highly compatible with the immutable BTXRD gallery and
+  complements, rather than replaces, DSMIL: DSMIL relates candidates in
+  descriptor space, whereas PCL restricts the positive ambiguity spatially.
+  Its weakness remains dependence on the initial cluster center and its natural
+  image box-overlap assumptions. The BTXRD transfer will use mask IoU or
+  containment, retain the seed candidate even when isolated, and never label
+  every out-of-cluster candidate in a tumor image as background. Source:
+  https://arxiv.org/abs/1807.03342 and DOI
+  `10.1109/TPAMI.2018.2876304`.
+- Wan et al.'s C-MIL views early hard instance selection as a non-convex local
+  minimum and optimizes a sequence of smoother losses over spatially and
+  class-related proposal subsets. This supports a continuation schedule inside
+  the PCL-like arm: begin with normalized soft pooling over the OOF-seeded
+  overlap cluster and sharpen only after original/flip cluster stability,
+  rather than introduce a fixed hard-positive threshold at epoch one. It is not
+  a separate unconstrained architecture search. Source:
+  https://openaccess.thecvf.com/content_CVPR_2019/papers/Wan_C-MIL_Continuation_Multiple_Instance_Learning_for_Weakly_Supervised_Object_Detection_CVPR_2019_paper.pdf.
+- Kosugi et al. show that naive top-proposal propagation can select only an
+  object part and can incorrectly label other objects as negative; their
+  context-based and spatially restricted labeling improves OICR. For BTXRD,
+  this justifies preserving uncertain tumor-bag candidates instead of treating
+  them as background. A proposal-versus-context completeness descriptor is a
+  bounded contingency, but no natural-image box context loss or unverified
+  claim of complete tumor coverage is transferred. Source:
+  https://openaccess.thecvf.com/content_ICCV_2019/html/Kosugi_Object-Aware_Instance_Labeling_for_Weakly_Supervised_Object_Detection_ICCV_2019_paper.html.
+- The selector matrix gains one causal row after the independent relational
+  arms and before general self-paced contrastive learning:
+  **S4 OOF proposal-cluster refinement**. A fold-excluded teacher seeds at most
+  the train-only predeclared number of clusters; membership uses frozen mask
+  overlap/containment and teacher-view agreement; each cluster is a normalized
+  small bag with a smooth-to-sharp continuation schedule. S4 must be tested
+  alone on the same cache. Outside-cluster candidates in positive bags remain
+  unlabeled. Only if S4 and a descriptor/relational arm show complementary
+  frozen recoveries may they be combined.
+- S4 remains subject to the same mechanism gate: selected-to-oracle regret must
+  fall in at least two tumor subgroups, overall selected Dice cannot regress,
+  and absolute count/miss association cannot increase. A failure rejects S4
+  but leaves descriptor/selector as the active bottleneck and advances to the
+  next finite row. No proposal, prediction, validation GT/test sample or
+  consumer was produced during this literature audit, and geometry-v3 was not
+  polled or changed.
+
+### OOF proposal-cluster primitive preparation
+
+- Dataset-agnostic S4 primitives were added at
+  `project/models/mask_bag_proposal_clusters.py`, canonical-LF SHA-256
+  `3fe2cab3054156256c03f1887fb3d38c9daf74dc7dc631192afd228c1a637721`.
+  Given externally audited OOF teacher logits, validity and a frozen symmetric
+  overlap matrix, the module greedily seeds a bounded number of disjoint
+  overlap clusters, pools candidates with normalized SmoothMax inside each
+  small bag and then across clusters, and supplies a geometric
+  smooth-to-sharp temperature schedule. Every isolated seed remains a valid
+  singleton cluster; no out-of-cluster negative label is generated.
+- Tests at `tests/test_mask_bag_proposal_clusters.py`, canonical-LF SHA-256
+  `b523bb0a6ce76c8590e86ed0319aef2ec9646dbb7476f7e1382744f315fe8f2d`,
+  specify score/overlap seed behavior, invariance to an identical member
+  duplicate, monotonic continuation and a GT/subgroup-free API.
+  `py_compile` passes; the local no-Torch runtime reports
+  `1 passed, 3 skipped`. These three numerical Torch tests are mandatory on
+  Kaggle before S4 may run.
+- The primitive deliberately cannot assert that teacher logits are cross-fitted
+  by itself. The future runner must first pass
+  `audit_crossfit_training_exclusion`, bind every teacher checkpoint and fold
+  manifest, and serialize cluster seeds/members before optimizer construction.
+  It is not imported by geometry-v3 and no BTXRD prototype, selector,
+  validation prediction or consumer was trained here.
+
+### Flip-equivariant global-plus-four-tile descriptor preparation
+
+- Small remains a selector/descriptor case rather than a support case under
+  the immutable oracle, but its proposal can occupy approximately one or fewer
+  cells on the global `32x32` RAD-DINO grid. L2G reports that local crops expose
+  finer object details than a full image, while SEAM shows that weak
+  localization should remain equivariant under transformations. These
+  mechanisms support a bounded higher-resolution descriptor arm, not a new
+  proposal map. Primary sources:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html
+  and
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html.
+  Mun et al. independently document that aggregate WSSS evaluation obscures
+  poor small-object behavior:
+  https://openaccess.thecvf.com/content/WACV2024/papers/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.pdf.
+- A geometry-only source primitive was added at
+  `project/models/mask_bag_multiview.py`, canonical-LF SHA-256
+  `211d0a365056ab7b7af52454ecc342f88a6f2d71cc99ba4214a75aa0b57225db`.
+  It creates four overlapping corner rectangles in the unpadded source-image
+  frame, measures retained candidate mass in every tile, averages all tiles
+  tied for maximum retention and verifies the exact horizontal-flip tile
+  permutation. Per-tile descriptors are fused with those weights; the global
+  descriptor and WTA candidate masks remain unchanged.
+- The equal-tie average corrects an issue in the earlier prose design.
+  Selecting the lowest-index tile in a tie is deterministic but not
+  flip-equivariant for a centered candidate: the flipped candidate can again
+  choose the lowest index instead of the mirrored view. Equal averaging across
+  all maximal-retention tiles preserves the left/right permutation exactly and
+  costs no additional encoder views because all four tiles are already
+  encoded.
+- The crop fraction is deliberately not selected yet. After the terminal v3
+  cache is accepted, a finite GT-blind train-candidate audit will compare
+  `{0.625,0.75,0.875}` and choose the smallest fraction satisfying both:
+  at least `99%` of all retained training candidates keep at least `50%` of
+  their mask mass in their best tile, and at least `99%` of training
+  candidates whose own class-agnostic area is at most `1%` keep at least
+  `90%`. If none passes, the local-view arm is rejected rather than tuning
+  against validation Dice. Each rectangular tile is independently
+  square-padded before the frozen encoder; its mask uses the exact same
+  continuous content-box projection as geometry-v3.
+- Tests at `tests/test_mask_bag_multiview.py`, canonical-LF SHA-256
+  `714f41f4ce02ce854b94f6ad1c79fc909e16accbd314413700abd2612e17b992`,
+  verify complete rectangular coverage, corner and centered mass behavior,
+  horizontal-flip equivariance of retention/weights, symmetric descriptor
+  fusion and a GT/subgroup-free API. `py_compile` and all five numerical/source
+  tests pass under the bundled NumPy runtime.
+- This remains a separate descriptor arm: it may not be bundled with
+  fractional normalization, normal prototypes, DINO affinity, relational
+  selection or S4 in its first frozen evaluation. No geometry-v3 poll or
+  mutation, validation GT/test access, BTXRD feature extraction, selector
+  training or consumer training occurred.
+
+### Compact DINO-affinity descriptor preparation
+
+- AffinityNet demonstrates that local semantic affinity can propagate weak
+  discriminative evidence using only image-level supervision, and DINO-ECA
+  shows that self-supervised ViT affinity can guide WSSS. TokenCut provides a
+  complementary unsupervised result: cosine relations between self-supervised
+  transformer tokens form a useful object graph, but it also documents a bias
+  toward the largest salient object. These strengths and weaknesses motivate
+  using affinity as a **candidate descriptor only**, not allowing it to grow or
+  replace a mask. Primary sources:
+  https://openaccess.thecvf.com/content_cvpr_2018/html/Ahn_Learning_Pixel-Level_Semantic_CVPR_2018_paper.html;
+  https://openreview.net/forum?id=qipYQAcvVG; and
+  https://openaccess.thecvf.com/content/CVPR2022/html/Wang_Self-Supervised_Transformers_for_Unsupervised_Object_Discovery_Using_Normalized_Cut_CVPR_2022_paper.html.
+- A dataset-agnostic source primitive was added at
+  `project/models/mask_bag_affinity_features.py`, canonical-LF SHA-256
+  `9334d41a8d426fadad8281cd5a6e6af70fa9a8b9cd3a47c2d6334013faa9b38a`.
+  For every frozen candidate and RAD-DINO layer it computes eight explicit
+  statistics: inclusive and off-diagonal proposal cohesion, the corresponding
+  two context statistics, proposal-context cosine affinity, cohesion-minus-
+  boundary affinity, and normalized effective token counts for proposal and
+  context. The output is `24` values for the current three layers.
+- The pairwise mean cosine is computed exactly from the squared norm of a
+  weighted token sum and the squared weights, so the implementation does not
+  materialize a `1024x1024` affinity matrix for each image. Off-diagonal
+  cohesion removes self-similarity; it is zero when a candidate contains only
+  one effective token rather than falsely claiming perfect multi-token
+  coherence. Inclusive cohesion and cross-boundary affinity remain available
+  for precisely that small-candidate case.
+- This is not a reproduction of DINO-ECA. ECA derives a class-aware graph from
+  a natural-image WSSS pipeline, whereas this arm uses frozen RAD-DINO hidden
+  token cosine statistics inside the immutable BTXRD proposal/context
+  geometry. Healthy bone may also be highly coherent, so the affinity arm must
+  be evaluated alone first and may combine with normal prototypes only after
+  complementary frozen recoveries are proven.
+- Tests at `tests/test_mask_bag_affinity_features.py`, canonical-LF SHA-256
+  `829a0d78c7e929046119f3158a02af6bbbc646c9bdc62127b4854c0053260a58`,
+  specify maximal coherent-token affinity, reduced cohesion for orthogonal
+  tokens, empty-context/invalid-candidate behavior and a GT/subgroup-free API.
+  `py_compile` passes; the local no-Torch runtime reports
+  `1 passed, 3 skipped`. These three numerical Torch tests are mandatory on
+  Kaggle before R2 execution.
+- R2 will append these statistics to the accepted v3 descriptor cache without
+  changing candidate validity, ordering, WTA masks or pooling. Its first
+  evaluation is separate from local tiles, prototypes and relational
+  mechanisms. No geometry-v3 poll or mutation, validation GT/test access,
+  descriptor extraction, selector training or consumer training occurred.
+
+### Baseline-preserving auxiliary-descriptor residual
+
+- To prevent a descriptor arm from becoming an uncontrolled full-selector
+  retrain, a common residual adapter was added at
+  `project/models/mask_bag_descriptor_residual.py`, canonical-LF SHA-256
+  `9bb062d4ee1a100ab3bd108dfe52e846bf0df69aca29d58f2cdd2d8adb9eade9`.
+  It independently projects the accepted v3 descriptor and one auxiliary
+  descriptor, models their self/auxiliary/difference/product/cosine relation,
+  and adds a scalar residual to the frozen baseline candidate logit.
+  The last layer is exactly zero-initialized, so initial valid logits are
+  bit-identical to the v3 scorer and invalid candidates remain zero.
+- The first causal runs for normal prototypes (`4` auxiliary values),
+  DINO-affinity (`24`) and local-view evidence must use separate instances of
+  this adapter with the v3 scorer frozen. This both protects the large subgroup
+  from gratuitous scorer drift and makes any learned correction attributable
+  to the new representation. Unfreezing or composing adapters is a later arm
+  requiring independent complementary evidence.
+- Tests at `tests/test_mask_bag_descriptor_residual.py`, canonical-LF SHA-256
+  `b8f36b70f679a419b089e529657e1e6f9436dfa2537c2160e1084e02c32ef6ac`,
+  specify exact initialization identity, the expected zero gradient to earlier
+  layers on the first step while the final layer becomes trainable, invalid
+  candidate masking and a GT/subgroup-free API. `py_compile` passes; the local
+  no-Torch runtime reports `1 passed, 3 skipped`. The three numerical Torch
+  tests are mandatory on Kaggle before any auxiliary arm.
+- Adapter training still uses only clean-train image labels and the frozen MIL
+  loss contract; validation GT cannot choose an epoch, adapter size or
+  optimizer. No geometry-v3 poll/mutation, BTXRD descriptor fit, validation
+  GT/test access, selector training or consumer training occurred.
+
+### Selector-bottleneck persistence rule and frozen ranking diagnostics
+
+- The candidate oracle still exceeds every operational subgroup goal while
+  the selected proposal fails every goal. Therefore candidate support is not
+  reopened as the primary bottleneck. A failure of one or two descriptor
+  mechanisms is evidence against those mechanisms, not evidence that the
+  bottleneck has moved. The descriptor/selector diagnosis remains active until
+  the finite campaign `R0-R2`, `S1-S4`, `T1` has either (a) produced the
+  required regret reduction or (b) supplied a frozen all-arm pattern showing
+  that proposal support, rather than ranking, has become limiting. This rule
+  prevents cycling from selector to another speculative cause after each
+  isolated failure.
+- A fresh primary-source check supports this ordering. SelfPatch improves
+  dense ViT features by enforcing patch-neighbour consistency, so it supports
+  the already prepared affinity/local-descriptor arms rather than a new mask
+  generator:
+  https://arxiv.org/abs/2206.07990. Tang et al.'s weakly supervised RPN learns
+  proposal objectness from image labels, but it addresses proposal generation
+  and its natural-image objectness assumptions are poorly matched to subtle
+  radiographic lesions:
+  https://openaccess.thecvf.com/content_ECCV_2018/html/Peng_Tang_Weakly_Supervised_Region_ECCV_2018_paper.html.
+  Because the immutable BTXRD gallery oracle already passes all goals, that
+  mechanism is deferred. SEAM and the small-object WSSS analysis continue to
+  justify equivariant/local evidence specifically for the small subgroup:
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html
+  and
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+- An evaluation-only primitive was added at
+  `project/models/mask_bag_ranking_diagnostics.py`, canonical-LF SHA-256
+  `c8b95cde03006c78aad624f060684d2f4d3acad2bdfeb6fc42bfc05762abefe8`.
+  Given candidate logits already frozen without validation masks, the
+  post-freeze evaluator can report deterministic/tie-aware oracle rank,
+  top-`1/3/5/10` oracle reach, top-k best achievable Dice, selected-to-oracle
+  and top-k regret, and score-versus-candidate-Dice Spearman correlation.
+  Complete misses remain in every subgroup, while recovered baseline misses
+  and newly lost baseline hits are counted separately.
+- These diagnostics distinguish mechanisms without changing the metric or
+  tuning on validation GT. High top-3/5 reach with poor top-1 points to
+  calibration or relational reranking; poor top-10 reach despite a high
+  gallery oracle points to descriptor failure; a deficit concentrated in
+  small supports the predeclared local-view arm; and a negative/near-zero
+  score-quality correlation across sizes rejects the scoring representation
+  even if one aggregate Dice moves by chance. Future arm prediction freezes
+  must therefore serialize every valid candidate logit and its immutable
+  gallery index, not only the winning logit. The evaluator may read candidate
+  Dice only after that manifest is hash-frozen.
+- Tests at `tests/test_mask_bag_ranking_diagnostics.py`, canonical-LF SHA-256
+  `cfcd7855360ee3c4b3904fbdd0ddc8a5af6ff27f72de9bbd99841d17055b9cc8`,
+  cover exact ranking/regret, oracle ties, invalid candidates, empty bags,
+  recovered-versus-lost misses and the evaluation-only dependency boundary.
+  All six tests pass under the bundled NumPy runtime. The current geometry-v3
+  runner was not changed because its prediction protocol was already frozen;
+  the richer score manifest is mandatory for the next selector arm. No Kaggle
+  poll/mutation, validation GT/test access, training or consumer run occurred.
+- That requirement is now executable rather than prose-only. The GT-free
+  evidence contract at `project/models/mask_bag_score_evidence.py`,
+  canonical-LF SHA-256
+  `02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a`,
+  stores every finite valid candidate logit with its immutable ascending
+  gallery index in a hash-bound NPZ. Its manifest binds each payload to
+  `image_id`, `group_id`, image label, candidate-gallery payload hash and exact
+  candidate count. Validation fails closed on a cohort, provenance, physical
+  hash, dtype/shape/order or argmax mismatch. Equal logits deterministically
+  choose the first gallery candidate.
+- Tests at `tests/test_mask_bag_score_evidence.py`, canonical-LF SHA-256
+  `206d3fecd2688b244a7ba8a1124731df3b8fe436e9559068da60a6ed8ebcddf1`,
+  cover round-trip provenance, stable ties, invalid/non-finite scores, physical
+  tampering and independence from annotation/training loaders. All five tests
+  pass under the bundled NumPy runtime; both new modules also pass
+  `py_compile`. The current frozen geometry-v3 output contract remains
+  untouched.
+
+### R1 objective and train-only finite-selection contract
+
+- The source audit confirmed that the baseline runner's positive-instance term
+  uses the current model's detached argmax as its own positive target. Reusing
+  it to train the R1 adapter would preserve the confirmation mechanism that R1
+  is intended to escape. R1 therefore freezes the complete accepted v3 scorer
+  and trains only a zero-initialized auxiliary residual with image-level
+  SmoothMax BCE, aligned original/flip consistency and a small residual-drift
+  penalty. It generates no positive candidate target. This remains standard
+  bag-label MIL: Ilse et al. formulate MIL learning from a single label assigned
+  to a bag of instances, while the already logged self-guided radiograph and
+  ItS2CLR work explain why uncertain inferred instances require particular
+  caution. Sources:
+  https://proceedings.mlr.press/v80/ilse18a.html,
+  https://openaccess.thecvf.com/content/ACCV2020/html/Seibold_Self-Guided_Multiple_Instance_Learning_for_Weakly_Supervised_Thoracic_DiseaseClassification_and_ACCV_2020_paper.html,
+  and
+  https://openaccess.thecvf.com/content/CVPR2023/html/Liu_Multiple_Instance_Learning_via_Iterative_Self-Paced_Supervised_Contrastive_Learning_CVPR_2023_paper.html.
+- The executable objective is
+  `project/models/mask_bag_residual_objective.py`, canonical-LF SHA-256
+  `7b176c955408fb14b59e0c901243be12791f1d68540484ab06e99f2ba14b92df`.
+  It detaches both original and flip base logits inside the objective, so the
+  v3 freeze is enforced even if a caller accidentally includes the base scorer
+  in an optimizer. Invalid candidates contribute to neither pooling,
+  consistency nor drift. Its source contains no argmax, inferred instance
+  target, segmentation loader or candidate-quality input.
+- Tests at `tests/test_mask_bag_residual_objective.py`, canonical-LF SHA-256
+  `a439ff2a1c26e926160beb2b3354e0bbda59bb88c05f154366ec82fc97f0d826`,
+  verify the source boundary, zero-residual identity term, invalid-candidate
+  exclusion, residual gradients and absence of a base-logit gradient. Local
+  `py_compile` passes and the no-Torch runtime reports
+  `1 passed, 3 skipped`; the three numerical Torch tests are mandatory in the
+  post-v3 Kaggle preflight.
+- R1 keeps the already frozen finite set `K={8,16,32}` and selects it using
+  five group-held-out clean-train folds only. To reduce model-selection
+  overfitting, the chosen value is the smallest K whose mean OOF image BCE is
+  within one standard error of the lowest-BCE K. Cawley and Talbot show that
+  model-selection overfitting can be comparable to apparent differences
+  between algorithms, motivating this conservative finite rule:
+  https://www.jmlr.org/papers/v11/cawley10a.html. The one-standard-error rule
+  explicitly prefers the simpler model when cross-validated errors are not
+  clearly separated. It is used here only for image-label training selection,
+  never for reporting validation localization.
+- Because the terminal v6 audit exposed a candidate-count shortcut, K is
+  ineligible if the magnitude of its all-OOF candidate-count versus
+  bag-probability Spearman correlation exceeds the frozen baseline magnitude
+  by more than `0.02`. If all K values fail, R1 is rejected without reading a
+  validation mask. The rule is implemented at
+  `project/models/mask_bag_oof_selection.py`, canonical-LF SHA-256
+  `4f3bacb75ad10b6751f90fbe8b4321d48db7ec03192382de0fe7eff82b460ff9`.
+  Tests at `tests/test_mask_bag_oof_selection.py`, canonical-LF SHA-256
+  `bcc106f96f5392931896bdfb8422699abe200fe516d7056d067d2db53628f856`,
+  cover the one-SE choice, count guard, clear improvement, fail-closed
+  behavior, order independence and absence of segmentation/subgroup inputs;
+  all six tests pass under the bundled NumPy runtime.
+- This prepares R1's causal loss and model-selection boundary but does not
+  select K or fit a prototype before the accepted post-v3 cache exists. It
+  changes neither the running geometry-v3 checkout nor its frozen protocol.
+  No Kaggle poll, validation GT/test access, selector fit or consumer training
+  occurred.
+
+### Hash-bound selector-development cache format
+
+- A reusable selector campaign is scientifically useful only if every arm sees
+  the exact accepted v3 descriptors, valid-candidate indices and gallery
+  geometry. Otherwise a changed cache could masquerade as a better selector.
+  The cache format is now implemented at
+  `project/models/mask_bag_selector_cache_io.py`, canonical-LF SHA-256
+  `24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93`.
+  This is provenance/infrastructure rather than a new scientific mechanism; it
+  operationalizes the already sourced representation/relational campaign.
+- Each physical NPZ contains aligned original/flip fp16 descriptors, ascending
+  immutable candidate-gallery indices, exact family IDs, four position-free
+  shape features, the original component/prompt/source/fallback provenance,
+  and symmetric float32 IoU/containment/relative-distance matrices. Training
+  records are forbidden from retaining candidate masks
+  after this graph geometry has been computed. Validation records retain only
+  exact bit-packed immutable WTA masks, because future frozen candidate logits
+  must still be converted into prediction maps before post-freeze evaluation.
+- The manifest binds every record to split, image/group identity, image label,
+  physical candidate-payload SHA-256, kept candidate count, descriptor
+  dimension, mask-retention flag and physical cache hash. The loader rechecks
+  hashes, schema, dtype, finite values, candidate order, family validity,
+  geometry symmetry/range and packed-mask byte count. Thus even a hash-valid
+  but structurally malformed record fails closed.
+- The same module now supplies a full manifest validator for arm training. It
+  requires independently expected train/validation image, group, image-label
+  and candidate-payload identities, then opens and structurally validates
+  every physical record rather than trusting the manifest hash alone.
+- Tests at `tests/test_mask_bag_selector_cache_io.py`, canonical-LF SHA-256
+  `00907cd4570205df8fa49cbc7df87dbb1322a97377e83bfddef17d461182b351`,
+  cover validation round-trip, mandatory train mask deletion, physical
+  tampering, structurally malformed payloads, full physical-manifest
+  validation, split-specific boundaries, candidate ordering and absence of
+  GT/subgroup APIs. All eight
+  tests pass under the bundled NumPy runtime and both files pass
+  `py_compile`.
+- This format does not by itself authorize a cache. The future post-v3 builder
+  must still bind the terminal prediction freeze/checkpoint and reproduce all
+  `371` selected indices and final map hashes before writing the cache freeze.
+  No cache was produced, Kaggle status polled, validation GT/test accessed or
+  selector/consumer trained during this source preparation.
+
+### Post-v3 cache-builder source readiness
+
+- The cache production runner is now prepared at
+  `project/build_mask_bag_selector_cache.py`, canonical-LF SHA-256
+  `a17a7fcf1d9849c65fd2bda14e0ecd23947bfa3cdcd49618367ae2e961fc4992`.
+  Before RAD-DINO extraction it verifies the split, every physical candidate
+  payload through both manifests, the frozen model snapshot, the direct
+  geometry-v3 prediction freeze, checkpoint, prediction manifest and all `371`
+  physical prediction-map hashes. It is hard-bound to input `448`, projection
+  `128/seed42`, three frozen layers, candidate cap `81`, the baseline random
+  projection hash and two actual Tesla T4 devices.
+- After extracting the corrected descriptors once, the runner loads the
+  accepted v3 checkpoint and invokes the same prediction writer on the rebuilt
+  validation cache. Cache serialization cannot begin until all `371` selected
+  gallery indices and final fp16 map SHA-256 values match exactly; selected
+  candidate logits, bag logits and probabilities must additionally agree
+  within the fixed `5e-6` numerical tolerance. This detects changes in
+  geometry, candidate validity/order, TTA alignment, scorer state or WTA map
+  construction before selector development can proceed.
+- Only after reproduction does it save train/validation cache records.
+  Component IDs, prompt modes, proposal-source IDs and fallback flags are
+  reopened from the already hash-verified candidate NPZs and sliced by the
+  exact reproduced kept indices. Train masks are discarded after graph/shape
+  construction; validation masks are bit-packed. The final cache freeze binds
+  the terminal v3 freeze/checkpoint, source/protocol/split/model/projection,
+  four candidate/pseudo manifests, all cache records and reproduction audit.
+- Static tests at `tests/test_build_mask_bag_selector_cache.py`, canonical-LF
+  SHA-256
+  `610c52771e761571efe7d237bac80f45536000aa2fb4048b09029fd15c810cb5`,
+  verify annotation/test isolation, pre-extraction input verification,
+  reproduce-before-serialize ordering, complete provenance, split-specific
+  mask handling and T4x2/frozen-geometry constraints. All six static tests and
+  eight cache-I/O numerical tests pass; all four files pass `py_compile`.
+- The runner remains source-only until the monitor reports terminal
+  geometry-v3 and that output passes its independent audit. No cache was
+  generated, Kaggle status polled, validation GT/test accessed, selector fit or
+  consumer trained here.
+
+### Common prediction-first evaluator for selector arms
+
+- The campaign now has a common evaluator at
+  `project/evaluate_mask_bag_selector_arm.py`, canonical-LF SHA-256
+  `ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084`.
+  Before importing the segmentation dataset or opening the previous
+  GT-derived baseline rows, it verifies the split, selector-cache freeze and
+  every physical validation cache record, the arm freeze, all `371` prediction
+  maps, all-candidate score manifest/payloads, exact score-to-cache gallery
+  indices, selected winner/logit/TTA semantics, and the direct accepted
+  geometry-v3 baseline freeze/manifest/maps. This preserves the
+  prediction-first boundary for every R/S/T arm.
+- After the freeze boundary, candidate Dice is computed from the immutable
+  bit-packed gallery and is never fed back to training or arm choice. For the
+  complete `184/94/72/18` tumor cohort, the evaluator reports selected Dice,
+  candidate oracle, deterministic oracle index/rank, top-`1/3/5/10` oracle
+  reach and best Dice, selected/top-k regret, score-versus-candidate-Dice
+  Spearman correlation, complete misses, recovered baseline misses and newly
+  lost hits. It additionally confirms that the recomputed gallery oracle
+  matches the frozen geometry-v3 per-image oracle.
+- The evaluator distinguishes two outcomes:
+  - `MECHANISM_PASS` requires selected-to-oracle regret reduction in at least
+    two tumor-size subgroups, no overall selected-Dice regression, and no
+    increase in the absolute overall candidate-count/miss association. Such an
+    arm may be retained only for the predeclared complementary composition.
+  - `OPERATIONAL_PASS` additionally requires all four current Dice goals, all
+    oracle goals, overall paired complete-group bootstrap CI95 lower bound
+    above zero, no tumor-subgroup mean decrease, no complete-miss increase and
+    image AUROC at least `0.75`. Only this status sets
+    `consumer_authorized=true`; `MECHANISM_PASS` alone cannot train a consumer.
+  A failed arm advances to the next finite selector row without changing the
+  selector/descriptor bottleneck.
+- Static tests at `tests/test_evaluate_mask_bag_selector_arm.py`,
+  canonical-LF SHA-256
+  `21fafe74740588ae02a897e387a639a7723575334ce2ff4fe6df4fcd36aa8e29`,
+  verify the single GT boundary, all-candidate/cache binding, gallery-index
+  mapping, complete ranking diagnostics, distinct mechanism/operational
+  statuses, fixed goals/cohort/bootstrap and consumer/test locks. All six
+  tests pass; the evaluator and tests pass `py_compile`. Numerical paths that
+  require Torch and frozen dataset artifacts remain mandatory in the future
+  Kaggle preflight.
+- No selector arm was evaluated, Kaggle status polled, validation GT/test
+  accessed or consumer trained while preparing this evaluator.
+
+### R1 normal-prototype residual training core
+
+- R1 now has one shared fit/score implementation at
+  `project/models/mask_bag_normal_residual_training.py`, canonical-LF SHA-256
+  `8a2ca06585a2e718a29cda8c93f54f8c42743fb56f45a5ea134cad92cfcf5703`.
+  The same functions will be used inside every group-held-out K-selection fold
+  and for the final clean-train fit, preventing an implementation change
+  between model selection and the frozen arm.
+- The prototype bank uses only image-label-normal training bags. Original and
+  horizontal-flip descriptors share the same image/family identity in the
+  hierarchical weights, so adding the second view does not double an image's
+  influence. Every image has equal total mass, then every immutable proposal
+  family within that image, then every candidate/view within the family. This
+  implements the conservative normal-prototype transfer already motivated by
+  TPMIL rather than copying its full pathology-specific architecture:
+  https://proceedings.mlr.press/v227/yang24d.html.
+- Each candidate receives only the four predeclared normality features:
+  nearest and soft-min normal-prototype distance, assignment entropy and
+  top-two margin. The zero-initialized residual adapter is trained for fixed
+  final-only epochs with image-level normalized SmoothMax BCE, original/flip
+  consistency and residual-drift regularization. The complete v3 scorer is
+  put in eval mode, marked `requires_grad=false`, evaluated under inference
+  mode and detached again inside the objective. No argmax, hard positive
+  candidate, segmentation quality or subgroup enters the fit. The bag-label
+  supervision remains the MIL setting formalized by Ilse et al.:
+  https://proceedings.mlr.press/v80/ilse18a.html.
+- The scoring path returns every candidate logit in its original aligned cache
+  order plus the normalized SmoothMax bag logit/probability. It performs the
+  exact mean of original and aligned-flip logits required by the all-candidate
+  evidence and common evaluator contracts.
+- Tests at `tests/test_mask_bag_normal_residual_training.py`, canonical-LF
+  SHA-256
+  `ae36fe80615571ddecad18aed09a1d6a05e31bf69a013c59f109b162101d046f`,
+  cover the no-confirmation/no-GT source boundary, flip-symmetric prototype
+  weighting, bit-identical frozen scorer parameters with a learned residual,
+  and complete ordered candidate scoring. Local `py_compile` passes and the
+  no-Torch runtime reports `1 passed, 3 skipped`; all three numerical Torch
+  tests are mandatory in the future Kaggle preflight.
+- This is source readiness only. No prototype bank or adapter was fitted,
+  Kaggle status polled, validation GT/test accessed or consumer trained.
+
+### R1 group-excluded OOF orchestration core
+
+- The fold-level R1 orchestration is implemented at
+  `project/models/mask_bag_normal_crossfit.py`, canonical-LF SHA-256
+  `30ea542734f9223942faf9f8ba29a4629089af2c2c3fb22e42b43e1adc1cb9f4`.
+  Each invocation fits exactly one `(K, heldout_fold)` unit: it first proves
+  that the training and held-out group sets are disjoint, fits the normal bank
+  only on the training folds, enriches training and held-out descriptors using
+  that bank, trains the residual only on training image labels and scores every
+  held-out image once. The derived deterministic seed is
+  `base_seed + 1000*K + fold`.
+- The fold artifact includes training/held-out group inventories, prototype
+  bank/audit, adapter state, exact objective/training config, final-only
+  history, and held-out image label/logit/probability/BCE/candidate-count rows.
+  It contains no candidate target or localization quality. Keeping a
+  fold-level callable also allows the future Kaggle runner to dispatch
+  independent folds across the two T4 devices without changing the scientific
+  operation.
+- The assembler requires every frozen fold exactly once, calls the existing
+  `audit_crossfit_training_exclusion`, rejects a duplicate/missing image or
+  identity/fold mismatch, and produces the five held-out fold BCE values plus
+  the all-OOF candidate-count versus bag-probability Spearman correlation
+  consumed by the already frozen one-standard-error/count-guard K selector.
+  Thus no in-fold prediction can enter model selection.
+- Tests at `tests/test_mask_bag_normal_crossfit.py`, canonical-LF SHA-256
+  `15636584eea0b8e651931858f66b3666b3f6b3ba997bbd372e08d3bb532c37f1`,
+  cover the group-exclusion/no-GT source boundary, complete two-fold OOF
+  coverage with a bit-identical base scorer, and missing-fold rejection.
+  Local `py_compile` passes and the no-Torch runtime reports
+  `1 passed, 2 skipped`; both numerical Torch tests are mandatory in the
+  future Kaggle preflight.
+- This module only prepares the group-safe computation. No fold, prototype,
+  adapter or OOF prediction was fitted; geometry-v3 was not polled and no
+  validation GT/test or consumer was accessed.
+
+### Complete R1 T4x2 runner readiness
+
+- The complete R1 execution runner is prepared at
+  `project/run_mask_bag_normal_prototype_arm.py`, canonical-LF SHA-256
+  `5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f`.
+  It verifies the terminal selector-cache freeze, baseline checkpoint, frozen
+  train/validation split and every physical cache record before assigning a
+  fold or fitting any prototype. The exact known five-fold cohort
+  `596/596/596/596/597` with normal/tumor counts
+  `298/298`, `298/298`, `299/297`, `299/297`, `299/298` and group counts
+  `196/196/197/197/198` is required.
+- All `15` finite `(K in {8,16,32}, fold in {0..4})` jobs are assigned
+  deterministically across two real T4 devices as `8/7` independent jobs.
+  Adapter initial states are created sequentially on CPU with the exact
+  derived seeds before two worker threads start; workers only load those states
+  and therefore cannot race through the global RNG. CUDA deterministic
+  algorithms and `CUBLAS_WORKSPACE_CONFIG=:4096:8` are required. Each worker
+  owns an independent frozen v3 scorer on its device.
+- Every fold writes its prototype bank, adapter checkpoint, train/held-out
+  group inventories, fit history and held-out image predictions with physical
+  hashes. The assembled all-OOF evidence for each K is passed to the frozen
+  one-standard-error and `baseline absolute count-probability Spearman + 0.02`
+  guard. The baseline magnitude is a required protocol-bound scalar from the
+  accepted geometry-v3 GT-blind prediction manifest; it cannot be recomputed
+  from validation masks.
+- Only the selected K is refit on the complete clean-train split. The runner
+  then freezes all `371` validation all-candidate logits, exact gallery
+  indices, prediction maps and manifests. It saves the final prototype and
+  residual checkpoints plus a prediction freeze binding source/protocol,
+  split/cache/baseline, every OOF artifact, K selection, final fit and score/
+  map manifests. It imports no segmentation dataset and contains no validation
+  target, candidate quality, consumer or test path.
+- Static/core tests at
+  `tests/test_run_mask_bag_normal_prototype_arm.py`, canonical-LF SHA-256
+  `2655563f47214a598837762af237bf6bcc8e23f5b837e13ec9e10704bda76470`,
+  plus the two updated core suites report `8 passed, 5 skipped` locally.
+  The skipped tests require Torch and are mandatory on Kaggle before execution;
+  all six changed/new files pass `py_compile`.
+- The runner is not launched until geometry-v3 is terminal, independently
+  audited, and its reproducible selector cache is accepted. No R1 fit,
+  validation prediction, Kaggle poll, validation GT/test access or consumer
+  training occurred here.
+
+### Persistent descriptor/selector campaign contract
+
+- The descriptor/selector diagnosis is now a campaign-level conclusion, not a
+  disposable explanation for one arm. The frozen gallery oracle reaches
+  `0.4090755342/0.2227494852/0.5941470844/0.6418253674`
+  overall/small/medium/large and exceeds every current goal, whereas the v6
+  selected result is only
+  `0.2178991820/0.0781967787/0.3469906970/0.4310901171`.
+  Therefore candidate support is sufficient under the present goal and the
+  active causal target remains candidate representation, scoring, aggregation
+  and selection. A failed selector arm rejects only its mechanism; it does not
+  reopen proposal generation or replace the bottleneck hypothesis.
+- The common endpoint for every remaining arm is the same selected-to-oracle
+  regret on the immutable gallery, accompanied by top-k oracle reach,
+  score-versus-candidate-Dice rank correlation, complete misses and
+  candidate-count/miss association. This makes the experiments cumulative:
+  each row must explain which part of the same regret it can reduce. An arm
+  with a small-lesion regression is never accepted as a standalone solution;
+  at most it can be retained as an orthogonal component for the predeclared C1
+  composition, which must itself prove no subgroup decrease.
+- The finite mechanism sequence remains fixed unless an earlier arm achieves
+  the full operational gate:
+  1. **R1 normal prototypes** exploits the reliable MIL fact that every
+     instance in an image-label-negative bag is negative. Soft assignment to
+     several normal prototypes can expose candidates that resemble normal
+     anatomy without inventing positive instance labels. Its strength is
+     conservative negative evidence; its weakness is that normal anatomy is
+     diverse and a prototype bank can still encode acquisition/anatomy
+     shortcuts. TPMIL supports soft assignment of all instances to prototypes
+     and distance-based interpretability:
+     https://proceedings.mlr.press/v227/yang24d.html.
+  2. **R2 frozen RAD-DINO local affinity** changes representation rather than
+     proposals. Local token correspondence and within-mask/near-boundary
+     contrast are intended to separate a small lesion mask from a
+     visually-similar anatomical mask. Its strength is dense self-supervised
+     structure; its weakness is natural-image-to-radiograph domain shift, so
+     the v3 scorer remains a frozen residual baseline rather than being
+     replaced. DINOv2 reports transferable patch-level features:
+     https://arxiv.org/abs/2304.07193. WeCLIP independently supports a frozen
+     foundation backbone plus a lightweight trainable decoder/refinement
+     design in image-label-only WSSS:
+     https://openaccess.thecvf.com/content/CVPR2024/html/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.html.
+  3. **S1 family-balanced SmoothMax** changes aggregation only. Equalizing
+     proposal-family mass directly targets the measured candidate-count
+     shortcut and prevents a prolific prompt family from winning merely by
+     multiplicity. Its strength is causal specificity and low capacity; its
+     weakness is that it cannot repair an inseparable descriptor.
+  4. **S2 critical-instance relation** uses both an instance-scoring stream and
+     similarity from the critical instance to all other candidates. This can
+     recover support distributed over related proposals, but an incorrect
+     critical instance can propagate confirmation error. The mechanism is
+     adapted from DSMIL, not treated as an architecture-name guarantee:
+     https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_CVPR_2021_paper.html.
+  5. **S3 same-family graph smoothing** tests whether overlap/containment and
+     descriptor agreement provide useful relational consensus. Its strength
+     is explicit candidate dependence; its weakness is over-smoothing between
+     nested anatomical distractors. TransMIL motivates correlated rather than
+     independent-instance MIL, while the BTXRD arm stays a smaller,
+     provenance-constrained graph:
+     https://proceedings.neurips.cc/paper/2021/hash/10c272d06794d3e5785d5e7c5356e9ff-Abstract.html.
+  6. **S4 group-excluded OOF proposal clusters** learns recurring proposal
+     types from clean-train descriptors only. It can distinguish stable lesion
+     and anatomy modes that one image cannot reveal; its main risk is learning
+     group/acquisition shortcuts, hence all cluster features and selection are
+     group-held-out before the final fit.
+  7. **T1 self-paced confirmation** is delayed until R/S evidence yields a
+     stable, cross-fitted high-confidence seed. It may refine the descriptor
+     beyond fixed negative prototypes, but has the highest confirmation-bias
+     risk and therefore cannot be the first repair. ItS2CLR reports
+     self-paced pseudo-instance refinement for medical MIL and explicitly
+     motivates controlling pseudo-label reliability:
+     https://openaccess.thecvf.com/content/CVPR2023/html/Liu_Multiple_Instance_Learning_via_Iterative_Self-Paced_Supervised_Contrastive_Learning_CVPR_2023_paper.html.
+- Small lesions remain a required selector diagnostic rather than a reason to
+  jump back to proposal generation. The WACV study *Small Objects Matters in
+  Weakly-Supervised Semantic Segmentation* independently finds that standard
+  aggregate WSSS evaluation hides pronounced small-object failures and
+  motivates size-stratified evaluation:
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+  In this project the immutable gallery already proves small-goal support
+  (`0.2227494852 > 0.17895493`); the next question is specifically whether the
+  selector ranks those supported small masks, not whether another gallery can
+  be generated.
+- `C1` may combine only mechanisms that independently satisfy the common
+  mechanism gate and improve different regret slices; there is no unbounded
+  architecture search. Proposal generation is reconsidered only if a future
+  predeclared goal exceeds the frozen gallery oracle, or an independently
+  audited gallery change raises the oracle under a separate protocol. Neither
+  condition currently holds. This contract prevents one- or two-arm failures
+  from causing another diagnostic loop.
+
+### R2 affinity-cache integration and residual-training readiness
+
+- Audit of the prepared selector cache exposed an execution gap: the compact
+  affinity-statistic primitive existed, but the cache builder retained only
+  mean-pooled descriptors. Running R2 from that cache would either require a
+  second complete RAD-DINO pass or risk rebuilding proposal/context geometry
+  differently from v3. The cache contract is therefore upgraded before any
+  cache exists; this changes no running geometry-v3 artifact.
+- `project/models/rad_dino_mask_bag_mil.py`, canonical-LF SHA-256
+  `0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67`,
+  now exposes one shared `proposal_context_grid_weights` primitive. Both the
+  accepted mean descriptor and R2 affinity summaries use the same area
+  projection, `minimum_grid_mass`, content mask, dilation radius, validity and
+  padding exclusion. The refactor preserves the original arithmetic order;
+  the future cache job must still reproduce all 371 v3 winners/map hashes
+  before serialization, so source equivalence is not accepted on inspection
+  alone.
+- `project/run_rad_dino_mask_bag_mil_probe.py`, canonical-LF SHA-256
+  `0a220933343212dd3f4cc349f459db54b2b492d04240a7aa28fb85c475d54ae8`,
+  can now compute the fixed 24-value affinity summary during the same encoder
+  pass that creates each original/flip descriptor. It asserts exact equality
+  of descriptor and affinity kept indices and applies the corresponding
+  square-frame flip to both candidate and content masks. This avoids a second
+  3,352-image RAD-DINO extraction and makes T4x2 useful at the actual
+  extraction bottleneck. Baseline descriptors retain the original CPU
+  arithmetic required for exact v3 reproduction, while the additional
+  affinity reductions run on the encoder output device rather than adding a
+  large CPU-only matrix workload.
+- Selector-cache schema v2 stores aligned fp16
+  `affinity_features/flipped_affinity_features` for every candidate and binds
+  `affinity_dim=24` in every manifest row. The loader physically validates
+  dtype, finiteness, original/flip shape and candidate alignment. R1 now also
+  fails closed unless the shared accepted cache contains these fields; this
+  ensures R1 and R2 consume one identical gallery/cache rather than
+  experiment-specific caches.
+- The R2 fit/score core is prepared at
+  `project/models/mask_bag_affinity_residual_training.py`, canonical-LF
+  SHA-256
+  `d7c3054f80bc89780eb2c9c56a3c6fb43655c12dd717c5ee223f7f9adf81d95f`.
+  It requires exactly 24 aligned cached features, retains the complete frozen
+  v3 scorer and trains only the zero-initialized auxiliary residual using
+  image-level SmoothMax BCE, aligned original/flip consistency and residual
+  drift. There is no argmax, inferred positive candidate, segmentation target,
+  subgroup or validation-quality input. R2 therefore tests whether local
+  token cohesion/boundary contrast improves ranking, not whether a second
+  selector can relearn the gallery.
+- This mechanism follows the already frozen AffinityNet/DINO-ECA/TokenCut
+  rationale:
+  https://openaccess.thecvf.com/content_cvpr_2018/html/Ahn_Learning_Pixel-Level_Semantic_CVPR_2018_paper.html,
+  https://openreview.net/forum?id=qipYQAcvVG, and
+  https://openaccess.thecvf.com/content/CVPR2022/html/Wang_Self-Supervised_Transformers_for_Unsupervised_Object_Discovery_Using_Normalized_Cut_CVPR_2022_paper.html.
+  Its anticipated strength is candidate-internal and across-boundary structure
+  absent from mean descriptors; its explicit weakness is that healthy bone can
+  also be highly coherent. Hence R2 remains separate from R1 normality,
+  relational pooling and proposal generation, and must pass the common
+  selected-to-oracle regret gate on its own.
+- New R2 tests at
+  `tests/test_mask_bag_affinity_residual_training.py`, canonical-LF SHA-256
+  `0b231a2495c4e54a013ec1749872735ae9852c9feb1a858b0fa622d76bab0012`,
+  plus updated geometry/cache/R1 suites report `26 passed, 9 skipped` under
+  the local bundled NumPy runtime. The skips require Torch and remain mandatory
+  in the post-v3 Kaggle preflight. All changed/new Python files pass
+  `py_compile` and `git diff --check` has no error.
+- This is source/cache readiness, not an R2 result. No cache, affinity feature,
+  adapter, validation prediction or consumer was produced; validation GT and
+  BTXRD test were not accessed, and Kaggle status was not polled outside the
+  scheduled monitor.
+
+### Complete R2 prediction-first runner readiness
+
+- The isolated R2 runner is prepared at
+  `project/run_mask_bag_affinity_residual_arm.py`, canonical-LF SHA-256
+  `cfec06dd97d18156347fcea7079be6c9b9d9246d1b2647751e721119bfbe1d9d`.
+  It reuses the physically verified cache/baseline loading and all-candidate
+  evidence writer from the R1 runner, but it does not fit a normal prototype
+  or import any R1 scientific feature. Before training it verifies the cache
+  freeze, split, baseline checkpoint, all physical train/validation records and
+  exact 24-value affinity alignment for every candidate.
+- R2 has one predeclared final-only fit: 16 epochs, batch 16, AdamW
+  `3e-4/1e-4`, hidden dimension 128, seed 42, bag temperature 0.20,
+  original/flip consistency 0.10 and residual drift `1e-3`. There is no epoch
+  search, early stopping, validation loss or alternate hyperparameter arm.
+  The complete v3 scorer is frozen; the only learned parameters are the
+  zero-initialized affinity residual. This avoids converting one scientific
+  mechanism into an implicit validation architecture search.
+- Runtime requires exactly two real Tesla T4 devices and deterministic CUDA
+  controls. The small adapter fit uses one T4, where multi-device gradient
+  synchronization would add more overhead and nondeterministic surface than
+  useful throughput. After the fixed fit, two independent frozen
+  baseline/adapter replicas score interleaved validation shards of `186/185`
+  images concurrently. Results are joined back to the immutable 371-row cache
+  order and fail closed on a missing or duplicated image.
+- The arm writes a hash-bound adapter checkpoint, final-only history, all 371
+  candidate-logit payloads, score manifest, WTA probability maps, prediction
+  manifest and prediction freeze before the common evaluator may import
+  validation segmentation. The freeze explicitly records
+  `training_labels=image_level_only`,
+  `epoch_selection=fixed_final_epoch_only`,
+  `validation_gt_read=false`, `consumer_trained=false` and
+  `test_evaluated=false`.
+- Static tests at
+  `tests/test_run_mask_bag_affinity_residual_arm.py`, canonical-LF SHA-256
+  `4ab40011239ffc18c9972e969152b6cc38cda5f85ad76330f3c26a050d8ed38a`,
+  verify source isolation, cache-before-fit ordering, the single finite fit,
+  T4x2 complete scoring and prediction-before-evaluation freeze. Together with
+  the R1/R2 core suites they report `13 passed, 5 skipped`; skipped numerical
+  Torch paths remain mandatory in Kaggle preflight. All files pass
+  `py_compile`.
+- The runner is not launched before terminal geometry-v3 audit and acceptance
+  of the shared reproducible cache. Its eventual result is judged only by the
+  common selected-to-oracle regret mechanism gate; a failure rejects affinity
+  cohesion as a mechanism and advances to S1/S2, without changing the
+  descriptor/selector bottleneck. No Kaggle status poll, validation GT/test
+  access or consumer training occurred here.
+
+### S1 matched family-balanced pooling readiness
+
+- A causal audit refined the S1 design. Recomputing only a family-balanced bag
+  probability cannot change candidate ranking, while training a new residual
+  head can. Attributing a resulting Dice change directly to family balance
+  would therefore confound the new head/additional epochs with the pooling
+  mechanism. S1 is now a matched two-arm experiment: an ordinary normalized
+  SmoothMax residual control and a family-balanced SmoothMax residual receive
+  the exact same frozen descriptors/base scorer, architecture, initial state,
+  batches, optimizer, epochs and loss weights. The sole scientific change is
+  the bag pooling operation during training and final bag scoring.
+- The paired training core is
+  `project/models/mask_bag_pooling_residual_training.py`, canonical-LF
+  SHA-256
+  `8deaee980bd639fddc309eab9942147c8b0be8538951298e6e3c4fecb38c063f`.
+  A descriptor-only residual MLP has an exactly zero-initialized final layer,
+  so both arms begin with candidate logits identical to v3. The base logits
+  are detached inside the objective. Both arms use only image-level BCE,
+  aligned original/flip consistency and residual drift; there is no argmax,
+  positive-instance target, segmentation quality or subgroup input.
+- The standard arm uses the existing normalized SmoothMax across all valid
+  candidates. The family arm first applies the same normalized SmoothMax
+  within each immutable `(proposal source, prompt mode, component)` family,
+  then across families. An identical duplicate within one family is therefore
+  neutral instead of increasing that family's effective representation.
+  Ilse et al. motivate permutation-invariant learned aggregation for
+  image-label MIL:
+  https://proceedings.mlr.press/v80/ilse18a.html.
+  Deep Sets provides the general invariant-set-function foundation:
+  https://proceedings.neurips.cc/paper_files/paper/2017/hash/f22e4747da1aa27e363d86d40ff442fe-Abstract.html.
+  The BTXRD hierarchy is a bounded adaptation to the measured proposal-count
+  shortcut, not a claim that proposal families are latent tumor classes.
+- The complete paired runner is
+  `project/run_mask_bag_family_balanced_pair.py`, canonical-LF SHA-256
+  `e8bc06a7e2e3bd75de2f34fe32823e3d92e6237d6fdbcb1498ff4b8f991d6f59`.
+  It verifies the shared cache/baseline and every physical record before
+  training. One CPU-created initial state is physically frozen and supplied to
+  both workers. Standard trains on T4:0 and family-balanced on the identical
+  T4:1 concurrently. Before fitting, each device scores the same eight-image
+  probe from that shared zero-residual state; execution fails if maximum
+  candidate-logit disagreement exceeds `5e-6`, preventing a device difference
+  from masquerading as the pooling effect.
+- Both arms use the same fixed final-only contract: 16 epochs, batch 16,
+  AdamW `3e-4/1e-4`, hidden 128, seed 42, bag temperature 0.20,
+  consistency 0.10 and drift `1e-3`. Each independently freezes all 371
+  candidate-score payloads, maps, manifests, checkpoint and history before a
+  pair-level freeze is written. The pair freeze records all matched variables,
+  the initial-state hash, cross-device probe delta and
+  `sole_changed_variable=standard_vs_family_balanced_bag_pool`.
+- S1 promotion is stricter than comparing family-balanced directly with v3.
+  The family arm must first improve the frozen ranking/mechanism diagnostics
+  over its matched standard residual control; otherwise any improvement shared
+  by both is residual-head/extra-training evidence, not family/count evidence.
+  It must still satisfy the common no-overall-regression, subgroup-regret and
+  count/miss guard relative to v3. Its strength is direct control of proposal
+  multiplicity; its weakness is that it cannot repair an affinity/descriptor
+  separability failure.
+- Tests at
+  `tests/test_mask_bag_pooling_residual_training.py`, canonical-LF SHA-256
+  `c1858d832b83a7f1a148cb2bc57a1dd5fb8c4c0f8a6ba046635ddea5eaa39e71`,
+  and
+  `tests/test_run_mask_bag_family_balanced_pair.py`, canonical-LF SHA-256
+  `4aba83a50434cc35481937e1a673a84650efc9505d608cfff9117d7ecf395bb7`,
+  verify zero-residual identity, standard/family objective separation, frozen
+  base and complete candidate scoring, matched variables, T4x2 execution,
+  cross-device guard and prediction-first freezes. The focused suites report
+  `7 passed, 7 skipped`; numerical Torch paths remain mandatory on Kaggle.
+- S1 remains source-only until geometry-v3 and the common cache pass their
+  independent audits. No S1 model/prediction was produced, Kaggle was not
+  polled outside its scheduled monitor, validation GT/test were not accessed
+  and no consumer was trained.
+
+## 2026-07-29 - Geometry-v3 version 1 preflight test-fixture error
+
+- The single scheduled status check found Kaggle kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-v3`, version `1`, at terminal
+  `ERROR`. Direct output was downloaded to a separate ignored temporary
+  directory before diagnosis. The wrapper stopped in the focused preflight
+  with `32 passed, 1 failed`; candidate generation, RAD-DINO extraction,
+  optimizer construction, validation prediction, validation-GT evaluation and
+  test access were never reached.
+- The only failure was
+  `test_project_then_square_flip_preserves_asymmetric_padding_geometry`.
+  Its fixture created a wide `3x6` source with vertical square padding, then
+  changed the vertical content box while applying a horizontal mask flip.
+  Horizontal flipping does not mirror vertical padding, so the expected tensor
+  encoded the wrong transform. The production geometry is unchanged:
+  `content_box=(x0,y0,x1,y1)` is verified by the projection implementation and
+  callers, and the runner projects once into the square frame before applying
+  its horizontal flip.
+- The fixture is corrected to a tall `6x3` source with real asymmetric
+  horizontal padding: original box `(1,0,4,6)` and mirrored box
+  `(2,0,5,6)`. This now tests the intended odd-padding horizontal
+  flip-equivariance contract. The production model, projection arithmetic,
+  gallery, loss, optimizer, epoch budget, seed, evaluator, goals and subgroup
+  definitions are unchanged. In the isolated geometry-v3 execution lineage,
+  canonical-LF test SHA-256 changes from
+  `b563dd7c91aa47c939dce1c95db23344548799ba85af1dd53be13bf30643df0c`
+  to
+  `fed558ea04298bbafdcf922d36f43c176ca733d688815231ca90900d79dc9428`.
+  The current research branch also contains later R2 cache tests, so its
+  complete combined test-file hash is intentionally different and is not used
+  by this isolated rerun.
+- Local `git diff --check` passes. The local environment still lacks Torch, so
+  the corrected numerical fixture remains mandatory in the next Kaggle
+  preflight rather than being claimed as locally executed evidence. A
+  hash-bound implementation-only correction addendum and wrapper revision
+  must be frozen before version `2` can launch. No scientific result exists
+  for version `1`, no consumer was trained and BTXRD test remains locked.
+- To avoid importing later R1/R2/S1 source changes into this causal geometry
+  arm, the rerun checkout is isolated from the original execution commit
+  `6e0b50c`. Repair commit `3c852f0a3a3847f1190f452cc2b7ace5558a0312`
+  changes only the invalid fixture; checkout
+  `55a2305ee143ae7f9232ac8542103475e890fb60` adds only its correction
+  addendum. The production model/runner hashes remain exactly
+  `44cd6ff0...` and `1bf56d0d...`.
+- Correction protocol
+  `rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v1`
+  is frozen at canonical-LF SHA-256
+  `da2037a57769435b0dc74bb74c08c9c0de90051b2a421c76a9a9ea99c018086e`.
+  Version-2 wrapper and metadata hashes are
+  `4592bffeecd3064f6d7a8eb699555af913de91fd12fc2ba942bc00ca2fe67a80`
+  and
+  `ed2a289cdcf028038451a6fe256249608486f891f5867c042057cc1a11782a2d`.
+  The wrapper verifies that the repair is an ancestor, binds the corrected
+  fixture hash, copies the addendum to output provenance and records its own
+  physical hash. Prelaunch audit
+  `rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_v2_wrapper_audit.json`
+  reports `PRELAUNCH_PASS`.
+- Per the user's updated direction, the ten-minute heartbeat
+  `theo-d-i-geometry-v3-m-i-10-ph-t-trong-task-ch-nh` was deleted. The
+  version-2 preflight will be followed at a short cadence so an implementation
+  error can be diagnosed immediately; this monitoring change does not alter
+  the experiment.
+
+### Geometry-v3 version 2 duplicate source-guard error
+
+- Rapid monitoring found version `2` at terminal `ERROR` and the one-minute
+  heartbeat was deleted before retrieval. The output directory was empty
+  because the wrapper stopped at `3.06` seconds. Direct Kaggle execution logs
+  prove checkout `55a2305` succeeded and then raised
+  `Geometry-v3 source SHA-256 mismatch:
+  tests/test_rad_dino_mask_bag_mil.py`.
+- Root cause is a second wrapper guard, not the corrected fixture or
+  production geometry. The wrapper had already authorized and verified the
+  repaired test hash while iterating the parent protocol, but later iterated
+  the immutable geometry-v3 protocol and compared the same file against its
+  original pre-repair hash. Runtime installation, candidate generation,
+  RAD-DINO extraction, optimizer construction, validation prediction and GT
+  evaluation were never reached; no consumer or test access occurred.
+- Correction-v2 protocol is frozen at canonical-LF SHA-256
+  `9527deb8c6507da73a35d933224ab130e1303c310b897bd3e7a6a3204bd5360d`.
+  The sole wrapper repair applies the already authorized corrected test hash
+  in that second source loop. Production model, runner, fixture content and
+  every scientific setting remain unchanged. Isolated execution checkout is
+  `ae035311b7e7e080c7454a5f2e06b3f6f96d060b`; version-3 wrapper SHA-256
+  is `02309d49385d518dd64c0e233d336abc6101f78af52a7232e03b09df06301bf1`.
+  The prelaunch wrapper audit reports `PRELAUNCH_PASS`; numerical Torch
+  execution remains mandatory on Kaggle.
+
+### Geometry-v3 version 3 byte-hash reproducibility failure and paired recovery
+
+- After the user resumed the paused task, one status check found version `3`
+  at terminal `ERROR`. Direct logs and compact output were downloaded into a
+  new ignored directory. Source checkout `ae03531`, the version-3 wrapper hash
+  `02309d49...`, focused preflight `33 passed` and whole-repository preflight
+  `219 passed, 1 skipped` all passed. The run then completed all `2,981`
+  train candidate payloads and stopped at `5,709.73` seconds with
+  `Regenerated train candidate/pseudo manifests differ from terminal v6`.
+  Validation candidate generation, fractional-mass audit, optimizer
+  construction, selector fitting, prediction, validation-GT evaluation,
+  consumer training and BTXRD test access were never reached. Version `3`
+  therefore has no scientific result.
+- Direct terminal-v6 manifests were downloaded separately and joined by exact
+  image name against the regenerated manifests. Candidate structure is
+  unchanged for every image: `2,981/2,981` image rows, candidate count, box
+  count, positive/negative point count and generation status agree exactly.
+  The only candidate-manifest differences are `diagnostic_sha256` on all
+  `2,981` rows and compressed `diagnostic_bytes` on `2,926`. The terminal-v6
+  versus version-3 candidate-manifest hashes are `7dfe43cc...` versus
+  `ad3b52d...`.
+- The final pseudo mask is bit-identical for all `2,981` train images:
+  `mask_sha256`, status and SAM candidate count have zero mismatches. The
+  pseudo-manifest hashes nevertheless differ (`5d50bd39...` versus
+  `5aec58ce...`) because `1,305` rows contain small summary differences.
+  Maximum absolute CAM deltas are at most `1.20e-7`; the largest
+  selection-score delta is `0.002014`; only six unique prompt counts, two
+  selected-area summaries and one above-threshold count differ. Every one of
+  those rows still has the same final pseudo-mask hash.
+- This evidence rejects the wrapper's whole-file hash equality as a sufficient
+  *causal equivalence test*, but it does not authorize silently replacing the
+  four frozen v6 hashes. NumPy documents NPZ as a ZIP archive of named NPY
+  members, so an NPZ byte hash binds serialization as well as array values:
+  https://numpy.org/doc/stable/reference/generated/numpy.savez.html.
+  PyTorch's reproducibility note separately states that seeded CUDA execution
+  is not universally bit-identical unless deterministic implementations are
+  available and enforced:
+  https://docs.pytorch.org/docs/stable/notes/randomness.html. More
+  importantly, terminal v6 deleted its physical NPZ payloads after compact
+  export; its manifests cannot prove that every non-selected SAM candidate is
+  bit-identical. A `v3-minus-v6` result on a regenerated gallery would
+  therefore retain a small gallery confound even though the observed discrete
+  evidence is extremely stable.
+- The valid recovery is predeclared conceptually before any retry: generate
+  and physically freeze one gallery, run the legacy direct-resize descriptor
+  geometry and square-corrected geometry against that exact same gallery,
+  freeze both complete `371`-map predictions before either evaluator imports
+  validation segmentation, and compare them with the same paired
+  complete-group bootstrap. Both arms must have identical labels, gallery,
+  ordering, RAD-DINO tokens, scorer, loss, seed, optimizer and final-only
+  epochs; descriptor coordinate geometry is the sole changed scientific
+  variable. The corrected geometry remains canonical because it repairs a
+  proven coordinate error, not because validation GT selects it. This paired
+  control also avoids reopening the already established
+  descriptor/selector—not candidate-support—bottleneck.
+- Machine-readable error evidence is frozen at
+  `artifacts/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/version3_error_audit.json`,
+  SHA-256
+  `db4b29054719960abfed97d6380ff7cb8388d0b86f3f574e662f9f1311110702`.
+  It records the direct log/wrapper hashes, field-level manifest comparison,
+  maximum numeric deltas, execution boundary and locks:
+  `consumer_trained=false`, `test_evaluated=false`.
+
