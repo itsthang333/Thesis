@@ -5783,3 +5783,75 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   optimizer. No geometry-v3 poll/mutation, BTXRD descriptor fit, validation
   GT/test access, selector training or consumer training occurred.
 
+### Selector-bottleneck persistence rule and frozen ranking diagnostics
+
+- The candidate oracle still exceeds every operational subgroup goal while
+  the selected proposal fails every goal. Therefore candidate support is not
+  reopened as the primary bottleneck. A failure of one or two descriptor
+  mechanisms is evidence against those mechanisms, not evidence that the
+  bottleneck has moved. The descriptor/selector diagnosis remains active until
+  the finite campaign `R0-R2`, `S1-S4`, `T1` has either (a) produced the
+  required regret reduction or (b) supplied a frozen all-arm pattern showing
+  that proposal support, rather than ranking, has become limiting. This rule
+  prevents cycling from selector to another speculative cause after each
+  isolated failure.
+- A fresh primary-source check supports this ordering. SelfPatch improves
+  dense ViT features by enforcing patch-neighbour consistency, so it supports
+  the already prepared affinity/local-descriptor arms rather than a new mask
+  generator:
+  https://arxiv.org/abs/2206.07990. Tang et al.'s weakly supervised RPN learns
+  proposal objectness from image labels, but it addresses proposal generation
+  and its natural-image objectness assumptions are poorly matched to subtle
+  radiographic lesions:
+  https://openaccess.thecvf.com/content_ECCV_2018/html/Peng_Tang_Weakly_Supervised_Region_ECCV_2018_paper.html.
+  Because the immutable BTXRD gallery oracle already passes all goals, that
+  mechanism is deferred. SEAM and the small-object WSSS analysis continue to
+  justify equivariant/local evidence specifically for the small subgroup:
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html
+  and
+  https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html.
+- An evaluation-only primitive was added at
+  `project/models/mask_bag_ranking_diagnostics.py`, canonical-LF SHA-256
+  `c8b95cde03006c78aad624f060684d2f4d3acad2bdfeb6fc42bfc05762abefe8`.
+  Given candidate logits already frozen without validation masks, the
+  post-freeze evaluator can report deterministic/tie-aware oracle rank,
+  top-`1/3/5/10` oracle reach, top-k best achievable Dice, selected-to-oracle
+  and top-k regret, and score-versus-candidate-Dice Spearman correlation.
+  Complete misses remain in every subgroup, while recovered baseline misses
+  and newly lost baseline hits are counted separately.
+- These diagnostics distinguish mechanisms without changing the metric or
+  tuning on validation GT. High top-3/5 reach with poor top-1 points to
+  calibration or relational reranking; poor top-10 reach despite a high
+  gallery oracle points to descriptor failure; a deficit concentrated in
+  small supports the predeclared local-view arm; and a negative/near-zero
+  score-quality correlation across sizes rejects the scoring representation
+  even if one aggregate Dice moves by chance. Future arm prediction freezes
+  must therefore serialize every valid candidate logit and its immutable
+  gallery index, not only the winning logit. The evaluator may read candidate
+  Dice only after that manifest is hash-frozen.
+- Tests at `tests/test_mask_bag_ranking_diagnostics.py`, canonical-LF SHA-256
+  `cfcd7855360ee3c4b3904fbdd0ddc8a5af6ff27f72de9bbd99841d17055b9cc8`,
+  cover exact ranking/regret, oracle ties, invalid candidates, empty bags,
+  recovered-versus-lost misses and the evaluation-only dependency boundary.
+  All six tests pass under the bundled NumPy runtime. The current geometry-v3
+  runner was not changed because its prediction protocol was already frozen;
+  the richer score manifest is mandatory for the next selector arm. No Kaggle
+  poll/mutation, validation GT/test access, training or consumer run occurred.
+- That requirement is now executable rather than prose-only. The GT-free
+  evidence contract at `project/models/mask_bag_score_evidence.py`,
+  canonical-LF SHA-256
+  `02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a`,
+  stores every finite valid candidate logit with its immutable ascending
+  gallery index in a hash-bound NPZ. Its manifest binds each payload to
+  `image_id`, `group_id`, image label, candidate-gallery payload hash and exact
+  candidate count. Validation fails closed on a cohort, provenance, physical
+  hash, dtype/shape/order or argmax mismatch. Equal logits deterministically
+  choose the first gallery candidate.
+- Tests at `tests/test_mask_bag_score_evidence.py`, canonical-LF SHA-256
+  `206d3fecd2688b244a7ba8a1124731df3b8fe436e9559068da60a6ed8ebcddf1`,
+  cover round-trip provenance, stable ties, invalid/non-finite scores, physical
+  tampering and independence from annotation/training loaders. All five tests
+  pass under the bundled NumPy runtime; both new modules also pass
+  `py_compile`. The current frozen geometry-v3 output contract remains
+  untouched.
+
