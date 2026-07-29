@@ -5311,3 +5311,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   not an unbounded hyperparameter search, while ensuring a failure of one
   technique does not terminate work on the established selector bottleneck.
 
+### Relational-selector primitive preparation while geometry-v3 runs
+
+- Lightweight, dataset-agnostic primitives were prepared at
+  `project/models/mask_bag_relational_selector.py`, canonical-LF SHA-256
+  `3cae8adbdf0a11384a891926570069ceefb0cda2de6dc9b5476ae19a1f17f790`.
+  This is source readiness only: it is not imported by the running v3 pipeline,
+  does not alter its frozen wrapper/checkout and authorizes no additional job.
+- The module implements three deliberately separable mechanisms:
+  - hierarchical normalized SmoothMax, first within immutable proposal family
+    and then across families, making an identical within-family duplicate
+    neutral to the bag score;
+  - a symmetric local graph that connects only same-family proposals satisfying
+    fixed mask IoU or containment, followed by fidelity-preserving normalized
+    graph smoothing directly on candidate logits;
+  - a DSMIL-inspired critical-proposal relation residual with a detached
+    independent critical index and exactly zero-initialized final layer, so its
+    initial logits equal the independent selector bit-for-bit.
+  The code accepts only descriptors, masks, validity and family IDs; it has no
+  dataset, annotation, lesion-size, subgroup or GT API.
+- Tests at `tests/test_mask_bag_relational_selector.py`, canonical-LF SHA-256
+  `b3bb46a7e37562c2bc780e10480f1bcc358072adf9ac0037497a2fb06b30e1d8`,
+  verify family-duplicate invariance, cross-family edge exclusion, isolated-node
+  fidelity, decreased connected contrast, `alpha=0` identity, critical-index
+  selection and zero-residual identity. Local `py_compile` passed; the local
+  no-Torch runtime reports `1 passed, 4 skipped`. All four numerical Torch
+  tests remain mandatory on Kaggle before any arm can execute.
+- The primitives are intentionally not combined into one opaque model. The
+  terminal v3 audit will determine the fixed baseline cache, after which
+  family balance, global critical relation and local smoothing receive separate
+  prediction freezes before any complementary combination. No Kaggle status
+  poll, validation GT read, test access or consumer training occurred.
+
