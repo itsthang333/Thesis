@@ -5240,3 +5240,74 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   validation mask, BTXRD test sample or new prediction was read for this
   design.
 
+### Technique-strength audit and reusable selector-development cache
+
+- The literature mechanisms are not interchangeable, and their failure modes
+  are now explicit before implementation:
+  - exact fractional normalization can restore the amplitude of sub-token
+    proposals, but it can amplify a noisy `0.25`-mass candidate; it is tested
+    alone and remains protected by the existing minimum-mass threshold;
+  - a train-normal prototype uses genuinely reliable negative instances and
+    directly attacks tumor-versus-normal separability, but normal bags contain
+    more proposals. Prototype estimation must therefore give equal total weight
+    to every normal image and cap every proposal family, rather than allowing
+    large bags to dominate;
+  - DINO affinity captures pairwise semantic cohesion that the current
+    inside/outside means discard, but class-agnostic affinity may strongly
+    connect healthy bone. It is appended as an instance feature and cannot
+    expand or replace the frozen candidate mask;
+  - DSMIL's critical-instance relation can recover medium candidates that are
+    individually ambiguous, but an incorrect early critical instance can
+    spread error. Its residual is zero-initialized and the independent v3 logit
+    remains an explicit skip connection;
+  - SmMIL directly optimizes localization-relevant smooth instance scores and
+    can complement global relations. Its original “neighboring patches share a
+    label” assumption does not automatically hold for alternative SAM masks.
+    The BTXRD graph may connect only same-component/source proposals with
+    sufficient mask overlap/containment; the normalized-Laplacian smoothing
+    acts on candidate logits themselves, not merely on a bag embedding;
+  - ACMIL/MIL-Dropout can break winner concentration, but their WSI setting has
+    many truly positive patches. BTXRD can have one useful small-tumor proposal,
+    so top-k masking is forbidden until measured within-family redundancy is
+    adequate, and it must preserve at least one proposal in every family;
+  - PSMIL's probability-space alignment is relevant to the observed
+    same-model selection drift, but its paper also reports benchmark code where
+    the untrimmed input contains an instance-label feature and provides a
+    trimmed sensitivity version. No headline performance or label-bearing
+    feature is transferable. Only augmentation-consistent probabilities from
+    out-of-fold image-label-only models are admissible here.
+- Primary details supporting those limits:
+  SmMIL derives a fidelity-preserving normalized-Laplacian smoother from
+  Dirichlet energy and applies it directly to attention/localization values:
+  https://proceedings.neurips.cc/paper_files/paper/2024/file/8db9279f593652ee9bb2223b4a2c43fa-Paper-Conference.pdf.
+  ACMIL uses multiple attention branches plus stochastic top-k masking to
+  counter attention concentration:
+  https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/06954.pdf.
+  PSMIL moves attention/alignment into probability space but documents both
+  untrimmed label-feature and trimmed benchmark variants:
+  https://proceedings.iclr.cc/paper_files/paper/2025/file/463a91da3c832bd28912cd0d1b8d9974-Paper-Conference.pdf.
+- To make the campaign broad enough without paying for candidate generation
+  and RAD-DINO extraction for every selector, the first post-v3 infrastructure
+  job will be a reusable **GT-blind selector-development cache**, launched only
+  after terminal v3 audit. It will mechanically reproduce the exact four
+  candidate-manifest hashes and corrected v3 descriptors, then store:
+  original/flip fp16 descriptors, retained indices, metadata, component/prompt/
+  source IDs, normalized proposal geometry, family IDs, sparse proposal-graph
+  edges and bit-packed validation WTA masks. Train masks are discarded after
+  graph construction. The cache may read radiographs and image labels but no
+  segmentation annotation.
+- The cache is valid only if the frozen v3 checkpoint rescored from it
+  reproduces all 371 v3 selected indices, logits within a predeclared numerical
+  tolerance, and exact final map hashes. This makes subsequent selector arms
+  inexpensive and causally comparable while preserving the immutable gallery.
+  Each arm receives an independent prediction directory and protocol; one arm
+  cannot overwrite another.
+- The relational family is further separated for causal evidence:
+  `family-balanced SmoothMax`, `DSMIL-like global critical relation`, and
+  `SmMIL-like local proposal-graph smoothing` are three individual arms. Their
+  combinations are authorized only after individual frozen maps show
+  complementary recoveries. The same rule separates normal-prototype and DINO
+  affinity descriptors before combining them. This yields a finite campaign,
+  not an unbounded hyperparameter search, while ensuring a failure of one
+  technique does not terminate work on the established selector bottleneck.
+
