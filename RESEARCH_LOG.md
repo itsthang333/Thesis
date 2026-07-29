@@ -4970,3 +4970,51 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   that v6 misses at least one operational goal and that its immutable-gallery
   oracle passes every goal. No new job is authorized before those conditions.
 
+## 2026-07-29 - Dataset-free v6 compact-output auditor
+
+- A fail-closed terminal auditor was added at
+  `project/audit_rad_dino_mask_bag_mil_v6_compact_output.py` (canonical-LF
+  SHA-256
+  `7f4855d409dd456f7066ae79df58856b77627e9babe15ea3ed0bf8fff67313b0`).
+  It uses only the direct compact Kaggle output and Python's standard library;
+  it does not import Torch/NumPy, locate the BTXRD dataset, open an image or
+  load a segmentation annotation.
+- The auditor independently verifies:
+  - exact v6 wrapper, parent protocol and correction-v1 through v5 hashes;
+  - checkout/scientific-source/split/classifier/SAM/baseline/RAD-DINO hashes;
+  - two real Tesla T4 devices, pinned Torch/CUDA and the recorded nontrivial
+    convolution result on both devices;
+  - direct candidate/pseudo manifests, 2981/371 identities, the evidence that
+    all 3352 physical payload hashes were verified before training, candidate
+    cap, empty normal pseudo masks and generation GT lock;
+  - checkpoint/history/prediction freeze, all 371 physical prediction-map
+    hashes and complete prediction identity;
+  - evaluation hashes, cohort `371/184/187`, subgroup `94/72/18`, 10,000
+    bootstrap replicates, complete misses, all-checks-required gate and
+    consumer/test locks;
+  - selected-prediction and candidate-oracle pass/fail against the operational
+    goals separately. This prevents the lower consumer-entry gate from being
+    mistaken for achievement of the final goal.
+- Tests are at
+  `tests/test_audit_rad_dino_mask_bag_mil_v6_compact_output.py`
+  (canonical-LF SHA-256
+  `6d406471220599ec73dc3049b6aea7b29aee6924b10c0c313172e09db5ad13c5`).
+  A complete synthetic compact tree contains 2981/371 candidate rows, 371
+  hashed maps and the exact `184=94/72/18` evaluation cohort. The test proves a
+  valid artifact passes and a one-map byte mutation fails closed.
+- The first focused test run reported `2 failed, 11 passed`. Both were
+  test-fixture-only mistakes: a source-text assertion rejected the word
+  `BTXRD` in the safety docstring, and the hand-entered fixture digest was
+  incorrect. The assertions were corrected without weakening the auditor:
+  the safety test now forbids dataset-loader/annotation-path code, and the
+  byte hash uses the independently observed SHA-256. The complete rerun
+  reports `14 passed in 4.62s`; `py_compile` also passed.
+- This tool does not claim that deleted candidate NPZ files are present in the
+  compact artifact. It verifies the direct manifests and wrapper-emitted
+  pre-training physical-verification count honestly. A future geometry-v3 run
+  must regenerate or immutably mount and rehash the physical payloads as its
+  separate protocol already requires.
+- No Kaggle status poll, validation GT read, test access, consumer training or
+  heavy local computation occurred. The v6 result remains pending delivery
+  from the separate ten-minute monitor.
+
