@@ -5486,3 +5486,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   bind their hashes before producing validation logits. No Kaggle status poll,
   validation GT access, test access or consumer training occurred.
 
+### Selector-cache provenance and geometry preparation
+
+- A read-only source audit of `run_rad_dino_mask_bag_mil_probe.py` and the
+  candidate-diagnostic schema found that the runner currently retains masks,
+  four numeric metadata values and kept indices, but discards already frozen
+  `component_ids`, `prompt_modes` and `proposal_source_ids`. Those arrays are
+  present in every schema-v2 candidate NPZ and are integrity-covered by the
+  existing per-payload and manifest hashes. Therefore family-balanced and
+  proposal-graph arms need neither a new gallery nor new proposal generation:
+  the post-v3 cache can restore provenance mechanically from the exact
+  candidate payloads and slice it with the same `kept_indices`.
+- Dataset-agnostic cache helpers were added at
+  `project/models/mask_bag_selector_cache.py`, canonical-LF SHA-256
+  `f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5`.
+  They define a family as the exact immutable tuple
+  `(proposal_source_id, prompt_mode, component_id)`, with a separate explicit
+  fallback family; IDs are assigned from sorted unique tuples and cannot depend
+  on candidate order. The same module derives position-free proposal shape
+  features, pairwise IoU/containment/normalized centroid distance and an exact
+  bit-packed mask representation. Absolute centroid coordinates are not
+  exposed as candidate features.
+- Tests at `tests/test_mask_bag_selector_cache.py`, canonical-LF SHA-256
+  `8e57b638cca17a0e282464ce8be0b9c83c795d678ef99d7fab69e2da514bb3f5`,
+  verify source isolation, all-three-field family identity, same-family
+  duplicates, position-free shape features, symmetric overlap geometry and
+  exact bit-pack round trip. `py_compile` and all six numerical/source tests
+  pass under the bundled NumPy runtime.
+- The eventual cache acceptance gate remains stricter than these unit tests:
+  it must bind the terminal v3 source/protocol/candidate hashes, cover exactly
+  all train/validation rows, and rescore the frozen v3 checkpoint to reproduce
+  every validation selected index, logit tolerance and map hash before any new
+  selector is trained. This preparation did not poll or modify geometry-v3,
+  load validation GT/test, fit a prototype or train a consumer.
+
