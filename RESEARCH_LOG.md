@@ -5161,4 +5161,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   only in this main task every ten minutes; RUNNING/QUEUED heartbeats produce
   `DONT_NOTIFY`. No external monitor task will be created. Consumer training
   and BTXRD test remain locked.
+- Kaggle accepted private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-v3`, version `1`, using
+  `NvidiaTeslaT4` (`T4 x2` required by fail-closed runtime preflight). Invalid
+  free-form Kaggle tags were ignored by Kaggle, which does not affect code,
+  inputs or scientific execution. The sole same-task heartbeat is
+  `theo-d-i-geometry-v3-m-i-10-ph-t-trong-task-ch-nh`, active at exactly ten
+  minutes with failed-run-only notifications and exact `DONT_NOTIFY` behavior
+  while queued/running. No launch-time status poll or duplicate monitor was
+  created.
 
