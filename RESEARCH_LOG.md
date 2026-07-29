@@ -6498,3 +6498,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   error can be diagnosed immediately; this monitoring change does not alter
   the experiment.
 
+### Geometry-v3 version 2 duplicate source-guard error
+
+- Rapid monitoring found version `2` at terminal `ERROR` and the one-minute
+  heartbeat was deleted before retrieval. The output directory was empty
+  because the wrapper stopped at `3.06` seconds. Direct Kaggle execution logs
+  prove checkout `55a2305` succeeded and then raised
+  `Geometry-v3 source SHA-256 mismatch:
+  tests/test_rad_dino_mask_bag_mil.py`.
+- Root cause is a second wrapper guard, not the corrected fixture or
+  production geometry. The wrapper had already authorized and verified the
+  repaired test hash while iterating the parent protocol, but later iterated
+  the immutable geometry-v3 protocol and compared the same file against its
+  original pre-repair hash. Runtime installation, candidate generation,
+  RAD-DINO extraction, optimizer construction, validation prediction and GT
+  evaluation were never reached; no consumer or test access occurred.
+- Correction-v2 protocol is frozen at canonical-LF SHA-256
+  `9527deb8c6507da73a35d933224ab130e1303c310b897bd3e7a6a3204bd5360d`.
+  The sole wrapper repair applies the already authorized corrected test hash
+  in that second source loop. Production model, runner, fixture content and
+  every scientific setting remain unchanged. Isolated execution checkout is
+  `ae035311b7e7e080c7454a5f2e06b3f6f96d060b`; version-3 wrapper SHA-256
+  is `02309d49385d518dd64c0e233d336abc6101f78af52a7232e03b09df06301bf1`.
+  The prelaunch wrapper audit reports `PRELAUNCH_PASS`; numerical Torch
+  execution remains mandatory on Kaggle.
+
