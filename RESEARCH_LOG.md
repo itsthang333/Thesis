@@ -6039,3 +6039,44 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - No selector arm was evaluated, Kaggle status polled, validation GT/test
   accessed or consumer trained while preparing this evaluator.
 
+### R1 normal-prototype residual training core
+
+- R1 now has one shared fit/score implementation at
+  `project/models/mask_bag_normal_residual_training.py`, canonical-LF SHA-256
+  `68a5588a1aea5b68db5f836a4ad67340039cfab12906884df115ba035904f07a`.
+  The same functions will be used inside every group-held-out K-selection fold
+  and for the final clean-train fit, preventing an implementation change
+  between model selection and the frozen arm.
+- The prototype bank uses only image-label-normal training bags. Original and
+  horizontal-flip descriptors share the same image/family identity in the
+  hierarchical weights, so adding the second view does not double an image's
+  influence. Every image has equal total mass, then every immutable proposal
+  family within that image, then every candidate/view within the family. This
+  implements the conservative normal-prototype transfer already motivated by
+  TPMIL rather than copying its full pathology-specific architecture:
+  https://proceedings.mlr.press/v227/yang24d.html.
+- Each candidate receives only the four predeclared normality features:
+  nearest and soft-min normal-prototype distance, assignment entropy and
+  top-two margin. The zero-initialized residual adapter is trained for fixed
+  final-only epochs with image-level normalized SmoothMax BCE, original/flip
+  consistency and residual-drift regularization. The complete v3 scorer is
+  put in eval mode, marked `requires_grad=false`, evaluated under inference
+  mode and detached again inside the objective. No argmax, hard positive
+  candidate, segmentation quality or subgroup enters the fit. The bag-label
+  supervision remains the MIL setting formalized by Ilse et al.:
+  https://proceedings.mlr.press/v80/ilse18a.html.
+- The scoring path returns every candidate logit in its original aligned cache
+  order plus the normalized SmoothMax bag logit/probability. It performs the
+  exact mean of original and aligned-flip logits required by the all-candidate
+  evidence and common evaluator contracts.
+- Tests at `tests/test_mask_bag_normal_residual_training.py`, canonical-LF
+  SHA-256
+  `5254777d8751760bc44c15ef23c3a6c4bc4f4911142d341d8597e7227f37bf55`,
+  cover the no-confirmation/no-GT source boundary, flip-symmetric prototype
+  weighting, bit-identical frozen scorer parameters with a learned residual,
+  and complete ordered candidate scoring. Local `py_compile` passes and the
+  no-Torch runtime reports `1 passed, 3 skipped`; all three numerical Torch
+  tests are mandatory in the future Kaggle preflight.
+- This is source readiness only. No prototype bank or adapter was fitted,
+  Kaggle status polled, validation GT/test accessed or consumer trained.
+
