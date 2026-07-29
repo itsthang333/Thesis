@@ -6435,3 +6435,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   polled outside its scheduled monitor, validation GT/test were not accessed
   and no consumer was trained.
 
+## 2026-07-29 - Geometry-v3 version 1 preflight test-fixture error
+
+- The single scheduled status check found Kaggle kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-v3`, version `1`, at terminal
+  `ERROR`. Direct output was downloaded to a separate ignored temporary
+  directory before diagnosis. The wrapper stopped in the focused preflight
+  with `32 passed, 1 failed`; candidate generation, RAD-DINO extraction,
+  optimizer construction, validation prediction, validation-GT evaluation and
+  test access were never reached.
+- The only failure was
+  `test_project_then_square_flip_preserves_asymmetric_padding_geometry`.
+  Its fixture created a wide `3x6` source with vertical square padding, then
+  changed the vertical content box while applying a horizontal mask flip.
+  Horizontal flipping does not mirror vertical padding, so the expected tensor
+  encoded the wrong transform. The production geometry is unchanged:
+  `content_box=(x0,y0,x1,y1)` is verified by the projection implementation and
+  callers, and the runner projects once into the square frame before applying
+  its horizontal flip.
+- The fixture is corrected to a tall `6x3` source with real asymmetric
+  horizontal padding: original box `(1,0,4,6)` and mirrored box
+  `(2,0,5,6)`. This now tests the intended odd-padding horizontal
+  flip-equivariance contract. The production model, projection arithmetic,
+  gallery, loss, optimizer, epoch budget, seed, evaluator, goals and subgroup
+  definitions are unchanged. Canonical-LF test SHA-256 changes from
+  `b563dd7c91aa47c939dce1c95db23344548799ba85af1dd53be13bf30643df0c`
+  to
+  `f31650c477bf22758a6e4a70c2a87f0118168979d5a0750898d766526a13454b`.
+- Local `git diff --check` passes. The local environment still lacks Torch, so
+  the corrected numerical fixture remains mandatory in the next Kaggle
+  preflight rather than being claimed as locally executed evidence. A
+  hash-bound implementation-only correction addendum and wrapper revision
+  must be frozen before version `2` can launch. No scientific result exists
+  for version `1`, no consumer was trained and BTXRD test remains locked.
+
