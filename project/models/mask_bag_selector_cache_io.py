@@ -325,10 +325,64 @@ def write_selector_cache_manifest(
     }
 
 
+def validate_selector_cache_manifest(
+    root: Path,
+    *,
+    expected_manifest_sha256: str,
+    expected_images: Mapping[str, Mapping[str, Mapping[str, object]]],
+) -> dict[str, list[dict[str, str]]]:
+    """Verify the manifest and every physical cache record before arm fitting."""
+
+    if set(expected_images) != {"train", "val"}:
+        raise ValueError("expected selector-cache splits must be train and val")
+    manifest_path = root / "selector_cache_manifest.csv"
+    if sha256_file(manifest_path) != expected_manifest_sha256:
+        raise ValueError("selector cache manifest SHA-256 mismatch")
+    with manifest_path.open("r", newline="", encoding="utf-8-sig") as handle:
+        rows = list(csv.DictReader(handle))
+    indexed = {(row["split"], row["image_id"]): row for row in rows}
+    expected_keys = {
+        (split, image_id)
+        for split, images in expected_images.items()
+        for image_id in images
+    }
+    if len(rows) != len(indexed) or set(indexed) != expected_keys:
+        raise ValueError("selector cache manifest cohort mismatch")
+
+    validated: dict[str, list[dict[str, str]]] = {"train": [], "val": []}
+    for split in ("train", "val"):
+        for image_id, expected in expected_images[split].items():
+            row = indexed[(split, image_id)]
+            if (
+                row["group_id"] != str(expected["group_id"])
+                or row["tumor"] != str(expected["tumor"])
+                or row["candidate_payload_sha256"]
+                != str(expected["candidate_payload_sha256"])
+            ):
+                raise ValueError(f"selector cache provenance mismatch: {split}/{image_id}")
+            payload = load_selector_cache_record(
+                root / row["cache_path"],
+                expected_sha256=row["cache_sha256"],
+                require_packed_masks=split == "val",
+            )
+            descriptors = np.asarray(payload["descriptors"])
+            if (
+                int(row["candidate_count"]) != descriptors.shape[0]
+                or int(row["descriptor_dim"]) != descriptors.shape[1]
+                or bool(int(row["packed_masks_included"])) != (split == "val")
+            ):
+                raise ValueError(
+                    f"selector cache manifest/content mismatch: {split}/{image_id}"
+                )
+            validated[split].append(row)
+    return validated
+
+
 __all__ = [
     "PackedCandidateMasks",
     "load_selector_cache_record",
     "save_selector_cache_record",
     "sha256_file",
+    "validate_selector_cache_manifest",
     "write_selector_cache_manifest",
 ]

@@ -5922,7 +5922,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   geometry. Otherwise a changed cache could masquerade as a better selector.
   The cache format is now implemented at
   `project/models/mask_bag_selector_cache_io.py`, canonical-LF SHA-256
-  `b66a456123a84e78d20d503bc5168b9ebd558eacdd8befcb22e63e2426138028`.
+  `8f0c021415101d4bc3db35bd6a519e6c8567e4a64ad6a265a4ef07e74661358a`.
   This is provenance/infrastructure rather than a new scientific mechanism; it
   operationalizes the already sourced representation/relational campaign.
 - Each physical NPZ contains aligned original/flip fp16 descriptors, ascending
@@ -5939,11 +5939,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   hashes, schema, dtype, finite values, candidate order, family validity,
   geometry symmetry/range and packed-mask byte count. Thus even a hash-valid
   but structurally malformed record fails closed.
+- The same module now supplies a full manifest validator for arm training. It
+  requires independently expected train/validation image, group, image-label
+  and candidate-payload identities, then opens and structurally validates
+  every physical record rather than trusting the manifest hash alone.
 - Tests at `tests/test_mask_bag_selector_cache_io.py`, canonical-LF SHA-256
-  `868b0622e38a0927d10f8f5f2848e1dfa36445edff1496e948a7863dcd1d423d`,
+  `091ff6395d379f5664960caf019ae009fb7187345690a4f44901c0e63c068176`,
   cover validation round-trip, mandatory train mask deletion, physical
-  tampering, structurally malformed payloads, split-specific manifest
-  boundaries, candidate ordering and absence of GT/subgroup APIs. All seven
+  tampering, structurally malformed payloads, full physical-manifest
+  validation, split-specific boundaries, candidate ordering and absence of
+  GT/subgroup APIs. All eight
   tests pass under the bundled NumPy runtime and both files pass
   `py_compile`.
 - This format does not by itself authorize a cache. The future post-v3 builder
@@ -5984,9 +5989,53 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   verify annotation/test isolation, pre-extraction input verification,
   reproduce-before-serialize ordering, complete provenance, split-specific
   mask handling and T4x2/frozen-geometry constraints. All six static tests and
-  seven cache-I/O numerical tests pass; all four files pass `py_compile`.
+  eight cache-I/O numerical tests pass; all four files pass `py_compile`.
 - The runner remains source-only until the monitor reports terminal
   geometry-v3 and that output passes its independent audit. No cache was
   generated, Kaggle status polled, validation GT/test accessed, selector fit or
   consumer trained here.
+
+### Common prediction-first evaluator for selector arms
+
+- The campaign now has a common evaluator at
+  `project/evaluate_mask_bag_selector_arm.py`, canonical-LF SHA-256
+  `ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084`.
+  Before importing the segmentation dataset or opening the previous
+  GT-derived baseline rows, it verifies the split, selector-cache freeze and
+  every physical validation cache record, the arm freeze, all `371` prediction
+  maps, all-candidate score manifest/payloads, exact score-to-cache gallery
+  indices, selected winner/logit/TTA semantics, and the direct accepted
+  geometry-v3 baseline freeze/manifest/maps. This preserves the
+  prediction-first boundary for every R/S/T arm.
+- After the freeze boundary, candidate Dice is computed from the immutable
+  bit-packed gallery and is never fed back to training or arm choice. For the
+  complete `184/94/72/18` tumor cohort, the evaluator reports selected Dice,
+  candidate oracle, deterministic oracle index/rank, top-`1/3/5/10` oracle
+  reach and best Dice, selected/top-k regret, score-versus-candidate-Dice
+  Spearman correlation, complete misses, recovered baseline misses and newly
+  lost hits. It additionally confirms that the recomputed gallery oracle
+  matches the frozen geometry-v3 per-image oracle.
+- The evaluator distinguishes two outcomes:
+  - `MECHANISM_PASS` requires selected-to-oracle regret reduction in at least
+    two tumor-size subgroups, no overall selected-Dice regression, and no
+    increase in the absolute overall candidate-count/miss association. Such an
+    arm may be retained only for the predeclared complementary composition.
+  - `OPERATIONAL_PASS` additionally requires all four current Dice goals, all
+    oracle goals, overall paired complete-group bootstrap CI95 lower bound
+    above zero, no tumor-subgroup mean decrease, no complete-miss increase and
+    image AUROC at least `0.75`. Only this status sets
+    `consumer_authorized=true`; `MECHANISM_PASS` alone cannot train a consumer.
+  A failed arm advances to the next finite selector row without changing the
+  selector/descriptor bottleneck.
+- Static tests at `tests/test_evaluate_mask_bag_selector_arm.py`,
+  canonical-LF SHA-256
+  `21fafe74740588ae02a897e387a639a7723575334ce2ff4fe6df4fcd36aa8e29`,
+  verify the single GT boundary, all-candidate/cache binding, gallery-index
+  mapping, complete ranking diagnostics, distinct mechanism/operational
+  statuses, fixed goals/cohort/bootstrap and consumer/test locks. All six
+  tests pass; the evaluator and tests pass `py_compile`. Numerical paths that
+  require Torch and frozen dataset artifacts remain mandatory in the future
+  Kaggle preflight.
+- No selector arm was evaluated, Kaggle status polled, validation GT/test
+  accessed or consumer trained while preparing this evaluator.
 

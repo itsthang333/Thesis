@@ -65,6 +65,37 @@ def _arrays() -> dict[str, object]:
 
 
 class SelectorCacheIOTests(unittest.TestCase):
+    def _write_manifest_fixture(
+        self, root: Path
+    ) -> tuple[dict[str, object], dict[str, dict[str, dict[str, object]]]]:
+        rows = []
+        expected: dict[str, dict[str, dict[str, object]]] = {"train": {}, "val": {}}
+        for split, masks_included in (("train", False), ("val", True)):
+            values = _arrays()
+            if not masks_included:
+                values["packed_masks"] = None
+            relative = Path(split) / "image.npz"
+            saved = MODULE.save_selector_cache_record(root / relative, **values)
+            image_id = f"{split}.jpeg"
+            candidate_hash = ("a" if split == "train" else "b") * 64
+            rows.append(
+                {
+                    "image_id": image_id,
+                    "group_id": f"{split}_group",
+                    "tumor": 1,
+                    "split": split,
+                    "candidate_payload_sha256": candidate_hash,
+                    **saved,
+                    "cache_path": str(relative),
+                }
+            )
+            expected[split][image_id] = {
+                "group_id": f"{split}_group",
+                "tumor": 1,
+                "candidate_payload_sha256": candidate_hash,
+            }
+        return MODULE.write_selector_cache_manifest(root, rows), expected
+
     def test_validation_round_trip_preserves_descriptors_geometry_and_masks(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "record.npz"
@@ -141,29 +172,31 @@ class SelectorCacheIOTests(unittest.TestCase):
     def test_manifest_allows_masks_only_for_validation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            rows = []
-            for split, masks_included in (("train", False), ("val", True)):
-                values = _arrays()
-                if not masks_included:
-                    values["packed_masks"] = None
-                relative = Path(split) / "image.npz"
-                saved = MODULE.save_selector_cache_record(root / relative, **values)
-                rows.append(
-                    {
-                        "image_id": f"{split}.jpeg",
-                        "group_id": f"{split}_group",
-                        "tumor": 1,
-                        "split": split,
-                        "candidate_payload_sha256": "a" * 64,
-                        **saved,
-                        "cache_path": str(relative),
-                    }
-                )
-            summary = MODULE.write_selector_cache_manifest(root, rows)
+            summary, _expected = self._write_manifest_fixture(root)
 
             self.assertEqual(summary["records"], 2)
             self.assertEqual(summary["train_records"], 1)
             self.assertEqual(summary["validation_records"], 1)
+
+    def test_manifest_validator_opens_every_physical_record(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            summary, expected = self._write_manifest_fixture(root)
+            validated = MODULE.validate_selector_cache_manifest(
+                root,
+                expected_manifest_sha256=summary["manifest_sha256"],
+                expected_images=expected,
+            )
+            self.assertEqual(len(validated["train"]), 1)
+            self.assertEqual(len(validated["val"]), 1)
+
+            expected["val"]["val.jpeg"]["candidate_payload_sha256"] = "c" * 64
+            with self.assertRaisesRegex(ValueError, "provenance mismatch"):
+                MODULE.validate_selector_cache_manifest(
+                    root,
+                    expected_manifest_sha256=summary["manifest_sha256"],
+                    expected_images=expected,
+                )
 
     def test_nonascending_candidate_indices_fail(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
