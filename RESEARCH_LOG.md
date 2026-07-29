@@ -6080,3 +6080,38 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - This is source readiness only. No prototype bank or adapter was fitted,
   Kaggle status polled, validation GT/test accessed or consumer trained.
 
+### R1 group-excluded OOF orchestration core
+
+- The fold-level R1 orchestration is implemented at
+  `project/models/mask_bag_normal_crossfit.py`, canonical-LF SHA-256
+  `12f35f3daf3ac8bd6d03adc1cd4b518c3873ba5254a4ad48ede42b12d5027afd`.
+  Each invocation fits exactly one `(K, heldout_fold)` unit: it first proves
+  that the training and held-out group sets are disjoint, fits the normal bank
+  only on the training folds, enriches training and held-out descriptors using
+  that bank, trains the residual only on training image labels and scores every
+  held-out image once. The derived deterministic seed is
+  `base_seed + 1000*K + fold`.
+- The fold artifact includes training/held-out group inventories, prototype
+  bank/audit, adapter state, exact objective/training config, final-only
+  history, and held-out image label/logit/probability/BCE/candidate-count rows.
+  It contains no candidate target or localization quality. Keeping a
+  fold-level callable also allows the future Kaggle runner to dispatch
+  independent folds across the two T4 devices without changing the scientific
+  operation.
+- The assembler requires every frozen fold exactly once, calls the existing
+  `audit_crossfit_training_exclusion`, rejects a duplicate/missing image or
+  identity/fold mismatch, and produces the five held-out fold BCE values plus
+  the all-OOF candidate-count versus bag-probability Spearman correlation
+  consumed by the already frozen one-standard-error/count-guard K selector.
+  Thus no in-fold prediction can enter model selection.
+- Tests at `tests/test_mask_bag_normal_crossfit.py`, canonical-LF SHA-256
+  `a8c97449f4011809dfc610d0bae33343519708538ddf0ebc8b11a9c1b8521e07`,
+  cover the group-exclusion/no-GT source boundary, complete two-fold OOF
+  coverage with a bit-identical base scorer, and missing-fold rejection.
+  Local `py_compile` passes and the no-Torch runtime reports
+  `1 passed, 2 skipped`; both numerical Torch tests are mandatory in the
+  future Kaggle preflight.
+- This module only prepares the group-safe computation. No fold, prototype,
+  adapter or OOF prediction was fitted; geometry-v3 was not polled and no
+  validation GT/test or consumer was accessed.
+
