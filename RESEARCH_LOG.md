@@ -4778,9 +4778,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   implementation because the frozen 81-candidate cap would require up to 82
   encoder views per image before flip augmentation. The bounded alternative
   is a fixed global-plus-four-overlapping-tile bank: every proposal uses the
-  local tile retaining the greatest projected mask mass, with deterministic
-  tie-breaking, and retains the global descriptor. This is exactly five views
-  per image, 16.4x fewer than the worst-case proposal-specific view count.
+  local tile or equal average of symmetrically tied tiles retaining the
+  greatest projected mask mass, and retains the global descriptor. This is
+  exactly five views per image, 16.4x fewer than the worst-case
+  proposal-specific view count.
   Tile geometry and local-validity rules remain deliberately unfrozen until a
   train-only/image-label and compute preflight; they cannot be tuned using
   subgroup Dice. The future arm must preserve gallery/order/WTA masks and
@@ -5653,4 +5654,56 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   manifest, and serialize cluster seeds/members before optimizer construction.
   It is not imported by geometry-v3 and no BTXRD prototype, selector,
   validation prediction or consumer was trained here.
+
+### Flip-equivariant global-plus-four-tile descriptor preparation
+
+- Small remains a selector/descriptor case rather than a support case under
+  the immutable oracle, but its proposal can occupy approximately one or fewer
+  cells on the global `32x32` RAD-DINO grid. L2G reports that local crops expose
+  finer object details than a full image, while SEAM shows that weak
+  localization should remain equivariant under transformations. These
+  mechanisms support a bounded higher-resolution descriptor arm, not a new
+  proposal map. Primary sources:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html
+  and
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Wang_Self-Supervised_Equivariant_Attention_Mechanism_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2020_paper.html.
+  Mun et al. independently document that aggregate WSSS evaluation obscures
+  poor small-object behavior:
+  https://openaccess.thecvf.com/content/WACV2024/papers/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.pdf.
+- A geometry-only source primitive was added at
+  `project/models/mask_bag_multiview.py`, canonical-LF SHA-256
+  `211d0a365056ab7b7af52454ecc342f88a6f2d71cc99ba4214a75aa0b57225db`.
+  It creates four overlapping corner rectangles in the unpadded source-image
+  frame, measures retained candidate mass in every tile, averages all tiles
+  tied for maximum retention and verifies the exact horizontal-flip tile
+  permutation. Per-tile descriptors are fused with those weights; the global
+  descriptor and WTA candidate masks remain unchanged.
+- The equal-tie average corrects an issue in the earlier prose design.
+  Selecting the lowest-index tile in a tie is deterministic but not
+  flip-equivariant for a centered candidate: the flipped candidate can again
+  choose the lowest index instead of the mirrored view. Equal averaging across
+  all maximal-retention tiles preserves the left/right permutation exactly and
+  costs no additional encoder views because all four tiles are already
+  encoded.
+- The crop fraction is deliberately not selected yet. After the terminal v3
+  cache is accepted, a finite GT-blind train-candidate audit will compare
+  `{0.625,0.75,0.875}` and choose the smallest fraction satisfying both:
+  at least `99%` of all retained training candidates keep at least `50%` of
+  their mask mass in their best tile, and at least `99%` of training
+  candidates whose own class-agnostic area is at most `1%` keep at least
+  `90%`. If none passes, the local-view arm is rejected rather than tuning
+  against validation Dice. Each rectangular tile is independently
+  square-padded before the frozen encoder; its mask uses the exact same
+  continuous content-box projection as geometry-v3.
+- Tests at `tests/test_mask_bag_multiview.py`, canonical-LF SHA-256
+  `714f41f4ce02ce854b94f6ad1c79fc909e16accbd314413700abd2612e17b992`,
+  verify complete rectangular coverage, corner and centered mass behavior,
+  horizontal-flip equivariance of retention/weights, symmetric descriptor
+  fusion and a GT/subgroup-free API. `py_compile` and all five numerical/source
+  tests pass under the bundled NumPy runtime.
+- This remains a separate descriptor arm: it may not be bundled with
+  fractional normalization, normal prototypes, DINO affinity, relational
+  selection or S4 in its first frozen evaluation. No geometry-v3 poll or
+  mutation, validation GT/test access, BTXRD feature extraction, selector
+  training or consumer training occurred.
 
