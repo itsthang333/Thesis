@@ -33,6 +33,22 @@ def test_affinity_feature_surface_is_gt_and_subgroup_free() -> None:
         assert forbidden not in lowered
 
 
+def test_cache_extraction_uses_shared_geometry_and_aligned_flip_views() -> None:
+    source = (
+        Path(__file__).parents[1]
+        / "project"
+        / "run_rad_dino_mask_bag_mil_probe.py"
+    ).read_text(encoding="utf-8")
+    ast.parse(source)
+    assert "proposal_context_grid_weights(" in source
+    assert "affinity_summary_features(" in source
+    assert "Affinity and descriptor candidate validity differ" in source
+    assert 'record["affinity_features"] = affinity' in source
+    assert 'record["flipped_affinity_features"] = flipped_affinity' in source
+    assert "descriptor_masks[..., ::-1].copy()" in source
+    assert "descriptor_content[..., ::-1].copy()" in source
+
+
 @pytest.mark.skipif(torch is None, reason="PyTorch is unavailable locally")
 def test_coherent_tokens_have_maximal_inside_affinity() -> None:
     tokens = torch.tensor(

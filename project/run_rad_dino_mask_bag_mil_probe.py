@@ -31,6 +31,7 @@ from mae_reconstruction_io import (
     sha256_file,
     verify_model_snapshot,
 )
+from models.mask_bag_affinity_features import affinity_summary_features
 from models.nominal_patch_memory import make_seeded_random_projection, projection_sha256
 from models.rad_dino_mask_bag_mil import (
     MaskBagMILConfig,
@@ -38,6 +39,7 @@ from models.rad_dino_mask_bag_mil import (
     aligned_candidate_consistency_loss,
     image_bag_loss,
     mask_pool_descriptors,
+    proposal_context_grid_weights,
     project_direct_resize_masks_to_square,
     self_guided_instance_loss,
     smooth_mil_pool,
@@ -223,6 +225,46 @@ def _pool_one_bag(
     )
 
 
+def _affinity_one_bag(
+    token_maps: torch.Tensor,
+    masks: np.ndarray,
+    content_mask: np.ndarray,
+    kept_indices: np.ndarray,
+    config: MaskBagMILConfig,
+) -> np.ndarray:
+    """Compute R2 summaries with the exact descriptor validity/context geometry."""
+
+    feature_device = token_maps.device
+    mask_tensor = torch.from_numpy(masks)[None].to(feature_device)
+    candidate_valid = torch.ones(
+        (1, len(masks)),
+        dtype=torch.bool,
+        device=feature_device,
+    )
+    proposal, context, valid = proposal_context_grid_weights(
+        mask_tensor,
+        candidate_valid,
+        grid_height=int(token_maps.shape[-3]),
+        grid_width=int(token_maps.shape[-2]),
+        minimum_grid_mass=config.minimum_grid_mass,
+        context_radius=config.context_radius,
+        content_masks=torch.from_numpy(content_mask)[None].to(feature_device),
+    )
+    kept = torch.nonzero(valid[0], as_tuple=False).reshape(-1)
+    expected = torch.from_numpy(
+        np.asarray(kept_indices, dtype=np.int64)
+    ).to(feature_device)
+    if not torch.equal(kept, expected):
+        raise RuntimeError("Affinity and descriptor candidate validity differ")
+    features = affinity_summary_features(
+        token_maps[None].float(),
+        proposal,
+        context,
+        valid,
+    )
+    return features[0, kept].float().cpu().numpy().astype(np.float16)
+
+
 def build_descriptor_cache(
     rows: list[dict[str, str]],
     candidate_rows: dict[str, dict[str, str]],
@@ -233,6 +275,7 @@ def build_descriptor_cache(
     device: torch.device,
     *,
     split: str,
+    include_affinity_features: bool = False,
 ) -> list[dict[str, object]]:
     cache: list[dict[str, object]] = []
     for start in range(0, len(rows), args.encoder_batch_size):
@@ -261,8 +304,8 @@ def build_descriptor_cache(
         with torch.inference_mode(), torch.autocast(
             device_type="cuda", dtype=torch.float16
         ):
-            token_batch = encoder(augmented.to(device, non_blocking=True))
-        token_batch = token_batch.float().cpu()
+            encoded_token_batch = encoder(augmented.to(device, non_blocking=True))
+        token_batch = encoded_token_batch.float().cpu()
         count = len(batch_rows)
         for offset, (row, payload, projection) in enumerate(
             zip(batch_rows, payloads, projections, strict=True)
@@ -296,22 +339,40 @@ def build_descriptor_cache(
             )
             if not np.array_equal(kept, flipped_kept):
                 raise RuntimeError("Original/flip candidate validity differs")
-            cache.append(
-                {
-                    "image_id": row["image_id"],
-                    "group_id": row["group_id"],
-                    "label": int(row["tumor"]),
-                    "descriptors": descriptors,
-                    "flipped_descriptors": flipped_descriptors,
-                    "kept_indices": kept,
-                    "fallback_count": int(fallback_flags[kept].sum()),
-                    "candidate_payload_sha256": candidate_rows[
-                        Path(row["image_id"]).stem
-                    ][
-                        "diagnostic_sha256"
-                    ],
-                }
-            )
+            record: dict[str, object] = {
+                "image_id": row["image_id"],
+                "group_id": row["group_id"],
+                "label": int(row["tumor"]),
+                "descriptors": descriptors,
+                "flipped_descriptors": flipped_descriptors,
+                "kept_indices": kept,
+                "fallback_count": int(fallback_flags[kept].sum()),
+                "candidate_payload_sha256": candidate_rows[
+                    Path(row["image_id"]).stem
+                ][
+                    "diagnostic_sha256"
+                ],
+            }
+            if include_affinity_features:
+                affinity = _affinity_one_bag(
+                    encoded_token_batch[offset],
+                    descriptor_masks,
+                    descriptor_content,
+                    kept,
+                    config,
+                )
+                flipped_affinity = _affinity_one_bag(
+                    encoded_token_batch[count + offset],
+                    descriptor_masks[..., ::-1].copy(),
+                    descriptor_content[..., ::-1].copy(),
+                    kept,
+                    config,
+                )
+                if affinity.shape != flipped_affinity.shape:
+                    raise RuntimeError("Original/flip affinity shapes differ")
+                record["affinity_features"] = affinity
+                record["flipped_affinity_features"] = flipped_affinity
+            cache.append(record)
         completed = min(start + len(batch_rows), len(rows))
         if completed % 100 == 0 or completed == len(rows):
             print(f"mask-bag {split} feature cache: {completed}/{len(rows)}", flush=True)

@@ -65,6 +65,15 @@ def test_cache_preserves_complete_candidate_provenance() -> None:
         assert required in source
 
 
+def test_cache_extracts_aligned_affinity_in_the_same_encoder_pass() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    assert source.count("include_affinity_features=True") == 2
+    assert "affinity_features=np.asarray(record[\"affinity_features\"])" in source
+    assert "record[\"flipped_affinity_features\"]" in source
+    assert '"affinity_features_cached": True' in source
+    assert '"affinity_feature_dim": 8 * len(SELECTED_HIDDEN_LAYERS)' in source
+
+
 def test_train_masks_are_discarded_and_validation_masks_are_bitpacked() -> None:
     source = SOURCE.read_text(encoding="utf-8")
     assert (

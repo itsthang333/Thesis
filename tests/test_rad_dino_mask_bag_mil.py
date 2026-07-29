@@ -10,6 +10,7 @@ from project.models.rad_dino_mask_bag_mil import (
     aligned_candidate_consistency_loss,
     image_bag_loss,
     mask_pool_descriptors,
+    proposal_context_grid_weights,
     project_direct_resize_masks_to_square,
     self_guided_instance_loss,
     smooth_mil_pool,
@@ -71,6 +72,45 @@ def test_mask_pool_excludes_square_padding_from_local_context() -> None:
     assert torch.allclose(inside, torch.tensor(2.0))
     assert torch.allclose(context_mean, torch.tensor(2.0))
     assert torch.allclose(contrast, torch.tensor(0.0))
+
+
+def test_shared_affinity_geometry_matches_descriptor_validity_and_content() -> None:
+    config = MaskBagMILConfig(
+        token_dim=1,
+        token_layers=1,
+        hidden_dim=4,
+        context_radius=1,
+        minimum_grid_mass=0.25,
+    )
+    masks = torch.zeros(1, 2, 4, 4)
+    masks[0, 0, 1, 1] = 1.0
+    masks[0, 1, 0, 0] = 0.1
+    valid = torch.ones(1, 2, dtype=torch.bool)
+    content = torch.zeros(1, 4, 4)
+    content[:, 1:] = 1.0
+    proposal, context, affinity_valid = proposal_context_grid_weights(
+        masks,
+        valid,
+        grid_height=4,
+        grid_width=4,
+        minimum_grid_mass=config.minimum_grid_mass,
+        context_radius=config.context_radius,
+        content_masks=content,
+    )
+    tokens = torch.ones(1, 1, 4, 4, 1)
+    metadata = torch.zeros(1, 2, 4)
+    _descriptors, descriptor_valid = mask_pool_descriptors(
+        tokens,
+        masks,
+        metadata,
+        valid,
+        config,
+        content_masks=content,
+    )
+    assert torch.equal(affinity_valid, descriptor_valid)
+    assert affinity_valid.tolist() == [[True, False]]
+    assert torch.count_nonzero(context[:, :, 0]) == 0
+    assert torch.count_nonzero(proposal[:, 1]) == 0
 
 
 def test_fractional_projected_proposal_is_not_attenuated_twice() -> None:

@@ -27,6 +27,7 @@ MANIFEST_FIELDS = (
     "candidate_payload_sha256",
     "candidate_count",
     "descriptor_dim",
+    "affinity_dim",
     "packed_masks_included",
     "cache_path",
     "cache_sha256",
@@ -55,6 +56,8 @@ def save_selector_cache_record(
     *,
     descriptors: np.ndarray,
     flipped_descriptors: np.ndarray,
+    affinity_features: np.ndarray,
+    flipped_affinity_features: np.ndarray,
     candidate_indices: np.ndarray,
     family_ids: np.ndarray,
     component_ids: np.ndarray,
@@ -71,6 +74,8 @@ def save_selector_cache_record(
 
     original = np.asarray(descriptors, dtype=np.float16)
     flipped = np.asarray(flipped_descriptors, dtype=np.float16)
+    affinity = np.asarray(affinity_features, dtype=np.float16)
+    flipped_affinity = np.asarray(flipped_affinity_features, dtype=np.float16)
     indices = np.asarray(candidate_indices, dtype=np.int32)
     families = np.asarray(family_ids, dtype=np.int32)
     components = np.asarray(component_ids, dtype=np.int32)
@@ -88,6 +93,16 @@ def save_selector_cache_record(
     ):
         raise ValueError("original/flip descriptors must be aligned finite matrices")
     count, descriptor_dim = original.shape
+    if (
+        affinity.ndim != 2
+        or affinity.shape != flipped_affinity.shape
+        or affinity.shape[0] != count
+        or affinity.shape[1] <= 0
+        or not np.isfinite(affinity).all()
+        or not np.isfinite(flipped_affinity).all()
+    ):
+        raise ValueError("original/flip affinity features must align with descriptors")
+    affinity_dim = int(affinity.shape[1])
     if (
         indices.shape != (count,)
         or np.any(indices < 0)
@@ -120,9 +135,11 @@ def save_selector_cache_record(
         raise ValueError("pairwise geometry lies outside its valid range")
 
     payload: dict[str, np.ndarray] = {
-        "schema_version": np.asarray(1, dtype=np.int32),
+        "schema_version": np.asarray(2, dtype=np.int32),
         "descriptors": original,
         "flipped_descriptors": flipped,
+        "affinity_features": affinity,
+        "flipped_affinity_features": flipped_affinity,
         "candidate_indices": indices,
         "family_ids": families,
         "component_ids": components,
@@ -164,6 +181,7 @@ def save_selector_cache_record(
     return {
         "candidate_count": int(count),
         "descriptor_dim": int(descriptor_dim),
+        "affinity_dim": affinity_dim,
         "packed_masks_included": int(packed_masks is not None),
         "cache_sha256": sha256_file(path),
     }
@@ -180,13 +198,15 @@ def load_selector_cache_record(
     if sha256_file(path) != expected_sha256:
         raise ValueError("selector cache record SHA-256 mismatch")
     with np.load(path, allow_pickle=False) as payload:
-        if int(payload["schema_version"]) != 1:
+        if int(payload["schema_version"]) != 2:
             raise ValueError("selector cache schema mismatch")
         result: dict[str, np.ndarray | PackedCandidateMasks] = {
             key: payload[key]
             for key in (
                 "descriptors",
                 "flipped_descriptors",
+                "affinity_features",
+                "flipped_affinity_features",
                 "candidate_indices",
                 "family_ids",
                 "component_ids",
@@ -214,6 +234,8 @@ def load_selector_cache_record(
     # Reuse the writer's complete structural checks without rewriting the file.
     original = np.asarray(result["descriptors"])
     flipped = np.asarray(result["flipped_descriptors"])
+    affinity = np.asarray(result["affinity_features"])
+    flipped_affinity = np.asarray(result["flipped_affinity_features"])
     indices = np.asarray(result["candidate_indices"])
     families = np.asarray(result["family_ids"])
     components = np.asarray(result["component_ids"])
@@ -230,6 +252,14 @@ def load_selector_cache_record(
         or flipped.dtype != np.float16
         or not np.isfinite(original).all()
         or not np.isfinite(flipped).all()
+        or affinity.dtype != np.float16
+        or affinity.ndim != 2
+        or affinity.shape[0] != count
+        or affinity.shape[1] <= 0
+        or affinity.shape != flipped_affinity.shape
+        or flipped_affinity.dtype != np.float16
+        or not np.isfinite(affinity).all()
+        or not np.isfinite(flipped_affinity).all()
         or indices.dtype != np.int32
         or indices.shape != (count,)
         or np.any(indices < 0)
@@ -317,7 +347,7 @@ def write_selector_cache_manifest(
         writer.writeheader()
         writer.writerows(normalized)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "records": len(normalized),
         "train_records": sum(row["split"] == "train" for row in normalized),
         "validation_records": sum(row["split"] == "val" for row in normalized),
@@ -366,9 +396,12 @@ def validate_selector_cache_manifest(
                 require_packed_masks=split == "val",
             )
             descriptors = np.asarray(payload["descriptors"])
+            affinity = np.asarray(payload["affinity_features"])
             if (
                 int(row["candidate_count"]) != descriptors.shape[0]
                 or int(row["descriptor_dim"]) != descriptors.shape[1]
+                or int(row["affinity_dim"]) != affinity.shape[1]
+                or affinity.shape[0] != descriptors.shape[0]
                 or bool(int(row["packed_masks_included"])) != (split == "val")
             ):
                 raise ValueError(

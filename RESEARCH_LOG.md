@@ -5742,7 +5742,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   be evaluated alone first and may combine with normal prototypes only after
   complementary frozen recoveries are proven.
 - Tests at `tests/test_mask_bag_affinity_features.py`, canonical-LF SHA-256
-  `87c242e4db7529ae4e9661bd6e31deacb3ff5a47abdbde733d08c27dd00f5805`,
+  `829a0d78c7e929046119f3158a02af6bbbc646c9bdc62127b4854c0053260a58`,
   specify maximal coherent-token affinity, reduced cohesion for orthogonal
   tokens, empty-context/invalid-candidate behavior and a GT/subgroup-free API.
   `py_compile` passes; the local no-Torch runtime reports
@@ -5922,7 +5922,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   geometry. Otherwise a changed cache could masquerade as a better selector.
   The cache format is now implemented at
   `project/models/mask_bag_selector_cache_io.py`, canonical-LF SHA-256
-  `8f0c021415101d4bc3db35bd6a519e6c8567e4a64ad6a265a4ef07e74661358a`.
+  `24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93`.
   This is provenance/infrastructure rather than a new scientific mechanism; it
   operationalizes the already sourced representation/relational campaign.
 - Each physical NPZ contains aligned original/flip fp16 descriptors, ascending
@@ -5944,7 +5944,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   and candidate-payload identities, then opens and structurally validates
   every physical record rather than trusting the manifest hash alone.
 - Tests at `tests/test_mask_bag_selector_cache_io.py`, canonical-LF SHA-256
-  `091ff6395d379f5664960caf019ae009fb7187345690a4f44901c0e63c068176`,
+  `00907cd4570205df8fa49cbc7df87dbb1322a97377e83bfddef17d461182b351`,
   cover validation round-trip, mandatory train mask deletion, physical
   tampering, structurally malformed payloads, full physical-manifest
   validation, split-specific boundaries, candidate ordering and absence of
@@ -5961,7 +5961,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - The cache production runner is now prepared at
   `project/build_mask_bag_selector_cache.py`, canonical-LF SHA-256
-  `cf2b88ff57e1e956ed1575d1dc020b202767d28b993449fb2972a375921a4611`.
+  `a17a7fcf1d9849c65fd2bda14e0ecd23947bfa3cdcd49618367ae2e961fc4992`.
   Before RAD-DINO extraction it verifies the split, every physical candidate
   payload through both manifests, the frozen model snapshot, the direct
   geometry-v3 prediction freeze, checkpoint, prediction manifest and all `371`
@@ -5985,7 +5985,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   four candidate/pseudo manifests, all cache records and reproduction audit.
 - Static tests at `tests/test_build_mask_bag_selector_cache.py`, canonical-LF
   SHA-256
-  `9af425de0afedaaa4050c52625f1a0b96f45cdcfab9e89d3059f9469a27c5417`,
+  `610c52771e761571efe7d237bac80f45536000aa2fb4048b09029fd15c810cb5`,
   verify annotation/test isolation, pre-extraction input verification,
   reproduce-before-serialize ordering, complete provenance, split-specific
   mask handling and T4x2/frozen-geometry constraints. All six static tests and
@@ -6043,7 +6043,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - R1 now has one shared fit/score implementation at
   `project/models/mask_bag_normal_residual_training.py`, canonical-LF SHA-256
-  `300039ccae28ba5962f4747dadf890a90542602523fa70dd1961d0b8f16c695d`.
+  `8a2ca06585a2e718a29cda8c93f54f8c42743fb56f45a5ea134cad92cfcf5703`.
   The same functions will be used inside every group-held-out K-selection fold
   and for the final clean-train fit, preventing an implementation change
   between model selection and the frozen arm.
@@ -6119,7 +6119,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - The complete R1 execution runner is prepared at
   `project/run_mask_bag_normal_prototype_arm.py`, canonical-LF SHA-256
-  `02700e36d0aecf4dcc82885fadf4dc1ed1b9950905c36ad76c6b6d6235c66707`.
+  `99289fdab2edc941e9351af64a3e3e1420fe8ebef002999759e45353851c53c7`.
   It verifies the terminal selector-cache freeze, baseline checkpoint, frozen
   train/validation split and every physical cache record before assigning a
   fold or fitting any prototype. The exact known five-fold cohort
@@ -6149,7 +6149,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   target, candidate quality, consumer or test path.
 - Static/core tests at
   `tests/test_run_mask_bag_normal_prototype_arm.py`, canonical-LF SHA-256
-  `4bc3b870fe7bb4799b1ba19ebca0df9bf0c4107c85ef2898b9e24f57cec195f8`,
+  `2655563f47214a598837762af237bf6bcc8e23f5b837e13ec9e10704bda76470`,
   plus the two updated core suites report `8 passed, 5 skipped` locally.
   The skipped tests require Torch and are mandatory on Kaggle before execution;
   all six changed/new files pass `py_compile`.
@@ -6247,4 +6247,72 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   audited gallery change raises the oracle under a separate protocol. Neither
   condition currently holds. This contract prevents one- or two-arm failures
   from causing another diagnostic loop.
+
+### R2 affinity-cache integration and residual-training readiness
+
+- Audit of the prepared selector cache exposed an execution gap: the compact
+  affinity-statistic primitive existed, but the cache builder retained only
+  mean-pooled descriptors. Running R2 from that cache would either require a
+  second complete RAD-DINO pass or risk rebuilding proposal/context geometry
+  differently from v3. The cache contract is therefore upgraded before any
+  cache exists; this changes no running geometry-v3 artifact.
+- `project/models/rad_dino_mask_bag_mil.py`, canonical-LF SHA-256
+  `0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67`,
+  now exposes one shared `proposal_context_grid_weights` primitive. Both the
+  accepted mean descriptor and R2 affinity summaries use the same area
+  projection, `minimum_grid_mass`, content mask, dilation radius, validity and
+  padding exclusion. The refactor preserves the original arithmetic order;
+  the future cache job must still reproduce all 371 v3 winners/map hashes
+  before serialization, so source equivalence is not accepted on inspection
+  alone.
+- `project/run_rad_dino_mask_bag_mil_probe.py`, canonical-LF SHA-256
+  `0a220933343212dd3f4cc349f459db54b2b492d04240a7aa28fb85c475d54ae8`,
+  can now compute the fixed 24-value affinity summary during the same encoder
+  pass that creates each original/flip descriptor. It asserts exact equality
+  of descriptor and affinity kept indices and applies the corresponding
+  square-frame flip to both candidate and content masks. This avoids a second
+  3,352-image RAD-DINO extraction and makes T4x2 useful at the actual
+  extraction bottleneck. Baseline descriptors retain the original CPU
+  arithmetic required for exact v3 reproduction, while the additional
+  affinity reductions run on the encoder output device rather than adding a
+  large CPU-only matrix workload.
+- Selector-cache schema v2 stores aligned fp16
+  `affinity_features/flipped_affinity_features` for every candidate and binds
+  `affinity_dim=24` in every manifest row. The loader physically validates
+  dtype, finiteness, original/flip shape and candidate alignment. R1 now also
+  fails closed unless the shared accepted cache contains these fields; this
+  ensures R1 and R2 consume one identical gallery/cache rather than
+  experiment-specific caches.
+- The R2 fit/score core is prepared at
+  `project/models/mask_bag_affinity_residual_training.py`, canonical-LF
+  SHA-256
+  `d7c3054f80bc89780eb2c9c56a3c6fb43655c12dd717c5ee223f7f9adf81d95f`.
+  It requires exactly 24 aligned cached features, retains the complete frozen
+  v3 scorer and trains only the zero-initialized auxiliary residual using
+  image-level SmoothMax BCE, aligned original/flip consistency and residual
+  drift. There is no argmax, inferred positive candidate, segmentation target,
+  subgroup or validation-quality input. R2 therefore tests whether local
+  token cohesion/boundary contrast improves ranking, not whether a second
+  selector can relearn the gallery.
+- This mechanism follows the already frozen AffinityNet/DINO-ECA/TokenCut
+  rationale:
+  https://openaccess.thecvf.com/content_cvpr_2018/html/Ahn_Learning_Pixel-Level_Semantic_CVPR_2018_paper.html,
+  https://openreview.net/forum?id=qipYQAcvVG, and
+  https://openaccess.thecvf.com/content/CVPR2022/html/Wang_Self-Supervised_Transformers_for_Unsupervised_Object_Discovery_Using_Normalized_Cut_CVPR_2022_paper.html.
+  Its anticipated strength is candidate-internal and across-boundary structure
+  absent from mean descriptors; its explicit weakness is that healthy bone can
+  also be highly coherent. Hence R2 remains separate from R1 normality,
+  relational pooling and proposal generation, and must pass the common
+  selected-to-oracle regret gate on its own.
+- New R2 tests at
+  `tests/test_mask_bag_affinity_residual_training.py`, canonical-LF SHA-256
+  `0b231a2495c4e54a013ec1749872735ae9852c9feb1a858b0fa622d76bab0012`,
+  plus updated geometry/cache/R1 suites report `26 passed, 9 skipped` under
+  the local bundled NumPy runtime. The skips require Torch and remain mandatory
+  in the post-v3 Kaggle preflight. All changed/new Python files pass
+  `py_compile` and `git diff --check` has no error.
+- This is source/cache readiness, not an R2 result. No cache, affinity feature,
+  adapter, validation prediction or consumer was produced; validation GT and
+  BTXRD test were not accessed, and Kaggle status was not polled outside the
+  scheduled monitor.
 

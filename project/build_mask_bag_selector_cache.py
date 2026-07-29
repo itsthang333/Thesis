@@ -316,6 +316,10 @@ def _serialize_cache_split(
             args.output_dir / relative,
             descriptors=np.asarray(record["descriptors"]),
             flipped_descriptors=np.asarray(record["flipped_descriptors"]),
+            affinity_features=np.asarray(record["affinity_features"]),
+            flipped_affinity_features=np.asarray(
+                record["flipped_affinity_features"]
+            ),
             candidate_indices=kept,
             family_ids=families,
             component_ids=components[kept],
@@ -428,6 +432,7 @@ def main() -> None:
         args,
         device,
         split="train",
+        include_affinity_features=True,
     )
     val_cache = build_descriptor_cache(
         val_rows,
@@ -438,6 +443,7 @@ def main() -> None:
         args,
         device,
         split="val",
+        include_affinity_features=True,
     )
     del encoder, backbone
     torch.cuda.empty_cache()
@@ -518,6 +524,8 @@ def main() -> None:
         "validation_map_hashes_reproduced": 371,
         "train_masks_discarded": True,
         "validation_masks_bitpacked": True,
+        "affinity_features_cached": True,
+        "affinity_feature_dim": 8 * len(SELECTED_HIDDEN_LAYERS),
         "validation_gt_read": False,
         "consumer_trained": False,
         "test_evaluated": False,

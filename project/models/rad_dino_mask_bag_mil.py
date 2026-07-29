@@ -138,6 +138,84 @@ def _validate_inputs(
         raise ValueError("candidate_metadata must be finite")
 
 
+def proposal_context_grid_weights(
+    candidate_masks: torch.Tensor,
+    candidate_valid: torch.Tensor,
+    *,
+    grid_height: int,
+    grid_width: int,
+    minimum_grid_mass: float,
+    context_radius: int,
+    content_masks: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Project candidates and their local context to one token grid.
+
+    This is the shared geometric primitive for mean-pooled descriptors and
+    affinity summaries. Keeping one implementation prevents an R2 auxiliary
+    feature from silently using a different validity/content convention.
+    """
+
+    if candidate_masks.ndim != 4:
+        raise ValueError("candidate_masks must have shape [B,N,H,W]")
+    if candidate_valid.shape != candidate_masks.shape[:2]:
+        raise ValueError("candidate_valid must align with candidate masks")
+    if grid_height <= 0 or grid_width <= 0:
+        raise ValueError("token-grid dimensions must be positive")
+    if minimum_grid_mass <= 0 or context_radius < 1:
+        raise ValueError("grid-mass/context controls are invalid")
+    if not torch.isfinite(candidate_masks).all():
+        raise ValueError("candidate masks must be finite")
+    batch, candidates, mask_height, mask_width = candidate_masks.shape
+    if content_masks is not None:
+        if content_masks.shape != (batch, mask_height, mask_width):
+            raise ValueError("content_masks must align with candidate masks")
+        if not torch.isfinite(content_masks).all():
+            raise ValueError("content masks must be finite")
+        if not (content_masks > 0).flatten(start_dim=1).any(dim=1).all():
+            raise ValueError("every content mask must contain valid support")
+
+    proposal = F.interpolate(
+        candidate_masks.float().reshape(
+            batch * candidates,
+            1,
+            mask_height,
+            mask_width,
+        ),
+        size=(grid_height, grid_width),
+        mode="area",
+    ).reshape(batch, candidates, grid_height, grid_width)
+    if content_masks is None:
+        content = torch.ones(
+            (batch, grid_height, grid_width),
+            dtype=proposal.dtype,
+            device=proposal.device,
+        )
+    else:
+        content = F.interpolate(
+            content_masks[:, None].float(),
+            size=(grid_height, grid_width),
+            mode="area",
+        )[:, 0].clamp(0.0, 1.0)
+    valid = candidate_valid.bool() & (
+        proposal.sum(dim=(-2, -1)) >= minimum_grid_mass
+    )
+    proposal = proposal * valid[:, :, None, None].to(proposal.dtype)
+    kernel = 2 * context_radius + 1
+    dilated = F.max_pool2d(
+        proposal.reshape(
+            batch * candidates,
+            1,
+            grid_height,
+            grid_width,
+        ),
+        kernel_size=kernel,
+        stride=1,
+        padding=context_radius,
+    ).reshape(batch, candidates, grid_height, grid_width)
+    context = (dilated - proposal).clamp_min(0.0) * content[:, None]
+    return proposal, context, valid
+
+
 def mask_pool_descriptors(
     token_maps: torch.Tensor,
     candidate_masks: torch.Tensor,
@@ -164,41 +242,15 @@ def mask_pool_descriptors(
     )
     batch, layers, grid_h, grid_w, channels = token_maps.shape
     candidates = candidate_masks.shape[1]
-    masks = F.interpolate(
-        candidate_masks.float().reshape(
-            batch * candidates,
-            1,
-            candidate_masks.shape[-2],
-            candidate_masks.shape[-1],
-        ),
-        size=(grid_h, grid_w),
-        mode="area",
-    ).reshape(batch, candidates, grid_h, grid_w)
-    if content_masks is None:
-        content = torch.ones(
-            (batch, grid_h, grid_w),
-            dtype=masks.dtype,
-            device=masks.device,
-        )
-    else:
-        content = F.interpolate(
-            content_masks[:, None].float(),
-            size=(grid_h, grid_w),
-            mode="area",
-        )[:, 0].clamp(0.0, 1.0)
-    valid = candidate_valid.bool() & (
-        masks.sum(dim=(-2, -1)) >= config.minimum_grid_mass
+    masks, context, valid = proposal_context_grid_weights(
+        candidate_masks,
+        candidate_valid,
+        grid_height=grid_h,
+        grid_width=grid_w,
+        minimum_grid_mass=config.minimum_grid_mass,
+        context_radius=config.context_radius,
+        content_masks=content_masks,
     )
-    masks = masks * valid[:, :, None, None].to(masks.dtype)
-
-    kernel = 2 * config.context_radius + 1
-    dilated = F.max_pool2d(
-        masks.reshape(batch * candidates, 1, grid_h, grid_w),
-        kernel_size=kernel,
-        stride=1,
-        padding=config.context_radius,
-    ).reshape(batch, candidates, grid_h, grid_w)
-    context = (dilated - masks).clamp_min(0.0) * content[:, None]
 
     tokens = token_maps.reshape(batch, layers, grid_h * grid_w, channels)
     mask_weights = masks.reshape(batch, candidates, grid_h * grid_w)
@@ -402,6 +454,7 @@ __all__ = [
     "aligned_candidate_consistency_loss",
     "image_bag_loss",
     "mask_pool_descriptors",
+    "proposal_context_grid_weights",
     "project_direct_resize_masks_to_square",
     "self_guided_instance_loss",
     "smooth_mil_pool",

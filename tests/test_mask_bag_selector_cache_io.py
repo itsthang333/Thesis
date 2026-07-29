@@ -25,6 +25,7 @@ PackedCandidateMasks = MODULE.PackedCandidateMasks
 
 def _arrays() -> dict[str, object]:
     descriptors = np.arange(24, dtype=np.float32).reshape(3, 8)
+    affinity = np.arange(72, dtype=np.float32).reshape(3, 24) / 100.0
     masks = np.zeros((3, 4, 5), dtype=np.uint8)
     masks[0, :2, :2] = 1
     masks[1, 1:3, 1:4] = 1
@@ -50,6 +51,8 @@ def _arrays() -> dict[str, object]:
     return {
         "descriptors": descriptors,
         "flipped_descriptors": descriptors + 1,
+        "affinity_features": affinity,
+        "flipped_affinity_features": affinity + 0.01,
         "candidate_indices": np.asarray([0, 2, 5]),
         "family_ids": np.asarray([0, 0, 1]),
         "component_ids": np.asarray([4, 4, 9]),
@@ -112,6 +115,13 @@ class SelectorCacheIOTests(unittest.TestCase):
                     np.asarray(_arrays()["descriptors"], dtype=np.float16),
                 )
             )
+            self.assertTrue(
+                np.array_equal(
+                    loaded["affinity_features"],
+                    np.asarray(_arrays()["affinity_features"], dtype=np.float16),
+                )
+            )
+            self.assertEqual(saved["affinity_dim"], 24)
             self.assertTrue(
                 np.array_equal(loaded["candidate_indices"], np.asarray([0, 2, 5]))
             )
@@ -203,6 +213,15 @@ class SelectorCacheIOTests(unittest.TestCase):
             values = _arrays()
             values["candidate_indices"] = np.asarray([0, 5, 2])
             with self.assertRaisesRegex(ValueError, "index/family/shape"):
+                MODULE.save_selector_cache_record(
+                    Path(directory) / "record.npz", **values
+                )
+
+    def test_misaligned_affinity_features_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            values = _arrays()
+            values["affinity_features"] = np.ones((2, 24), dtype=np.float32)
+            with self.assertRaisesRegex(ValueError, "affinity features"):
                 MODULE.save_selector_cache_record(
                     Path(directory) / "record.npz", **values
                 )

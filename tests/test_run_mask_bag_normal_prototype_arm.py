@@ -38,6 +38,8 @@ def test_runner_verifies_and_opens_every_cache_record_before_fitting() -> None:
     assert source.index("validate_selector_cache_manifest(") < fit
     assert source.index("load_selector_cache_record(") < fit
     assert source.index("cache, validated_cache_rows = _load_cache_records(") < fit
+    assert 'freeze.get("affinity_features_cached") is not True' in source
+    assert 'freeze.get("affinity_feature_dim") != 24' in source
 
 
 def test_k_and_fold_selection_are_finite_group_excluded_and_train_only() -> None:

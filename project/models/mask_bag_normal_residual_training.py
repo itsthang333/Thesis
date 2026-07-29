@@ -190,19 +190,22 @@ def train_normal_residual_adapter(
     training_config: NormalResidualTrainingConfig,
     device: torch.device,
     initial_adapter_state: Mapping[str, torch.Tensor] | None = None,
+    auxiliary_dim: int = 4,
 ) -> tuple[AuxiliaryDescriptorResidual, list[dict[str, float]]]:
     """Fit only the residual adapter; the independent scorer stays frozen."""
 
     if not records:
         raise ValueError("adapter training records cannot be empty")
     frozen_base_scorer.requires_grad_(False).eval()
+    if auxiliary_dim <= 0:
+        raise ValueError("auxiliary_dim must be positive")
     if initial_adapter_state is None:
         torch.manual_seed(training_config.seed)
         if device.type == "cuda":
             torch.cuda.manual_seed_all(training_config.seed)
     adapter = AuxiliaryDescriptorResidual(
         base_descriptor_dim=descriptor_dim,
-        auxiliary_dim=4,
+        auxiliary_dim=auxiliary_dim,
         hidden_dim=training_config.adapter_hidden_dim,
     ).to(device)
     if initial_adapter_state is not None:

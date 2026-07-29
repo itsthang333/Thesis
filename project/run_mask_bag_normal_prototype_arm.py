@@ -107,6 +107,8 @@ def _verify_cache_freeze(
         or freeze.get("validation_map_hashes_reproduced") != 371
         or freeze.get("train_masks_discarded") is not True
         or freeze.get("validation_masks_bitpacked") is not True
+        or freeze.get("affinity_features_cached") is not True
+        or freeze.get("affinity_feature_dim") != 24
         or freeze.get("validation_gt_read") is not False
         or freeze.get("consumer_trained") is not False
         or freeze.get("test_evaluated") is not False
