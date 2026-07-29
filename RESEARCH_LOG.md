@@ -6523,3 +6523,66 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   The prelaunch wrapper audit reports `PRELAUNCH_PASS`; numerical Torch
   execution remains mandatory on Kaggle.
 
+### Geometry-v3 version 3 byte-hash reproducibility failure and paired recovery
+
+- After the user resumed the paused task, one status check found version `3`
+  at terminal `ERROR`. Direct logs and compact output were downloaded into a
+  new ignored directory. Source checkout `ae03531`, the version-3 wrapper hash
+  `02309d49...`, focused preflight `33 passed` and whole-repository preflight
+  `219 passed, 1 skipped` all passed. The run then completed all `2,981`
+  train candidate payloads and stopped at `5,709.73` seconds with
+  `Regenerated train candidate/pseudo manifests differ from terminal v6`.
+  Validation candidate generation, fractional-mass audit, optimizer
+  construction, selector fitting, prediction, validation-GT evaluation,
+  consumer training and BTXRD test access were never reached. Version `3`
+  therefore has no scientific result.
+- Direct terminal-v6 manifests were downloaded separately and joined by exact
+  image name against the regenerated manifests. Candidate structure is
+  unchanged for every image: `2,981/2,981` image rows, candidate count, box
+  count, positive/negative point count and generation status agree exactly.
+  The only candidate-manifest differences are `diagnostic_sha256` on all
+  `2,981` rows and compressed `diagnostic_bytes` on `2,926`. The terminal-v6
+  versus version-3 candidate-manifest hashes are `7dfe43cc...` versus
+  `ad3b52d...`.
+- The final pseudo mask is bit-identical for all `2,981` train images:
+  `mask_sha256`, status and SAM candidate count have zero mismatches. The
+  pseudo-manifest hashes nevertheless differ (`5d50bd39...` versus
+  `5aec58ce...`) because `1,305` rows contain small summary differences.
+  Maximum absolute CAM deltas are at most `1.20e-7`; the largest
+  selection-score delta is `0.002014`; only six unique prompt counts, two
+  selected-area summaries and one above-threshold count differ. Every one of
+  those rows still has the same final pseudo-mask hash.
+- This evidence rejects the wrapper's whole-file hash equality as a sufficient
+  *causal equivalence test*, but it does not authorize silently replacing the
+  four frozen v6 hashes. NumPy documents NPZ as a ZIP archive of named NPY
+  members, so an NPZ byte hash binds serialization as well as array values:
+  https://numpy.org/doc/stable/reference/generated/numpy.savez.html.
+  PyTorch's reproducibility note separately states that seeded CUDA execution
+  is not universally bit-identical unless deterministic implementations are
+  available and enforced:
+  https://docs.pytorch.org/docs/stable/notes/randomness.html. More
+  importantly, terminal v6 deleted its physical NPZ payloads after compact
+  export; its manifests cannot prove that every non-selected SAM candidate is
+  bit-identical. A `v3-minus-v6` result on a regenerated gallery would
+  therefore retain a small gallery confound even though the observed discrete
+  evidence is extremely stable.
+- The valid recovery is predeclared conceptually before any retry: generate
+  and physically freeze one gallery, run the legacy direct-resize descriptor
+  geometry and square-corrected geometry against that exact same gallery,
+  freeze both complete `371`-map predictions before either evaluator imports
+  validation segmentation, and compare them with the same paired
+  complete-group bootstrap. Both arms must have identical labels, gallery,
+  ordering, RAD-DINO tokens, scorer, loss, seed, optimizer and final-only
+  epochs; descriptor coordinate geometry is the sole changed scientific
+  variable. The corrected geometry remains canonical because it repairs a
+  proven coordinate error, not because validation GT selects it. This paired
+  control also avoids reopening the already established
+  descriptor/selector—not candidate-support—bottleneck.
+- Machine-readable error evidence is frozen at
+  `artifacts/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/version3_error_audit.json`,
+  SHA-256
+  `db4b29054719960abfed97d6380ff7cb8388d0b86f3f574e662f9f1311110702`.
+  It records the direct log/wrapper hashes, field-level manifest comparison,
+  maximum numeric deltas, execution boundary and locks:
+  `consumer_trained=false`, `test_evaluated=false`.
+

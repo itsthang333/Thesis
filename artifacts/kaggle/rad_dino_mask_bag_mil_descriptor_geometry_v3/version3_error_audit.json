@@ -1,0 +1,92 @@
+{
+  "artifact": "rad_dino_mask_bag_mil_descriptor_geometry_v3_version3_error_audit",
+  "audited_utc": "2026-07-29T16:42:00Z",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-geometry-v3",
+  "version": 3,
+  "kernel_status": "ERROR",
+  "classification": "IMPLEMENTATION_GUARD_FAILURE_BEFORE_MODEL_FIT",
+  "direct_evidence": {
+    "execution_log_sha256": "044f552ac983225c26c324dda0befbc79212925cda8023845336807f06836718",
+    "wrapper_sha256": "02309d49385d518dd64c0e233d336abc6101f78af52a7232e03b09df06301bf1",
+    "checkout_commit": "ae035311b7e7e080c7454a5f2e06b3f6f96d060b",
+    "focused_preflight": "33 passed",
+    "whole_repository_preflight": "219 passed, 1 skipped",
+    "failure_runtime_seconds": 5709.72842439,
+    "failure": "RuntimeError: Regenerated train candidate/pseudo manifests differ from terminal v6"
+  },
+  "execution_reached": {
+    "source_and_protocol_hash_guards": true,
+    "torch_preflight": true,
+    "whole_repository_preflight": true,
+    "train_candidate_generation": true,
+    "train_candidate_physical_payload_audit": true,
+    "validation_candidate_generation": false,
+    "fractional_grid_mass_audit": false,
+    "optimizer_constructed": false,
+    "selector_fit": false,
+    "validation_prediction": false,
+    "validation_ground_truth": false,
+    "consumer_training": false,
+    "test_evaluation": false
+  },
+  "train_manifest_comparison": {
+    "images": 2981,
+    "terminal_v6_candidate_manifest_sha256": "7dfe43cc90585c58c48bff95dfe6884b84ae3e304c52b8f3bab3f18ea09d6a28",
+    "version3_candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "terminal_v6_pseudo_manifest_sha256": "5d50bd39619e3e8859e86fdcbb80b8d9bcfc3de8b6d0a88d0011fc35ccb1dc77",
+    "version3_pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "candidate_rows_with_any_difference": 2981,
+    "candidate_differing_columns": {
+      "diagnostic_sha256": 2981,
+      "diagnostic_bytes": 2926
+    },
+    "candidate_stable_field_mismatches": 0,
+    "candidate_count_mismatches": 0,
+    "box_count_mismatches": 0,
+    "positive_point_count_mismatches": 0,
+    "negative_point_count_mismatches": 0,
+    "generation_status_mismatches": 0,
+    "pseudo_rows_with_any_difference": 1305,
+    "final_pseudo_mask_sha256_mismatches": 0,
+    "pseudo_status_mismatches": 0,
+    "sam_candidate_count_mismatches": 0,
+    "maximum_absolute_numeric_deltas": {
+      "cam_max": 1.19209289550781e-07,
+      "cam_mean": 1.19209289550781e-07,
+      "cam_std": 5.96046447753906e-08,
+      "selection_score_min": 0.00201317667961121,
+      "selection_score_mean": 0.0017109215259552,
+      "selection_score_max": 5.96046447753906e-08,
+      "support_area_ratio": 9.76562500001887e-06,
+      "selected_area_ratio": 0.005517578125
+    },
+    "rows_with_unique_prompt_count_change": 6,
+    "rows_with_selected_area_ratio_change": 2,
+    "rows_with_above_threshold_candidate_count_change": 1
+  },
+  "diagnosis": {
+    "exact_byte_hash_reproduction": "NOT_ESTABLISHED",
+    "whole_gallery_scientific_equivalence": "NOT_CLAIMED",
+    "evidence_interpretation": "The regenerated gallery preserves every manifest-level candidate structure field and every final pseudo-mask hash, while compressed diagnostic payload byte hashes and small floating summaries differ. The terminal-v6 physical NPZ payloads were deleted after its successful compact export, so candidate-level bit identity cannot be recovered from manifests alone.",
+    "protocol_consequence": "Do not replace the four frozen v6 hashes with the observed version-3 hashes and call the arm unchanged. A valid recovery must freeze one regenerated physical gallery and run legacy-direct-resize and square-corrected descriptor geometry against that exact same gallery before either arm opens validation segmentation."
+  },
+  "references": [
+    {
+      "title": "NumPy savez documentation",
+      "url": "https://numpy.org/doc/stable/reference/generated/numpy.savez.html",
+      "relevance": "NPZ is a ZIP archive of named NPY members, so a whole-file byte hash binds serialization as well as array values."
+    },
+    {
+      "title": "PyTorch Reproducibility",
+      "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html",
+      "relevance": "Seeds and fixed algorithms do not by themselves guarantee bit-identical results across all CUDA operations and environments; deterministic algorithms must be enforced where available."
+    }
+  ],
+  "decision": {
+    "version3_result": "NO_SCIENTIFIC_RESULT",
+    "exact_hash_guard": "REJECT_AS_CAUSAL_EQUIVALENCE_TEST",
+    "next_experiment": "PAIRED_LEGACY_VS_SQUARE_CORRECTED_GEOMETRY_ON_ONE_NEWLY_FROZEN_PHYSICAL_GALLERY",
+    "consumer_authorized": false,
+    "test_remains_locked": true
+  }
+}
