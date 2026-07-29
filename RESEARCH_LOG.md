@@ -5915,3 +5915,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   No Kaggle poll, validation GT/test access, selector fit or consumer training
   occurred.
 
+### Hash-bound selector-development cache format
+
+- A reusable selector campaign is scientifically useful only if every arm sees
+  the exact accepted v3 descriptors, valid-candidate indices and gallery
+  geometry. Otherwise a changed cache could masquerade as a better selector.
+  The cache format is now implemented at
+  `project/models/mask_bag_selector_cache_io.py`, canonical-LF SHA-256
+  `81904e18e8985b2c4b7ec33f012ecfc15295a6f50c3874020d1709ec9bc328db`.
+  This is provenance/infrastructure rather than a new scientific mechanism; it
+  operationalizes the already sourced representation/relational campaign.
+- Each physical NPZ contains aligned original/flip fp16 descriptors, ascending
+  immutable candidate-gallery indices, exact family IDs, four position-free
+  shape features and symmetric float32 IoU/containment/relative-distance
+  matrices. Training records are forbidden from retaining candidate masks
+  after this graph geometry has been computed. Validation records retain only
+  exact bit-packed immutable WTA masks, because future frozen candidate logits
+  must still be converted into prediction maps before post-freeze evaluation.
+- The manifest binds every record to split, image/group identity, image label,
+  physical candidate-payload SHA-256, kept candidate count, descriptor
+  dimension, mask-retention flag and physical cache hash. The loader rechecks
+  hashes, schema, dtype, finite values, candidate order, family validity,
+  geometry symmetry/range and packed-mask byte count. Thus even a hash-valid
+  but structurally malformed record fails closed.
+- Tests at `tests/test_mask_bag_selector_cache_io.py`, canonical-LF SHA-256
+  `351a6936f89d56999ea8ed2bad4b6d76eda643b61360c570cc08cb2f595a0779`,
+  cover validation round-trip, mandatory train mask deletion, physical
+  tampering, structurally malformed payloads, split-specific manifest
+  boundaries, candidate ordering and absence of GT/subgroup APIs. All seven
+  tests pass under the bundled NumPy runtime and both files pass
+  `py_compile`.
+- This format does not by itself authorize a cache. The future post-v3 builder
+  must still bind the terminal prediction freeze/checkpoint and reproduce all
+  `371` selected indices and final map hashes before writing the cache freeze.
+  No cache was produced, Kaggle status polled, validation GT/test accessed or
+  selector/consumer trained during this source preparation.
+
