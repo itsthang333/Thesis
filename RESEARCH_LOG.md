@@ -6363,3 +6363,75 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   descriptor/selector bottleneck. No Kaggle status poll, validation GT/test
   access or consumer training occurred here.
 
+### S1 matched family-balanced pooling readiness
+
+- A causal audit refined the S1 design. Recomputing only a family-balanced bag
+  probability cannot change candidate ranking, while training a new residual
+  head can. Attributing a resulting Dice change directly to family balance
+  would therefore confound the new head/additional epochs with the pooling
+  mechanism. S1 is now a matched two-arm experiment: an ordinary normalized
+  SmoothMax residual control and a family-balanced SmoothMax residual receive
+  the exact same frozen descriptors/base scorer, architecture, initial state,
+  batches, optimizer, epochs and loss weights. The sole scientific change is
+  the bag pooling operation during training and final bag scoring.
+- The paired training core is
+  `project/models/mask_bag_pooling_residual_training.py`, canonical-LF
+  SHA-256
+  `8deaee980bd639fddc309eab9942147c8b0be8538951298e6e3c4fecb38c063f`.
+  A descriptor-only residual MLP has an exactly zero-initialized final layer,
+  so both arms begin with candidate logits identical to v3. The base logits
+  are detached inside the objective. Both arms use only image-level BCE,
+  aligned original/flip consistency and residual drift; there is no argmax,
+  positive-instance target, segmentation quality or subgroup input.
+- The standard arm uses the existing normalized SmoothMax across all valid
+  candidates. The family arm first applies the same normalized SmoothMax
+  within each immutable `(proposal source, prompt mode, component)` family,
+  then across families. An identical duplicate within one family is therefore
+  neutral instead of increasing that family's effective representation.
+  Ilse et al. motivate permutation-invariant learned aggregation for
+  image-label MIL:
+  https://proceedings.mlr.press/v80/ilse18a.html.
+  Deep Sets provides the general invariant-set-function foundation:
+  https://proceedings.neurips.cc/paper_files/paper/2017/hash/f22e4747da1aa27e363d86d40ff442fe-Abstract.html.
+  The BTXRD hierarchy is a bounded adaptation to the measured proposal-count
+  shortcut, not a claim that proposal families are latent tumor classes.
+- The complete paired runner is
+  `project/run_mask_bag_family_balanced_pair.py`, canonical-LF SHA-256
+  `e8bc06a7e2e3bd75de2f34fe32823e3d92e6237d6fdbcb1498ff4b8f991d6f59`.
+  It verifies the shared cache/baseline and every physical record before
+  training. One CPU-created initial state is physically frozen and supplied to
+  both workers. Standard trains on T4:0 and family-balanced on the identical
+  T4:1 concurrently. Before fitting, each device scores the same eight-image
+  probe from that shared zero-residual state; execution fails if maximum
+  candidate-logit disagreement exceeds `5e-6`, preventing a device difference
+  from masquerading as the pooling effect.
+- Both arms use the same fixed final-only contract: 16 epochs, batch 16,
+  AdamW `3e-4/1e-4`, hidden 128, seed 42, bag temperature 0.20,
+  consistency 0.10 and drift `1e-3`. Each independently freezes all 371
+  candidate-score payloads, maps, manifests, checkpoint and history before a
+  pair-level freeze is written. The pair freeze records all matched variables,
+  the initial-state hash, cross-device probe delta and
+  `sole_changed_variable=standard_vs_family_balanced_bag_pool`.
+- S1 promotion is stricter than comparing family-balanced directly with v3.
+  The family arm must first improve the frozen ranking/mechanism diagnostics
+  over its matched standard residual control; otherwise any improvement shared
+  by both is residual-head/extra-training evidence, not family/count evidence.
+  It must still satisfy the common no-overall-regression, subgroup-regret and
+  count/miss guard relative to v3. Its strength is direct control of proposal
+  multiplicity; its weakness is that it cannot repair an affinity/descriptor
+  separability failure.
+- Tests at
+  `tests/test_mask_bag_pooling_residual_training.py`, canonical-LF SHA-256
+  `c1858d832b83a7f1a148cb2bc57a1dd5fb8c4c0f8a6ba046635ddea5eaa39e71`,
+  and
+  `tests/test_run_mask_bag_family_balanced_pair.py`, canonical-LF SHA-256
+  `4aba83a50434cc35481937e1a673a84650efc9505d608cfff9117d7ecf395bb7`,
+  verify zero-residual identity, standard/family objective separation, frozen
+  base and complete candidate scoring, matched variables, T4x2 execution,
+  cross-device guard and prediction-first freezes. The focused suites report
+  `7 passed, 7 skipped`; numerical Torch paths remain mandatory on Kaggle.
+- S1 remains source-only until geometry-v3 and the common cache pass their
+  independent audits. No S1 model/prediction was produced, Kaggle was not
+  polled outside its scheduled monitor, validation GT/test were not accessed
+  and no consumer was trained.
+
