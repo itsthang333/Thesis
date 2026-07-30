@@ -40,8 +40,8 @@
     "reason": "This changes only a diagnostic numerical-symmetry assertion. Candidate tensors, retention threshold, descriptors, losses, optimizer, seeds, epochs, prediction writers, pair freeze, evaluator and gates are unchanged."
   },
   "corrected_source_hashes": {
-    "project/audit_mask_bag_fractional_grid_mass.py": "f56361372e920c8e8790d3ac2b022aff2d24cb5db4daa050ba43c545a654003a",
-    "tests/test_mask_bag_fractional_grid_mass_audit.py": "90372dcc9f49623898925b5d2fe1afd1d9eba07a309418c5224fb0396f9e864e"
+    "project/audit_mask_bag_fractional_grid_mass.py": "a4841ee11f7cb61bde56b7681caea8caf0fa4ffd085e9b9ddff908c8d95bebe0",
+    "tests/test_mask_bag_fractional_grid_mass_audit.py": "2d1d4efeee9688be28a4fc0d2dca4515eff9fc45090a4c4dc5c10a1374ac9d57"
   },
   "unchanged_contract": {
     "private_dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
