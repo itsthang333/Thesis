@@ -6642,3 +6642,77 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   geometry-v3 output as a kernel source; no monitor is created by this
   protocol.
 
+## 2026-07-30 - Goal recovery and paired geometry dataset-source correction
+
+- The complete `6,644`-line research log was re-audited from the first clean
+  split and supervised reference work through the latest same-gallery recovery
+  freeze. Git was clean on `research-wsss-improvement` at
+  `3cd43a126667fd1b54d9a1ba21243f0d1b9876f5`. The task runtime contained no
+  active goal even though the research contract remained intact in this log
+  and its protocols. The active goal was therefore restored verbatim in
+  substance: image-level-only WSSS; Dice
+  overall/small/medium/large at least
+  `0.34024039/0.17895493/0.51244178/0.49370336`; persistent focus on the
+  descriptor/selector bottleneck; prediction freeze before validation GT; no
+  consumer before the operational gate; BTXRD test locked; heavy compute only
+  on Kaggle T4x2/P100.
+- One direct status check found paired recovery kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1` version `1` at
+  terminal `ERROR`. Direct logs and the only output files were downloaded to a
+  new ignored temporary directory. Checkout `75efd2b...`, runtime installation
+  and frozen split hash `85511ee1...` passed, then the runner stopped at
+  `87.19` seconds because its fail-closed constant expected `353` test rows
+  while the immutable split correctly contains `373`. T4x2 verification,
+  gallery discovery, preflight tests, validation generation, optimizer
+  construction, prediction, validation-GT evaluation, consumer training and
+  test access were never reached. This is an implementation-only error and has
+  no scientific result.
+- Machine-readable evidence is
+  `artifacts/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/paired_version1_error_audit.json`.
+  The direct output-log SHA-256 is
+  `a5f249719babd263f639857e0261690e55437ea04381509270e789fb8ea40d1a`;
+  the separately retrieved CLI-log JSON SHA-256 is
+  `5f4c7ddd4bed53a24ac388d1acda341e709f9d2cf45dbc58c910539fbdac41a9`.
+- The split guard was corrected from `test=353` to `test=373` and bound by an
+  assertion in the existing recovery test. `py_compile` and the focused suite
+  report `3 passed`. Isolated source commit
+  `f3ad49d657e50b5bc0da3572d98f3376800f2099` was pushed to
+  `codex/geometry-v3-v2`; runner/test canonical-LF SHA-256 values at that
+  correction were `f9fecd9d.../156250a1...`. Correction-v4 protocol SHA-256
+  is `9f64d5fcfa420e0e9f09953c0db2688c0654711db29cce7779cc527cda855093`.
+- The version-3 train gallery recovery finished locally without regenerating
+  any candidate. Exactly `5,967` files / `1,172,344,928` bytes were retrieved
+  from the direct error output. All `2,981` candidate NPZ payloads
+  (`1,169,292,707` bytes) and all `2,981` pseudo masks (`1,331,655` bytes)
+  were physically rehashed against manifests
+  `ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1`
+  and
+  `5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21`.
+  `consumer_trained=false` and `test_evaluated=false`.
+- Kaggle does not accept a terminal-ERROR kernel as an input source, so the
+  exact recovered gallery is being uploaded as private dataset
+  `itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1`. Directory
+  transport uses `train_candidates.zip`; the wrapper safely extracts it and
+  supplies an explicit recovered-root path. The runner still verifies both
+  manifest hashes and every manifest-bound NPZ/PNG before heavy work. This is
+  transport only: neither arm's gallery, descriptor, loss, optimizer, seed,
+  epoch budget, prediction writer, evaluator or goal changes.
+- Transport-root support is isolated at source commit
+  `260388aee9a0d264982cbad6b8ded353c9fa3eaf`; final runner/test canonical-LF
+  SHA-256 values are `72e1226d.../50231367...`. Correction-v5 protocol is
+  frozen at SHA-256
+  `b858c2e196c4a364c7c33b319fb3f3c00062091ddd5ddf8110b853fe6b5cbb39`
+  and committed in execution checkout
+  `f03c16c8543ac242849a2acd2b55cd9820d1d492`. The next valid action is to
+  finish the private dataset upload, freeze/audit the revised wrapper and
+  launch paired version `2`. No monitor is created; descriptor/selector arms
+  R1/R2/S1 remain gated on the terminal paired audit and accepted shared cache.
+- This correction uses no new scientific technique. The scientific rationale
+  remains the same-gallery causal control already sourced in the preceding
+  section; the relevant serialization/reproducibility references remain NumPy
+  NPZ documentation
+  (https://numpy.org/doc/stable/reference/generated/numpy.savez.html) and
+  PyTorch reproducibility guidance
+  (https://docs.pytorch.org/docs/stable/notes/randomness.html). No external
+  metric or performance claim is transferred to BTXRD.
+

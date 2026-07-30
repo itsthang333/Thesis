@@ -1,0 +1,45 @@
+{
+  "audit_id": "rad_dino_mask_bag_mil_descriptor_geometry_paired_v1_error_audit",
+  "audited_utc": "2026-07-30T16:34:00Z",
+  "status": "ERROR_IMPLEMENTATION_ONLY",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1",
+  "version": 1,
+  "source_checkout": "75efd2b77776d15ce07cee52e14122b182390167",
+  "scientific_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+  "wrapper_sha256": "d1d7d9de819f5f49967d526f7fa0f1058938f1cabc2882078e51c4e094536b8d",
+  "protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555",
+  "direct_output_log_sha256": "a5f249719babd263f639857e0261690e55437ea04381509270e789fb8ea40d1a",
+  "cli_log_json_sha256": "5f4c7ddd4bed53a24ac388d1acda341e709f9d2cf45dbc58c910539fbdac41a9",
+  "downloaded_split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "observed_split_counts": {
+    "train": 2981,
+    "validation": 371,
+    "test": 373,
+    "train_normal": 1493,
+    "train_tumor": 1488,
+    "validation_normal": 187,
+    "validation_tumor": 184
+  },
+  "failure": {
+    "message": "Frozen split counts differ",
+    "root_cause": "The paired recovery runner incorrectly expected 353 test rows although the immutable split contains 373.",
+    "classification": "fail_closed_constant_typo",
+    "scientific_setting_changed": false
+  },
+  "execution_boundary": {
+    "checkout_verified": true,
+    "runtime_installed": true,
+    "split_hash_verified": true,
+    "t4x2_verified": false,
+    "train_gallery_opened": false,
+    "preflight_tests_run": false,
+    "validation_candidates_generated": false,
+    "optimizer_constructed": false,
+    "prediction_maps_frozen": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "scientific_result": false,
+  "authorized_repair": "Correct only the split-count guard to test=373 and replace the rejected terminal-ERROR kernel source with a private dataset containing the exact locally rehashed version-3 train gallery; retain the same-gallery paired scientific contract."
+}
