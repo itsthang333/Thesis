@@ -6788,3 +6788,71 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   immediate status poll was created. Validation GT, consumer and BTXRD test
   remain locked.
 
+## 2026-07-31 - Paired geometry version 3 float32 audit correction
+
+- A single terminal status check found paired recovery version `3` at
+  `ERROR`. Direct compact output and logs were retrieved into a new ignored
+  temporary directory. Checkout `c3d06ea...`, the T4x2 guard, focused
+  preflight (`34 passed`), whole-repository preflight
+  (`223 passed, 1 skipped`), physical recovered-train-gallery checks and
+  prediction-first generation of all `371/371` validation candidate payloads
+  passed. The candidate and pseudo manifests are
+  `6fa02c3716b96609227677056c6effa439212d4cf61bf970f0aa9301dcc38cd6`
+  and
+  `78c19b7600d895059ab45168ae337e5d6f8c660a1e2468e6b55151ed1365ea9c`.
+  The job then stopped in the GT-blind train fractional-grid-mass audit at
+  `IMG000004.jpeg`, before optimizer construction, either geometry arm,
+  prediction-map freeze or validation-GT import. There is no scientific
+  result; `consumer_trained=false` and `test_evaluated=false`.
+- The exact physical 27-candidate NPZ and frozen source dimensions
+  `2561x2817` reproduce the cause. Horizontal reversal changes only float32
+  reduction order: maximum mass difference is
+  `1.52587890625e-5`, four candidates exceed the old fixed absolute
+  tolerance `1e-5`, and the maximum difference is only two float32 ULPs.
+  Original/flip retained vectors remain exactly equal at the scientific
+  minimum-grid-mass threshold `0.25`. Thus the failed condition is a
+  scale-independent numerical assertion, not a candidate-retention,
+  descriptor or geometry disagreement.
+- Correction-v9 keeps exact retained-vector equality and replaces only that
+  diagnostic assertion with the frozen per-pair bound
+  `max(4 float32 ULP at the mass scale, 4*float32 epsilon)`. It records each
+  tolerance and delta-to-tolerance ratio and still fails closed above the
+  bound. On the failing sample, the former check has four failures, the new
+  check has zero, the maximum delta/tolerance ratio is `0.5`, and retention
+  remains identical. Candidate tensors, `0.25` filter, descriptors, losses,
+  optimizer, seeds, epochs, pair freeze, evaluator and gates are unchanged.
+- This repair follows PyTorch's numerical-accuracy guidance: floating-point
+  addition is non-associative, so mathematically identical reductions are not
+  guaranteed to be bitwise identical
+  (https://docs.pytorch.org/docs/stable/notes/numerical_accuracy.html).
+  NumPy defines `spacing(x)` as the distance to the nearest adjacent
+  representable value, which is the scale-aware ULP used by the audit
+  (https://numpy.org/doc/stable/reference/generated/numpy.spacing.html).
+  These sources justify only the diagnostic tolerance; they supply no BTXRD
+  performance claim or model-selection signal.
+- Error evidence
+  `paired_version3_error_audit.json` has canonical-LF SHA-256
+  `6ede5a65b965fb36f640e6b2c3739c5da1848d697d3180cefda6ec55f1319073`.
+  Correction-v9 is frozen in isolated source commit
+  `911f853bac788d0c9ac1cd63e5a4408b2d6dae1a`; protocol, corrected audit
+  source and test canonical-LF hashes are
+  `79a4d076cb0a48ef082385897c01059b7a16cfadcdaffca0090ba4c3a4583a06`,
+  `a4841ee11f7cb61bde56b7681caea8caf0fa4ffd085e9b9ddff908c8d95bebe0`
+  and
+  `2d1d4efeee9688be28a4fc0d2dca4515eff9fc45090a4c4dc5c10a1374ac9d57`.
+  The isolated branch is pushed.
+- Version-4 wrapper SHA-256 is
+  `b404f85b68fba8267bf8916f7fc14a84796b372a8219465049f163933ad46a49`;
+  metadata remains
+  `1c00d8ba7547ac4009f0bcb3a9e59588590752b73dbb0d337dfc7ea64d2a44dd`.
+  Exact remote Git/protocol/eight-source binding, wrapper `py_compile`,
+  direct mount, safe archive fallback, traversal rejection, two changed
+  static tests and the failing-sample numerical reproduction pass.
+  Prelaunch audit
+  `rad_dino_mask_bag_mil_descriptor_geometry_paired_v4_wrapper_audit.json`
+  has canonical-LF SHA-256
+  `f6a915be443ec9f5e6d88798569eea37f8cf28f37efeaeb516ffed2e153c1b50`.
+  The next valid action is to commit/push this error evidence, then submit
+  paired version `4`; R1/R2/S1 and any consumer remain gated on its terminal
+  paired audit.
+

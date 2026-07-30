@@ -1,0 +1,57 @@
+{
+  "audit_id": "rad_dino_mask_bag_mil_descriptor_geometry_paired_v4_wrapper_audit",
+  "audited_utc": "2026-07-30T22:01:43Z",
+  "status": "PRELAUNCH_PASS",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1",
+  "expected_version": 4,
+  "checkout_commit": "911f853bac788d0c9ac1cd63e5a4408b2d6dae1a",
+  "scientific_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v9.json",
+    "canonical_lf_sha256": "79a4d076cb0a48ef082385897c01059b7a16cfadcdaffca0090ba4c3a4583a06"
+  },
+  "corrected_source_hashes": {
+    "project/audit_mask_bag_fractional_grid_mass.py": "a4841ee11f7cb61bde56b7681caea8caf0fa4ffd085e9b9ddff908c8d95bebe0",
+    "tests/test_mask_bag_fractional_grid_mass_audit.py": "2d1d4efeee9688be28a4fc0d2dca4515eff9fc45090a4c4dc5c10a1374ac9d57"
+  },
+  "wrapper_sha256": "b404f85b68fba8267bf8916f7fc14a84796b372a8219465049f163933ad46a49",
+  "metadata_sha256": "1c00d8ba7547ac4009f0bcb3a9e59588590752b73dbb0d337dfc7ea64d2a44dd",
+  "private_gallery_dataset": {
+    "ref": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+    "version": 1,
+    "candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21"
+  },
+  "local_checks": {
+    "wrapper_py_compile": "PASS",
+    "exact_remote_git_protocol_and_eight_source_bindings": "PASS",
+    "direct_dataset_mount_test": "PASS",
+    "safe_archive_fallback_test": "PASS",
+    "archive_path_traversal_rejection_test": "PASS",
+    "changed_static_tests": "2 passed",
+    "failing_sample_numerical_reproduction": {
+      "old_failures": 4,
+      "new_failures": 0,
+      "maximum_delta_to_new_tolerance": 0.5,
+      "retained_vectors_equal": true
+    },
+    "broader_local_focused_suite": "33 passed; one unrelated Python-3.9-only failure because zip(strict=true) requires Python >=3.10. Kaggle version 3 already passed the same 34-test suite under Python 3.12 before this two-file correction."
+  },
+  "scientific_contract": {
+    "training_labels": "image_level_only",
+    "all_manifest_bound_payloads_rehashed": true,
+    "same_physical_gallery_for_both_arms": true,
+    "sole_changed_scientific_variable": "legacy_direct_resize versus square_corrected_v3 descriptor coordinate geometry",
+    "prediction_maps_per_arm": 371,
+    "pair_freeze_before_validation_gt": true,
+    "paired_complete_group_bootstrap_replicates": 10000,
+    "operational_goals": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    },
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}
