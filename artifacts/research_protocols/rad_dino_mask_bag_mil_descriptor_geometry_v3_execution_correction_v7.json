@@ -1,0 +1,34 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v7",
+  "frozen_utc": "2026-07-30T17:01:00Z",
+  "status": "PREDECLARED_SEPARATE_ARCHIVE_STAGING_ROOT_BEFORE_PAIRED_VERSION2_PUSH",
+  "prior_correction": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v6.json",
+    "canonical_lf_sha256": "b4f6fb0ee8e54d7338b7cd81a6991acf8c97aa3beeac81faf3b530b88e677f2f"
+  },
+  "prelaunch_source_audit": {
+    "finding": "The paired runner intentionally creates mask_bag_geometry_paired_runtime with exist_ok=false. Extracting the private dataset beneath that path in the wrapper would pre-create it and force an implementation error before preflight.",
+    "prediction_or_ground_truth_read": false,
+    "scientific_result": false
+  },
+  "implementation_only_change": {
+    "archive_staging_root": "/kaggle/working/mask_bag_geometry_gallery_transport",
+    "runner_runtime_root": "/kaggle/working/mask_bag_geometry_paired_runtime",
+    "roots_must_be_distinct": true,
+    "export_environment_variable": "BTXRD_RECOVERED_TRAIN_ROOT",
+    "always_remove_archive_staging_root_in_wrapper_finally": true,
+    "scientific_change": false
+  },
+  "unchanged_contract": {
+    "private_dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+    "candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "all_5962_manifest_bound_payloads_rehashed_before_heavy_work": true,
+    "paired_arms_share_identical_physical_payloads": true,
+    "sole_changed_scientific_variable": "legacy_direct_resize versus square_corrected_v3 descriptor coordinate geometry",
+    "prediction_first_pair_freeze": true,
+    "validation_gt_tuning": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}
