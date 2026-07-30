@@ -1,0 +1,62 @@
+{
+  "audit_id": "rad_dino_mask_bag_mil_descriptor_geometry_paired_v5_wrapper_audit",
+  "audited_utc": "2026-07-30T22:39:29Z",
+  "status": "PRELAUNCH_PASS",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1",
+  "next_version": 5,
+  "checkout_commit": "4758701b5a8d8bb6b24d1d376ff75ff12d000379",
+  "remote_branch": "codex/geometry-v3-v2",
+  "remote_head_verified": true,
+  "scientific_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+  "scientific_source_is_ancestor": true,
+  "correction_protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v10.json",
+    "canonical_lf_sha256": "b1a64a9e9ff4fddf7fa0f0251b12874d632bad1b4fbad3b4e2f777dd60e98d92"
+  },
+  "wrapper": {
+    "path": "tmp/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/run_mask_bag_geometry_paired_recovery_v1.py",
+    "sha256": "1f0a6dcda07ca03dcdb8556bea8fb1251fcc846732209e739cb46d7c95ed0d2b",
+    "py_compile": true,
+    "direct_mount_discovery_unchanged_from_v4": true,
+    "safe_archive_fallback_unchanged_from_v4": true,
+    "path_traversal_rejection_unchanged_from_v4": true
+  },
+  "metadata": {
+    "sha256": "1c00d8ba7547ac4009f0bcb3a9e59588590752b73dbb0d337dfc7ea64d2a44dd",
+    "machine_shape": "NvidiaTeslaT4",
+    "private": true,
+    "gallery_dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1"
+  },
+  "remote_blob_sha256": {
+    "project/audit_mask_bag_fractional_grid_mass.py": "a4841ee11f7cb61bde56b7681caea8caf0fa4ffd085e9b9ddff908c8d95bebe0",
+    "project/models/rad_dino_mask_bag_mil.py": "44cd6ff052a38f9e87c1d93ce71d2aad2105c4b11083354d06b835409c517407",
+    "project/run_rad_dino_mask_bag_mil_probe.py": "6e0280e67f3e04fa62bbe4bcece6f3c7094bab7fc5668228d4ff557a4207cb23",
+    "project/run_mask_bag_geometry_paired_recovery.py": "3be46915557634363972805d9253fc00288d6cdf27cf8bd7f0b372a5534af314",
+    "tests/test_rad_dino_mask_bag_mil.py": "5f83a7c46f71a41dc53146cc16188031520599975f1617d9810e6611a13531f7",
+    "tests/test_rad_dino_mask_bag_mil_probe.py": "975411b05e86176fbc599faea07b67dc3eaba868b748cd1b9f33b46fd72e968f",
+    "tests/test_mask_bag_fractional_grid_mass_audit.py": "2d1d4efeee9688be28a4fc0d2dca4515eff9fc45090a4c4dc5c10a1374ac9d57",
+    "tests/test_run_mask_bag_geometry_paired_recovery.py": "656736b3fe54bca9be8c63ee7bd93d25a5cd4f017e4dca6ad2a06c17e362603a"
+  },
+  "verification": {
+    "local_corrected_focused_tests": "5 passed",
+    "git_diff_check": true,
+    "exact_remote_commit_protocol_and_source_bindings": true,
+    "version4_error_audit_sha256": "e235b1de0ce4650e8aa161fac0244f9268d70f5402df74462f81e7fda35a843e",
+    "expected_kaggle_focused_preflight": "34 passed",
+    "expected_kaggle_whole_repository_preflight": "223 passed, 1 skipped"
+  },
+  "scientific_contract": {
+    "same_physical_gallery_for_both_arms": true,
+    "sole_changed_scientific_variable": "legacy_direct_resize versus square_corrected_v3 descriptor coordinate geometry",
+    "prediction_first_pair_freeze": true,
+    "validation_gt_read_before_freeze": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "operational_goals": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    }
+  }
+}

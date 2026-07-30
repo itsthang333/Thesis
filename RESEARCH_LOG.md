@@ -6866,3 +6866,61 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   launch-time status poll was made. Validation GT, consumer training and
   BTXRD test remain locked.
 
+### Paired geometry version 4 split-qualified audit-artifact correction
+
+- One terminal status check found paired recovery version `4` at `ERROR`.
+  Direct output and Kaggle console logs were retrieved into a new ignored
+  temporary directory before diagnosis. Checkout `911f853...`, the T4x2
+  guard, focused preflight (`34 passed`), whole-repository preflight
+  (`223 passed, 1 skipped`), physical recovered-train-gallery verification
+  and prediction-first generation of all `371/371` validation candidate
+  payloads passed. Validation candidate/pseudo manifest SHA-256 values are
+  `e2f6f30033ca8a3b71349ac2377116555173a20b4eb06be731b4fc6ff59a8d04`
+  and
+  `38d7ae19ef57a2abd068bd0baa5f89600a4fbb54254fc47df3826dd7b87f3793`.
+- The complete GT-blind train fractional-grid-mass audit also passed across
+  `2,981` images and `174,669` candidates. It retained `173,376` candidates,
+  verified exact original/flip retention-vector equality, observed maximum
+  absolute mass delta `0.0001220703125` and maximum delta/tolerance ratio
+  `0.75`. The summary and CSV SHA-256 values are
+  `7611849bf3ab049ab8de0da06f06e27101557e0107cb7259c95269f0ae8b023b`
+  and
+  `f105005e193de33016aa262c3cf8b6167e994e5d8963f6cb79e0142d0e64d6fc`.
+  This independently confirms that correction-v9's ULP-bound numerical audit
+  works as intended.
+- Failure occurred only after that audit returned: the auditor writes
+  `train_fractional_grid_mass_summary.json`, while the paired orchestrator
+  tried to read the nonexistent legacy name `summary.json`. Validation
+  fractional audit, optimizer construction, both geometry arms, prediction
+  freeze and validation-GT import were never reached. There is no scientific
+  result; `consumer_trained=false` and `test_evaluated=false`.
+  Machine-readable error evidence is
+  `artifacts/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/paired_version4_error_audit.json`,
+  SHA-256
+  `e235b1de0ce4650e8aa161fac0244f9268d70f5402df74462f81e7fda35a843e`.
+- Correction-v10 changes only artifact wiring: the runner now reads
+  `<split>_fractional_grid_mass_summary.json` and hashes the exact
+  `train_...`/`val_...` filenames. A static regression test rejects the
+  obsolete path; `py_compile`, `git diff --check` and the two focused suites
+  report `5 passed`. The isolated source branch is pushed at
+  `4758701b5a8d8bb6b24d1d376ff75ff12d000379`; correction protocol, runner
+  and test SHA-256 values are
+  `b1a64a9e9ff4fddf7fa0f0251b12874d632bad1b4fbad3b4e2f777dd60e98d92`,
+  `3be46915557634363972805d9253fc00288d6cdf27cf8bd7f0b372a5534af314`
+  and
+  `656736b3fe54bca9be8c63ee7bd93d25a5cd4f017e4dca6ad2a06c17e362603a`.
+- Version-5 wrapper and unchanged metadata SHA-256 values are
+  `1f0a6dcda07ca03dcdb8556bea8fb1251fcc846732209e739cb46d7c95ed0d2b`
+  and
+  `1c00d8ba7547ac4009f0bcb3a9e59588590752b73dbb0d337dfc7ea64d2a44dd`.
+  Exact remote commit/protocol/eight-source binding and wrapper
+  `py_compile` pass; prelaunch audit
+  `rad_dino_mask_bag_mil_descriptor_geometry_paired_v5_wrapper_audit.json`
+  reports `PRELAUNCH_PASS`. This correction introduces no new scientific
+  technique. The numerical rationale remains the already cited PyTorch
+  numerical-accuracy guidance
+  (https://docs.pytorch.org/docs/stable/notes/numerical_accuracy.html) and
+  NumPy `spacing` definition
+  (https://numpy.org/doc/stable/reference/generated/numpy.spacing.html);
+  neither source supplies a BTXRD performance claim.
+
