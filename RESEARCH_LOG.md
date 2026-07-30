@@ -6855,4 +6855,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   The next valid action is to commit/push this error evidence, then submit
   paired version `4`; R1/R2/S1 and any consumer remain gated on its terminal
   paired audit.
+- Error evidence and the prelaunch audit were committed and pushed on
+  `research-wsss-improvement` at
+  `0bbc98fa1ddb67353d6fdd8fb9254a5c80e2d8a4`. Kaggle then accepted paired
+  recovery version `4` from the correction-v9 wrapper at
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1.
+  Invalid free-form tags were ignored; metadata still requests
+  `NvidiaTeslaT4`, and the runner still requires exactly two physical T4
+  devices with a real convolution on both. No monitor was created and no
+  launch-time status poll was made. Validation GT, consumer training and
+  BTXRD test remain locked.
 
