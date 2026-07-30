@@ -6782,4 +6782,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   audit SHA-256 is
   `ad4d5a18de0e13b6d8bc8a3f3054e47776efe3d3f72a7560e6436025dbe5f226`.
   The paired scientific contract is unchanged.
+- Kaggle accepted paired recovery version `3` from the correction-v8 wrapper.
+  Invalid free-form tags were ignored again; the attached private dataset,
+  T4x2 machine shape and all scientific inputs remain unchanged. No monitor or
+  immediate status poll was created. Validation GT, consumer and BTXRD test
+  remain locked.
 
