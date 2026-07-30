@@ -32,6 +32,8 @@ MASS_BINS = (
     ("mass_1_to_2", 1.0, 2.0),
     ("mass_ge_2", 2.0, float("inf")),
 )
+FLOAT32_MASS_ULP_BUDGET = 4.0
+FLOAT32_MASS_ABSOLUTE_FLOOR = 4.0 * float(np.finfo(np.float32).eps)
 
 
 def parse_args() -> argparse.Namespace:
@@ -139,6 +141,20 @@ def _projected_grid_mass(
     return masses, flipped_masses
 
 
+def _mass_symmetry_tolerances(
+    masses: np.ndarray,
+    flipped_masses: np.ndarray,
+) -> np.ndarray:
+    """Return a scale-aware float32 reduction tolerance for each mass pair."""
+
+    scale = np.maximum(np.abs(masses), np.abs(flipped_masses)).astype(np.float32)
+    ulp = np.spacing(scale).astype(np.float64)
+    return np.maximum(
+        FLOAT32_MASS_ABSOLUTE_FLOOR,
+        FLOAT32_MASS_ULP_BUDGET * ulp,
+    )
+
+
 def _summarize(values: np.ndarray, *, minimum_grid_mass: float) -> dict[str, object]:
     values = np.asarray(values, dtype=np.float64)
     retained = values[values >= minimum_grid_mass]
@@ -211,9 +227,14 @@ def main() -> None:
             raise RuntimeError(
                 f"Original/flip candidate validity differs for {row['image_id']}"
             )
-        if not np.allclose(masses, flipped_masses, rtol=0.0, atol=1.0e-5):
+        mass_deltas = np.abs(masses - flipped_masses)
+        mass_tolerances = _mass_symmetry_tolerances(masses, flipped_masses)
+        if np.any(mass_deltas > mass_tolerances):
+            failed = int(np.argmax(mass_deltas / mass_tolerances))
             raise RuntimeError(
-                f"Original/flip grid mass differs for {row['image_id']}"
+                f"Original/flip grid mass differs for {row['image_id']} "
+                f"candidate={failed}: delta={mass_deltas[failed]:.9g}, "
+                f"tolerance={mass_tolerances[failed]:.9g}"
             )
         for index, (
             mask,
@@ -222,6 +243,7 @@ def main() -> None:
             is_fallback,
             mass,
             flipped_mass,
+            mass_tolerance,
         ) in enumerate(
             zip(
                 masks,
@@ -230,9 +252,11 @@ def main() -> None:
                 fallback,
                 masses,
                 flipped_masses,
+                mass_tolerances,
                 strict=True,
             )
         ):
+            absolute_delta = float(abs(mass - flipped_mass))
             output_rows.append(
                 {
                     "image_id": row["image_id"],
@@ -245,7 +269,11 @@ def main() -> None:
                     "raw_area_pixels_320": int((mask > 0.5).sum()),
                     "grid_mass": float(mass),
                     "flip_grid_mass": float(flipped_mass),
-                    "absolute_flip_mass_delta": float(abs(mass - flipped_mass)),
+                    "absolute_flip_mass_delta": absolute_delta,
+                    "flip_mass_tolerance": float(mass_tolerance),
+                    "flip_mass_delta_to_tolerance": (
+                        absolute_delta / float(mass_tolerance)
+                    ),
                     "retained": int(mass >= args.minimum_grid_mass),
                 }
             )
@@ -277,6 +305,16 @@ def main() -> None:
         "maximum_absolute_flip_mass_delta": float(
             max(float(row["absolute_flip_mass_delta"]) for row in output_rows)
         ),
+        "maximum_flip_mass_delta_to_tolerance": float(
+            max(
+                float(row["flip_mass_delta_to_tolerance"])
+                for row in output_rows
+            )
+        ),
+        "flip_mass_symmetry_tolerance": {
+            "float32_ulp_budget": FLOAT32_MASS_ULP_BUDGET,
+            "absolute_floor": FLOAT32_MASS_ABSOLUTE_FLOOR,
+        },
         "original_flip_validity_aligned": True,
         "overall": _summarize(masses, minimum_grid_mass=args.minimum_grid_mass),
         "by_image_label": {

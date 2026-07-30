@@ -41,5 +41,11 @@ def test_fractional_mass_audit_uses_v3_projection_contract() -> None:
     assert '"flip_grid_mass"' in text
     assert '"absolute_flip_mass_delta"' in text
     assert "np.array_equal(retained, flipped_retained)" in text
-    assert "np.allclose(masses, flipped_masses" in text
+    assert "FLOAT32_MASS_ULP_BUDGET = 4.0" in text
+    assert "FLOAT32_MASS_ABSOLUTE_FLOOR" in text
+    assert "np.spacing(scale)" in text
+    assert "mass_deltas > mass_tolerances" in text
+    assert '"flip_mass_tolerance"' in text
+    assert '"maximum_flip_mass_delta_to_tolerance"' in text
+    assert "np.allclose(masses, flipped_masses" not in text
     assert '"original_flip_validity_aligned": True' in text
