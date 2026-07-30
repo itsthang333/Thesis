@@ -6923,4 +6923,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   NumPy `spacing` definition
   (https://numpy.org/doc/stable/reference/generated/numpy.spacing.html);
   neither source supplies a BTXRD performance claim.
+- Error evidence, correction-v10 prelaunch audit and this log were committed
+  and pushed on `research-wsss-improvement` at
+  `d47b9504e6431ccf50bfec707d16560a1359c6c2`. Kaggle then accepted paired
+  recovery version `5` from checkout `4758701...` and wrapper
+  `1f0a6dcd...`. Invalid free-form tags were ignored; the attached private
+  gallery dataset, T4x2 metadata and scientific contract remain unchanged.
+  No launch-time status poll or monitor was created. Validation GT, consumer
+  training and BTXRD test remain locked.
 
