@@ -6744,4 +6744,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   bindings, safe extraction and path-traversal rejection, distinct transport
   and runner-runtime roots, removal of the rejected error-kernel source,
   T4x2 metadata and the unchanged prediction-first scientific contract.
+- Kaggle accepted paired recovery kernel version `2` at
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1.
+  Its metadata requests `NvidiaTeslaT4`; the runner still fails closed unless
+  exactly two physical T4 devices and a nontrivial convolution on each pass.
+  Invalid free-form tags were ignored by Kaggle and do not affect inputs,
+  source or execution. No monitor was created and no launch-time status poll
+  was made. Validation GT, consumer training and BTXRD test remain locked.
 
