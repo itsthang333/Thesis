@@ -63,6 +63,7 @@ def test_recovery_source_freezes_both_predictions_before_gt_evaluation() -> None
     source = RUNNER.read_text(encoding="utf-8")
     assert "build_segmentation_dataset" not in source
     assert "find_recovered_train_root()" in source
+    assert 'RECOVERED_TRAIN_ROOT_ENV = "BTXRD_RECOVERED_TRAIN_ROOT"' in source
     assert '"legacy_direct_resize"' in source
     assert '"square_corrected_v3"' in source
     assert source.index("train_root = find_recovered_train_root()") < source.index(

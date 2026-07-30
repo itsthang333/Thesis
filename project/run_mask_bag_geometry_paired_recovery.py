@@ -112,6 +112,7 @@ FRACTIONAL_CHANGE_LIMIT = {
     "selected_area_ratio": 0.01,
 }
 CANDIDATE_BYTE_FIELDS = {"diagnostic_sha256", "diagnostic_bytes"}
+RECOVERED_TRAIN_ROOT_ENV = "BTXRD_RECOVERED_TRAIN_ROOT"
 
 
 def sha256(path: Path) -> str:
@@ -266,11 +267,25 @@ def verify_t4x2() -> dict[str, object]:
 
 
 def find_recovered_train_root() -> Path:
-    manifest = find_unique_input(
-        "candidate_diagnostics_manifest.csv",
-        RECOVERED_TRAIN_HASHES["candidate"],
-    )
-    root = manifest.parent
+    override = os.environ.get(RECOVERED_TRAIN_ROOT_ENV)
+    if override:
+        root = Path(override).resolve()
+        if not root.is_dir():
+            raise RuntimeError("Recovered train gallery override is not a directory")
+        manifest = root / "candidate_diagnostics_manifest.csv"
+        if (
+            not manifest.is_file()
+            or sha256(manifest) != RECOVERED_TRAIN_HASHES["candidate"]
+        ):
+            raise RuntimeError(
+                "Recovered train gallery override candidate manifest mismatch"
+            )
+    else:
+        manifest = find_unique_input(
+            "candidate_diagnostics_manifest.csv",
+            RECOVERED_TRAIN_HASHES["candidate"],
+        )
+        root = manifest.parent
     pseudo = root / "pseudo_mask_manifest.csv"
     if not pseudo.is_file() or sha256(pseudo) != RECOVERED_TRAIN_HASHES["pseudo"]:
         raise RuntimeError("Recovered version-3 train pseudo manifest is unavailable")
