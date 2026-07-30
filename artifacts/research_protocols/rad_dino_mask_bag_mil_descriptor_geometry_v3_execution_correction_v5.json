@@ -1,0 +1,52 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v5",
+  "frozen_utc": "2026-07-30T16:43:00Z",
+  "status": "PREDECLARED_ARCHIVE_TRANSPORT_CORRECTION_AFTER_PRIVATE_DATASET_PACKAGING_BEFORE_PAIRED_VERSION2_PUSH",
+  "prior_correction": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v4.json",
+    "canonical_lf_sha256": "9f64d5fcfa420e0e9f09953c0db2688c0654711db29cce7779cc527cda855093"
+  },
+  "reason": {
+    "problem": "Kaggle dataset directory transport stores the recovered train_candidates directory as an archive, while the paired runner originally searched only direct files beneath /kaggle/input.",
+    "classification": "implementation-only input transport",
+    "scientific_result": false
+  },
+  "source_correction": {
+    "commit": "260388aee9a0d264982cbad6b8ded353c9fa3eaf",
+    "project/run_mask_bag_geometry_paired_recovery.py": "72e1226dcef001c0fd231d6ea672eb7d66cfaa7164f684d24c19069030afaf26",
+    "tests/test_run_mask_bag_geometry_paired_recovery.py": "5023136764756fc4163e5574b7e274a58eb8f19eb5fa9c2982c12d1d1c3780da",
+    "change": "Allow an explicit BTXRD_RECOVERED_TRAIN_ROOT transport path while retaining the original direct-input fallback.",
+    "fail_closed": [
+      "override must resolve to a directory",
+      "candidate manifest must match ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+      "pseudo manifest must match 5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+      "the unchanged candidate-root auditor rehashes all 2981 candidate NPZs and all 2981 pseudo masks before heavy work"
+    ],
+    "local_verification": "py_compile passed; tests/test_run_mask_bag_geometry_paired_recovery.py reports 3 passed."
+  },
+  "wrapper_transport": {
+    "dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+    "dataset_version": 1,
+    "expected_archive": "train_candidates.zip",
+    "safe_extraction_required": true,
+    "path_traversal_forbidden": true,
+    "export_environment_variable": "BTXRD_RECOVERED_TRAIN_ROOT",
+    "delete_extracted_gallery_only_after_completed_json_exists": true
+  },
+  "unchanged_scientific_contract": {
+    "train_gallery_candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "train_gallery_pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "paired_arms_share_identical_physical_payloads": true,
+    "sole_changed_scientific_variable": "legacy_direct_resize versus square_corrected_v3 descriptor coordinate geometry",
+    "prediction_first_pair_freeze": true,
+    "validation_gt_tuning": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "operational_goals": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    }
+  }
+}
