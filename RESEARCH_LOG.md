@@ -6751,4 +6751,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Invalid free-form tags were ignored by Kaggle and do not affect inputs,
   source or execution. No monitor was created and no launch-time status poll
   was made. Validation GT, consumer training and BTXRD test remain locked.
+- The next single status check found paired version `2` at terminal `ERROR`.
+  Direct logs and the sole compact output log were retrieved into a new
+  ignored directory. Source checkout `217b68d...` and all wrapper-bound source
+  hashes passed, then execution stopped at `20.20` seconds before runtime
+  installation because the wrapper found no literal `train_candidates.zip`.
+  The private dataset was attached in the remote kernel metadata, so the error
+  is the wrapper's archive-name/mount-representation assumption, not missing
+  scientific input. T4x2 verification, runner runtime creation, gallery
+  opening, preflights, validation generation, optimizer construction,
+  prediction, validation GT, consumer and test were never reached.
+- Direct output-log and CLI-log JSON SHA-256 values are
+  `fa2ce84a6861f3ebfb2cd447835a0cf073264393fe0a54699607edd5b5a879c5`
+  and `e4f35aedf93d69025fe02107fff394555e31f9e91ec6d68f43b5bd7296de7eb7`.
+  Machine-readable error audit
+  `paired_version2_error_audit.json` has canonical-LF SHA-256
+  `26c4d7d5a612946b2038521d5869548372bbe797a594a1edc6fc7eec2f6f2ef6`.
+- Correction-v8, frozen before another push at source commit
+  `c3d06ea8f4835f32617831fc20e3c089e542b425`, first accepts exactly one
+  direct Kaggle root whose candidate and pseudo manifests match
+  `ad3b52d.../5aec58ce...`; only if none exists does it use the already frozen
+  safe archive extraction. Multiple matches fail closed, and a missing match
+  emits only a bounded file-path/size inventory. No image, label, candidate
+  tensor or GT is opened for discovery. Protocol canonical-LF SHA-256 is
+  `e457d09016eb9cb4fde19a90881d279ebe323ac429ace23da46dad020d4e2bfd`.
+  Wrapper v3 SHA-256 is
+  `d373171fc204d80e9c6f0b97e965bbc55ab0c1be42568173c2d652d65168f1bf`.
+  Local direct-mount, safe-archive, traversal-rejection, distinct-root,
+  `py_compile` and exact Git/source/protocol binding checks pass. Prelaunch
+  audit SHA-256 is
+  `ad4d5a18de0e13b6d8bc8a3f3054e47776efe3d3f72a7560e6436025dbe5f226`.
+  The paired scientific contract is unchanged.
 
