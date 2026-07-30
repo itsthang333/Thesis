@@ -6715,4 +6715,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   PyTorch reproducibility guidance
   (https://docs.pytorch.org/docs/stable/notes/randomness.html). No external
   metric or performance claim is transferred to BTXRD.
+- A final prelaunch source audit found that extracting the archive beneath the
+  runner's own runtime directory would pre-create a path that the runner
+  intentionally creates with `exist_ok=false`. No kernel version used this
+  wrapper. Correction-v6 first froze unconditional deletion of the extracted
+  transport copy; correction-v7 then assigned it the distinct staging root
+  `/kaggle/working/mask_bag_geometry_gallery_transport`. Their canonical-LF
+  SHA-256 values are `b4f6fb0e...` and
+  `a1dd596585e1eb196fe229b5d108373ff8999983ee79361f3703e2c4dbc98051`.
+  Final isolated checkout is
+  `217b68da81096b47dc9b82ee517171a205b9b4ac`; the revised wrapper/metadata
+  SHA-256 values are `fb82857a54ef2baedb7a996cbe887ad37dcdd685f00ed8ee335395d9c80a987d`
+  and `1c00d8ba7547ac4009f0bcb3a9e59588590752b73dbb0d337dfc7ea64d2a44dd`.
+  `py_compile`, safe-archive extraction, path-traversal rejection, distinct
+  staging/runtime roots and exact Git/protocol/source bindings pass locally.
+  The private dataset upload remains the only unfinished prelaunch step; one
+  upload process is active and no status monitor or duplicate upload exists.
 
