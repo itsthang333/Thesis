@@ -1,0 +1,30 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v6",
+  "frozen_utc": "2026-07-30T16:52:00Z",
+  "status": "PREDECLARED_RECOVERED_GALLERY_TEMP_CLEANUP_BEFORE_PAIRED_VERSION2_PUSH",
+  "prior_correction": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v5.json",
+    "canonical_lf_sha256": "b858c2e196c4a364c7c33b319fb3f3c00062091ddd5ddf8110b853fe6b5cbb39"
+  },
+  "problem": "The private dataset is the immutable source of the recovered train gallery. Retaining its 1.17 GB extracted working copy after an unrelated kernel error would duplicate transport data in Kaggle output, delay error retrieval and consume storage without adding evidence.",
+  "implementation_only_change": {
+    "always_remove": "mask_bag_geometry_paired_runtime/recovered_train_gallery",
+    "preserve_on_error": [
+      "direct Kaggle execution log",
+      "all other compact runtime evidence produced before the error",
+      "the immutable private dataset source",
+      "manifest and archive hashes already emitted before heavy work"
+    ],
+    "scientific_change": false
+  },
+  "unchanged_contract": {
+    "private_dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+    "candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "paired_arms_share_identical_physical_payloads": true,
+    "prediction_first_pair_freeze": true,
+    "validation_gt_tuning": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}
