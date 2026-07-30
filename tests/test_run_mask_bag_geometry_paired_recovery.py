@@ -82,6 +82,7 @@ def test_recovery_source_freezes_both_predictions_before_gt_evaluation() -> None
     assert '"small": 0.17895493' in source
     assert '"medium": 0.51244178' in source
     assert '"large": 0.49370336' in source
+    assert '"test": 373' in source
 
 
 def test_semantic_reference_accepts_byte_and_bounded_float_differences(

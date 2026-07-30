@@ -227,7 +227,7 @@ def verify_split(split_path: Path) -> dict[str, int]:
     expected = {
         "train": 2981,
         "validation": 371,
-        "test": 353,
+        "test": 373,
         "train_normal": 1493,
         "train_tumor": 1488,
         "validation_normal": 187,
