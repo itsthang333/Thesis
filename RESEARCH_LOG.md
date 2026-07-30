@@ -6731,4 +6731,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   staging/runtime roots and exact Git/protocol/source bindings pass locally.
   The private dataset upload remains the only unfinished prelaunch step; one
   upload process is active and no status monitor or duplicate upload exists.
+- The single upload completed after `1:04:57`. Kaggle reports private dataset
+  `itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1` version `1` as
+  `ready`, dataset ID `11426522`, `isPrivate=true`, and remote size
+  `1,146,249,052` bytes. The uploaded files are the 599-byte physical audit
+  plus `train_candidates.zip`; no source candidate was regenerated.
+  Prelaunch audit
+  `rad_dino_mask_bag_mil_descriptor_geometry_paired_v2_wrapper_audit.json`
+  reports `PRELAUNCH_PASS` at canonical-LF SHA-256
+  `d314d6ce4c17cf2190db9cd517644530a461bf4abfd98aee4146d89678db99bc`.
+  It verifies the private dataset, exact source/protocol/wrapper/metadata
+  bindings, safe extraction and path-traversal rejection, distinct transport
+  and runner-runtime roots, removal of the rejected error-kernel source,
+  T4x2 metadata and the unchanged prediction-first scientific contract.
 
