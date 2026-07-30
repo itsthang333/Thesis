@@ -684,9 +684,8 @@ def run_fractional_audit(
         env=env,
         log_path=log_path,
     )
-    summary = json.loads(
-        (output_dir / "summary.json").read_text(encoding="utf-8")
-    )
+    summary_path = output_dir / f"{split}_fractional_grid_mass_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
     if (
         summary.get("images") != candidate_audit["images"]
         or summary.get("candidate_manifest_sha256")
@@ -1336,7 +1335,11 @@ def main() -> None:
                 "summary_sha256": sha256(
                     fractional_root
                     / ("validation" if split == "validation" else "train")
-                    / "summary.json"
+                    / (
+                        "val_fractional_grid_mass_summary.json"
+                        if split == "validation"
+                        else "train_fractional_grid_mass_summary.json"
+                    )
                 ),
                 "images": payload["images"],
             }

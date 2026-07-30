@@ -84,6 +84,10 @@ def test_recovery_source_freezes_both_predictions_before_gt_evaluation() -> None
     assert '"medium": 0.51244178' in source
     assert '"large": 0.49370336' in source
     assert '"test": 373' in source
+    assert 'f"{split}_fractional_grid_mass_summary.json"' in source
+    assert '"train_fractional_grid_mass_summary.json"' in source
+    assert '"val_fractional_grid_mass_summary.json"' in source
+    assert 'output_dir / "summary.json"' not in source
 
 
 def test_semantic_reference_accepts_byte_and_bounded_float_differences(
