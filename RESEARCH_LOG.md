@@ -9835,4 +9835,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Kaggle accepted exactly one corrected private push as kernel version `2` at
   about `2026-07-31T22:38:27Z`. Prediction freeze, validation GT, consumer and
   BTXRD test remain locked pending terminal schema-2 independent audit.
+- **Single bounded version-2 post-launch status:** one query immediately after
+  the launch record was pushed returned `RUNNING`. This is not a scientific
+  result. No repeat poll or additional monitor was created; all GT/consumer/test
+  locks remain in force.
 
