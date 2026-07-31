@@ -7814,6 +7814,41 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Version 1 is permanently retained as `LỖI`; the R1 claim remains `ĐANG LÀM`
   solely for that transport-only successor. No validation GT/test was opened,
   no consumer was trained and no prediction was created.
+- **Progress — version-2 baseline transport correction frozen:** private
+  dataset `itsthang333/btxrd-mask-bag-r1-baseline-transport-v1` version 1 was
+  created from exactly two already-frozen files and reached Kaggle status
+  `ready`: `square_corrected_baseline.zip` (1,784,924 bytes, SHA-256
+  `8857eb6d...`) and `transport_audit.json` (SHA-256 `9377ce5b...`). The
+  authenticated CLI's independent dataset-download endpoint returned `403
+  Forbidden` on `GetDatasetMetadata`, so no round-trip hash is claimed. Instead,
+  the unchanged wrapper remains the launch gate: it must find exactly one
+  mounted archive/audit with those physical hashes before cache discovery or
+  fitting. Kernel metadata replaces only the old dataset source with this
+  dedicated source; selector-cache kernel input and every scientific setting
+  are unchanged. New metadata SHA-256 is
+  `22d87a060b7d43952371ae11b2fc2db5c4f8f4a070af4ee58cab4cbf11a3dd9d`;
+  wrapper remains byte-identical `2ee94b62...` and `py_compile` passes.
+  Transport-correction audit
+  `artifacts/research_protocols/rad_dino_mask_bag_normal_prototype_r1_v1_kernel_v2_transport_correction.json`
+  has SHA-256
+  `6ca2c8b2603b85ce160764be3819e74b7567da1ae3a24e8ca2353ce133a56a21`.
+  Version 2 remains unlaunched until this evidence is committed/pushed; no GT,
+  consumer, test or prediction access occurred.
+- **Progress — R1 version 2 launched:** after the transport correction was
+  committed and pushed at `279fc57`, Kaggle accepted version 2 of the same
+  private kernel. It uses unchanged bound wrapper SHA-256 `2ee94b62...`, new
+  metadata SHA-256 `22d87a06...`, the dedicated baseline-only dataset and the
+  existing accepted selector-cache kernel source. No launch-time status poll,
+  recurring polling or monitor was created. The runtime must still prove the
+  exact archive/audit hashes, T4x2, source/protocol/cache/baseline contracts and
+  pass unmodified tests before any image-label-only fitting. Validation GT,
+  consumer and BTXRD test remain locked; the experiment remains `ĐANG LÀM`.
+- **Progress — bounded version-2 status check:** the single planned continuation
+  check found R1 version 2 still `RUNNING`. HEAD/origin and the complete central
+  log blob were unchanged at `1306c1c`/`647e2ff3...`. No repeat poll, monitor,
+  output access, local heavy compute, GT/test read or competing launch occurred.
+  The independent output auditor remains frozen and the evaluator remains
+  locked until a later terminal direct output passes its physical freeze audit.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 
