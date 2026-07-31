@@ -8714,4 +8714,21 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   payloads, checkpoints, histories and pair freeze remain. No kernel was pushed,
   no scientific data/prediction was opened locally, validation GT/consumer/test
   remain locked, and no monitor was created in this binding step.
+- **Progress — S1 version 1 launched:** launch binding/final prelaunch audit were
+  committed and pushed at `55c9baa2a2153319e04952bce5c774be9553c7ea`.
+  Immediately before launch, HEAD matched origin with a clean worktree and the
+  package hashes were reverified as bound wrapper `ad5cfe59...`, metadata
+  `36137acf...`, launch binding `9e77ef03...` and final audit `95d3adf4...`.
+  Kaggle accepted private kernel version 1
+  `itsthang333/btxrd-rad-dino-mask-bag-family-balanced-s1-pair-v1`; local
+  post-push timestamp was `2026-07-31T17:05:58Z`. Exactly one kernel push was
+  performed. No immediate status poll, repeat poll or monitor was created.
+  Validation GT, consumer and BTXRD test remain locked until terminal compact
+  output passes the independent matched-pair physical audit.
+- **Metadata-time correction:** the immutable prelaunch audit's manually entered
+  `created_utc` value `2026-07-31T17:08:00Z` is about two minutes later than the
+  actual commit/launch ordering. This display-only timestamp is inaccurate;
+  exact Git commits, protocol/source/package hashes, tests and launch binding are
+  unaffected. The frozen artifact is preserved unchanged and this successor note
+  is the correction, rather than rewriting prelaunch evidence.
 
