@@ -8427,7 +8427,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - **Owner/status:** Codex main task trên `research-wsss-improvement`; `ĐANG LÀM`.
 - **Registered:** `2026-07-31T16:13:39.6180285Z`; registration base commit
-  `f514f1b`; exact claim commit sẽ được ghi ngay sau commit/push đăng ký và trước
+  `f514f1bc8467f8ef05dfa4f9b2edf758a300c8f2`; exact claim commit
+  `569bff4c4fb5552a039cad9ad08a260294a48069` đã push lên branch điều phối trước
   mọi binding/launch.
 - **Objective/hypothesis:** kiểm tra liệu zero-initialized residual chỉ dùng 24
   frozen RAD-DINO local-affinity summaries (within proposal, local context và
