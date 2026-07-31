@@ -7965,6 +7965,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   claim must be registered and made visible before G0/G1. No validation GT is
   an algorithm input; consumer training and BTXRD test remain locked.
 
+### EXP-20260731-codex-rich-gallery-g0g1-v1
+
+- **Owner/status:** Codex independent Kaggle workstream; `ĐANG LÀM`.
+- **Scope:** execute the already frozen richer-gallery hypothesis from
+  `rich_gallery_geometry_v3_pair_candidate_v1` on the private `wanwin`
+  account. This claim unconditionally merges the LayerCAM+BiomedCLIP anchor
+  gallery with the 448-pixel binary-classifier gallery, then measures G0
+  frozen-selector transport and G1 matched geometry-v3 retraining. It does not
+  read, modify, cancel, rerun or interpret the collaborator-owned R1 kernel.
+- **Why this is a distinct claim:** R1 changes the candidate-ranking residual
+  on the immutable old gallery. This claim changes proposal supply and then
+  measures transport/retraining on the enlarged gallery. The scientific
+  variable, Kaggle owner, payload and output namespace are separate.
+- **Reproduction requirement:** private collaborator checkpoints are not
+  assumed accessible. The 448-pixel DenseNet121 is therefore retrained from
+  the published image-label-only recipe (seed 42, 448 px, AdamW
+  `1e-4/1e-4`, no augmentation, fixed 0.5 validation-F1 checkpoint rule).
+  The local BiomedCLIP, SAM ViT-B and RAD-DINO physical weights independently
+  match the historical SHA-256 values `52cc993c...`, `ec2df627...` and
+  `dbfb9f54...`. The local binary LayerCAM anchor checkpoint is hash-bound in
+  the prelaunch payload audit.
+- **Required reporting:** actual binary-mask Dice/IoU must be reported for all
+  184 validation tumors and separately for `<1%` (`n=94`), `1–<5%` (`n=72`)
+  and `>=5%` (`n=18`). Each Dice is accompanied by its signed gap to the
+  frozen fully-supervised reference `0.49513170/0.32895493/0.66244178/
+  0.69370336`. Oracle values are reported only as proposal-support ceilings,
+  never as achieved Dice.
+- **Safety/order:** train/validation only; image labels are the only spatially
+  weak training supervision; candidate galleries and all 371 Stage-A outputs
+  are frozen and independently audited before the Stage-B polygon evaluator;
+  BTXRD test remains locked. No per-image oracle/source/lesion-size router,
+  validation-area selection, threshold rescue or hidden GT input is allowed.
+
 ### Central rich-gallery synchronization and exact R2 static protocol freeze
 
 - The collaborator branch `origin/codex/research-sync-20260731` advanced by one
@@ -8214,4 +8247,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Real binding remains forbidden until R1 is terminal/audited, the central log
   is synchronized and a unique R2 claim is pushed; no scientific data,
   prediction, GT/test, consumer, R2 binding or launch occurred.
+
+### Đồng bộ claim rich-gallery từ nhánh cộng tác (2026-07-31)
+
+- Đã fetch `origin/research-wsss-improvement` và
+  `origin/codex/research-sync-20260731`; nhánh trung tâm đang ở
+  `1edfa37e9996d98650ee7ada7678f918dfc02a6b`, nhánh cộng tác mới nhất ở
+  `65bae85a90c1ee0ca9968eec4fa615c9fcbf9b38`, merge-base là
+  `84f7b1fa15423823a6e0295b0551b394fc573287`. Toàn bộ phần lịch sử chung đã
+  được đọc trước đó; toàn bộ delta log duy nhất sau merge-base (33 dòng) đã
+  được đọc và nhập nguyên nội dung claim
+  `EXP-20260731-codex-rich-gallery-g0g1-v1` ở trên. Không nhập ngược các
+  heartbeat R1 v2 cũ vì nhánh trung tâm đã giữ đầy đủ bằng chứng và trạng thái
+  kế nhiệm R1 v3.
+- **Thông tin điều phối mới:** nhánh cộng tác đã nhận quyền G0/G1 với trạng thái
+  `ĐANG LÀM` trên tài khoản Kaggle `wanwin`: tái tạo classifier DenseNet121
+  448 px bằng nhãn cấp ảnh, hợp nhất vô điều kiện gallery đó với anchor
+  LayerCAM+BiomedCLIP, sau đó đo G0 frozen-selector transport và G1 matched
+  geometry-v3 retraining. Vì vậy không được launch, tái tạo hoặc đánh giá một
+  G0/G1 cạnh tranh trong workstream hiện tại. R1/R2/S1 same-gallery vẫn là biến
+  khoa học khác nhưng mọi quyết định kế tiếp phải kế thừa mã claim G0/G1 này.
+- **Bằng chứng/insight mới:** nhánh cộng tác chưa ghi metric hay kết quả khoa
+  học mới; oracle rich-gallery vẫn chỉ là proposal-support ceiling, không phải
+  achieved Dice. Commit kế tiếp `65bae85` chỉ thêm source/test cho supply stage
+  và không thay đổi `RESEARCH_LOG.md`, do đó không suy diễn rằng kernel đã
+  launch hoặc Stage-A đã freeze. Giá trị mới hiện tại là ownership và protocol:
+  checkpoint classifier riêng không được giả định có thể chia sẻ, nên recipe
+  tái huấn luyện image-label-only cùng hash vật lý BiomedCLIP/SAM/RAD-DINO phải
+  là ranh giới tái lập; tất cả 371 Stage-A outputs phải freeze và audit độc lập
+  trước Stage-B GT.
+- Lần đồng bộ này chỉ sửa `RESEARCH_LOG.md`; không cherry-pick code của nhánh
+  cộng tác, không chạy compute, không truy vấn Kaggle, không mở validation GT
+  hoặc BTXRD test và không train consumer.
 
