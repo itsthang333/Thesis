@@ -9307,4 +9307,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   orbit-averaging correction under the instance-ranking caution of Jang and
   Kwon, NeurIPS 2024,
   https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html .
+- **Claim/source progress:** exact claim commit is
+  `0c2085ace6166057bcd94e2abb427747a16f4182`. Static image-label-only fitter and
+  T4x2 runner are now implemented at
+  `project/models/mask_bag_orbit_relation_training.py` and
+  `project/run_mask_bag_orbit_relation_arm.py`, SHA-256 respectively
+  `44ecd9c6ad1779942e9cc0df31634fd5d83204a97c7e89c75c64507d66fecf71` /
+  `68888d7d81cbe35cb0b5b1b1f46881469fe8949524c2371b948308e13591184c`.
+  The fitter constructs one averaged descriptor/base-logit branch, verifies
+  exact zero identity and exact input-swap invariance, freezes the base scorer,
+  and exposes only the declared image BCE/self-guided instance objective. The
+  runner freezes per-image swap diagnostics, count/probability gate, all 371
+  score vectors/maps and T4x2 shard evidence before any evaluator could run.
+- Tests `tests/test_mask_bag_orbit_relation_training.py` and
+  `tests/test_run_mask_bag_orbit_relation_arm.py` have SHA-256
+  `7a074178f6efc87f74bd631106d27adbe964c81ffe2f31012a63d6b98417b9e9` /
+  `314492cb61098dbacbffb22102b2e90e85e4133d4fcefed1dfc6274c412ed2c9`.
+  Focused R4/relational suite passes `12/12`; full repository regression passes
+  `415/415` in 17.39 seconds under the documented Python-3.9
+  `zip(strict=...)` shim. This is static preparation only: no protocol,
+  binding, kernel launch, scientific training/prediction, validation GT/test or
+  consumer access occurred.
 
