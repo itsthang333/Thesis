@@ -9839,4 +9839,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the launch record was pushed returned `RUNNING`. This is not a scientific
   result. No repeat poll or additional monitor was created; all GT/consumer/test
   locks remain in force.
+- **Bounded status-check access error:** after the predeclared approximately
+  20-minute quiet interval, exactly one status command at about
+  `2026-07-31T22:57Z` failed locally with Kaggle permission
+  `kernels.get was denied` for the unchanged private kernel slug. This response
+  does not establish `RUNNING`, `COMPLETE`, or kernel `ERROR`, so no scientific
+  or terminal inference is made and no output/GT was opened. Per the one-check
+  heartbeat constraint, it was not retried in this interval and no additional
+  poll/monitor was created. The S3 claim remains `ĐANG LÀM`; prediction-freeze,
+  validation-GT, consumer, and BTXRD-test locks remain in force pending a later
+  bounded authenticated terminal check.
 
