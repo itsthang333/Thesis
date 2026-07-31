@@ -9458,3 +9458,91 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   non-relational, non-duplicate successor grounded in terminal evidence and
   must not compete with the collaborator's active proposal-supply G0/G1 arm.
 
+### EXP-20260801-codex-s3-same-family-graph-v1
+
+- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Registered:** `2026-07-31T21:17:00Z` (`2026-08-01` ICT), after terminal R4
+  evidence commit `28c53c6862e8c8025329fdbf6bf4924581a7a2c0` was pushed centrally.
+  Exact claim commit will be recorded after this note is pushed. No S3 source,
+  protocol, kernel binding, launch, prediction or metric exists at
+  registration.
+- **Coordination/non-duplicate audit:** full central coordination state was
+  reread and both remote branches were fetched. Collaborator head remains
+  `797f191fcae8a5bb0b4ccb920d1adf635af1eff8`; active
+  `EXP-20260731-codex-rich-gallery-g0g1-v1` changes proposal supply by merging a
+  classifier-448 gallery and fitting G1 on it. S3 keeps the immutable old
+  candidate gallery and accepted Geometry-v3 scorer, changes no proposal or
+  descriptor, and applies only a fixed same-family graph operator to frozen
+  candidate logits. It therefore does not duplicate or compete with G0/G1.
+  R1, R2, S1, R3 and R4 are terminal negative evidence and none of their
+  mechanisms is adopted as a demonstrated improvement.
+- **Inherited terminal evidence and hypothesis:** R4 terminal audit SHA-256
+  `a18b6382a39161b0d3ffa0edb56a7930aca720226bbae5a68dcad903e5092bcc`
+  shows exact view-swap stability but changes only `25/184` tumor winners; among
+  those changes, four improve Dice, 14 worsen and seven tie, with four
+  baseline-hit→miss versus one miss→hit transition. Thus a learned global
+  critical relation is rejected. Yet the same frozen R4 ranking diagnostic
+  reduces top-1 to top-3 regret from `0.17591328→0.12929660` overall,
+  `0.23251191→0.17323013` medium and `0.26125464→0.15571134` large. S3 tests the
+  narrower predeclared campaign question: can strictly local consensus among
+  geometrically overlapping proposals from the same immutable family move a
+  better supported candidate upward without propagating evidence across
+  unrelated families?
+- **Exact inherited inputs:** selector-cache freeze
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
+  manifest `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`,
+  split `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`,
+  accepted Geometry-v3 checkpoint
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069`
+  and prediction freeze
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`.
+  Geometry-v3 Dice remains `0.2454823867797678 / 0.11708057891440651 /
+  0.37713551529480416 / 0.3894126471276201`; immutable oracle remains
+  `0.4090755342486002 / 0.2227494852063559 / 0.5941470844279589 /
+  0.6418253674184405`. Candidate identity/order, masks, family/source IDs,
+  descriptor bytes, map construction and evaluator remain unchanged.
+- **Frozen mechanism before implementation:** reproduce the accepted
+  original/aligned-flip averaged candidate logits `s` exactly from the shared
+  cache and checkpoint. Build a symmetric graph only between distinct valid
+  candidates with the same immutable `family_id` and either IoU at least
+  `0.25` or containment at least `0.50`; cross-family edges are forbidden and
+  isolated candidates receive only a self-loop. With symmetric normalized
+  adjacency `P`, apply exactly ten fidelity iterations
+  `z_(t+1) = 0.5 * P * z_t + 0.5 * s`, initialized by `z_0=s`, then select the
+  maximum final logit. These constants are the already prepared S3 primitive
+  defaults/test coefficient, not a validation-fitted sweep. There is no fit,
+  learnable parameter, alternate alpha/threshold/iteration, family balancing,
+  critical relation, affinity residual, pseudo-instance label, subgroup input,
+  GT router or rescue.
+- **GT-blind gates before evaluation:** independently verify bit-exact
+  `alpha=0` reproduction of all accepted base candidate logits/indices/maps;
+  graph symmetry, zero cross-family edges and exact preservation of every
+  isolated candidate logit; at least one non-self edge so the arm is
+  nontrivial; `371/371` exact view-swap records; all `371` physical candidate
+  score vectors/maps frozen; and absolute candidate-count/bag-probability
+  Spearman no greater than `0.5013777759365411`. Any failure rejects S3 before
+  validation GT with no parameter change, rerun, sweep or rescue.
+- **Post-freeze decision/gates:** only after a separate physical-output audit
+  passes may the unchanged evaluator read validation GT. Mechanism pass still
+  requires medium regret reduction, regret reduction in at least two tumor
+  subgroups, no overall Dice regression and no increase in absolute
+  candidate-count/miss association. Adoption and consumer authorization
+  additionally require Dice at least `0.34024039 / 0.17895493 / 0.51244178 /
+  0.49370336`, paired overall CI95 lower bound above zero, no subgroup mean
+  decrease, no miss increase and image AUROC at least `0.75`.
+- **Compute/safety:** static local synthetic tests only; one future private
+  Kaggle T4x2 kernel will rescore disjoint validation shards on both T4s and
+  freeze the graph outputs. The inherited scorer was trained with image-level
+  labels only and S3 performs no new fit. Validation GT remains closed until
+  prediction freeze and independent gate pass; consumer and BTXRD test remain
+  locked.
+- **Technical basis:** this is the already predeclared S3 campaign row. SmMIL
+  motivates fidelity-preserving normalized-Laplacian smoothing of localization
+  values while warning that local-dependency assumptions must match the graph:
+  https://proceedings.neurips.cc/paper_files/paper/2024/file/8db9279f593652ee9bb2223b4a2c43fa-Paper-Conference.pdf .
+  TransMIL motivates correlated rather than independent MIL instances:
+  https://proceedings.neurips.cc/paper/2021/hash/10c272d06794d3e5785d5e7c5356e9ff-Abstract.html .
+  S3 transfers only the local-consensus principle; neither paper nor the
+  prepared primitive is claimed beneficial on BTXRD before a terminal audited
+  result.
+
