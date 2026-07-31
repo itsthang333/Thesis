@@ -9545,4 +9545,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   S3 transfers only the local-consensus principle; neither paper nor the
   prepared primitive is claimed beneficial on BTXRD before a terminal audited
   result.
+- **Static implementation progress:** scientific source commit
+  `c11b891c7063e202e2c93a87b4d971542eb305e1` is pushed centrally. The shared
+  relational primitive now constructs the exact same-family graph directly
+  from the hash-frozen pairwise IoU/containment cache; canonical-LF SHA-256 is
+  `0b5eb685e474ad4a0480abe97c5f30db5825bb101326b13c7fe1a9d616ec48a2`.
+  New fit-free scorer `project/models/mask_bag_same_family_graph.py` and T4x2
+  runner `project/run_mask_bag_same_family_graph_s3_arm.py` have SHA-256
+  `5d2eef32bcfc971457e6cd6a2eac2b68c4dc7bd4d4eace654dd0121e486f7b0b` /
+  `5f882090b1d8ce8192d207047afe16f0aa572394b94fee55b4d6b56e410ec6a1`.
+  The runner verifies the full `2,981/371` cache, accepted baseline freeze and
+  manifest; rescores disjoint validation shards on both T4s; freezes per-image
+  hashes of all alpha-zero base score vectors; requires exact accepted
+  selected index/logit/bag-logit/bag-probability/map reproduction; then writes
+  the distinct S3 score vectors/maps and graph diagnostics before its physical
+  prediction freeze. No optimizer or fitting surface exists.
+- Synthetic graph/scorer and static runner tests have SHA-256
+  `9d0270289b21343a3b08cee47e2a6f94439604383227ca6301805ec53d422904` /
+  `8d834ec85be2b760a0edba3687f7458cd7f6d5ecc236d87c06f9b2b05643394e`.
+  `py_compile` passes; the focused S3/relational/R4 compatibility suite passes
+  `14/14`, and full repository regression passes `428/428` in 17.96 seconds
+  under the documented local Python-3.9 `zip(strict=...)` diagnostic shim.
+  This is static preparation only: no S3 protocol/binding/kernel launch,
+  scientific input, prediction, validation GT/test or consumer access has
+  occurred.
 
