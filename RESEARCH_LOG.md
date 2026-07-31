@@ -7965,3 +7965,58 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   claim must be registered and made visible before G0/G1. No validation GT is
   an algorithm input; consumer training and BTXRD test remain locked.
 
+### Central rich-gallery synchronization and exact R2 static protocol freeze
+
+- The collaborator branch `origin/codex/research-sync-20260731` advanced by one
+  unique commit, `29d2d2871a2dcca663883ae8700f7ec3337e6a63`. Its complete log
+  history through the common parent was already identical to the fully read
+  central history; the 51 appended lines and all seven referenced
+  code/protocol/evidence files were read in full. Merge commit
+  `9c432d771d64f77de091701b5e926f5f09336c90` preserves the branch provenance,
+  the active R1 version-2 heartbeat and every collaborator entry, and was
+  pushed to `origin/research-wsss-improvement` without force-push or conflict.
+- The synchronized post-freeze oracle evidence adds a real but separate
+  proposal-supply hypothesis. Unconditionally appending classifier-448 to the
+  current BiomedCLIP+LayerCAM anchor yields oracle
+  `0.53100361/0.33695530/0.73052286/0.74628997`; the three-source ceiling is
+  `0.56365361/0.38542822/0.74796800/0.75712864`. These are not achieved Dice
+  and cannot be used as a per-image router. Inspection confirms the merger
+  deduplicates exact masks, preserves source provenance only for audit and
+  scores all appended candidates with the anchor prompt map. The evidence JSON
+  hash is `a0c42250b65266c0a25f573cb40aaedb55ad249d5aa8e755498887db9ffcf4d6`;
+  its six focused tests pass unchanged in the project environment. A remaining
+  operational gap is that the repository evidence contains frozen oracle CSVs
+  but not a complete classifier-448 candidate-diagnostics payload for both
+  train and validation. Consequently G0/G1 remains a static design requiring a
+  later distinct claim and candidate-transport/generation gate; it does not
+  replace or tune the finite same-gallery R1/R2/S1 campaign.
+- To prevent post-R1 design choices, the exact same-gallery R2 protocol is now
+  frozen before the R1 result is known at
+  `artifacts/research_protocols/rad_dino_mask_bag_affinity_residual_r2_v1.json`,
+  SHA-256
+  `3f28cc7187ad64f3755ae4c7a10bb380a0085d1733807dcf667c44d92d9f593d`.
+  It binds scientific commit `c0e3862`, accepted cache freeze `2f6290cd...`,
+  split `85511ee1...`, baseline checkpoint `58b82642...`, the fixed
+  24-dimensional original/flip local-affinity mechanism and exactly one
+  16-epoch image-label-only residual fit. It also fixes T4x2 execution,
+  371-prediction/all-candidate-score physical freeze, the evaluator-only
+  baseline CSV `a26143d...`, all four operational goals and the rule that the
+  separate rich-gallery oracle/size information is never a training or
+  inference input. All 21 canonical-LF source/test hashes match physically;
+  `py_compile`, JSON parsing, `git diff --check` and all 14 focused R2 tests
+  pass. Static readiness evidence SHA-256 is
+  `f0cc043cc4dc9dfe3b4f4b4be42f39740bb0dc223d23440a92238082a1e5ee4c`.
+- Two local test commands initially failed before scientific execution: the
+  default Miniconda Python lacked NumPy, and the bundled Codex Python lacked
+  PyTorch for the gallery-merger import. The identical tests were rerun in the
+  existing `btxrd-pseudomask` environment and passed (`6/6` collaborator tests,
+  `14/14` R2 tests). An unsupported PowerShell `Get-Date -AsUTC` spelling was
+  likewise replaced by the read-only `DateTime.UtcNow` equivalent. These are
+  environment/tooling errors only; no scientific input or output was opened.
+- This is static preparation under the active
+  `EXP-20260731-codex-r1-normal-prototype-v1` claim, not an R2 claim or result.
+  R1 remains last known `RUNNING`; no Kaggle status poll, monitor, R2 launch,
+  prediction, validation GT/test access or consumer training occurred. R2 may
+  be claimed and launched only after R1 is terminal and independently audited,
+  followed by another complete central-log synchronization.
+

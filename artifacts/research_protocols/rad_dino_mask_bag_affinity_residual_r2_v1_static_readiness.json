@@ -1,0 +1,49 @@
+{
+  "audit_id": "rad_dino_mask_bag_affinity_residual_r2_v1_static_readiness",
+  "audited_utc": "2026-07-31T14:42:38Z",
+  "status": "STATIC_READY_NO_CLAIM_NO_LAUNCH",
+  "prepared_on_head": "9c432d771d64f77de091701b5e926f5f09336c90",
+  "scientific_source_commit": "c0e38628069ff3bedd4493c4ff004b75bd32e008",
+  "protocol_path": "artifacts/research_protocols/rad_dino_mask_bag_affinity_residual_r2_v1.json",
+  "protocol_sha256": "3f28cc7187ad64f3755ae4c7a10bb380a0085d1733807dcf667c44d92d9f593d",
+  "source_hashes_verified": 21,
+  "source_hash_verification": "canonical LF bytes for every path in canonical_lf_source_hashes exactly match the protocol",
+  "focused_tests": {
+    "command": "python -m pytest tests/test_run_mask_bag_affinity_residual_arm.py tests/test_mask_bag_affinity_features.py tests/test_mask_bag_affinity_residual_training.py -q",
+    "runtime": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe",
+    "python": "3.9.23",
+    "result": "14 passed",
+    "scientific_data_opened": false
+  },
+  "static_checks": {
+    "json_parse": "passed",
+    "py_compile": "passed for the runner and two R2 model modules",
+    "git_diff_check": "passed",
+    "protocol_cache_freeze_binding": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "fixed_fit_contract": "16 epochs, one final fit, no validation selection",
+    "prediction_first_contract": "371 predictions and all candidate scores must be physically frozen and independently audited before evaluator GT access",
+    "compute_contract": "Kaggle Tesla T4 x2 only"
+  },
+  "coordination": {
+    "active_claim": "EXP-20260731-codex-r1-normal-prototype-v1",
+    "r1_last_known_state": "RUNNING",
+    "r2_claim_registered": false,
+    "r2_launch_authorized": false,
+    "required_before_launch": "wait for terminal independently audited R1, synchronize complete central log, register and push a unique R2 claim",
+    "rich_gallery_static_design": "STATIC-DESIGN-20260731-rich-gallery-geometry-v3-pair-v1 is preserved as a separate proposal-supply hypothesis and is not an R2 input"
+  },
+  "environment_notes": [
+    "The first local pytest attempt failed before collection because the default Miniconda Python lacked NumPy.",
+    "The bundled Codex Python passed the three oracle tests but could not import the merge test because it lacks PyTorch; rerunning the unchanged six collaborator tests in the project btxrd-pseudomask environment passed 6/6.",
+    "A PowerShell Get-Date -AsUTC spelling unsupported by this host was replaced by the read-only DateTime.UtcNow equivalent; no artifact or scientific operation depended on the failed command."
+  ],
+  "safety": {
+    "training_labels": "image_level_only",
+    "validation_gt_read": false,
+    "prediction_created": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "kaggle_polled": false,
+    "kaggle_monitor_created": false
+  }
+}
