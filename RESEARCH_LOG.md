@@ -9693,3 +9693,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Prediction bytes/protocol/producer remain unchanged; GT, consumer and BTXRD
   test remain locked.
 
+### S4 feasibility boundary while S3 is running (2026-08-01)
+
+- A static inventory found locally retained group-OOF artifacts from terminal
+  rejected `EXP-20260731-codex-r1-normal-prototype-v1`, including all 15 folds
+  for `K={8,16,32}`. Independent error audit SHA-256
+  `833c4814eee0891df1cd55a01fa008e0708ad3485dd30b730657f52508317719`
+  already proves those fits are group-excluded, but also proves absolute OOF
+  candidate-count/probability Spearman
+  `0.60365911/0.60299779/0.60282430`, all far above the frozen `0.50137778`
+  ceiling. R1 is terminal negative evidence, not an accepted teacher.
+- Therefore the predeclared S4 proposal-cluster arm must not inherit or relabel
+  any R1 OOF logits/checkpoints as a useful teacher. If S3 is terminal rejected
+  and S4 is claimed, its runner must create a distinct group-excluded teacher
+  under the S4 protocol, verify every held-out/training-group exclusion before
+  cluster construction, and serialize teacher/seed/member provenance. Using the
+  accepted all-train Geometry-v3 checkpoint as an OOF teacher is also forbidden
+  because it has seen the held-out train groups.
+- This audit changes no S3/S4 scientific source or protocol, registers no S4
+  claim and launches no competing experiment. No Kaggle status query,
+  scientific input execution, validation prediction/GT, consumer training or
+  BTXRD test access occurred. S3 remains the sole active central selector claim.
+
