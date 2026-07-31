@@ -7094,3 +7094,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   status poll or monitor was created. R1/R2/S1 remain gated on terminal cache
   reproduction audit; validation GT, consumer and BTXRD test remain locked.
 
+### Shared selector-cache version 1 split-serialization correction
+
+- A single terminal status check found selector-cache kernel version `1` at
+  `ERROR`. Direct Kaggle output contained only the console log; its SHA-256 is
+  `c07d5ed0f3eda11d475e98ff8b456172639e67883186b98ad1a7e8009473f049`.
+  Exact checkout `dd3e9f4...`, scientific-source ancestry, package installation,
+  the two-T4 real-convolution guard, transport safety checks, validation and
+  baseline archive extraction, and train-gallery discovery all passed.
+- Failure occurred at split discovery, before dataset-root verification, model
+  download, pytest, image opening, descriptor extraction, baseline
+  reproduction or cache serialization. The wrapper searched Kaggle inputs for
+  the frozen Windows-CRLF split hash `85511ee1...`, but the Git-derived input
+  exposes the same manifest in canonical LF form `43662d5d...`. No radiograph,
+  validation GT or BTXRD test was opened; no scientific result exists and
+  R1/R2/S1 remain unauthorized. Machine-readable evidence is
+  `artifacts/kaggle/rad_dino_mask_bag_selector_cache_v1/kernel_version1_error_audit.json`.
+- The version-2 correction is wrapper-only: read the split from the already
+  hash-bound checkout, require exact LF hash `43662d5d...` and zero carriage
+  returns, reconstruct CRLF exactly once, then require frozen hash
+  `85511ee1...`. Local reconstruction reproduces that hash exactly and wrapper
+  `py_compile` passes. Protocol, 18-module scientific source closure, gallery,
+  baseline, cache schema, image-label-only contract and selector campaign are
+  unchanged. Corrected wrapper SHA-256 is `25c8a98a...`; prelaunch audit
+  `rad_dino_mask_bag_selector_cache_v1_kernel_v2_wrapper_audit.json` reports
+  `PRELAUNCH_PASS`.
+- This is cross-platform byte-serialization repair, not a research mechanism;
+  it adds no technique/paper claim. The scientific sources supporting R1/R2/S1
+  remain the Attention MIL, Deep Sets, AffinityNet/AFA, WeCLIP, PatchCore and
+  DSMIL references recorded immediately above. The only valid next step is the
+  same cache rerun; validation GT, consumer training and BTXRD test remain
+  locked.
+
