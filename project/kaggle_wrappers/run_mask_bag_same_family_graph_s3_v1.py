@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import shutil
 import subprocess
 import sys
 import zipfile
@@ -24,6 +25,21 @@ PROTOCOL_RELATIVE = Path(
     "artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1.json"
 )
 PROTOCOL_SHA256 = "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca"
+NUMERIC_IDENTITY_ADDENDUM_RELATIVE = Path(
+    "artifacts/research_protocols/"
+    "rad_dino_mask_bag_same_family_graph_s3_v1_posterror_numeric_identity_addendum.json"
+)
+NUMERIC_IDENTITY_ADDENDUM_SHA256 = (
+    "41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51"
+)
+IMPLEMENTATION_SOURCE_OVERRIDES = {
+    "project/run_mask_bag_same_family_graph_s3_arm.py": (
+        "30e3048a706127e0cea52892d0e682d97e0c81dc8aee2bd05c4254674fabf6db"
+    ),
+    "tests/test_run_mask_bag_same_family_graph_s3_arm.py": (
+        "66a8f81a0dbb7c150a03d95f27693c4d96544c1858f2621f49591655a98d8440"
+    ),
+}
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 GIT_SPLIT_SHA256 = "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
 CACHE_FREEZE_SHA256 = "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c"
@@ -112,12 +128,19 @@ def clone_and_verify() -> dict[str, str]:
     if hash_file(protocol_path) != PROTOCOL_SHA256:
         raise RuntimeError("S3 protocol hash mismatch")
     protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+    addendum_path = SOURCE / NUMERIC_IDENTITY_ADDENDUM_RELATIVE
+    if hash_file(addendum_path) != NUMERIC_IDENTITY_ADDENDUM_SHA256:
+        raise RuntimeError("S3 numeric identity addendum hash mismatch")
     hashes = protocol.get("canonical_lf_source_hashes", {})
     for relative, expected in hashes.items():
         path = SOURCE / relative
-        if not path.is_file() or canonical_hash(path) != expected:
+        effective_expected = IMPLEMENTATION_SOURCE_OVERRIDES.get(relative, expected)
+        if not path.is_file() or canonical_hash(path) != effective_expected:
             raise RuntimeError(f"S3 source hash mismatch: {relative}")
-    return hashes
+    return {
+        relative: IMPLEMENTATION_SOURCE_OVERRIDES.get(relative, expected)
+        for relative, expected in hashes.items()
+    }
 
 
 def install_runtime() -> None:
@@ -280,6 +303,8 @@ def audit_output(
     run_manifest = json.loads(run_path.read_text(encoding="utf-8"))
     if (
         freeze.get("protocol_sha256") != PROTOCOL_SHA256
+        or freeze.get("numeric_identity_addendum_sha256")
+        != NUMERIC_IDENTITY_ADDENDUM_SHA256
         or freeze.get("validation_predictions") != 371
         or freeze.get("training_labels") != "image_level_only"
         or freeze.get("arm_fit") != "none_fixed_operator"
@@ -302,7 +327,7 @@ def audit_output(
             raise RuntimeError("S3 output cohort mismatch")
         row_sets.append(rows)
     predictions, scores, identities, diagnostics = row_sets
-    if any(int(row["accepted_row_exact"]) != 1 for row in identities):
+    if any(int(row["accepted_row_identity_pass"]) != 1 for row in identities):
         raise RuntimeError("S3 accepted baseline identity mismatch")
     for row in predictions:
         path = OUTPUT / "predictions" / row["map_path"]
@@ -334,6 +359,8 @@ def audit_output(
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "numeric_identity_addendum_sha256": NUMERIC_IDENTITY_ADDENDUM_SHA256,
+        "implementation_source_overrides": IMPLEMENTATION_SOURCE_OVERRIDES,
         "source_hashes": source_hashes,
         "cache": cache,
         "baseline": baseline,
@@ -359,59 +386,64 @@ def main() -> None:
         {"PYTHONHASHSEED": "42", "CUBLAS_WORKSPACE_CONFIG": ":4096:8"}
     )
     RUNTIME.mkdir(parents=True, exist_ok=False)
-    source_hashes = clone_and_verify()
-    install_runtime()
-    t4 = verify_t4x2()
-    split = prepare_split()
-    baseline_root, baseline = prepare_baseline()
-    cache_root, cache = find_cache()
-    run(
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            "-q",
-            "tests/test_run_mask_bag_same_family_graph_s3_arm.py",
-            "tests/test_mask_bag_same_family_graph.py",
-            "tests/test_mask_bag_relational_selector.py",
-            "tests/test_mask_bag_selector_cache.py",
-            "tests/test_mask_bag_selector_cache_io.py",
-        ],
-        cwd=SOURCE,
-    )
-    run([sys.executable, "-m", "pytest", "-q"], cwd=SOURCE)
-    run(
-        [
-            sys.executable,
-            str(SOURCE / "project/run_mask_bag_same_family_graph_s3_arm.py"),
-            "--split-manifest",
-            str(split),
-            "--expected-split-sha256",
-            SPLIT_SHA256,
-            "--selector-cache-root",
-            str(cache_root),
-            "--expected-selector-cache-freeze-sha256",
-            CACHE_FREEZE_SHA256,
-            "--baseline-root",
-            str(baseline_root),
-            "--expected-baseline-checkpoint-sha256",
-            BASELINE["checkpoint"],
-            "--expected-baseline-freeze-sha256",
-            BASELINE["freeze"],
-            "--expected-baseline-source-commit",
-            BASELINE["source_commit"],
-            "--expected-baseline-protocol-sha256",
-            BASELINE["protocol"],
-            "--source-commit",
-            SOURCE_COMMIT,
-            "--protocol-sha256",
-            PROTOCOL_SHA256,
-            "--output-dir",
-            str(OUTPUT),
-        ],
-        cwd=SOURCE,
-    )
-    audit_output(source_hashes, cache, baseline, t4)
+    try:
+        source_hashes = clone_and_verify()
+        install_runtime()
+        t4 = verify_t4x2()
+        split = prepare_split()
+        baseline_root, baseline = prepare_baseline()
+        cache_root, cache = find_cache()
+        run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                "tests/test_run_mask_bag_same_family_graph_s3_arm.py",
+                "tests/test_mask_bag_same_family_graph.py",
+                "tests/test_mask_bag_relational_selector.py",
+                "tests/test_mask_bag_selector_cache.py",
+                "tests/test_mask_bag_selector_cache_io.py",
+            ],
+            cwd=SOURCE,
+        )
+        run([sys.executable, "-m", "pytest", "-q"], cwd=SOURCE)
+        run(
+            [
+                sys.executable,
+                str(SOURCE / "project/run_mask_bag_same_family_graph_s3_arm.py"),
+                "--split-manifest",
+                str(split),
+                "--expected-split-sha256",
+                SPLIT_SHA256,
+                "--selector-cache-root",
+                str(cache_root),
+                "--expected-selector-cache-freeze-sha256",
+                CACHE_FREEZE_SHA256,
+                "--baseline-root",
+                str(baseline_root),
+                "--expected-baseline-checkpoint-sha256",
+                BASELINE["checkpoint"],
+                "--expected-baseline-freeze-sha256",
+                BASELINE["freeze"],
+                "--expected-baseline-source-commit",
+                BASELINE["source_commit"],
+                "--expected-baseline-protocol-sha256",
+                BASELINE["protocol"],
+                "--source-commit",
+                SOURCE_COMMIT,
+                "--protocol-sha256",
+                PROTOCOL_SHA256,
+                "--output-dir",
+                str(OUTPUT),
+            ],
+            cwd=SOURCE,
+        )
+        audit_output(source_hashes, cache, baseline, t4)
+    finally:
+        for cleanup_path in (SOURCE, RUNTIME):
+            if cleanup_path.exists() and cleanup_path.resolve().parent == WORK.resolve():
+                shutil.rmtree(cleanup_path)
 
 
 if __name__ == "__main__":

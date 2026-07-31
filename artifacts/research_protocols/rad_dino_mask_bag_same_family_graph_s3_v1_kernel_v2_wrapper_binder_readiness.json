@@ -1,0 +1,56 @@
+{
+  "readiness_id": "rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v2_wrapper_binder_readiness",
+  "created_utc": "2026-07-31T22:32:02Z",
+  "status": "UNBOUND_FAIL_CLOSED_VERSION2_WRAPPER_AND_BINDER_READY",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "parent_protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "numeric_identity_addendum_sha256": "41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51",
+  "corrected_source_commit": "ceb7003a29303b9840d1f30fd6378ffd964313e1",
+  "implementation_only_source_overrides": {
+    "project/run_mask_bag_same_family_graph_s3_arm.py": "30e3048a706127e0cea52892d0e682d97e0c81dc8aee2bd05c4254674fabf6db",
+    "tests/test_run_mask_bag_same_family_graph_s3_arm.py": "66a8f81a0dbb7c150a03d95f27693c4d96544c1858f2621f49591655a98d8440"
+  },
+  "wrapper": {
+    "path": "project/kaggle_wrappers/run_mask_bag_same_family_graph_s3_v1.py",
+    "canonical_lf_sha256": "774cae093545632ab71de07800fd3642669cd04c713bbcbb4168370e6e30f42d",
+    "test_path": "tests/test_kaggle_wrapper_mask_bag_same_family_graph_s3_v1.py",
+    "test_sha256": "f67af2ae036485a59bbd98e608e936f57a79ec964740335d44eaec6639675025",
+    "kernel_version": 0,
+    "launch_binding_ready": false,
+    "checkout_commit": "UNBOUND",
+    "requires_t4x2": true,
+    "removes_exact_source_and_runtime_in_finally": true
+  },
+  "binder": {
+    "path": "project/bind_mask_bag_same_family_graph_s3_wrapper.py",
+    "sha256": "655b3bc9b2e1835a7b7650eac96f99d27eb524b2b53aaaf16d20d5d9e6848872",
+    "test_path": "tests/test_bind_mask_bag_same_family_graph_s3_wrapper.py",
+    "test_sha256": "a8d8c5dec7e3ecd96863fe688fc9643c02f849d01ee7bc0ea458dfd63f6e139c",
+    "binding_schema_version": 2,
+    "finite_replacements": 3,
+    "verifies_parent_protocol_addendum_and_effective_source_hashes": true
+  },
+  "independent_auditor": {
+    "path": "project/audit_mask_bag_same_family_graph_s3_output.py",
+    "sha256": "79591dff304dbe90621b226ff301af3094b8979827108eeb4d514875c22ceed4",
+    "requires_schema_version2_binding_and_addendum": true
+  },
+  "tests": {
+    "focused_result": "13 passed in 3.21s",
+    "full_repository_result": "441 passed in 16.65s",
+    "python39_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "remaining_before_launch": [
+    "commit and push exact version2 wrapper/binder source",
+    "bind kernel version 2 to an exact later execution checkout once",
+    "freeze schema2 launch binding and final prelaunch audit",
+    "push binding/audit before a single Kaggle rerun"
+  ],
+  "kaggle_bound": false,
+  "kaggle_launched": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

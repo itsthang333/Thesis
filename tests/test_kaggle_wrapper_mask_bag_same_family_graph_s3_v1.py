@@ -46,6 +46,9 @@ def test_s3_wrapper_binds_t4x2_transport_and_all_outputs() -> None:
         '"physical_candidate_score_payloads_verified": 371',
         '"physical_pregraph_identity_rows_verified": 371',
         '"physical_gt_blind_diagnostic_rows_verified": 371',
+        "NUMERIC_IDENTITY_ADDENDUM_SHA256",
+        "IMPLEMENTATION_SOURCE_OVERRIDES",
+        'row["accepted_row_identity_pass"]',
+        "shutil.rmtree(cleanup_path)",
     ):
         assert required in source
-

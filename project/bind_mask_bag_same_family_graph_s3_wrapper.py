@@ -10,12 +10,27 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "c4e41f81d4f874e137cefc9a80875ced07a92555289be7c7fbba9fe58f8a7b2d"
+TEMPLATE_SHA256 = "774cae093545632ab71de07800fd3642669cd04c713bbcbb4168370e6e30f42d"
 PROTOCOL_PATH = (
     "artifacts/research_protocols/"
     "rad_dino_mask_bag_same_family_graph_s3_v1.json"
 )
 PROTOCOL_SHA256 = "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca"
+NUMERIC_IDENTITY_ADDENDUM_PATH = (
+    "artifacts/research_protocols/"
+    "rad_dino_mask_bag_same_family_graph_s3_v1_posterror_numeric_identity_addendum.json"
+)
+NUMERIC_IDENTITY_ADDENDUM_SHA256 = (
+    "41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51"
+)
+IMPLEMENTATION_SOURCE_OVERRIDES = {
+    "project/run_mask_bag_same_family_graph_s3_arm.py": (
+        "30e3048a706127e0cea52892d0e682d97e0c81dc8aee2bd05c4254674fabf6db"
+    ),
+    "tests/test_run_mask_bag_same_family_graph_s3_arm.py": (
+        "66a8f81a0dbb7c150a03d95f27693c4d96544c1858f2621f49591655a98d8440"
+    ),
+}
 SOURCE_COMMIT = "293b013cd036d8346fea3852ec3025772172f32d"
 KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1"
 
@@ -77,8 +92,17 @@ def bind(
     if digest(protocol_payload) != PROTOCOL_SHA256:
         raise ValueError("S3 protocol differs at execution checkout")
     protocol = json.loads(protocol_payload.decode("utf-8"))
+    addendum_payload = _git_bytes(
+        repository_root, checkout_commit, NUMERIC_IDENTITY_ADDENDUM_PATH
+    )
+    if digest(addendum_payload) != NUMERIC_IDENTITY_ADDENDUM_SHA256:
+        raise ValueError("S3 numeric identity addendum differs at execution checkout")
     source_hashes = protocol.get("canonical_lf_source_hashes", {})
-    for relative, expected in source_hashes.items():
+    effective_source_hashes = {
+        relative: IMPLEMENTATION_SOURCE_OVERRIDES.get(relative, expected)
+        for relative, expected in source_hashes.items()
+    }
+    for relative, expected in effective_source_hashes.items():
         if digest(_git_bytes(repository_root, checkout_commit, relative)) != expected:
             raise ValueError(f"S3 source differs at execution checkout: {relative}")
     subprocess.run(
@@ -89,16 +113,18 @@ def bind(
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(bound)
     binding = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "FROZEN_PRELAUNCH",
         "kernel": KERNEL,
         "kernel_version": kernel_version,
         "checkout_commit": checkout_commit,
         "scientific_source_commit": SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "numeric_identity_addendum_sha256": NUMERIC_IDENTITY_ADDENDUM_SHA256,
+        "implementation_only_source_overrides": IMPLEMENTATION_SOURCE_OVERRIDES,
         "template_sha256": TEMPLATE_SHA256,
         "bound_wrapper_sha256": digest(bound),
-        "runtime_source_hashes": source_hashes,
+        "runtime_source_hashes": effective_source_hashes,
         "replacement_count": len(replacements),
         "inverse_reconstruction_matches_template": True,
         "validation_gt_read": False,

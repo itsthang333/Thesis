@@ -9782,4 +9782,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `9a8c512049b30fbc1af844a3021da55e29a628be82445bf90510925a14af321f`.
   Graph/candidates/hyperparameters/protocol gates are unchanged; no rerun,
   prediction, validation GT, consumer or test access occurred.
+- **Version-2 wrapper/binder readiness:** fail-closed wrapper template SHA-256
+  is `774cae093545632ab71de07800fd3642669cd04c713bbcbb4168370e6e30f42d`;
+  schema-2 binder SHA-256 is
+  `655b3bc9b2e1835a7b7650eac96f99d27eb524b2b53aaaf16d20d5d9e6848872`.
+  The binder verifies the immutable parent protocol and addendum, and allows
+  exactly two implementation overrides: corrected runner/test hashes
+  `30e3048a...` / `66a8f81a...`; every other scientific source remains pinned to
+  the original protocol. Updated independent auditor SHA-256 is
+  `79591dff304dbe90621b226ff301af3094b8979827108eeb4d514875c22ceed4`
+  and requires the same schema-2 binding/addendum/override map.
+- Wrapper now removes only exact `/kaggle/working/s3_source` and `s3_runtime`
+  paths in `finally`, after path-parent verification, so either terminal success
+  or error keeps compact S3 evidence without exporting redundant cloned source
+  and 371 baseline maps. Wrapper/binder test hashes are
+  `f67af2ae036485a59bbd98e608e936f57a79ec964740335d44eaec6639675025` /
+  `a8d8c5dec7e3ecd96863fe688fc9643c02f849d01ee7bc0ea458dfd63f6e139c`.
+  Focused closure passes `13/13`; full repository passes `441/441` in 16.65
+  seconds. Wrapper/binder readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v2_wrapper_binder_readiness.json`
+  is frozen before source commit/binding with SHA-256
+  `2669f50858648f0616158225739ad38ab459a249a045a0adceacd72e1d4b6352`.
+  No version-2 binding/launch, prediction, validation GT,
+  consumer or BTXRD test access occurred.
 

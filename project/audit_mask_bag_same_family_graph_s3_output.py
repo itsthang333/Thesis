@@ -407,6 +407,10 @@ def audit_s3_output(
         or wrapper.get("checkout_commit") != binding["checkout_commit"]
         or wrapper.get("scientific_source_commit") != SOURCE_COMMIT
         or wrapper.get("protocol_sha256") != PROTOCOL_SHA256
+        or wrapper.get("numeric_identity_addendum_sha256")
+        != NUMERIC_IDENTITY_ADDENDUM_SHA256
+        or wrapper.get("implementation_source_overrides")
+        != binding["implementation_only_source_overrides"]
         or wrapper.get("source_hashes") != runtime_source_hashes
         or wrapper.get("physical_prediction_maps_verified") != expected_validation
         or wrapper.get("physical_candidate_score_payloads_verified")
