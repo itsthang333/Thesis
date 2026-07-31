@@ -7420,4 +7420,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   rerun the unmodified focused and whole suites. No heavy local extraction,
   cache, validation prediction, GT access, consumer or test evaluation was
   performed.
+- The correction is frozen separately at
+  `artifacts/research_protocols/rad_dino_mask_bag_selector_cache_v1_affinity_broadcast_correction_v1.json`,
+  SHA-256
+  `be9c91b53926eda2f8bf8dba894385f03dc6accd15d3fa9646da0d1a17a635f2`.
+  It references parent protocol `ee810fd8...`, error audit `2f82d7dc...`,
+  corrected scientific source commit `c0e3862...` and both new source/test
+  hashes. A corrected cache must record this correction protocol/source in its
+  freeze; it may not claim the parent bytes unchanged.
+- The R1 scientific protocol remains frozen because no R1 mechanism or input
+  selection rule changes. Its earlier unbound wrapper-readiness audit is now
+  explicitly superseded only for upstream cache provenance: after a corrected
+  cache passes, the staged wrapper must bind the corrected cache source,
+  correction protocol, freeze and wrapper-audit hashes before launch. R1 is
+  still unlaunched and no cache binding exists.
 
