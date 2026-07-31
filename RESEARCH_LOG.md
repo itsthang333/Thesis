@@ -8784,4 +8784,6 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   response; it retrieves the official log but never queries kernel status or
   creates a monitor. `py_compile` and focused tests pass `3/3`. The utility has
   not yet been run on S1 output and opened no scientific data/prediction/GT.
+  Full repository regression after adding it passes `393/393` in 14.14 s under
+  the documented local Python-3.9 `zip(strict)` diagnostic shim.
 
