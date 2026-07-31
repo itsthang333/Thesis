@@ -1,0 +1,76 @@
+{
+  "audit_id": "rad_dino_mask_bag_critical_relation_r3_v1_kernel_version1_terminal_result",
+  "created_utc": "2026-07-31T19:37:24Z",
+  "experiment_id": "EXP-20260801-codex-r3-critical-relation-v1",
+  "status": "TERMINAL_REJECTED_GT_BLIND_GATE_FAIL",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-critical-relation-r3-v1",
+  "kernel_version": 1,
+  "kernel_status": "COMPLETE",
+  "protocol_sha256": "f7253df27444c1b56706ac19646441a7b2d2a7374a4d6888b8e97d26c2c3fd03",
+  "scientific_source_commit": "84867698dbc652957bd1a1430f4b9d32fa399119",
+  "execution_checkout": "2e958f1bf7f5c0290cb54f6f45f8b0c9432c3168",
+  "launch_binding_sha256": "4b49a0fca65c4e433446e752460aad90cc2153a2fef63faf553ccb255ca4e93d",
+  "bound_wrapper_sha256": "21a43a06e8e6c7c7558f77c74df71465219758c9c85a431c2e7c8db1a12e27ef",
+  "official_output": {
+    "inventory_files": 2566,
+    "downloaded_tree_files_including_direct_log": 2567,
+    "downloaded_tree_bytes": 196064064,
+    "remaining_part_files": 0,
+    "direct_log_sha256": "f5735b88eb1ab7807ba5cb9e2038921e929e5cca82c24a219000866c1533f055",
+    "direct_log_bytes": 23107,
+    "ignored_temp_root": "tmp/kaggle/critical_relation_r3_complete_20260801_0237"
+  },
+  "runtime_provenance": {
+    "t4x2_names": ["Tesla T4", "Tesla T4"],
+    "real_convolution_checksums": [-2755.579345703125, -121.6896743774414],
+    "validation_shards": [186, 185],
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "physical_cache_records_verified": 3352,
+    "baseline_archive_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "baseline_transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "frozen_outputs": {
+    "prediction_freeze_sha256": "11ed9eb9aa4c5b97b0f14cae7458bbffbb7a91a844b9441b71cb5b9153fece98",
+    "run_manifest_sha256": "64fa8dc4e6aee56b6d5de3f46189c04af069bfdba762ab459f1cdb536ce25cdf",
+    "wrapper_output_audit_sha256": "e1be8fdee31b1fc0a219a2f45541ae46ee2f21ed526a1d8176f8950b625b6ca7",
+    "checkpoint_sha256": "1ebdd9a07ffaacb18acd98f708af31f40d644c3cb4ce2e648fd3426192c4399e",
+    "training_history_sha256": "8b4d1a80993bcafe976670f2445c9ee6121580e7e6ebcae8b49ad608b108a183",
+    "pretraining_identity_audit_sha256": "47d39ff2358c1d7e7d5eba96365c6a47287c215607dd37e4de9f2f708af7702c",
+    "candidate_score_manifest_sha256": "1be3e8077a26765ea08270915f463e0812c5d5ab9091e6c4772a3a1b56ca540c",
+    "prediction_manifest_sha256": "b8600d86ccb8d1ed1bbc86710a29ff8a71164ad0d443c8cec81b556090d4c139",
+    "gt_blind_diagnostics_sha256": "fe1591ec9aff0381da0574d9c9ff90ec0b9d6ecaec5fdaa244d7b2f64d23cfe7",
+    "validation_predictions": 371,
+    "physical_candidate_score_payloads_verified": 371,
+    "physical_prediction_maps_verified": 371,
+    "physical_gt_blind_diagnostic_rows_verified": 371
+  },
+  "independent_gt_blind_audit": {
+    "path": "artifacts/kaggle/rad_dino_mask_bag_critical_relation_r3_v1/kernel_version1_complete_gt_blind_output_audit.json",
+    "sha256": "683ef9efe1993614770f58966f1f5427d2ceab51f831321cd51c0c1f6292394f",
+    "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_FAIL",
+    "physical_output_bytes_verified": 77499181
+  },
+  "gt_blind_gate": {
+    "absolute_candidate_count_probability_spearman": 0.46925209554046915,
+    "ceiling": 0.5013777759365411,
+    "count_gate_pass": true,
+    "frozen_base_flip_critical_agreement": 0.6522911051212938,
+    "final_flip_selected_agreement": 0.6118598382749326,
+    "agreement_delta": -0.0404312668463612,
+    "minimum_allowed_final_agreement": 0.6422911051212938,
+    "agreement_gate_pass": false,
+    "overall_gt_blind_gate_pass": false
+  },
+  "scientific_conclusion": "The relational residual did not increase the candidate-count shortcut, but it destabilized original/flip candidate selection by about 4.04 percentage points versus the predeclared maximum 1-point drop. The fixed GT-blind gate therefore rejects R3 before any validation segmentation evaluation. No Dice result exists and the mechanism is not adopted as an improvement.",
+  "local_download_errors": [
+    "The first downloader invocation used the btxrd-pseudomask interpreter, which lacks the Kaggle package, and stopped before API access or output creation.",
+    "The first correct-interpreter invocation exceeded the 124-second local shell timeout while its exact child process continued downloading. The process was identity-checked and allowed to finish; one same-destination resume then completed the official 2566-file inventory with 2556 existing and 10 downloaded files, wrote the direct log and left zero partial files."
+  ],
+  "validation_gt_read": false,
+  "validation_dice_evaluated": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "rerun_or_sweep_authorized": false
+}

@@ -1,0 +1,62 @@
+{
+  "audit_id": "independent_mask_bag_critical_relation_r3_output_v1",
+  "bound_wrapper_sha256": "21a43a06e8e6c7c7558f77c74df71465219758c9c85a431c2e7c8db1a12e27ef",
+  "cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "consumer_trained": false,
+  "gt_blind_diagnostics": {
+    "absolute_candidate_count_probability_spearman": 0.46925209554046915,
+    "base_flip_critical_agreement": 0.6522911051212938,
+    "final_flip_selected_agreement": 0.6118598382749326,
+    "gt_blind_gate_pass": false,
+    "physical_bytes": 15531,
+    "records": 371,
+    "sha256": "fe1591ec9aff0381da0574d9c9ff90ec0b9d6ecaec5fdaa244d7b2f64d23cfe7"
+  },
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-critical-relation-r3-v1",
+  "kernel_version": 1,
+  "launch_binding_sha256": "4b49a0fca65c4e433446e752460aad90cc2153a2fef63faf553ccb255ca4e93d",
+  "physical_output_bytes_verified": 77499181,
+  "prediction_freeze_sha256": "11ed9eb9aa4c5b97b0f14cae7458bbffbb7a91a844b9441b71cb5b9153fece98",
+  "pretraining_identity": {
+    "consumer_trained": false,
+    "protocol_sha256": "f7253df27444c1b56706ac19646441a7b2d2a7374a4d6888b8e97d26c2c3fd03",
+    "source_commit": "84867698dbc652957bd1a1430f4b9d32fa399119",
+    "test_evaluated": false,
+    "train": {
+      "base_flip_critical_agreement": 0.647769204964777,
+      "base_flip_critical_agreement_count": 1931,
+      "candidates": 173376,
+      "combined_equals_frozen_base_exact": true,
+      "records": 2981,
+      "zero_residual_exact": true
+    },
+    "validation": {
+      "base_flip_critical_agreement": 0.6522911051212938,
+      "base_flip_critical_agreement_count": 242,
+      "candidates": 20778,
+      "combined_equals_frozen_base_exact": true,
+      "records": 371,
+      "zero_residual_exact": true
+    },
+    "validation_gt_read": false
+  },
+  "protocol_sha256": "f7253df27444c1b56706ac19646441a7b2d2a7374a4d6888b8e97d26c2c3fd03",
+  "run_manifest_sha256": "64fa8dc4e6aee56b6d5de3f46189c04af069bfdba762ab459f1cdb536ce25cdf",
+  "source_commit": "84867698dbc652957bd1a1430f4b9d32fa399119",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_FAIL",
+  "test_evaluated": false,
+  "training_labels": "image_level_only",
+  "validation": {
+    "physical_candidate_score_payloads_verified": 371,
+    "physical_validation_evidence_bytes": 76595417,
+    "physical_validation_maps_verified": 371,
+    "validation_absolute_count_probability_spearman": 0.46925209554046915,
+    "validation_image_label_counts": {
+      "normal": 187,
+      "tumor": 184
+    }
+  },
+  "validation_gt_read": false,
+  "wrapper_output_audit_sha256": "e1be8fdee31b1fc0a219a2f45541ae46ee2f21ed526a1d8176f8950b625b6ca7"
+}

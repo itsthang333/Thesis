@@ -8983,7 +8983,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 ### EXP-20260801-codex-r3-critical-relation-v1
 
-- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Owner/status:** Codex main task on `research-wsss-improvement`;
+  `HOÀN THÀNH — TERMINAL REJECTED AT GT-BLIND AGREEMENT GATE`.
 - **Registered:** `2026-07-31T18:24:00Z` (`2026-08-01` ICT); registration base
   commit `93c7c13c3b1c8f27bdd7a992a1de11adc814562e`. The exact registration
   commit will be recorded in the immediate successor note after push; no R3
@@ -9190,4 +9191,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `b3d5a331c59045fcb9896b1f1ff7a8a9bb8e91c2700ecf385678fa443092beb4`. Validation
   GT, consumer and BTXRD test remain locked until terminal physical audit and
   both GT-blind gates pass.
+- **R3 terminal COMPLETE and independent GT-blind rejection:** one later bounded
+  status check found kernel version 1 `COMPLETE`. The official-output downloader
+  was resumed to a complete inventory of 2,566 Kaggle files plus its direct log
+  (2,567 local files, 196,064,064 bytes, zero `.part`). Direct log SHA-256 is
+  `f5735b88eb1ab7807ba5cb9e2038921e929e5cca82c24a219000866c1533f055`.
+  The first local invocation used the wrong existing Python environment and
+  stopped before Kaggle API access because `kaggle` was absent. The first
+  correct-interpreter invocation exceeded the local 124-second shell timeout
+  while its identity-checked child continued; a same-destination resume found
+  2,556 existing files, downloaded the remaining 10 and wrote the direct log.
+  These are download/tooling boundaries only; no incomplete tree was audited.
+- Runtime evidence reproduces exact wrapper `21a43a06...`, checkout `2e958f1`,
+  protocol `f7253df...`, split `85511ee1...`, accepted cache freeze
+  `2f6290cd...`/3,352 records, baseline archive `8857eb6d...`, and two real Tesla
+  T4 convolutions. All 371 candidate-score payloads, maps and GT-blind
+  diagnostic rows were physically frozen. Prediction-freeze/run/wrapper audit
+  SHA-256 are `11ed9eb9aa4c5b97b0f14cae7458bbffbb7a91a844b9441b71cb5b9153fece98` /
+  `64fa8dc4e6aee56b6d5de3f46189c04af069bfdba762ab459f1cdb536ce25cdf` /
+  `e1be8fdee31b1fc0a219a2f45541ae46ee2f21ed526a1d8176f8950b625b6ca7`.
+- Independent auditor output SHA-256
+  `683ef9efe1993614770f58966f1f5427d2ceab51f831321cd51c0c1f6292394f`
+  has status `PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_FAIL` and
+  verifies 77,499,181 physical bytes. Absolute candidate-count/probability
+  Spearman is `0.46925209554046915`, below the frozen ceiling
+  `0.5013777759365411`, so the count shortcut gate passes. However frozen-base
+  original/flip critical agreement `0.6522911051212938` falls after fitting to
+  final selected-index agreement `0.6118598382749326`, delta
+  `-0.0404312668463612`, below the minimum allowed `0.6422911051212938`.
+  The predeclared agreement gate therefore fails.
+- Per protocol, R3 is terminal rejected before validation segmentation GT. No
+  Dice, subgroup, regret or oracle-quality metric was read; there is no rescue,
+  rerun or sweep and the critical-relation mechanism is not adopted as a
+  performance improvement. Consumer remains unauthorized and BTXRD test stays
+  locked. Consolidated terminal audit SHA-256 is
+  `d74d28ca66430524764fb5168955bcb0e710665d25caa5b65357190f08ef9632`.
 
