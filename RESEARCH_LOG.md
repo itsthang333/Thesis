@@ -7043,3 +7043,48 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   cache packaging is in progress, and validation GT, consumer and BTXRD test
   remain locked.
 
+### Shared selector-cache v1 freeze and T4x2 prelaunch
+
+- The exact version-5 validation gallery and canonical corrected baseline were
+  recovered from direct Kaggle output rather than regenerated. All `371`
+  candidate NPZ hashes, `371` pseudo-mask hashes and `371` corrected map hashes
+  match their frozen manifests. They are packaged only for lossless transport
+  as `val_candidates.zip` and `square_corrected_baseline.zip`, SHA-256
+  `426fbe9c.../8857eb6d...`, in private dataset
+  `itsthang333/btxrd-mask-bag-selector-baseline-v1` version `1`. Kaggle reports
+  the dataset `ready`. Its transport-audit SHA-256 is `9377ce5b...`; no
+  validation GT or BTXRD test artifact is included.
+- Protocol `rad_dino_mask_bag_selector_cache_v1` is frozen before cache
+  execution at canonical-LF SHA-256
+  `ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489`.
+  The cache must first reproduce all `371` canonical selected indices,
+  candidate-TTA decisions and fp16 map hashes, with selected/bag-logit and
+  probability deltas no greater than `5e-6`; any failure rejects the entire
+  cache before R1/R2/S1. Only then may it serialize aligned original/flip mean
+  descriptors, 24 local-affinity values, immutable candidate/family identity,
+  shape and pairwise geometry. Training masks are discarded; only validation
+  candidate masks are bit-packed for later post-freeze evaluation.
+- A prelaunch source-closure audit expanded the initial direct hash list to all
+  `18` transitive local modules imported by the cache path. No kernel used the
+  narrower draft. Execution checkout
+  `dd3e9f4689beb113fc7fff523a21e0bb7d5ca384` is a descendant of scientific
+  source commit `61e64b38992db5e4b7414d3fb4c64b7edc39c6aa`; every remote Git blob and the
+  protocol blob match the wrapper constants. The wrapper requires two Tesla
+  T4 devices, performs a real convolution on each, uses RAD-DINO DataParallel
+  for the heavy `2,981+371` extraction, runs focused and whole-source tests,
+  and independently rehashes all `3,352` cache records after construction.
+- Wrapper and metadata canonical-LF SHA-256 values are
+  `4f072183b17f8c4557e550b2e5cb57ed99e42618e8387460e9721ecff6e9e79b`
+  and `85a88e98...`. Local `py_compile`, JSON parsing, direct-root discovery,
+  safe extraction, path-traversal rejection, exact remote source/protocol
+  binding and T4x2/static contract checks pass. Prelaunch audit
+  `rad_dino_mask_bag_selector_cache_v1_wrapper_audit.json` has canonical-LF
+  SHA-256
+  `9333c887e3783ac528c124e11a0d8e07dcc75288ad61466406684c92b7599e63`
+  and reports `PRELAUNCH_PASS`.
+- This cache adds no scientific mechanism and reads no segmentation GT. Its
+  purpose is to make the already sourced R1 normal-memory, R2 local-affinity
+  and S1 invariant family-pooling experiments consume one identical,
+  geometry-corrected representation. Heavy extraction will run only on Kaggle
+  T4x2; consumer training and BTXRD test remain locked.
+
