@@ -83,6 +83,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--consistency-loss-weight", type=float, default=0.10)
     parser.add_argument("--instance-warmup-epochs", type=int, default=2)
     parser.add_argument("--maximum-candidates", type=int, default=81)
+    parser.add_argument("--rich-gallery-union", action="store_true")
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
@@ -553,8 +554,13 @@ def main() -> None:
     args = parse_args()
     if args.input_size != 448 or args.projection_dim != 128:
         raise ValueError("The v1 mask-bag protocol requires input 448/projection 128")
-    if args.encoder_batch_size < 2 or args.maximum_candidates != 81:
-        raise ValueError("Mask-bag v1 requires encoder batch >=2 and candidate cap 81")
+    if args.encoder_batch_size < 2:
+        raise ValueError("Mask-bag v1 requires encoder batch >=2")
+    if args.rich_gallery_union:
+        if not 82 <= args.maximum_candidates <= 162:
+            raise ValueError("Rich gallery union cap must be in [82, 162]")
+    elif args.maximum_candidates != 81:
+        raise ValueError("Mask-bag v1 requires candidate cap 81")
     seed_everything(args.seed)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     started = datetime.now(timezone.utc)
@@ -682,6 +688,8 @@ def main() -> None:
             "oversampling_per_token_axis": 4,
             "flip": "horizontal flip of the projected square mask",
             "padding_exclusion": "fractional content occupancy excludes square padding from proposal and local-context pooling",
+            "rich_gallery_union": args.rich_gallery_union,
+            "maximum_candidates": args.maximum_candidates,
         },
         "train_candidate_manifest_sha256": args.train_candidate_manifest_sha256,
         "train_pseudo_manifest_sha256": args.train_pseudo_manifest_sha256,
@@ -714,6 +722,8 @@ def main() -> None:
             "consistency_loss_weight": args.consistency_loss_weight,
             "instance_warmup_epochs": args.instance_warmup_epochs,
             "final_epoch_only": True,
+            "rich_gallery_union": args.rich_gallery_union,
+            "maximum_candidates": args.maximum_candidates,
         },
         "candidate_inputs": {"train": train_audit, "validation": val_audit},
         "cohort": {"train": len(train_rows), "validation": len(val_rows)},
