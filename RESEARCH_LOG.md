@@ -6932,3 +6932,114 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   No launch-time status poll or monitor was created. Validation GT, consumer
   training and BTXRD test remain locked.
 
+### Paired geometry version 5 scientific recovery and selector-campaign activation
+
+- Version `5` reached terminal `ERROR`, but unlike versions `1`-`4` it had
+  already completed every scientific operation. Direct Kaggle logs bind
+  checkout `4758701b5a8d8bb6b24d1d376ff75ff12d000379`, focused preflight
+  `34 passed`, whole-repository preflight `223 passed, 1 skipped`, two real
+  Tesla T4 devices, RAD-DINO DataParallel, the exact `2,981+371` physical
+  candidate payloads and both 16-epoch arms. Both `371`-map prediction cohorts
+  were frozen before either evaluator imported validation segmentation, and
+  both complete `371/184/187` evaluations finished. The direct-log and
+  execution-log SHA-256 values are `2fd4791c...` and `e9659939...`;
+  `consumer_trained=false` and `test_evaluated=false` throughout.
+- The only failure was the first final comparison call. The runner supplied
+  bootstrap seed `20261201`, while the comparator already failed closed unless
+  the predeclared `10,000/20261101` contract was used. Correction-v11 therefore
+  changes all three orchestration calls to `20261101` and authorizes only
+  post-hoc comparison of exact hash-bound frozen per-image tables. It does not
+  rerun training, prediction or evaluation, does not reopen GT, and changes no
+  metric, replicate count or selector. The source fix and regression test
+  report `6 passed`; isolated source commit `d9263f7` is pushed on
+  `codex/geometry-v3-v2`. Correction-v11 canonical-LF SHA-256 is
+  `34cfde33248487cde270f8be46219d01038c7b0c5879909f43783365f3409308`.
+- All `371+371` physical prediction maps were retrieved and rehashed against
+  their immutable manifests with zero mismatch. The pair-freeze SHA-256 is
+  `610a675e...`; the local ordered 742-map hash-manifest SHA-256 is
+  `24f644dc...`. Legacy and corrected checkpoint SHA-256 values are
+  `b6d6803b.../58b82642...`; per-image evaluation SHA-256 values are
+  `f6933bd4.../a26143d0...`. The train and validation fractional-mass audits
+  cover `174,669/20,967` candidates, retain `173,376/20,778`, preserve exact
+  original/flip retention vectors and have maximum delta/tolerance ratios
+  `0.75/0.75`.
+- The same-gallery legacy selected Dice is
+  `0.21949219/0.08043121/0.34656449/0.43741027`
+  overall/small/medium/large. Square-corrected geometry-v3 reaches
+  `0.24548239/0.11708058/0.37713552/0.38941265`, so corrected-minus-legacy is
+  `+0.02599020/+0.03664936/+0.03057103/-0.04799762`. The exact paired
+  complete-group bootstrap CI95 values are respectively
+  `[-0.00181951,0.05505616]`, `[0.00114346,0.07770157]`,
+  `[-0.01280067,0.07157508]` and `[-0.18019991,0.06424610]`. Thus the rare
+  small-lesion improvement is statistically positive under the frozen paired
+  analysis; overall and medium means improve, while the large mean decreases
+  with a very wide interval over only `18` images.
+- The causal interpretation is now fixed. Square-corrected geometry-v3 becomes
+  canonical because it repairs a proven coordinate-frame error and has a
+  positive small-lesion paired interval; validation performance did not choose
+  the correction. The large decrease is retained as a required selector
+  diagnostic, but its `n=18` interval does not justify reintroducing wrong
+  geometry. A plausible mechanism, explicitly treated as an inference rather
+  than a measured fact, is that removing square-padding distortion restores
+  precise token/proposal alignment most strongly for small masks, whereas
+  large masks pool more heterogeneous anatomy and remain sensitive to which
+  proposal the descriptor scorer ranks first.
+- The exact corrected mask-bag configuration still fails its operational gate:
+  goal Dice remains
+  `0.34024039/0.17895493/0.51244178/0.49370336`, and no consumer is
+  authorized. Crucially, the unchanged single-candidate gallery oracle is
+  `0.40907553/0.22274949/0.59414708/0.64182537`, above every goal. This
+  simultaneously preserves the small gain and confirms that large support was
+  not destroyed. The active causal problem remains descriptor/aggregation/
+  selector regret, not candidate generation.
+- The finite post-geometry campaign is therefore activated rather than reset:
+  build one hash-bound shared cache that bit-reproduces all corrected winners
+  and maps, then run `R1` normal-prototype residual, `R2` frozen RAD-DINO local
+  affinity residual and matched `S1` standard-versus-family-balanced SmoothMax.
+  Each arm sees only clean-train image labels, keeps the complete v3 scorer
+  frozen and writes all-candidate scores/maps before validation GT. A failed
+  arm advances to the next selector mechanism; it does not reopen proposal
+  generation. An arm may be composed later only if it independently reduces
+  selected-to-oracle regret without sacrificing the small subgroup.
+- Research mechanisms and sources supporting this decision are recorded for
+  the report:
+  - Ilse, Tomczak and Welling, *Attention-based Deep Multiple Instance
+    Learning*, ICML 2018, formalize trainable permutation-invariant bag
+    aggregation under bag/image labels. This supports the residual MIL
+    selector but not any inferred pixel target:
+    https://proceedings.mlr.press/v80/ilse18a.html.
+  - Zaheer et al., *Deep Sets*, NeurIPS 2017, give the invariant-set-function
+    basis for treating an unordered candidate gallery and motivate S1's
+    within-family then across-family aggregation:
+    https://papers.nips.cc/paper/2017/hash/f22e4747da1aa27e363d86d40ff442fe-Abstract.html.
+  - Ahn and Kwak, *Learning Pixel-Level Semantic Affinity With Image-Level
+    Supervision*, CVPR 2018, and Ru et al., *Learning Affinity From Attention*,
+    CVPR 2022, show that local semantic affinity can recover spatial support
+    missed by discriminative activation. BTXRD transfers only local
+    token/proposal cohesion and boundary contrast into R2; it does not copy
+    their natural-image propagation or use segmentation labels:
+    https://openaccess.thecvf.com/content_cvpr_2018/html/Ahn_Learning_Pixel-Level_Semantic_CVPR_2018_paper.html,
+    https://openaccess.thecvf.com/content/CVPR2022/html/Ru_Learning_Affinity_From_Attention_End-to-End_Weakly-Supervised_Semantic_Segmentation_With_Transformers_CVPR_2022_paper.html.
+  - Zhang et al., *Frozen CLIP: A Strong Backbone for WSSS (WeCLIP)*, CVPR
+    2024, supports a frozen foundation backbone plus a lightweight learned
+    decoder/refinement path. The bounded BTXRD adaptation is a zero-initialized
+    residual on frozen radiology descriptors, not a CLIP/text transfer:
+    https://openaccess.thecvf.com/content/CVPR2024/html/Zhang_Frozen_CLIP_A_Strong_Backbone_for_Weakly_Supervised_Semantic_Segmentation_CVPR_2024_paper.html.
+  - Roth et al., *Towards Total Recall in Industrial Anomaly Detection
+    (PatchCore)*, CVPR 2022, motivate representative nominal patch memory for
+    localization. R1 conservatively transfers normal-only prototype distance;
+    industrial anomaly accuracy is not assumed to transfer to BTXRD:
+    https://openaccess.thecvf.com/content/CVPR2022/html/Roth_Towards_Total_Recall_in_Industrial_Anomaly_Detection_CVPR_2022_paper.html.
+  - Li, Li and Eliceiri, *Dual-stream Multiple Instance Learning Network*,
+    CVPR 2021, motivate the predeclared S2 fallback in which a critical
+    candidate is related to every other candidate. S2 remains later than
+    R1/R2/S1 because a wrong critical instance can amplify confirmation error:
+    https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html.
+- Complete machine-readable evidence is frozen at
+  `artifacts/kaggle/rad_dino_mask_bag_mil_descriptor_geometry_v3/paired_version5_posthoc_audit.json`.
+  Its canonical-LF SHA-256 is
+  `f7e48abc9f377c41010def9fcca1ffed06c2caebd699c75756ecbc8bff2807a1`.
+  The exact corrected arm is rejected, geometry-v3 is canonical, selector
+  cache packaging is in progress, and validation GT, consumer and BTXRD test
+  remain locked.
+
