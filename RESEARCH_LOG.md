@@ -7548,3 +7548,59 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   changed. No new paper/URL was used; no heavy local compute, validation GT,
   consumer training or BTXRD test access occurred.
 
+### EXP-20260731-codex-r1-normal-prototype-v1
+
+- **Owner:** Codex main task on `research-wsss-improvement`.
+- **Registered:** `2026-07-31T13:15:29.6440302Z`; registration base commit
+  `72d92b812682760b1759608f02117040d4c8c1f3`; the exact claim-commit hash will
+  be added before any terminal artifact is read or any kernel is launched.
+- **Status:** `ĐANG LÀM`.
+- **Objective/hypothesis:** accept or reject the already-running corrected
+  selector cache version 5 with the frozen independent audit, then—only after
+  every cache gate passes—run the predeclared R1 normal-prototype residual arm.
+  R1 tests whether train-normal multi-prototype distance supplies candidate
+  evidence missing from the frozen same-gallery baseline selector.
+- **Non-duplicate scope:** this claim does not regenerate proposals, repeat a
+  selector-cache launch, alter geometry-v3, or claim R2/S1. It takes ownership
+  only of the terminal version-5 audit and the single R1 arm already frozen in
+  the sections `Shared selector-cache v1 freeze and T4x2 prelaunch`,
+  `R1 normal-prototype arm protocol freeze while cache v4 runs`, and their
+  version-4/version-5 correction successors. No other `ĐANG LÀM` claim for
+  this scope was present in the complete log at registration time.
+- **Inherited evidence:** corrected geometry-v3 Dice
+  `0.24548239/0.11708058/0.37713552/0.38941265`; gallery oracle
+  `0.40907553/0.22274949/0.59414708/0.64182537`; cache correction source
+  `c0e38628069ff3bedd4493c4ff004b75bd32e008`; cache correction protocol
+  SHA-256
+  `be9c91b53926eda2f8bf8dba894385f03dc6accd15d3fa9646da0d1a17a635f2`;
+  cache-v5 wrapper SHA-256
+  `db6b461dbc9e9afe1837ecee90df68b9423ad9d60c56f1120b9da1693b658a7a`;
+  R1 protocol SHA-256
+  `dded9c638e142576fedf0ae4c8102fdf64198744a4949707865e50b7081f312b`;
+  independent-auditor readiness SHA-256
+  `a704b19eeaf828d52033a6d599b7e342d8222956d171ab245455af6d769b80ea`;
+  corrected unbound R1 wrapper SHA-256
+  `4b886f91aa01b15c18a1a0105db11a31f62233635e214e9bbd406e5712d05044`.
+- **Inputs/protocol:** frozen clean split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  sanitized dataset `itsthang333/btxrd-mask-bag-selector-baseline-v1` version 1;
+  existing kernel `itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1`
+  version 5; candidate gallery and baseline archives remain exact and contain
+  no validation GT/test. R1 uses only the accepted cache plus image-level train
+  labels and its frozen finite `K={8,16,32}`/15-fold group-OOF contract.
+- **Compute:** terminal status/download and independent hash audit are local
+  read-only work. Any R1 fitting/inference is heavy compute and may run only on
+  Kaggle T4x2 under the frozen wrapper; no local heavy compute is authorized.
+- **Expected output/gates:** cache acceptance requires all 3,352 record hashes,
+  371 packed-mask geometry reconstructions, 371 baseline selected-index/map
+  reproductions, corrected source/protocol, split/input/model/projection and
+  T4x2 evidence to pass. R1 must freeze all 371 validation candidate scores,
+  maps and predictions before the evaluator can receive validation GT. The
+  final operational gate remains simultaneous Dice at least
+  `0.34024039/0.17895493/0.51244178/0.49370336` for
+  overall/small/medium/large; otherwise report rejection honestly.
+- **Safety locks:** training supervision is image-level only; validation GT is
+  unavailable before prediction freeze; consumer training is forbidden before
+  the full operational gate passes; BTXRD test remains locked; no polling
+  monitor is authorized.
+
