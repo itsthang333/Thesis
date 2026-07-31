@@ -32,6 +32,14 @@ MODEL_HASHES = {
 PROJECTION_SHA256 = (
     "5cbb6846ca1b185fda50b0843951985422ce7e7782fd897639e3238cf9b567ec"
 )
+TOKEN_PROJECTION_DIM = 128
+TOKEN_LAYER_COUNT = 3
+DESCRIPTOR_SUMMARIES_PER_LAYER = 3
+DESCRIPTOR_METADATA_DIM = 4
+DESCRIPTOR_DIM = (
+    DESCRIPTOR_SUMMARIES_PER_LAYER * TOKEN_LAYER_COUNT * TOKEN_PROJECTION_DIM
+    + DESCRIPTOR_METADATA_DIM
+)
 TRAIN_CANDIDATE_MANIFEST_SHA256 = (
     "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1"
 )
@@ -464,8 +472,8 @@ def audit_cache_output(
         count = descriptors.shape[0]
         if (
             int(row["candidate_count"]) != count
-            or int(row["descriptor_dim"]) != 128
-            or descriptors.shape[1] != 128
+            or int(row["descriptor_dim"]) != DESCRIPTOR_DIM
+            or descriptors.shape[1] != DESCRIPTOR_DIM
             or int(row["affinity_dim"]) != 24
             or affinity.shape != (count, 24)
             or bool(int(row["packed_masks_included"])) != (split == "val")

@@ -1,0 +1,65 @@
+{
+  "audit_id": "independent_mask_bag_selector_cache_output_v1_descriptor_dim_correction",
+  "experiment_id": "EXP-20260731-codex-r1-normal-prototype-v1",
+  "status": "IMPLEMENTATION_CORRECTION_BEFORE_CACHE_ACCEPTANCE",
+  "parent_readiness": {
+    "path": "artifacts/research_protocols/independent_mask_bag_selector_cache_output_audit_v1_readiness.json",
+    "sha256": "a704b19eeaf828d52033a6d599b7e342d8222956d171ab245455af6d769b80ea"
+  },
+  "triggering_output": {
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "version": 5,
+    "cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "wrapper_output_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "selector_cache_manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+    "direct_log_sha256": "f9ce546212d4e64076366e253d94b35ea0fe43ae2c5b925495460b17914abb20"
+  },
+  "failure_boundary": {
+    "first_record": "train/IMG000002.jpeg",
+    "record_sha256": "6e9505eee8416beab65ea1767601ab53ea1f236714a1004fb32e5f2d0148829e",
+    "observed_descriptor_shape": [27, 1156],
+    "manifest_descriptor_dim": 1156,
+    "hard_coded_auditor_descriptor_dim": 128,
+    "candidate_count_passed": true,
+    "candidate_index_bounds_passed": true,
+    "affinity_shape_27_by_24_passed": true,
+    "train_masks_discarded_passed": true,
+    "independent_family_ids_passed": true,
+    "validation_record_opened": false,
+    "audit_output_created": false,
+    "cache_accepted": false
+  },
+  "correction": {
+    "projection_dim": 128,
+    "token_layers": 3,
+    "summaries_per_layer": 3,
+    "metadata_dim": 4,
+    "descriptor_formula": "3 * 3 * 128 + 4",
+    "frozen_descriptor_dim": 1156,
+    "mathematical_or_scientific_contract_changed": false,
+    "reason": "The auditor had confused the per-layer random projection width with the complete proposal/context/difference descriptor width already defined by MaskBagMILConfig.descriptor_dim."
+  },
+  "source": {
+    "path": "project/audit_mask_bag_selector_cache_output.py",
+    "old_sha256": "c4d27e89d66254b4b6677230c3ed7ff08f5c5da2d78acc17d90f37d5880a7966",
+    "new_sha256": "0c7ab38315dd29cb71b70bdc9dbebb9f4bc8d2d810a56a394c8ba74a47b10d23"
+  },
+  "regression": {
+    "path": "tests/test_audit_mask_bag_selector_cache_output.py",
+    "old_sha256": "dedb9d160218c433ba54e417e55c15a345e5924408ece31af7fa8b9fb836cb24",
+    "new_sha256": "a49d67a7b116783dd7e91f6cba78995e2b452d8cca339790cf77cc4b85638ee6",
+    "synthetic_end_to_end_descriptor_dim": 1156,
+    "auditor_tests": "5 passed",
+    "auditor_plus_cache_io_tests": "20 passed",
+    "complete_worktree_tests_with_python39_strict_zip_compatibility": "343 passed",
+    "py_compile": "PASS"
+  },
+  "rerun_rule": "Rerun the same independent audit against the immutable downloaded version-5 output. Any later mismatch remains a new fail-closed boundary and must be recorded before another correction.",
+  "safety": {
+    "training_labels": "image_level_only",
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "r1_launched": false
+  }
+}

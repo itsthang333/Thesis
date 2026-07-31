@@ -75,6 +75,7 @@ def test_family_audit_is_ordered_and_collapses_fallback() -> None:
 
 def test_independent_shape_and_geometry_matches_manual_masks() -> None:
     module = _load_module()
+    assert module.DESCRIPTOR_DIM == 3 * 3 * 128 + 4 == 1156
     masks = np.zeros((2, 4, 4), dtype=bool)
     masks[0, :2, :2] = True
     masks[1, 1:3, 1:4] = True
@@ -222,8 +223,10 @@ def test_complete_synthetic_cache_audit_contract(tmp_path: Path) -> None:
         relative = Path("records") / split / f"{split}.npz"
         saved = save_selector_cache_record(
             cache_root / relative,
-            descriptors=np.ones((2, 128), dtype=np.float16),
-            flipped_descriptors=np.ones((2, 128), dtype=np.float16),
+            descriptors=np.ones((2, module.DESCRIPTOR_DIM), dtype=np.float16),
+            flipped_descriptors=np.ones(
+                (2, module.DESCRIPTOR_DIM), dtype=np.float16
+            ),
             affinity_features=np.ones((2, 24), dtype=np.float16),
             flipped_affinity_features=np.ones((2, 24), dtype=np.float16),
             candidate_indices=np.asarray([0, 1], dtype=np.int32),

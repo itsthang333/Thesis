@@ -7648,4 +7648,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   regression so `128` can no longer mask the error; no cache/scientific bytes
   or protocol change. No validation packed mask/GT/test was read in the failed
   attempt, no cache was accepted and R1 remains unlaunched.
+- **Progress — descriptor-dimension auditor correction frozen:** the auditor now
+  freezes projection width 128, three token layers, three proposal/context/
+  difference summaries per layer and four metadata values, yielding exact
+  descriptor dimension 1,156. Corrected auditor SHA-256 is
+  `0c7ab38315dd29cb71b70bdc9dbebb9f4bc8d2d810a56a394c8ba74a47b10d23`;
+  corrected regression SHA-256 is
+  `a49d67a7b116783dd7e91f6cba78995e2b452d8cca339790cf77cc4b85638ee6`.
+  `py_compile`, five auditor tests, the 20-test auditor/cache-I/O suite and the
+  complete 343-test worktree regression pass; the synthetic end-to-end cache
+  now uses 1,156-dimensional descriptors. The complete regression uses only the
+  previously documented Python-3.9 `zip(strict=...)` compatibility shim.
+  Machine-readable correction evidence is
+  `artifacts/research_protocols/independent_mask_bag_selector_cache_output_audit_v1_descriptor_dim_correction.json`,
+  SHA-256
+  `714fdee6bbb90f53c255ee48fe13b712e6748304075427ef2b2cec07480a3d85`.
+  It changes no cache/scientific bytes or protocol and authorizes only rerunning
+  the same independent audit against the immutable downloaded version-5 output.
+  Cache acceptance, R1 launch, validation GT, consumer and test remain locked.
 
