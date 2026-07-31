@@ -9653,4 +9653,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `ee627c066f1036e199805f7eb33c6d80bc1cfe24cb8d085a85b0d6dda7edaf31`.
   At this point no kernel push, scientific input/prediction, validation GT/test
   access or consumer training has occurred.
+- **S3 version 1 launched:** after launch binding/final audit were committed and
+  pushed at `3870c37e504c593ad3bef91b95ee93cb9414bbab`, central HEAD/origin were
+  synchronized with a clean tracked worktree and the ignored package was
+  reverified as bound wrapper
+  `0b5ca61ba9170bba6301efad378a03acaf412f002eed3436c04ed9ac7c8d5a0b`
+  plus metadata
+  `3a4943f7f91ffc8641074c49f59eafa60701e0ec7d1b12b6a611a30801e26850`.
+  Kaggle accepted exactly one private kernel push as version `1` of
+  `itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1` at about
+  `2026-07-31T21:49:19Z`. The wrapper must physically observe two T4 devices or
+  fail closed. Prediction freeze, validation GT, consumer and BTXRD test remain
+  locked pending a terminal independent output audit.
 
