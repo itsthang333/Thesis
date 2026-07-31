@@ -9880,4 +9880,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS`. Validation GT
   remains unread at this commit boundary; only after this evidence is pushed
   may the frozen S3 pair be evaluated by the predeclared evaluator.
+- **First post-freeze evaluator input-copy error before GT:** after audit commit
+  `fff0be1` was pushed, the unchanged evaluator was invoked with the frozen S3
+  arm/cache/split/seed inputs but pointed at the baseline copy retained by the
+  incomplete S3 version-1 error download. That copy has the correct baseline
+  freeze but lacks `predictions/prediction_manifest.csv`; evaluator verification
+  therefore raised `FileNotFoundError` in `_verify_baseline` before line 349's
+  GT boundary, before importing the segmentation dataset, and before creating
+  any evaluation output. No metric or scientific result exists from this
+  attempt. The authoritative paired-geometry-v5 baseline root is independently
+  present with the same freeze SHA-256 `ec346276...` and expected manifest
+  SHA-256 `a810e1fc...`. A bounded retry may change only the physical baseline
+  root to that complete, hash-identical copy; arm predictions, cache, split,
+  evaluator, protocol, baseline per-image SHA, 10,000 replicates and seed
+  `20261012` remain unchanged. This error/correction is recorded and pushed
+  before retry; BTXRD test and consumer remain locked.
 
