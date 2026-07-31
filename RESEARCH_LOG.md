@@ -7461,3 +7461,54 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer training and BTXRD test remain locked pending terminal corrected
   cache reproduction audit.
 
+### Independent selector-cache output auditor readiness
+
+- The single permitted status check in this continuation found selector-cache
+  kernel version `5` still `RUNNING`. No second poll and no monitor was created.
+  This is not a cache result, cache acceptance or selector authorization; R1,
+  R2 and S1 remain unlaunched and unbound.
+- A new independent, GT-blind post-download verifier is frozen at
+  `project/audit_mask_bag_selector_cache_output.py`, SHA-256
+  `c4d27e89d66254b4b6677230c3ed7ff08f5c5da2d78acc17d90f37d5880a7966`.
+  It does not call a dataset factory, open annotations, train a model or access
+  BTXRD test. It is deliberately separate from the version-5 wrapper's own
+  output audit and will only run after a terminal direct output is downloaded.
+- The verifier binds caller-supplied exact cache-freeze and wrapper-audit
+  hashes, corrected scientific source/protocol, canonical-LF to frozen-CRLF
+  split reconstruction, RAD-DINO snapshot, deterministic projection, exact
+  candidate/pseudo manifests and the frozen baseline source/protocol,
+  checkpoint, prediction manifest and maps. It rejects any cohort or safety
+  flag mismatch and independently checks the wrapper's two-T4 names plus its
+  two finite real-convolution checksums.
+- For a production cache it will load and hash all `3,352` physical records,
+  verify schema/dtypes/dimensions/provenance/strict candidate indices and
+  independently reconstruct family IDs. For all `371` validation records it
+  unpacks masks and independently recomputes the four shape features, pairwise
+  IoU, containment and normalized centroid distance. It also independently
+  checks all `371` baseline selections, logits/probabilities within the frozen
+  `5e-6` tolerance and exact hashes of both baseline and reproduced physical
+  maps. The emitted audit file is fail-if-present so a prior audit cannot be
+  silently overwritten.
+- Test source
+  `tests/test_audit_mask_bag_selector_cache_output.py`, SHA-256
+  `dedb9d160218c433ba54e417e55c15a345e5924408ece31af7fa8b9fb836cb24`,
+  includes a complete synthetic train/validation cache, baseline reproduction,
+  freeze, run manifest, wrapper audit, packed-mask geometry and T4x2 contract.
+  `py_compile` passes; the auditor plus existing cache/cache-I/O suites report
+  `20 passed`; `git diff --check` passes. The Python-3.9 compatibility shim was
+  used only to ignore unsupported `zip(strict=...)` keywords in the existing
+  tests, as previously documented; production Kaggle remains Python 3.12.
+  The complete local repository regression then reports `339 passed` under
+  the same compatibility shim.
+- Machine-readable readiness evidence is
+  `artifacts/research_protocols/independent_mask_bag_selector_cache_output_audit_v1_readiness.json`,
+  SHA-256
+  `a704b19eeaf828d52033a6d599b7e342d8222956d171ab245455af6d769b80ea`,
+  with status `SOURCE_READINESS_PASS_WAITING_FOR_V5_OUTPUT`. It explicitly sets
+  `cache_accepted=false` and `r1_binding_authorized=false`. A terminal cache
+  mismatch will be recorded as rejection/error before any correction; a clean
+  pass is required before binding the exact cache hashes into the R1 wrapper.
+- No new scientific technique, paper or external URL was introduced in this
+  preparation step. No heavy local compute, validation GT read, consumer
+  training or BTXRD test access occurred.
+
