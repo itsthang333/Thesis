@@ -9328,4 +9328,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `zip(strict=...)` shim. This is static preparation only: no protocol,
   binding, kernel launch, scientific training/prediction, validation GT/test or
   consumer access occurred.
+- **R4 protocol/auditor freeze:** exact protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_orbit_relation_r4_v1.json`
+  SHA-256
+  `00d1ba1b7611c8320e87948d88dac06af87c0b29d1e62f875e79105fc41c0aae`
+  freezes source commit `84f3dca`, the averaged branch, one fixed 16-epoch fit,
+  T4x2 execution, physical outputs, exact swap gate, count ceiling and unchanged
+  post-freeze promotion/adoption rules. Independent auditor
+  `project/audit_mask_bag_orbit_relation_r4_output.py` SHA-256
+  `f7d6e2823bda726e3f13cc7a87fe3465ee9fce78335f4873be755c32f7c234f6`
+  requires an external frozen launch binding, pins generic physical helper
+  `3cc5feee...`, verifies source/cache/baseline/T4x2/checkpoint/history and all
+  371 maps/scores, then independently reconstructs both GT-blind gates from the
+  physical diagnostic CSV. Auditor test SHA-256 is
+  `e0530316386848780d04672bb3798ade7002df2c51de8b7f1afac7ef4add1837`.
+- Focused R4 suite passes `15/15`; full repository regression passes `418/418`
+  in 15.03 seconds under the documented Python-3.9 shim. Static-readiness JSON
+  SHA-256 is
+  `b6d545cdc7520db50c5c2fd4598899be3f4da9aecec0f5aa5c86c714648e8351`.
+  Wrapper/binder remain unfinished, so no binding or launch exists and
+  validation GT/test plus consumer remain locked.
 
