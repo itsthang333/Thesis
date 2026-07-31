@@ -7554,7 +7554,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - **Registered:** `2026-07-31T13:15:29.6440302Z`; registration base commit
   `72d92b812682760b1759608f02117040d4c8c1f3`; exact claim commit
   `62f6f4c96aeefb0c1977eb237bcec1fcbcbd0f55`.
-- **Status:** `ĐANG LÀM`.
+- **Status:** `HOÀN THÀNH — BỊ LOẠI TẠI OOF COUNT-SHORTCUT GATE`; Kaggle
+  version 3 kết thúc `ERROR` do fail-closed predeclared, không phải lỗi transport.
 - **Objective/hypothesis:** accept or reject the already-running corrected
   selector cache version 5 with the frozen independent audit, then—only after
   every cache gate passes—run the predeclared R1 normal-prototype residual arm.
@@ -8368,4 +8369,105 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   không train consumer và không chạy compute nặng local. S1 tiếp tục bị khóa sau
   R1→R2; artifact này chỉ ngăn lựa chọn hậu nghiệm nếu finite campaign tiến tới
   S1.
+
+### EXP-20260731-codex-r1-normal-prototype-v1 — terminal OOF rejection
+
+- Một bounded status check sau khi tiếp tục task thấy kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1` version 3 ở
+  terminal `ERROR`. Không có repeat poll hoặc monitor. CLI direct-output đầu
+  tiên bị local timeout sau 124 giây ở 48 file/12,318,159 bytes; không suy luận
+  từ download dở. Official `KaggleApi.kernels_output` với UTF-8 text-open
+  workaround đã tải lại bằng `force=True` và hoàn tất 68 file/16,785,943 bytes
+  vào ignored temp root
+  `tmp/kaggle/normal_prototype_r1_v3_error_20260731_2305`. Direct log SHA-256 là
+  `bf81d1fed07af9a0a3a0103994874c6c342490b159c1206ce921dba0d0cc3a3a`.
+- **Provenance/runtime gate:** log xác nhận checkout
+  `3647997d0c18ad31057709462fd8c922d939fb4f`, scientific source
+  `d66c89958baa3344dbbaae6030a9ccd8ecec7b3a`, protocol
+  `dded9c638e142576fedf0ae4c8102fdf64198744a4949707865e50b7081f312b`, split
+  `85511ee1...`, selector-cache freeze `2f6290cd...`, baseline checkpoint
+  `58b82642...` và exact frozen hyperparameters trong duy nhất một runner call.
+  Focused tests pass `53/53`; full Kaggle suite pass `332`, skip `1`. Exact bound
+  wrapper SHA-256 `a896d45d...` đặt two-T4 real-convolution guard trước
+  baseline/cache/tests/runner; vì log đi tới runner nên guard đó đã pass, dù tên
+  device/checksum không được serialize do wrapper audit chỉ được viết sau
+  prediction.
+- **Independent GT-blind output audit:** cả 15 five-fold group-OOF fits cho
+  `K={8,16,32}` hoàn tất trên 2,981 train images/984 groups, group overlap bằng
+  0; 66 OOF files và toàn bộ aggregate rows/probability/BCE/Spearman/prototype
+  payload được tái tạo. Crossfit assignment SHA-256 là
+  `84ed881e982fbc70fa50129dafabf638dc6e2a864c0ebb60d5e3c2b512d9eeb8`.
+  Audit JSON
+  `artifacts/kaggle/rad_dino_mask_bag_normal_prototype_r1_v1/kernel_version3_oof_count_guard_error_audit.json`
+  có SHA-256
+  `833c4814eee0891df1cd55a01fa008e0708ad3485dd30b730657f52508317719`.
+  Auditor source/test SHA-256 lần lượt là
+  `04375745d3993e38fbd894fef854b306fdc9256e8d1702da2ebba9a7ff46ae2d` /
+  `cd1147bd6fdc67f969b9ae9a7dfefb678df1f94faaa851f2a0949bba3ff6800e`;
+  focused complete/error auditors pass `12/12`, full local regression pass
+  `372/372` bằng documented Python-3.9 `zip(strict=...)` diagnostic shim.
+- **Kết quả âm đã predeclare:** baseline absolute candidate-count/probability
+  Spearman là `0.48137777593654113`, tolerance `0.02`, nên trần là
+  `0.5013777759365411`. Với `K=8/16/32`, absolute OOF Spearman lần lượt là
+  `0.6036591097469204/0.6029977890495820/0.6028243037056212`, vượt trần
+  `+0.1022813338103793/+0.1016200131130409/+0.1014465277690801`.
+  Mean OOF image BCE tương ứng là
+  `0.1067681700602822/0.1046994421741868/0.1089559329557645`; cả ba K đều fail
+  count guard, nên one-standard-error selector cố ý raise
+  `all prototype counts increase the frozen count shortcut`.
+- **Error boundary/kết luận:** R1 dừng sau toàn bộ OOF aggregates nhưng trước
+  prototype-count selection, final fit, validation inference, prediction freeze
+  và evaluator. Không có validation Dice để báo cáo và không được cứu bằng đổi
+  K/tolerance/epoch. Normal-prototype residual làm mạnh hơn shortcut proposal
+  count thay vì giảm selector regret; cơ chế R1 bị loại. Validation GT không mở,
+  không tạo prediction validation, không train consumer và BTXRD test vẫn khóa.
+  Finite campaign chuyển đúng predeclaration sang R2 frozen local-affinity.
+
+### EXP-20260731-codex-r2-affinity-residual-v1
+
+- **Owner/status:** Codex main task trên `research-wsss-improvement`; `ĐANG LÀM`.
+- **Registered:** `2026-07-31T16:13:39.6180285Z`; registration base commit
+  `f514f1b`; exact claim commit sẽ được ghi ngay sau commit/push đăng ký và trước
+  mọi binding/launch.
+- **Objective/hypothesis:** kiểm tra liệu zero-initialized residual chỉ dùng 24
+  frozen RAD-DINO local-affinity summaries (within proposal, local context và
+  across-boundary contrast trên original/aligned flip) có giảm selected-to-oracle
+  regret mà không tăng shortcut count, giữ nguyên complete Geometry-v3 scorer và
+  candidate gallery hay không.
+- **Non-duplicate scope/inheritance:** kế thừa kết quả terminal bị loại của
+  `EXP-20260731-codex-r1-normal-prototype-v1`, accepted geometry-v3/cache và exact
+  R2 static protocol. R2 thay representation evidence bằng local affinity, không
+  dùng normal prototypes, không regenerate proposal và không trùng
+  `EXP-20260731-codex-rich-gallery-g0g1-v1` đang thay proposal supply. G1 chưa có
+  actual Dice terminal nên không có kỹ thuật hiệu năng nào từ G1 được đưa vào R2.
+- **Exact inputs/protocol:** protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_affinity_residual_r2_v1.json`
+  SHA-256
+  `3f28cc7187ad64f3755ae4c7a10bb380a0085d1733807dcf667c44d92d9f593d`;
+  split `85511ee1...`; selector-cache freeze `2f6290cd...` với 3,352 physical
+  records và 24D affinity; baseline checkpoint `58b82642...`/prediction freeze
+  `ec346276...`; source closure tại
+  `c0e38628069ff3bedd4493c4ff004b75bd32e008`. Corrected fail-closed wrapper
+  template SHA-256
+  `000843edda2593cba96e9a310462670cfd4be7a561862c5a29ac48624eafd629`,
+  one-time binder SHA-256
+  `0e744edd20784ac1d56beb33bbe84c1e41f740b00304eb870050c300b3dd1aad`, và
+  independent output auditor SHA-256
+  `2d772ebca7c7b332e5c5d607a4dfb31fe7fb3cac40bbdbf1394d5bc503e85b64`
+  đã static-ready; real binding chỉ được tạo sau khi exact claim commit xuất hiện
+  trên origin.
+- **Compute:** duy nhất Kaggle Nvidia Tesla T4x2; 16 epoch fixed-final image-label
+  fit trên T4:0, two-device validation scoring/real CUDA guard theo protocol.
+  Không heavy compute local.
+- **Expected output/gates:** freeze vật lý đủ 371 validation maps và mọi candidate
+  score theo original gallery order trước evaluator. Sau independent GT-blind
+  output audit mới được mở validation GT và baseline per-image SHA-256
+  `a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f`.
+  `MECHANISM_PASS` và `OPERATIONAL_PASS` dùng common evaluator; operational Dice
+  tối thiểu là `0.34024039/0.17895493/0.51244178/0.49370336`, cùng CI/miss/AUROC
+  gates đã khóa. Chỉ full operational pass mới cho phép consumer.
+- **Safety:** train supervision chỉ image-level; không validation GT/subgroup/
+  candidate Dice/oracle rank trong fit; không post-hoc feature/epoch/threshold;
+  BTXRD test khóa. Không launch trước khi claim được push/sync và bound wrapper
+  cuối cùng pass source/protocol/cache/baseline/T4x2/tests gates.
 
