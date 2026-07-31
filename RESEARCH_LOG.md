@@ -8772,4 +8772,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   still returned `RUNNING`. This is not a scientific result. No further poll or
   monitor was created; terminal output, prediction freeze, validation GT,
   consumer and BTXRD test remain unopened/locked.
+- **Compact retrieval preparation without polling:** the next goal continuation
+  occurred only about one minute after that bounded check, so no new status query
+  was made. To avoid repeating R2's many-small-file timeout/waste when S1 is
+  terminal, a generic official-inventory resume utility was committed/pushed at
+  `817788d78da472c011d2e61f47aae2742c560b67`. Source/test SHA-256 are
+  `049115f63e45eb984a6c9fd908363a92ae840cbc7b2f12869cc5aaf2ccee19a3` /
+  `299499ebea6c512a6d8067593c88d6177ec0b9cf6be1b428ec157db84626b791`.
+  It supports a compact-output regex, skips existing complete files, uses
+  bounded workers/retries and atomically renames `.part` files only after a full
+  response; it retrieves the official log but never queries kernel status or
+  creates a monitor. `py_compile` and focused tests pass `3/3`. The utility has
+  not yet been run on S1 output and opened no scientific data/prediction/GT.
 
