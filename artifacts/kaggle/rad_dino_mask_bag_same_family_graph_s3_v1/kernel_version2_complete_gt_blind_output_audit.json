@@ -1,0 +1,59 @@
+{
+  "audit_id": "independent_mask_bag_same_family_graph_s3_output_v1",
+  "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+  "bound_wrapper_sha256": "1b07e044b068170a24e06c63095ad3867094a40ff2f0f0d4640bed44ef7cfa33",
+  "cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "consumer_trained": false,
+  "graph_config": {
+    "alpha": 0.5,
+    "iterations": 10,
+    "minimum_containment": 0.5,
+    "minimum_iou": 0.25
+  },
+  "gt_blind_diagnostics": {
+    "absolute_candidate_count_probability_spearman": 0.4836266033771249,
+    "alpha_zero_identity_exact_records": 371,
+    "cross_family_edge_count": 0,
+    "graph_symmetric_records": 371,
+    "gt_blind_gate_pass": true,
+    "isolated_candidate_count": 1012,
+    "isolated_logits_exact_records": 371,
+    "non_self_edge_count": 18441,
+    "physical_bytes": 19770,
+    "records": 371,
+    "sha256": "5d5d9149a79349f2d50e28405fe3f407af0dde3667a5f8d5c285d0f8b571753c",
+    "view_swap_exact_records": 371
+  },
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1",
+  "kernel_version": 2,
+  "launch_binding_sha256": "f4592f31b6173f2b8d5fe1abd8c4166b57ca3bd0e0fa6d14c97b56bd3c98d9dc",
+  "physical_output_bytes_verified": 76757769,
+  "prediction_freeze_sha256": "2e737e356b2f8785c61665099235873415d6f9a165d999578e7a53206a37a91f",
+  "pregraph_identity": {
+    "accepted_row_exact_records": 81,
+    "accepted_row_identity_pass_records": 371,
+    "alpha_zero_identity_exact_records": 371,
+    "physical_bytes": 129673,
+    "records": 371,
+    "sha256": "d653f8abc4835529777dadf7cd9c3e182ba977a08768e8c1f3534f661e6dd3db"
+  },
+  "protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "run_manifest_sha256": "81ad3ee685bebd10c4d2b25cd9108d16cbbd1d2349017d34ea3ad5a76435e6db",
+  "source_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS",
+  "test_evaluated": false,
+  "training_labels": "image_level_only",
+  "validation": {
+    "physical_candidate_score_payloads_verified": 371,
+    "physical_validation_evidence_bytes": 76595539,
+    "physical_validation_maps_verified": 371,
+    "validation_absolute_count_probability_spearman": 0.4836266033771249,
+    "validation_image_label_counts": {
+      "normal": 187,
+      "tumor": 184
+    }
+  },
+  "validation_gt_read": false,
+  "wrapper_output_audit_sha256": "d2f15f49b9ca3151df8b387f0e707a6f70d08b9c484f19c5833db3685f46058b"
+}

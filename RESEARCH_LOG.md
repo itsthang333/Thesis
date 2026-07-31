@@ -9849,4 +9849,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   poll/monitor was created. The S3 claim remains `ĐANG LÀM`; prediction-freeze,
   validation-GT, consumer, and BTXRD-test locks remain in force pending a later
   bounded authenticated terminal check.
+- **S3 version-2 terminal and GT-blind freeze gate:** a later single bounded
+  authenticated API check again failed before returning kernel state (HTTP 401
+  `kernels.get`), and the predeclared compact downloader likewise failed before
+  listing any file (HTTP 403 `ListKernelSessionOutput`). Neither response was
+  interpreted as kernel failure. The already authenticated Kaggle notebook page
+  at
+  `https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1`
+  then provided the authoritative read-only terminal evidence: `Version 2 of
+  2`, successful run, `4m 30s`, `GPU T4 x2`, and 500-file UI listing. The
+  user-authorized web `Download output` action produced `results.zip`, SHA-256
+  `1a4cf54c14c5cc93c33d9e64a24958cadf742456ffa79e667c3a0bb505e2b02e`,
+  1,920,599 bytes, with 749 ZIP members and full CRC pass. It was copied to a
+  new ignored experiment directory and expanded to 749 files; BTXRD test and
+  validation GT were not opened.
+- The independent schema-2 auditor then verified 371/371 candidate-score
+  payloads and 371/371 frozen validation maps, exact protocol
+  `7d763617...`, launch binding `f4592f31...`, bound wrapper `1b07e044...`,
+  source commit `293b013...`, split `85511ee1...`, baseline/cache freezes,
+  image-level-only training, no consumer and no test evaluation. It also
+  verified zero cross-family edges, 18,441 non-self edges, 1,012 isolated
+  candidates, exact graph symmetry/view-swap/isolated-logit invariants and all
+  371 tolerance-bounded pregraph identity records. Prediction-freeze SHA-256 is
+  `2e737e356b2f8785c61665099235873415d6f9a165d999578e7a53206a37a91f`.
+  Independent audit
+  `artifacts/kaggle/rad_dino_mask_bag_same_family_graph_s3_v1/kernel_version2_complete_gt_blind_output_audit.json`
+  has SHA-256
+  `d8fb1f74ff40bcc419566e7eaa2dd74ebe36cfd3f82ab4468028bc1fd7e6f627`
+  and terminal status
+  `PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS`. Validation GT
+  remains unread at this commit boundary; only after this evidence is pushed
+  may the frozen S3 pair be evaluated by the predeclared evaluator.
 
