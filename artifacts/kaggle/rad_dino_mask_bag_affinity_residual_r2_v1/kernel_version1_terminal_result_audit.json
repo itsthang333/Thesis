@@ -1,0 +1,140 @@
+{
+  "artifact_id": "rad_dino_mask_bag_affinity_residual_r2_v1_kernel_version1_terminal_result_audit",
+  "created_utc": "2026-07-31T16:55:41Z",
+  "experiment_id": "EXP-20260731-codex-r2-affinity-residual-v1",
+  "status": "TERMINAL_COMPLETE_GATE_FAIL",
+  "kernel": {
+    "slug": "itsthang333/btxrd-rad-dino-mask-bag-affinity-residual-r2-v1",
+    "version": 1,
+    "terminal_status": "COMPLETE",
+    "direct_log_sha256": "94406cf25328a3e574a761e087d10af15da3e368778a1eaf884768ae175eaf11"
+  },
+  "retrieval": {
+    "ignored_temp_root": "tmp/kaggle/affinity_residual_r2_v1_complete_20260731_2333",
+    "initial_cli_boundary": "The direct Kaggle CLI timed out locally after 124 seconds with a partial output; no scientific inference was made from it.",
+    "official_api_boundary": "One force=True official kernels_output retry stopped at a kaggleusercontent connection timeout.",
+    "bounded_resume": "An official-inventory resume used at most eight workers, five attempts per missing file, and atomic .part replacement. It was stopped after the complete compact scientific result root was present because the remaining official inventory consisted only of the redundant r2_source checkout/legacy artifacts.",
+    "official_inventory_files": 2499,
+    "redundant_checkout_files_not_required_for_audit": 220,
+    "compact_result_files": 749,
+    "compact_result_bytes": 77494000,
+    "candidate_score_payloads": 371,
+    "prediction_maps": 371,
+    "partial_files_remaining": 0
+  },
+  "frozen_provenance": {
+    "scientific_source_commit": "c0e38628069ff3bedd4493c4ff004b75bd32e008",
+    "execution_checkout": "5905b4f9549a03dde5f4dba1c9279ef7146e3244",
+    "protocol_sha256": "3f28cc7187ad64f3755ae4c7a10bb380a0085d1733807dcf667c44d92d9f593d",
+    "launch_binding_sha256": "93f7d8887fc4ee93d0e379fca753ff613223bbcb436b8d1e8c1820318efebb7b",
+    "bound_wrapper_sha256": "37724fa4082db58459c65a89394e704ee0f4a60900aad2278de1f08364e91c88",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f"
+  },
+  "gt_blind_output_audit": {
+    "path": "artifacts/kaggle/rad_dino_mask_bag_affinity_residual_r2_v1/kernel_version1_complete_gt_blind_output_audit.json",
+    "sha256": "740616136bb56e4a356085117e771b0f7006b2f1f7dfa0680aab86bc8c0fea13",
+    "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND",
+    "physical_output_bytes_verified": 77497309,
+    "prediction_freeze_sha256": "3f557d9618169f292eb5c6a23fa77d050b8c37803f523bcb3e12f2a63684fa40",
+    "candidate_score_manifest_sha256": "783069184f26c709eba2f428449bc18a3b4aea5544d9aa2a19669ca74f270e44",
+    "wrapper_output_audit_sha256": "1a3707921a03a5f7b039ddea258e3233587b1beb0c54638aa1dbbe154ad8e467",
+    "validation_absolute_count_probability_spearman": 0.4699654612347809,
+    "baseline_absolute_count_probability_spearman": 0.48137777593654113
+  },
+  "evaluation": {
+    "evaluator_source_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261012,
+    "first_local_attempt": {
+      "status": "TECHNICAL_ERROR_BEFORE_OUTPUT_SERIALIZATION",
+      "boundary": "Validation GT was opened only after the GT-blind audit passed; bootstrap then raised TypeError because local Python 3.9 does not support zip(strict=True).",
+      "scientific_output_written": false,
+      "correction": "Rerun the identical evaluator command and inputs with the previously documented diagnostic builtins.zip shim; no source, input, seed, threshold or protocol changed."
+    },
+    "output_hashes": {
+      "evaluation_audit.json": "7544bbfcbf3c4d840180b7a83a47bded7e247634066b1f12269fa31b56411272",
+      "gate_decision.json": "8af7812c0a65a4dcd3fdc12b778be63faaf07dec921d085999777fc368a9a63e",
+      "paired_comparison.json": "7e2ab19f90a1cc17bff558bc1f54181e32d61e7f8031b4af1efcf19b0e7f4c7d",
+      "per_image.csv": "1013e0094861fcce417902245472087156ff921254ed3df09f43806e39542b4b",
+      "summary.json": "cc273551adf84a4ba716927caeb9a203b6163995588a55f85096aa5a1050fec0"
+    },
+    "image_auroc": 0.8186177633108579,
+    "dice": {
+      "overall": 0.23620168299249675,
+      "small": 0.10976054406519861,
+      "medium": 0.3624019287552691,
+      "large": 0.39170442545063067
+    },
+    "baseline_dice": {
+      "overall": 0.2454823867797678,
+      "small": 0.11708057891440651,
+      "medium": 0.37713551529480416,
+      "large": 0.3894126471276201
+    },
+    "dice_delta_arm_minus_baseline": {
+      "overall": -0.009280703787271038,
+      "small": -0.007320034849207898,
+      "medium": -0.014733586539534972,
+      "large": 0.0022917783230105293
+    },
+    "dice_delta_ci95": {
+      "overall": [-0.019035002847131204, -0.002001549645557231],
+      "small": [-0.022427420643466426, 0.0004934592793643835],
+      "medium": [-0.025606165607094063, -0.005663656265479824],
+      "large": [-0.02085098649430166, 0.030689685502147086]
+    },
+    "complete_misses": {
+      "overall": 53,
+      "small": 32,
+      "medium": 19,
+      "large": 2
+    },
+    "baseline_complete_misses": {
+      "overall": 53,
+      "small": 33,
+      "medium": 18,
+      "large": 2
+    },
+    "selected_to_oracle_regret": {
+      "overall": 0.17287385125610347,
+      "small": 0.11298894114115728,
+      "medium": 0.23174515567268983,
+      "large": 0.25012094196780993
+    },
+    "baseline_selected_to_oracle_regret": {
+      "overall": 0.16359314746883238,
+      "small": 0.10566890629194937,
+      "medium": 0.21701156913315486,
+      "large": 0.25241272029082046
+    }
+  },
+  "gate": {
+    "status": "FAIL",
+    "mechanism_pass": false,
+    "operational_pass": false,
+    "regret_reduced_subgroups": ["large"],
+    "overall_selected_dice_no_regression": false,
+    "absolute_count_miss_association_no_increase": false,
+    "all_operational_dice_goals_pass": false,
+    "consumer_authorized": false
+  },
+  "scientific_conclusion": "The frozen local-affinity residual reduces count-probability association and preserves image AUROC, but worsens selected-to-oracle regret and Dice overall, small and medium. The small large-group gain is within a wide CI. R2 is rejected and is not adopted as an improvement.",
+  "coordination": {
+    "collaborator_branch": "origin/codex/research-sync-20260731",
+    "collaborator_head": "b1da28db0c18dd983f8ed5e080c745869935bd8c",
+    "collaborator_log_changed_since_e8683c3": false,
+    "collaborator_terminal_improvement_available": false,
+    "rich_gallery_technique_adopted": false
+  },
+  "safety": {
+    "training_labels": "image_level_only",
+    "predictions_frozen_before_validation_gt": true,
+    "validation_gt_read_after_gt_blind_audit": true,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}

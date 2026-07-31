@@ -8425,7 +8425,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 ### EXP-20260731-codex-r2-affinity-residual-v1
 
-- **Owner/status:** Codex main task trên `research-wsss-improvement`; `ĐANG LÀM`.
+- **Owner/status:** Codex main task trên `research-wsss-improvement`;
+  `HOÀN THÀNH — TERMINAL COMPLETE, GATE FAIL`.
 - **Registered:** `2026-07-31T16:13:39.6180285Z`; registration base commit
   `f514f1bc8467f8ef05dfa4f9b2edf758a300c8f2`; exact claim commit
   `569bff4c4fb5552a039cad9ad08a260294a48069` đã push lên branch điều phối trước
@@ -8508,6 +8509,78 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tests và freeze đủ 371 maps/candidate scores trước khi có thể audit/evaluate.
   Validation GT, consumer và BTXRD test tiếp tục khóa.
 
+- **Terminal retrieval/audit:** one bounded status check found version 1
+  `COMPLETE`. The direct CLI timed out locally after 124 seconds with only a
+  partial download, and one official `force=True` API retry met a
+  kaggleusercontent connection timeout; neither partial state was interpreted.
+  A bounded official-inventory resume with atomic `.part` replacement produced
+  the complete compact result root: 749 files/77,494,000 bytes, exactly 371
+  candidate-score payloads, 371 maps and seven freeze/checkpoint/manifest files.
+  The remaining official inventory was only the redundant `r2_source` checkout
+  and legacy artifacts, so its helper was stopped to avoid wasting network/time.
+  Direct log SHA-256 is
+  `94406cf25328a3e574a761e087d10af15da3e368778a1eaf884768ae175eaf11`.
+- Independent GT-blind audit passed before any validation GT and physically
+  verified 77,497,309 bytes. Prediction-freeze SHA-256 is
+  `3f557d9618169f292eb5c6a23fa77d050b8c37803f523bcb3e12f2a63684fa40`;
+  score-manifest SHA-256 is
+  `783069184f26c709eba2f428449bc18a3b4aea5544d9aa2a19669ca74f270e44`;
+  wrapper-output-audit SHA-256 is
+  `1a3707921a03a5f7b039ddea258e3233587b1beb0c54638aa1dbbe154ad8e467`.
+  Tracked independent audit
+  `artifacts/kaggle/rad_dino_mask_bag_affinity_residual_r2_v1/kernel_version1_complete_gt_blind_output_audit.json`
+  has SHA-256
+  `740616136bb56e4a356085117e771b0f7006b2f1f7dfa0680aab86bc8c0fea13`.
+  Absolute validation count/probability Spearman decreased from frozen baseline
+  `0.48137777593654113` to `0.4699654612347809`; this isolated diagnostic did
+  not authorize promotion before Dice evaluation.
+- **Post-freeze evaluation:** the first local Python 3.9 invocation opened GT
+  only after audit pass, then stopped before output serialization because
+  `zip(strict=True)` is unsupported. The identical evaluator/source/input/seed
+  was rerun with the already documented diagnostic builtins-zip shim; no model,
+  threshold, protocol or prediction changed. Evaluator SHA-256 is
+  `ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084`.
+  R2 Dice overall/small/medium/large is
+  `0.23620168299249675 / 0.10976054406519861 / 0.3624019287552691 /
+  0.39170442545063067`, versus geometry-v3
+  `0.2454823867797678 / 0.11708057891440651 / 0.37713551529480416 /
+  0.3894126471276201`. Deltas are
+  `-0.009280703787271038 / -0.007320034849207898 /
+  -0.014733586539534972 / +0.0022917783230105293`; CI95 are respectively
+  `[-0.019035002847131204,-0.002001549645557231]`,
+  `[-0.022427420643466426,+0.0004934592793643835]`,
+  `[-0.025606165607094063,-0.005663656265479824]`, and
+  `[-0.02085098649430166,+0.030689685502147086]`. Image AUROC is
+  `0.8186177633108579`.
+- **Gate/conclusion:** mechanism and operational gates both fail. Regret is
+  reduced only for large (`1/4` subgroups), overall Dice regresses, and absolute
+  candidate-count/miss association rises from `0.3135074102409047` to
+  `0.32002927972401846`. Overall/small/medium regret worsens; only large Dice
+  rises slightly with a wide CI. Therefore local-affinity R2 is rejected and is
+  not learned/adopted as an improvement. Consumer remains unauthorized; no
+  consumer was trained and BTXRD test remains untouched.
+- Evaluator output hashes are: `evaluation_audit.json`
+  `7544bbfcbf3c4d840180b7a83a47bded7e247634066b1f12269fa31b56411272`,
+  `gate_decision.json`
+  `8af7812c0a65a4dcd3fdc12b778be63faaf07dec921d085999777fc368a9a63e`,
+  `paired_comparison.json`
+  `7e2ab19f90a1cc17bff558bc1f54181e32d61e7f8031b4af1efcf19b0e7f4c7d`,
+  `per_image.csv`
+  `1013e0094861fcce417902245472087156ff921254ed3df09f43806e39542b4b`,
+  and `summary.json`
+  `cc273551adf84a4ba716927caeb9a203b6163995588a55f85096aa5a1050fec0`.
+  Consolidated terminal audit
+  `artifacts/kaggle/rad_dino_mask_bag_affinity_residual_r2_v1/kernel_version1_terminal_result_audit.json`
+  has SHA-256
+  `8e1687bbddc513d2d51472049f55951608d0405a0d676d9138689db228f33eae`.
+- Immediately before the successor claim, central HEAD/origin were synchronized
+  at `43fd32d9629c182350bbf6a6672229c3f5ce5102`; the entire central log was read.
+  Collaborator branch advanced to
+  `b1da28db0c18dd983f8ed5e080c745869935bd8c`, but its `RESEARCH_LOG.md` is
+  unchanged since `e8683c3` and contains no terminal audited G1 metric. New
+  rich-gallery evaluator/source code is therefore useful only as preparation,
+  not performance evidence, and no G1 technique is adopted into the successor.
+
 ### S1 static audit-gap correction — no claim/no launch (2026-07-31)
 
 - Static review found that the original S1 prediction contract froze candidate
@@ -8564,4 +8637,52 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   improvement until a terminal audited output is actually better on the common
   predeclared metrics/gates; running code, oracle support and implementation
   availability are insufficient.
+
+### EXP-20260731-codex-s1-family-balanced-v1
+
+- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Registered:** `2026-07-31T16:55:41Z`; registration base commit
+  `43fd32d9629c182350bbf6a6672229c3f5ce5102`; exact registration commit will be
+  recorded and pushed in the immediate coordination-only successor before any
+  binding or launch.
+- **Objective/hypothesis:** run the already predeclared matched causal pair to
+  test whether hierarchical normalized SmoothMax within immutable proposal
+  families and then across families reduces proposal-multiplicity shortcut and
+  selected-to-oracle regret relative to an otherwise identical standard
+  normalized-SmoothMax residual control.
+- **Non-duplicate scope/inheritance:** inherits terminal rejected
+  `EXP-20260731-codex-r1-normal-prototype-v1` and
+  `EXP-20260731-codex-r2-affinity-residual-v1`, the accepted geometry-v3 baseline
+  and selector cache. It does not reuse either rejected mechanism: both arms use
+  the same descriptor-only residual and differ only in the predeclared bag pool.
+  It does not duplicate active
+  `EXP-20260731-codex-rich-gallery-g0g1-v1`, does not change candidate supply and
+  adopts no collaborator technique because no terminal better G1 result exists.
+- **Exact inputs/protocol:** corrected protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1.json`
+  SHA-256
+  `62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413`;
+  static readiness SHA-256
+  `eda5f84a841aa5bb228d9a5a5ee2b032a4b1082ab728153baa2de663cc7dba5d`;
+  source commit `f3da1817ee3491f04e8c86335556762ebc675d8d`; split
+  `85511ee1...`; selector-cache freeze `2f6290cd...`; baseline checkpoint
+  `58b82642...` and baseline prediction freeze `ec346276...`. The shared
+  candidate-family manifest/payloads must be written before training and bound
+  into both arms and pair freeze.
+- **Compute/output:** one Kaggle T4x2 run, standard arm on T4:0 and
+  family-balanced arm on T4:1 with identical initial state, batch order,
+  optimizer, 16 fixed-final epochs and image-label-only losses. Both arms must
+  freeze 371 maps and every candidate score; the pair must pass the independent
+  GT-blind physical auditor before the evaluator may open validation GT.
+- **Predeclared gates:** causal promotion requires family-balanced to improve
+  the frozen mechanism diagnostics over the matched standard arm; improvement
+  shared by both arms is residual-head evidence, not family-balance evidence.
+  Operational Dice minimum remains
+  `0.34024039 / 0.17895493 / 0.51244178 / 0.49370336` plus CI/miss/AUROC gates.
+  Only a terminal audited result that is actually better may be learned as an
+  improvement; failure/negative evidence is recorded but not adopted.
+- **Safety:** no validation segmentation GT, subgroup, candidate Dice or oracle
+  rank during fit; no post-hoc pool/epoch/threshold alternative; no consumer
+  before full operational pass; BTXRD test locked. No binding, kernel push,
+  training, inference or prediction has occurred under this claim yet.
 
