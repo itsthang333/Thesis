@@ -1,0 +1,84 @@
+{
+  "artifact_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1_kernel_v1_final_prelaunch_audit",
+  "created_utc": "2026-07-31T17:08:00Z",
+  "status": "FROZEN_PRELAUNCH_NO_KERNEL_PUSH",
+  "experiment_id": "EXP-20260731-codex-s1-family-balanced-v1",
+  "coordination": {
+    "claim_commit": "97db17c16938a8f842546076a26a52e58928b07b",
+    "claim_visible_on_origin": true,
+    "execution_checkout": "7ad0462f94e4cc0109fb7db605c0388ff7164f05",
+    "execution_checkout_equals_origin_when_bound": true,
+    "collaborator_active_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "collaborator_claim_duplicated": false,
+    "collaborator_terminal_better_result_adopted": false
+  },
+  "kernel": {
+    "slug": "itsthang333/btxrd-rad-dino-mask-bag-family-balanced-s1-pair-v1",
+    "version": 1,
+    "machine_shape": "NvidiaTeslaT4",
+    "private": true,
+    "internet": true,
+    "dataset_sources": [
+      "itsthang333/btxrd-mask-bag-r1-baseline-transport-v1"
+    ],
+    "kernel_sources": [
+      "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+    ],
+    "metadata_sha256": "36137acf5ced95c9e4a92f6cb73c157527ff2acd65d553be61882e1cc4418f7a"
+  },
+  "binding": {
+    "template_sha256": "f613b259546552c226f0197e3878442fb6891ed76655b5030b251d24a087a4ba",
+    "binder_sha256": "f03f2a2ac7663cfcca6a208de332b45a7a875ef7241281eac86057c6a1f70bb1",
+    "launch_binding_sha256": "9e77ef03d77162674bc1305440f05a09257ad4d6ac1c0157987c36a6030fe442",
+    "bound_wrapper_sha256": "ad5cfe595820215353ebd2513d6f6f71bacbe9121ba67a28ac28605cb44c5462",
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true,
+    "runtime_source_hashes_verified": 12,
+    "claim_and_scientific_source_ancestry_passed": true
+  },
+  "frozen_science": {
+    "scientific_source_commit": "f3da1817ee3491f04e8c86335556762ebc675d8d",
+    "protocol_sha256": "62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "baseline_archive_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "sole_changed_variable": "standard_vs_family_balanced_bag_pool",
+    "epochs": 16,
+    "fixed_final_epoch": true,
+    "shared_candidate_family_evidence_before_training": true
+  },
+  "independent_output_auditor": {
+    "source_sha256": "d1f6bac4bbffc71df37d609c5fc92dd65d33d905f14bb93cf33cbb949c11e5d6",
+    "test_sha256": "86ad491583ed6766e71ebc188dea03bcc23f934351ac29adf804017096ef82c7",
+    "actual_launch_binding_parse_and_source_check_passed": true,
+    "required_before_validation_gt": true
+  },
+  "validation": {
+    "py_compile": "passed for bound wrapper, binder and independent auditor",
+    "focused_tests": "29 passed in 4.02s",
+    "full_repository": "387 passed in 15.60s under the documented local Python-3.9 zip(strict) diagnostic shim",
+    "git_diff_check": "passed",
+    "wrapper_test_sha256": "2b5228101001e5c5e7fa361eb40f368e8445aef14b51acefcea2c72cf8ffc1c0",
+    "binder_test_sha256": "ff68ee28a3453a0d27a662359cc34493d66082ab8c22e6396d8a756f123a1741"
+  },
+  "output_compaction": {
+    "source_checkout_removed_only_after_wrapper_output_audit": true,
+    "runtime_transport_removed_only_after_wrapper_output_audit": true,
+    "frozen_pair_output_preserved": true,
+    "purpose": "Avoid reproducing the R2 direct-output waste caused by exporting the redundant repository checkout and extracted runtime inputs."
+  },
+  "safety": {
+    "training_labels": "image_level_only",
+    "scientific_data_opened_locally": false,
+    "kernel_pushed": false,
+    "prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  },
+  "next_action": "Commit and push this launch binding and final audit, reverify exact package hashes against origin, then push exactly kernel version 1 without a launch-time status poll or monitor."
+}

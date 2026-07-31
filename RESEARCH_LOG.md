@@ -8685,4 +8685,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   rank during fit; no post-hoc pool/epoch/threshold alternative; no consumer
   before full operational pass; BTXRD test locked. No binding, kernel push,
   training, inference or prediction has occurred under this claim yet.
+- **Progress — version-1 binding frozen, not launched:** compact fail-closed
+  wrapper template and one-time binder were committed/pushed at
+  `04ca6602743e411b28bec329df6b287d72b5608e` and
+  `7ad0462f94e4cc0109fb7db605c0388ff7164f05`. Exact execution checkout is
+  `7ad0462f94e4cc0109fb7db605c0388ff7164f05`; binder verified the S1 claim and
+  scientific-source commits are ancestors, the corrected protocol hash and all
+  12 canonical source/test hashes. Template/binder SHA-256 are
+  `f613b259546552c226f0197e3878442fb6891ed76655b5030b251d24a087a4ba` /
+  `f03f2a2ac7663cfcca6a208de332b45a7a875ef7241281eac86057c6a1f70bb1`.
+  Bound wrapper SHA-256 is
+  `ad5cfe595820215353ebd2513d6f6f71bacbe9121ba67a28ac28605cb44c5462`;
+  launch-binding SHA-256 is
+  `9e77ef03d77162674bc1305440f05a09257ad4d6ac1c0157987c36a6030fe442`;
+  metadata SHA-256 is
+  `36137acf5ced95c9e4a92f6cb73c157527ff2acd65d553be61882e1cc4418f7a`.
+- Bound wrapper/binder/independent-auditor `py_compile` passes; focused closure
+  passes `29/29`, and full repository passes `387/387` in 15.60 s under the
+  documented local Python-3.9 `zip(strict)` diagnostic shim. The actual launch
+  binding also passes the independent auditor's prelaunch source check. Final
+  prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1_kernel_v1_final_prelaunch_audit.json`
+  has SHA-256
+  `95d3adf4e74d84d681030e27da0387065e91f03cf28304fbb03d1d177c04631c`.
+- To prevent the retrieval waste observed for R2, the wrapper removes only the
+  redundant cloned source and extracted runtime after the complete pair output
+  and wrapper audit have been written. Frozen predictions, scores, family
+  payloads, checkpoints, histories and pair freeze remain. No kernel was pushed,
+  no scientific data/prediction was opened locally, validation GT/consumer/test
+  remain locked, and no monitor was created in this binding step.
 

@@ -1,0 +1,31 @@
+{
+  "bound_wrapper_sha256": "ad5cfe595820215353ebd2513d6f6f71bacbe9121ba67a28ac28605cb44c5462",
+  "checkout_commit": "7ad0462f94e4cc0109fb7db605c0388ff7164f05",
+  "claim_commit": "97db17c16938a8f842546076a26a52e58928b07b",
+  "consumer_trained": false,
+  "inverse_reconstruction_matches_template": true,
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-family-balanced-s1-pair-v1",
+  "kernel_version": 1,
+  "protocol_sha256": "62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413",
+  "replacement_count": 3,
+  "runtime_source_hashes": {
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mask_bag_pooling_residual_training.py": "8deaee980bd639fddc309eab9942147c8b0be8538951298e6e3c4fecb38c063f",
+    "project/models/mask_bag_relational_selector.py": "3cae8adbdf0a11384a891926570069ceefb0cda2de6dc9b5476ae19a1f17f790",
+    "project/models/mask_bag_residual_objective.py": "7b176c955408fb14b59e0c901243be12791f1d68540484ab06e99f2ba14b92df",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/run_mask_bag_family_balanced_pair.py": "0102f79220d3dfb417eeb70c7dadf6b846044a6c881a3653110f33ecfd526b74",
+    "project/run_mask_bag_normal_prototype_arm.py": "5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f",
+    "tests/test_mask_bag_pooling_residual_training.py": "c1858d832b83a7f1a148cb2bc57a1dd5fb8c4c0f8a6ba046635ddea5eaa39e71",
+    "tests/test_mask_bag_relational_selector.py": "b3bb46a7e37562c2bc780e10480f1bcc358072adf9ac0037497a2fb06b30e1d8",
+    "tests/test_run_mask_bag_family_balanced_pair.py": "50566421f5d1b2db564cfba0da8f46f8d391f91c5c87a504de1248385e15d010"
+  },
+  "schema_version": 1,
+  "scientific_source_commit": "f3da1817ee3491f04e8c86335556762ebc675d8d",
+  "status": "FROZEN_PRELAUNCH",
+  "template_sha256": "f613b259546552c226f0197e3878442fb6891ed76655b5030b251d24a087a4ba",
+  "test_evaluated": false,
+  "validation_gt_read": false
+}
