@@ -1,0 +1,43 @@
+{
+  "causal_checks": {
+    "absolute_count_miss_association_no_increase": {
+      "family_balanced": 0.31353010808150683,
+      "pass": true,
+      "standard": 0.31353010808150683
+    },
+    "overall_selected_dice_no_regression": {
+      "delta_family_minus_standard": -8.328047992246669e-05,
+      "pass": false
+    },
+    "regret_reduced_in_at_least_two_tumor_subgroups": {
+      "improvements": {
+        "large": 0.0,
+        "medium": -0.0002128278931351757,
+        "overall": -8.328047992245402e-05,
+        "small": 0.0
+      },
+      "minimum_count": 2,
+      "observed_subgroups": [],
+      "pass": false
+    }
+  },
+  "consumer_authorized": false,
+  "consumer_trained": false,
+  "decision_id": "mask_bag_family_balanced_s1_matched_decision_v1",
+  "family_balanced_evaluation_audit_sha256": "6bd402ba01825b4a685cd7f13efa4e109dbdb5abf08c7e32cd7fd5a539032ee1",
+  "family_balanced_gate_status": "FAIL",
+  "family_balanced_operational_pass": false,
+  "ground_truth_reopened": false,
+  "matched_comparison_sha256": "cfd360ac7b760b799b07276e88c8f2cc05a2f11f8e2fbdefcfd9711be2196124",
+  "matched_overall_ci95": [
+    -0.0002526218377948036,
+    0.0
+  ],
+  "pair_output_audit_sha256": "fb0f92706432e36d856ccbe6beff7ef6bde2063ec293810b665db3ed85b74b3a",
+  "protocol_sha256": "62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413",
+  "result_adoption_allowed": false,
+  "standard_evaluation_audit_sha256": "f5d6f44f4dd02fa7b12cf71df2638d0fcc6b912626f80694b17e048e5f86cc1b",
+  "standard_gate_status": "FAIL",
+  "status": "FAIL",
+  "test_evaluated": false
+}

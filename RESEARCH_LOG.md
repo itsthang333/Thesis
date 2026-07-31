@@ -8640,7 +8640,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 ### EXP-20260731-codex-s1-family-balanced-v1
 
-- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Owner/status:** Codex main task on `research-wsss-improvement`;
+  `HOÀN THÀNH — TERMINAL REJECTED`.
 - **Registered:** `2026-07-31T16:55:41Z`; registration base commit
   `43fd32d9629c182350bbf6a6672229c3f5ce5102`; exact registration commit
   `97db17c16938a8f842546076a26a52e58928b07b` was pushed to the central branch
@@ -8951,4 +8952,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   documented Python-3.9 `zip(strict)` shim. The corrected comparator has not yet
   been rerun; GT remains closed to it, no consumer was trained and test remains
   locked.
+- **Terminal matched comparison/decision:** the corrected comparator read only
+  the two hash-locked evaluation CSVs and did not reopen GT. Family-balanced
+  minus standard Dice is `-8.328047992246669e-05 / 0 /
+  -0.00021282789313519266 / 0` for overall/small/medium/large; overall CI95 is
+  `[-0.0002526218377948036, 0]`, with zero recovered misses and zero lost
+  overlaps. Comparator output/per-image SHA-256 are
+  `cfd360ac7b760b799b07276e88c8f2cc05a2f11f8e2fbdefcfd9711be2196124` /
+  `0c0ecdb103f526d7922e2c4b9672b12cdbf52d1333c46922a8a6d0b6dbcce54d`.
+- The predeclared decision source SHA-256
+  `90bf0d92e6a53e3773418810fb81a12c0069a944e47d6c25a8a5c5956e8aaff7`
+  returned `FAIL`; decision output SHA-256 is
+  `7ff448b3783b796a7899481fad3d31a943bf05581ccedf2a00bce037ae871404`.
+  Family balancing reduces regret in zero required subgroups, slightly regresses
+  overall against standard, and the family arm itself fails every operational
+  Dice goal. Therefore neither the shared descriptor-only residual nor
+  hierarchical family-balanced SmoothMax is learned/adopted as a performance
+  improvement. S1 is terminal rejected; consumer remains unauthorized, no
+  consumer was trained, and BTXRD test remains untouched.
+- Consolidated terminal result audit
+  `artifacts/kaggle/rad_dino_mask_bag_family_balanced_s1_pair_v1/kernel_version1_terminal_result_audit.json`
+  has SHA-256
+  `6733eef1b9e2ad302285395c7fdb897b3035659d2d46314a8f29643d0286687b`.
+  It preserves the official inventory/log, pair/audit/addendum/evaluation/
+  comparator/decision hashes, all four technical error boundaries, exact Dice,
+  paired CIs and safety flags. The next scientific claim must first fetch and
+  read the collaborator branch for any now-terminal G1 result; only a terminal
+  audited improvement may be inherited, and a successor must change an
+  untested selector bottleneck rather than rerun R1/R2/S1 or proposal supply.
 

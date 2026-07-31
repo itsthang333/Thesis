@@ -1,0 +1,81 @@
+{
+  "candidate_per_image_sha256": "6f81ea1a1c2f0ec0668cb058462ce66182fa0f63dd47ee724da2f126bab1894d",
+  "cohort": {
+    "large": 18,
+    "medium": 72,
+    "small": 94,
+    "tumor": 184
+  },
+  "comparison": "family_balanced minus standard",
+  "complete_misses_included": true,
+  "consumer_trained": false,
+  "ground_truth_reopened": false,
+  "method": "paired complete-group bootstrap",
+  "metrics": {
+    "large": {
+      "candidate_complete_misses": 2,
+      "candidate_dice": 0.39783494021966315,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "delta_candidate_minus_reference": 0.0,
+      "misses_recovered": 0,
+      "n_groups": 17,
+      "n_images": 18,
+      "overlaps_lost": 0,
+      "reference_complete_misses": 2,
+      "reference_dice": 0.39783494021966315
+    },
+    "medium": {
+      "candidate_complete_misses": 20,
+      "candidate_dice": 0.3578521661015722,
+      "ci95": [
+        -0.0006567260702457373,
+        0.0
+      ],
+      "delta_candidate_minus_reference": -0.00021282789313519266,
+      "misses_recovered": 0,
+      "n_groups": 61,
+      "n_images": 72,
+      "overlaps_lost": 0,
+      "reference_complete_misses": 20,
+      "reference_dice": 0.3580649939947074
+    },
+    "overall": {
+      "candidate_complete_misses": 57,
+      "candidate_dice": 0.2332033020034355,
+      "ci95": [
+        -0.0002526218377948036,
+        0.0
+      ],
+      "delta_candidate_minus_reference": -8.328047992246669e-05,
+      "misses_recovered": 0,
+      "n_groups": 167,
+      "n_images": 184,
+      "overlaps_lost": 0,
+      "reference_complete_misses": 57,
+      "reference_dice": 0.23328658248335798
+    },
+    "small": {
+      "candidate_complete_misses": 35,
+      "candidate_dice": 0.1062023689932446,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "delta_candidate_minus_reference": 0.0,
+      "misses_recovered": 0,
+      "n_groups": 92,
+      "n_images": 94,
+      "overlaps_lost": 0,
+      "reference_complete_misses": 35,
+      "reference_dice": 0.1062023689932446
+    }
+  },
+  "paired_per_image_sha256": "0c0ecdb103f526d7922e2c4b9672b12cdbf52d1333c46922a8a6d0b6dbcce54d",
+  "reference_per_image_sha256": "57407f5304c6ed6f3ae1c37d9d40ed4a2a07b798f7b3a2e5d014d3bf85b14157",
+  "replicates": 10000,
+  "seed_family": 20261101,
+  "test_evaluated": false
+}
