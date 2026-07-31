@@ -8098,4 +8098,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   status check, recurring poll or monitor was created. Validation GT, consumer
   and BTXRD test remain locked; the existing R1 claim stays `ĐANG LÀM` pending
   a later bounded terminal check and direct-output audit.
+- **Progress — post-launch static regression:** without querying Kaggle again,
+  the complete current worktree regression passes `360/360` in 18.25 seconds
+  under the same documented local Python-3.9 `zip(strict=...)` diagnostic shim.
+  This covers the synchronized rich-gallery utilities, frozen R2 protocol,
+  version-3-bound independent R1 auditor and all existing repository tests.
+  It used no scientific input, prediction, GT/test path or local heavy compute
+  and changes no launch state.
 
