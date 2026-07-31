@@ -7242,4 +7242,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   checkout is needed. No cache record, prototype, adapter or validation
   prediction was created locally; validation GT, consumer training and BTXRD
   test remained untouched.
+- Machine-readable R1 source-readiness evidence is frozen at
+  `artifacts/research_protocols/r1_normal_prototype_readiness_audit_v1.json`,
+  canonical-LF SHA-256
+  `d70573d44ff71c6207acaf7030cf0eed595b16e123cb8b8935099178d654bc9c`.
+  It binds the corrected source commit `d66c899...`, exact R1 source/test
+  hashes, the finite `K={8,16,32}` five-fold contract, baseline GT-blind
+  count-correlation magnitude `0.48137777593654113`, the `+0.02` shortcut
+  guard and all safety locks. Its status is
+  `SOURCE_READINESS_PASS_PENDING_SELECTOR_CACHE_GATE`, not launch approval.
 
