@@ -1,0 +1,86 @@
+{
+  "protocol_id": "rich_gallery_geometry_v3_pair_candidate_v1",
+  "status": "STATIC_DESIGN_ONLY_WAITING_FOR_ACTIVE_R1_TERMINAL_COORDINATION",
+  "scientific_question": "Does the accepted square-corrected geometry-v3 image-label selector convert a minimally enriched, unconditionally merged proposal gallery into actual Dice closer to the frozen fully-supervised reference?",
+  "goal": {
+    "primary": "minimize the frozen fully-supervised Dice gap rather than require weakly supervised Dice above 0.5",
+    "operational_dice_gates": {
+      "overall": 0.34024039,
+      "small_lt_1pct": 0.17895493,
+      "medium_1_to_lt_5pct": 0.51244178,
+      "large_ge_5pct": 0.49370336
+    },
+    "report_frozen_fully_gap": true
+  },
+  "frozen_fully_reference": {
+    "overall": 0.49513170,
+    "small": 0.32895493,
+    "medium": 0.66244178,
+    "large": 0.69370336
+  },
+  "proposal_feasibility_evidence": {
+    "analysis_artifact": "artifacts/research_handoffs/rich_gallery_union_oracle_20260731.json",
+    "analysis_sha256": "a0c42250b65266c0a25f573cb40aaedb55ad249d5aa8e755498887db9ffcf4d6",
+    "required_anchor": "biomedclip_layercam_gallery",
+    "addition": "classifier448_gallery",
+    "unconditional_union_oracle": {
+      "overall": 0.5310036062602438,
+      "small": 0.33695529907509236,
+      "medium": 0.7305228610176115,
+      "large": 0.7462899691976745
+    },
+    "delta_vs_frozen_fully": {
+      "overall": 0.03587190626024378,
+      "small": 0.008000369075092384,
+      "medium": 0.06808108101761157,
+      "large": 0.05258660919767455
+    },
+    "interpretation": "candidate support is no longer the limiting ceiling if the two sources are appended without a GT router; actual selector Dice remains unknown"
+  },
+  "immutable_gallery_semantics": {
+    "anchor": "frozen LayerCAM plus BiomedCLIP component/SAM proposal gallery",
+    "addition": "frozen 448px binary-classifier LayerCAM/SAM proposals",
+    "merge": "unconditional append followed only by exact binary-mask deduplication",
+    "prompt_metadata": "the anchor LayerCAM prompt map scores every candidate so source-local saliency cannot act as a hidden router",
+    "source_identity": "preserved only for audit and a separately predeclared later family-balanced arm",
+    "candidate_cap": "bind the GT-blind exact maximum after complete train/validation generation; no truncation",
+    "validation_polygon_access": false,
+    "test_access": false
+  },
+  "execution_sequence": [
+    {
+      "stage": "G0 frozen-selector transport",
+      "change": "candidate gallery only",
+      "selector": "accepted geometry-v3 checkpoint and square-corrected descriptor projection unchanged",
+      "fit": "none",
+      "purpose": "measure whether the existing learned scorer can exploit the new candidates without confounding from retraining"
+    },
+    {
+      "stage": "G1 matched geometry-v3 retraining",
+      "authorization": "run only after G0 is frozen/audited and regardless of proxy metrics; actual Dice is always evaluated",
+      "change": "same geometry-v3 model trained image-label-only on the same merged train gallery",
+      "frozen": "split, seed, fixed final epoch, optimizer, losses, square geometry, no GT model selection",
+      "purpose": "separate proposal-domain adaptation from proposal availability"
+    }
+  ],
+  "evaluation": {
+    "stage_a": "freeze 371 continuous maps and candidate selections before any validation polygon is opened",
+    "stage_b": "actual binary-mask Dice and IoU over 184 tumors, including complete misses, with 94/72/18 subgroups",
+    "secondary": "paired complete-group bootstrap and candidate-source/count reliance diagnostics",
+    "prohibited": [
+      "per-image oracle routing",
+      "validation-size routing",
+      "per-image GT area selection",
+      "post-hoc threshold, source or epoch selection",
+      "SAM/pseudo-student rescue before the direct selector result is understood",
+      "BTXRD test access"
+    ]
+  },
+  "coordination": {
+    "active_related_claim": "EXP-20260731-codex-r1-normal-prototype-v1",
+    "launch_now": false,
+    "reason": "repository coordination forbids a competing related selector launch while R1 remains active; static code, tests and evidence preparation are allowed",
+    "next_action": "after R1 terminal result, synchronize the complete log, register a unique gallery-supply claim, push it to the central branch, then launch"
+  },
+  "test_evaluated": false
+}

@@ -7914,3 +7914,54 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   launched no model, prediction or evaluation and opened no validation GT or
   BTXRD test.
 
+### STATIC-DESIGN-20260731-rich-gallery-geometry-v3-pair-v1
+
+- **Owner/status:** Codex local static preparation; `THIET KE TINH - CHUA
+  CLAIM/CHUA LAUNCH`. This work does not overlap or modify the active
+  `EXP-20260731-codex-r1-normal-prototype-v1` run.
+- **Question:** the accepted geometry-v3 selector has actual Dice
+  `0.24548239/0.11708058/0.37713552/0.38941265` while its current-gallery
+  oracle is `0.40907553/0.22274949/0.59414708/0.64182537`. Before another
+  selector change, determine whether already-frozen proposal sources can raise
+  the proposal-support ceiling above the frozen fully-supervised reference in
+  overall and every `94/72/18` lesion-size subgroup.
+- **Hash-locked post-freeze result:** the independent analyzer validates the
+  frozen prompt-quality and `test_evaluated=false` contracts for the
+  LayerCAM+BiomedCLIP, classifier-448 and AdvCAM-split galleries. Anchoring the
+  current LayerCAM+BiomedCLIP gallery and unconditionally appending the
+  classifier-448 gallery gives oracle
+  `0.53100361/0.33695530/0.73052286/0.74628997` for
+  overall/small/medium/large. It exceeds the frozen fully reference
+  `0.49513170/0.32895493/0.66244178/0.69370336` in all four metrics. The best
+  overall anchored pair, LayerCAM+BiomedCLIP plus AdvCAM-split, is
+  `0.53150194/0.33031714/0.73775319/0.75712864`; the classifier-448 pair is
+  chosen for the next design because the predeclared bottleneck is the small
+  subgroup. The three-source union is a later ceiling only:
+  `0.56365361/0.38542822/0.74796800/0.75712864`.
+- **Interpretation:** this is not achieved Dice and is not a legal inference
+  router. It proves that proposal availability need not remain the ceiling if
+  sources are appended to every image before the image-label-only selector.
+  The deployable bottleneck remains selector regret and source/count shortcut
+  risk.
+- **Prepared implementation:** `project/merge_frozen_candidate_galleries.py`
+  performs an unconditional, exact-mask-deduplicated union, retains namespaced
+  proposal provenance and evaluates every added candidate against the anchor
+  LayerCAM prompt map. It contains no polygon/test loader. The planned G0 arm
+  transports the immutable geometry-v3 checkpoint to the merged gallery with
+  no fit; G1 then retrains the unchanged square-corrected geometry-v3 model on
+  the merged train gallery with image labels only. Both must freeze all 371
+  predictions before Stage-B Dice/IoU evaluation.
+- **Evidence:**
+  `artifacts/research_handoffs/rich_gallery_union_oracle_20260731.json`
+  SHA-256
+  `a0c42250b65266c0a25f573cb40aaedb55ad249d5aa8e755498887db9ffcf4d6`;
+  static execution design
+  `artifacts/research_protocols/rich_gallery_geometry_v3_pair_candidate_v1.json`.
+  Six new unit tests and the focused candidate/cache regression suite pass
+  (`21/21`).
+- **Coordination/safety:** no Kaggle kernel, candidate generation, training or
+  evaluation was launched. After R1 reaches a terminal audited result, the
+  complete central log must be synchronized again and a unique gallery-supply
+  claim must be registered and made visible before G0/G1. No validation GT is
+  an algorithm input; consumer training and BTXRD test remain locked.
+
