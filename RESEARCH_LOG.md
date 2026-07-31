@@ -7788,6 +7788,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `42e836045827310967f42e566c2f855b7ca0ccbcb2724a537601304d10e17528`.
   Safety remains image-label-only, `validation_gt_read=false`,
   `consumer_trained=false`, and `test_evaluated=false`.
+- **Progress — R1 kernel version 1 `LỖI` before scientific execution:** the
+  single post-readiness terminal check found version 1 `ERROR`. The standard
+  Windows Kaggle output command created a zero-byte log and then failed only
+  because its default `charmap` could not encode Unicode progress glyphs; the
+  same authenticated session-output API retrieved the complete 11,913-byte log
+  explicitly as UTF-8, SHA-256
+  `4edc8eac7db4a388957264540c8ec6feda8bf7a1319d5c56e6f4aaf980979dde`.
+  The wrapper verified checkout/source/protocol, installed the frozen runtime,
+  passed its two-T4 real-convolution guard, reconstructed the split and found
+  the exact sanitized `transport_audit.json`, then failed in
+  `prepare_baseline()` because no Kaggle input file matched
+  `square_corrected_baseline.zip` SHA-256
+  `8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4`.
+  It failed before baseline extraction, cache discovery, tests, fitting,
+  inference or prediction freeze. There are zero kernel output files and no
+  scientific result. Error audit
+  `artifacts/kaggle/rad_dino_mask_bag_normal_prototype_r1_v1/kernel_version1_error_audit.json`
+  has SHA-256
+  `6afdb72a0d2fab2caf1bae44357344c45e3185f518e96c1f8a3e1324b55cf311`.
+  The log proves only that the exact archive was absent from this input mount,
+  not why it was absent; the bounded correction is a dedicated small private
+  transport dataset containing the already frozen 1,784,924-byte archive and
+  its existing audit, with no scientific source/protocol/wrapper change.
+  Version 1 is permanently retained as `LỖI`; the R1 claim remains `ĐANG LÀM`
+  solely for that transport-only successor. No validation GT/test was opened,
+  no consumer was trained and no prediction was created.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 

@@ -1,0 +1,52 @@
+{
+  "audit_id": "rad_dino_mask_bag_normal_prototype_r1_v1_kernel_version1_error",
+  "audited_utc": "2026-07-31T14:27:34.7380497Z",
+  "boundary": {
+    "cache_discovery_or_consumption_started": false,
+    "dataset_or_validation_gt_opened": false,
+    "failed_function": "prepare_baseline",
+    "failed_operation": "find_unique_file('square_corrected_baseline.zip', expected_sha256)",
+    "failure_after": [
+      "verified Git checkout/source/protocol hashes",
+      "installed frozen runtime",
+      "passed T4x2 real-convolution guard",
+      "reconstructed the frozen split",
+      "found and verified the sanitized transport_audit.json"
+    ],
+    "failure_before": [
+      "baseline archive extraction",
+      "selector-cache discovery",
+      "focused or whole tests",
+      "prototype fitting or residual training",
+      "validation scoring or prediction freeze"
+    ]
+  },
+  "direct_log": {
+    "bytes": 11913,
+    "path": "tmp/kaggle/normal_prototype_r1_v1_error_20260731_utf8/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1.log",
+    "retrieval": "Authenticated session-output API; explicit UTF-8 because the standard Windows Kaggle CLI failed to encode the Unicode progress glyphs and left a zero-byte log.",
+    "sha256": "4edc8eac7db4a388957264540c8ec6feda8bf7a1319d5c56e6f4aaf980979dde"
+  },
+  "error": "RuntimeError: Expected one square_corrected_baseline.zip/8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4, found []",
+  "expected_input": {
+    "archive_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "local_archive_bytes": 1784924,
+    "sanitized_dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1",
+    "transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da"
+  },
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1",
+  "kernel_output_files": 0,
+  "kernel_version": 1,
+  "metadata_sha256": "fc290c04a913fd17dfded8ee71a933233af1b047afacdbceecc02d7571f108b2",
+  "root_cause": "The R1 wrapper's Kaggle input mount did not contain a file matching the exact baseline archive name and SHA-256. The same transport audit was present, so the failure is isolated to baseline-archive transport availability; the direct log does not prove why the mounted dataset omitted or changed that file.",
+  "safety": {
+    "consumer_trained": false,
+    "scientific_result": false,
+    "test_evaluated": false,
+    "training_labels": "image_level_only",
+    "validation_gt_read": false,
+    "validation_prediction_created": false
+  },
+  "status": "ERROR_BEFORE_SCIENTIFIC_EXECUTION",
+  "wrapper_sha256": "2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b"
+}
