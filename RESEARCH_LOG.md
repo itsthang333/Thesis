@@ -9072,4 +9072,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `artifacts/literature_reviews/relational_mil_medium_selection_design_2026-07-28.md`;
   R3 transfers only the relational principle, not pathology tiling,
   self-supervised pretraining, instance labels or an auxiliary bag head.
+- **Static implementation progress (2026-08-01 ICT):** the image-label-only R3
+  fitter and two-T4 runner now exist at
+  `project/models/mask_bag_critical_relation_training.py` and
+  `project/run_mask_bag_critical_relation_arm.py`, SHA-256 respectively
+  `b29ffc4b77680f9e9b0046238506f738cf1c855cfc2f33769726b034d6d67042` and
+  `a00bc05f289a7afe6653264fc09053ff5ed59e372be75de01024ea9447932686`.
+  The fitter freezes the accepted base scorer, creates one deterministic
+  zero-residual state, physically audits exact base equality and original/flip
+  base-critical agreement before optimization, then performs the single fixed
+  16-epoch fit declared above. The runner requires exactly T4x2, trains only on
+  T4:0, scores disjoint `186/185` validation shards on both devices, freezes
+  all 371 score vectors/maps, and records the count/probability and final
+  original/flip selected-index gates without importing an evaluator or GT.
+- Tests
+  `tests/test_mask_bag_critical_relation_training.py` and
+  `tests/test_run_mask_bag_critical_relation_arm.py` have SHA-256
+  `a0b4e639f736e24419e76daef09d09f2415009c1d1cef09a6f77b414fb8bb47e` /
+  `5a5dade7de8c2beab1aa4e59f7279fda517da8c609306df5aec7d43faebbf4fa`.
+  The focused relational/R3 suite passes `12/12`; full repository regression
+  passes `401/401` in 14.80 seconds under the already documented Python-3.9
+  `zip(strict=...)` compatibility shim. The first default full-regression call
+  produced the known environment-only boundary `7 failed, 394 passed` because
+  Python 3.9 rejects the Python-3.10 `zip(strict=...)` keyword. One initial R3
+  static test also matched substring `dice` inside `indices`; it was corrected
+  to a word-boundary assertion before the passing runs. Neither error opened
+  scientific input or changed the R3 mechanism.
+- This is static preparation only. No R3 protocol/binding/kernel launch,
+  training, validation prediction, GT/test access or consumer training has
+  occurred. Independent output-auditor closure and exact protocol/source hash
+  freeze remain required before launch.
 
