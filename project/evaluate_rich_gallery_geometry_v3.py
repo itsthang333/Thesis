@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -110,21 +111,28 @@ def main() -> None:
             sources = payload["proposal_source_ids"].astype(str)
         proposal_dice = np.asarray([_dice(mask, target) for mask in proposals])
         oracle_index = int(np.argmax(proposal_dice)) if len(proposal_dice) else -1
+        selected_index = int(prediction["selected_candidate_index"])
+        if not 0 <= selected_index < len(proposals):
+            raise ValueError(f"Selected candidate index is invalid: {image_name}")
         area_ratio = float(target.mean())
         overlap = np.logical_and(selected, target)
+        selected_dice = _dice(selected, target)
+        oracle_dice = float(proposal_dice[oracle_index]) if oracle_index >= 0 else 0.0
         per_image.append(
             {
                 "image_id": str(image_name),
                 "group_id": prediction["group_id"],
                 "gt_area_ratio": area_ratio,
                 "size_group": _size_group(area_ratio),
-                "dice": _dice(selected, target),
+                "dice": selected_dice,
                 "iou": iou(selected, target),
                 "complete_miss": int(not overlap.any()),
                 "selected_area_ratio": float(selected.mean()),
                 "candidate_count": len(proposals),
-                "oracle_dice": float(proposal_dice[oracle_index]) if oracle_index >= 0 else 0.0,
+                "selected_source": str(sources[selected_index]),
+                "oracle_dice": oracle_dice,
                 "oracle_source": str(sources[oracle_index]) if oracle_index >= 0 else "none",
+                "selector_regret": oracle_dice - selected_dice,
             }
         )
     if len(per_image) != 184:
@@ -152,6 +160,15 @@ def main() -> None:
             "fully_dice": FULLY_DICE[subgroup],
             "complete_misses": int(sum(int(row["complete_miss"]) for row in rows)),
             "oracle_dice": float(np.mean([float(row["oracle_dice"]) for row in rows])),
+            "mean_selector_regret": float(
+                np.mean([float(row["selector_regret"]) for row in rows])
+            ),
+            "selected_source_counts": dict(
+                sorted(Counter(str(row["selected_source"]) for row in rows).items())
+            ),
+            "oracle_source_counts": dict(
+                sorted(Counter(str(row["oracle_source"]) for row in rows).items())
+            ),
         }
     image_auroc = float(
         roc_auc_score(
