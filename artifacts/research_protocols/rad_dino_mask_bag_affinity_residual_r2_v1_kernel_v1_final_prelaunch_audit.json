@@ -1,0 +1,76 @@
+{
+  "audit_id": "rad_dino_mask_bag_affinity_residual_r2_v1_kernel_v1_final_prelaunch",
+  "audited_utc": "2026-07-31T16:16:02Z",
+  "status": "READY_TO_LAUNCH_AFTER_COMMIT_PUSH",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-affinity-residual-r2-v1",
+  "kernel_version": 1,
+  "execution_checkout": "5905b4f9549a03dde5f4dba1c9279ef7146e3244",
+  "coordination": {
+    "active_claim": "EXP-20260731-codex-r2-affinity-residual-v1",
+    "claim_commit": "569bff4c4fb5552a039cad9ad08a260294a48069",
+    "claim_commit_recorded_on_origin_commit": "5905b4f9549a03dde5f4dba1c9279ef7146e3244",
+    "r1_terminal_audit_sha256": "833c4814eee0891df1cd55a01fa008e0708ad3485dd30b730657f52508317719",
+    "separate_active_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "separate_claim_duplicated": false,
+    "g1_technique_adopted": false,
+    "reason": "G1 has no terminal audited actual-Dice result; result-gated collaboration forbids treating its implementation as a demonstrated improvement"
+  },
+  "scientific_contract": {
+    "scientific_source_commit": "c0e38628069ff3bedd4493c4ff004b75bd32e008",
+    "protocol_sha256": "3f28cc7187ad64f3755ae4c7a10bb380a0085d1733807dcf667c44d92d9f593d",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_archive_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "baseline_transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da",
+    "affinity_feature_dim": 24,
+    "train_records": 2981,
+    "validation_records": 371
+  },
+  "binding": {
+    "template_sha256": "000843edda2593cba96e9a310462670cfd4be7a561862c5a29ac48624eafd629",
+    "bound_wrapper_sha256": "37724fa4082db58459c65a89394e704ee0f4a60900aad2278de1f08364e91c88",
+    "launch_binding_sha256": "93f7d8887fc4ee93d0e379fca753ff613223bbcb436b8d1e8c1820318efebb7b",
+    "metadata_sha256": "c3d81f3afecd398514f7e95629e662a1cfa58cc12aa832140f583e8963772bd5",
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true,
+    "runtime_source_hash_entries": 21,
+    "runtime_source_hash_mismatches": 0
+  },
+  "kaggle_inputs": {
+    "dataset_sources": [
+      "itsthang333/btxrd-mask-bag-r1-baseline-transport-v1"
+    ],
+    "kernel_sources": [
+      "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+    ],
+    "machine_shape": "NvidiaTeslaT4",
+    "internet_enabled_only_for_frozen_runtime_install": true,
+    "private": true
+  },
+  "validation": {
+    "bound_wrapper_py_compile": "passed",
+    "binder_wrapper_auditor_runner_feature_training_tests": "24 passed in 3.96s",
+    "whole_repository_before_binding": "372 passed in 17.94s under the documented local Python-3.9 zip(strict) diagnostic shim",
+    "json_parse": "passed",
+    "bound_wrapper_hash_matches_launch_binding": true,
+    "metadata_kernel_code_input_and_machine_contract": true
+  },
+  "readiness_evidence": {
+    "static_protocol_readiness_sha256": "f0cc043cc4dc9dfe3b4f4be42f39740bb0dc223d23440a92238082a1e5ee4c",
+    "independent_output_auditor_readiness_sha256": "0c10163009277c479afe596a113758614f4f0969ba172f7c749964fedd04be31",
+    "wrapper_binder_readiness_sha256": "a2586adb08c3366c681b512cff1095d171bd86a57bdec8e25649be15d2b5a858"
+  },
+  "safety": {
+    "training_labels": "image_level_only",
+    "validation_prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false,
+    "monitor_created": false
+  },
+  "next_action": "commit and push the exact launch binding and this audit, reverify origin and package hashes, then push exactly kernel version 1 without a launch-time status poll"
+}

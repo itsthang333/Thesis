@@ -8471,4 +8471,29 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   candidate Dice/oracle rank trong fit; không post-hoc feature/epoch/threshold;
   BTXRD test khóa. Không launch trước khi claim được push/sync và bound wrapper
   cuối cùng pass source/protocol/cache/baseline/T4x2/tests gates.
+- **Progress — version-1 binding/prelaunch frozen:** sau khi claim commit
+  `569bff4c4fb5552a039cad9ad08a260294a48069` và commit xác nhận `5905b4f` đều
+  hiện trên `origin/research-wsss-improvement`, one-time binder khóa wrapper vào
+  execution checkout `5905b4f9549a03dde5f4dba1c9279ef7146e3244` và kernel version 1. Bound wrapper
+  canonical SHA-256 là
+  `37724fa4082db58459c65a89394e704ee0f4a60900aad2278de1f08364e91c88`;
+  launch-binding SHA-256 là
+  `93f7d8887fc4ee93d0e379fca753ff613223bbcb436b8d1e8c1820318efebb7b`;
+  metadata SHA-256 là
+  `c3d81f3afecd398514f7e95629e662a1cfa58cc12aa832140f583e8963772bd5`.
+  Binder xác nhận đúng ba replacement, inverse về exact template và 21/21
+  runtime source/test hash tại checkout.
+- Bound wrapper `py_compile` pass; binder/wrapper/auditor/runner/feature/training
+  suites pass `24/24`. Full repository ngay trước binding pass `372/372` bằng
+  documented Python-3.9 `zip(strict=...)` diagnostic shim. Final prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_affinity_residual_r2_v1_kernel_v1_final_prelaunch_audit.json`
+  có SHA-256
+  `ff8e4a2d6ea81a466b57ef22795e3426a9a08fc0f1b80535d33bee1ff1462fc2`.
+  Nó khóa đúng baseline transport dataset, selector-cache kernel input, private
+  T4 machine shape, protocol/source/cache/baseline và independent auditor.
+- Đây vẫn là prelaunch kỹ thuật: chưa push kernel, chưa status poll, chưa mở dữ
+  liệu khoa học, chưa tạo prediction/validation GT, chưa train consumer và không
+  truy cập test. Exact binding và audit phải commit/push trước launch; sau đó
+  package hash được kiểm tra lại và chỉ một version 1 được push, không launch-time
+  poll hoặc monitor.
 
