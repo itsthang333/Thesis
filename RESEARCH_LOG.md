@@ -7447,4 +7447,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   reports `PRELAUNCH_PASS`. The wrapper still requires the exact T4x2 guard,
   runs focused and unmodified Python-3.12 whole tests before compute, and must
   pass all baseline reproduction/physical-cache checks. R1 remains locked.
+- From clean, origin-synchronized commit
+  `9f00ffe98f5be74fe4d5d8fb81d333c8fd469348`, wrapper, metadata, correction
+  protocol and version-5 audit re-matched exact SHA-256 values
+  `db6b461dbc9e9afe1837ecee90df68b9423ad9d60c56f1120b9da1693b658a7a`,
+  `85a88e983bfc4707e7b3abfb1222ebc44a80c026739cdb8d757c0a4b006f6d54`,
+  `be9c91b53926eda2f8bf8dba894385f03dc6accd15d3fa9646da0d1a17a635f2`
+  and
+  `c71cdc0cec4879bff66ae74dd4ce455a49089966726a8e09fcda0465560e708e`.
+  Kaggle accepted selector-cache kernel version `5` at
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1.
+  No launch-time poll or monitor was created. R1/R2/S1, validation GT,
+  consumer training and BTXRD test remain locked pending terminal corrected
+  cache reproduction audit.
 
