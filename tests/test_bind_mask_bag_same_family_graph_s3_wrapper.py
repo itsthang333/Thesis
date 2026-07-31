@@ -9,6 +9,7 @@ from bind_mask_bag_same_family_graph_s3_wrapper import bind, canonical_bytes, di
 
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION1_EXECUTION_CHECKOUT = "56c658af1062c95d8ee4c4eae62ea20557bf49b9"
 TEMPLATE = (
     ROOT
     / "project"
@@ -18,9 +19,7 @@ TEMPLATE = (
 
 
 def test_s3_binder_exactly_replaces_three_external_fields(tmp_path: Path) -> None:
-    checkout = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-    ).strip()
+    checkout = VERSION1_EXECUTION_CHECKOUT
     output = tmp_path / "bound.py"
     audit = tmp_path / "binding.json"
     result = bind(
@@ -52,4 +51,3 @@ def test_s3_binder_refuses_existing_output(tmp_path: Path) -> None:
             checkout_commit="0" * 40,
             kernel_version=1,
         )
-

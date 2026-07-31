@@ -1,0 +1,52 @@
+{
+  "readiness_id": "rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v2_numeric_correction_readiness",
+  "created_utc": "2026-07-31T22:30:00Z",
+  "status": "IMPLEMENTATION_CORRECTION_FROZEN_NOT_BOUND_NOT_LAUNCHED",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "parent_protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "version1_error_audit_sha256": "8962636754fc06f7c0097de6a8866b91483e611279ec9c7d22a8bcc3f3aa0f78",
+  "numeric_identity_addendum_sha256": "41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51",
+  "corrected_sources": {
+    "runner": {
+      "path": "project/run_mask_bag_same_family_graph_s3_arm.py",
+      "sha256": "30e3048a706127e0cea52892d0e682d97e0c81dc8aee2bd05c4254674fabf6db"
+    },
+    "independent_auditor": {
+      "path": "project/audit_mask_bag_same_family_graph_s3_output.py",
+      "sha256": "2ee49080f80b2f651f80f11be79bf663bc062cc288f6828d3bd8c427f94a39a6"
+    },
+    "runner_test": {
+      "path": "tests/test_run_mask_bag_same_family_graph_s3_arm.py",
+      "sha256": "66a8f81a0dbb7c150a03d95f27693c4d96544c1858f2621f49591655a98d8440"
+    },
+    "auditor_test": {
+      "path": "tests/test_audit_mask_bag_same_family_graph_s3_output.py",
+      "sha256": "9c21b982834047986a407b5253d565272edb45fea7d8b0d67dd6d9f232fe8654"
+    }
+  },
+  "identity_contract": {
+    "minimum_absolute_tolerance": 0.000002,
+    "maximum_float32_ulps": 4,
+    "exact_candidate_vectors_required": 371,
+    "exact_selected_indices_required": 371,
+    "exact_selected_map_hashes_required": 371,
+    "scalar_identity_rows_required": 371,
+    "observed_reference_delta_spacing_tolerance_serialized": true,
+    "independent_auditor_recomputes_every_scalar": true,
+    "eight_ulp_perturbation_rejected_by_test": true
+  },
+  "historical_version1_binder_test_checkout": "56c658af1062c95d8ee4c4eae62ea20557bf49b9",
+  "tests": {
+    "focused_result": "11 passed in 3.07s",
+    "full_repository_result": "441 passed in 16.61s",
+    "python39_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "scientific_graph_or_hyperparameter_changed": false,
+  "kaggle_bound": false,
+  "kaggle_launched": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

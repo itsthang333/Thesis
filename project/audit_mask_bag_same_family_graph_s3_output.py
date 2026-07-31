@@ -9,6 +9,8 @@ import math
 from pathlib import Path
 from typing import Any, Mapping
 
+import numpy as np
+
 from audit_mask_bag_normal_prototype_r1_output import (
     _json,
     _require_safety,
@@ -28,6 +30,11 @@ BASELINE_FREEZE_SHA256 = "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d110858
 BASELINE_MANIFEST_SHA256 = "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee"
 PHYSICAL_HELPER_SHA256 = "3cc5feeed7fd8fddc2b630448e6bdbd7e18d9020770de850b1e580a40c173a17"
 COUNT_SPEARMAN_CEILING = 0.5013777759365411
+NUMERIC_IDENTITY_ADDENDUM_SHA256 = (
+    "41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51"
+)
+SCALAR_IDENTITY_MIN_ABS_TOLERANCE = 2.0e-6
+SCALAR_IDENTITY_MAX_FLOAT32_ULPS = 4
 EXPECTED_GRAPH_CONFIG = {
     "minimum_iou": 0.25,
     "minimum_containment": 0.5,
@@ -64,10 +71,12 @@ def _verify_launch_binding(
     protocol: Mapping[str, Any],
 ) -> dict[str, str]:
     if (
-        binding.get("schema_version") != 1
+        binding.get("schema_version") != 2
         or binding.get("status") != "FROZEN_PRELAUNCH"
         or binding.get("protocol_sha256") != PROTOCOL_SHA256
         or binding.get("scientific_source_commit") != SOURCE_COMMIT
+        or binding.get("numeric_identity_addendum_sha256")
+        != NUMERIC_IDENTITY_ADDENDUM_SHA256
         or binding.get("kernel_version", 0) < 1
     ):
         raise ValueError("S3 launch binding contract mismatch")
@@ -81,9 +90,17 @@ def _verify_launch_binding(
     ):
         raise ValueError("S3 launch binding omits required runtime sources")
     protocol_hashes = protocol.get("canonical_lf_source_hashes", {})
+    overrides = binding.get("implementation_only_source_overrides")
+    expected_override_paths = {
+        "project/run_mask_bag_same_family_graph_s3_arm.py",
+        "tests/test_run_mask_bag_same_family_graph_s3_arm.py",
+    }
+    if not isinstance(overrides, dict) or set(overrides) != expected_override_paths:
+        raise ValueError("S3 launch binding implementation overrides mismatch")
     for relative, expected in source_hashes.items():
         _require_hex(expected, name=f"runtime source {relative}")
-        if protocol_hashes.get(relative) != expected:
+        frozen_expected = overrides.get(relative, protocol_hashes.get(relative))
+        if frozen_expected != expected:
             raise ValueError(f"S3 runtime source is not frozen by protocol: {relative}")
     return {str(key): str(value) for key, value in source_hashes.items()}
 
@@ -105,12 +122,27 @@ def _verify_identity_rows(
         "base_candidate_logits_sha256",
         "alpha_zero_identity_exact",
         "accepted_selected_index_exact",
-        "accepted_selected_logit_exact",
-        "accepted_bag_logit_exact",
-        "accepted_bag_probability_exact",
         "accepted_map_sha256_exact",
         "accepted_row_exact",
+        "accepted_row_identity_pass",
     }
+    scalar_prefixes = (
+        "accepted_selected_logit",
+        "accepted_bag_logit",
+        "accepted_bag_probability",
+    )
+    for prefix in scalar_prefixes:
+        required.update(
+            {
+                f"{prefix}_observed",
+                f"{prefix}_reference",
+                f"{prefix}_abs_delta",
+                f"{prefix}_float32_spacing",
+                f"{prefix}_tolerance",
+                f"{prefix}_exact",
+                f"{prefix}_within_tolerance",
+            }
+        )
     if (
         len(rows) != expected_validation
         or len({row["image_id"] for row in rows}) != expected_validation
@@ -118,11 +150,8 @@ def _verify_identity_rows(
         or set(rows[0]) != required
     ):
         raise ValueError("S3 identity cohort/schema mismatch")
-    exact_fields = required - {
-        "image_id",
-        "candidate_count",
-        "base_candidate_logits_sha256",
-    }
+    exact_rows = 0
+    verified_rows = 0
     for row in rows:
         if int(row["candidate_count"]) <= 0:
             raise ValueError("S3 identity candidate count must be positive")
@@ -130,13 +159,57 @@ def _verify_identity_rows(
             row["base_candidate_logits_sha256"],
             name="base candidate-vector SHA-256",
         )
-        if any(int(row[field]) != 1 for field in exact_fields):
+        if (
+            int(row["alpha_zero_identity_exact"]) != 1
+            or int(row["accepted_selected_index_exact"]) != 1
+            or int(row["accepted_map_sha256_exact"]) != 1
+        ):
             raise ValueError("S3 alpha-zero or accepted baseline identity failed")
+        scalar_passes = []
+        scalar_exacts = []
+        for prefix in scalar_prefixes:
+            observed = float(row[f"{prefix}_observed"])
+            accepted = float(row[f"{prefix}_reference"])
+            recorded_delta = float(row[f"{prefix}_abs_delta"])
+            recorded_spacing = float(row[f"{prefix}_float32_spacing"])
+            recorded_tolerance = float(row[f"{prefix}_tolerance"])
+            if not np.isfinite(observed) or not np.isfinite(accepted):
+                raise ValueError("S3 scalar identity contains non-finite values")
+            delta = abs(observed - accepted)
+            spacing = abs(float(np.spacing(np.float32(accepted))))
+            tolerance = max(
+                SCALAR_IDENTITY_MIN_ABS_TOLERANCE,
+                SCALAR_IDENTITY_MAX_FLOAT32_ULPS * spacing,
+            )
+            exact = observed == accepted
+            within_tolerance = delta <= tolerance
+            if (
+                recorded_delta != delta
+                or recorded_spacing != spacing
+                or recorded_tolerance != tolerance
+                or int(row[f"{prefix}_exact"]) != int(exact)
+                or int(row[f"{prefix}_within_tolerance"])
+                != int(within_tolerance)
+            ):
+                raise ValueError("S3 scalar identity evidence does not reproduce")
+            scalar_exacts.append(exact)
+            scalar_passes.append(within_tolerance)
+        row_exact = all(scalar_exacts)
+        row_pass = all(scalar_passes)
+        if int(row["accepted_row_exact"]) != int(row_exact):
+            raise ValueError("S3 exact-row evidence does not reproduce")
+        if int(row["accepted_row_identity_pass"]) != int(row_pass):
+            raise ValueError("S3 tolerance-row evidence does not reproduce")
+        if not row_pass:
+            raise ValueError("S3 scalar identity exceeds frozen tolerance")
+        exact_rows += int(row_exact)
+        verified_rows += int(row_pass)
     return {
         "sha256": sha256_file(path),
         "records": expected_validation,
         "alpha_zero_identity_exact_records": expected_validation,
-        "accepted_row_exact_records": expected_validation,
+        "accepted_row_exact_records": exact_rows,
+        "accepted_row_identity_pass_records": verified_rows,
         "physical_bytes": path.stat().st_size,
     }
 
@@ -212,7 +285,7 @@ def _verify_gt_blind_diagnostics(
         and cross_family_edges == 0
         and non_self_edges > 0
         and binary_sums["isolated_logits_exact"] == expected_validation
-        and gate.get("accepted_baseline_identity_exact_records")
+        and gate.get("accepted_baseline_identity_verified_records")
         == expected_validation
     )
     if (
@@ -234,7 +307,7 @@ def _verify_gt_blind_diagnostics(
         or gate.get("isolated_candidate_count") != isolated_candidates
         or gate.get("isolated_logits_exact_records")
         != binary_sums["isolated_logits_exact"]
-        or gate.get("accepted_baseline_identity_exact_records")
+        or gate.get("accepted_baseline_identity_verified_records")
         != expected_validation
         or gate.get("gt_blind_gate_pass") is not expected_pass
     ):
@@ -289,6 +362,8 @@ def audit_s3_output(
     if (
         freeze.get("source_commit") != SOURCE_COMMIT
         or freeze.get("protocol_sha256") != PROTOCOL_SHA256
+        or freeze.get("numeric_identity_addendum_sha256")
+        != NUMERIC_IDENTITY_ADDENDUM_SHA256
         or freeze.get("split_sha256") != SPLIT_SHA256
         or freeze.get("selector_cache_freeze_sha256") != CACHE_FREEZE_SHA256
         or freeze.get("baseline_checkpoint_sha256") != BASELINE_CHECKPOINT_SHA256
@@ -306,6 +381,8 @@ def audit_s3_output(
         run.get("run_id") != "btxrd_mask_bag_same_family_graph_s3_v1"
         or run.get("source_commit") != SOURCE_COMMIT
         or run.get("protocol_sha256") != PROTOCOL_SHA256
+        or run.get("numeric_identity_addendum_sha256")
+        != NUMERIC_IDENTITY_ADDENDUM_SHA256
         or run.get("cache_freeze_sha256") != CACHE_FREEZE_SHA256
         or run.get("graph_config") != EXPECTED_GRAPH_CONFIG
         or run.get("validated_cache_records")

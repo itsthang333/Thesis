@@ -1,0 +1,49 @@
+{
+  "addendum_id": "rad_dino_mask_bag_same_family_graph_s3_v1_posterror_numeric_identity",
+  "created_utc": "2026-07-31T22:24:00Z",
+  "status": "IMPLEMENTATION_ONLY_FROZEN_BEFORE_CORRECTION_RERUN",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "parent_protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "version1_error_audit_sha256": "8962636754fc06f7c0097de6a8866b91483e611279ec9c7d22a8bcc3f3aa0f78",
+  "error_boundary": "Exact Python equality of three floating-point scalar display fields failed across GPU executions although 371/371 alpha-zero vectors, selected indices and selected map hashes passed.",
+  "scalar_identity_contract": {
+    "fields": [
+      "selected_candidate_logit",
+      "bag_logit",
+      "bag_probability"
+    ],
+    "observed_and_accepted_must_be_finite": true,
+    "absolute_tolerance": "max(2e-6, 4 * abs(spacing(float32(accepted))))",
+    "minimum_absolute_tolerance": 0.000002,
+    "maximum_float32_ulps": 4,
+    "pass_operator": "abs(observed - accepted) <= tolerance",
+    "serialize_per_row": [
+      "observed",
+      "accepted",
+      "absolute_delta",
+      "float32_spacing",
+      "tolerance",
+      "exact_equality",
+      "within_tolerance"
+    ]
+  },
+  "unchanged_exact_checks": [
+    "all alpha-zero candidate-logit vectors",
+    "selected candidate index",
+    "selected physical map SHA-256"
+  ],
+  "unchanged_scientific_contract": [
+    "candidate gallery and order",
+    "accepted base scorer checkpoint and TTA",
+    "same-family graph edges and normalization",
+    "alpha 0.5",
+    "ten graph iterations",
+    "argmax selection",
+    "count-probability gate",
+    "post-freeze mechanism and operational gates"
+  ],
+  "failure_action": "Fail before prediction freeze if any exact check or scalar tolerance check fails; preserve diagnostics and do not widen tolerance post hoc.",
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

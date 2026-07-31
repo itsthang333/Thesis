@@ -36,6 +36,13 @@ from run_mask_bag_normal_prototype_arm import (
 )
 
 
+NUMERIC_IDENTITY_ADDENDUM_SHA256 = (
+    "41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51"
+)
+SCALAR_IDENTITY_MIN_ABS_TOLERANCE = 2.0e-6
+SCALAR_IDENTITY_MAX_FLOAT32_ULPS = 4
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--split-manifest", type=Path, required=True)
@@ -99,6 +106,28 @@ def _base_vector_sha256(logits: np.ndarray) -> str:
     return sha256(values.tobytes(order="C")).hexdigest()
 
 
+def _float32_scalar_identity(observed: float, accepted: float) -> dict[str, object]:
+    observed_value = float(observed)
+    accepted_value = float(accepted)
+    if not np.isfinite(observed_value) or not np.isfinite(accepted_value):
+        raise ValueError("S3 scalar identity values must be finite")
+    spacing = abs(float(np.spacing(np.float32(accepted_value))))
+    tolerance = max(
+        SCALAR_IDENTITY_MIN_ABS_TOLERANCE,
+        SCALAR_IDENTITY_MAX_FLOAT32_ULPS * spacing,
+    )
+    delta = abs(observed_value - accepted_value)
+    return {
+        "observed": observed_value,
+        "accepted": accepted_value,
+        "absolute_delta": delta,
+        "float32_spacing": spacing,
+        "tolerance": tolerance,
+        "exact": int(observed_value == accepted_value),
+        "within_tolerance": int(delta <= tolerance),
+    }
+
+
 def _write_pregraph_identity_audit(
     args: argparse.Namespace,
     records: list[dict[str, Any]],
@@ -136,7 +165,29 @@ def _write_pregraph_identity_audit(
             "bag_probability": probability,
             "map_sha256": map_sha256,
         }
+        selected_logit_identity = _float32_scalar_identity(
+            observed["selected_candidate_logit"],
+            accepted["selected_candidate_logit"],
+        )
+        bag_logit_identity = _float32_scalar_identity(
+            observed["bag_logit"], accepted["bag_logit"]
+        )
+        bag_probability_identity = _float32_scalar_identity(
+            observed["bag_probability"], accepted["bag_probability"]
+        )
+        selected_index_exact = (
+            observed["selected_candidate_index"]
+            == accepted["selected_candidate_index"]
+        )
+        map_sha256_exact = observed["map_sha256"] == accepted["map_sha256"]
         exact = observed == accepted
+        identity_pass = bool(
+            selected_index_exact
+            and map_sha256_exact
+            and selected_logit_identity["within_tolerance"]
+            and bag_logit_identity["within_tolerance"]
+            and bag_probability_identity["within_tolerance"]
+        )
         rows.append(
             {
                 "image_id": image_id,
@@ -145,24 +196,61 @@ def _write_pregraph_identity_audit(
                 "alpha_zero_identity_exact": int(
                     prediction["alpha_zero_identity_exact"]
                 ),
-                "accepted_selected_index_exact": int(
-                    observed["selected_candidate_index"]
-                    == accepted["selected_candidate_index"]
-                ),
-                "accepted_selected_logit_exact": int(
-                    observed["selected_candidate_logit"]
-                    == accepted["selected_candidate_logit"]
-                ),
-                "accepted_bag_logit_exact": int(
-                    observed["bag_logit"] == accepted["bag_logit"]
-                ),
-                "accepted_bag_probability_exact": int(
-                    observed["bag_probability"] == accepted["bag_probability"]
-                ),
-                "accepted_map_sha256_exact": int(
-                    observed["map_sha256"] == accepted["map_sha256"]
-                ),
+                "accepted_selected_index_exact": int(selected_index_exact),
+                "accepted_selected_logit_observed": selected_logit_identity[
+                    "observed"
+                ],
+                "accepted_selected_logit_reference": selected_logit_identity[
+                    "accepted"
+                ],
+                "accepted_selected_logit_abs_delta": selected_logit_identity[
+                    "absolute_delta"
+                ],
+                "accepted_selected_logit_float32_spacing": selected_logit_identity[
+                    "float32_spacing"
+                ],
+                "accepted_selected_logit_tolerance": selected_logit_identity[
+                    "tolerance"
+                ],
+                "accepted_selected_logit_exact": selected_logit_identity["exact"],
+                "accepted_selected_logit_within_tolerance": selected_logit_identity[
+                    "within_tolerance"
+                ],
+                "accepted_bag_logit_observed": bag_logit_identity["observed"],
+                "accepted_bag_logit_reference": bag_logit_identity["accepted"],
+                "accepted_bag_logit_abs_delta": bag_logit_identity[
+                    "absolute_delta"
+                ],
+                "accepted_bag_logit_float32_spacing": bag_logit_identity[
+                    "float32_spacing"
+                ],
+                "accepted_bag_logit_tolerance": bag_logit_identity["tolerance"],
+                "accepted_bag_logit_exact": bag_logit_identity["exact"],
+                "accepted_bag_logit_within_tolerance": bag_logit_identity[
+                    "within_tolerance"
+                ],
+                "accepted_bag_probability_observed": bag_probability_identity[
+                    "observed"
+                ],
+                "accepted_bag_probability_reference": bag_probability_identity[
+                    "accepted"
+                ],
+                "accepted_bag_probability_abs_delta": bag_probability_identity[
+                    "absolute_delta"
+                ],
+                "accepted_bag_probability_float32_spacing": bag_probability_identity[
+                    "float32_spacing"
+                ],
+                "accepted_bag_probability_tolerance": bag_probability_identity[
+                    "tolerance"
+                ],
+                "accepted_bag_probability_exact": bag_probability_identity["exact"],
+                "accepted_bag_probability_within_tolerance": bag_probability_identity[
+                    "within_tolerance"
+                ],
+                "accepted_map_sha256_exact": int(map_sha256_exact),
                 "accepted_row_exact": int(exact),
+                "accepted_row_identity_pass": int(identity_pass),
             }
         )
     path = args.output_dir / "pregraph_identity_audit.csv"
@@ -177,6 +265,9 @@ def _write_pregraph_identity_audit(
             int(row["alpha_zero_identity_exact"]) for row in rows
         ),
         "accepted_row_exact_records": sum(int(row["accepted_row_exact"]) for row in rows),
+        "accepted_row_identity_pass_records": sum(
+            int(row["accepted_row_identity_pass"]) for row in rows
+        ),
         "validation_gt_read": False,
         "consumer_trained": False,
         "test_evaluated": False,
@@ -184,7 +275,7 @@ def _write_pregraph_identity_audit(
     if (
         summary["records"] != 371
         or summary["alpha_zero_identity_exact_records"] != 371
-        or summary["accepted_row_exact_records"] != 371
+        or summary["accepted_row_identity_pass_records"] != 371
     ):
         raise RuntimeError("S3 alpha-zero or accepted-baseline identity failed")
     return path, summary
@@ -352,6 +443,9 @@ def main() -> None:
         "accepted_baseline_identity_exact_records": identity_summary[
             "accepted_row_exact_records"
         ],
+        "accepted_baseline_identity_verified_records": identity_summary[
+            "accepted_row_identity_pass_records"
+        ],
     }
     graph_gate["gt_blind_gate_pass"] = bool(
         graph_gate["count_probability_gate_pass"]
@@ -361,12 +455,13 @@ def main() -> None:
         and graph_gate["cross_family_edge_count"] == 0
         and graph_gate["non_self_edge_count"] > 0
         and graph_gate["isolated_logits_exact_records"] == 371
-        and graph_gate["accepted_baseline_identity_exact_records"] == 371
+        and graph_gate["accepted_baseline_identity_verified_records"] == 371
     )
 
     freeze = {
         "source_commit": args.source_commit,
         "protocol_sha256": args.protocol_sha256,
+        "numeric_identity_addendum_sha256": NUMERIC_IDENTITY_ADDENDUM_SHA256,
         "split_sha256": args.expected_split_sha256,
         "selector_cache_freeze_sha256": args.expected_selector_cache_freeze_sha256,
         "selector_cache_manifest_sha256": cache_freeze[
@@ -399,6 +494,7 @@ def main() -> None:
         "run_id": "btxrd_mask_bag_same_family_graph_s3_v1",
         "source_commit": args.source_commit,
         "protocol_sha256": args.protocol_sha256,
+        "numeric_identity_addendum_sha256": NUMERIC_IDENTITY_ADDENDUM_SHA256,
         "cache_freeze_sha256": args.expected_selector_cache_freeze_sha256,
         "graph_config": asdict(graph_config),
         "runtime": {

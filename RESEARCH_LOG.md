@@ -9751,4 +9751,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   row, retain exact candidate-vector/index/map checks and change no graph,
   candidate, protocol gate or scientific hyperparameter. Validation GT,
   consumer and BTXRD test remain locked.
+- **Version-2 numeric-identity correction frozen, not bound/launched:** after the
+  version-1 error audit was committed/pushed at `6570a39`, implementation-only
+  addendum
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_posterror_numeric_identity_addendum.json`
+  was frozen with SHA-256
+  `41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51`.
+  It transfers the already audited S1 numerical contract without observing a
+  validation metric: scalar identity tolerance is exactly
+  `max(2e-6, 4*abs(spacing(float32(accepted))))`; no post-hoc widening is
+  allowed.
+- Corrected runner/auditor SHA-256 values are
+  `30e3048a706127e0cea52892d0e682d97e0c81dc8aee2bd05c4254674fabf6db` /
+  `2ee49080f80b2f651f80f11be79bf663bc062cc288f6828d3bd8c427f94a39a6`.
+  Every row now serializes observed/reference/delta/float32-spacing/tolerance/
+  exact/pass for selected logit, bag logit and probability. Exact 371-vector,
+  selected-index and physical-map checks remain mandatory. The independent
+  auditor recomputes every scalar and regression tests accept four ULP but
+  reject eight ULP.
+- Runner/auditor test SHA-256 values are
+  `66a8f81a0dbb7c150a03d95f27693c4d96544c1858f2621f49591655a98d8440` /
+  `9c21b982834047986a407b5253d565272edb45fea7d8b0d67dd6d9f232fe8654`.
+  Historical v1 binder regression is fixed to the immutable v1 execution
+  checkout `56c658af...`, rather than pretending corrected HEAD is v1 source.
+  Focused correction/binder tests pass `11/11`; full repository passes
+  `441/441` in 16.61 seconds under the documented Python-3.9
+  `zip(strict=...)` shim. Readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v2_numeric_correction_readiness.json`
+  is frozen before binding with SHA-256
+  `9a8c512049b30fbc1af844a3021da55e29a628be82445bf90510925a14af321f`.
+  Graph/candidates/hyperparameters/protocol gates are unchanged; no rerun,
+  prediction, validation GT, consumer or test access occurred.
 
