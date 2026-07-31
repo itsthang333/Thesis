@@ -9665,4 +9665,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `2026-07-31T21:49:19Z`. The wrapper must physically observe two T4 devices or
   fail closed. Prediction freeze, validation GT, consumer and BTXRD test remain
   locked pending a terminal independent output audit.
+- **Single bounded post-launch status:** at `2026-07-31T21:49:52Z`, exactly one
+  status query returned `RUNNING`. This is not a scientific result. No repeat
+  poll or additional monitor was created; validation GT, consumer and BTXRD
+  test remain locked.
 
