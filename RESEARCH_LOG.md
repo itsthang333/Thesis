@@ -8919,4 +8919,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `3daaa571c193388d89d4f1a1bd6a1e4fd5ba3f2c21ae22ca0f72c77f86573f1a`.
   It is frozen before the matched comparator: comparator/decision have not run,
   consumer remains unauthorized and BTXRD test remains untouched.
+- **Matched-comparator integration error before result:** the first invocation
+  of predeclared comparator source SHA-256
+  `24c625cfc50740d9cb633906d60ae81089e3960d3eec4b3ead6f3ce89ebaffad`
+  failed closed while reading the hash-locked family-balanced CSV because it
+  required a `selected_area_ratio` field that
+  `evaluate_mask_bag_selector_arm.py` does not serialize. No comparison output
+  or metric was created and the comparator did not reopen GT. Static source
+  inspection localizes this to a vestigial schema requirement: the field is
+  only range-validated in `_read` and is never used in identity matching,
+  paired Dice/miss rows, subgroup metrics, bootstrap, decision inputs or output.
+  The already frozen evaluation CSVs must not be rewritten. This boundary is
+  recorded and pushed before any comparator correction; a correction may only
+  remove that unused required-field/range check, add an exact evaluator-schema
+  integration regression test and freeze a machine-readable addendum. All
+  per-image hashes, comparator seed/replicates, paired fields, calculations,
+  decision gates, consumer lock and BTXRD test lock must remain unchanged.
 
