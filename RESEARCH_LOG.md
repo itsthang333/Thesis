@@ -9159,4 +9159,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   shim. Readiness JSON SHA-256 is
   `3ded95b79fb9a5f4822d8c873a00f4fddd963f95864e2be636f58349e720b952`.
   No real binding or launch exists yet; GT/test and consumer remain locked.
+- **R3 kernel-v1 real binding, prelaunch only (2026-08-01 ICT):** after verifying
+  clean synchronized central/collaborator state and unchanged active G1 scope,
+  the one-time binder froze kernel version 1 to execution checkout
+  `2e958f1bf7f5c0290cb54f6f45f8b0c9432c3168`. Bound wrapper SHA-256 is
+  `21a43a06e8e6c7c7558f77c74df71465219758c9c85a431c2e7c8db1a12e27ef`;
+  launch-binding SHA-256 is
+  `4b49a0fca65c4e433446e752460aad90cc2153a2fef63faf553ccb255ca4e93d`.
+  Exact inverse reconstruction, protocol/source closure and scientific-source
+  ancestry passed. Kaggle metadata SHA-256 is
+  `23f80f0342027f30a8e881f36df69e39d1657f16b9e7e6183c755c7b86f45e99`
+  and retains the accepted baseline transport dataset, accepted selector-cache
+  kernel source and `NvidiaTeslaT4` shape.
+- Final prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_critical_relation_r3_v1_kernel_v1_final_prelaunch_audit.json`
+  SHA-256
+  `ee0678755581a49792c8ac4cb46da97915ea088a5c29cad845dadae4f4d0ec6d`
+  records all binding/input/safety/test hashes. The binding and audit must be
+  committed and visible on central origin before the first Kaggle push. At this
+  note no Kaggle version exists yet; no training/prediction, validation GT/test
+  access or consumer training occurred.
 

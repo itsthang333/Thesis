@@ -1,0 +1,68 @@
+{
+  "audit_id": "rad_dino_mask_bag_critical_relation_r3_v1_kernel_v1_final_prelaunch",
+  "created_utc": "2026-07-31T19:17:24Z",
+  "status": "FROZEN_PRELAUNCH_NOT_YET_PUSHED_TO_KAGGLE",
+  "experiment_id": "EXP-20260801-codex-r3-critical-relation-v1",
+  "claim_commit": "00ff15b26a624bba04981f0b7a6f87d9faa4ac00",
+  "scientific_source_commit": "84867698dbc652957bd1a1430f4b9d32fa399119",
+  "execution_checkout": "2e958f1bf7f5c0290cb54f6f45f8b0c9432c3168",
+  "kernel": {
+    "slug": "itsthang333/btxrd-rad-dino-mask-bag-critical-relation-r3-v1",
+    "version": 1,
+    "machine_shape": "NvidiaTeslaT4",
+    "expected_physical_gpu_count": 2,
+    "metadata_sha256": "23f80f0342027f30a8e881f36df69e39d1657f16b9e7e6183c755c7b86f45e99",
+    "bound_wrapper_sha256": "21a43a06e8e6c7c7558f77c74df71465219758c9c85a431c2e7c8db1a12e27ef"
+  },
+  "binding": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_critical_relation_r3_v1_kernel_v1_launch_binding.json",
+    "sha256": "4b49a0fca65c4e433446e752460aad90cc2153a2fef63faf553ccb255ca4e93d",
+    "template_sha256": "c350238ad69231e6714c12d8c7cd8b7fc38b5d2a1702c22a55a0ed7ac6b6aa2e",
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true
+  },
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_critical_relation_r3_v1.json",
+    "sha256": "f7253df27444c1b56706ac19646441a7b2d2a7374a4d6888b8e97d26c2c3fd03"
+  },
+  "independent_output_auditor": {
+    "path": "project/audit_mask_bag_critical_relation_r3_output.py",
+    "sha256": "3a1078ba21e9215890b50bee8c057d44c59cf95ea7536f2cef763dddadc1d953",
+    "requires_this_launch_binding": true,
+    "opens_validation_gt": false
+  },
+  "inputs": {
+    "dataset_sources": [
+      "itsthang333/btxrd-mask-bag-r1-baseline-transport-v1"
+    ],
+    "kernel_sources": [
+      "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+    ],
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "validation_gt_included": false,
+    "test_included": false
+  },
+  "static_checks": {
+    "bound_wrapper_py_compile_pass": true,
+    "metadata_json_parse_pass": true,
+    "launch_binding_json_parse_pass": true,
+    "protocol_and_all_runtime_source_hashes_verified_by_binder": true,
+    "scientific_source_is_ancestor_of_execution_checkout": true,
+    "claim_visible_on_origin_before_binding": true,
+    "full_repository_regression": "408 passed in 15.27s",
+    "git_diff_check_pass": true
+  },
+  "launch_policy": {
+    "single_fixed_final_fit": true,
+    "heavy_compute_platform": "Kaggle T4x2 only",
+    "output_must_freeze_before_validation_gt": true,
+    "no_rerun_or_sweep_if_gt_blind_gate_fails": true,
+    "consumer_requires_full_adoption_gate": true
+  },
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kaggle_launched": false
+}
