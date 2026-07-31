@@ -7281,4 +7281,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   checkout/test hash and the unchanged cache source/protocol, then rerun the
   full preflight before the unchanged builder. No scientific mechanism or
   literature claim changes.
+- The version-4 wrapper now checks out exact correction commit `d66c899...`
+  and adds the corrected test SHA-256 `65f7831c...` to its fail-closed source
+  table. The original cache builder and all cache/scientific modules remain
+  byte-identical, as do protocol `ee810fd8...`, metadata `85a88e98...`, gallery,
+  baseline and schema. Wrapper SHA-256 is
+  `c4157072b4bf3ff74aa1793c8aef5ed0ad6e649b2ad557359d85a30199312eb1`.
+  Local `py_compile`, JSON parsing, Git ancestry/blob equality, canonical-LF
+  hashes and cache-surface identity pass. Prelaunch audit
+  `rad_dino_mask_bag_selector_cache_v1_kernel_v4_wrapper_audit.json`, SHA-256
+  `72dd6b47a361dff265d07081e77521bc55d23a8bc8c9f5038d91a6bef6def9d0`,
+  reports `PRELAUNCH_PASS`. The wrapper will still rerun the unmodified Python
+  3.12 whole suite before cache construction; R1 remains unauthorized until
+  terminal reproduction evidence passes.
 
