@@ -9940,8 +9940,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
 - **Registered:** `2026-07-31T23:17:34Z` (`2026-08-01` ICT), after terminal S3
   commit `1488a99daa2e2e40a2fee734eaf4899b2e2468f1` was pushed centrally.
-  Exact registration commit will be added and pushed in the next log-only
-  provenance update before any scientific launch.
+  Exact registration commit is
+  `fa8b0d64ea5571dedf3df2b1a98d221f4179a3f8`; it was pushed centrally before
+  any scientific launch.
 - **Hypothesis:** a distinct group-excluded OOF image-label-only teacher can
   identify recurring candidate modes without S3's per-image over-smoothing;
   using its stable original/flip seeds to form mask-IoU/containment proposal
