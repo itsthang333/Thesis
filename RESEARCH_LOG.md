@@ -7630,4 +7630,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   The full selector manifest plus independent per-record hashes remain the
   acceptance authority, so transport parallelism cannot relax a scientific or
   provenance gate. No GT/test was read and R1 remains unlaunched.
+- **Progress — independent-auditor descriptor-dimension failure:** parallel
+  transport completed the exact 3,731-file Kaggle output listing in 215.8
+  seconds (2,415 downloaded atomically, 1,316 pre-existing files validated by
+  Content-Length), for 998,064,727 remote bytes plus the direct log. Root
+  freeze/wrapper/manifest/run files are now present. The first independent
+  audit attempt then failed closed on the first train record
+  `IMG000002.jpeg` before producing an audit output. The cache row and payload
+  agree on descriptor shape `[27,1156]`; candidate count/index bounds, 24-value
+  affinity shape, no-train-mask policy and independently reconstructed family
+  IDs all pass. The auditor incorrectly hard-coded `128`—the per-layer random
+  projection dimension—as the final descriptor dimension. The frozen model
+  contract is `3 summaries × 3 layers × 128 + 4 metadata = 1156`, exactly as
+  implemented by `MaskBagMILConfig.descriptor_dim`. This is an independent
+  audit-tool defect, not cache evidence. The bounded correction is to freeze
+  `1156` from that already-existing formula and update the synthetic end-to-end
+  regression so `128` can no longer mask the error; no cache/scientific bytes
+  or protocol change. No validation packed mask/GT/test was read in the failed
+  attempt, no cache was accepted and R1 remains unlaunched.
 
