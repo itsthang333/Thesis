@@ -8120,4 +8120,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   exact transport-function simulation, one status check found kernel version 3
   `RUNNING`. No output was requested, no repeat poll/monitor was created and the
   independent auditor/evaluator remain locked until a later terminal check.
+- **Progress — continuation heartbeat and static R2 output-auditor readiness:**
+  after fetching and rereading the complete unchanged central log, one bounded
+  continuation check again found R1 version 3 `RUNNING`; no output, repeat poll
+  or monitor followed. During the wait, a GT-blind R2 physical-output auditor
+  was prepared at
+  `project/audit_mask_bag_affinity_residual_r2_output.py`, SHA-256
+  `2d772ebca7c7b332e5c5d607a4dfb31fe7fb3cac40bbdbf1394d5bc503e85b64`.
+  It pins the exact R2 protocol/source/split/cache/baseline, fixed 16-epoch fit,
+  T4x2 `186/185` validation shards, adapter/history hashes and all 371 physical
+  candidate-score/map/SmoothMax/winner contracts. It imports only the already
+  audited generic physical-map helper and fails if that helper differs from
+  SHA-256 `3cc5feee...`; it has no evaluator or GT loader.
+- The future kernel/version/wrapper/checkout cannot be chosen after output:
+  the auditor requires a separate `FROZEN_PRELAUNCH` launch-binding whose
+  runtime hashes are already present in protocol `3f28cc71...`. Auditor test
+  SHA-256 is
+  `cec3307f2a205650a2589ef05d1dea4ce9db88f96965f05b29c61da65683d9f1`;
+  14 focused auditor/helper tests and the combined 28-test R2 runner/features/
+  training/auditor suite pass, as do `py_compile` and `git diff --check`.
+  Readiness evidence SHA-256 is
+  `0c10163009277c479afe596a113758614f4f0969ba172f7c749964fedd04be31`.
+  This is static preparation only: R2 remains unclaimed/unlaunched behind the
+  active R1 claim, and no prediction, validation GT/test or consumer was
+  opened.
 

@@ -1,0 +1,44 @@
+{
+  "audit_id": "independent_mask_bag_affinity_residual_r2_output_audit_v1_readiness",
+  "audited_utc": "2026-07-31T15:02:03Z",
+  "status": "STATIC_READY_NO_R2_CLAIM_NO_LAUNCH",
+  "protocol_sha256": "3f28cc7187ad64f3755ae4c7a10bb380a0085d1733807dcf667c44d92d9f593d",
+  "auditor": {
+    "path": "project/audit_mask_bag_affinity_residual_r2_output.py",
+    "sha256": "2d772ebca7c7b332e5c5d607a4dfb31fe7fb3cac40bbdbf1394d5bc503e85b64",
+    "test_path": "tests/test_audit_mask_bag_affinity_residual_r2_output.py",
+    "test_sha256": "cec3307f2a205650a2589ef05d1dea4ce9db88f96965f05b29c61da65683d9f1",
+    "pinned_physical_helper_sha256": "3cc5feeed7fd8fddc2b630448e6bdbd7e18d9020770de850b1e580a40c173a17"
+  },
+  "verified_contract": [
+    "exact R2 protocol, scientific source, split, accepted cache and baseline hashes",
+    "prelaunch-only binding schema for future kernel version, wrapper, checkout and runtime source hashes",
+    "fixed 16-epoch image-label-only history and zero validation selection",
+    "T4x2 runtime with 186/185 validation shards",
+    "physical adapter checkpoint/history hashes",
+    "all 371 candidate-score payloads, SmoothMax probabilities, winners and prediction maps",
+    "wrapper source/cache/T4x2/output evidence",
+    "validation GT, consumer and BTXRD test locks"
+  ],
+  "tests": {
+    "focused_auditor_and_pinned_helper": "14 passed",
+    "combined_r2_runner_feature_training_and_auditors": "28 passed",
+    "py_compile": "passed",
+    "git_diff_check": "passed"
+  },
+  "future_binding_rule": "After R1 is terminal and an R2 claim is registered/pushed, create exactly one FROZEN_PRELAUNCH launch-binding artifact before kernel launch. The auditor rejects runtime source hashes not already present in the frozen R2 protocol.",
+  "coordination": {
+    "active_claim": "EXP-20260731-codex-r1-normal-prototype-v1",
+    "r1_last_known_state": "RUNNING",
+    "r2_claim_registered": false,
+    "r2_launch_authorized": false
+  },
+  "safety": {
+    "scientific_data_opened": false,
+    "prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "kaggle_polled_during_preparation": false
+  }
+}
