@@ -15,6 +15,15 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "project" / "audit_mask_bag_normal_prototype_r1_output.py"
 
 
+def test_auditor_is_bound_to_transport_corrected_kernel_version_3() -> None:
+    module = _load_module()
+    assert module.KERNEL_VERSION == 3
+    assert (
+        module.BOUND_WRAPPER_SHA256
+        == "a896d45dad1efb46d3f0b7544f01ca152e18a5e0f3eabd95f5f00414efe33114"
+    )
+
+
 def _load_module():
     spec = importlib.util.spec_from_file_location("r1_output_auditor", SOURCE)
     assert spec is not None and spec.loader is not None

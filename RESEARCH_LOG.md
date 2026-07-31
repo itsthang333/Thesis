@@ -8064,4 +8064,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   source/protocol/cache/split/baseline/fit settings remain byte-for-byte or
   hash-for-hash unchanged. No validation prediction/GT/test access or consumer
   training occurred; no monitor or repeated status polling was used.
+- **Progress — version-3 transport prelaunch gate passed:** dataset version 2
+  accepted both the original archive and the byte-identical
+  `square_corrected_baseline.zip.bin` payload and reached `ready`. The dataset
+  slug and kernel metadata remain unchanged; metadata SHA-256 is `22d87a06...`.
+  Because the private dataset file-list/download endpoint still denies 403, no
+  remote roundtrip hash is claimed: the version-3 wrapper must find exactly one
+  mounted `.zip.bin` and audit its frozen `8857eb6d...` bytes before safe
+  extraction, cache discovery or fitting.
+- The independent output auditor was rebound before any version-3 output exists
+  to report kernel version 3 and corrected wrapper SHA-256 `a896d45d...`.
+  Physical cache/OOF/selection/all-candidate-score/map checks and all GT locks
+  are unchanged. Auditor source/test SHA-256 values are respectively
+  `3cc5feeed7fd8fddc2b630448e6bdbd7e18d9020770de850b1e580a40c173a17`
+  and `f16cfcad5de0e815bfd8f0487fe4cc02fb338b6e2cf10461fe6c309f09c8c984`;
+  all ten auditor tests and the combined 63-test R1/cache suite pass (the latter
+  uses only the already documented local Python-3.9 `zip(strict=...)` shim;
+  Kaggle 3.12 must pass producer tests unmodified). Final version-3 prelaunch
+  audit SHA-256 is
+  `7beb631b8248e39602742b2664f84495da61ddaaa70241cf14a94259888e578b`.
+  Kernel version 3 remains unlaunched until this evidence and auditor binding
+  are committed and pushed. No scientific setting, prediction, GT/test access,
+  consumer training, status poll or monitor was added.
 

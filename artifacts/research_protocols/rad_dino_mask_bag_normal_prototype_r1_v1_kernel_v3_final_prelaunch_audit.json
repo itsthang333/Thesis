@@ -1,0 +1,73 @@
+{
+  "audit_id": "rad_dino_mask_bag_normal_prototype_r1_v1_kernel_v3_final_prelaunch",
+  "audited_utc": "2026-07-31T14:54:16Z",
+  "status": "READY_TO_LAUNCH_AFTER_COMMIT_PUSH",
+  "prepared_on_head": "657d3115635a5f42501283001c19e4ce97ce53e2",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1",
+  "next_kernel_version": 3,
+  "version2_error_audit_sha256": "6bddeb1fde87bd740eb5296d6a74f00b7d12484e3091668e62ad87a6465dcc05",
+  "transport_correction_audit_sha256": "7637e1542a65dccecd9ffb0047d8185b8474ba9bcae68cde6c9b52faaa091a01",
+  "wrapper": {
+    "path": "tmp/kaggle/mask_bag_normal_prototype_r1_v1/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1-bound.py",
+    "canonical_lf_sha256": "a896d45dad1efb46d3f0b7544f01ca152e18a5e0f3eabd95f5f00414efe33114",
+    "inverse_reconstructed_version2_sha256": "2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b",
+    "change": "one exact transport filename literal only",
+    "py_compile": "passed"
+  },
+  "metadata": {
+    "path": "tmp/kaggle/mask_bag_normal_prototype_r1_v1/kernel-metadata.json",
+    "sha256": "22d87a060b7d43952371ae11b2fc2db5c4f8f4a070af4ee58cab4cbf11a3dd9d",
+    "code_file": "btxrd-rad-dino-mask-bag-normal-prototype-r1-v1-bound.py",
+    "dataset_source": "itsthang333/btxrd-mask-bag-r1-baseline-transport-v1",
+    "kernel_source": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "machine_shape": "NvidiaTeslaT4"
+  },
+  "baseline_transport": {
+    "dataset_version": 2,
+    "dataset_status": "ready",
+    "payload_name": "square_corrected_baseline.zip.bin",
+    "payload_bytes": 1784924,
+    "payload_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da",
+    "remote_roundtrip_hash_claimed": false,
+    "runtime_authority": "the wrapper must find exactly one mounted payload/audit with the frozen physical hashes before safe extraction"
+  },
+  "scientific_contract": {
+    "source_commit": "d66c89958baa3344dbbaae6030a9ccd8ecec7b3a",
+    "execution_checkout": "3647997d0c18ad31057709462fd8c922d939fb4f",
+    "protocol_sha256": "dded9c638e142576fedf0ae4c8102fdf64198744a4949707865e50b7081f312b",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_independent_audit_sha256": "7d9f693dd5d1d9206b01cc2c8a0ed4aed497f9f17d9dedf670a97771b0f78334",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "scientific_change_from_versions_1_and_2": false
+  },
+  "independent_output_auditor": {
+    "source_path": "project/audit_mask_bag_normal_prototype_r1_output.py",
+    "source_sha256": "3cc5feeed7fd8fddc2b630448e6bdbd7e18d9020770de850b1e580a40c173a17",
+    "test_path": "tests/test_audit_mask_bag_normal_prototype_r1_output.py",
+    "test_sha256": "f16cfcad5de0e815bfd8f0487fe4cc02fb338b6e2cf10461fe6c309f09c8c984",
+    "change": "bind reported provenance to kernel version 3 and the corrected wrapper hash; physical audit logic unchanged",
+    "focused_result": "10 passed",
+    "combined_r1_cache_result": "63 passed under the previously documented Python-3.9 zip(strict) diagnostic shim; Kaggle Python 3.12 must run the producer's unmodified tests"
+  },
+  "required_runtime_order": [
+    "clone and source/protocol hash verification",
+    "frozen runtime installation",
+    "two-T4 real-convolution guard",
+    "split reconstruction",
+    "exact .zip.bin payload and transport-audit gates plus safe extraction",
+    "selector-cache discovery and physical gate",
+    "unmodified focused and whole-repository tests",
+    "image-label-only R1 fitting",
+    "371 prediction/all-candidate-score physical freeze and wrapper audit"
+  ],
+  "safety": {
+    "training_labels": "image_level_only",
+    "validation_gt_read": false,
+    "prediction_created_during_prelaunch": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "monitor_created": false
+  }
+}

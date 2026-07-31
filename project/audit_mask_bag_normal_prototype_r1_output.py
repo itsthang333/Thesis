@@ -14,10 +14,11 @@ import numpy as np
 
 
 KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1"
+KERNEL_VERSION = 3
 CHECKOUT_COMMIT = "3647997d0c18ad31057709462fd8c922d939fb4f"
 SOURCE_COMMIT = "d66c89958baa3344dbbaae6030a9ccd8ecec7b3a"
 PROTOCOL_SHA256 = "dded9c638e142576fedf0ae4c8102fdf64198744a4949707865e50b7081f312b"
-BOUND_WRAPPER_SHA256 = "2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b"
+BOUND_WRAPPER_SHA256 = "a896d45dad1efb46d3f0b7544f01ca152e18a5e0f3eabd95f5f00414efe33114"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 CACHE_FREEZE_SHA256 = "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c"
 CACHE_WRAPPER_AUDIT_SHA256 = (
@@ -623,7 +624,7 @@ def audit_r1_output(
         "audit_id": "independent_mask_bag_normal_prototype_r1_output_v1",
         "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND",
         "kernel": KERNEL,
-        "kernel_version": 1,
+        "kernel_version": KERNEL_VERSION,
         "bound_wrapper_sha256": BOUND_WRAPPER_SHA256,
         "prediction_freeze_sha256": sha256_file(freeze_path),
         "run_manifest_sha256": sha256_file(run_manifest_path),
