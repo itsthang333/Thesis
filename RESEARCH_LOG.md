@@ -8086,4 +8086,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Kernel version 3 remains unlaunched until this evidence and auditor binding
   are committed and pushed. No scientific setting, prediction, GT/test access,
   consumer training, status poll or monitor was added.
+- **Progress — R1 version 3 launched:** prelaunch evidence and the rebased
+  independent auditor were committed and pushed at `339904b`. Kaggle accepted
+  version 3 of the same private kernel with transport-corrected wrapper
+  canonical-LF SHA-256 `a896d45d...`, unchanged metadata SHA-256
+  `22d87a06...`, baseline transport dataset version 2 and the accepted
+  selector-cache kernel source. The only wrapper delta from version 2 is the
+  exact non-archive payload filename; the runtime still gates identical archive
+  bytes, safe extraction, baseline/cache/source/protocol/T4x2 contracts and
+  unmodified tests before the same image-label-only R1 fit. No launch-time
+  status check, recurring poll or monitor was created. Validation GT, consumer
+  and BTXRD test remain locked; the existing R1 claim stays `ĐANG LÀM` pending
+  a later bounded terminal check and direct-output audit.
 
