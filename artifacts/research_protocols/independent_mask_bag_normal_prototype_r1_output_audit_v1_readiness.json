@@ -1,0 +1,63 @@
+{
+  "audit_id": "independent_mask_bag_normal_prototype_r1_output_audit_v1_readiness",
+  "audited_utc": "2026-07-31T14:23:46.2154299Z",
+  "auditor": {
+    "path": "project/audit_mask_bag_normal_prototype_r1_output.py",
+    "sha256": "75a89ad885e8201a565a2a26aa9a401a76a9a0c5c89245cdcb29c411c19a38ba"
+  },
+  "bound_inputs": {
+    "bound_wrapper_sha256": "2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b",
+    "cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "final_prelaunch_audit_sha256": "f3921d1102f1b090d57dbf90ff3a3504336a60488d5e935c9733fb778bc5bfd9",
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1",
+    "kernel_version": 1,
+    "protocol_sha256": "dded9c638e142576fedf0ae4c8102fdf64198744a4949707865e50b7081f312b",
+    "scientific_source_commit": "d66c89958baa3344dbbaae6030a9ccd8ecec7b3a",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "coverage": {
+    "all_candidate_score_payloads": 371,
+    "all_oof_artifacts": 66,
+    "all_prediction_maps": 371,
+    "candidate_winner_and_smooth_pool_recomputed": true,
+    "crossfit_group_exclusion_recomputed": true,
+    "finite_k_one_standard_error_selection_recomputed": [8, 16, 32],
+    "hash_inventory_and_safe_relative_paths_verified": true,
+    "map_equals_selected_mask_times_bag_probability_verified": true,
+    "normal_prototype_shape_and_unit_norm_verified": true,
+    "source_protocol_cache_baseline_and_t4x2_verified": true
+  },
+  "pre_readiness_fail_closed_corrections": [
+    {
+      "boundary": "synthetic test data only",
+      "root_cause": "The first one-standard-error fixture did not actually put K=16 inside the best-K band, and its two validation bags had constant candidate count so rank correlation was undefined.",
+      "scientific_or_output_change": false
+    },
+    {
+      "boundary": "static surface test only",
+      "root_cause": "The string-level no-evaluator check rejected three evaluator filenames that the auditor deliberately names as post-freeze-only provenance exclusions; the corrected test checks the import AST instead.",
+      "scientific_or_output_change": false
+    },
+    {
+      "boundary": "pre-output source review",
+      "root_cause": "The first draft expected a nonexistent crossfit-exclusion key and compared the wrapper's 21 runtime source hashes to all 24 protocol hashes including three post-freeze evaluator files. The frozen producer schemas were inspected and the independent checks corrected before any R1 output was opened.",
+      "scientific_or_output_change": false
+    }
+  ],
+  "safety": {
+    "consumer_trained": false,
+    "output_downloaded_or_opened": false,
+    "test_evaluated": false,
+    "training_labels": "image_level_only",
+    "validation_gt_read": false
+  },
+  "status": "SOURCE_READINESS_PASS_WAITING_FOR_TERMINAL_R1_OUTPUT",
+  "tests": {
+    "focused": "9 passed",
+    "r1_and_cache_suite": "62 passed",
+    "test_sha256": "1a1a8ef366ff46a1f91add69e04ded68598ffa9e429b52b57761ef48638afe86",
+    "whole_repository": "353 passed",
+    "whole_repository_local_note": "Python 3.9 used only the already-documented zip(strict=...) compatibility shim; Kaggle Python 3.12 producer tests remain unmodified."
+  }
+}

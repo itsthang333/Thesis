@@ -7760,6 +7760,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   recurring polling or monitor was created. Consumer training and BTXRD test
   remain locked; status remains `ĐANG LÀM` pending a later bounded terminal
   check and direct-output audit.
+- **Progress — pause/resume and independent output-auditor readiness:** the
+  single bounded post-launch check before the user's pause found R1 version 1
+  still `RUNNING`. Work then stopped immediately: no repeat polling, monitor,
+  output download, evaluator, GT/test access or new launch occurred. On explicit
+  resume, central HEAD/origin and the complete `RESEARCH_LOG.md` blob remained
+  unchanged at `c3ab3b7`/`961f6cd1...`; this R1 claim is still the only active
+  overlapping claim. The GT-blind independent auditor is now frozen at
+  `project/audit_mask_bag_normal_prototype_r1_output.py`, SHA-256
+  `75a89ad885e8201a565a2a26aa9a401a76a9a0c5c89245cdcb29c411c19a38ba`.
+  It independently verifies all 66 OOF artifacts, group exclusion, the finite
+  `K={8,16,32}` count guard and one-standard-error choice, all 371 candidate
+  score payloads/maps, SmoothMax/bag probabilities/winners, selected-mask map
+  construction, final prototype geometry, source/protocol/cache/baseline hashes
+  and T4x2 evidence before authorizing any GT evaluator. Regression SHA-256 is
+  `1a1a8ef366ff46a1f91add69e04ded68598ffa9e429b52b57761ef48638afe86`;
+  nine focused tests, the 62-test R1/cache suite and the complete 353-test
+  worktree pass (the local Python-3.9 run uses only the documented
+  `zip(strict=...)` shim). Three pre-output technical corrections are preserved
+  in readiness evidence: two invalid synthetic fixtures; a string-level
+  no-evaluator test that mistook provenance filenames for imports; and draft
+  expectations for a nonexistent crossfit key/all-24 source set rather than the
+  producer's physical crossfit schema/21 runtime sources. None consumed R1
+  output or changed science. Readiness artifact
+  `artifacts/research_protocols/independent_mask_bag_normal_prototype_r1_output_audit_v1_readiness.json`
+  has SHA-256
+  `42e836045827310967f42e566c2f855b7ca0ccbcb2724a537601304d10e17528`.
+  Safety remains image-label-only, `validation_gt_read=false`,
+  `consumer_trained=false`, and `test_evaluated=false`.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 
