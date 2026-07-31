@@ -7308,3 +7308,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer training and BTXRD test remain locked pending terminal cache
   reproduction audit.
 
+### R1 normal-prototype arm protocol freeze while cache v4 runs
+
+- The single scheduled continuation check found selector-cache version `4`
+  still `RUNNING`; no repeat poll or monitor was created. R1 was not launched
+  and consumed no cache record. To avoid post-cache scientific choices, the
+  complete R1 arm contract is now frozen before the cache result at
+  `artifacts/research_protocols/rad_dino_mask_bag_normal_prototype_r1_v1.json`,
+  canonical-LF SHA-256
+  `dded9c638e142576fedf0ae4c8102fdf64198744a4949707865e50b7081f312b`.
+- The protocol fixes the already declared normal-only hierarchical spherical
+  prototypes, four normality features, finite `K={8,16,32}`, five whole-group
+  held-out folds, one-standard-error image-BCE rule, frozen absolute
+  candidate-count/probability Spearman `0.48137777593654113` plus `0.02`
+  shortcut guard, 16 final-only epochs, optimizer/loss weights, all seeds,
+  exact fold census and T4x2 `8/7` job allocation. Only image-level labels may
+  enter prototype/residual fitting or K selection.
+- Cache binding is intentionally a one-time execution input rather than an
+  unfrozen scientific choice: a launch wrapper may bind only a terminal direct
+  cache output whose freeze and wrapper audit pass all `3,352` physical-record,
+  `371` baseline-index/map reproduction, cohort and safety checks. Until that
+  SHA exists, the protocol status remains
+  `PREDECLARED_WAITING_FOR_SELECTOR_CACHE_BINDING` and launch is forbidden.
+- All `371` validation candidate scores/maps must be physically hashed and
+  prediction-frozen before the separate evaluator can receive the GT-derived
+  baseline table `a26143d0...` or open validation annotations. Evaluation then
+  uses the fixed `371/184/187`, `94/72/18`, complete misses and 10,000
+  complete-group bootstrap contract; consumer authorization requires all four
+  operational goals simultaneously. BTXRD test remains locked.
+- This protocol adds no new technique or source. It materializes the R1 row
+  already supported and logged by TPMIL and Attention MIL, and binds the exact
+  source/test hashes already covered by the R1 readiness audit. No prototype,
+  adapter, prediction, validation GT access or consumer training occurred.
+
