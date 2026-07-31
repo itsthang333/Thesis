@@ -8766,4 +8766,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `4497ab6e9a602a328c8a4d626e5741e138238cc2490159774117db7a4b68f8dd`.
   This preparation opened no scientific data/prediction/GT, trained no consumer,
   accessed no test and ran no heavy local compute.
+- **Bounded status after readiness push:** at `2026-07-31T17:13:15Z`, after the
+  static decision code/readiness and full regression were committed to central
+  branch `b66699a228edd5a8b0213222aed915ff5348d2a7`, one additional bounded check
+  still returned `RUNNING`. This is not a scientific result. No further poll or
+  monitor was created; terminal output, prediction freeze, validation GT,
+  consumer and BTXRD test remain unopened/locked.
 
