@@ -7834,6 +7834,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `6ca2c8b2603b85ce160764be3819e74b7567da1ae3a24e8ca2353ce133a56a21`.
   Version 2 remains unlaunched until this evidence is committed/pushed; no GT,
   consumer, test or prediction access occurred.
+- **Progress — R1 version 2 launched:** after the transport correction was
+  committed and pushed at `279fc57`, Kaggle accepted version 2 of the same
+  private kernel. It uses unchanged bound wrapper SHA-256 `2ee94b62...`, new
+  metadata SHA-256 `22d87a06...`, the dedicated baseline-only dataset and the
+  existing accepted selector-cache kernel source. No launch-time status poll,
+  recurring polling or monitor was created. The runtime must still prove the
+  exact archive/audit hashes, T4x2, source/protocol/cache/baseline contracts and
+  pass unmodified tests before any image-label-only fitting. Validation GT,
+  consumer and BTXRD test remain locked; the experiment remains `ĐANG LÀM`.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 
