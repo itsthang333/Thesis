@@ -1,0 +1,131 @@
+{
+  "artifact_id": "rad_dino_mask_bag_orbit_relation_r4_v1_kernel_version1_terminal_result_audit",
+  "created_utc": "2026-07-31T21:10:52Z",
+  "experiment_id": "EXP-20260801-codex-r4-orbit-averaged-relation-v1",
+  "status": "TERMINAL_COMPLETE_GATE_FAIL",
+  "kernel": {
+    "slug": "itsthang333/btxrd-rad-dino-mask-bag-orbit-relation-r4-v1",
+    "version": 1,
+    "terminal_status": "COMPLETE",
+    "direct_log_sha256": "9b352edb62d30c1cbaed45d9f19d7420184abc5fd379161c90b4347b258162ef"
+  },
+  "retrieval": {
+    "ignored_temp_root": "tmp/kaggle/mask_bag_orbit_relation_r4_v1_complete_20260801",
+    "official_inventory_files": 2591,
+    "local_files_including_direct_log": 2592,
+    "local_bytes_including_direct_log": 196271163,
+    "partial_files_remaining": 0,
+    "first_invocation_boundary": "The downloader received a relative destination. After 2,584 atomic files had completed, its resolved-path guard rejected one valid relative output path before writing it; no partial file or scientific audit was produced.",
+    "bounded_resume": "The same destination was identity-checked and resumed once with an absolute path. It retained 2,584 existing files, downloaded the remaining 7, wrote the direct log and did not query kernel status.",
+    "first_auditor_invocation_boundary": "The independent auditor was initially given the inventory root instead of the nested scientific output root and failed closed on a missing top-level prediction_freeze.json before GT or output serialization. The identical auditor/protocol/binding succeeded when invoked on the nested frozen output root."
+  },
+  "frozen_provenance": {
+    "scientific_source_commit": "84f3dca6bb58fa3dc2a0a48b5f58c05e33edff6e",
+    "execution_checkout": "2360a032b51f3e1f9b0b0ef9c9aa7ad9497385d3",
+    "protocol_sha256": "00d1ba1b7611c8320e87948d88dac06af87c0b29d1e62f875e79105fc41c0aae",
+    "launch_binding_sha256": "4315ec022fad086ac9ce179314d7a1fdfc59e53252a0573c0c96dffacbcac4fb",
+    "bound_wrapper_sha256": "4ff92612131ba461d9201b48a3d271f26079ef51afc78a71edc5dcf3a0d9bde9",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f"
+  },
+  "gt_blind_output_audit": {
+    "path": "artifacts/kaggle/rad_dino_mask_bag_orbit_relation_r4_v1/kernel_version1_complete_gt_blind_output_audit.json",
+    "sha256": "4ca0980554a9869b27f581c274108701aeba956df627ee07ba8f3482e5e9b1b7",
+    "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS",
+    "physical_output_bytes_verified": 77497835,
+    "prediction_freeze_sha256": "2cebdc7a9bd1f20a836c7f2452dd03ad8ee3365bb429faa75c5eba2b28a80855",
+    "candidate_score_manifest_sha256": "fad32a9d0b109aef9532e28dfc769ad67024678ce5db850228ea5d4e988006c0",
+    "wrapper_output_audit_sha256": "159b4697dce2cde0602f993c2c1bb1fd2698a2058c0ba15a59c708aaa6f0cf7a",
+    "validation_absolute_count_probability_spearman": 0.47015715758272214,
+    "count_probability_ceiling": 0.5013777759365411,
+    "view_swap_exact_records": 371
+  },
+  "evaluation": {
+    "evaluator_source_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261012,
+    "output_hashes": {
+      "evaluation_audit.json": "9e9cbd4421b4bf9b322b7a48d3939fa83a52a5193ead5158b9c104323ce9e509",
+      "gate_decision.json": "e9c4e79962294931819be1c78f36ab350178d0bb6c93b65ded7ddb2fbf826552",
+      "paired_comparison.json": "1bc4ae80b7669fdeda3db0a742053598e12e823840f9f62f59b12d62d06b1d53",
+      "per_image.csv": "c584c817b779b7c6bba8d829440084c8cd7d84d5b1719fb0de80e3da7d86251f",
+      "summary.json": "0b1535c7ec239c07ab66ec4c97ae671d7c171a76dd0479e95d0f3091507900be"
+    },
+    "image_auroc": 0.8201871657754012,
+    "dice": {
+      "overall": 0.23316225547412966,
+      "small": 0.1065303155319818,
+      "medium": 0.361635169733516,
+      "large": 0.3805707292455786
+    },
+    "baseline_dice": {
+      "overall": 0.2454823867797678,
+      "small": 0.11708057891440651,
+      "medium": 0.37713551529480416,
+      "large": 0.3894126471276201
+    },
+    "dice_delta_arm_minus_baseline": {
+      "overall": -0.012320131305638133,
+      "small": -0.010550263382424716,
+      "medium": -0.015500345561288141,
+      "large": -0.008841917882041484
+    },
+    "dice_delta_ci95": {
+      "overall": [-0.024904383846972345, -0.002666490276490879],
+      "small": [-0.029570119560916024, 0.0020073282589810047],
+      "medium": [-0.036807685335360545, -0.0013714285954327956],
+      "large": [-0.0238143505331155, 0.0]
+    },
+    "selected_to_oracle_regret": {
+      "overall": 0.17591327877447052,
+      "small": 0.11621916967437408,
+      "medium": 0.23251191469444304,
+      "large": 0.26125463817286193
+    },
+    "baseline_selected_to_oracle_regret": {
+      "overall": 0.16359314746883238,
+      "small": 0.10566890629194937,
+      "medium": 0.21701156913315486,
+      "large": 0.25241272029082046
+    },
+    "complete_misses": {
+      "overall": 56,
+      "small": 35,
+      "medium": 19,
+      "large": 2
+    },
+    "baseline_complete_misses": {
+      "overall": 53,
+      "small": 33,
+      "medium": 18,
+      "large": 2
+    }
+  },
+  "gate": {
+    "status": "FAIL",
+    "mechanism_pass": false,
+    "operational_pass": false,
+    "regret_reduced_subgroups": [],
+    "overall_selected_dice_no_regression": false,
+    "absolute_count_miss_association_no_increase": true,
+    "all_operational_dice_goals_pass": false,
+    "consumer_authorized": false
+  },
+  "scientific_conclusion": "Exact orbit averaging solves the predeclared view-swap instability and keeps count-probability dependence below the frozen ceiling, but the relational residual worsens selected-to-oracle regret and Dice in every tumor subgroup. R4 is rejected and is not adopted as an improvement.",
+  "coordination": {
+    "collaborator_branch": "origin/codex/research-sync-20260731",
+    "collaborator_head": "797f191fcae8a5bb0b4ccb920d1adf635af1eff8",
+    "collaborator_terminal_improvement_available": false,
+    "rich_gallery_technique_adopted": false
+  },
+  "safety": {
+    "training_labels": "image_level_only",
+    "predictions_frozen_before_validation_gt": true,
+    "validation_gt_read_after_gt_blind_audit": true,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}

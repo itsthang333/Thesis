@@ -9229,7 +9229,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 ### EXP-20260801-codex-r4-orbit-averaged-relation-v1
 
-- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Owner/status:** Codex main task on `research-wsss-improvement`;
+  `HOÀN THÀNH — GATE FAIL`.
 - **Registered:** `2026-07-31T19:57:24Z` (`2026-08-01` ICT); registration base
   commit `dc4222fb78b0e6f6c055c90fe83be6400ea923ac`. Exact claim commit will be
   recorded after this note is pushed. No R4 implementation, protocol, binding,
@@ -9387,4 +9388,73 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   extra monitor followed. Launch-record SHA-256 is
   `482b78e909d1b461f0ec7711b75e1816a0c65419aa2741c0dba3c0ec607d2f61`.
   Validation GT/test and consumer remain locked.
+- **R4 terminal retrieval and local tooling boundaries:** one later bounded
+  status check found kernel version 1 `COMPLETE`. The official-inventory
+  downloader ultimately retained all `2,591` official files plus its direct
+  log (`2,592` files, `196,271,163` bytes, zero `.part`); direct-log SHA-256 is
+  `9b352edb62d30c1cbaed45d9f19d7420184abc5fd379161c90b4347b258162ef`.
+  Its first invocation used a relative destination: after `2,584` atomic files
+  had completed, the resolved-path guard rejected one valid output path. No
+  partial file or scientific audit was produced. The same destination was
+  identity-checked and resumed once with an absolute path, retaining those
+  files and downloading only the remaining seven without another status query.
+  The first independent-auditor invocation then received the inventory root
+  instead of the nested scientific root and failed closed on a missing
+  top-level `prediction_freeze.json`; it opened no GT and serialized no audit.
+  The identical auditor/protocol/binding was rerun on the correct immutable
+  nested root. These are retrieval/invocation errors only, not scientific
+  retries or prediction changes.
+- **Independent GT-blind physical pass before evaluation:** audit
+  `artifacts/kaggle/rad_dino_mask_bag_orbit_relation_r4_v1/kernel_version1_complete_gt_blind_output_audit.json`
+  SHA-256
+  `4ca0980554a9869b27f581c274108701aeba956df627ee07ba8f3482e5e9b1b7`
+  has status `PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS`.
+  It reproduces exact wrapper `4ff92612...`, launch binding `4315ec02...`,
+  protocol `00d1ba1b...`, source commit `84f3dca`, split `85511ee1...`, cache
+  freeze `2f6290cd...` and T4x2 evidence, and physically verifies `371` score
+  payloads plus `371` maps (`77,497,835` bytes). All `371/371` diagnostic rows
+  are exactly invariant under view swap. Absolute candidate-count/probability
+  Spearman is `0.47015715758272214`, below the frozen ceiling
+  `0.5013777759365411`. Prediction-freeze and score-manifest SHA-256 are
+  `2cebdc7a9bd1f20a836c7f2452dd03ad8ee3365bb429faa75c5eba2b28a80855` /
+  `fad32a9d0b109aef9532e28dfc769ad67024678ce5db850228ea5d4e988006c0`.
+  Only after this audit passed did the evaluator open validation GT.
+- **Post-freeze R4 result:** the unchanged evaluator SHA-256 `ccc3a493...`
+  used the hash-locked corrected geometry-v3 rows `a26143d0...`, `10,000`
+  complete-group bootstrap replicates and seed `20261012`. R4 Dice
+  overall/small/medium/large is
+  `0.23316225547412966 / 0.1065303155319818 / 0.361635169733516 /
+  0.3805707292455786`, versus geometry-v3
+  `0.2454823867797678 / 0.11708057891440651 / 0.37713551529480416 /
+  0.3894126471276201`. Deltas are
+  `-0.012320131305638133 / -0.010550263382424716 /
+  -0.015500345561288141 / -0.008841917882041484`; CI95 values are
+  `[-0.02490438,-0.00266649] / [-0.02957012,+0.00200733] /
+  [-0.03680769,-0.00137143] / [-0.02381435,0]`. Thus overall and medium
+  regressions are independently nonzero at the paired-CI gate.
+- Selected-to-oracle regret worsens in every corresponding cohort from
+  `0.16359315/0.10566891/0.21701157/0.25241272` to
+  `0.17591328/0.11621917/0.23251191/0.26125464`; complete misses rise
+  `53→56` overall (`33→35` small, `18→19` medium, large unchanged at two).
+  Candidate-count/miss association improves `0.31350741→0.29424646` and image
+  AUROC `0.82018717` passes, but these isolated gates cannot rescue the failed
+  regret, Dice, subgroup, miss or operational-goal checks. Evaluation output
+  SHA-256 values for `evaluation_audit.json`, `gate_decision.json`,
+  `paired_comparison.json`, `per_image.csv` and `summary.json` are respectively
+  `9e9cbd4421b4bf9b322b7a48d3939fa83a52a5193ead5158b9c104323ce9e509`,
+  `e9c4e79962294931819be1c78f36ab350178d0bb6c93b65ded7ddb2fbf826552`,
+  `1bc4ae80b7669fdeda3db0a742053598e12e823840f9f62f59b12d62d06b1d53`,
+  `c584c817b779b7c6bba8d829440084c8cd7d84d5b1719fb0de80e3da7d86251f`
+  and `0b1535c7ec239c07ab66ec4c97ae671d7c171a76dd0479e95d0f3091507900be`.
+- **Terminal decision:** R4 is rejected. Exact orbit averaging successfully
+  removes R3's view-swap instability but does not make the relational residual
+  a useful selector; no part of R3/R4 relation fitting is adopted as a proven
+  performance improvement. Consolidated terminal audit is
+  `artifacts/kaggle/rad_dino_mask_bag_orbit_relation_r4_v1/kernel_version1_terminal_result_audit.json`,
+  SHA-256
+  `a18b6382a39161b0d3ffa0edb56a7930aca720226bbae5a68dcad903e5092bcc`.
+  Consumer authorization remains false, no consumer was trained, and BTXRD
+  test remains locked. The goal is not reached; the next claim must be a
+  non-relational, non-duplicate successor grounded in terminal evidence and
+  must not compete with the collaborator's active proposal-supply G0/G1 arm.
 
