@@ -7434,4 +7434,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   cache passes, the staged wrapper must bind the corrected cache source,
   correction protocol, freeze and wrapper-audit hashes before launch. R1 is
   still unlaunched and no cache binding exists.
+- The version-5 cache wrapper now checks out `5aed03f...`, records corrected
+  scientific source `c0e3862...` and correction protocol `be9c91b5...`, and
+  replaces exactly the affinity source/test entries in its fail-closed hash
+  table. Wrapper SHA-256 is
+  `db6b461dbc9e9afe1837ecee90df68b9423ad9d60c56f1120b9da1693b658a7a`;
+  metadata remains `85a88e98...`. Git comparison confirms those are the only
+  changed project/test files relative to the v4 checkout.
+- Version-5 prelaunch audit
+  `rad_dino_mask_bag_selector_cache_v1_kernel_v5_wrapper_audit.json`, SHA-256
+  `c71cdc0cec4879bff66ae74dd4ce455a49089966726a8e09fcda0465560e708e`,
+  reports `PRELAUNCH_PASS`. The wrapper still requires the exact T4x2 guard,
+  runs focused and unmodified Python-3.12 whole tests before compute, and must
+  pass all baseline reproduction/physical-cache checks. R1 remains locked.
 
