@@ -1,0 +1,64 @@
+{
+  "audit_id": "rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v1_final_prelaunch",
+  "created_utc": "2026-07-31T21:47:51Z",
+  "status": "FROZEN_PRELAUNCH_NOT_YET_PUSHED_TO_KAGGLE",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "claim_commit": "fad5ba66e72365ea12674aec41256f2e3bf582e9",
+  "scientific_source_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+  "execution_checkout": "56c658af1062c95d8ee4c4eae62ea20557bf49b9",
+  "kernel": {
+    "slug": "itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1",
+    "version": 1,
+    "machine_shape": "NvidiaTeslaT4",
+    "expected_physical_gpu_count": 2,
+    "metadata_sha256": "3a4943f7f91ffc8641074c49f59eafa60701e0ec7d1b12b6a611a30801e26850",
+    "bound_wrapper_sha256": "0b5ca61ba9170bba6301efad378a03acaf412f002eed3436c04ed9ac7c8d5a0b"
+  },
+  "binding": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v1_launch_binding.json",
+    "sha256": "0d280d4b56843366c18a1c370543c85a985415a4112019ee9f8b6e966f85ff47",
+    "template_sha256": "c4e41f81d4f874e137cefc9a80875ced07a92555289be7c7fbba9fe58f8a7b2d",
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true
+  },
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1.json",
+    "sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca"
+  },
+  "independent_output_auditor": {
+    "path": "project/audit_mask_bag_same_family_graph_s3_output.py",
+    "sha256": "787b68b144ec0759f75f186a5566e716f02db02f72689f674294b51b089d9913",
+    "requires_this_launch_binding": true,
+    "opens_validation_gt": false
+  },
+  "inputs": {
+    "dataset_sources": ["itsthang333/btxrd-mask-bag-r1-baseline-transport-v1"],
+    "kernel_sources": ["itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"],
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "validation_gt_included": false,
+    "test_included": false
+  },
+  "static_checks": {
+    "bound_wrapper_py_compile_pass": true,
+    "metadata_json_parse_pass": true,
+    "launch_binding_json_parse_pass": true,
+    "protocol_and_all_runtime_source_hashes_verified_by_binder": true,
+    "scientific_source_is_ancestor_of_execution_checkout": true,
+    "claim_visible_on_origin_before_binding": true,
+    "full_repository_regression": "435 passed in 17.01s",
+    "git_diff_check_pass": true
+  },
+  "launch_policy": {
+    "single_fixed_graph_execution": true,
+    "heavy_compute_platform": "Kaggle T4x2 only",
+    "output_must_freeze_before_validation_gt": true,
+    "no_rerun_or_sweep_if_gt_blind_gate_fails": true,
+    "consumer_requires_full_adoption_gate": true
+  },
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kaggle_launched": false
+}

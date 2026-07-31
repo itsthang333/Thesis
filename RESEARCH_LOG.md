@@ -9634,4 +9634,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `92ffcbbac0a8604c989ef51f83db9bdbc1418dff2027843572a8e62d5e324e38`.
   No binding, kernel push, scientific input/prediction, validation GT/test
   access or consumer training occurred in this static step.
+- **Version-1 launch binding frozen, not launched:** after wrapper/binder source
+  and readiness were committed/pushed at
+  `56c658af1062c95d8ee4c4eae62ea20557bf49b9`, the one-time binder bound that
+  exact execution checkout and positive kernel version `1`. Scientific source
+  `293b013...` and claim `fad5ba6...` are verified ancestors. Bound wrapper
+  SHA-256 is
+  `0b5ca61ba9170bba6301efad378a03acaf412f002eed3436c04ed9ac7c8d5a0b`;
+  launch-binding SHA-256 is
+  `0d280d4b56843366c18a1c370543c85a985415a4112019ee9f8b6e966f85ff47`;
+  metadata SHA-256 is
+  `3a4943f7f91ffc8641074c49f59eafa60701e0ec7d1b12b6a611a30801e26850`.
+- Bound-wrapper `py_compile`, metadata/binding JSON parse, exact three-field
+  inverse reconstruction, protocol/all-runtime-source verification and
+  claim/source ancestry checks pass. Final prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v1_final_prelaunch_audit.json`
+  is frozen before Kaggle push with SHA-256
+  `ee627c066f1036e199805f7eb33c6d80bc1cfe24cb8d085a85b0d6dda7edaf31`.
+  At this point no kernel push, scientific input/prediction, validation GT/test
+  access or consumer training has occurred.
 
