@@ -9715,3 +9715,40 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   scientific input execution, validation prediction/GT, consumer training or
   BTXRD test access occurred. S3 remains the sole active central selector claim.
 
+### EXP-20260801-codex-s3-same-family-graph-v1 — version-1 pregraph float-identity error
+
+- After waiting the full bounded monitor interval, exactly one status query at
+  about `2026-07-31T22:10:16Z` returned terminal `ERROR`. Direct Kaggle log was
+  retrieved separately with SHA-256
+  `d56049a8fe1f6615191413539f361a8fde2fdaa9afa2d9e2fc24ea36e0814ac4`
+  (`19,408` bytes). An initial official CLI output download timed out locally
+  after 124 seconds and left 147 files/29,752,885 bytes; its child downloader
+  was confirmed absent afterward. The incomplete baseline/runtime inventory is
+  not interpreted as a scientific result.
+- Log verifies checkout `56c658af...`, scientific source `293b013...`, protocol
+  `7d763617...`, focused tests `26/26`, full Kaggle tests `434 passed, 1 skipped`
+  and runner entry after the fail-closed T4x2 guard. The runner stopped in
+  `_write_pregraph_identity_audit` with
+  `RuntimeError: S3 alpha-zero or accepted-baseline identity failed`, before
+  graph candidate-score/prediction manifests, prediction freeze, wrapper audit
+  or evaluator.
+- Partial pregraph audit CSV SHA-256
+  `08ebf0ec7c53f9355c85c736b963d1b9a4a530b90511f89d08dc673d09f036ce`
+  contains all 371 validation identities. Crucially, alpha-zero candidate-vector
+  identity, accepted selected index and accepted map SHA each pass `371/371`.
+  Exact scalar equality passes only `104/371` selected logits, `158/371` bag
+  logits and `247/371` bag probabilities, leaving `81/371` entire rows exact.
+  Thus version 1 failed on strict `==` comparison of floating-point display
+  scalars across two GPU executions, while the complete candidate vectors,
+  discrete selector result and physical map identity were exact.
+- Tracked error audit
+  `artifacts/kaggle/rad_dino_mask_bag_same_family_graph_s3_v1/kernel_version1_error_audit.json`
+  is frozen before any correction with SHA-256
+  `8962636754fc06f7c0097de6a8866b91483e611279ec9c7d22a8bcc3f3aa0f78`.
+  Version 1 remains `LỖI` with no scientific Dice. A permitted
+  successor must be implementation-only: use a predeclared float32/ULP-grounded
+  scalar identity tolerance, serialize observed/accepted/delta/tolerance per
+  row, retain exact candidate-vector/index/map checks and change no graph,
+  candidate, protocol gate or scientific hyperparameter. Validation GT,
+  consumer and BTXRD test remain locked.
+

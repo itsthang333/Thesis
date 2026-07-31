@@ -1,0 +1,62 @@
+{
+  "audit_id": "rad_dino_mask_bag_same_family_graph_s3_v1_kernel_version1_error",
+  "created_utc": "2026-07-31T22:18:42Z",
+  "status": "ERROR_BEFORE_GRAPH_PREDICTION_FREEZE",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1",
+  "kernel_version": 1,
+  "execution_checkout": "56c658af1062c95d8ee4c4eae62ea20557bf49b9",
+  "scientific_source_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+  "protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "bound_wrapper_sha256": "0b5ca61ba9170bba6301efad378a03acaf412f002eed3436c04ed9ac7c8d5a0b",
+  "direct_log": {
+    "path": "tmp/kaggle/mask_bag_same_family_graph_s3_v1_error_20260801_0510/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1.log",
+    "sha256": "d56049a8fe1f6615191413539f361a8fde2fdaa9afa2d9e2fc24ea36e0814ac4",
+    "bytes": 19408
+  },
+  "pregraph_identity_audit": {
+    "path": "btxrd_mask_bag_same_family_graph_s3_v1/pregraph_identity_audit.csv",
+    "sha256": "08ebf0ec7c53f9355c85c736b963d1b9a4a530b90511f89d08dc673d09f036ce",
+    "bytes": 36222,
+    "records": 371,
+    "alpha_zero_identity_exact": 371,
+    "accepted_selected_index_exact": 371,
+    "accepted_selected_logit_exact": 104,
+    "accepted_bag_logit_exact": 158,
+    "accepted_bag_probability_exact": 247,
+    "accepted_map_sha256_exact": 371,
+    "accepted_row_exact": 81
+  },
+  "runtime": {
+    "t4x2_guard_passed_before_runner": true,
+    "focused_tests": "26 passed in 7.94s",
+    "full_repository_tests": "434 passed, 1 skipped in 18.25s",
+    "runner_started": true,
+    "runner_failed_at": "_write_pregraph_identity_audit",
+    "exception": "RuntimeError: S3 alpha-zero or accepted-baseline identity failed"
+  },
+  "error_boundary": {
+    "description": "The runner reproduced every alpha-zero candidate-logit vector, selected candidate index and selected-map SHA exactly, but required Python exact equality for three floating-point scalar display fields against the accepted earlier GPU run.",
+    "failed_rows": 290,
+    "graph_predictions_written": false,
+    "candidate_score_manifest_written": false,
+    "prediction_manifest_written": false,
+    "prediction_freeze_written": false,
+    "wrapper_output_audit_written": false,
+    "validation_gt_read": false,
+    "scientific_metric_available": false
+  },
+  "transport_note": {
+    "official_cli_output_attempt_timed_out_locally_after_124_seconds": true,
+    "partial_files_downloaded": 147,
+    "partial_bytes_before_direct_log": 29752885,
+    "partial_inventory_complete": false,
+    "direct_log_retrieved_separately": true,
+    "partial_runtime_files_not_used_as_scientific_result": true
+  },
+  "correction_policy": "Preserve version 1 as an error. Before any rerun, freeze an implementation-only ULP-grounded scalar identity tolerance and serialize observed/accepted/delta/tolerance evidence; do not change graph arithmetic, candidate vectors, protocol gates or scientific hyperparameters.",
+  "training_labels": "image_level_only",
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
