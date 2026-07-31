@@ -8642,9 +8642,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
 - **Registered:** `2026-07-31T16:55:41Z`; registration base commit
-  `43fd32d9629c182350bbf6a6672229c3f5ce5102`; exact registration commit will be
-  recorded and pushed in the immediate coordination-only successor before any
-  binding or launch.
+  `43fd32d9629c182350bbf6a6672229c3f5ce5102`; exact registration commit
+  `97db17c16938a8f842546076a26a52e58928b07b` was pushed to the central branch
+  before any binding or launch.
 - **Objective/hypothesis:** run the already predeclared matched causal pair to
   test whether hierarchical normalized SmoothMax within immutable proposal
   families and then across families reduces proposal-multiplicity shortcut and
