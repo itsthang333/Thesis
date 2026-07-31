@@ -1,0 +1,40 @@
+{
+  "readiness_id": "rad_dino_mask_bag_critical_relation_r3_v1_static_readiness",
+  "created_utc": "2026-07-31T18:37:23Z",
+  "status": "STATIC_READY_PROTOCOL_AND_GT_BLIND_AUDITOR_NO_BINDING_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-r3-critical-relation-v1",
+  "scientific_source_commit": "84867698dbc652957bd1a1430f4b9d32fa399119",
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_critical_relation_r3_v1.json",
+    "sha256": "f7253df27444c1b56706ac19646441a7b2d2a7374a4d6888b8e97d26c2c3fd03"
+  },
+  "independent_gt_blind_auditor": {
+    "path": "project/audit_mask_bag_critical_relation_r3_output.py",
+    "sha256": "3a1078ba21e9215890b50bee8c057d44c59cf95ea7536f2cef763dddadc1d953",
+    "test_path": "tests/test_audit_mask_bag_critical_relation_r3_output.py",
+    "test_sha256": "792d581686201c68fdfb975587a3962aa2717e11a7e0bd67eac54c95d1eb0de9",
+    "physical_helper_sha256": "3cc5feeed7fd8fddc2b630448e6bdbd7e18d9020770de850b1e580a40c173a17",
+    "requires_preoutput_launch_binding": true,
+    "recomputes_count_probability_spearman": true,
+    "recomputes_base_and_final_flip_agreement": true,
+    "opens_validation_gt": false
+  },
+  "tests": {
+    "focused_command": "pytest -q tests/test_audit_mask_bag_critical_relation_r3_output.py tests/test_run_mask_bag_critical_relation_arm.py tests/test_mask_bag_critical_relation_training.py tests/test_mask_bag_relational_selector.py",
+    "focused_result": "15 passed in 3.85s",
+    "full_repository_result": "404 passed in 14.80s",
+    "python39_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "remaining_before_launch": [
+    "fail-closed Kaggle wrapper",
+    "wrapper binder and synthetic inverse test",
+    "exact execution checkout and launch binding",
+    "final prelaunch audit and central-log push"
+  ],
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kaggle_launched": false
+}

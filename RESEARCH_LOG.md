@@ -9102,4 +9102,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   training, validation prediction, GT/test access or consumer training has
   occurred. Independent output-auditor closure and exact protocol/source hash
   freeze remain required before launch.
+- **R3 protocol and independent-auditor freeze (2026-08-01 ICT):** static review
+  found that the first runner froze only aggregate agreement values, which an
+  independent auditor could not reconstruct physically. Before protocol freeze
+  or scientific execution, the runner was corrected to write one
+  `gt_blind_diagnostics.csv` row per validation image with candidate count, bag
+  probability, frozen-base critical agreement and final selected-index
+  agreement. Corrected runner/test SHA-256 are
+  `bd8bca7d02802ce5881193f4ba0b1286a216bc4f4d077b34de3da5d14c9ae05c` /
+  `00fcd4fd20f7847a906918eed989659f4491b5be700f5dbb858c5a37ef3ccbe6`;
+  exact scientific source commit `84867698dbc652957bd1a1430f4b9d32fa399119`
+  was pushed before protocol creation. This is an auditability correction, not
+  a mechanism or gate change.
+- Exact protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_critical_relation_r3_v1.json`
+  SHA-256
+  `f7253df27444c1b56706ac19646441a7b2d2a7374a4d6888b8e97d26c2c3fd03`
+  now freezes the source closure, critical relation, one 16-epoch fit, T4x2
+  execution, physical predictions/diagnostics, both GT-blind gates and all
+  post-freeze mechanism/adoption gates. Independent auditor
+  `project/audit_mask_bag_critical_relation_r3_output.py` SHA-256
+  `3a1078ba21e9215890b50bee8c057d44c59cf95ea7536f2cef763dddadc1d953`
+  pins the generic physical-output helper `3cc5feee...`, requires a separate
+  frozen prelaunch binding, verifies cache/source/T4x2/checkpoint/history and all
+  371 physical scores/maps, and independently recomputes count/probability plus
+  base/final flip-agreement gates without an evaluator or GT. Auditor test
+  SHA-256 is
+  `792d581686201c68fdfb975587a3962aa2717e11a7e0bd67eac54c95d1eb0de9`.
+- Focused R3 suite passes `15/15`; full repository regression passes `404/404`
+  in 14.80 seconds under the documented Python-3.9 `zip(strict=...)` shim.
+  Static-readiness JSON SHA-256 is
+  `f85a68fd6a627ccfa8cb6b95e423776847d0732f8ec1ea06d0334525296cc5e3`.
+  Wrapper/binder/final binding remain unfinished, so no Kaggle kernel was bound
+  or launched; validation GT, consumer and BTXRD test remain locked.
 
