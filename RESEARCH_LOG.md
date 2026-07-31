@@ -9605,4 +9605,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `23bd41b07d2e99ccf33c4175eac291f5e1d5bc49e68d1a7613a010916bea4fc2`.
   Wrapper/binder remain unfinished; no binding, launch, scientific prediction,
   validation GT/test access or consumer training exists.
+- **Fail-closed wrapper/binder readiness:** unbound wrapper
+  `project/kaggle_wrappers/run_mask_bag_same_family_graph_s3_v1.py` canonical-LF
+  SHA-256
+  `c4e41f81d4f874e137cefc9a80875ced07a92555289be7c7fbba9fe58f8a7b2d`
+  fails closed at kernel version `0`, `LAUNCH_BINDING_READY=False` and
+  `CHECKOUT_COMMIT=UNBOUND`. It verifies the exact Git checkout/protocol/source,
+  T4x2, split reconstruction, cache and accepted baseline transport; runs the
+  focused plus full repository suites before inference; then physically checks
+  all 371 maps, score payloads, pregraph identity rows and graph diagnostics.
+- One-time binder
+  `project/bind_mask_bag_same_family_graph_s3_wrapper.py` SHA-256
+  `29e0fc57ca78564865136a65e89c92e7db0380b7b41227aa1708df8bb77d3636`
+  pins wrapper template SHA-256
+  `c4e41f81d4f874e137cefc9a80875ced07a92555289be7c7fbba9fe58f8a7b2d`,
+  changes exactly the three external launch fields, proves exact inverse
+  reconstruction, refuses existing output and re-verifies every protocol-bound
+  source hash at the future execution checkout. Wrapper/binder tests have
+  SHA-256
+  `304daa77c983e7f52f98e069ad6a8f64726fe13ee759eb6aa43682ae834efdfb` /
+  `7dcba537ceca01380271a7cf3a8542c9d37b37eb12e633cc471aafb6f8072a50`.
+- Focused S3/auditor/historical-binder closure passes `17/17`; full repository
+  regression passes `435/435` in 17.01 seconds under the documented Python-3.9
+  `zip(strict=...)` compatibility shim. `py_compile`, JSON parse and
+  `git diff --check` pass. Wrapper/binder readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_wrapper_binder_readiness.json`
+  is frozen before source commit/binding with SHA-256
+  `92ffcbbac0a8604c989ef51f83db9bdbc1418dff2027843572a8e62d5e324e38`.
+  No binding, kernel push, scientific input/prediction, validation GT/test
+  access or consumer training occurred in this static step.
 

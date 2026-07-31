@@ -1,0 +1,51 @@
+{
+  "readiness_id": "rad_dino_mask_bag_same_family_graph_s3_v1_wrapper_binder_readiness",
+  "created_utc": "2026-07-31T21:45:52Z",
+  "status": "UNBOUND_FAIL_CLOSED_WRAPPER_AND_BINDER_READY",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "scientific_source_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+  "wrapper": {
+    "path": "project/kaggle_wrappers/run_mask_bag_same_family_graph_s3_v1.py",
+    "canonical_lf_sha256": "c4e41f81d4f874e137cefc9a80875ced07a92555289be7c7fbba9fe58f8a7b2d",
+    "test_path": "tests/test_kaggle_wrapper_mask_bag_same_family_graph_s3_v1.py",
+    "test_sha256": "304daa77c983e7f52f98e069ad6a8f64726fe13ee759eb6aa43682ae834efdfb",
+    "kernel_version": 0,
+    "launch_binding_ready": false,
+    "checkout_commit": "UNBOUND",
+    "requires_t4x2": true,
+    "physical_outputs_checked": [
+      "371 prediction maps",
+      "371 candidate-score payloads",
+      "371 pregraph accepted-baseline identity rows",
+      "371 GT-blind graph diagnostic rows"
+    ]
+  },
+  "binder": {
+    "path": "project/bind_mask_bag_same_family_graph_s3_wrapper.py",
+    "sha256": "29e0fc57ca78564865136a65e89c92e7db0380b7b41227aa1708df8bb77d3636",
+    "test_path": "tests/test_bind_mask_bag_same_family_graph_s3_wrapper.py",
+    "test_sha256": "7dcba537ceca01380271a7cf3a8542c9d37b37eb12e633cc471aafb6f8072a50",
+    "finite_replacements": 3,
+    "inverse_reconstruction_required": true,
+    "refuses_existing_output": true,
+    "verifies_protocol_and_all_frozen_source_hashes_at_checkout": true
+  },
+  "tests": {
+    "focused_result": "17 passed in 4.34s",
+    "full_repository_result": "435 passed in 17.01s",
+    "python39_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "remaining_before_launch": [
+    "commit and push exact wrapper/binder source",
+    "bind exact positive kernel version and execution checkout once",
+    "freeze launch binding and final prelaunch audit",
+    "push binding/audit before Kaggle launch"
+  ],
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kaggle_launched": false
+}
