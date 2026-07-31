@@ -56,7 +56,7 @@ def test_zero_residual_objective_is_finite_and_drift_free() -> None:
 
 
 @pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch unavailable locally")
-def test_only_valid_residuals_contribute_to_drift() -> None:
+def test_only_valid_candidates_contribute_to_consistency_and_drift() -> None:
     torch = __import__("torch")
     module = _load_module()
     original = torch.tensor([[0.2, 100.0]], dtype=torch.float32)
@@ -75,7 +75,23 @@ def test_only_valid_residuals_contribute_to_drift() -> None:
     )
 
     assert details["residual_drift"].item() == pytest.approx(10.0)
-    assert details["consistency"].item() == 0.0
+    assert details["consistency"].item() > 0.0
+
+    _masked_total, masked_details = module.residual_arm_objective(
+        torch.tensor([[0.2, -7.0]], dtype=torch.float32),
+        torch.tensor([[0.2, 13.0]], dtype=torch.float32),
+        torch.tensor([[2.0, -19.0]], dtype=torch.float32),
+        torch.tensor([[4.0, 23.0]], dtype=torch.float32),
+        valid,
+        torch.tensor([1.0]),
+        module.ResidualObjectiveConfig(),
+    )
+    assert masked_details["residual_drift"].item() == pytest.approx(
+        details["residual_drift"].item()
+    )
+    assert masked_details["consistency"].item() == pytest.approx(
+        details["consistency"].item()
+    )
 
 
 @pytest.mark.skipif(not TORCH_AVAILABLE, reason="torch unavailable locally")

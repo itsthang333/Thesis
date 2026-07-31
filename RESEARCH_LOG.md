@@ -7204,3 +7204,42 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer training and BTXRD test remain locked pending terminal cache
   reproduction audit.
 
+### R1 readiness audit while selector-cache version 3 runs
+
+- The single scheduled continuation check found selector-cache kernel version
+  `3` still `RUNNING`. No repeat poll or monitor was created, and the running
+  kernel was not modified. R1/R2/S1 remain locked because no terminal cache
+  freeze or reproduction audit exists yet.
+- A local source-only R1 readiness run exposed one contradictory unit-test
+  assertion in `tests/test_mask_bag_residual_objective.py`. The implemented
+  and documented objective applies original/aligned-flip consistency to the
+  final candidate logits after adding the learned residual. The old test used
+  different valid residuals (`2` versus `4`) but incorrectly required zero
+  consistency; the exact Smooth-L1 probability discrepancy is positive. This
+  is a test-oracle error, not evidence that the objective should ignore the
+  residual signal.
+- The correction changes only that test. It now requires positive consistency
+  for the deliberately different valid residuals, then changes every invalid
+  base/residual value and proves both consistency and residual drift remain
+  identical. The scientific objective source remains byte-identical at
+  SHA-256
+  `7b176c955408fb14b59e0c901243be12791f1d68540484ab06e99f2ba14b92df`;
+  the corrected test SHA-256 is
+  `65f7831c99c5acd2cf619d4f37e2540114ceb1214981095e00e00974adca3fcc`.
+  No loss, feature, cohort, K candidate, selector rule or numerical
+  hyperparameter changed.
+- Under the available NumPy/Torch runtime, the corrected objective suite is
+  `4 passed`. The complete focused R1/cache suite is `43 passed, 4 failed`
+  under Python 3.9 solely because `zip(strict=...)` was introduced in Python
+  3.10; the four tracebacks are all that interpreter boundary. Re-running with
+  a local compatibility shim only for the unsupported `strict` keyword gives
+  `47 passed`, and the whole repository gives `333 passed`. This shim is local
+  diagnostic evidence only: the unmodified whole suite remains mandatory in
+  Kaggle's Python 3.12 runtime before any cache or arm execution is accepted.
+- The running version-3 cache still uses its already frozen checkout and is
+  unaffected by this later test correction. Its eventual terminal boundary
+  must be audited directly before deciding whether a new implementation-only
+  checkout is needed. No cache record, prototype, adapter or validation
+  prediction was created locally; validation GT, consumer training and BTXRD
+  test remained untouched.
+
