@@ -7087,4 +7087,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   and S1 invariant family-pooling experiments consume one identical,
   geometry-corrected representation. Heavy extraction will run only on Kaggle
   T4x2; consumer training and BTXRD test remain locked.
+- Kaggle accepted selector-cache kernel version `1` at
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1.
+  Metadata requests `NvidiaTeslaT4`, and runtime still fails closed unless two
+  physical Tesla T4 devices each complete a real convolution. No launch-time
+  status poll or monitor was created. R1/R2/S1 remain gated on terminal cache
+  reproduction audit; validation GT, consumer and BTXRD test remain locked.
 
