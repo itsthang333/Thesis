@@ -7739,6 +7739,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   validation GT path exists in the wrapper; `consumer_trained=false`,
   `test_evaluated=false`, and the kernel remains not launched until this final
   evidence is committed and pushed.
+- **Progress — R1 version 1 launched:** final prelaunch evidence was committed
+  and pushed at `5a3c659`. The direct prelaunch `kernels status` anti-duplicate
+  check returned Kaggle permission/slug denial because no accessible private
+  kernel yet existed; an authenticated `kernels list --mine` search then
+  returned `Not found`, so no running or prior R1 job was duplicated. Kaggle
+  accepted private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1` version `1` from
+  bound wrapper SHA-256
+  `2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b`
+  and metadata SHA-256
+  `fc290c04a913fd17dfded8ee71a933233af1b047afacdbceecc02d7571f108b2`.
+  URL:
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1.
+  The wrapper fails before fitting unless exactly two Tesla T4 devices execute
+  real convolutions, both unmodified focused and whole-repository suites pass,
+  and the exact accepted cache/baseline/source/protocol gates pass. It generates
+  and physically audits all 371 validation predictions and candidate-score
+  payloads without any evaluator or validation GT. No launch-time status poll,
+  recurring polling or monitor was created. Consumer training and BTXRD test
+  remain locked; status remains `ĐANG LÀM` pending a later bounded terminal
+  check and direct-output audit.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 
