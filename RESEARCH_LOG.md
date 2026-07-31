@@ -7603,4 +7603,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   unavailable before prediction freeze; consumer training is forbidden before
   the full operational gate passes; BTXRD test remains locked; no polling
   monitor is authorized.
+- **Progress — terminal cache/download boundary:** after the claim became
+  visible, the single status check found version 5 `COMPLETE`. The first direct
+  output download request was terminated only by the local client timeout after
+  604 seconds. Its new temp directory contains 617 files/125,689,801 bytes but
+  lacks `selector_cache_freeze.json`, `wrapper_output_audit.json`,
+  `selector_cache_manifest.csv`, and `run_manifest.json`; it is therefore an
+  explicitly incomplete transport, not cache evidence. No incomplete file was
+  accepted, no independent audit/binding ran, no GT/test was read and R1 stayed
+  unlaunched. The bounded transport correction is one retry of the same frozen
+  remote output into a new temp directory with Kaggle output page size 200 and
+  a longer client timeout; scientific source/protocol and every gate remain
+  unchanged.
 
