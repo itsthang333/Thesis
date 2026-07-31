@@ -7997,6 +7997,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   are frozen and independently audited before the Stage-B polygon evaluator;
   BTXRD test remains locked. No per-image oracle/source/lesion-size router,
   validation-area selection, threshold rescue or hidden GT input is allowed.
+- **Execution update:** the user explicitly authorized this independent
+  `wanwin` workstream without waiting for collaborator R1. Private/offline T4
+  kernels `wanwin/btxrd-rich-gallery-classifier448-supply` and
+  `wanwin/btxrd-rich-gallery-biomedclip-saliency` were launched after source,
+  split, model-weight, Internet-off and no-GT/no-test audits. The server-side
+  model bundle was download-backed with exact hashes for LayerCAM, SAM,
+  RAD-DINO, OpenCLIP 2.32 and its manifest.
+- **Pre-generation implementation audit:** the frozen anchor candidate grid is
+  320 px while the published classifier-448 gallery is 448 px. The first
+  merger implementation rejected this scientifically intended pair instead of
+  defining the required alignment. The merger now performs one fixed,
+  deterministic nearest-neighbor 448-to-320 mask projection before exact-mask
+  deduplication and records the two input grids plus the number of resized
+  images. The anchor prompt map remains the only prompt map used by the
+  geometry-v3 descriptor. Focused merger/geometry tests pass `9/9`; no
+  polygon, lesion size or source-dependent routing enters this transform.
+- **Fast-path decision:** the user prioritized the earliest actual-Dice answer
+  over matched reproduction overhead. The accepted collaborator Geometry-v3
+  checkpoint and private selector-cache dataset are inaccessible from the
+  independent `wanwin` account (Kaggle returns permission denied), so B0
+  reproduction and G0 transport are removed from the critical path. The first
+  result will be G1 only: the same square-corrected Geometry-v3 architecture
+  and fixed image-label training recipe on the merged gallery, compared with
+  the already audited published Geometry-v3 Dice. G0 remains optional only if
+  that checkpoint later becomes accessible or G1 is ambiguous. Mandatory
+  audit is narrowed to exact split/model hashes, complete gallery/mask counts,
+  no-GT/no-test and prediction freeze before the polygon evaluator.
 
 ### Central rich-gallery synchronization and exact R2 static protocol freeze
 
@@ -8279,4 +8306,66 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Lần đồng bộ này chỉ sửa `RESEARCH_LOG.md`; không cherry-pick code của nhánh
   cộng tác, không chạy compute, không truy vấn Kaggle, không mở validation GT
   hoặc BTXRD test và không train consumer.
+
+### Đồng bộ rich-gallery fast path và quy tắc học hỏi có gate (2026-07-31)
+
+- Nhánh cộng tác `origin/codex/research-sync-20260731` tiến từ `65bae85` đến
+  `e8683c3bf42cde99c781cb3bb528a6ab1333b327`. Bản log trung tâm tại
+  `bdbaec192d5899467082f9817ee0f198ca27765b` không đổi so với bản đầy đủ đã
+  đọc trước khi tạm dừng; toàn bộ delta log mới 27 dòng đã được đọc và nhập
+  nguyên văn vào `EXP-20260731-codex-rich-gallery-g0g1-v1`. Protocol cập nhật,
+  merger, candidate-supply runner và hai test file tại `e8683c3` cũng được đọc
+  trực tiếp để hiểu ranh giới kỹ thuật, không cherry-pick hay launch lại.
+- **Thông tin mới nhưng chưa phải cải tiến đã chứng minh:** hai kernel supply
+  riêng trên `wanwin` đã launch; G1-only là critical path vì checkpoint/cache
+  Geometry-v3 riêng không truy cập chéo tài khoản. Phép chiếu mask cố định
+  nearest-neighbor `448→320` trước exact dedup giải quyết bất tương thích grid và
+  giữ anchor prompt map cho mọi candidate. Đây là contract GT-blind cần thiết để
+  G1 chạy đúng, nhưng chưa có terminal actual Dice nên không được xem là kỹ thuật
+  cải thiện và chưa được đưa vào same-gallery R1/R2/S1.
+- **Quy tắc học hỏi được người dùng làm rõ:** log nhánh cộng tác được dùng cả để
+  tránh duplicate và để hai workstream tiếp nối nhau. Tuy nhiên chỉ kế thừa một
+  kỹ thuật vào hướng cải tiến vì hiệu năng sau khi có kết quả terminal, audit
+  đúng prediction-freeze/GT boundary và tốt hơn baseline liên quan trên metric/
+  gate chung đã predeclare. Code/protocol/oracle ceiling/kết quả đang chạy không
+  đủ. Kết quả âm và error chỉ dùng để loại hướng, thu hẹp không gian hoặc thiết
+  kế đối chứng. Khi G1 có kết quả, workstream hiện tại chỉ được kế thừa phần tốt
+  nếu actual Dice thực sự tăng; mọi successor phải nêu mã nguồn, exact artifact,
+  phần giữ/thay đổi và một hypothesis chưa được chạy, không sao chép G1.
+- Rule bền vững tương ứng đã được thêm vào `AGENTS.md`. Claim G1 vẫn thuộc
+  workstream cộng tác và `ĐANG LÀM`; không có G0/G1 cạnh tranh, status poll hay
+  monitor nào được tạo từ workstream hiện tại.
+
+### S1 exact matched-pooling static predeclaration (2026-07-31)
+
+- Exact protocol tĩnh
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1.json`
+  có SHA-256
+  `225edfdb4d66c2147b482ffc3857bf17024a9c683db45b1559c4bccd87b10008`.
+  Nó khóa hai arm standard normalized SmoothMax và hierarchical
+  family-balanced SmoothMax với cùng cache/baseline, CPU-created zero-residual
+  initial state, batches, optimizer, 16 epoch fixed-final, loss, validation
+  cohort và serialization; sole changed variable là bag pool. Standard chạy
+  T4:0, family-balanced chạy T4:1 và probe tám ảnh phải khớp candidate logits
+  trong `5e-6`. Mỗi arm phải freeze 371 prediction/candidate-score payload trước
+  pair freeze và trước mọi validation GT.
+- Protocol đặt S1 sau terminal audited R1 rồi R2, không claim/bind/launch và
+  tham chiếu claim riêng `EXP-20260731-codex-rich-gallery-g0g1-v1` để không
+  duplicate. Family/source balancing từ rich gallery chỉ có thể trở thành
+  successor nếu G1 sau này chứng minh actual Dice tốt hơn; oracle hoặc supply
+  readiness không đủ để thay đổi S1 same-gallery đã khóa.
+- JSON parse và cả 12 canonical source/test hash đều pass. `py_compile` pass;
+  focused runner/pooling/relational suite pass `14/14` trong existing
+  `btxrd-pseudomask` Python 3.9 environment. Lần gọi đầu bằng terminal-default
+  Python dừng ở pytest collection với `ModuleNotFoundError: numpy`; không test,
+  dữ liệu hay kết quả khoa học nào được mở. Không cài package hoặc sửa source;
+  rerun cùng suite bằng environment đã có. Readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1_readiness.json`
+  có SHA-256
+  `45f71a00a26633dfb37721ba7680f515d48a4890a23f05491463ba8f7756f7dd`.
+- R1 version 3 vẫn ở heartbeat cuối `RUNNING`; trong static preparation này
+  không poll lặp, không tải output, không mở scientific input/validation GT/test,
+  không train consumer và không chạy compute nặng local. S1 tiếp tục bị khóa sau
+  R1→R2; artifact này chỉ ngăn lựa chọn hậu nghiệm nếu finite campaign tiến tới
+  S1.
 

@@ -1,0 +1,45 @@
+{
+  "artifact_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1_readiness",
+  "created_utc": "2026-07-31T15:20:45Z",
+  "status": "STATIC_READY_NO_CLAIM_NO_BINDING_NO_LAUNCH",
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1.json",
+    "sha256": "225edfdb4d66c2147b482ffc3857bf17024a9c683db45b1559c4bccd87b10008",
+    "json_parse_passed": true,
+    "source_hash_entries": 12,
+    "source_hash_mismatches": 0
+  },
+  "focused_validation": {
+    "python": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe",
+    "python_version": "3.9.23",
+    "command": "python -m pytest -q tests/test_run_mask_bag_family_balanced_pair.py tests/test_mask_bag_pooling_residual_training.py tests/test_mask_bag_relational_selector.py",
+    "result": "14 passed in 3.71s",
+    "py_compile_passed": true
+  },
+  "discarded_local_invocation": {
+    "boundary": "pytest collection before any test or scientific-data access",
+    "error": "ModuleNotFoundError: No module named 'numpy'",
+    "cause": "the terminal default Python runtime has no NumPy",
+    "scientific_result": false,
+    "correction": "rerun the identical focused suite with the existing btxrd-pseudomask environment; no package installation or source change"
+  },
+  "coordination": {
+    "r1_kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1",
+    "last_bounded_status": "RUNNING",
+    "repeat_poll_or_monitor_created": false,
+    "r2_status": "STATIC_READY_UNCLAIMED_UNBOUND_UNLAUNCHED",
+    "s1_status": "STATIC_READY_UNCLAIMED_UNBOUND_UNLAUNCHED",
+    "separate_active_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "separate_claim_duplicated": false
+  },
+  "safety": {
+    "scientific_data_opened": false,
+    "training_or_inference_run": false,
+    "validation_prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  },
+  "next_gate": "R1 must become terminal and pass its independent physical output audit before evaluation; R2 must then be claimed, executed and audited before any S1 claim or launch"
+}

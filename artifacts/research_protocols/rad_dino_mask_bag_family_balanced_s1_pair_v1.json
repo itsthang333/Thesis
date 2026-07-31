@@ -1,0 +1,195 @@
+{
+  "protocol_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1",
+  "frozen_utc": "2026-07-31T15:20:45Z",
+  "status": "STATIC_PREDECLARED_NO_CLAIM_NO_LAUNCH_WAITING_FOR_R1_R2_DECISION",
+  "scientific_role": "third finite same-gallery selector arm and matched causal test of proposal-family-balanced aggregation",
+  "hypothesis": "When immutable proposal families have unequal candidate multiplicity, hierarchical normalized SmoothMax within families and then across families can reduce proposal-count shortcut and selected-to-oracle regret relative to an otherwise identical standard normalized-SmoothMax residual control.",
+  "campaign_position": {
+    "arm": "S1",
+    "required_predecessors": [
+      "EXP-20260731-codex-r1-normal-prototype-v1",
+      "R2 frozen RAD-DINO local-affinity residual"
+    ],
+    "launch_condition": "R1 and then R2 reach terminal independently audited results without OPERATIONAL_PASS; synchronize the central log and register a unique S1 claim before binding or launch",
+    "proposal_generation_reopened": false,
+    "rich_gallery_coordination": "EXP-20260731-codex-rich-gallery-g0g1-v1 is a separately owned proposal-supply experiment and must not be duplicated, cancelled or used to tune this same-gallery S1 pair"
+  },
+  "required_inputs": {
+    "selector_cache": {
+      "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+      "freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+      "wrapper_output_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+      "cohort": {
+        "train": 2981,
+        "validation": 371
+      },
+      "physical_records": 3352,
+      "validation_selected_indices_reproduced": 371,
+      "validation_map_hashes_reproduced": 371,
+      "train_masks_discarded": true,
+      "validation_masks_bitpacked": true,
+      "validation_gt_read": false,
+      "consumer_trained": false,
+      "test_evaluated": false
+    },
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline": {
+      "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+      "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+      "source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+      "protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+    }
+  },
+  "matched_pair": {
+    "arms": [
+      {
+        "name": "standard",
+        "pool": "normalized SmoothMax over all valid candidates"
+      },
+      {
+        "name": "family_balanced",
+        "pool": "normalized SmoothMax within each immutable proposal family followed by normalized SmoothMax across families"
+      }
+    ],
+    "matched_variables": [
+      "selector-cache descriptors and candidate order",
+      "frozen geometry-v3 base scorer",
+      "descriptor-only residual architecture",
+      "CPU-created zero-residual initial state bytes",
+      "epoch-wise batch permutation",
+      "AdamW optimizer and hyperparameters",
+      "epoch count and fixed-final selection",
+      "image-level BCE, aligned-flip consistency and residual-drift weights",
+      "validation cohort and prediction serialization"
+    ],
+    "sole_changed_variable": "standard_vs_family_balanced_bag_pool",
+    "family_identity": "immutable selector-cache family_ids derived from proposal source, prompt mode and component; never derived from validation GT, lesion size, candidate Dice or oracle rank",
+    "duplicate_semantics": "multiplicity within one family is normalized before equal family-level aggregation",
+    "cross_device_initial_probe": {
+      "records": 8,
+      "quantity": "candidate logits from the shared zero-residual state",
+      "maximum_absolute_delta": 0.000005,
+      "fail_closed": true
+    }
+  },
+  "fit": {
+    "baseline": "complete frozen geometry-v3 candidate scorer",
+    "trainable": "zero-initialized descriptor-only residual MLP per arm",
+    "epochs": 16,
+    "batch_size": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "hidden_dim": 128,
+    "seed": 42,
+    "bag_temperature": 0.2,
+    "supervision": "binary image-level label only",
+    "aligned_flip_consistency_weight": 0.1,
+    "residual_drift_weight": 0.001,
+    "epoch_selection": "fixed final epoch only",
+    "validation_loss_or_early_stopping": false,
+    "candidate_or_segmentation_target": false,
+    "hyperparameter_alternatives": false
+  },
+  "execution": {
+    "runtime": "Kaggle",
+    "accelerator": "NvidiaTeslaT4",
+    "physical_gpu_count": 2,
+    "parallel_arms": {
+      "standard": 0,
+      "family_balanced": 1
+    },
+    "real_cuda_work_required_on_each_device": true,
+    "deterministic_algorithms": true,
+    "cublas_workspace_config": ":4096:8",
+    "heavy_compute_local": false
+  },
+  "prediction_freeze": {
+    "per_arm_validation_predictions": 371,
+    "candidate_scores": "all immutable candidate logits in original gallery order for each arm",
+    "candidate_tta": "mean original and aligned-horizontal-flip logits",
+    "map": "selected bit-packed candidate mask multiplied by the arm bag probability",
+    "arm_freeze_before_pair_freeze": true,
+    "pair_freeze_must_bind": [
+      "scientific source commit and this protocol SHA-256",
+      "split, selector-cache freeze and manifest",
+      "baseline checkpoint",
+      "shared initial-state SHA-256",
+      "both adapter checkpoints and exact 16-epoch histories",
+      "both candidate-score and prediction manifests",
+      "cross-device probe delta and T4x2 runtime"
+    ],
+    "validation_gt_read_before_both_arm_freezes_and_pair_freeze": false
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "validation_cohort": {
+      "all": 371,
+      "tumor": 184,
+      "normal": 187,
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    },
+    "complete_misses_included": true,
+    "paired_complete_group_bootstrap_replicates": 10000,
+    "validation_gt_read_only_after_independent_physical_audit_of_both_arm_and_pair_freezes": true,
+    "causal_promotion": "family_balanced must improve frozen ranking/mechanism diagnostics over the matched standard arm; improvement shared by both arms is residual-head evidence, not family-balance evidence",
+    "mechanism_pass": {
+      "selected_to_oracle_regret_reduced_in_at_least_two_tumor_subgroups": true,
+      "overall_selected_dice_regression_allowed": false,
+      "absolute_overall_candidate_count_miss_association_increase_allowed": false
+    },
+    "operational_pass": {
+      "dice_minimum": {
+        "overall": 0.34024039,
+        "small": 0.17895493,
+        "medium": 0.51244178,
+        "large": 0.49370336
+      },
+      "overall_paired_complete_group_bootstrap_ci95_lower_bound_above_zero": true,
+      "tumor_subgroup_mean_decrease_allowed": false,
+      "complete_miss_increase_allowed": false,
+      "image_auroc_minimum": 0.75
+    },
+    "consumer_authorized_only_if_family_balanced_operational_passes": true
+  },
+  "literature_basis": [
+    {
+      "technique": "attention-based permutation-invariant multiple-instance learning",
+      "url": "https://proceedings.mlr.press/v80/ilse18a.html"
+    },
+    {
+      "technique": "permutation-invariant set functions",
+      "url": "https://proceedings.neurips.cc/paper_files/paper/2017/hash/f22e4747da1aa27e363d86d40ff442fe-Abstract.html"
+    }
+  ],
+  "scientific_source": {
+    "commit": "103445ad45fd90162dcc700f692aab9bca0273c6",
+    "canonical_lf_source_hashes": {
+      "project/run_mask_bag_family_balanced_pair.py": "e8bc06a7e2e3bd75de2f34fe32823e3d92e6237d6fdbcb1498ff4b8f991d6f59",
+      "project/models/mask_bag_pooling_residual_training.py": "8deaee980bd639fddc309eab9942147c8b0be8538951298e6e3c4fecb38c063f",
+      "project/models/mask_bag_relational_selector.py": "3cae8adbdf0a11384a891926570069ceefb0cda2de6dc9b5476ae19a1f17f790",
+      "project/models/mask_bag_residual_objective.py": "7b176c955408fb14b59e0c901243be12791f1d68540484ab06e99f2ba14b92df",
+      "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+      "project/run_mask_bag_normal_prototype_arm.py": "5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f",
+      "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+      "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+      "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+      "tests/test_mask_bag_pooling_residual_training.py": "c1858d832b83a7f1a148cb2bc57a1dd5fb8c4c0f8a6ba046635ddea5eaa39e71",
+      "tests/test_run_mask_bag_family_balanced_pair.py": "4aba83a50434cc35481937e1a673a84650efc9505d608cfff9117d7ecf395bb7",
+      "tests/test_mask_bag_relational_selector.py": "b3bb46a7e37562c2bc780e10480f1bcc358072adf9ac0037497a2fb06b30e1d8"
+    }
+  },
+  "prohibited": [
+    "S1 claim, binding or launch before terminal independently audited R1 and R2 decisions",
+    "duplicating or modifying EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "validation segmentation GT before both arm predictions and pair freeze pass independent physical audit",
+    "validation subgroup, Dice, candidate Dice or oracle rank during fit",
+    "inferred positive-candidate targets",
+    "post-hoc hyperparameter, epoch, pool, threshold or arm alternatives",
+    "consumer training before the complete operational gate passes",
+    "BTXRD test access"
+  ]
+}

@@ -74,6 +74,24 @@ Hai thực nghiệm không được dùng mã trùng nhau. Nếu scope thay đ�
 
 - Được phép tham khảo và kế thừa mọi kết quả đã có.
 - Khi kế thừa, phải ghi rõ mã thực nghiệm nguồn và exact artifact/hash được dùng.
+- Việc đọc và đồng bộ `RESEARCH_LOG.md` của nhánh cộng tác không chỉ để tránh
+  trùng lặp. Phải chủ động rút ra kỹ thuật, bằng chứng, kết quả dương/âm, error
+  boundary và insight có thể chuyển giao; dùng chúng để cải thiện giả thuyết kế
+  nhiệm hoặc thu hẹp không gian thử nghiệm chung.
+- Chỉ kế thừa một kỹ thuật vào mô hình/hướng cải tiến vì lý do hiệu năng khi nó
+  đã có kết quả terminal, được audit đúng prediction-freeze/GT boundary và tốt
+  hơn baseline liên quan theo metric/gate chung đã định trước. Code mới, protocol,
+  oracle ceiling, kết quả đang chạy hoặc kỳ vọng lý thuyết chưa đủ để kết luận
+  kỹ thuật đó tốt hơn. Kết quả âm/error vẫn được học để tránh lặp lại hoặc thiết
+  kế đối chứng, nhưng không được quảng bá như một cải tiến đã chứng minh.
+- Mục tiêu là hai workstream cùng tiến trên một chuỗi bằng chứng. Không chạy lại
+  nguyên implementation của thành viên khác; ưu tiên kế thừa phần đã chứng minh
+  hữu ích và đăng ký một thay đổi khoa học chưa được chạy, có giá trị thông tin
+  mới. Nếu kết quả đang chờ, có thể chuẩn bị tĩnh một hướng kế nhiệm khác biệt
+  nhưng không launch cạnh tranh.
+- Khi một insight được chuyển từ workstream này sang workstream khác, ghi rõ mã
+  thực nghiệm nguồn, commit/artifact/hash, phần được giữ lại, phần được thay đổi
+  và vì sao thay đổi đó không phải bản sao của thực nghiệm nguồn.
 - Không lặp lại thực nghiệm chỉ để “xác nhận lại” nếu không đăng ký một lý do mới,
   tiêu chí sai khác và giá trị thông tin dự kiến.
 - Nếu một thực nghiệm liên quan đang `ĐANG LÀM`, không chạy cạnh tranh. Có thể
