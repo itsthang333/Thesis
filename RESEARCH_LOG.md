@@ -9367,4 +9367,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `181d4fed5f91f72aa4f8da94eb4069bde193bc04e7a57f06bf5220be1955d140`.
   No real binding/launch or scientific output exists; GT/test and consumer stay
   locked.
+- **R4 real binding, prelaunch only:** one-time binder froze kernel version 1 to
+  execution checkout `2360a032b51f3e1f9b0b0ef9c9aa7ad9497385d3` after wrapper/binder
+  source commit `2360a03` was visible on central origin. Bound wrapper,
+  launch-binding and metadata SHA-256 are
+  `4ff92612131ba461d9201b48a3d271f26079ef51afc78a71edc5dcf3a0d9bde9` /
+  `4315ec022fad086ac9ce179314d7a1fdfc59e53252a0573c0c96dffacbcac4fb` /
+  `5834705b38130979148ea69ab842ce496c5e67320c98952bab89f3313ec33ca1`.
+  Exact inverse reconstruction, source closure and ancestry passed. Final
+  prelaunch audit SHA-256 is
+  `a1bec7958b0ba51bf25b3376c6dfd5230d90583c00a4eafb67d283f86e65f76d`.
+  Binding/audit must be pushed centrally before Kaggle; at this note no kernel
+  version exists and no GT/test/consumer/scientific output was opened.
 
