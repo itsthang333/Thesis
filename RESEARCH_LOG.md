@@ -7694,6 +7694,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   operationally passed, but R1 remains unbound and unlaunched until the newly
   announced collaborator log branch is fully synchronized and checked for an
   overlapping `ĐANG LÀM` claim.
+- **Progress — fail-closed R1 cache binder ready:** collaborator synchronization
+  found no overlapping active R1/cache claim. The binder at
+  `project/bind_mask_bag_normal_prototype_r1_cache.py`, SHA-256
+  `f949d56227f015518192ab536a6258a3e8226140cc38e0fd2a3b066d5cda9981`,
+  accepts only the exact independent audit SHA, re-verifies both physical cache
+  root hashes and their safety/cohort/reproduction contracts, verifies the
+  exact unbound wrapper template, and permits exactly the three predeclared
+  constant replacements with byte-exact inverse reconstruction. It refuses
+  pre-existing or aliased output paths and re-reads the written wrapper/audit.
+  Regression SHA-256 is
+  `f8f953218edaef60fefac413be4cd9fb7e90d0561f986b80199b353301814c2b`;
+  `py_compile` and all five binder tests pass. The 25-test binder/cache/auditor
+  suite passes with the already documented local Python-3.9 diagnostic shim;
+  without that shim, only the two known `zip(strict=...)` calls fail at the
+  interpreter boundary. Kaggle Python 3.12 must still pass the unmodified
+  tests before fitting. This is technical binding preparation only: no cache
+  record was consumed for fitting, no prediction/GT/test was opened, and R1
+  remains unbound and unlaunched pending commit/push of this binder evidence.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 
