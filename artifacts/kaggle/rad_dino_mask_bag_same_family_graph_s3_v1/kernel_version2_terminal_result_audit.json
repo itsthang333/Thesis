@@ -1,0 +1,137 @@
+{
+  "artifact_id": "rad_dino_mask_bag_same_family_graph_s3_v1_kernel_version2_terminal_result_audit",
+  "created_utc": "2026-07-31T23:11:44Z",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "status": "TERMINAL_COMPLETE_GATE_FAIL",
+  "kernel": {
+    "slug": "itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1",
+    "version": 2,
+    "terminal_status": "COMPLETE",
+    "terminal_evidence": "Authenticated Kaggle notebook UI: Version 2 of 2, successful, 4m 30s, GPU T4 x2",
+    "api_status_boundary": "Authenticated CLI/API status and output-list endpoints returned HTTP 401/403 before data; no kernel-state inference was made from those errors."
+  },
+  "retrieval": {
+    "method": "user-authorized authenticated Kaggle web Download output action after UI terminal proof",
+    "ignored_temp_root": "tmp/kaggle/mask_bag_same_family_graph_s3_v2_output_20260801_0610",
+    "results_zip_sha256": "1a4cf54c14c5cc93c33d9e64a24958cadf742456ffa79e667c3a0bb505e2b02e",
+    "results_zip_bytes": 1920599,
+    "zip_members": 749,
+    "zip_crc_pass": true,
+    "extracted_files": 749,
+    "first_evaluator_boundary": "The first invocation used the incomplete baseline copy retained by the S3 version-1 error output and failed on missing predictions/prediction_manifest.csv during baseline verification, before the evaluator GT boundary and before output serialization.",
+    "bounded_evaluator_correction": "Only the physical baseline root changed to the complete paired-geometry-v5 copy with the same frozen baseline and expected manifest hashes."
+  },
+  "frozen_provenance": {
+    "scientific_source_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+    "execution_checkout": "271e3f7b476671e6719c26c6263bc9624f9cd8d3",
+    "protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+    "launch_binding_sha256": "f4592f31b6173f2b8d5fe1abd8c4166b57ca3bd0e0fa6d14c97b56bd3c98d9dc",
+    "bound_wrapper_sha256": "1b07e044b068170a24e06c63095ad3867094a40ff2f0f0d4640bed44ef7cfa33",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f"
+  },
+  "gt_blind_output_audit": {
+    "path": "artifacts/kaggle/rad_dino_mask_bag_same_family_graph_s3_v1/kernel_version2_complete_gt_blind_output_audit.json",
+    "sha256": "d8fb1f74ff40bcc419566e7eaa2dd74ebe36cfd3f82ab4468028bc1fd7e6f627",
+    "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS",
+    "physical_output_bytes_verified": 76757769,
+    "prediction_freeze_sha256": "2e737e356b2f8785c61665099235873415d6f9a165d999578e7a53206a37a91f",
+    "candidate_score_manifest_sha256": "404904f834351394a64d17a92b60b813c1dabcffd2c673042d4dd8b83d5c6f73",
+    "wrapper_output_audit_sha256": "d2f15f49b9ca3151df8b387f0e707a6f70d08b9c484f19c5833db3685f46058b",
+    "validation_absolute_count_probability_spearman": 0.4836266033771249,
+    "count_probability_ceiling": 0.5013777759365411,
+    "cross_family_edges": 0,
+    "non_self_edges": 18441,
+    "isolated_candidates": 1012,
+    "view_swap_exact_records": 371
+  },
+  "evaluation": {
+    "evaluator_source_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261012,
+    "output_hashes": {
+      "evaluation_audit.json": "220ff04d5cca993f65383ead9c84bb25ae4f97596acb103b3461e863f3ecb7ce",
+      "gate_decision.json": "97cdb393acd7d89ca4e146fcce9bb6c8e0e81cbcca2304b6e1bba86d3a378901",
+      "paired_comparison.json": "7fd17c1a208f20deb2a05e3b1a83a3a84323016515db928b3e81ebe85e77e2ba",
+      "per_image.csv": "27ca3c3e74a02a95154fe7b021467d938f19d3c059a5090122112bc4460bfe2e",
+      "summary.json": "7765d1987755f16d1e40e2dc15a4dfb38b4f64ed032a788f1c5cb2a3f1a13c0b"
+    },
+    "image_auroc": 0.8103638688677052,
+    "dice": {
+      "overall": 0.2424364550818621,
+      "small": 0.10337489174368669,
+      "medium": 0.3819824010665648,
+      "large": 0.4104630574646339
+    },
+    "baseline_dice": {
+      "overall": 0.2454823867797678,
+      "small": 0.11708057891440651,
+      "medium": 0.37713551529480416,
+      "large": 0.3894126471276201
+    },
+    "dice_delta_arm_minus_baseline": {
+      "overall": -0.0030459316979057254,
+      "small": -0.013705687170719816,
+      "medium": 0.004846885771760589,
+      "large": 0.02105041033701373
+    },
+    "dice_delta_ci95": {
+      "overall": [-0.01946796082532792, 0.011803669419722097],
+      "small": [-0.03852680105435282, 0.0038369453710849883],
+      "medium": [-0.016963674669587765, 0.03144843639549812],
+      "large": [-0.031059894981996294, 0.07408481904188643]
+    },
+    "selected_to_oracle_regret": {
+      "overall": 0.16663907916673812,
+      "small": 0.1193745934626692,
+      "medium": 0.21216468336139427,
+      "large": 0.23136230995380672
+    },
+    "baseline_selected_to_oracle_regret": {
+      "overall": 0.16359314746883238,
+      "small": 0.10566890629194937,
+      "medium": 0.21701156913315486,
+      "large": 0.25241272029082046
+    },
+    "complete_misses": {
+      "overall": 49,
+      "small": 30,
+      "medium": 17,
+      "large": 2
+    },
+    "baseline_complete_misses": {
+      "overall": 53,
+      "small": 33,
+      "medium": 18,
+      "large": 2
+    }
+  },
+  "decision": {
+    "path": "artifacts/kaggle/rad_dino_mask_bag_same_family_graph_s3_v1/kernel_version2_postfreeze_decision.json",
+    "sha256": "077fc8d563c5a2f42d3f5fd9c6e409bf5147f94a6a4dcb2d51fcef2f88fc079c",
+    "status": "FAIL",
+    "generic_evaluator_status": "FAIL",
+    "medium_regret_improvement": 0.004846885771760595,
+    "medium_regret_gate_pass": true,
+    "s3_mechanism_pass": false,
+    "full_adoption_pass": false,
+    "consumer_authorized": false
+  },
+  "scientific_conclusion": "The fixed same-family graph improves medium and large mean Dice and regret, and recovers four net complete misses overall, but it regresses overall and small Dice and increases overall/small regret. The predeclared generic and full S3 gates fail, so S3 is rejected as a validated selector improvement and is not adopted or used to train a consumer.",
+  "coordination": {
+    "collaborator_branch": "origin/codex/research-sync-20260731",
+    "collaborator_head": "797f191fcae8a5bb0b4ccb920d1adf635af1eff8",
+    "collaborator_terminal_improvement_available": false,
+    "rich_gallery_technique_adopted": false
+  },
+  "safety": {
+    "training_labels": "image_level_only",
+    "predictions_frozen_before_validation_gt": true,
+    "validation_gt_read_after_gt_blind_audit": true,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "consumer_authorized": false,
+  "consumer_trained": false,
+  "decision_id": "mask_bag_same_family_graph_s3_decision_v1",
+  "evaluation_audit_sha256": "220ff04d5cca993f65383ead9c84bb25ae4f97596acb103b3461e863f3ecb7ce",
+  "evaluation_output_hashes": {
+    "gate_decision.json": "97cdb393acd7d89ca4e146fcce9bb6c8e0e81cbcca2304b6e1bba86d3a378901",
+    "paired_comparison.json": "7fd17c1a208f20deb2a05e3b1a83a3a84323016515db928b3e81ebe85e77e2ba",
+    "per_image.csv": "27ca3c3e74a02a95154fe7b021467d938f19d3c059a5090122112bc4460bfe2e",
+    "summary.json": "7765d1987755f16d1e40e2dc15a4dfb38b4f64ed032a788f1c5cb2a3f1a13c0b"
+  },
+  "full_adoption_pass": false,
+  "generic_evaluator_status": "FAIL",
+  "independent_output_audit_sha256": "d8fb1f74ff40bcc419566e7eaa2dd74ebe36cfd3f82ab4468028bc1fd7e6f627",
+  "protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "s3_mechanism_checks": {
+    "generic_mechanism_gate_pass": false,
+    "medium_selected_to_oracle_regret_reduced": {
+      "improvement": 0.004846885771760595,
+      "minimum_exclusive": 0.0,
+      "pass": true
+    }
+  },
+  "s3_mechanism_pass": false,
+  "status": "FAIL",
+  "test_evaluated": false
+}

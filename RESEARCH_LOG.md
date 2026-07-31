@@ -9460,7 +9460,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 ### EXP-20260801-codex-s3-same-family-graph-v1
 
-- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Owner/status:** Codex main task on `research-wsss-improvement`; `HOÀN THÀNH`
+  with terminal gate failure.
 - **Registered:** `2026-07-31T21:17:00Z` (`2026-08-01` ICT), after terminal R4
   evidence commit `28c53c6862e8c8025329fdbf6bf4924581a7a2c0` was pushed centrally.
   Exact claim commit is `fad5ba66e72365ea12674aec41256f2e3bf582e9`.
@@ -9895,4 +9896,42 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   evaluator, protocol, baseline per-image SHA, 10,000 replicates and seed
   `20261012` remain unchanged. This error/correction is recorded and pushed
   before retry; BTXRD test and consumer remain locked.
+- **Post-freeze S3 result:** the bounded corrected evaluator changed only the
+  physical baseline root to the complete paired-geometry-v5 copy; all expected
+  hashes, frozen arm/cache/split, evaluator SHA-256 `ccc3a493...`, baseline
+  per-image SHA-256 `a26143d0...`, 10,000 complete-group bootstrap replicates
+  and seed `20261012` remained fixed. It opened validation GT only after the
+  committed independent freeze audit. S3 Dice overall/small/medium/large is
+  `0.2424364550818621 / 0.10337489174368669 / 0.3819824010665648 /
+  0.4104630574646339`, versus accepted geometry-v3
+  `0.2454823867797678 / 0.11708057891440651 / 0.37713551529480416 /
+  0.3894126471276201`. Deltas are
+  `-0.0030459316979057254 / -0.013705687170719816 /
+  +0.004846885771760589 / +0.02105041033701373`; paired CI95 values are
+  `[-0.01946796,+0.01180367] / [-0.03852680,+0.00383695] /
+  [-0.01696367,+0.03144844] / [-0.03105989,+0.07408482]`.
+- Selected-to-oracle regret changes (baseline minus S3; positive is better) are
+  `-0.003045931697905735 / -0.013705687170719821 /
+  +0.004846885771760595 / +0.021050410337013742` for
+  overall/small/medium/large. Thus the explicit medium-regret condition passes
+  and large also improves, but overall and small regress. Complete misses fall
+  from `53/33/18/2` to `49/30/17/2`; image AUROC is
+  `0.8103638688677052`. Output hashes are evaluation audit `220ff04d...`, gate
+  `97cdb393...`, paired comparison `7fd17c1a...`, per-image `27ca3c3e...`, and
+  summary `7765d198...`.
+- **Terminal decision:** the generic evaluator and S3-specific hash-locked
+  decision both return `FAIL`: despite real medium/large gains, S3 misses every
+  operational Dice goal and violates overall/small no-regression. Decision
+  `artifacts/kaggle/rad_dino_mask_bag_same_family_graph_s3_v1/kernel_version2_postfreeze_decision.json`
+  has SHA-256
+  `077fc8d563c5a2f42d3f5fd9c6e409bf5147f94a6a4dcb2d51fcef2f88fc079c`.
+  Consolidated terminal audit
+  `artifacts/kaggle/rad_dino_mask_bag_same_family_graph_s3_v1/kernel_version2_terminal_result_audit.json`
+  has SHA-256
+  `6a03b7294c1cd168bf1967c30fa4f16fc8a72e983bd128b854a23c274a2349eb`.
+  The graph is not adopted as a validated selector improvement and no consumer
+  is trained. BTXRD test remains locked. The goal is not reached; any successor
+  must be separately claimed after a fresh collaboration-log sync and may use
+  the positive medium/large observation only as bounded terminal evidence, not
+  as permission to relabel S3 as successful or to tune on validation GT.
 
