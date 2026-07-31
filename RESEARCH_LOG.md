@@ -9179,4 +9179,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   committed and visible on central origin before the first Kaggle push. At this
   note no Kaggle version exists yet; no training/prediction, validation GT/test
   access or consumer training occurred.
+- **R3 launch:** after binding/audit commit `e0ef4d6` was visible on
+  `origin/research-wsss-improvement`, the exact bound payload was pushed once as
+  private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-critical-relation-r3-v1` version 1 on
+  Kaggle `NvidiaTeslaT4` (expected T4x2). Push succeeded; exactly one immediate
+  bounded status check returned `KernelWorkerStatus.RUNNING`. No output was
+  requested and no repeat poll/extra monitor was created. Launch-record
+  artifact SHA-256 is
+  `b3d5a331c59045fcb9896b1f1ff7a8a9bb8e91c2700ecf385678fa443092beb4`. Validation
+  GT, consumer and BTXRD test remain locked until terminal physical audit and
+  both GT-blind gates pass.
 
