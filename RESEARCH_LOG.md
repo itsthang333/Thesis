@@ -7252,3 +7252,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   guard and all safety locks. Its status is
   `SOURCE_READINESS_PASS_PENDING_SELECTOR_CACHE_GATE`, not launch approval.
 
+### Shared selector-cache version 3 preflight-test failure
+
+- The next single status check found selector-cache kernel version `3` at
+  terminal `ERROR`. Direct Kaggle output was downloaded once into a new
+  ignored directory and read completely. Its sole console log has SHA-256
+  `de0bcb43ab2a64514de9296648f3a8c5fc79cab56044d6cffcf74f8e9508a591`.
+- Exact checkout `dd3e9f4...`, scientific ancestry, runtime installation, the
+  T4x2 guard, transport safety/unpacking, train-gallery discovery, LF-to-CRLF
+  split reconstruction, unique current-mount BTXRD-root discovery and exact
+  RAD-DINO snapshot preparation all passed. The focused cache/geometry suite
+  then reported `44 passed` under Python 3.12 and PyTorch 2.5.1+cu121.
+- The whole-repository preflight reported `331 passed, 1 failed, 1 skipped`
+  with four warnings. Its sole failure was the already identified
+  `test_only_valid_residuals_contribute_to_drift`: observed consistency
+  `0.0036104973405599594` versus the contradictory expected `0.0`. The wrapper
+  stopped before invoking `build_mask_bag_selector_cache.py`, BTXRD image
+  opening, descriptor extraction, baseline reproduction or serialization.
+  Consequently no cache or scientific result exists; validation GT, consumer
+  and BTXRD test remain untouched, and every selector arm stays locked.
+- Machine-readable evidence is
+  `artifacts/kaggle/rad_dino_mask_bag_selector_cache_v1/kernel_version3_error_audit.json`.
+  Its canonical-LF SHA-256 is
+  `16364b1679c2b957c76a135bd49ea11f6ed17d18384953775d5f9d315bd1cee5`.
+  The only authorized correction is the test-only commit `d66c899...`, whose
+  corrected test SHA-256 is `65f7831c...`; the objective source remains
+  byte-identical at `7b176c95...`. The next wrapper must bind both that exact
+  checkout/test hash and the unchanged cache source/protocol, then rerun the
+  full preflight before the unchanged builder. No scientific mechanism or
+  literature claim changes.
+
