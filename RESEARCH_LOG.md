@@ -9379,4 +9379,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `a1bec7958b0ba51bf25b3376c6dfd5230d90583c00a4eafb67d283f86e65f76d`.
   Binding/audit must be pushed centrally before Kaggle; at this note no kernel
   version exists and no GT/test/consumer/scientific output was opened.
+- **R4 launch:** after binding/audit commit `a5f4b6d` was visible on central
+  origin, the exact payload was pushed once as private Kaggle kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-orbit-relation-r4-v1` version 1 on
+  `NvidiaTeslaT4` (expected T4x2). Push succeeded; one immediate bounded status
+  check returned `KernelWorkerStatus.RUNNING`. No output request, repeat poll or
+  extra monitor followed. Launch-record SHA-256 is
+  `482b78e909d1b461f0ec7711b75e1816a0c65419aa2741c0dba3c0ec607d2f61`.
+  Validation GT/test and consumer remain locked.
 

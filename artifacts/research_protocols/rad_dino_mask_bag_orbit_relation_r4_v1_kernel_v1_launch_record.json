@@ -1,0 +1,22 @@
+{
+  "record_id": "rad_dino_mask_bag_orbit_relation_r4_v1_kernel_v1_launch",
+  "launched_utc": "2026-07-31T20:17:25Z",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-orbit-relation-r4-v1",
+  "kernel_version": 1,
+  "url": "https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-orbit-relation-r4-v1",
+  "push_result": "Kernel version 1 successfully pushed",
+  "first_bounded_status": "KernelWorkerStatus.RUNNING",
+  "execution_checkout": "2360a032b51f3e1f9b0b0ef9c9aa7ad9497385d3",
+  "scientific_source_commit": "84f3dca6bb58fa3dc2a0a48b5f58c05e33edff6e",
+  "protocol_sha256": "00d1ba1b7611c8320e87948d88dac06af87c0b29d1e62f875e79105fc41c0aae",
+  "launch_binding_sha256": "4315ec022fad086ac9ce179314d7a1fdfc59e53252a0573c0c96dffacbcac4fb",
+  "bound_wrapper_sha256": "4ff92612131ba461d9201b48a3d271f26079ef51afc78a71edc5dcf3a0d9bde9",
+  "metadata_sha256": "5834705b38130979148ea69ab842ce496c5e67320c98952bab89f3313ec33ca1",
+  "machine_shape": "NvidiaTeslaT4",
+  "expected_physical_gpu_count": 2,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "output_downloaded": false,
+  "scientific_result_available": false
+}
