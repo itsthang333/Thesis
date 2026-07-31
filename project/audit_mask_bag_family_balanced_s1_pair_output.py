@@ -96,6 +96,16 @@ def _family_balanced_pool(
     return _smooth_pool(family_logits, temperature)
 
 
+def _float32_reduction_atol(expected: float) -> float:
+    """Bound cross-device float32 reduction drift without relaxing small logits."""
+
+    value = np.float32(expected)
+    if not np.isfinite(value):
+        raise ValueError("Float32 reduction reference must be finite")
+    four_ulps = 4.0 * abs(float(np.spacing(value)))
+    return max(2.0e-6, four_ulps)
+
+
 def _verify_launch_binding(
     binding: Mapping[str, Any], protocol: Mapping[str, Any]
 ) -> dict[str, str]:
@@ -267,7 +277,12 @@ def _verify_arm_validation(
             if mode == "standard"
             else _family_balanced_pool(logits, family_ids)
         )
-        _close(prediction["bag_logit"], expected_logit, name=f"{mode} bag logit", atol=2.0e-6)
+        _close(
+            prediction["bag_logit"],
+            expected_logit,
+            name=f"{mode} bag logit",
+            atol=_float32_reduction_atol(expected_logit),
+        )
         probability = float(prediction["bag_probability"])
         _close(probability, _sigmoid(expected_logit), name=f"{mode} bag probability", atol=1.0e-7)
         map_path = _safe_child(root / "predictions", prediction["map_path"])
@@ -446,6 +461,12 @@ def audit_s1_pair_output(
     return {
         "audit_id": "independent_mask_bag_family_balanced_s1_pair_output_v1",
         "status": "MATCHED_PAIR_PREDICTIONS_PHYSICALLY_VERIFIED_GT_BLIND",
+        "auditor_source_sha256": sha256_file(Path(__file__)),
+        "numeric_reconstruction_tolerance": {
+            "base_absolute": 2.0e-6,
+            "float32_ulps": 4,
+            "scope": "stored GPU float32 bag logit versus independent CPU float64 reconstruction",
+        },
         "kernel": binding["kernel"],
         "kernel_version": binding["kernel_version"],
         "bound_wrapper_sha256": binding["bound_wrapper_sha256"],

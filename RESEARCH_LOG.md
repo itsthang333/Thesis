@@ -8847,4 +8847,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tolerance from float32 representation rather than the observed metric, add
   regression tests and a machine-readable addendum, and pass the full physical
   audit before validation GT may be opened.
+- **GT-blind auditor correction frozen before rerun:** after the error record was
+  pushed at commit `b0818a7`, the sole numerical comparison change replaces the
+  fixed bag-logit tolerance with
+  `max(2e-6, 4*abs(spacing(float32(expected))))`. This retains the original
+  `2e-6` bound for small logits and allows at most four representable float32
+  steps for GPU-reduction versus CPU-float64 reconstruction; a regression test
+  explicitly rejects an eight-ULP perturbation. Corrected auditor/test SHA-256
+  are
+  `6ee254d184e062927d45ff1355df998adc0caba20147acd59cb4629687ce66ce` /
+  `1c8042416c282f4d72889d3e82bdc8848a95c1b4df3d97b625f3a9dea843515b`.
+  The auditor now self-records its source hash and exact tolerance contract;
+  every structural/hash/map/probability/provenance/safety check is unchanged.
+  Machine-readable post-output, pre-GT addendum
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1_postoutput_numeric_auditor_addendum.json`
+  has SHA-256
+  `095100c0d5b487ac0302e0b34574bc181eff8cdeba03b4c05904e987aef09237`.
+  `py_compile`, focused tests `8/8`, JSON parse, `git diff --check` and full
+  repository regression `394/394` in 16.60 seconds pass under the documented
+  local Python-3.9 `zip(strict)` diagnostic shim. Producer, predictions,
+  protocol, launch binding, GT boundary, consumer and test remain unchanged;
+  the corrected physical audit has not yet been rerun at this point.
 

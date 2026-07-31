@@ -1,0 +1,72 @@
+{
+  "addendum_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1_postoutput_numeric_auditor_addendum",
+  "created_utc": "2026-07-31T18:04:48Z",
+  "error_record_commit": "b0818a7",
+  "status": "FROZEN_GT_BLIND_AUDITOR_IMPLEMENTATION_CORRECTION",
+  "experiment_id": "EXP-20260731-codex-s1-family-balanced-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-family-balanced-s1-pair-v1",
+  "kernel_version": 1,
+  "protocol_sha256": "62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413",
+  "launch_binding_sha256": "9e77ef03d77162674bc1305440f05a09257ad4d6ac1c0157987c36a6030fe442",
+  "pair_prediction_freeze_sha256": "b393174c6cf8ce8a6aaea551ab36a1893280140529336a702d9b7aceb9b6af16",
+  "direct_log_sha256": "4f5cda2e390c1d1445f3849a7fcad2c9ed890f213ee2a22f6c4cfd3d352e6432",
+  "original_auditor_source_sha256": "d1f6bac4bbffc71df37d609c5fc92dd65d33d905f14bb93cf33cbb949c11e5d6",
+  "corrected_auditor_source_sha256": "6ee254d184e062927d45ff1355df998adc0caba20147acd59cb4629687ce66ce",
+  "original_auditor_test_sha256": "86ad491583ed6766e71ebc188dea03bcc23f934351ac29adf804017096ef82c7",
+  "corrected_auditor_test_sha256": "1c8042416c282f4d72889d3e82bdc8848a95c1b4df3d97b625f3a9dea843515b",
+  "failure_boundary": {
+    "image_id": "IMG001934.jpeg",
+    "pool_mode": "family_balanced",
+    "stored_gpu_float32_bag_logit": -10.748274803161621,
+    "independent_cpu_float64_bag_logit": -10.748272689228461,
+    "absolute_delta": 2.113933160075021e-06,
+    "original_absolute_tolerance": 2e-06,
+    "validation_gt_read": false
+  },
+  "complete_gt_blind_diagnostic": {
+    "validation_images_per_arm": 371,
+    "standard_max_float64_reconstruction_delta": 1.2513269211922307e-06,
+    "family_balanced_rows_above_original_tolerance": 1,
+    "family_balanced_second_largest_float64_reconstruction_delta": 1.3723830765144385e-06,
+    "family_balanced_rows_above_3e_6": 0,
+    "standard_max_pytorch_cpu_float32_delta": 1.9073486328125e-06,
+    "family_balanced_max_pytorch_cpu_float32_delta": 9.5367431640625e-07,
+    "standard_max_sigmoid_probability_delta": 8.53041076664951e-08,
+    "family_balanced_max_sigmoid_probability_delta": 8.157106268225078e-08
+  },
+  "corrected_rule": {
+    "formula": "max(2e-6, 4 * abs(spacing(float32(independent_expected_logit))))",
+    "base_absolute_tolerance": 2e-06,
+    "float32_ulps": 4,
+    "boundary_row_float32_spacing": -9.5367431640625e-07,
+    "boundary_row_corrected_tolerance": 3.814697265625e-06,
+    "rationale": "The producer stores a GPU float32 hierarchical logsumexp reduction while the independent auditor reconstructs from the frozen float32 candidate logits in CPU float64. Four representable float32 steps bound cross-device reduction drift; the original absolute tolerance remains unchanged for small-magnitude logits.",
+    "corruption_guard": "The regression test rejects an eight-ULP perturbation. Hash, schema, cohort, candidate order, argmax, probability, map, checkpoint, history, source, split, T4x2 and safety checks remain unchanged."
+  },
+  "changed_scope": [
+    "independent auditor bag-logit numerical comparison",
+    "auditor result self-identification",
+    "auditor regression test"
+  ],
+  "unchanged_scope": [
+    "producer source and runtime",
+    "scientific protocol",
+    "candidate logits",
+    "bag predictions and physical maps",
+    "training and checkpoint",
+    "validation cohort",
+    "evaluation protocol and gates"
+  ],
+  "pre_evaluation_safety": {
+    "training_labels": "image_level_only",
+    "validation_gt_read": false,
+    "baseline_per_image_opened": false,
+    "evaluator_run": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_tests": "8 passed"
+  }
+}

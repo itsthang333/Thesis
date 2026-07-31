@@ -163,6 +163,29 @@ def test_family_balanced_pool_is_independently_hierarchical() -> None:
     )
 
 
+def test_float32_reduction_tolerance_is_base_or_four_ulps() -> None:
+    module = _load_module()
+    assert module._float32_reduction_atol(0.25) == pytest.approx(2.0e-6)
+    expected = -10.748272689228461
+    tolerance = module._float32_reduction_atol(expected)
+    assert tolerance == pytest.approx(
+        4.0 * abs(float(np.spacing(np.float32(expected))))
+    )
+    module._close(
+        -10.748274803161621,
+        expected,
+        name="GPU float32 hierarchical reduction",
+        atol=tolerance,
+    )
+    with pytest.raises(ValueError, match="differs"):
+        module._close(
+            expected + 8.0 * abs(float(np.spacing(np.float32(expected)))),
+            expected,
+            name="corrupted hierarchical reduction",
+            atol=tolerance,
+        )
+
+
 @pytest.mark.parametrize("mode", ["standard", "family_balanced"])
 def test_each_arm_pool_scores_selection_and_maps_are_recomputed(tmp_path: Path, mode: str) -> None:
     module = _load_module()
