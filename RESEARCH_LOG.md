@@ -7145,3 +7145,49 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   R1/R2/S1, validation GT, consumer training and BTXRD test remain locked
   pending the terminal cache reproduction audit.
 
+### Shared selector-cache version 2 Kaggle-mount correction
+
+- A single continuation status check found selector-cache kernel version `2`
+  at terminal `ERROR`. Direct Kaggle output was downloaded into a new ignored
+  directory and read in full; the sole console log has SHA-256
+  `dd980b03fef452563da2800d8a8744df3a8f03c61b49fb7acd9baeed88f59a2c`.
+  Exact checkout `dd3e9f4...`, scientific-source ancestry, runtime installation,
+  the T4x2 real-convolution guard, transport safety/unpacking, train-gallery
+  discovery, canonical LF split verification and exact CRLF reconstruction
+  all passed.
+- Failure was `RuntimeError: BTXRD dataset root is missing:
+  /kaggle/input/btxrd-raw/BTXRD` at about 97.49 seconds. It occurred before
+  model download, pytest, image opening, descriptor extraction, baseline
+  reproduction or cache serialization. Thus no radiograph, validation GT or
+  BTXRD test was opened; no cache or scientific result exists, no consumer was
+  trained, and R1/R2/S1 remain unauthorized. The machine-readable error audit
+  is
+  `artifacts/kaggle/rad_dino_mask_bag_selector_cache_v1/kernel_version2_error_audit.json`,
+  canonical-LF SHA-256
+  `d3da6b9c783652a2e752ff4db55f2b91d0ec51354c6c302d8c0ef655eb0bbf46`.
+- Root cause is an implementation-only Kaggle mount convention mismatch. The
+  attached dataset is still exactly `itsthang333/btxrd-raw`, whose file listing
+  begins under `BTXRD/Annotations/...`, but the current runtime mounts it at
+  `/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD`; earlier successful
+  paired-geometry and independent-reproduction logs record that exact path.
+  The version-2 wrapper instead required the legacy short path
+  `/kaggle/input/btxrd-raw/BTXRD`.
+- The authorized version-3 repair changes only wrapper dataset-root discovery:
+  enumerate `BTXRD` directories beneath `/kaggle/input`, resolve/deduplicate
+  them, require both `images/` and `Annotations/`, accept exactly one valid
+  root, and fail closed otherwise. A synthetic current-mount test and an
+  ambiguous-two-root rejection test pass, as do `py_compile`, JSON parsing and
+  `git diff --check`. Corrected wrapper SHA-256 is
+  `0ac60591248d385bddf8aff6f26450feb6f40e0013b3c36f3aa993e1c1632e5e`;
+  metadata remains `85a88e98...`, protocol remains `ee810fd8...`, and the
+  scientific checkout/source remain `dd3e9f4.../61e64b3...`. Prelaunch audit
+  `rad_dino_mask_bag_selector_cache_v1_kernel_v3_wrapper_audit.json` reports
+  `PRELAUNCH_PASS` and has canonical-LF SHA-256
+  `beb136fa01d5dafa6ad9b91b32932092b657eadf03bb5a745edcc474d1b9f391`.
+- This path repair adds no research mechanism or new literature claim. The
+  frozen Attention MIL, Deep Sets, AffinityNet/AFA, WeCLIP, PatchCore and DSMIL
+  basis, candidate gallery, corrected baseline, cache schema and finite
+  R1/R2/S1 campaign are unchanged. The only authorized next action is the same
+  cache rerun on Kaggle T4x2; validation GT, consumer training and BTXRD test
+  remain locked.
+

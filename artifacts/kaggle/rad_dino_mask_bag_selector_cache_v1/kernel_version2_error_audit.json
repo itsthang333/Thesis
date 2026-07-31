@@ -1,0 +1,51 @@
+{
+  "audit_id": "rad_dino_mask_bag_selector_cache_v1_kernel_version2_error",
+  "audited_utc": "2026-07-31T11:29:50Z",
+  "status": "IMPLEMENTATION_ERROR_BEFORE_CACHE_BUILD",
+  "kernel": {
+    "id": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "version": 2,
+    "terminal_status": "ERROR",
+    "checkout_commit": "dd3e9f4689beb113fc7fff523a21e0bb7d5ca384",
+    "scientific_source_commit": "61e64b38992db5e4b7414d3fb4c64b7edc39c6aa",
+    "protocol_sha256": "ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489",
+    "wrapper_sha256": "25c8a98ae8f50744a8810d74dc5d66b91801042fe05687f599b13bc640015649",
+    "metadata_sha256": "85a88e983bfc4707e7b3abfb1222ebc44a80c026739cdb8d757c0a4b006f6d54",
+    "direct_log_path": "tmp/kaggle/selector_cache_v2_error_20260731/btxrd-rad-dino-mask-bag-selector-cache-v1.log",
+    "direct_log_sha256": "dd980b03fef452563da2800d8a8744df3a8f03c61b49fb7acd9baeed88f59a2c"
+  },
+  "passed_before_failure": {
+    "exact_git_checkout": true,
+    "scientific_source_ancestry": true,
+    "runtime_install": true,
+    "t4x2_guard": true,
+    "transport_safety_audit": true,
+    "validation_transport_unpacked": true,
+    "canonical_baseline_transport_unpacked": true,
+    "train_gallery_discovered": true,
+    "canonical_git_lf_split_verified": true,
+    "frozen_crlf_split_reconstructed": true
+  },
+  "failure": {
+    "boundary": "dataset-root check before model download, pytest, image opening, descriptor extraction, baseline reproduction or cache serialization",
+    "exception": "RuntimeError: BTXRD dataset root is missing: /kaggle/input/btxrd-raw/BTXRD",
+    "root_cause": "The wrapper assumed Kaggle's legacy short dataset mount, while the attached itsthang333/btxrd-raw dataset is exposed by the current mount convention at /kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD.",
+    "classification": "implementation-only Kaggle input mount-path mismatch",
+    "scientific_result_produced": false
+  },
+  "access_and_safety": {
+    "radiographs_opened": false,
+    "validation_gt_read": false,
+    "test_evaluated": false,
+    "consumer_trained": false,
+    "selector_cache_created": false,
+    "selector_arms_authorized": false
+  },
+  "authorized_correction": {
+    "method": "Search the Kaggle input tree for BTXRD directories, accept only a unique resolved directory containing both the lowercase images directory and the Annotations directory, and fail closed on zero or multiple valid roots.",
+    "legacy_mount_supported": "/kaggle/input/btxrd-raw/BTXRD",
+    "current_mount_supported": "/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD",
+    "scientific_contract_changed": false,
+    "new_research_mechanism": false
+  }
+}

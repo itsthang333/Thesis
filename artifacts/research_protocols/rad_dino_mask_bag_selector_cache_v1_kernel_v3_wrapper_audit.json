@@ -1,0 +1,46 @@
+{
+  "audit_id": "rad_dino_mask_bag_selector_cache_v1_kernel_v3_wrapper_audit",
+  "audited_utc": "2026-07-31T11:31:16Z",
+  "status": "PRELAUNCH_PASS",
+  "kernel": {
+    "id": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "target_version": 3,
+    "wrapper_path": "tmp/kaggle/mask_bag_selector_cache_v1/btxrd-rad-dino-mask-bag-selector-cache-v1.py",
+    "wrapper_canonical_lf_sha256": "0ac60591248d385bddf8aff6f26450feb6f40e0013b3c36f3aa993e1c1632e5e",
+    "metadata_canonical_lf_sha256": "85a88e983bfc4707e7b3abfb1222ebc44a80c026739cdb8d757c0a4b006f6d54",
+    "checkout_commit": "dd3e9f4689beb113fc7fff523a21e0bb7d5ca384",
+    "scientific_source_commit": "61e64b38992db5e4b7414d3fb4c64b7edc39c6aa",
+    "protocol_sha256": "ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489",
+    "version2_error_audit_sha256": "d3da6b9c783652a2e752ff4db55f2b91d0ec51354c6c302d8c0ef655eb0bbf46",
+    "machine_shape": "NvidiaTeslaT4",
+    "physical_gpu_count_required": 2,
+    "real_convolution_required_on_each_gpu": true
+  },
+  "correction": {
+    "scope": "wrapper-only fail-closed BTXRD dataset-root discovery",
+    "accepted_structure": "one resolved BTXRD directory beneath /kaggle/input containing both images/ and Annotations/",
+    "legacy_mount_supported": "/kaggle/input/btxrd-raw/BTXRD",
+    "current_mount_supported": "/kaggle/input/datasets/itsthang333/btxrd-raw/BTXRD",
+    "protocol_changed": false,
+    "scientific_source_changed": false,
+    "candidate_gallery_changed": false,
+    "baseline_changed": false,
+    "cache_schema_changed": false,
+    "selector_campaign_changed": false
+  },
+  "checks": {
+    "wrapper_py_compile": "PASS",
+    "current_mount_synthetic_unique_discovery": "PASS",
+    "duplicate_valid_roots_rejected": "PASS",
+    "resolved_path_deduplication": "PASS_BY_STATIC_INSPECTION",
+    "required_images_and_annotations_markers": "PASS_BY_STATIC_INSPECTION",
+    "metadata_json_parse": "PASS_UNCHANGED_FROM_V2",
+    "split_lf_to_crlf_reconstruction": "PASS_UNCHANGED_FROM_V2",
+    "complete_transitive_source_binding": "PASS_UNCHANGED_FROM_V2",
+    "t4x2_and_real_work_guard": "PASS_UNCHANGED_FROM_V2",
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "launch_decision": "AUTHORIZED_IMPLEMENTATION_ONLY_RERUN"
+}
