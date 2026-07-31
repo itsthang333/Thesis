@@ -8508,3 +8508,60 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tests và freeze đủ 371 maps/candidate scores trước khi có thể audit/evaluate.
   Validation GT, consumer và BTXRD test tiếp tục khóa.
 
+### S1 static audit-gap correction — no claim/no launch (2026-07-31)
+
+- Static review found that the original S1 prediction contract froze candidate
+  logits but did not physically freeze the immutable `family_ids`. Therefore an
+  independent auditor could reproduce standard normalized SmoothMax but could
+  not reproduce hierarchical family-balanced SmoothMax. This is an auditability
+  defect before launch, not a scientific result and not evidence that S1 is
+  better.
+- The source-only correction was committed and pushed at
+  `f3da1817ee3491f04e8c86335556762ebc675d8d`. Before parallel training, the S1
+  runner now writes one shared 371-row candidate-family manifest plus exact
+  candidate-index/nonnegative-family-ID payloads, then binds the manifest SHA-256
+  into both checkpoints, both arm freezes, the pair freeze and run manifest.
+  Runner/test SHA-256 are
+  `0102f79220d3dfb417eeb70c7dadf6b846044a6c881a3653110f33ecfd526b74` and
+  `50566421f5d1b2db564cfba0da8f46f8d391f91c5c87a504de1248385e15d010`.
+- The corrected exact protocol supersedes, but does not erase, protocol SHA-256
+  `225edfdb4d66c2147b482ffc3857bf17024a9c683db45b1559c4bccd87b10008`.
+  New protocol SHA-256 is
+  `62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413`;
+  JSON parse and all 12 canonical runtime/test source hashes pass. It was pushed
+  at `e6af4318078ecac8f35451fa05f395285350e46a`.
+- A new GT-blind independent physical auditor at
+  `project/audit_mask_bag_family_balanced_s1_pair_output.py` was committed and
+  pushed at `8ffd04c6ca7aabbfd0c4ba1175b1fb49b0f02b48`. Auditor/test SHA-256 are
+  `d1f6bac4bbffc71df37d609c5fc92dd65d33d905f14bb93cf33cbb949c11e5d6` and
+  `86ad491583ed6766e71ebc188dea03bcc23f934351ac29adf804017096ef82c7`.
+  It independently verifies the common family payloads, exact candidate order,
+  standard and hierarchical family-balanced pooling, selected argmax,
+  probabilities, maps, 16-epoch histories, pair/arm freezes, T4x2 runtime,
+  cache/protocol/source/launch binding and safety flags before any evaluator or
+  validation GT. Focused runner/pooling/relational/auditor suite passes `22/22`
+  in 4.13 s; `py_compile` passes.
+- Superseding readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1_readiness.json`
+  has SHA-256
+  `eda5f84a841aa5bb228d9a5a5ee2b032a4b1082ab728153baa2de663cc7dba5d`.
+  The previous readiness SHA-256
+  `45f71a00a26633dfb37721ba7680f515d48a4890a23f05491463ba8f7756f7dd`
+  remains recorded as superseded evidence.
+- Full local regression passes `380/380` in 13.88 s. As in earlier audits, the
+  Python 3.9 command used only the documented diagnostic shim that ignores the
+  unsupported `strict` keyword for built-in `zip`; it did not change scientific
+  source or the Kaggle runtime contract.
+- Coordination remains unchanged: R1 is terminal and rejected at its frozen OOF
+  count-shortcut gate; `EXP-20260731-codex-r2-affinity-residual-v1` version 1 is
+  still the active experiment and no post-launch status check or monitor was
+  performed during this S1 preparation. S1 remains unclaimed, unbound and
+  unlaunched until the terminal independently audited R2 decision satisfies the
+  predeclared transition. No scientific input, prediction, validation GT,
+  consumer or BTXRD test was opened and no heavy compute ran locally.
+- Result-gated learning remains binding: this correction improves auditability
+  only. Neither S1 nor collaborator G1 may be adopted as a performance
+  improvement until a terminal audited output is actually better on the common
+  predeclared metrics/gates; running code, oracle support and implementation
+  availability are insufficient.
+

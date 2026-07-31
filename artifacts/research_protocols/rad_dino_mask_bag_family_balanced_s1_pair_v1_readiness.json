@@ -1,20 +1,51 @@
 {
   "artifact_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1_readiness",
   "created_utc": "2026-07-31T15:20:45Z",
+  "superseded_utc": "2026-07-31T16:27:39Z",
   "status": "STATIC_READY_NO_CLAIM_NO_BINDING_NO_LAUNCH",
   "protocol": {
     "path": "artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1.json",
-    "sha256": "225edfdb4d66c2147b482ffc3857bf17024a9c683db45b1559c4bccd87b10008",
+    "sha256": "62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413",
     "json_parse_passed": true,
     "source_hash_entries": 12,
     "source_hash_mismatches": 0
   },
+  "scientific_source": {
+    "commit": "f3da1817ee3491f04e8c86335556762ebc675d8d",
+    "runner_sha256": "0102f79220d3dfb417eeb70c7dadf6b846044a6c881a3653110f33ecfd526b74",
+    "runner_test_sha256": "50566421f5d1b2db564cfba0da8f46f8d391f91c5c87a504de1248385e15d010"
+  },
+  "independent_output_audit": {
+    "source": "project/audit_mask_bag_family_balanced_s1_pair_output.py",
+    "source_sha256": "d1f6bac4bbffc71df37d609c5fc92dd65d33d905f14bb93cf33cbb949c11e5d6",
+    "test": "tests/test_audit_mask_bag_family_balanced_s1_pair_output.py",
+    "test_sha256": "86ad491583ed6766e71ebc188dea03bcc23f934351ac29adf804017096ef82c7",
+    "commit": "8ffd04c6ca7aabbfd0c4ba1175b1fb49b0f02b48",
+    "gt_blind": true,
+    "recomputes_standard_pool": true,
+    "recomputes_family_balanced_pool": true,
+    "recomputes_selection_probability_and_map": true,
+    "requires_shared_candidate_family_manifest": true
+  },
+  "audit_gap_correction": {
+    "supersedes_protocol_sha256": "225edfdb4d66c2147b482ffc3857bf17024a9c683db45b1559c4bccd87b10008",
+    "supersedes_readiness_sha256": "45f71a00a26633dfb37721ba7680f515d48a4890a23f05491463ba8f7756f7dd",
+    "gap": "The prior prediction freeze contained candidate logits but not immutable candidate family IDs, so an independent auditor could not reproduce hierarchical family-balanced SmoothMax.",
+    "correction": "Write one shared 371-row candidate-family manifest and exact candidate-index/family-ID payloads before parallel training, bind its SHA-256 in both checkpoints, both arm freezes, the pair freeze and run manifest, and independently recompute both pools before any GT access.",
+    "scientific_result": false,
+    "claim_or_launch_created": false
+  },
   "focused_validation": {
     "python": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe",
     "python_version": "3.9.23",
-    "command": "python -m pytest -q tests/test_run_mask_bag_family_balanced_pair.py tests/test_mask_bag_pooling_residual_training.py tests/test_mask_bag_relational_selector.py",
-    "result": "14 passed in 3.71s",
+    "command": "python -m pytest -q tests/test_audit_mask_bag_family_balanced_s1_pair_output.py tests/test_run_mask_bag_family_balanced_pair.py tests/test_mask_bag_pooling_residual_training.py tests/test_mask_bag_relational_selector.py",
+    "result": "22 passed in 4.13s",
     "py_compile_passed": true
+  },
+  "full_regression": {
+    "command": "python -c diagnostic builtins.zip shim followed by pytest -q",
+    "result": "380 passed in 13.88s",
+    "shim_scope": "Local Python 3.9 diagnostic compatibility only; ignores the unsupported strict keyword while preserving built-in zip behavior. Scientific source and Kaggle runtime are unchanged."
   },
   "discarded_local_invocation": {
     "boundary": "pytest collection before any test or scientific-data access",
@@ -25,9 +56,9 @@
   },
   "coordination": {
     "r1_kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1",
-    "last_bounded_status": "RUNNING",
+    "r1_status": "TERMINAL_REJECTED_AT_FROZEN_OOF_COUNT_SHORTCUT_GATE",
     "repeat_poll_or_monitor_created": false,
-    "r2_status": "STATIC_READY_UNCLAIMED_UNBOUND_UNLAUNCHED",
+    "r2_status": "EXP-20260731-codex-r2-affinity-residual-v1_RUNNING_KERNEL_VERSION_1_NO_POSTLAUNCH_STATUS_CHECK_YET",
     "s1_status": "STATIC_READY_UNCLAIMED_UNBOUND_UNLAUNCHED",
     "separate_active_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
     "separate_claim_duplicated": false
@@ -41,5 +72,6 @@
     "test_evaluated": false,
     "heavy_compute_local": false
   },
-  "next_gate": "R1 must become terminal and pass its independent physical output audit before evaluation; R2 must then be claimed, executed and audited before any S1 claim or launch"
+  "result_adoption_rule": "A collaborator or local technique is promoted as an improvement only after a terminal independently audited result is better on the common predeclared metrics/gates; running code, oracle support or implementation availability alone is not improvement evidence.",
+  "next_gate": "Wait for one meaningfully separated bounded R2 status check; if terminal, download and independently audit its GT-blind prediction freeze before evaluation. S1 remains unclaimed and unlaunched until the terminal R2 decision is synchronized and its predeclared launch condition is met."
 }
