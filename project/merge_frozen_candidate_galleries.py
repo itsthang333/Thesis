@@ -29,6 +29,33 @@ def _candidate_key(mask: np.ndarray) -> bytes:
     return np.packbits(binary.reshape(-1)).tobytes()
 
 
+def resize_binary_masks_nearest(
+    masks: np.ndarray, target_shape: tuple[int, int]
+) -> np.ndarray:
+    """Project a frozen gallery onto the anchor grid without using GT.
+
+    The mapping is explicit ``floor(output_index * source / target)`` nearest
+    sampling.  Keeping it here makes the 448->320 supply alignment immutable
+    and independently testable rather than relying on a library default.
+    """
+    values = np.asarray(masks, dtype=np.uint8)
+    if values.ndim != 3 or len(target_shape) != 2 or min(target_shape) <= 0:
+        raise ValueError("Masks/target shape are invalid for nearest resizing")
+    source_height, source_width = values.shape[1:]
+    target_height, target_width = (int(target_shape[0]), int(target_shape[1]))
+    if (source_height, source_width) == (target_height, target_width):
+        return values.copy()
+    y = np.floor(
+        np.arange(target_height, dtype=np.float64) * source_height / target_height
+    ).astype(np.int64)
+    x = np.floor(
+        np.arange(target_width, dtype=np.float64) * source_width / target_width
+    ).astype(np.int64)
+    y = np.clip(y, 0, source_height - 1)
+    x = np.clip(x, 0, source_width - 1)
+    return (values[:, y[:, None], x[None, :]] > 0).astype(np.uint8)
+
+
 def merge_payloads(
     anchor: dict[str, np.ndarray],
     addition: dict[str, np.ndarray],
@@ -39,16 +66,15 @@ def merge_payloads(
         raise ValueError("addition_namespace must be a nonempty source prefix")
     anchor_masks = np.asarray(anchor["sam_masks"], dtype=np.uint8)
     addition_masks = np.asarray(addition["sam_masks"], dtype=np.uint8)
-    if (
-        anchor_masks.ndim != 3
-        or addition_masks.ndim != 3
-        or anchor_masks.shape[1:] != addition_masks.shape[1:]
-    ):
-        raise ValueError("Candidate galleries must have aligned [N,H,W] masks")
+    if anchor_masks.ndim != 3 or addition_masks.ndim != 3:
+        raise ValueError("Candidate galleries must contain [N,H,W] masks")
     if np.asarray(anchor["prompt_map"]).shape != anchor_masks.shape[1:]:
         raise ValueError("Anchor prompt map does not match candidate geometry")
     if np.asarray(addition["prompt_map"]).shape != addition_masks.shape[1:]:
         raise ValueError("Addition prompt map does not match candidate geometry")
+    addition_input_shape = tuple(int(value) for value in addition_masks.shape[1:])
+    anchor_shape = tuple(int(value) for value in anchor_masks.shape[1:])
+    addition_masks = resize_binary_masks_nearest(addition_masks, anchor_shape)
 
     required = (
         "sam_scores",
@@ -126,6 +152,7 @@ def merge_payloads(
             len(anchor_masks) + len(addition_masks) - len(result["sam_masks"])
         ),
         "merged_count": int(len(result["sam_masks"])),
+        "addition_resized": int(addition_input_shape != anchor_shape),
     }
 
 
@@ -176,8 +203,10 @@ def main() -> None:
         expected_pseudo_manifest_sha256=args.addition_pseudo_manifest_sha256,
         expected_manifest_sha256=args.addition_candidate_manifest_sha256,
     )
-    if int(anchor_summary["image_size"]) != int(addition_summary["image_size"]):
-        raise ValueError("Candidate galleries use different output grids")
+    anchor_image_size = int(anchor_summary["image_size"])
+    addition_image_size = int(addition_summary["image_size"])
+    if anchor_image_size <= 0 or addition_image_size <= 0:
+        raise ValueError("Candidate gallery output grids must be positive")
     args.output_dir.mkdir(parents=True, exist_ok=False)
     output_rows: list[dict[str, object]] = []
     totals = {
@@ -187,6 +216,7 @@ def main() -> None:
         "addition_kept": 0,
         "duplicates_removed": 0,
         "merged_count": 0,
+        "addition_resized": 0,
     }
     maximum_candidates = 0
     for row in rows:
@@ -241,7 +271,7 @@ def main() -> None:
         output_rows,
         expected_image_names=expected,
         split=args.split,
-        image_size=int(anchor_summary["image_size"]),
+        image_size=anchor_image_size,
         pseudo_manifest_sha256=args.anchor_pseudo_manifest_sha256,
         selection_method="geometry_v3_unconditional_gallery_union",
         support_clip_kernel=int(anchor_summary["support_clip_kernel"]),
@@ -261,6 +291,13 @@ def main() -> None:
         ),
         "addition_pseudo_manifest_sha256": args.addition_pseudo_manifest_sha256,
         "addition_namespace": args.addition_namespace,
+        "anchor_image_size": anchor_image_size,
+        "addition_image_size": addition_image_size,
+        "addition_alignment": (
+            "identity"
+            if anchor_image_size == addition_image_size
+            else "fixed_nearest_neighbor_to_anchor_grid_before_dedup"
+        ),
         "anchor_prompt_map_for_all_candidates": True,
         "exact_mask_deduplication": True,
         "maximum_candidates": maximum_candidates,

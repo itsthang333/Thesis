@@ -10,7 +10,10 @@ import numpy as np
 PROJECT = Path(__file__).resolve().parents[1] / "project"
 sys.path.insert(0, str(PROJECT))
 
-from merge_frozen_candidate_galleries import merge_payloads  # noqa: E402
+from merge_frozen_candidate_galleries import (  # noqa: E402
+    merge_payloads,
+    resize_binary_masks_nearest,
+)
 
 
 def payload(masks: np.ndarray, source: str, prompt_value: float) -> dict[str, np.ndarray]:
@@ -69,6 +72,26 @@ class MergeFrozenCandidateGalleriesTests(unittest.TestCase):
                 bad,
                 addition_namespace="classifier448",
             )
+
+    def test_resizes_448_style_addition_to_anchor_before_dedup(self) -> None:
+        anchor = np.zeros((1, 4, 4), dtype=np.uint8)
+        anchor[0, :2, :2] = 1
+        addition = np.zeros((2, 8, 8), dtype=np.uint8)
+        addition[0, :4, :4] = 1
+        addition[1, 4:, 4:] = 1
+        merged, stats = merge_payloads(
+            payload(anchor, "layercam", 0.25),
+            payload(addition, "layercam", 0.75),
+            addition_namespace="classifier448",
+        )
+        self.assertEqual(merged["sam_masks"].shape, (2, 4, 4))
+        self.assertEqual(stats["duplicates_removed"], 1)
+        self.assertEqual(stats["addition_resized"], 1)
+        np.testing.assert_array_equal(merged["sam_masks"][0], anchor[0])
+        np.testing.assert_array_equal(
+            merged["sam_masks"][1],
+            resize_binary_masks_nearest(addition[1:], (4, 4))[0],
+        )
 
 
 if __name__ == "__main__":

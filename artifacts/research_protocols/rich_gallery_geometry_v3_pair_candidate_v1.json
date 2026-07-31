@@ -1,6 +1,6 @@
 {
   "protocol_id": "rich_gallery_geometry_v3_pair_candidate_v1",
-  "status": "STATIC_DESIGN_ONLY_WAITING_FOR_ACTIVE_R1_TERMINAL_COORDINATION",
+  "status": "EXECUTION_ACTIVE_ON_INDEPENDENT_WANWIN_KAGGLE",
   "scientific_question": "Does the accepted square-corrected geometry-v3 image-label selector convert a minimally enriched, unconditionally merged proposal gallery into actual Dice closer to the frozen fully-supervised reference?",
   "goal": {
     "primary": "minimize the frozen fully-supervised Dice gap rather than require weakly supervised Dice above 0.5",
@@ -41,6 +41,7 @@
     "anchor": "frozen LayerCAM plus BiomedCLIP component/SAM proposal gallery",
     "addition": "frozen 448px binary-classifier LayerCAM/SAM proposals",
     "merge": "unconditional append followed only by exact binary-mask deduplication",
+    "grid_alignment": "classifier-448 masks are deterministically nearest-neighbor projected onto the 320px anchor grid before exact-mask deduplication; the transform is fixed, global and GT-blind",
     "prompt_metadata": "the anchor LayerCAM prompt map scores every candidate so source-local saliency cannot act as a hidden router",
     "source_identity": "preserved only for audit and a separately predeclared later family-balanced arm",
     "candidate_cap": "bind the GT-blind exact maximum after complete train/validation generation; no truncation",
@@ -49,18 +50,19 @@
   },
   "execution_sequence": [
     {
+      "stage": "G1 matched geometry-v3 retraining",
+      "authorization": "fast-path primary run authorized by the user because the private accepted checkpoint is not accessible to the independent wanwin account; actual Dice is always evaluated",
+      "change": "same geometry-v3 model trained image-label-only on the same merged train gallery",
+      "frozen": "split, seed, fixed final epoch, optimizer, losses, square geometry, no GT model selection",
+      "purpose": "answer as quickly as possible whether the richer oracle support can become improved actual Dice under the best published selector family"
+    },
+    {
       "stage": "G0 frozen-selector transport",
+      "status": "deferred_outside_fast_path",
       "change": "candidate gallery only",
       "selector": "accepted geometry-v3 checkpoint and square-corrected descriptor projection unchanged",
       "fit": "none",
-      "purpose": "measure whether the existing learned scorer can exploit the new candidates without confounding from retraining"
-    },
-    {
-      "stage": "G1 matched geometry-v3 retraining",
-      "authorization": "run only after G0 is frozen/audited and regardless of proxy metrics; actual Dice is always evaluated",
-      "change": "same geometry-v3 model trained image-label-only on the same merged train gallery",
-      "frozen": "split, seed, fixed final epoch, optimizer, losses, square geometry, no GT model selection",
-      "purpose": "separate proposal-domain adaptation from proposal availability"
+      "purpose": "run only if the accepted checkpoint becomes accessible or G1 is causally ambiguous"
     }
   ],
   "evaluation": {
@@ -78,9 +80,9 @@
   },
   "coordination": {
     "active_related_claim": "EXP-20260731-codex-r1-normal-prototype-v1",
-    "launch_now": false,
-    "reason": "repository coordination forbids a competing related selector launch while R1 remains active; static code, tests and evidence preparation are allowed",
-    "next_action": "after R1 terminal result, synchronize the complete log, register a unique gallery-supply claim, push it to the central branch, then launch"
+    "launch_now": true,
+    "reason": "the user explicitly authorized the independent wanwin Kaggle workstream; its gallery-supply claim, account, payload and outputs are distinct from collaborator-owned work",
+    "next_action": "audit both running supply kernels, generate and freeze both galleries, then execute the direct G1 fast path; G0 is deferred unless needed"
   },
   "test_evaluated": false
 }

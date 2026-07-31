@@ -7997,4 +7997,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   are frozen and independently audited before the Stage-B polygon evaluator;
   BTXRD test remains locked. No per-image oracle/source/lesion-size router,
   validation-area selection, threshold rescue or hidden GT input is allowed.
+- **Execution update:** the user explicitly authorized this independent
+  `wanwin` workstream without waiting for collaborator R1. Private/offline T4
+  kernels `wanwin/btxrd-rich-gallery-classifier448-supply` and
+  `wanwin/btxrd-rich-gallery-biomedclip-saliency` were launched after source,
+  split, model-weight, Internet-off and no-GT/no-test audits. The server-side
+  model bundle was download-backed with exact hashes for LayerCAM, SAM,
+  RAD-DINO, OpenCLIP 2.32 and its manifest.
+- **Pre-generation implementation audit:** the frozen anchor candidate grid is
+  320 px while the published classifier-448 gallery is 448 px. The first
+  merger implementation rejected this scientifically intended pair instead of
+  defining the required alignment. The merger now performs one fixed,
+  deterministic nearest-neighbor 448-to-320 mask projection before exact-mask
+  deduplication and records the two input grids plus the number of resized
+  images. The anchor prompt map remains the only prompt map used by the
+  geometry-v3 descriptor. Focused merger/geometry tests pass `9/9`; no
+  polygon, lesion size or source-dependent routing enters this transform.
+- **Fast-path decision:** the user prioritized the earliest actual-Dice answer
+  over matched reproduction overhead. The accepted collaborator Geometry-v3
+  checkpoint and private selector-cache dataset are inaccessible from the
+  independent `wanwin` account (Kaggle returns permission denied), so B0
+  reproduction and G0 transport are removed from the critical path. The first
+  result will be G1 only: the same square-corrected Geometry-v3 architecture
+  and fixed image-label training recipe on the merged gallery, compared with
+  the already audited published Geometry-v3 Dice. G0 remains optional only if
+  that checkpoint later becomes accessible or G1 is ambiguous. Mandatory
+  audit is narrowed to exact split/model hashes, complete gallery/mask counts,
+  no-GT/no-test and prediction freeze before the polygon evaluator.
 
