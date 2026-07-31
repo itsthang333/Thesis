@@ -1,0 +1,74 @@
+{
+  "audit_id": "rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v2_final_prelaunch",
+  "created_utc": "2026-07-31T22:34:34Z",
+  "status": "FROZEN_PRELAUNCH_NOT_YET_PUSHED_TO_KAGGLE",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "version1_error_audit_sha256": "8962636754fc06f7c0097de6a8866b91483e611279ec9c7d22a8bcc3f3aa0f78",
+  "scientific_source_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+  "correction_source_commit": "ceb7003a29303b9840d1f30fd6378ffd964313e1",
+  "execution_checkout": "271e3f7b476671e6719c26c6263bc9624f9cd8d3",
+  "kernel": {
+    "slug": "itsthang333/btxrd-rad-dino-mask-bag-same-family-graph-s3-v1",
+    "version": 2,
+    "machine_shape": "NvidiaTeslaT4",
+    "expected_physical_gpu_count": 2,
+    "metadata_sha256": "3a4943f7f91ffc8641074c49f59eafa60701e0ec7d1b12b6a611a30801e26850",
+    "bound_wrapper_sha256": "1b07e044b068170a24e06c63095ad3867094a40ff2f0f0d4640bed44ef7cfa33"
+  },
+  "binding": {
+    "schema_version": 2,
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v2_launch_binding.json",
+    "sha256": "f4592f31b6173f2b8d5fe1abd8c4166b57ca3bd0e0fa6d14c97b56bd3c98d9dc",
+    "template_sha256": "774cae093545632ab71de07800fd3642669cd04c713bbcbb4168370e6e30f42d",
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true
+  },
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1.json",
+    "sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+    "scientific_graph_unchanged": true
+  },
+  "numeric_identity_addendum": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_posterror_numeric_identity_addendum.json",
+    "sha256": "41e88ae7011c3f994f7d47a6a9216730ba9448ccb6f9fc8599d277a0679f0d51",
+    "implementation_only_source_overrides": {
+      "project/run_mask_bag_same_family_graph_s3_arm.py": "30e3048a706127e0cea52892d0e682d97e0c81dc8aee2bd05c4254674fabf6db",
+      "tests/test_run_mask_bag_same_family_graph_s3_arm.py": "66a8f81a0dbb7c150a03d95f27693c4d96544c1858f2621f49591655a98d8440"
+    }
+  },
+  "independent_output_auditor": {
+    "path": "project/audit_mask_bag_same_family_graph_s3_output.py",
+    "sha256": "79591dff304dbe90621b226ff301af3094b8979827108eeb4d514875c22ceed4",
+    "schema2_launch_binding_static_verification_pass": true,
+    "runtime_source_hashes_verified": 17,
+    "opens_validation_gt": false
+  },
+  "inputs": {
+    "dataset_sources": ["itsthang333/btxrd-mask-bag-r1-baseline-transport-v1"],
+    "kernel_sources": ["itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"],
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "validation_gt_included": false,
+    "test_included": false
+  },
+  "static_checks": {
+    "bound_wrapper_py_compile_pass": true,
+    "metadata_json_parse_pass": true,
+    "launch_binding_json_parse_pass": true,
+    "parent_protocol_addendum_and_effective_source_hashes_verified": true,
+    "full_repository_regression": "441 passed in 16.65s",
+    "git_diff_check_pass": true
+  },
+  "launch_policy": {
+    "single_implementation_corrected_rerun": true,
+    "heavy_compute_platform": "Kaggle T4x2 only",
+    "output_must_freeze_before_validation_gt": true,
+    "no_tolerance_widening_or_scientific_change": true,
+    "consumer_requires_full_adoption_gate": true
+  },
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kaggle_launched": false
+}

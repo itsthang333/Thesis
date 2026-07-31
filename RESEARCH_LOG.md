@@ -9805,4 +9805,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `2669f50858648f0616158225739ad38ab459a249a045a0adceacd72e1d4b6352`.
   No version-2 binding/launch, prediction, validation GT,
   consumer or BTXRD test access occurred.
+- **Version-2 binding/final prelaunch frozen, not launched:** after corrected
+  wrapper/binder source was committed/pushed at
+  `271e3f7b476671e6719c26c6263bc9624f9cd8d3`, the one-time binder created a
+  schema-2 version-2 binding to that exact checkout. Bound wrapper SHA-256 is
+  `1b07e044b068170a24e06c63095ad3867094a40ff2f0f0d4640bed44ef7cfa33`;
+  launch-binding SHA-256 is
+  `f4592f31b6173f2b8d5fe1abd8c4166b57ca3bd0e0fa6d14c97b56bd3c98d9dc`;
+  unchanged metadata SHA-256 is
+  `3a4943f7f91ffc8641074c49f59eafa60701e0ec7d1b12b6a611a30801e26850`.
+- Bound-wrapper `py_compile`, metadata/binding JSON parse and independent
+  auditor schema-2 static verification pass; all 17 effective runtime hashes
+  reproduce from parent protocol plus the exact two addendum overrides. Final
+  prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_kernel_v2_final_prelaunch_audit.json`
+  is frozen before Kaggle push with SHA-256
+  `4c39b310680cbbe79c07a4dfcaf72cf1558a570878d499605bca23811da74502`.
+  No version-2 launch/prediction, validation GT, consumer or test access has
+  occurred.
 
