@@ -311,9 +311,13 @@ def main() -> None:
         raise ValueError("Addition mode cannot receive external saliency")
 
     env = os.environ.copy()
+    inherited_pythonpath = env.get("PYTHONPATH", "")
+    python_paths = [str(args.source_root / "project")]
+    if inherited_pythonpath:
+        python_paths.append(inherited_pythonpath)
     env.update(
         {
-            "PYTHONPATH": str(args.source_root / "project"),
+            "PYTHONPATH": os.pathsep.join(python_paths),
             "PYTHONUNBUFFERED": "1",
             "BTXRD_DISABLE_TQDM": "1",
             "HF_HUB_OFFLINE": "1",
