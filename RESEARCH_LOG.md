@@ -9135,4 +9135,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `f85a68fd6a627ccfa8cb6b95e423776847d0732f8ec1ea06d0334525296cc5e3`.
   Wrapper/binder/final binding remain unfinished, so no Kaggle kernel was bound
   or launched; validation GT, consumer and BTXRD test remain locked.
+- **R3 fail-closed wrapper/binder readiness (2026-08-01 ICT):** unbound wrapper
+  `project/kaggle_wrappers/run_mask_bag_critical_relation_r3_v1.py` canonical-LF
+  SHA-256
+  `c350238ad69231e6714c12d8c7cd8b7fc38b5d2a1702c22a55a0ed7ac6b6aa2e`
+  retains `KERNEL_VERSION=0`, `LAUNCH_BINDING_READY=False` and checkout
+  `UNBOUND`. It reconstructs the exact frozen split, verifies the transported
+  accepted baseline and cache, requires real T4x2 CUDA work, runs the frozen
+  source/tests/one R3 fit, and checks 371 physical maps, score payloads and
+  per-image GT-blind diagnostic rows before writing its wrapper audit. Wrapper
+  test SHA-256 is
+  `076aff8e42a681c2bddbb32f8af852442785688782d129c95b23e0db2f27d48a`.
+- One-time binder
+  `project/bind_mask_bag_critical_relation_r3_wrapper.py` SHA-256
+  `0bd3b2be99049eff89a36c375089221863e5cdee25e657b9ae3a12895d1a93d7`
+  performs exactly three external replacements, requires exact inverse
+  reconstruction, verifies protocol and every frozen source hash at the chosen
+  execution checkout, refuses existing outputs and emits the schema already
+  required by the independent auditor. Binder test SHA-256 is
+  `ad6b0685df2ce88aa482abc8e83460e0c518ac6de5bb9d6b7c0cafb4475b1de1`.
+  Focused wrapper/binder/auditor tests pass `7/7`; full regression passes
+  `408/408` in 15.27 seconds under the documented Python-3.9 compatibility
+  shim. Readiness JSON SHA-256 is
+  `3ded95b79fb9a5f4822d8c873a00f4fddd963f95864e2be636f58349e720b952`.
+  No real binding or launch exists yet; GT/test and consumer remain locked.
 

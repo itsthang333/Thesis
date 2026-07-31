@@ -1,0 +1,50 @@
+{
+  "readiness_id": "rad_dino_mask_bag_critical_relation_r3_v1_wrapper_binder_readiness",
+  "created_utc": "2026-07-31T18:57:23Z",
+  "status": "UNBOUND_FAIL_CLOSED_WRAPPER_AND_BINDER_READY",
+  "experiment_id": "EXP-20260801-codex-r3-critical-relation-v1",
+  "protocol_sha256": "f7253df27444c1b56706ac19646441a7b2d2a7374a4d6888b8e97d26c2c3fd03",
+  "scientific_source_commit": "84867698dbc652957bd1a1430f4b9d32fa399119",
+  "wrapper": {
+    "path": "project/kaggle_wrappers/run_mask_bag_critical_relation_r3_v1.py",
+    "canonical_lf_sha256": "c350238ad69231e6714c12d8c7cd8b7fc38b5d2a1702c22a55a0ed7ac6b6aa2e",
+    "test_path": "tests/test_kaggle_wrapper_mask_bag_critical_relation_r3_v1.py",
+    "test_sha256": "076aff8e42a681c2bddbb32f8af852442785688782d129c95b23e0db2f27d48a",
+    "kernel_version": 0,
+    "launch_binding_ready": false,
+    "checkout_commit": "UNBOUND",
+    "requires_t4x2": true,
+    "physical_outputs_checked": [
+      "371 prediction maps",
+      "371 all-candidate score payloads",
+      "371 per-image GT-blind diagnostic rows"
+    ]
+  },
+  "binder": {
+    "path": "project/bind_mask_bag_critical_relation_r3_wrapper.py",
+    "sha256": "0bd3b2be99049eff89a36c375089221863e5cdee25e657b9ae3a12895d1a93d7",
+    "test_path": "tests/test_bind_mask_bag_critical_relation_r3_wrapper.py",
+    "test_sha256": "ad6b0685df2ce88aa482abc8e83460e0c518ac6de5bb9d6b7c0cafb4475b1de1",
+    "finite_replacements": 3,
+    "inverse_reconstruction_required": true,
+    "refuses_existing_output": true,
+    "verifies_protocol_and_all_frozen_source_hashes_at_checkout": true
+  },
+  "tests": {
+    "focused_result": "7 passed in 0.62s",
+    "full_repository_result": "408 passed in 15.27s",
+    "python39_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "remaining_before_launch": [
+    "commit and push this exact wrapper/binder source",
+    "bind exact positive kernel version and execution checkout once",
+    "freeze launch binding and final prelaunch audit",
+    "push binding/audit before Kaggle launch"
+  ],
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kaggle_launched": false
+}
