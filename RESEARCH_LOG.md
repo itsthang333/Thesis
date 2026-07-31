@@ -7965,3 +7965,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   claim must be registered and made visible before G0/G1. No validation GT is
   an algorithm input; consumer training and BTXRD test remain locked.
 
+### EXP-20260731-codex-rich-gallery-g0g1-v1
+
+- **Owner/status:** Codex independent Kaggle workstream; `ĐANG LÀM`.
+- **Scope:** execute the already frozen richer-gallery hypothesis from
+  `rich_gallery_geometry_v3_pair_candidate_v1` on the private `wanwin`
+  account. This claim unconditionally merges the LayerCAM+BiomedCLIP anchor
+  gallery with the 448-pixel binary-classifier gallery, then measures G0
+  frozen-selector transport and G1 matched geometry-v3 retraining. It does not
+  read, modify, cancel, rerun or interpret the collaborator-owned R1 kernel.
+- **Why this is a distinct claim:** R1 changes the candidate-ranking residual
+  on the immutable old gallery. This claim changes proposal supply and then
+  measures transport/retraining on the enlarged gallery. The scientific
+  variable, Kaggle owner, payload and output namespace are separate.
+- **Reproduction requirement:** private collaborator checkpoints are not
+  assumed accessible. The 448-pixel DenseNet121 is therefore retrained from
+  the published image-label-only recipe (seed 42, 448 px, AdamW
+  `1e-4/1e-4`, no augmentation, fixed 0.5 validation-F1 checkpoint rule).
+  The local BiomedCLIP, SAM ViT-B and RAD-DINO physical weights independently
+  match the historical SHA-256 values `52cc993c...`, `ec2df627...` and
+  `dbfb9f54...`. The local binary LayerCAM anchor checkpoint is hash-bound in
+  the prelaunch payload audit.
+- **Required reporting:** actual binary-mask Dice/IoU must be reported for all
+  184 validation tumors and separately for `<1%` (`n=94`), `1–<5%` (`n=72`)
+  and `>=5%` (`n=18`). Each Dice is accompanied by its signed gap to the
+  frozen fully-supervised reference `0.49513170/0.32895493/0.66244178/
+  0.69370336`. Oracle values are reported only as proposal-support ceilings,
+  never as achieved Dice.
+- **Safety/order:** train/validation only; image labels are the only spatially
+  weak training supervision; candidate galleries and all 371 Stage-A outputs
+  are frozen and independently audited before the Stage-B polygon evaluator;
+  BTXRD test remains locked. No per-image oracle/source/lesion-size router,
+  validation-area selection, threshold rescue or hidden GT input is allowed.
+
