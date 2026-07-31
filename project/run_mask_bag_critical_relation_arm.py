@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+import csv
 from dataclasses import asdict
 from datetime import datetime, timezone
 import json
@@ -105,6 +106,27 @@ def _absolute_spearman(values_a: np.ndarray, values_b: np.ndarray) -> float:
     if np.std(ranks_a) == 0 or np.std(ranks_b) == 0:
         raise ValueError("Spearman input is constant")
     return abs(float(np.corrcoef(ranks_a, ranks_b)[0, 1]))
+
+
+def _write_gt_blind_diagnostics(
+    output_dir: Path, scored: list[dict[str, Any]]
+) -> Path:
+    path = output_dir / "gt_blind_diagnostics.csv"
+    rows = [
+        {
+            "image_id": item["image_id"],
+            "candidate_count": item["candidate_count"],
+            "bag_probability": item["bag_probability"],
+            "base_critical_agreement": int(item["base_critical_agreement"]),
+            "final_selected_agreement": int(item["final_selected_agreement"]),
+        }
+        for item in scored
+    ]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
 
 
 def _score_device_shard(
@@ -293,6 +315,7 @@ def main() -> None:
     prediction_manifest_sha256, score_manifest_sha256 = _write_validation_outputs(
         args, val_records, scored_val
     )
+    diagnostics_path = _write_gt_blind_diagnostics(args.output_dir, scored_val)
 
     count_spearman = _absolute_spearman(
         np.asarray([item["candidate_count"] for item in scored_val]),
@@ -344,6 +367,7 @@ def main() -> None:
         "checkpoint_sha256": sha256_file(checkpoint_path),
         "pretraining_identity_audit_sha256": sha256_file(initial_audit_path),
         "training_history_sha256": sha256_file(history_path),
+        "gt_blind_diagnostics_sha256": sha256_file(diagnostics_path),
         "candidate_score_manifest_sha256": score_manifest_sha256,
         "prediction_manifest_sha256": prediction_manifest_sha256,
         "validation_predictions": 371,

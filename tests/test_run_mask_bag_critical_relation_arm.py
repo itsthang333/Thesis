@@ -64,10 +64,12 @@ def test_r3_uses_t4x2_and_freezes_before_gt_blind_decision() -> None:
     assert "ThreadPoolExecutor(max_workers=2)" in source
     assert "len(unordered_scored) != 371" in source
     outputs = source.index("_write_validation_outputs(\n        args, val_records, scored_val")
+    diagnostics = source.index("_write_gt_blind_diagnostics(args.output_dir, scored_val)")
     freeze = source.index('freeze_path = args.output_dir / "prediction_freeze.json"')
-    assert outputs < freeze
+    assert outputs < diagnostics < freeze
     assert '"validation_predictions": 371' in source
     assert '"gt_blind_gate": gate' in source
+    assert '"gt_blind_diagnostics_sha256"' in source
 
 
 def test_r3_spearman_matches_average_tie_ranks() -> None:
