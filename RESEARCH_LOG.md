@@ -7843,6 +7843,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   exact archive/audit hashes, T4x2, source/protocol/cache/baseline contracts and
   pass unmodified tests before any image-label-only fitting. Validation GT,
   consumer and BTXRD test remain locked; the experiment remains `ĐANG LÀM`.
+- **Progress — bounded version-2 status check:** the single planned continuation
+  check found R1 version 2 still `RUNNING`. HEAD/origin and the complete central
+  log blob were unchanged at `1306c1c`/`647e2ff3...`. No repeat poll, monitor,
+  output access, local heavy compute, GT/test read or competing launch occurred.
+  The independent output auditor remains frozen and the evaluator remains
+  locked until a later terminal direct output passes its physical freeze audit.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 
