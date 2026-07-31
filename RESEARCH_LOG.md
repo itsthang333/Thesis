@@ -7126,3 +7126,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   same cache rerun; validation GT, consumer training and BTXRD test remain
   locked.
 
+- After a complete-log reread and a clean-worktree audit, branch
+  `research-wsss-improvement` was confirmed synchronized with
+  `origin/research-wsss-improvement` at
+  `ea2e1e0b1c3b2d4d45d9110f4916b8569bd1f333`. The exact corrected wrapper,
+  unchanged metadata, frozen protocol, version-2 prelaunch audit and
+  version-1 error audit re-matched SHA-256 values
+  `25c8a98ae8f50744a8810d74dc5d66b91801042fe05687f599b13bc640015649`,
+  `85a88e983bfc4707e7b3abfb1222ebc44a80c026739cdb8d757c0a4b006f6d54`,
+  `ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489`,
+  `ee203d9aaaa43fbb8d8d09323b2bb3643c488d0e293c5ab1f8ac6869ab927b1a`
+  and
+  `430c05804ae413d50f096073823be69cc25a330659a6dd75b67ec4bc0df8873e`.
+  Kaggle then accepted selector-cache kernel version `2` at
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1.
+  No launch-time status poll or monitor was created. The scientific source,
+  cache protocol, gallery, baseline and selector campaign remain unchanged;
+  R1/R2/S1, validation GT, consumer training and BTXRD test remain locked
+  pending the terminal cache reproduction audit.
+
