@@ -8020,3 +8020,48 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   be claimed and launched only after R1 is terminal and independently audited,
   followed by another complete central-log synchronization.
 
+### EXP-20260731-codex-r1-normal-prototype-v1 — version-2 transport error
+
+- One bounded check after the intervening static work found kernel version 2
+  `ERROR`. The user-requested standard `kaggle kernels output` command and one
+  stdout-UTF8 retry each left a zero-byte log because the Kaggle client's
+  Windows text writer still used the default `charmap`. The authenticated
+  official session-output API was therefore called with an explicit UTF-8
+  writer and returned exactly one 11,999-byte log and zero scientific output
+  files. Direct log SHA-256 is
+  `5a517847f495a5adbe4bd66731e4be6ffdd387783855233a5bb763d883a8c730`.
+- The direct pull of the terminal kernel proves that version 2 used the intended
+  dataset source `itsthang333/btxrd-mask-bag-r1-baseline-transport-v1`, the
+  accepted selector-cache kernel source, T4 shape and the exact bound wrapper:
+  pulled CRLF SHA-256 `44fb9a62...`, canonical-LF SHA-256
+  `2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b`.
+  Runtime passed checkout/source/protocol, frozen dependency installation, the
+  two-T4 real-convolution guard, split reconstruction and exact
+  `transport_audit.json` discovery/safety. It then failed at the next statement
+  in `prepare_baseline()` because no mounted file retained the exact name
+  `square_corrected_baseline.zip`; cache discovery, all tests, fitting,
+  inference and prediction freeze were never reached.
+- Since the transport audit from the same dataset was mounted while only the
+  ZIP container was absent, the supported transport inference is that Kaggle
+  dataset ingestion/mount normalization expanded the `.zip` content instead of
+  retaining that filename. The dataset is `ready` and listed at 1,844,965
+  bytes, but `ListDatasetFiles` still returns 403, so no independent remote file
+  inventory is claimed. Full version-2 error audit SHA-256 is
+  `6bddeb1fde87bd740eb5296d6a74f00b7d12484e3091668e62ad87a6465dcc05`.
+- A bounded version-3 transport correction is prepared but not launched: copy
+  the same 1,784,924 archive bytes under the non-archive mount name
+  `square_corrected_baseline.zip.bin`, require the unchanged archive SHA-256
+  `8857eb6d...`, then use the unchanged safe ZIP extractor and all unchanged
+  inner baseline gates. The wrapper changes exactly one literal and inverse
+  reconstruction returns exact version 2. New wrapper canonical-LF SHA-256 is
+  `a896d45dad1efb46d3f0b7544f01ca152e18a5e0f3eabd95f5f00414efe33114`;
+  the payload copy is byte-identical, contains 378 members/77,479,804
+  uncompressed bytes and passes `ZipFile.testzip`. Static correction audit
+  SHA-256 is
+  `7637e1542a65dccecd9ffb0047d8185b8474ba9bcae68cde6c9b52faaa091a01`.
+  Dataset version 2 and kernel version 3 remain uncreated/unlaunched until this
+  error and correction evidence are committed and pushed. Scientific
+  source/protocol/cache/split/baseline/fit settings remain byte-for-byte or
+  hash-for-hash unchanged. No validation prediction/GT/test access or consumer
+  training occurred; no monitor or repeated status polling was used.
+

@@ -1,0 +1,71 @@
+{
+  "audit_id": "rad_dino_mask_bag_normal_prototype_r1_v1_kernel_version2_error",
+  "audited_utc": "2026-07-31T14:49:28Z",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1",
+  "kernel_version": 2,
+  "terminal_status": "ERROR",
+  "status_check": "one bounded check; no monitor or repeated polling",
+  "launch_commit": "1306c1c",
+  "central_head_at_audit": "9977dbf73d9e4be18159c3b8badfb17bd8e9836c",
+  "direct_output": {
+    "files_returned": 1,
+    "scientific_output_files": 0,
+    "log_path": "tmp/kaggle/normal_prototype_r1_v2_error_20260731_utf8/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1.log",
+    "log_bytes": 11999,
+    "log_sha256": "5a517847f495a5adbe4bd66731e4be6ffdd387783855233a5bb763d883a8c730",
+    "retrieval": "The standard Kaggle CLI and one stdout-UTF8 retry each left a zero-byte log because the Windows default text writer could not encode progress glyphs. The same authenticated official kernels_output session API was then called with an explicit UTF-8 text writer and returned the immutable complete log."
+  },
+  "pulled_kernel": {
+    "wrapper_path": "tmp/kaggle/normal_prototype_r1_v2_kernel_pull_20260731/btxrd-rad-dino-mask-bag-normal-prototype-r1-v1.py",
+    "wrapper_physical_crlf_sha256": "44fb9a627c996130424daf64c9767a26e5222bdc5a94598f17200b4406cd02b8",
+    "wrapper_canonical_lf_sha256": "2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b",
+    "expected_bound_wrapper_sha256": "2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b",
+    "metadata_path": "tmp/kaggle/normal_prototype_r1_v2_kernel_pull_20260731/kernel-metadata.json",
+    "metadata_sha256": "f002ce95c4c0bff0a8b43fd8c0c1fa95f06b56bde14e85a1510b6ff6847c9442",
+    "dataset_sources": [
+      "itsthang333/btxrd-mask-bag-r1-baseline-transport-v1"
+    ],
+    "kernel_sources": [
+      "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+    ],
+    "machine_shape": "NvidiaTeslaT4"
+  },
+  "passed_before_failure": [
+    "exact checkout 3647997d0c18ad31057709462fd8c922d939fb4f",
+    "scientific-source ancestry and all frozen source/protocol hashes",
+    "frozen Torch/torchvision/transformers runtime installation",
+    "two-Tesla-T4 real-convolution guard",
+    "exact LF-to-CRLF split reconstruction",
+    "exact transport_audit.json discovery, SHA-256 and safety fields"
+  ],
+  "error": "RuntimeError: Expected one square_corrected_baseline.zip/8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4, found []",
+  "failure_boundary": {
+    "function": "prepare_baseline",
+    "line": "find_unique_file for the exact archive after the transport audit passed",
+    "not_reached": [
+      "baseline archive extraction or baseline-root acceptance",
+      "selector-cache discovery or verification",
+      "focused or whole-repository tests",
+      "prototype fitting or residual training",
+      "validation scoring, candidate-score serialization or prediction freeze"
+    ]
+  },
+  "transport_diagnosis": {
+    "dataset": "itsthang333/btxrd-mask-bag-r1-baseline-transport-v1",
+    "dataset_status_after_terminal_audit": "ready",
+    "dataset_listed_size_bytes": 1844965,
+    "transport_audit_mounted": true,
+    "exact_zip_filename_mounted": false,
+    "local_zip_bytes": 1784924,
+    "local_zip_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "inference": "Because the unarchived transport audit from the same dataset was found and passed while the .zip container alone was absent, Kaggle dataset ingestion/mount normalization most likely expanded the ZIP contents rather than preserving the container filename. This is a transport-format inference, not a scientific result.",
+    "independent_file_listing": "The authenticated ListDatasetFiles endpoint still returned 403, so no independent remote file-list claim is made."
+  },
+  "bounded_correction": "Preserve the exact archive bytes under a non-archive mount filename, verify the same SHA-256 at runtime, and extract those bytes with the unchanged safe extractor. Do not change scientific source, protocol, cache, baseline checkpoint, split or fit settings.",
+  "scientific_result": false,
+  "training_labels": "image_level_only",
+  "validation_prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
