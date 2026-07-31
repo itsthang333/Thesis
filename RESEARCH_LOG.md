@@ -8148,4 +8148,29 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `364/364` in 16.24 seconds under the same documented Python-3.9
   `zip(strict=...)` diagnostic shim. No producer source/protocol or running
   kernel was changed, and Kaggle was not queried during this regression.
+- **Progress — later R1 heartbeat and unbound R2 Kaggle wrapper readiness:** one
+  later bounded check found R1 version 3 still `RUNNING`; polling stopped and no
+  output was requested. A tracked, reviewable R2 Kaggle wrapper template is now
+  prepared at `project/kaggle_wrappers/run_mask_bag_affinity_residual_r2_v1.py`,
+  canonical-LF SHA-256
+  `ee506cdcd2c7cfd7f914694e9dcdf3008d50d2c96159e483cbc8232219c73802`.
+  It is physically fail-closed with kernel version `0`, binding false and
+  wrapper/checkout `UNBOUND`; therefore it cannot launch under the active R1
+  claim. Before fit it requires source/protocol hashes, T4x2 real convolutions,
+  exact split, `.zip.bin` baseline, accepted cache/24D affinity and focused/full
+  tests. After fit it audits all 371 maps and candidate-score payloads and emits
+  the wrapper evidence required by the independent R2 auditor.
+- A draft direct self-hash comparison was rejected during static testing:
+  embedding the final whole-file hash inside that same file changes the hash
+  and has no stable one-pass binding. The committed template follows the proven
+  R1 boundary instead: an external one-time binder/final prelaunch audit verifies
+  exact wrapper bytes, runtime validates bound fields, and the downloaded-output
+  auditor verifies the declared binding. Three wrapper tests and the combined
+  seven wrapper/auditor tests pass with `py_compile` and `git diff --check`;
+  the complete worktree regression passes `367/367` in 15.82 seconds under the
+  documented local Python-3.9 `zip(strict=...)` diagnostic shim.
+  Readiness evidence SHA-256 is
+  `cf6d6dc01e912a57e0cf05d0a99837666ae3c17f900332e930b18864f1337d31`.
+  No R2 claim, binding, kernel launch, scientific input, prediction, GT/test or
+  consumer access occurred.
 

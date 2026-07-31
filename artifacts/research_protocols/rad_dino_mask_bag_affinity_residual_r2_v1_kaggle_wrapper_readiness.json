@@ -1,0 +1,47 @@
+{
+  "audit_id": "rad_dino_mask_bag_affinity_residual_r2_v1_kaggle_wrapper_readiness",
+  "status": "STATIC_UNBOUND_NO_R2_CLAIM_NO_LAUNCH",
+  "wrapper": {
+    "path": "project/kaggle_wrappers/run_mask_bag_affinity_residual_r2_v1.py",
+    "canonical_lf_sha256": "ee506cdcd2c7cfd7f914694e9dcdf3008d50d2c96159e483cbc8232219c73802",
+    "kernel_version": 0,
+    "launch_binding_ready": false,
+    "bound_wrapper_sha256": "UNBOUND",
+    "checkout_commit": "UNBOUND"
+  },
+  "protocol_sha256": "3f28cc7187ad64f3755ae4c7a10bb380a0085d1733807dcf667c44d92d9f593d",
+  "gates_before_fit": [
+    "one-time external launch binding",
+    "repository checkout, source ancestry, protocol and all 21 canonical source hashes",
+    "frozen Kaggle runtime installation",
+    "two-T4 real-convolution checks",
+    "exact split reconstruction",
+    "byte-exact .zip.bin baseline transport and inner baseline hashes",
+    "accepted selector-cache freeze/audit and 24D affinity contract",
+    "focused and whole-repository tests"
+  ],
+  "post_fit_gates": [
+    "371 unique prediction rows and physical float16 maps",
+    "371 unique candidate-score rows and physical candidate-logit payloads",
+    "prediction freeze/run safety fields",
+    "wrapper output audit binding kernel version, wrapper, checkout, source hashes, cache, baseline and T4x2"
+  ],
+  "tests": {
+    "wrapper_tests": "3 passed",
+    "wrapper_plus_independent_auditor_tests": "7 passed",
+    "full_repository": "367 passed under the documented local Python-3.9 zip(strict) diagnostic shim",
+    "py_compile": "passed",
+    "git_diff_check": "passed"
+  },
+  "prelaunch_correction": "A draft self-hash comparison was removed before commit because embedding a final whole-file hash in the same file has no stable one-pass value. The established R1 design is retained: an external binder/prelaunch audit verifies exact wrapper bytes, runtime validates bound fields and the independent downloaded-output audit verifies the declared wrapper binding.",
+  "required_before_launch": "R1 terminal independent audit, central-log synchronization, a unique pushed R2 claim, one exact binder and a separate final prelaunch audit",
+  "safety": {
+    "training_labels": "image_level_only",
+    "scientific_data_opened": false,
+    "prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "kernel_launched": false
+  }
+}
