@@ -8105,4 +8105,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   version-3-bound independent R1 auditor and all existing repository tests.
   It used no scientific input, prediction, GT/test path or local heavy compute
   and changes no launch state.
+- **Progress — exact transport-function simulation:** still without polling
+  the launched kernel, the exact version-3 wrapper was imported against a new
+  temporary Kaggle-like input root containing only the frozen transport audit
+  and `.zip.bin` payload. Its unchanged `prepare_baseline()` passed safe
+  extraction, found one baseline root and reproduced freeze/checkpoint/manifest
+  SHA-256 values `ec346276...` / `58b82642...` / `a810e1fc...` exactly.
+  Machine-readable evidence SHA-256 is
+  `76d687a491c42bc2889d6fedac2918c5139fde1db51e7187d1a685852f140b5e`.
+  This closes the local code-path question but does not substitute for the
+  runtime mount/hash gate. No cache, model fit, prediction, GT/test or consumer
+  was opened.
 

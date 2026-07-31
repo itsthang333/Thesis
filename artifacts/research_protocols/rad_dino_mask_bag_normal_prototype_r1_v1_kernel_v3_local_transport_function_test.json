@@ -1,0 +1,22 @@
+{
+  "audit_id": "rad_dino_mask_bag_normal_prototype_r1_v1_kernel_v3_local_transport_function_test",
+  "audited_utc": "2026-07-31T14:57:46Z",
+  "status": "PASSED_STATIC_LOCAL_MOUNT_SIMULATION",
+  "wrapper_canonical_lf_sha256": "a896d45dad1efb46d3f0b7544f01ca152e18a5e0f3eabd95f5f00414efe33114",
+  "test": "Import the exact version-3 wrapper, point its INPUT and RUNTIME globals to a temporary mount containing only the frozen transport audit and .zip.bin payload, and call the unchanged prepare_baseline() function directly.",
+  "payload": {
+    "name": "square_corrected_baseline.zip.bin",
+    "bytes": 1784924,
+    "sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4"
+  },
+  "verified_outputs": {
+    "transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da",
+    "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+    "unique_baseline_root_found": true,
+    "safe_extraction_passed": true
+  },
+  "scope": "transport-function test only; no cache, model fitting, inference, validation GT, consumer or BTXRD test access",
+  "kernel_status_polled": false
+}
