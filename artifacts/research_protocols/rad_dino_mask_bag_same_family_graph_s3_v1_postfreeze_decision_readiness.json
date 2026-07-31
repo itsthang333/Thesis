@@ -1,0 +1,31 @@
+{
+  "readiness_id": "rad_dino_mask_bag_same_family_graph_s3_v1_postfreeze_decision_readiness",
+  "created_utc": "2026-07-31T21:54:05Z",
+  "status": "FROZEN_BEFORE_TERMINAL_OUTPUT_AND_VALIDATION_GT",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "protocol_sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca",
+  "gap_corrected": "The generic selector evaluator requires regret reduction in any two tumor subgroups; the S3 protocol additionally requires medium regret reduction explicitly.",
+  "decision": {
+    "path": "project/decide_mask_bag_same_family_graph_s3.py",
+    "sha256": "871b370a00a73c4266874b8c5abd04fc39f0319e1ae89656ff182ff779bb1ec9",
+    "test_path": "tests/test_decide_mask_bag_same_family_graph_s3.py",
+    "test_sha256": "d96353f59c1109f898b699a80ed4fd1144b7ba4de6ef4c48bb4514bfb081b6d4",
+    "requires_independent_gt_blind_output_audit_pass": true,
+    "requires_hash_locked_generic_evaluation_outputs": true,
+    "requires_generic_mechanism_gate": true,
+    "requires_medium_regret_improvement_exclusive_above_zero": true,
+    "consumer_authorized_only_on_full_operational_pass": true,
+    "reopens_validation_gt": false
+  },
+  "tests": {
+    "focused_result": "12 passed in 0.21s",
+    "full_repository_result": "438 passed in 16.88s",
+    "python39_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "kaggle_status_query_performed_in_this_step": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

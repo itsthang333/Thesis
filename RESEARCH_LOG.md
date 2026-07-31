@@ -9669,4 +9669,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   status query returned `RUNNING`. This is not a scientific result. No repeat
   poll or additional monitor was created; validation GT, consumer and BTXRD
   test remain locked.
+- **S3-specific post-freeze decision gap closed while RUNNING:** a static audit
+  found that the generic evaluator enforces regret reduction in any two tumor
+  subgroups, whereas the frozen S3 protocol additionally requires medium regret
+  reduction explicitly. No terminal output or metric had been seen and no new
+  Kaggle status query was made in this step. New decision source
+  `project/decide_mask_bag_same_family_graph_s3.py` SHA-256
+  `871b370a00a73c4266874b8c5abd04fc39f0319e1ae89656ff182ff779bb1ec9`
+  reads only the hash-locked independent GT-blind audit and generic evaluation
+  artifacts; it never opens GT, and requires both the complete generic mechanism
+  gate and strictly positive medium regret improvement. Consumer authorization
+  still requires the complete operational/adoption gate.
+- Decision regression test SHA-256 is
+  `d96353f59c1109f898b699a80ed4fd1144b7ba4de6ef4c48bb4514bfb081b6d4`;
+  it proves a hypothetical generic `OPERATIONAL_PASS` with zero medium gain is
+  rejected, a full pass with positive medium gain is accepted, and any mutated
+  evaluation output is rejected. Focused closure passes `12/12`; full repository
+  passes `438/438` in 16.88 seconds under the documented Python-3.9
+  `zip(strict=...)` shim. Readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_postfreeze_decision_readiness.json`
+  is frozen before terminal retrieval/GT with SHA-256
+  `630a81372fc9cccace09c92715217b7ac85bf22d9234edff27bee792ba1aa08c`.
+  Prediction bytes/protocol/producer remain unchanged; GT, consumer and BTXRD
+  test remain locked.
 
