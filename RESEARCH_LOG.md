@@ -7552,8 +7552,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - **Owner:** Codex main task on `research-wsss-improvement`.
 - **Registered:** `2026-07-31T13:15:29.6440302Z`; registration base commit
-  `72d92b812682760b1759608f02117040d4c8c1f3`; the exact claim-commit hash will
-  be added before any terminal artifact is read or any kernel is launched.
+  `72d92b812682760b1759608f02117040d4c8c1f3`; exact claim commit
+  `62f6f4c96aeefb0c1977eb237bcec1fcbcbd0f55`.
 - **Status:** `ĐANG LÀM`.
 - **Objective/hypothesis:** accept or reject the already-running corrected
   selector cache version 5 with the frozen independent audit, then—only after
