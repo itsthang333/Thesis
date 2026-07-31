@@ -9569,4 +9569,40 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   This is static preparation only: no S3 protocol/binding/kernel launch,
   scientific input, prediction, validation GT/test or consumer access has
   occurred.
+- **Static source-isolation correction:** the first full regression after the
+  draft cached-pairwise helper reported `2 failed, 429 passed`: the S3 helper
+  had been added to shared `mask_bag_relational_selector.py`, so the
+  historical R3 and R4 binder tests correctly rejected current HEAD because
+  their protocols hash-lock the earlier shared file. This happened entirely
+  in static tests, before any scientific input, prediction or launch. Commit
+  `293b013cd036d8346fea3852ec3025772172f32d` moves the helper into the isolated
+  S3 module and restores the shared source byte/hash exactly to
+  `3cae8adbdf0a11384a891926570069ceefb0cda2de6dc9b5476ae19a1f17f790`.
+  The S3 graph arithmetic/constants/hypothesis are unchanged. Corrected S3
+  module/test SHA-256 values are
+  `0c65a2bfa2ad9a190f860bf51bfdc28c8af2b03b7a4e8ec9f2327e3cfed67287` /
+  `ec0137a518d0def488a4f8a61fca368675cd797aa1d5d8dec20387c2a308993c`.
+- **S3 protocol and independent-auditor freeze:** exact protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1.json`
+  SHA-256
+  `7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca`
+  freezes source commit `293b013`, the no-fit graph, one T4x2 execution, all
+  alpha-zero/baseline/graph/count gates and unchanged post-freeze adoption
+  rules. Independent auditor
+  `project/audit_mask_bag_same_family_graph_s3_output.py` SHA-256
+  `787b68b144ec0759f75f186a5566e716f02db02f72689f674294b51b089d9913`
+  pins the generic physical-output helper `3cc5feee...`, requires a separate
+  frozen launch binding, verifies source/cache/baseline/T4x2 plus all `371`
+  maps/scores, and independently recomputes every alpha-zero, accepted-row,
+  graph, view-swap and count gate without an evaluator or GT. Auditor test
+  SHA-256 is
+  `7f174dab7b4fa9515217158d9b2950aab1c3a798d49751425ddc4f679884a26f`.
+- Focused S3 plus historical-binder closure passes `18/18`; full repository
+  regression now passes `431/431` in 16.05 seconds under the documented
+  Python-3.9 `zip(strict=...)` shim. Static-readiness artifact is
+  `artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1_static_readiness.json`,
+  SHA-256
+  `23bd41b07d2e99ccf33c4175eac291f5e1d5bc49e68d1a7613a010916bea4fc2`.
+  Wrapper/binder remain unfinished; no binding, launch, scientific prediction,
+  validation GT/test access or consumer training exists.
 

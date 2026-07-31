@@ -1,0 +1,167 @@
+{
+  "protocol_id": "rad_dino_mask_bag_same_family_graph_s3_v1",
+  "frozen_utc": "2026-07-31T21:27:36Z",
+  "status": "STATIC_PREDECLARED_ACTIVE_CLAIM_NO_BINDING_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "scientific_role": "same-gallery selector arm testing one fixed fidelity-preserving graph operator over same-family overlapping candidates",
+  "hypothesis": "A strictly local same-family overlap graph may promote candidates supported by nearby proposal variants while avoiding the rejected global critical-relation propagation and preserving unrelated or isolated candidates exactly.",
+  "non_duplicate_scope": {
+    "terminal_negative_predecessor": "EXP-20260801-codex-r4-orbit-averaged-relation-v1",
+    "collaborator_active_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "difference_from_r4": "no learned relation, critical candidate, fitting or cross-family propagation; only a fixed graph transform of accepted frozen-base logits",
+    "difference_from_collaborator": "proposal supply, descriptors, gallery geometry and scorer checkpoint are unchanged",
+    "negative_mechanism_claimed_as_improvement": false
+  },
+  "scientific_source": {
+    "commit": "293b013cd036d8346fea3852ec3025772172f32d",
+    "claim_commit": "fad5ba66e72365ea12674aec41256f2e3bf582e9",
+    "parent_cache_protocol_sha256": "ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489",
+    "accepted_cache_independent_audit_sha256": "7d9f693dd5d1d9206b01cc2c8a0ed4aed497f9f17d9dedf670a97771b0f78334",
+    "r4_terminal_result_audit_sha256": "a18b6382a39161b0d3ffa0edb56a7930aca720226bbae5a68dcad903e5092bcc"
+  },
+  "required_inputs": {
+    "selector_cache": {
+      "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+      "freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+      "wrapper_output_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+      "manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+      "cohort": {"train": 2981, "validation": 371},
+      "physical_records": 3352,
+      "descriptor_dim": 1156,
+      "pairwise_iou_and_containment_cached": true,
+      "family_ids_cached": true,
+      "train_masks_discarded": true,
+      "validation_masks_bitpacked": true,
+      "validation_gt_read": false,
+      "consumer_trained": false,
+      "test_evaluated": false
+    },
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline": {
+      "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+      "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+      "prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+      "source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+      "protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+    }
+  },
+  "graph": {
+    "input_logit": "0.5*(frozen_base_original_logit+frozen_base_aligned_flip_logit)",
+    "edge": "distinct valid candidates share immutable family_id and satisfy IoU >= 0.25 or containment >= 0.50",
+    "minimum_iou": 0.25,
+    "minimum_containment": 0.50,
+    "cross_family_edges": false,
+    "isolated_candidate_self_loop": true,
+    "normalization": "symmetric D^(-1/2) A D^(-1/2)",
+    "initial_state": "z_0 = accepted frozen-base candidate logits",
+    "recurrence": "z_(t+1) = 0.5*P*z_t + 0.5*s",
+    "alpha": 0.5,
+    "iterations": 10,
+    "selection": "argmax final candidate logit in immutable candidate order",
+    "candidate_order_or_geometry_changed": false,
+    "descriptor_changed": false,
+    "learnable_parameter": false,
+    "segmentation_target_used": false,
+    "hyperparameter_alternatives": false
+  },
+  "fit": {
+    "arm_fit": "none_fixed_operator",
+    "inherited_scorer_training_supervision": "binary image-level label only",
+    "optimizer": null,
+    "epoch_selection": null,
+    "validation_loss_or_early_stopping": false,
+    "candidate_or_segmentation_target": false,
+    "parameter_sweep": false
+  },
+  "execution": {
+    "runtime": "Kaggle",
+    "accelerator": "NvidiaTeslaT4",
+    "physical_gpu_count": 2,
+    "validation_scoring_workers": 2,
+    "validation_shards": [186, 185],
+    "batch_size": 16,
+    "real_cuda_work_required_on_each_device": true,
+    "deterministic_algorithms": true,
+    "cublas_workspace_config": ":4096:8",
+    "heavy_compute_local": false
+  },
+  "gt_blind_pre_evaluation_gates": {
+    "alpha_zero_base_vector_identity_records": 371,
+    "accepted_selected_index_logit_bag_and_map_identity_records": 371,
+    "graph_symmetric_records": 371,
+    "cross_family_edge_count": 0,
+    "minimum_total_non_self_edges": 1,
+    "isolated_candidate_logits_preserved_records": 371,
+    "view_swap_exact_records": 371,
+    "absolute_candidate_count_probability_spearman_ceiling": 0.5013777759365411,
+    "failure_action": "reject S3 before validation GT; no parameter change, rerun, sweep or rescue"
+  },
+  "prediction_freeze": {
+    "validation_predictions": 371,
+    "candidate_scores": "all immutable candidate logits in original gallery order",
+    "map": "selected bit-packed candidate mask multiplied by bag probability",
+    "must_bind": [
+      "scientific source commit and this protocol SHA-256",
+      "split, selector-cache freeze and manifest",
+      "baseline checkpoint, prediction freeze and prediction manifest",
+      "371 alpha-zero base-vector hashes and accepted baseline identity rows",
+      "candidate-score, prediction and per-image graph diagnostic manifests",
+      "T4x2 runtime and independent physical output audit"
+    ],
+    "validation_gt_read_before_freeze": false
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "validation_cohort": {"all": 371, "tumor": 184, "normal": 187, "small": 94, "medium": 72, "large": 18},
+    "paired_complete_group_bootstrap_replicates": 10000,
+    "bootstrap_seed_family": 20261012,
+    "mechanism_gate": {
+      "medium_selected_to_oracle_regret_reduced": true,
+      "minimum_subgroups_with_regret_reduction": 2,
+      "overall_dice_regression_allowed": false,
+      "absolute_candidate_count_miss_association_increase_allowed": false
+    },
+    "adoption_gate": {
+      "operational_goals": {"overall": 0.34024039, "small": 0.17895493, "medium": 0.51244178, "large": 0.49370336},
+      "overall_ci95_lower_bound_above_zero": true,
+      "subgroup_mean_decrease_allowed": false,
+      "miss_increase_allowed": false,
+      "minimum_image_auroc": 0.75
+    },
+    "consumer_authorized_only_if_full_adoption_gate_passes": true
+  },
+  "literature_basis": [
+    {"technique": "SmMIL fidelity-preserving graph smoothing", "url": "https://proceedings.neurips.cc/paper_files/paper/2024/file/8db9279f593652ee9bb2223b4a2c43fa-Paper-Conference.pdf"},
+    {"technique": "TransMIL correlated-instance MIL", "url": "https://proceedings.neurips.cc/paper/2021/hash/10c272d06794d3e5785d5e7c5356e9ff-Abstract.html"},
+    {"technique": "MIL instance-ranking learnability caution", "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html"}
+  ],
+  "canonical_lf_source_hashes": {
+    "project/run_mask_bag_same_family_graph_s3_arm.py": "5f882090b1d8ce8192d207047afe16f0aa572394b94fee55b4d6b56e410ec6a1",
+    "project/models/mask_bag_same_family_graph.py": "0c65a2bfa2ad9a190f860bf51bfdc28c8af2b03b7a4e8ec9f2327e3cfed67287",
+    "project/models/mask_bag_relational_selector.py": "3cae8adbdf0a11384a891926570069ceefb0cda2de6dc9b5476ae19a1f17f790",
+    "project/models/mask_bag_orbit_relation_training.py": "44ecd9c6ad1779942e9cc0df31634fd5d83204a97c7e89c75c64507d66fecf71",
+    "project/models/mask_bag_critical_relation_training.py": "b29ffc4b77680f9e9b0046238506f738cf1c855cfc2f33769726b034d6d67042",
+    "project/run_mask_bag_critical_relation_arm.py": "bd8bca7d02802ce5881193f4ba0b1286a216bc4f4d077b34de3da5d14c9ae05c",
+    "project/run_mask_bag_normal_prototype_arm.py": "5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/models/mask_bag_ranking_diagnostics.py": "c8b95cde03006c78aad624f060684d2f4d3acad2bdfeb6fc42bfc05762abefe8",
+    "tests/test_mask_bag_same_family_graph.py": "ec0137a518d0def488a4f8a61fca368675cd797aa1d5d8dec20387c2a308993c",
+    "tests/test_run_mask_bag_same_family_graph_s3_arm.py": "8d834ec85be2b760a0edba3687f7458cd7f6d5ecc236d87c06f9b2b05643394e",
+    "tests/test_mask_bag_relational_selector.py": "b3bb46a7e37562c2bc780e10480f1bcc358072adf9ac0037497a2fb06b30e1d8"
+  },
+  "prohibited": [
+    "validation segmentation GT before prediction freeze and independent physical audit",
+    "validation subgroup, Dice, candidate Dice or oracle rank before freeze",
+    "proposal generation or rich-gallery merger",
+    "alpha, threshold, iteration, family or graph sweep",
+    "consumer training before every adoption gate passes",
+    "BTXRD test access",
+    "post-hoc parameter, threshold or gate alternatives"
+  ]
+}

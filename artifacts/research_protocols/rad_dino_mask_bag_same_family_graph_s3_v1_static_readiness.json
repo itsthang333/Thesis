@@ -1,0 +1,51 @@
+{
+  "artifact_id": "rad_dino_mask_bag_same_family_graph_s3_v1_static_readiness",
+  "created_utc": "2026-07-31T21:35:00Z",
+  "status": "SOURCE_PROTOCOL_INDEPENDENT_AUDITOR_READY_NO_WRAPPER_NO_BINDING_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-s3-same-family-graph-v1",
+  "scientific_source_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_same_family_graph_s3_v1.json",
+    "sha256": "7d7636176fc05d407b51a913170ad780e2d43d328d9437b2d9d2656e191471ca"
+  },
+  "independent_auditor": {
+    "path": "project/audit_mask_bag_same_family_graph_s3_output.py",
+    "sha256": "787b68b144ec0759f75f186a5566e716f02db02f72689f674294b51b089d9913",
+    "test_path": "tests/test_audit_mask_bag_same_family_graph_s3_output.py",
+    "test_sha256": "7f174dab7b4fa9515217158d9b2950aab1c3a798d49751425ddc4f679884a26f",
+    "pins_physical_output_helper_sha256": "3cc5feeed7fd8fddc2b630448e6bdbd7e18d9020770de850b1e580a40c173a17",
+    "recomputes_gt_blind_gates_without_evaluator_or_gt": true
+  },
+  "static_correction": {
+    "initial_source_commit": "c11b891c7063e202e2c93a87b4d971542eb305e1",
+    "boundary": "The first full static regression found that adding a cached-pairwise helper to the shared relational-selector file invalidated the hash-locked historical R3 and R4 binder tests at current HEAD.",
+    "scientific_input_or_prediction_opened": false,
+    "correction_commit": "293b013cd036d8346fea3852ec3025772172f32d",
+    "correction": "Move the helper into the isolated S3 module and restore the shared relational-selector bytes exactly; graph arithmetic, frozen S3 constants and hypothesis are unchanged.",
+    "restored_shared_source_sha256": "3cae8adbdf0a11384a891926570069ceefb0cda2de6dc9b5476ae19a1f17f790"
+  },
+  "verification": {
+    "json_parse": "passed",
+    "py_compile": "passed",
+    "focused_s3_plus_historical_binder_result": "18 passed in 3.76s",
+    "full_repository_result": "431 passed in 16.05s",
+    "python39_zip_strict_compatibility_shim": true,
+    "git_diff_check": "passed"
+  },
+  "remaining_before_launch": [
+    "commit and push exact protocol, independent auditor, test and this readiness artifact",
+    "prepare a fail-closed unbound Kaggle wrapper",
+    "prepare and test a one-time external binder",
+    "bind one exact kernel version only after wrapper/binder source is pushed",
+    "commit and push final launch binding and prelaunch audit before Kaggle push"
+  ],
+  "safety": {
+    "training_labels": "image_level_only",
+    "arm_fit": "none_fixed_operator",
+    "validation_prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}
