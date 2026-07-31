@@ -8496,4 +8496,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   truy cập test. Exact binding và audit phải commit/push trước launch; sau đó
   package hash được kiểm tra lại và chỉ một version 1 được push, không launch-time
   poll hoặc monitor.
+- **Progress — R2 version 1 launched:** exact launch binding/prelaunch evidence
+  được commit và push tại `d8661fe0264ede64e5a68f1ce937d1ea10740ee8`.
+  Ngay trước launch, HEAD/origin khớp, worktree sạch, remote log chứa claim và
+  bound hash; wrapper `37724fa4...` và metadata `c3d81f3a...` được hash lại và
+  khớp binding/audit. Kaggle chấp nhận version 1 của private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-affinity-residual-r2-v1` lúc
+  `2026-07-31T16:17:48Z`. Chỉ một push được thực hiện; không launch-time status
+  poll, repeat poll hay monitor. Runtime vẫn phải tự chứng minh source/protocol,
+  T4x2 real convolution, reconstructed split, exact baseline/cache, focused/full
+  tests và freeze đủ 371 maps/candidate scores trước khi có thể audit/evaluate.
+  Validation GT, consumer và BTXRD test tiếp tục khóa.
 
