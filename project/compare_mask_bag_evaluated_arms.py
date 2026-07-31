@@ -22,7 +22,6 @@ REQUIRED_FIELDS = {
     "dice",
     "oracle_best_single_dice",
     "complete_miss",
-    "selected_area_ratio",
 }
 
 
@@ -60,7 +59,7 @@ def _read(path: Path, expected_sha256: str) -> dict[str, dict[str, str]]:
             raise ValueError("Per-image evaluation contains an invalid subgroup")
         if row["complete_miss"] not in {"0", "1"}:
             raise ValueError("Per-image evaluation contains an invalid miss flag")
-        for field in ("gt_area_ratio", "dice", "oracle_best_single_dice", "selected_area_ratio"):
+        for field in ("gt_area_ratio", "dice", "oracle_best_single_dice"):
             value = float(row[field])
             if not np.isfinite(value) or value < 0.0 or value > 1.0:
                 raise ValueError(f"Invalid {field} for {image_id}")

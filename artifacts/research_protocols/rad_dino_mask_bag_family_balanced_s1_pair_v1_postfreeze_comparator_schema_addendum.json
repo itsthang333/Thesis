@@ -1,0 +1,58 @@
+{
+  "addendum_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1_postfreeze_comparator_schema_addendum",
+  "created_utc": "2026-07-31T18:15:00Z",
+  "status": "FROZEN_NO_GT_REOPEN_COMPARATOR_INTEGRATION_CORRECTION",
+  "experiment_id": "EXP-20260731-codex-s1-family-balanced-v1",
+  "error_record_commit": "40c16c4",
+  "evaluation_freeze_sha256": "3daaa571c193388d89d4f1a1bd6a1e4fd5ba3f2c21ae22ca0f72c77f86573f1a",
+  "candidate_name": "family_balanced",
+  "candidate_per_image_sha256": "6f81ea1a1c2f0ec0668cb058462ce66182fa0f63dd47ee724da2f126bab1894d",
+  "reference_name": "standard",
+  "reference_per_image_sha256": "57407f5304c6ed6f3ae1c37d9d40ed4a2a07b798f7b3a2e5d014d3bf85b14157",
+  "original_comparator_source_sha256": "24c625cfc50740d9cb633906d60ae81089e3960d3eec4b3ead6f3ce89ebaffad",
+  "corrected_comparator_source_sha256": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119",
+  "original_comparator_test_sha256": "1466be0ebe917e93a04914914d0f09e6f065257b95b32a4b9f9f5111a553298d",
+  "corrected_comparator_test_sha256": "f29650ad9139bc2c894274cfe338bb69890ecb77133286e5e90ce0825324c7b6",
+  "failure": {
+    "exception": "ValueError: Per-image evaluation lacks fields: ['selected_area_ratio']",
+    "output_created": false,
+    "ground_truth_reopened": false
+  },
+  "root_cause": "The comparator inherited a vestigial selected_area_ratio schema requirement that the frozen evaluator never serialized. The comparator only range-validated this field and never used it in pairing, Dice, miss, subgroup, bootstrap, decision or output calculations.",
+  "correction": {
+    "removed_required_field": "selected_area_ratio",
+    "removed_range_validation_field": "selected_area_ratio",
+    "changed_calculation": false,
+    "rewrote_evaluation_csv": false,
+    "regression_test": "The complete 184-row paired fixture now uses the evaluator-compatible schema without selected_area_ratio and must still reproduce all paired metrics and safety flags."
+  },
+  "frozen_comparison": {
+    "replicates": 10000,
+    "seed_family": 20261101,
+    "cohort": {
+      "tumor": 184,
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    },
+    "paired_fields": [
+      "image_id",
+      "group_id",
+      "gt_area_ratio",
+      "size_group",
+      "oracle_best_single_dice",
+      "dice",
+      "complete_miss"
+    ]
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_tests_with_documented_python39_zip_strict_shim": "6 passed"
+  },
+  "safety": {
+    "inputs_are_hash_locked_postfreeze_csv_only": true,
+    "ground_truth_reopened": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}

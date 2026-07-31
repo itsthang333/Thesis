@@ -43,6 +43,7 @@ def test_evaluated_arm_comparator_freezes_cohort_metric_and_bootstrap() -> None:
     assert '"complete_misses_included": True' in text
     assert '"misses_recovered"' in text
     assert '"overlaps_lost"' in text
+    assert "selected_area_ratio" not in text
 
 
 def test_evaluated_arm_comparator_runs_complete_paired_fixture(
@@ -60,7 +61,6 @@ def test_evaluated_arm_comparator_runs_complete_paired_fixture(
         "dice",
         "oracle_best_single_dice",
         "complete_miss",
-        "selected_area_ratio",
     ]
     subgroup_rows = (("small", 94, 0.005), ("medium", 72, 0.02), ("large", 18, 0.08))
     reference_rows = []
@@ -80,7 +80,6 @@ def test_evaluated_arm_comparator_runs_complete_paired_fixture(
                     **common,
                     "dice": 0.2,
                     "complete_miss": int(index < 12),
-                    "selected_area_ratio": 0.03,
                 }
             )
             candidate_rows.append(
@@ -88,7 +87,6 @@ def test_evaluated_arm_comparator_runs_complete_paired_fixture(
                     **common,
                     "dice": 0.3,
                     "complete_miss": int(6 <= index < 8),
-                    "selected_area_ratio": 0.03,
                 }
             )
             index += 1

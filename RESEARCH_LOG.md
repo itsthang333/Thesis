@@ -8935,4 +8935,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   integration regression test and freeze a machine-readable addendum. All
   per-image hashes, comparator seed/replicates, paired fields, calculations,
   decision gates, consumer lock and BTXRD test lock must remain unchanged.
+- **Comparator correction frozen before rerun:** after pushing the error record
+  at `40c16c4`, the comparator removed only `selected_area_ratio` from its
+  required-field and range-validation lists. The frozen evaluator CSVs and all
+  used paired fields/calculations remain byte-identical. Corrected comparator
+  source/test SHA-256 are
+  `2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119` /
+  `f29650ad9139bc2c894274cfe338bb69890ecb77133286e5e90ce0825324c7b6`.
+  Machine-readable no-GT-reopen addendum
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1_postfreeze_comparator_schema_addendum.json`
+  has SHA-256
+  `54db1347668407f84d2f989e046fd206825ee5b6f863de52688fa1b6bf28d4e7`.
+  `py_compile`, JSON parse, `git diff --check`, focused comparator/decision tests
+  `6/6` and full repository regression `394/394` in 14.99 seconds pass under the
+  documented Python-3.9 `zip(strict)` shim. The corrected comparator has not yet
+  been rerun; GT remains closed to it, no consumer was trained and test remains
+  locked.
 
