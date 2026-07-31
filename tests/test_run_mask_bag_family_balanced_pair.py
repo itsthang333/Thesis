@@ -94,3 +94,21 @@ def test_both_arms_freeze_scores_and_maps_before_pair_freeze() -> None:
     assert '"candidate_score_manifest_sha256"' in source
     assert '"prediction_manifest_sha256"' in source
     assert '"validation_predictions": 371' in source
+
+
+def test_s1_freezes_shared_candidate_family_ids_for_pool_reproduction() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    family_output = source.index(
+        "candidate_family_manifest_sha256 = _write_candidate_family_outputs("
+    )
+    parallel_training = source.index(
+        "with ThreadPoolExecutor(max_workers=2) as executor:"
+    )
+    pair_freeze = source.index(
+        'pair_freeze_path = args.output_dir / "pair_prediction_freeze.json"'
+    )
+    assert family_output < parallel_training < pair_freeze
+    assert '"candidate_family_manifest_sha256"' in source
+    assert 'candidate_indices=candidate_indices' in source
+    assert 'family_ids=family_ids' in source
+    assert '"family_sha256": sha256_file(path)' in source

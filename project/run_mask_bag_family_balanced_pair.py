@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+import csv
 from dataclasses import asdict
 from datetime import datetime, timezone
 import json
@@ -142,6 +143,57 @@ def _run_matched_arm(
     }
 
 
+def _write_candidate_family_outputs(
+    output_dir: Path,
+    val_records: list[dict[str, Any]],
+) -> str:
+    """Freeze immutable candidate-family IDs for independent pool auditing."""
+
+    root = output_dir / "candidate_families"
+    payload_root = root / "families"
+    payload_root.mkdir(parents=True, exist_ok=False)
+    rows: list[dict[str, object]] = []
+    for index, record in enumerate(val_records):
+        candidate_indices = np.asarray(record["candidate_indices"], dtype=np.int64)
+        family_ids = np.asarray(record["family_ids"], dtype=np.int64)
+        if (
+            candidate_indices.ndim != 1
+            or family_ids.shape != candidate_indices.shape
+            or len(candidate_indices) == 0
+            or np.any(candidate_indices < 0)
+            or np.any(np.diff(candidate_indices) <= 0)
+            or np.any(family_ids < 0)
+        ):
+            raise ValueError("S1 validation family payload differs from cache")
+        stem = f"{index:04d}_{Path(str(record['image_id'])).stem}"
+        relative = Path("families") / f"{stem}.npz"
+        path = root / relative
+        np.savez_compressed(
+            path,
+            schema_version=np.asarray(1, dtype=np.int64),
+            candidate_indices=candidate_indices,
+            family_ids=family_ids,
+        )
+        rows.append(
+            {
+                "image_id": record["image_id"],
+                "group_id": record["group_id"],
+                "tumor": record["label"],
+                "candidate_payload_sha256": record["candidate_payload_sha256"],
+                "candidate_count": len(candidate_indices),
+                "family_count": len(np.unique(family_ids)),
+                "family_path": str(relative),
+                "family_sha256": sha256_file(path),
+            }
+        )
+    manifest = root / "candidate_family_manifest.csv"
+    with manifest.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    return sha256_file(manifest)
+
+
 def _freeze_arm(
     args: argparse.Namespace,
     result: dict[str, Any],
@@ -151,6 +203,7 @@ def _freeze_arm(
     objective_config: ResidualObjectiveConfig,
     training_config: PoolingResidualTrainingConfig,
     initial_state_sha256: str,
+    candidate_family_manifest_sha256: str,
 ) -> dict[str, Any]:
     pool_mode = str(result["pool_mode"])
     arm_root = args.output_dir / pool_mode
@@ -161,6 +214,9 @@ def _freeze_arm(
             "adapter_state_dict": result["adapter_state_dict"],
             "pool_mode": pool_mode,
             "initial_state_sha256": initial_state_sha256,
+            "candidate_family_manifest_sha256": (
+                candidate_family_manifest_sha256
+            ),
             "baseline_checkpoint_sha256": args.expected_baseline_checkpoint_sha256,
             "baseline_config": result["baseline_config"],
             "objective_config": asdict(objective_config),
@@ -203,6 +259,7 @@ def _freeze_arm(
         ],
         "baseline_checkpoint_sha256": args.expected_baseline_checkpoint_sha256,
         "initial_state_sha256": initial_state_sha256,
+        "candidate_family_manifest_sha256": candidate_family_manifest_sha256,
         "checkpoint_sha256": sha256_file(checkpoint_path),
         "training_history_sha256": sha256_file(history_path),
         "candidate_score_manifest_sha256": score_manifest_sha256,
@@ -296,6 +353,10 @@ def main() -> None:
     initial_state_path = args.output_dir / "matched_initial_state.pt"
     torch.save(initial_state, initial_state_path)
     initial_state_sha256 = sha256_file(initial_state_path)
+    candidate_family_manifest_sha256 = _write_candidate_family_outputs(
+        args.output_dir,
+        val_records,
+    )
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [
@@ -337,6 +398,9 @@ def main() -> None:
             objective_config=objective_config,
             training_config=training_config,
             initial_state_sha256=initial_state_sha256,
+            candidate_family_manifest_sha256=(
+                candidate_family_manifest_sha256
+            ),
         )
         for pool_mode in POOL_MODES
     }
@@ -366,6 +430,7 @@ def main() -> None:
         ),
         "cross_device_initial_candidate_logit_tolerance": 5.0e-6,
         "initial_state_sha256": initial_state_sha256,
+        "candidate_family_manifest_sha256": candidate_family_manifest_sha256,
         "arms": arm_freezes,
         "validation_gt_read": False,
         "consumer_trained": False,
