@@ -7512,3 +7512,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   preparation step. No heavy local compute, validation GT read, consumer
   training or BTXRD test access occurred.
 
+### R1 corrected-cache provenance readiness
+
+- The one status check in the next bounded continuation again found
+  selector-cache kernel version `5` at `RUNNING`. No second poll and no monitor
+  was created. There is still no terminal cache result or R1 authorization.
+- Static re-audit of the ignored R1 staging wrapper found that its two upstream
+  cache provenance constants still named the parent cache source/protocol
+  `61e64b3...` and `ee810fd8...`. A successful version-5 freeze must instead
+  name corrected source `c0e3862...` and correction protocol `be9c91b5...`;
+  otherwise `find_cache_root()` would correctly reject the corrected cache
+  before fitting. This is the upstream-provenance supersession already required
+  by the correction protocol, not a change to the R1 mechanism or search space.
+- Only those two known constants were updated in the ignored wrapper:
+  `CACHE_SCIENTIFIC_SOURCE_COMMIT=c0e3862...` and
+  `CACHE_PROTOCOL_SHA256=be9c91b5...`. The new unbound wrapper SHA-256 is
+  `4b886f91aa01b15c18a1a0105db11a31f62233635e214e9bbd406e5712d05044`;
+  inversely replacing exactly those two values reconstructs the previous hash
+  `4312a1410c1cf83894359895907c94840f55273f78b8593bc728328f1cb4688e`.
+  Metadata is unchanged at `e3144006...`.
+- `py_compile` passes. Dynamic import confirms both corrected provenance
+  constants, both pending terminal SHA placeholders and
+  `CACHE_BINDING_READY=False`; calling `main()` raises at the first statement,
+  before environment mutation, filesystem creation, clone, input discovery or
+  CUDA access. No cache was consumed and the kernel was not launched.
+- Successor readiness evidence
+  `artifacts/research_protocols/rad_dino_mask_bag_normal_prototype_r1_v1_wrapper_readiness_audit_v2.json`,
+  SHA-256
+  `6287d15c250cb78761d6f4e4c1adf647b0ea252bf9f171008f60a2b1b5132854`,
+  supersedes the earlier readiness audit only for upstream cache provenance.
+  It binds the independent-auditor readiness SHA `a704b19e...` and permits only
+  the two terminal output hashes plus `CACHE_BINDING_READY=True` after a full
+  cache audit pass, followed by a final wrapper prelaunch audit.
+- No R1 scientific code, protocol, hyperparameter, prediction or metric was
+  changed. No new paper/URL was used; no heavy local compute, validation GT,
+  consumer training or BTXRD test access occurred.
+
