@@ -8868,4 +8868,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   local Python-3.9 `zip(strict)` diagnostic shim. Producer, predictions,
   protocol, launch binding, GT boundary, consumer and test remain unchanged;
   the corrected physical audit has not yet been rerun at this point.
+- **Corrected full physical audit pass before GT:** the same immutable compact
+  output then passed the corrected independent auditor with status
+  `MATCHED_PAIR_PREDICTIONS_PHYSICALLY_VERIFIED_GT_BLIND`. It physically
+  verified 371 shared family payloads plus 371 candidate-score payloads and 371
+  prediction maps for each arm, `155,401,323` bound evidence bytes, exact
+  protocol/source/split/cache/baseline/initial-state/history/checkpoint/T4x2
+  provenance and all safety flags. Tracked audit
+  `artifacts/kaggle/rad_dino_mask_bag_family_balanced_s1_pair_v1/kernel_version1_complete_gt_blind_output_audit.json`
+  has SHA-256
+  `fb0f92706432e36d856ccbe6beff7ef6bde2063ec293810b665db3ed85b74b3a`;
+  it self-binds corrected auditor SHA-256
+  `6ee254d184e062927d45ff1355df998adc0caba20147acd59cb4629687ce66ce`
+  and pair prediction-freeze SHA-256
+  `b393174c6cf8ce8a6aaea551ab36a1893280140529336a702d9b7aceb9b6af16`.
+  Absolute candidate-count/probability Spearman is
+  `0.4674388986415078` standard and `0.46716896371012795`
+  family-balanced, both below frozen geometry-v3 baseline
+  `0.48137777593654113`; this GT-blind diagnostic alone does not authorize
+  promotion. Validation GT, baseline per-image table, consumer and BTXRD test
+  still had not been opened at audit freeze time. The audit artifact/hash must
+  be committed/pushed before the predeclared post-freeze evaluator may run.
 

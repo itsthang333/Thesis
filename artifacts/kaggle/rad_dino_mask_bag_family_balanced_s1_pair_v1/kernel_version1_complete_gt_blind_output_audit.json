@@ -1,0 +1,40 @@
+{
+  "arms": {
+    "family_balanced": {
+      "absolute_count_probability_spearman": 0.46716896371012795,
+      "physical_candidate_score_payloads_verified": 371,
+      "physical_validation_evidence_bytes": 76595455,
+      "physical_validation_maps_verified": 371
+    },
+    "standard": {
+      "absolute_count_probability_spearman": 0.4674388986415078,
+      "physical_candidate_score_payloads_verified": 371,
+      "physical_validation_evidence_bytes": 76595504,
+      "physical_validation_maps_verified": 371
+    }
+  },
+  "audit_id": "independent_mask_bag_family_balanced_s1_pair_output_v1",
+  "auditor_source_sha256": "6ee254d184e062927d45ff1355df998adc0caba20147acd59cb4629687ce66ce",
+  "bound_wrapper_sha256": "ad5cfe595820215353ebd2513d6f6f71bacbe9121ba67a28ac28605cb44c5462",
+  "candidate_family_manifest_sha256": "637dde13dcc94630d6f8bcb65c840da22fa3aec3fbfef77ccdfe2cb15612d4a7",
+  "consumer_trained": false,
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-family-balanced-s1-pair-v1",
+  "kernel_version": 1,
+  "launch_binding_sha256": "9e77ef03d77162674bc1305440f05a09257ad4d6ac1c0157987c36a6030fe442",
+  "numeric_reconstruction_tolerance": {
+    "base_absolute": 2e-06,
+    "float32_ulps": 4,
+    "scope": "stored GPU float32 bag logit versus independent CPU float64 reconstruction"
+  },
+  "pair_prediction_freeze_sha256": "b393174c6cf8ce8a6aaea551ab36a1893280140529336a702d9b7aceb9b6af16",
+  "physical_candidate_family_payloads_verified": 371,
+  "physical_output_bytes_verified": 155401323,
+  "protocol_sha256": "62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413",
+  "run_manifest_sha256": "e79e335e79f6fa9913e06286cfc433e90b673c5c0d90253d3a8b601b8ea3b252",
+  "source_commit": "f3da1817ee3491f04e8c86335556762ebc675d8d",
+  "status": "MATCHED_PAIR_PREDICTIONS_PHYSICALLY_VERIFIED_GT_BLIND",
+  "test_evaluated": false,
+  "training_labels": "image_level_only",
+  "validation_gt_read": false,
+  "wrapper_output_audit_sha256": "ea1bc6626ceabfba428755cca824eed573f24a9b723edad4c47e1915efa1460c"
+}
