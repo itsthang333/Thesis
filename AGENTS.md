@@ -8,6 +8,9 @@ này và toàn bộ `RESEARCH_LOG.md` trước khi thực hiện nghiên cứu.
 
 - Tất cả thành viên cùng hướng tới mục tiêu thesis và goal nghiên cứu hiện tại.
 - `RESEARCH_LOG.md` là nguồn điều phối thực nghiệm trung tâm và có thẩm quyền.
+- Branch `research-wsss-improvement` giữ bản `RESEARCH_LOG.md` điều phối chính.
+  Người cộng tác làm code trên branch riêng và đồng bộ bản log mới nhất từ branch
+  này trước khi đăng ký hoặc chạy thực nghiệm.
 - Không dựa riêng vào lịch sử chat, trí nhớ hoặc file tạm để xác định thực nghiệm
   nào đang chạy hay đã hoàn thành.
 - Không xóa, ghi đè hoặc sửa lại kết quả/bằng chứng của thành viên khác. Nếu cần
@@ -18,23 +21,34 @@ này và toàn bộ `RESEARCH_LOG.md` trước khi thực hiện nghiên cứu.
 Trước khi chạy bất kỳ thực nghiệm khoa học nào:
 
 1. Fetch phiên bản mới nhất của `origin/research-wsss-improvement`.
-2. Đồng bộ và đọc phiên bản `RESEARCH_LOG.md` mới nhất từ remote mà không ghi đè
-   code hoặc thay đổi cục bộ của người đang làm việc.
+2. Nếu đang làm trên branch riêng, đồng bộ phiên bản `RESEARCH_LOG.md` mới nhất
+   từ `origin/research-wsss-improvement` vào branch đó mà không ghi đè code hoặc
+   thay đổi cục bộ.
 3. Đọc **toàn bộ** `RESEARCH_LOG.md`, không chỉ tail hoặc mục gần nhất.
 4. Tìm các thực nghiệm giống, gần giống, có chung input, hypothesis, protocol,
    model, candidate gallery, evaluator hoặc output consumer.
 5. Không chạy lại một thực nghiệm đang có trạng thái `ĐANG LÀM`.
 6. Nếu chưa có người phụ trách, thêm một mục đăng ký vào `RESEARCH_LOG.md` với
    trạng thái `ĐANG LÀM`.
-7. Commit và push **chỉ thay đổi đăng ký trong `RESEARCH_LOG.md`** trước khi chạy;
-   không gộp code thực nghiệm vào commit giành quyền này.
-8. Chỉ bắt đầu chạy sau khi push đăng ký thành công trên remote mới nhất.
+7. Commit và push ghi chú `ĐANG LÀM` trước khi chạy. Không còn yêu cầu commit này
+   chỉ chứa `RESEARCH_LOG.md`; code có thể được commit/push bình thường theo quy
+   trình của branch đang làm việc.
+8. Bảo đảm ghi chú `ĐANG LÀM` đã hiện diện trong `RESEARCH_LOG.md` điều phối trên
+   `research-wsss-improvement` để thành viên ở branch khác nhìn thấy. Người làm
+   trên branch riêng có thể đưa thay đổi log về branch điều phối bằng một commit,
+   merge hoặc PR chỉ dành cho phần log.
+9. Chỉ bắt đầu chạy sau khi đăng ký đã được push thành công và nhìn thấy từ
+   branch điều phối mới nhất.
 
-Không dùng `git pull` thông thường nếu thao tác đó có thể merge/ghi đè code của
-người khác. Việc “đồng bộ riêng `RESEARCH_LOG.md`” phải bảo toàn worktree hiện tại
-và đặt commit điều phối lên trên lịch sử remote mới nhất. Nếu push bị
-non-fast-forward hoặc log có xung đột, dừng lại, fetch lại và hợp nhất nội dung
-log; không force-push và không bỏ mục của người khác.
+Mỗi thành viên push code lên branch của mình như bình thường; việc push code là
+cần thiết để kiểm tra source, chạy Kaggle và đóng băng provenance. Không hạn chế
+push code chỉ vì cơ chế điều phối log. Tuy nhiên, không push code của branch này
+đè lên branch code của người khác và không force-push.
+
+Khi chỉ cần lấy log điều phối, không dùng một thao tác có thể merge/ghi đè code
+ngoài ý muốn. Việc đồng bộ riêng `RESEARCH_LOG.md` phải bảo toàn worktree và code
+trên branch hiện tại. Nếu log có xung đột, fetch lại và hợp nhất đầy đủ nội dung;
+không bỏ mục hoặc kết quả của người khác.
 
 ## 3. Nội dung tối thiểu của một đăng ký thực nghiệm
 
@@ -81,6 +95,10 @@ Khi thực nghiệm kết thúc, cập nhật chính mục/mã thực nghiệm t
 - Bước tiếp theo được đề xuất và mã thực nghiệm kế thừa nếu có.
 - Xác nhận các khóa GT/consumer/test và prediction-freeze có được giữ hay không.
 
+Kết quả cuối cũng phải được đưa về bản `RESEARCH_LOG.md` trên
+`research-wsss-improvement`; chỉ lưu trên branch riêng thì chưa đủ để điều phối
+và có thể khiến thành viên khác lặp lại thực nghiệm.
+
 Không được xóa dấu vết của lỗi, kết quả âm hoặc thực nghiệm bị thay thế. Ghi một
 mục kế nhiệm/supersession thay vì sửa lịch sử theo hướng làm mất bằng chứng.
 
@@ -117,7 +135,9 @@ Một task/chat kế nhiệm phải:
 
 1. Đọc toàn bộ `AGENTS.md` này.
 2. Đọc toàn bộ `RESEARCH_LOG.md` mới nhất.
-3. Kiểm tra branch, HEAD, origin và worktree; bảo toàn thay đổi chưa commit.
+3. Kiểm tra branch, HEAD, origin và worktree; bảo toàn thay đổi chưa commit. Nếu
+   đang ở branch cộng tác riêng, xác nhận log đã được đồng bộ từ
+   `origin/research-wsss-improvement`.
 4. Xác định các mã `ĐANG LÀM` và không chiếm/chạy trùng.
 5. Tiếp tục từ artifact/protocol/hash mới nhất, không khởi động lại từ đầu.
 6. Không coi mô tả handoff hoặc lịch sử chat là mạnh hơn trạng thái repository và
