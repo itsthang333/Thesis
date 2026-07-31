@@ -123,6 +123,16 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Immutable derived split manifest. Its assignments are authoritative for BTXRD.",
     )
+    parser.add_argument(
+        "--classifier-split-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "Optional provenance-only split manifest bound to an older classifier "
+            "checkpoint. Dataset selection and external saliency remain bound to "
+            "--split-manifest."
+        ),
+    )
     parser.add_argument("--classifier-checkpoint", type=Path,
                         default=ROOT / "outputs" / "classifier" / "best_classifier.pt")
     parser.add_argument(
@@ -1181,7 +1191,7 @@ def main() -> None:
         expected_target_columns=expected_profile_columns,
         expected_task="single-label" if expected_profile_columns is not None else None,
         expected_num_classes=10 if expected_profile_columns is not None else None,
-        expected_split_manifest=args.split_manifest,
+        expected_split_manifest=(args.classifier_split_manifest or args.split_manifest),
         expected_pipeline_profile=(
             canonical_profile.name if canonical_profile is not None else None
         ),
@@ -1213,7 +1223,7 @@ def main() -> None:
         proposal_teacher, proposal_teacher_info = load_proposal_teacher(
             args.proposal_teacher_segmentation_checkpoint,
             expected_sha256=args.proposal_teacher_expected_sha256,
-            expected_split_manifest=args.split_manifest,
+            expected_split_manifest=(args.classifier_split_manifest or args.split_manifest),
             device=device,
         )
         print(
@@ -1452,6 +1462,14 @@ def main() -> None:
             "sam_checkpoint_sha256": sha256_file(args.sam_checkpoint.resolve()) if args.sam_checkpoint else None,
             "split_manifest": str(args.split_manifest.resolve()) if args.split_manifest else None,
             "split_manifest_sha256": sha256_file(args.split_manifest.resolve()) if args.split_manifest else None,
+            "classifier_split_manifest": (
+                str(args.classifier_split_manifest.resolve())
+                if args.classifier_split_manifest else None
+            ),
+            "classifier_split_manifest_sha256": (
+                sha256_file(args.classifier_split_manifest.resolve())
+                if args.classifier_split_manifest else None
+            ),
             "sam_prompt_mode": args.sam_prompt_mode,
             "sam_prompt_ensemble": args.sam_prompt_ensemble,
             "sam_grid_gallery": args.sam_grid_gallery,

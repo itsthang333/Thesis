@@ -54,8 +54,9 @@ def common_generation_args(
     classifier: Path,
     sam: Path,
     output_dir: Path,
+    classifier_split_manifest: Path | None = None,
 ) -> list[str]:
-    return [
+    command = [
         sys.executable,
         str(source_root / "project" / "generate_pseudo_masks.py"),
         "--pipeline-profile",
@@ -144,6 +145,11 @@ def common_generation_args(
         "all",
         "--force-normal-candidate-gallery",
     ]
+    if classifier_split_manifest is not None:
+        command.extend(
+            ["--classifier-split-manifest", str(classifier_split_manifest)]
+        )
+    return command
 
 
 def build_generation_command(
@@ -156,6 +162,7 @@ def build_generation_command(
     classifier: Path,
     sam: Path,
     output_dir: Path,
+    classifier_split_manifest: Path | None = None,
     external_root: Path | None = None,
     external_manifest_sha256: str | None = None,
     external_metadata_sha256: str | None = None,
@@ -166,6 +173,7 @@ def build_generation_command(
         source_root=source_root,
         data_root=data_root,
         split_manifest=split_manifest,
+        classifier_split_manifest=classifier_split_manifest,
         split=split,
         classifier=classifier,
         sam=sam,
@@ -262,6 +270,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--split-manifest", type=Path, required=True)
     parser.add_argument("--expected-split-sha256", required=True)
+    parser.add_argument("--classifier-split-manifest", type=Path)
+    parser.add_argument("--expected-classifier-split-sha256")
     parser.add_argument("--classifier-checkpoint", type=Path, required=True)
     parser.add_argument("--expected-classifier-sha256", required=True)
     parser.add_argument("--sam-checkpoint", type=Path, required=True)
@@ -278,6 +288,16 @@ def main() -> None:
     args = parse_args()
     if sha256_file(args.split_manifest) != args.expected_split_sha256:
         raise ValueError("Canonical split SHA-256 mismatch")
+    if args.classifier_split_manifest is not None:
+        if args.expected_classifier_split_sha256 is None:
+            raise ValueError("Classifier split manifest requires its expected SHA-256")
+        if (
+            sha256_file(args.classifier_split_manifest)
+            != args.expected_classifier_split_sha256
+        ):
+            raise ValueError("Classifier split manifest SHA-256 mismatch")
+    elif args.expected_classifier_split_sha256 is not None:
+        raise ValueError("Unexpected classifier split SHA-256 without a manifest")
     if sha256_file(args.classifier_checkpoint) != args.expected_classifier_sha256:
         raise ValueError("Classifier checkpoint SHA-256 mismatch")
     if sha256_file(args.sam_checkpoint) != args.expected_sam_sha256:
@@ -338,6 +358,7 @@ def main() -> None:
             source_root=args.source_root,
             data_root=args.data_root,
             split_manifest=args.split_manifest,
+            classifier_split_manifest=args.classifier_split_manifest,
             split=split,
             classifier=args.classifier_checkpoint,
             sam=args.sam_checkpoint,
