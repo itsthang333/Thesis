@@ -1,0 +1,50 @@
+{
+  "audit_id": "rad_dino_mask_bag_affinity_residual_r2_v1_wrapper_binder_readiness",
+  "status": "STATIC_READY_NO_R2_CLAIM_NO_LAUNCH",
+  "template_sha256": "000843edda2593cba96e9a310462670cfd4be7a561862c5a29ac48624eafd629",
+  "binder": {
+    "path": "project/bind_mask_bag_affinity_residual_r2_wrapper.py",
+    "sha256": "0e744edd20784ac1d56beb33bbe84c1e41f740b00304eb870050c300b3dd1aad",
+    "test_path": "tests/test_bind_mask_bag_affinity_residual_r2_wrapper.py",
+    "test_sha256": "5e5683c767ee9986c51315f299fa2bebc2eae6534fc0332d09e3b68483dd331a"
+  },
+  "finite_binding_surface": [
+    "KERNEL_VERSION = 0",
+    "LAUNCH_BINDING_READY = False",
+    "CHECKOUT_COMMIT = UNBOUND"
+  ],
+  "binding_guards": [
+    "template canonical SHA-256",
+    "three replacements exactly once",
+    "exact inverse reconstruction",
+    "output and launch-binding paths must not exist",
+    "scientific source is an ancestor of execution checkout",
+    "protocol and all 21 source/test hashes match at execution checkout",
+    "written wrapper and JSON are reread exactly"
+  ],
+  "static_smoke": {
+    "checkout_commit": "4b9b2841a543d40e1540601f168e9a03edc0dfb1",
+    "kernel_version": 1,
+    "bound_wrapper_sha256": "05e69e9f4600c4b3888f7d163259b81257419da644280766673bc19d9e56da2c",
+    "launch_binding_sha256": "93610cded5c36b9513a3aeac7eb59e48a4c65a3475067eb531f672bbdd34cb6a",
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true,
+    "role": "ignored synthetic binding-path smoke only; not an authorized R2 launch binding"
+  },
+  "tests": {
+    "binder_wrapper_auditor": "10 passed",
+    "full_repository": "370 passed under the documented local Python-3.9 zip(strict) diagnostic shim",
+    "py_compile": "passed",
+    "git_diff_check": "passed"
+  },
+  "required_before_real_binding": "R1 terminal independent audit, complete central-log synchronization and a unique R2 claim committed/pushed",
+  "safety": {
+    "scientific_data_opened": false,
+    "prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "r2_bound": false,
+    "r2_launched": false
+  }
+}

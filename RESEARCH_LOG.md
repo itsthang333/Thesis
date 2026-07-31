@@ -8173,4 +8173,45 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `cf6d6dc01e912a57e0cf05d0a99837666ae3c17f900332e930b18864f1337d31`.
   No R2 claim, binding, kernel launch, scientific input, prediction, GT/test or
   consumer access occurred.
+- **Correction — R2 wrapper self-hash binding made non-circular:** a later
+  binder audit found that the first tracked wrapper still carried an unused
+  `BOUND_WRAPPER_SHA256` literal. Even without comparing it at runtime, filling
+  that literal would change the bytes it purported to name. The corrected
+  template removes the literal entirely. The future binder has exactly three
+  finite replacements (`LAUNCH_BINDING_READY`, `KERNEL_VERSION`,
+  `CHECKOUT_COMMIT`), then writes the resulting canonical wrapper hash to an
+  external prelaunch binding. Runtime computes the same hash directly from
+  `__file__` for `wrapper_output_audit.json`; the independent output auditor
+  compares it to the pre-output binding. Corrected wrapper/test SHA-256 values
+  are `000843edda2593cba96e9a310462670cfd4be7a561862c5a29ac48624eafd629`
+  and `66cc6096a0b7f39437f411cf23079f9860a72c4fd3767cd19ad8d904a0704c4e`;
+  seven wrapper/auditor tests and `py_compile` pass. Superseding readiness JSON
+  SHA-256 is
+  `407020467251cfafa5cdd27cf086ee715eff58460abda3f9df5092d3ce95dc85`.
+- One bounded R1 check preceding this static correction still found version 3
+  `RUNNING`; no repeat poll or output request followed. R2 remains unbound,
+  unclaimed and unlaunched; GT/test and consumer remain locked.
+- **Progress — finite R2 wrapper binder ready:** the external one-time binder
+  is prepared at `project/bind_mask_bag_affinity_residual_r2_wrapper.py`,
+  SHA-256
+  `0e744edd20784ac1d56beb33bbe84c1e41f740b00304eb870050c300b3dd1aad`.
+  It accepts only corrected template `000843ed...`, replaces exactly launch
+  readiness, positive kernel version and a 40-hex execution checkout, verifies
+  exact inverse reconstruction, source ancestry, protocol and all 21 frozen
+  source/test hashes at that checkout, refuses existing output paths and
+  rereads both written files. Its launch-binding JSON has the exact schema
+  required by the already frozen independent output auditor.
+- A synthetic ignored-path smoke against checkout `4b9b284` and version `1`
+  produced wrapper/binding hashes `05e69e9f...` / `93610cde...`, three exact
+  replacements and a byte-exact inverse. These smoke outputs are explicitly
+  not an authorized R2 binding. Ten binder/wrapper/auditor tests and
+  `py_compile` pass; the complete repository regression passes `370/370` in
+  13.98 seconds under the documented local Python-3.9 `zip(strict=...)` shim.
+  Test SHA-256 is
+  `5e5683c767ee9986c51315f299fa2bebc2eae6534fc0332d09e3b68483dd331a`.
+  Binder-readiness evidence SHA-256 is
+  `a2586adb08c3366c681b512cff1095d171bd86a57bdec8e25649be15d2b5a858`.
+  Real binding remains forbidden until R1 is terminal/audited, the central log
+  is synchronized and a unique R2 claim is pushed; no scientific data,
+  prediction, GT/test, consumer, R2 binding or launch occurred.
 

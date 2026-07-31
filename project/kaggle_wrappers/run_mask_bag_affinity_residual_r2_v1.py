@@ -17,7 +17,6 @@ import zipfile
 KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-affinity-residual-r2-v1"
 KERNEL_VERSION = 0
 LAUNCH_BINDING_READY = False
-BOUND_WRAPPER_SHA256 = "UNBOUND"
 CHECKOUT_COMMIT = "UNBOUND"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "c0e38628069ff3bedd4493c4ff004b75bd32e008"
@@ -85,10 +84,7 @@ def safe_extract(archive_path: Path, destination: Path) -> None:
 def clone_and_verify() -> dict[str, str]:
     if not LAUNCH_BINDING_READY or KERNEL_VERSION < 1:
         raise RuntimeError("R2 launch binding is not frozen")
-    for value, name, length in (
-        (BOUND_WRAPPER_SHA256, "wrapper", 64),
-        (CHECKOUT_COMMIT, "checkout", 40),
-    ):
+    for value, name, length in ((CHECKOUT_COMMIT, "checkout", 40),):
         if len(value) != length or any(character not in "0123456789abcdef" for character in value):
             raise RuntimeError(f"Invalid bound R2 {name}")
     run(["git", "clone", "--filter=blob:none", "--no-checkout", REPOSITORY, str(SOURCE)], cwd=WORK)
@@ -208,7 +204,7 @@ def audit_output(source_hashes: dict[str, str], cache: dict[str, object], baseli
             indices, logits = payload["candidate_indices"], payload["candidate_logits"]
         if hash_file(path) != row["score_sha256"] or indices.dtype != np.int64 or logits.dtype != np.float32 or logits.shape != indices.shape or not np.isfinite(logits).all():
             raise RuntimeError(f"R2 candidate-score mismatch: {row['image_id']}")
-    wrapper_audit = {"kernel": KERNEL, "kernel_version": KERNEL_VERSION, "bound_wrapper_sha256": BOUND_WRAPPER_SHA256, "checkout_commit": CHECKOUT_COMMIT, "scientific_source_commit": SOURCE_COMMIT, "protocol_sha256": PROTOCOL_SHA256, "source_hashes": source_hashes, "cache": cache, "baseline": baseline, "t4x2": t4, "physical_prediction_maps_verified": 371, "physical_candidate_score_payloads_verified": 371, "validation_gt_read": False, "consumer_trained": False, "test_evaluated": False, "python": platform.python_version(), "finished_utc": datetime.now(timezone.utc).isoformat()}
+    wrapper_audit = {"kernel": KERNEL, "kernel_version": KERNEL_VERSION, "bound_wrapper_sha256": canonical_hash(Path(__file__)), "checkout_commit": CHECKOUT_COMMIT, "scientific_source_commit": SOURCE_COMMIT, "protocol_sha256": PROTOCOL_SHA256, "source_hashes": source_hashes, "cache": cache, "baseline": baseline, "t4x2": t4, "physical_prediction_maps_verified": 371, "physical_candidate_score_payloads_verified": 371, "validation_gt_read": False, "consumer_trained": False, "test_evaluated": False, "python": platform.python_version(), "finished_utc": datetime.now(timezone.utc).isoformat()}
     (OUTPUT / "wrapper_output_audit.json").write_text(json.dumps(wrapper_audit, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 

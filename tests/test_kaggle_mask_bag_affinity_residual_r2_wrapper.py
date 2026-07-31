@@ -8,10 +8,10 @@ def test_r2_wrapper_is_fail_closed_until_prelaunch_binding() -> None:
     source = SOURCE.read_text(encoding="utf-8")
     assert "KERNEL_VERSION = 0" in source
     assert "LAUNCH_BINDING_READY = False" in source
-    assert 'BOUND_WRAPPER_SHA256 = "UNBOUND"' in source
     assert 'CHECKOUT_COMMIT = "UNBOUND"' in source
     assert source.index("if not LAUNCH_BINDING_READY") < source.index("git\", \"clone")
-    assert "canonical_hash(Path(__file__))" not in source
+    assert '"bound_wrapper_sha256": canonical_hash(Path(__file__))' in source
+    assert "BOUND_WRAPPER_SHA256" not in source
 
 
 def test_r2_wrapper_orders_all_gates_before_fit_and_freeze() -> None:
