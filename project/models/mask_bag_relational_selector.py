@@ -122,75 +122,23 @@ def build_family_overlap_graph(
     iou = intersections / unions.clamp_min(1.0)
     minimum_area = torch.minimum(areas[:, :, None], areas[:, None, :])
     containment = intersections / minimum_area.clamp_min(1.0)
-    return build_family_overlap_graph_from_pairwise(
-        iou,
-        containment,
-        candidate_valid,
-        family_ids,
-        minimum_iou=minimum_iou,
-        minimum_containment=minimum_containment,
-    )
-
-
-def build_family_overlap_graph_from_pairwise(
-    pairwise_iou: torch.Tensor,
-    pairwise_containment: torch.Tensor,
-    candidate_valid: torch.Tensor,
-    family_ids: torch.Tensor,
-    *,
-    minimum_iou: float = 0.25,
-    minimum_containment: float = 0.50,
-) -> torch.Tensor:
-    """Build the same graph from hash-frozen pairwise cache matrices."""
-
-    if pairwise_iou.ndim != 3 or pairwise_iou.shape != pairwise_containment.shape:
-        raise ValueError("pairwise IoU/containment must be aligned [B,N,N] tensors")
-    if pairwise_iou.shape[:2] != candidate_valid.shape or (
-        pairwise_iou.shape[1] != pairwise_iou.shape[2]
-    ):
-        raise ValueError("pairwise geometry must align with candidate validity")
-    if family_ids.shape != candidate_valid.shape:
-        raise ValueError("family IDs must align with candidate validity")
-    if (
-        not torch.isfinite(pairwise_iou).all()
-        or not torch.isfinite(pairwise_containment).all()
-        or (pairwise_iou < 0).any()
-        or (pairwise_iou > 1).any()
-        or (pairwise_containment < 0).any()
-        or (pairwise_containment > 1).any()
-        or not torch.allclose(pairwise_iou, pairwise_iou.transpose(1, 2))
-        or not torch.allclose(
-            pairwise_containment,
-            pairwise_containment.transpose(1, 2),
-        )
-    ):
-        raise ValueError("pairwise geometry must be finite, symmetric and in [0,1]")
-    if not (0.0 <= minimum_iou <= 1.0):
-        raise ValueError("minimum_iou must lie in [0,1]")
-    if not (0.0 <= minimum_containment <= 1.0):
-        raise ValueError("minimum_containment must lie in [0,1]")
-    dummy_logits = torch.zeros(
-        candidate_valid.shape,
-        dtype=torch.float32,
-        device=pairwise_iou.device,
-    )
-    valid = _validate_bag_tensors(dummy_logits, candidate_valid, family_ids)
     same_family = family_ids[:, :, None] == family_ids[:, None, :]
     pair_valid = valid[:, :, None] & valid[:, None, :]
-    adjacency = pair_valid & same_family & (
-        (pairwise_iou >= minimum_iou)
-        | (pairwise_containment >= minimum_containment)
+    adjacency = (
+        pair_valid
+        & same_family
+        & ((iou >= minimum_iou) | (containment >= minimum_containment))
     )
     identity = torch.eye(
-        candidate_valid.shape[1],
+        candidate_masks.shape[1],
         dtype=torch.bool,
-        device=pairwise_iou.device,
+        device=candidate_masks.device,
     )[None]
     adjacency &= ~identity
 
     isolated = valid & ~adjacency.any(dim=-1)
     adjacency |= identity & isolated[:, :, None]
-    return adjacency.to(dtype=pairwise_iou.dtype)
+    return adjacency.to(dtype=candidate_masks.dtype)
 
 
 def smooth_candidate_logits(
@@ -340,7 +288,6 @@ class CriticalRelationResidual(nn.Module):
 __all__ = [
     "CriticalRelationResidual",
     "build_family_overlap_graph",
-    "build_family_overlap_graph_from_pairwise",
     "family_balanced_smooth_mil_pool",
     "smooth_candidate_logits",
 ]

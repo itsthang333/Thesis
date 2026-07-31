@@ -14,11 +14,9 @@ if str(PROJECT) not in sys.path:
 
 torch = pytest.importorskip("torch")
 
-from models.mask_bag_relational_selector import (  # noqa: E402
-    build_family_overlap_graph_from_pairwise,
-)
 from models.mask_bag_same_family_graph import (  # noqa: E402
     SameFamilyGraphConfig,
+    build_cached_same_family_graph,
     score_same_family_graph_records,
 )
 
@@ -52,7 +50,7 @@ def _record() -> dict[str, object]:
 
 def test_cached_pairwise_graph_is_same_family_symmetric_and_isolation_safe() -> None:
     record = _record()
-    graph = build_family_overlap_graph_from_pairwise(
+    graph = build_cached_same_family_graph(
         torch.from_numpy(record["pairwise_iou"])[None],
         torch.from_numpy(record["pairwise_containment"])[None],
         torch.ones((1, 3), dtype=torch.bool),
