@@ -1,0 +1,46 @@
+{
+  "readiness_id": "rad_dino_mask_bag_orbit_relation_r4_v1_wrapper_binder_readiness",
+  "created_utc": "2026-07-31T20:17:25Z",
+  "status": "UNBOUND_FAIL_CLOSED_WRAPPER_AND_BINDER_READY",
+  "experiment_id": "EXP-20260801-codex-r4-orbit-averaged-relation-v1",
+  "protocol_sha256": "00d1ba1b7611c8320e87948d88dac06af87c0b29d1e62f875e79105fc41c0aae",
+  "scientific_source_commit": "84f3dca6bb58fa3dc2a0a48b5f58c05e33edff6e",
+  "wrapper": {
+    "path": "project/kaggle_wrappers/run_mask_bag_orbit_relation_r4_v1.py",
+    "canonical_lf_sha256": "4924779ad3ce01cdd0c410f5dfbfdad78f1ba4c2650012f11503517df2f67a19",
+    "test_path": "tests/test_kaggle_wrapper_mask_bag_orbit_relation_r4_v1.py",
+    "test_sha256": "437af08d550dacb3da83b10fe63a834e1a06697e089e3d82433941864620aa19",
+    "kernel_version": 0,
+    "launch_binding_ready": false,
+    "checkout_commit": "UNBOUND",
+    "requires_t4x2": true,
+    "physical_outputs_checked": ["371 prediction maps", "371 candidate-score payloads", "371 GT-blind diagnostic rows"]
+  },
+  "binder": {
+    "path": "project/bind_mask_bag_orbit_relation_r4_wrapper.py",
+    "sha256": "a72e4d1612fad1f4f65d1fb31b2cfba968821308b436b8201e8540e46e87fec3",
+    "test_path": "tests/test_bind_mask_bag_orbit_relation_r4_wrapper.py",
+    "test_sha256": "1e9c498aa5fcac319aad0e70b34e1bfe50cba08bbd4d83df1aa4e263c669a255",
+    "finite_replacements": 3,
+    "inverse_reconstruction_required": true,
+    "refuses_existing_output": true,
+    "verifies_protocol_and_all_frozen_source_hashes_at_checkout": true
+  },
+  "tests": {
+    "focused_result": "7 passed in 0.69s",
+    "full_repository_result": "422 passed in 16.05s",
+    "python39_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "remaining_before_launch": [
+    "commit and push exact wrapper/binder source",
+    "bind exact positive kernel version and execution checkout once",
+    "freeze launch binding and final prelaunch audit",
+    "push binding/audit before Kaggle launch"
+  ],
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kaggle_launched": false
+}

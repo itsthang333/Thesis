@@ -9348,4 +9348,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `b6d545cdc7520db50c5c2fd4598899be3f4da9aecec0f5aa5c86c714648e8351`.
   Wrapper/binder remain unfinished, so no binding or launch exists and
   validation GT/test plus consumer remain locked.
+- **R4 wrapper/binder readiness:** fail-closed wrapper
+  `project/kaggle_wrappers/run_mask_bag_orbit_relation_r4_v1.py` canonical-LF
+  SHA-256
+  `4924779ad3ce01cdd0c410f5dfbfdad78f1ba4c2650012f11503517df2f67a19`
+  remains unbound at kernel version 0/checkout `UNBOUND`, verifies exact source,
+  split, accepted baseline/cache, T4x2 real work and all 371 physical outputs.
+  Wrapper test SHA-256 is
+  `437af08d550dacb3da83b10fe63a834e1a06697e089e3d82433941864620aa19`.
+  One-time binder SHA-256
+  `a72e4d1612fad1f4f65d1fb31b2cfba968821308b436b8201e8540e46e87fec3`
+  performs exactly three external replacements, inverse reconstruction and
+  checkout protocol/source verification; binder test SHA-256 is
+  `1e9c498aa5fcac319aad0e70b34e1bfe50cba08bbd4d83df1aa4e263c669a255`.
+- Focused wrapper/binder/auditor tests pass `7/7`; full regression passes
+  `422/422` in 16.05 seconds under the documented Python-3.9 shim. Readiness
+  JSON SHA-256 is
+  `181d4fed5f91f72aa4f8da94eb4069bde193bc04e7a57f06bf5220be1955d140`.
+  No real binding/launch or scientific output exists; GT/test and consumer stay
+  locked.
 
