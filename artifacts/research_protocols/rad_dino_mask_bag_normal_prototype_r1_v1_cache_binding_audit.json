@@ -1,0 +1,21 @@
+{
+  "audit_id": "mask_bag_normal_prototype_r1_cache_binding_v1",
+  "binder_source_sha256": "f949d56227f015518192ab536a6258a3e8226140cc38e0fd2a3b066d5cda9981",
+  "bound_wrapper_sha256": "2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b",
+  "cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "cache_protocol_sha256": "be9c91b53926eda2f8bf8dba894385f03dc6accd15d3fa9646da0d1a17a635f2",
+  "cache_source_commit": "c0e38628069ff3bedd4493c4ff004b75bd32e008",
+  "cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+  "consumer_trained": false,
+  "exact_wrapper_replacements": 3,
+  "independent_audit_sha256": "7d9f693dd5d1d9206b01cc2c8a0ed4aed497f9f17d9dedf670a97771b0f78334",
+  "inverse_byte_reconstruction_sha256": "4b886f91aa01b15c18a1a0105db11a31f62233635e214e9bbd406e5712d05044",
+  "kernel_launched": false,
+  "r1_protocol_sha256": "dded9c638e142576fedf0ae4c8102fdf64198744a4949707865e50b7081f312b",
+  "r1_source_commit": "d66c89958baa3344dbbaae6030a9ccd8ecec7b3a",
+  "status": "BOUND_NOT_LAUNCHED",
+  "test_evaluated": false,
+  "training_labels": "image_level_only",
+  "unbound_template_sha256": "4b886f91aa01b15c18a1a0105db11a31f62233635e214e9bbd406e5712d05044",
+  "validation_gt_read": false
+}

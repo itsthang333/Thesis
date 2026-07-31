@@ -7712,6 +7712,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tests before fitting. This is technical binding preparation only: no cache
   record was consumed for fitting, no prediction/GT/test was opened, and R1
   remains unbound and unlaunched pending commit/push of this binder evidence.
+- **Progress — exact cache binding and final prelaunch pass:** after the binder
+  evidence was pushed at `adec78c`, the accepted cache was bound once into the
+  R1 wrapper. Binding audit
+  `artifacts/research_protocols/rad_dino_mask_bag_normal_prototype_r1_v1_cache_binding_audit.json`
+  has SHA-256
+  `c17d7ed89adcb1f2ba86f0a21faacec83d62baf79521e0941cc6cae8d79551ae`.
+  Bound wrapper SHA-256 is
+  `2ee94b622fdaf02c4cf646be29a1651748cd134461df844ecf67217842269f5b`;
+  its inverse reconstruction is the exact unbound template
+  `4b886f91aa01b15c18a1a0105db11a31f62233635e214e9bbd406e5712d05044`,
+  with only `CACHE_BINDING_READY` and the accepted cache freeze/audit SHA values
+  changed. Final metadata SHA-256 is
+  `fc290c04a913fd17dfded8ee71a933233af1b047afacdbceecc02d7571f108b2`.
+  The first static order check failed closed because a whole-file string search
+  matched a test filename in the source-hash table before `main()`; restricting
+  order validation to the physical `main()` region passed without any wrapper,
+  protocol or scientific change. Final prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_normal_prototype_r1_v1_final_prelaunch_audit.json`
+  SHA-256
+  `f3921d1102f1b090d57dbf90ff3a3504336a60488d5e935c9733fb778bc5bfd9`
+  verifies metadata, `py_compile`, all 21 frozen source hashes at checkout
+  `3647997d...`, source ancestry, cache/binding provenance and execution order:
+  clone/source/hash/T4x2/cache gates, unmodified focused and whole tests,
+  image-label-only R1 fit, physical prediction freeze/audit. No evaluator or
+  validation GT path exists in the wrapper; `consumer_trained=false`,
+  `test_evaluated=false`, and the kernel remains not launched until this final
+  evidence is committed and pushed.
 
 ### EXP-20260731-codex-local-research-handoff-v1
 
