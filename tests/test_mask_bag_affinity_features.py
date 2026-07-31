@@ -103,3 +103,48 @@ def test_invalid_candidates_are_zero_and_empty_context_is_supported() -> None:
         torch.zeros_like(reshaped[0, 0, :, 4]),
     )
     assert torch.isfinite(features).all()
+
+
+@pytest.mark.skipif(torch is None, reason="PyTorch is unavailable locally")
+def test_inclusive_affinity_keeps_candidate_and_layer_axes_distinct() -> None:
+    batch, layers, height, width, channels, candidates = 2, 3, 2, 2, 4, 4
+    tokens = torch.arange(
+        1,
+        1 + batch * layers * height * width * channels,
+        dtype=torch.float32,
+    ).reshape(batch, layers, height, width, channels)
+    proposal = (
+        torch.arange(
+            1,
+            1 + batch * candidates * height * width,
+            dtype=torch.float32,
+        ).reshape(batch, candidates, height, width)
+        % 7
+        + 1
+    )
+    context = torch.zeros_like(proposal)
+    valid = torch.ones(batch, candidates, dtype=torch.bool)
+
+    features = affinity_summary_features(
+        tokens,
+        proposal,
+        context,
+        valid,
+    ).reshape(batch, candidates, layers, 8)
+    normalized = torch.nn.functional.normalize(tokens, dim=-1)
+    expected = torch.empty(batch, candidates, layers)
+    for batch_index in range(batch):
+        for candidate_index in range(candidates):
+            weights = proposal[batch_index, candidate_index]
+            mass = weights.sum()
+            for layer_index in range(layers):
+                weighted_sum = (
+                    normalized[batch_index, layer_index]
+                    * weights[:, :, None]
+                ).sum(dim=(0, 1))
+                expected[batch_index, candidate_index, layer_index] = (
+                    weighted_sum.square().sum() / mass.square()
+                )
+
+    assert features.shape == (batch, candidates, layers, 8)
+    assert torch.allclose(features[..., 0], expected, atol=1.0e-6, rtol=0.0)

@@ -18,7 +18,7 @@ def _weighted_affinity_statistics(
     vector_norm_squared = sums.square().sum(dim=-1)
 
     inclusive = (
-        vector_norm_squared / mass.square().clamp_min(epsilon)
+        vector_norm_squared / mass.square()[:, :, None].clamp_min(epsilon)
     ).clamp(0.0, 1.0)
     off_diagonal_denominator = mass.square() - squared_mass
     off_diagonal = torch.where(

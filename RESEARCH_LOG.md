@@ -7405,4 +7405,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   references parent protocol `ee810fd8...`, binds the corrected source/test,
   and leaves gallery, geometry, feature definition, baseline and all selector
   science unchanged. The prepared R1 wrapper remains unbound and unlaunched.
+- The source correction adds exactly the missing singleton in the inclusive
+  denominator: `[B,N] -> [B,N,1]`; the off-diagonal formula and every feature
+  definition remain unchanged. Corrected affinity source SHA-256 is
+  `400f018f6181c740d429dbf0e7f2d1de501e3845232f59a7862d4b779c673348`.
+  The new regression uses `B=2,L=3,N=4`, candidate-specific weights and an
+  explicit weighted-token manual reference, so neither equal dimension sizes
+  nor broadcasting can hide candidate/layer mixing. Corrected test SHA-256 is
+  `3650cb415b81ddaea84b8be8284ebb8b26539c8decc593e7271afc8a38cf7215`.
+- The six affinity tests pass. The exact former Kaggle shape
+  `B=2,L=3,N=27` now returns finite `[2,27,24]` features. The entire local
+  repository reports `334 passed` with the previously documented Python-3.9
+  compatibility shim only for `zip(strict=...)`; Kaggle Python 3.12 must still
+  rerun the unmodified focused and whole suites. No heavy local extraction,
+  cache, validation prediction, GT access, consumer or test evaluation was
+  performed.
 
