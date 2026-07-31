@@ -7367,3 +7367,42 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   has status `WAITING_FOR_ACCEPTED_SELECTOR_CACHE_BINDING`, not prelaunch
   approval. No R1 kernel was pushed; cache, GT, consumer and test locks remain.
 
+### Shared selector-cache version 4 affinity-axis failure
+
+- The next single status check found selector-cache version `4` at terminal
+  `ERROR`. Direct output was downloaded once into a new ignored directory and
+  read completely; its sole log has SHA-256
+  `625aedc2bf442d5aaedb6096353844bc0fcd830d733f6a59efbf127db4e4460a`.
+- Checkout/source/protocol, T4x2, transport, galleries, split, modern BTXRD
+  root and RAD-DINO snapshot all passed. Kaggle Python 3.12 reported `44`
+  focused tests passing and the unmodified whole repository reported
+  `332 passed, 1 skipped` with four warnings. This closes the version-3 test
+  correction and proves the builder reached real T4x2 cache execution.
+- The builder then failed during the first clean-train descriptor-cache pass,
+  inside the additional 24-value affinity summary. `vector_norm_squared` has
+  shape `[B,N,L]`, but inclusive affinity divided it by `[B,N]` mass squared.
+  PyTorch therefore aligned the trailing candidate count `27` against the
+  layer count `3` and raised the exact `3 versus 27` dimension error. A local
+  synthetic tensor with `B=2,L=3,N=27` reproduces the same traceback.
+- Existing tests used `N=L=1` or `N=L=2`, hiding the missing layer-axis
+  singleton and, in the latter case, failing to detect candidate-denominator
+  mixing. The mathematically intended exact weighted statistic requires
+  `mass.square()[:, :, None]`, consistent with the already explicit
+  off-diagonal denominator immediately below it. A new test must use multiple
+  batches and `N != L` with candidate-specific weights.
+- The failure occurred before a complete train cache, validation extraction,
+  baseline reproduction, cache serialization or freeze. Clean-train
+  radiographs were opened/encoded, but no segmentation GT was read; validation
+  radiographs/GT and BTXRD test were not opened, no consumer was trained, and
+  no scientific result or selector authorization exists. Machine-readable
+  evidence is
+  `artifacts/kaggle/rad_dino_mask_bag_selector_cache_v1/kernel_version4_error_audit.json`.
+  Its canonical-LF SHA-256 is
+  `2f82d7dcfbe2f8df2a778dd812469e579ae8ff7f88c1576e83d928f2c5cf04af`.
+- Because this changes one source byte path covered by the frozen cache
+  protocol, the correction must not masquerade under the old source/protocol
+  hash. It will be recorded as an immutable implementation correction that
+  references parent protocol `ee810fd8...`, binds the corrected source/test,
+  and leaves gallery, geometry, feature definition, baseline and all selector
+  science unchanged. The prepared R1 wrapper remains unbound and unlaunched.
+

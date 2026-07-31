@@ -1,0 +1,64 @@
+{
+  "audit_id": "rad_dino_mask_bag_selector_cache_v1_kernel_version4_error",
+  "audited_utc": "2026-07-31T11:54:12Z",
+  "status": "IMPLEMENTATION_AFFINITY_BROADCAST_ERROR_DURING_TRAIN_CACHE_BUILD",
+  "kernel": {
+    "id": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "version": 4,
+    "terminal_status": "ERROR",
+    "checkout_commit": "d66c89958baa3344dbbaae6030a9ccd8ecec7b3a",
+    "scientific_source_commit": "61e64b38992db5e4b7414d3fb4c64b7edc39c6aa",
+    "protocol_sha256": "ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489",
+    "wrapper_sha256": "c4157072b4bf3ff74aa1793c8aef5ed0ad6e649b2ad557359d85a30199312eb1",
+    "metadata_sha256": "85a88e983bfc4707e7b3abfb1222ebc44a80c026739cdb8d757c0a4b006f6d54",
+    "prelaunch_audit_sha256": "72dd6b47a361dff265d07081e77521bc55d23a8bc8c9f5038d91a6bef6def9d0",
+    "direct_log_path": "tmp/kaggle/selector_cache_v4_error_20260731/btxrd-rad-dino-mask-bag-selector-cache-v1.log",
+    "direct_log_sha256": "625aedc2bf442d5aaedb6096353844bc0fcd830d733f6a59efbf127db4e4460a"
+  },
+  "passed_before_failure": {
+    "exact_git_checkout": true,
+    "scientific_source_ancestry": true,
+    "runtime_install": true,
+    "t4x2_guard": true,
+    "transport_safety_and_unpacking": true,
+    "train_and_validation_gallery_discovery": true,
+    "canonical_git_lf_split_verified": true,
+    "frozen_crlf_split_reconstructed": true,
+    "unique_current_mount_btxrd_root_discovered": true,
+    "rad_dino_snapshot_downloaded_and_hashed": true,
+    "focused_cache_tests": "44 passed",
+    "whole_repository_preflight": "332 passed, 1 skipped, 4 warnings",
+    "cache_builder_invoked": true
+  },
+  "failure": {
+    "boundary": "first train descriptor-cache construction inside the auxiliary 24-value affinity summary, before completion of the train cache, validation descriptor extraction, baseline reproduction, cache serialization or freeze",
+    "exception": "RuntimeError: The size of tensor a (3) must match the size of tensor b (27) at non-singleton dimension 2",
+    "failing_source": "project/models/mask_bag_affinity_features.py:_weighted_affinity_statistics",
+    "root_cause": "vector_norm_squared has shape [batch,candidate,layer], while mass.square() has shape [batch,candidate]. The inclusive-affinity division omitted a trailing singleton layer axis, so PyTorch aligned candidate count 27 against layer count 3.",
+    "test_gap": "Existing numerical tests used one candidate/one layer or two candidates/two layers, which either hid the broadcast error or aligned the wrong axes without detecting candidate-specific denominator mixing.",
+    "local_reproduction": "A synthetic [B=2,L=3,H=4,W=4,D=8] token tensor with N=27 candidates reproduces the exact 3-versus-27 exception.",
+    "classification": "implementation-only tensor-axis broadcast mismatch in the predeclared R2 auxiliary cache feature",
+    "scientific_result_produced": false
+  },
+  "access_and_safety": {
+    "clean_train_radiographs_opened": true,
+    "train_segmentation_gt_read": false,
+    "validation_radiographs_opened": false,
+    "validation_gt_read": false,
+    "test_evaluated": false,
+    "consumer_trained": false,
+    "selector_cache_completed": false,
+    "selector_cache_freeze_created": false,
+    "selector_arms_authorized": false
+  },
+  "authorized_correction": {
+    "method": "Divide [B,N,L] vector-norm squares by mass.square()[:, :, None], add a multi-batch regression with N unequal to L and candidate-specific weights, and bind the corrected source/test hashes through an immutable parent-protocol correction before rerun.",
+    "old_affinity_source_sha256": "9334d41a8d426fadad8281cd5a6e6af70fa9a8b9cd3a47c2d6334013faa9b38a",
+    "old_affinity_test_sha256": "829a0d78c7e929046119f3158a02af6bbbc646c9bdc62127b4854c0053260a58",
+    "candidate_gallery_changed": false,
+    "baseline_changed": false,
+    "descriptor_geometry_changed": false,
+    "affinity_feature_definition_changed": false,
+    "new_research_mechanism": false
+  }
+}
