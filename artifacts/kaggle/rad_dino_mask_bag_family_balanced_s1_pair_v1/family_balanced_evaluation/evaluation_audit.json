@@ -1,0 +1,29 @@
+{
+  "arm_prediction_freeze_sha256": "e631f0fa2b1fdd8a0809f89637f5afc56df8dc1b0eb64a90eac90bfe49dd5bfb",
+  "arm_prediction_manifest_sha256": "7605d3d31428894d7b14c4cd522a3126f3b5f4246cc1be9ad971e9438dec1f17",
+  "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+  "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+  "baseline_prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+  "bootstrap_replicates": 10000,
+  "candidate_score_manifest_sha256": "891f91dc0ad920885c14ac95f3e2e636f4dadfc38861ecab741376b127112c81",
+  "cohort": {
+    "large": 18,
+    "medium": 72,
+    "normal": 187,
+    "small": 94,
+    "tumor": 184,
+    "validation": 371
+  },
+  "complete_misses_included": true,
+  "consumer_trained": false,
+  "output_hashes": {
+    "gate_decision.json": "d8880ecae5247d4f9eb9715d1d9aa316272ad284dc12255a8f9e694956f1ca6c",
+    "paired_comparison.json": "e47594f6e2a2e7889a53193d4e1418daca1f6d55a7c229357675955933c861b1",
+    "per_image.csv": "6f81ea1a1c2f0ec0668cb058462ce66182fa0f63dd47ee724da2f126bab1894d",
+    "summary.json": "b76db6a77cb2748b4d520a50e4884dc3689b017c20e9ee2c83741e4d906e86d7"
+  },
+  "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "test_evaluated": false,
+  "validation_gt_read_only_after_all_predictions_frozen_and_verified": true
+}

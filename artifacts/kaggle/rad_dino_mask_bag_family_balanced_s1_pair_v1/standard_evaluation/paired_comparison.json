@@ -1,0 +1,48 @@
+{
+  "comparison": "selector arm minus accepted geometry-v3 baseline",
+  "consumer_trained": false,
+  "method": "paired complete-group bootstrap",
+  "metrics": {
+    "dice": {
+      "large": {
+        "ci95": [
+          -0.007706093058025443,
+          0.03340108861515604
+        ],
+        "delta_arm_minus_baseline": 0.008422293092043062,
+        "n_groups": 17,
+        "n_images": 18
+      },
+      "medium": {
+        "ci95": [
+          -0.040987579785327063,
+          -0.00326276056330608
+        ],
+        "delta_arm_minus_baseline": -0.01907052130009668,
+        "n_groups": 61,
+        "n_images": 72
+      },
+      "overall": {
+        "ci95": [
+          -0.024976704645127863,
+          -0.0021076406277894455
+        ],
+        "delta_arm_minus_baseline": -0.012195804296409816,
+        "n_groups": 167,
+        "n_images": 184
+      },
+      "small": {
+        "ci95": [
+          -0.0295706927435674,
+          0.001764365431600231
+        ],
+        "delta_arm_minus_baseline": -0.010878209921161919,
+        "n_groups": 92,
+        "n_images": 94
+      }
+    }
+  },
+  "replicates": 10000,
+  "seed_family": 20261021,
+  "test_evaluated": false
+}

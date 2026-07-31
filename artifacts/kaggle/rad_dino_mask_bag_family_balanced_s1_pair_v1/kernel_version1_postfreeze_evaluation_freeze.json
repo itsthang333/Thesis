@@ -1,0 +1,59 @@
+{
+  "freeze_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1_postfreeze_evaluation",
+  "created_utc": "2026-07-31T18:12:00Z",
+  "status": "BOTH_ARM_EVALUATIONS_FROZEN_BEFORE_MATCHED_COMPARISON",
+  "experiment_id": "EXP-20260731-codex-s1-family-balanced-v1",
+  "pair_prediction_freeze_sha256": "b393174c6cf8ce8a6aaea551ab36a1893280140529336a702d9b7aceb9b6af16",
+  "pair_gt_blind_output_audit_sha256": "fb0f92706432e36d856ccbe6beff7ef6bde2063ec293810b665db3ed85b74b3a",
+  "evaluator_source_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+  "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+  "bootstrap": {
+    "replicates": 10000,
+    "seed": 20261021,
+    "unit": "complete_group"
+  },
+  "standard": {
+    "prediction_freeze_sha256": "2bb58fd66bdb1741944b18c68ba3e9b4ba1f2827c2a3e2135196cf1212a89bad",
+    "candidate_score_manifest_sha256": "11fb37b6894c62743bbac9f78f0d57392551215d268a648a02ec0dc4146ba62f",
+    "evaluation_audit_sha256": "f5d6f44f4dd02fa7b12cf71df2638d0fcc6b912626f80694b17e048e5f86cc1b",
+    "gate_decision_sha256": "8bf1d7dc01f89d23e3ae2e44ddbe333229710cadf173fe5c1ec85c505e53e88e",
+    "paired_comparison_sha256": "e9f6abbffc98c29a60a31a68780cc6c4e5daa95fbab5cf9c3f32f7b58e9f2ee8",
+    "per_image_sha256": "57407f5304c6ed6f3ae1c37d9d40ed4a2a07b798f7b3a2e5d014d3bf85b14157",
+    "summary_sha256": "aa02ba723b88a078b99ba92642faa1f0232254c8b16c73ba09a113a0289b068d",
+    "dice": {
+      "overall": 0.23328658248335798,
+      "small": 0.1062023689932446,
+      "medium": 0.3580649939947074,
+      "large": 0.39783494021966315
+    },
+    "image_auroc": 0.8233550337130899,
+    "complete_misses": 57,
+    "gate_status": "FAIL"
+  },
+  "family_balanced": {
+    "prediction_freeze_sha256": "e631f0fa2b1fdd8a0809f89637f5afc56df8dc1b0eb64a90eac90bfe49dd5bfb",
+    "candidate_score_manifest_sha256": "891f91dc0ad920885c14ac95f3e2e636f4dadfc38861ecab741376b127112c81",
+    "evaluation_audit_sha256": "6bd402ba01825b4a685cd7f13efa4e109dbdb5abf08c7e32cd7fd5a539032ee1",
+    "gate_decision_sha256": "d8880ecae5247d4f9eb9715d1d9aa316272ad284dc12255a8f9e694956f1ca6c",
+    "paired_comparison_sha256": "e47594f6e2a2e7889a53193d4e1418daca1f6d55a7c229357675955933c861b1",
+    "per_image_sha256": "6f81ea1a1c2f0ec0668cb058462ce66182fa0f63dd47ee724da2f126bab1894d",
+    "summary_sha256": "b76db6a77cb2748b4d520a50e4884dc3689b017c20e9ee2c83741e4d906e86d7",
+    "dice": {
+      "overall": 0.2332033020034355,
+      "small": 0.1062023689932446,
+      "medium": 0.3578521661015722,
+      "large": 0.39783494021966315
+    },
+    "image_auroc": 0.8230353406184608,
+    "complete_misses": 57,
+    "gate_status": "FAIL"
+  },
+  "execution_note": "The first local standard evaluator invocation stopped at module import before data access because runpy did not add the project directory to sys.path. The successful invocation added only that import path and the documented Python-3.9 zip(strict) compatibility shim; all scientific inputs, hashes, predictions, evaluator source, bootstrap settings and seeds were unchanged.",
+  "safety": {
+    "predictions_frozen_before_validation_gt": true,
+    "validation_gt_opened_only_after_pair_audit_commit": true,
+    "matched_comparison_run": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}

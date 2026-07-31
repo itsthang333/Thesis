@@ -8889,4 +8889,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   promotion. Validation GT, baseline per-image table, consumer and BTXRD test
   still had not been opened at audit freeze time. The audit artifact/hash must
   be committed/pushed before the predeclared post-freeze evaluator may run.
+- **Both arm evaluations frozen after the audited GT boundary:** after audit
+  commit `6ccfe1a`, the predeclared evaluator opened validation GT separately
+  for each already frozen arm with identical 10,000 complete-group bootstrap
+  replicates and seed `20261021`. The first standard invocation stopped at
+  Python import before data access because `runpy` did not add `project/` to
+  `sys.path`; the successful retry added only that module-search path plus the
+  documented Python-3.9 `zip(strict)` shim, with no input/hash/prediction/source
+  or seed change.
+- Standard Dice overall/small/medium/large is
+  `0.23328658248335798 / 0.1062023689932446 / 0.3580649939947074 /
+  0.39783494021966315`; family-balanced is
+  `0.2332033020034355 / 0.1062023689932446 / 0.3578521661015722 /
+  0.39783494021966315`. Both arm gates fail against geometry-v3: each reduces
+  regret only for large, regresses overall/small/medium, raises complete misses
+  from 53 to 57 and remains below all four operational goals. Image AUROC is
+  `0.8233550337130899` standard and `0.8230353406184608`
+  family-balanced.
+- The exact five evaluator outputs for each arm were copied byte-for-byte into
+  tracked `standard_evaluation/` and `family_balanced_evaluation/` evidence.
+  Standard evaluation-audit/per-image SHA-256 are
+  `f5d6f44f4dd02fa7b12cf71df2638d0fcc6b912626f80694b17e048e5f86cc1b` /
+  `57407f5304c6ed6f3ae1c37d9d40ed4a2a07b798f7b3a2e5d014d3bf85b14157`;
+  family-balanced values are
+  `6bd402ba01825b4a685cd7f13efa4e109dbdb5abf08c7e32cd7fd5a539032ee1` /
+  `6f81ea1a1c2f0ec0668cb058462ce66182fa0f63dd47ee724da2f126bab1894d`.
+  Evaluation-freeze artifact
+  `kernel_version1_postfreeze_evaluation_freeze.json` has SHA-256
+  `3daaa571c193388d89d4f1a1bd6a1e4fd5ba3f2c21ae22ca0f72c77f86573f1a`.
+  It is frozen before the matched comparator: comparator/decision have not run,
+  consumer remains unauthorized and BTXRD test remains untouched.
 
