@@ -1,0 +1,82 @@
+{
+  "protocol_id": "rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v11",
+  "frozen_utc": "2026-07-31T01:41:36Z",
+  "status": "PREDECLARED_POSTHOC_COMPARISON_ONLY_RECOVERY_AFTER_PAIRED_VERSION5_FINAL_ORCHESTRATION_ERROR",
+  "prior_correction": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_mil_descriptor_geometry_v3_execution_correction_v10.json",
+    "canonical_lf_sha256": "b1a64a9e9ff4fddf7fa0f0251b12874d632bad1b4fbad3b4e2f777dd60e98d92"
+  },
+  "paired_version5_error": {
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-geometry-paired-v1",
+    "version": 5,
+    "checkout_commit": "4758701b5a8d8bb6b24d1d376ff75ff12d000379",
+    "wrapper_sha256": "1f0a6dcda07ca03dcdb8556bea8fb1251fcc846732209e739cb46d7c95ed0d2b",
+    "wrapper_metadata_sha256": "1c00d8ba7547ac4009f0bcb3a9e59588590752b73dbb0d337dfc7ea64d2a44dd",
+    "direct_kaggle_logs_sha256": "2fd4791cb83517aa20660ff43e89a8e6dadac27148cd325968d9741337d5a695",
+    "execution_log_sha256": "e96599394789f6264bc16da224472da46575b8a2280cf7e973166fd29434fc1e",
+    "failure": "Both geometry arms completed training, froze 371 prediction maps each and completed validation evaluation. The first final comparator then rejected runner seed 20261201 because the comparator already fails closed on the frozen 10,000-replicate seed 20261101.",
+    "execution_boundary": "Failure occurred only in final comparison orchestration after both prediction freezes and both per-image evaluation tables had been written. No prediction, checkpoint, candidate, evaluation metric or validation row failed.",
+    "scientific_result_recoverable_from_exact_frozen_evaluations": true,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "exact_frozen_pair": {
+    "pair_freeze_sha256": "610a675ee6bb0ff58084166145e031e49cd3c228d896895f1669f3888ca0b867",
+    "maps_per_arm": 371,
+    "legacy": {
+      "prediction_freeze_sha256": "3a121466d0022191e8ff9d35da2aeeaedf44ee8a5a8547aaed73a245e6674487",
+      "prediction_manifest_sha256": "af52b1a3f810313702628aad69a49074d9a1b4503330702b3654f69f6a0b03b3",
+      "checkpoint_sha256": "b6d6803b36bc27718a1c00c97b5b272b5518c6481f355828e087f39e3960a05a",
+      "training_history_sha256": "1cf7d5be87a49249bc8ba408333d252b6b12992dc12697f9e1521b8ff3858574",
+      "per_image_sha256": "f6933bd47a4239fffbc4fac064520fe5abc700fc6c88569f80245043268e04bd"
+    },
+    "square_corrected_v3": {
+      "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+      "prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+      "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+      "training_history_sha256": "556a4c190b86a481a3fc27647cb2f209ce950abfe5714254a98004ee44bb6887",
+      "per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f"
+    },
+    "terminal_v6_reference_per_image_sha256": "94f19a3b7944706573fea03617196ff9a75b592c2b7d00f253ecfccd2253cc51"
+  },
+  "authorized_implementation_correction": {
+    "runner_change": "Use bootstrap seed 20261101 for all three final comparison calls, matching the existing fail-closed comparator contract.",
+    "posthoc_recovery": "Run the unchanged comparator locally against only the exact hash-bound frozen per-image CSVs for corrected-minus-legacy, legacy-minus-terminal-v6 and corrected-minus-terminal-v6.",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261101,
+    "training_rerun": false,
+    "prediction_rerun": false,
+    "evaluation_rerun": false,
+    "validation_gt_reopened": false,
+    "metric_changed": false,
+    "selection_changed": false,
+    "scientific_change": false,
+    "reason": "The comparator had already frozen seed 20261101. Reconciliation changes final orchestration only and recovers the predeclared paired statistics from immutable evaluation rows."
+  },
+  "corrected_source_hashes": {
+    "project/run_mask_bag_geometry_paired_recovery.py": "e8a8feb8c4a547adaaaad8ef659945af761ab1e3347f7d646f7bcc5b2392c9de",
+    "tests/test_run_mask_bag_geometry_paired_recovery.py": "ea7d4962310ed9bf730fb17cbcf5ff845d5aee3a1c1c17eb6884a1724db4d5d3"
+  },
+  "scientific_decision": {
+    "square_corrected_v3_geometry_is_canonical": true,
+    "reason": "It repairs a proven coordinate-frame error and the same-gallery paired comparison improves small-lesion Dice with a positive 95% paired complete-group bootstrap interval.",
+    "exact_mask_bag_configuration_operational_gate": "REJECT",
+    "next_campaign": "Keep the same candidate gallery and canonical geometry, then improve the descriptor/selector with validation-GT-blind residual, affinity and family-balanced image-label objectives.",
+    "consumer_authorized": false
+  },
+  "unchanged_contract": {
+    "scientific_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "same_physical_gallery_for_both_arms": true,
+    "prediction_first_pair_freeze": true,
+    "validation_gt_tuning": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "operational_goals": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    }
+  }
+}
