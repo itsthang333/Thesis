@@ -7615,4 +7615,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   remote output into a new temp directory with Kaggle output page size 200 and
   a longer client timeout; scientific source/protocol and every gate remain
   unchanged.
+- **Progress — transport retry diagnosis:** at the user's request the registered
+  page-size-200 retry was stopped for inspection rather than left waiting. It
+  had downloaded 1,094 files/227,858,692 bytes over about 16 minutes and still
+  lacked the same root freeze/audit/manifest files, so it also remains partial
+  and unaccepted. Direct inspection of the installed official Kaggle CLI shows
+  that `kernels output` paginates the listing but performs one blocking
+  `requests.get(...).content` download per file in a serial loop; the observed
+  delay is therefore thousands-of-small-files overhead, not output size or a
+  kernel failure. The bounded transport completion will reuse the exact signed
+  URLs returned by the same authenticated Kaggle session-output API, validate
+  existing files against remote Content-Length, download missing files with 16
+  parallel workers to `.part` paths, and atomically rename each completed file.
+  The full selector manifest plus independent per-record hashes remain the
+  acceptance authority, so transport parallelism cannot relax a scientific or
+  provenance gate. No GT/test was read and R1 remains unlaunched.
 
