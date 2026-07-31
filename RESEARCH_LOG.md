@@ -7695,3 +7695,67 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   announced collaborator log branch is fully synchronized and checked for an
   overlapping `ĐANG LÀM` claim.
 
+### EXP-20260731-codex-local-research-handoff-v1
+
+- **Owner/status:** Codex parallel local workstream; `HOÀN THÀNH` as a
+  documentation-only retrospective. It does not claim the active selector
+  cache or R1 scope and launches no experiment.
+- **Source:** dirty local `pipeline` workspace based at
+  `980722ac4b3f673dd09a9b2156d78b6ad334d0d9`; exact source-document hashes
+  are recorded in
+  `artifacts/research_handoffs/codex_local_wsss_research_handoff_2026-07-31.md`.
+- **Split audit:** the local split SHA `7b16771a...` and this branch's
+  `85511ee1...` manifest contain the same 3,746 image IDs and have zero
+  differences across 32 shared scientific fields. The difference is
+  provenance schema/serialization, not cohort assignment. Validation remains
+  `371/184/187` with fixed tumor subgroups `94/72/18`.
+- **Transferred evidence:** completed comparable Dice rows, diagnostic-only
+  upper bounds, retired-family root causes and implications for R1 are frozen
+  in the handoff document and machine-readable companion CSV. The best local
+  WSSS remains LayerCAM `0.234339`; this branch's audited geometry-v3
+  `0.245482` is therefore the best completed synchronized WSSS pseudo-mask
+  result, but it is not a final consumer result and still fails its gate.
+- **R1-specific negative evidence:** four separate normal/anomaly mechanisms
+  reduced shortcuts or exposed weak rank signal but did not produce
+  tumor-specific overlap. K=32 healthy density reached pixel AUC `0.563712`
+  but true-area Dice only `0.024037`; feature-normal replacement reached
+  `0.023373`; causal-patch reached `0.014293`. This does not duplicate or
+  invalidate R1, because R1 uses the stronger geometry-v3 candidate gallery
+  and image-label OOF residual learning. It does require honest retirement
+  without K/threshold sweeps if the frozen R1 gates fail.
+- **Artifacts:**
+  `artifacts/research_handoffs/codex_local_wsss_research_handoff_2026-07-31.md`
+  (canonical-LF SHA-256
+  `31822e9389d3cb5f22f36bac47c4746afc44b971aa0aeffe040fc2d445fab74a`)
+  and `artifacts/research_handoffs/codex_local_wsss_results_2026-07-31.csv`
+  (canonical-LF SHA-256
+  `f1a1090947c201e449e65beb887cb22a1e534b7215e28ada9a4868e5d18d20e8`).
+- **Safety:** no code, model, cache, prediction or test artifact was imported;
+  no validation GT was opened for this documentation step; consumer and test
+  remain locked. The active incomplete selector-cache download remains
+  explicitly unaccepted.
+- **Central synchronization:** collaborator commit
+  `bd3bbc27da6799a41c665ff7461762f088e658c0` was fetched and merged from
+  `origin/codex/research-sync-20260731` on top of the current central history.
+  Its complete `RESEARCH_LOG.md` consists of the already-read shared blob at
+  merge base `be9974ec9738330ae2a161482e3ecabc51b50c38` plus the exact 40-line
+  retrospective above; both new handoff artifacts were also read in full.
+  There is no competing `ĐANG LÀM` claim for selector cache or R1. The final
+  sentence of the historical safety record refers to the partial download at
+  that branch point and is superseded chronologically by the independently
+  accepted version-5 cache recorded under
+  `EXP-20260731-codex-r1-normal-prototype-v1`.
+- **Transferred decision/insight:** proceed with exactly the frozen R1 arm,
+  because its image-label OOF residual on the stronger geometry-v3 gallery is
+  not a duplicate of the retired direct anomaly maps. Interpret normality
+  distance only as a candidate-ranking residual, never as tumor localization
+  evidence by itself. If R1 fails its predeclared AUROC/count-shortcut/regret
+  or Dice gates, retire it without K/threshold/morphology expansion and proceed
+  only to predeclared R2 then S1. If the finite selector campaign still cannot
+  close gallery regret, the next representation hypothesis must learn
+  tumor-specific positive-versus-negative local evidence from image-label
+  bags; generic healthy rarity, resolution-only changes and consumer retraining
+  are already contradicted by the synchronized evidence. This synchronization
+  launched no model, prediction or evaluation and opened no validation GT or
+  BTXRD test.
+
