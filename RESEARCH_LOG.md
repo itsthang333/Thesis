@@ -9823,4 +9823,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `4c39b310680cbbe79c07a4dfcaf72cf1558a570878d499605bca23811da74502`.
   No version-2 launch/prediction, validation GT, consumer or test access has
   occurred.
+- **S3 version 2 launched:** after binding/final audit were committed/pushed at
+  `8a949358f2774a60615d3c3614ff8d7c67ffe684`, central HEAD/origin were clean and
+  synchronized. Because local policy refused removal of a generated
+  `__pycache__` directory, no destructive workaround was used; instead a fresh
+  ignored launch directory was created containing exactly two files. Their
+  hashes reverified as bound wrapper
+  `1b07e044b068170a24e06c63095ad3867094a40ff2f0f0d4640bed44ef7cfa33`
+  and metadata
+  `3a4943f7f91ffc8641074c49f59eafa60701e0ec7d1b12b6a611a30801e26850`.
+  Kaggle accepted exactly one corrected private push as kernel version `2` at
+  about `2026-07-31T22:38:27Z`. Prediction freeze, validation GT, consumer and
+  BTXRD test remain locked pending terminal schema-2 independent audit.
 
