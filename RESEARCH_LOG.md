@@ -8116,4 +8116,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   This closes the local code-path question but does not substitute for the
   runtime mount/hash gate. No cache, model fit, prediction, GT/test or consumer
   was opened.
+- **Progress — bounded version-3 heartbeat:** after the complete regression and
+  exact transport-function simulation, one status check found kernel version 3
+  `RUNNING`. No output was requested, no repeat poll/monitor was created and the
+  independent auditor/evaluator remain locked until a later terminal check.
 
