@@ -8981,3 +8981,95 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   audited improvement may be inherited, and a successor must change an
   untested selector bottleneck rather than rerun R1/R2/S1 or proposal supply.
 
+### EXP-20260801-codex-r3-critical-relation-v1
+
+- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Registered:** `2026-07-31T18:24:00Z` (`2026-08-01` ICT); registration base
+  commit `93c7c13c3b1c8f27bdd7a992a1de11adc814562e`. The exact registration
+  commit will be recorded in the immediate successor note after push; no R3
+  runner, protocol, binding, kernel launch, training or prediction exists yet.
+- **Coordination/non-duplicate audit:** immediately before registration, the
+  complete central and collaborator logs were read after fetching both branches.
+  Collaborator head remains
+  `797f191fcae8a5bb0b4ccb920d1adf635af1eff8`; active
+  `EXP-20260731-codex-rich-gallery-g0g1-v1` still has no terminal audited
+  actual-Dice result. R3 does not alter proposal supply and therefore does not
+  duplicate G0/G1. It inherits terminal rejected
+  `EXP-20260731-codex-r1-normal-prototype-v1`,
+  `EXP-20260731-codex-r2-affinity-residual-v1` and
+  `EXP-20260731-codex-s1-family-balanced-v1` only as negative constraints: no
+  normal-prototype, cached token-affinity or family-balanced-pooling mechanism
+  is adopted as an improvement.
+- **Objective/hypothesis:** test the previously unexecuted DSMIL-style
+  critical-instance relation on the same proven-oracle gallery. For each bag,
+  the frozen accepted geometry-v3 scorer supplies independent candidate logits;
+  its detached argmax candidate is the critical instance. A zero-initialized
+  residual compares every 1,156-D candidate descriptor with that critical
+  descriptor using `[h_i, h_m, h_i-h_m, h_i*h_m, cosine(h_i,h_m)]`, then adds a
+  per-candidate correction. This directly targets within-image candidate
+  ranking that R1/R2/S1 did not model, while starting exactly at geometry-v3.
+- **Exact inherited inputs:** selector cache freeze
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`
+  and manifest
+  `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`;
+  split
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  accepted baseline checkpoint
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069`
+  and prediction freeze
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`;
+  geometry-v3 Dice
+  `0.2454823867797678 / 0.11708057891440651 / 0.37713551529480416 /
+  0.3894126471276201`; immutable oracle
+  `0.4090755342486002 / 0.2227494852063559 / 0.5941470844279589 /
+  0.6418253674184405`. R3 changes no candidate, candidate order, family/source
+  identity, mask geometry, baseline parameters, map construction or evaluator.
+- **Frozen fit intent before implementation:** train only the zero-initialized
+  critical-relation residual; keep the geometry-v3 base scorer frozen. Use the
+  original geometry-v3 normalized SmoothMax (`temperature=0.2`), image BCE,
+  self-guided instance loss (`weight=0.25`, warm-up 2 epochs: all candidates in
+  negative bags are negative and only the detached current winner in positive
+  bags is positive), aligned original/flip consistency (`weight=0.10`), AdamW
+  `lr=3e-4`, weight decay `1e-4`, batch 16, seed 42 and exactly 16 fixed-final
+  epochs. Hidden dimension is 128. No early stopping, validation loss,
+  architecture/weight/epoch alternative, candidate target, pseudo mask or
+  segmentation/subgroup input is permitted.
+- **GT-blind gates before evaluation:** before optimization, freeze exact
+  zero-residual equality and base original/flip critical-index agreement. After
+  16 epochs, all 371 validation candidate-score vectors and WTA maps must be
+  physically frozen and independently audited. Absolute candidate-count versus
+  bag-probability Spearman must not exceed the inherited R1 ceiling
+  `0.5013777759365411`; final original/flip critical-index agreement may not
+  drop more than `0.01` below its frozen base value. Failure blocks GT
+  evaluation and rejects R3 without a rerun or sweep.
+- **Post-freeze promotion/output:** only after the GT-blind audit passes may the
+  unchanged evaluator read validation GT. Report Dice, paired 10,000-group
+  bootstrap CIs, selected-to-oracle regret, candidate-score/quality rank
+  correlation, misses and image AUROC for overall/small/medium/large. Mechanism
+  pass requires medium regret reduction, regret reduction in at least two tumor
+  subgroups, no overall Dice regression and no increase in absolute
+  candidate-count/miss association. Adoption/consumer authorization additionally
+  requires simultaneous Dice at least
+  `0.34024039 / 0.17895493 / 0.51244178 / 0.49370336`, overall CI95 lower bound
+  above zero, no subgroup mean decrease, no miss increase and AUROC at least
+  `0.75`. Otherwise R3 is terminal rejected and not learned as an improvement.
+- **Compute/safety:** prepare and statically test locally, but run scientific
+  training/inference on one private Kaggle T4x2 kernel (training on T4:0,
+  validation shards on both T4s with real CUDA work). Training supervision is
+  binary image-level labels only. Validation GT remains closed until audited
+  prediction freeze; no consumer before full operational pass; BTXRD test is
+  locked.
+- **Literature/technical basis:** the critical-instance relation is transferred
+  from Li, Li and Eliceiri, *Dual-stream Multiple Instance Learning Network for
+  Whole Slide Image Classification with Self-supervised Contrastive Learning*,
+  CVPR 2021,
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html .
+  The requirement to judge instance ranking rather than infer it from bag
+  classification follows Jang and Kwon, *Are Multiple Instance Learning
+  Algorithms Learnable for Instances?*, NeurIPS 2024,
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html .
+  The project-specific frozen design source is
+  `artifacts/literature_reviews/relational_mil_medium_selection_design_2026-07-28.md`;
+  R3 transfers only the relational principle, not pathology tiling,
+  self-supervised pretraining, instance labels or an auxiliary bag head.
+
