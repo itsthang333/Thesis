@@ -8787,3 +8787,64 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Full repository regression after adding it passes `393/393` in 14.14 s under
   the documented local Python-3.9 `zip(strict)` diagnostic shim.
 
+### S1 terminal retrieval and GT-blind precision-audit boundary (2026-08-01)
+
+- A user-authorized 20-minute heartbeat performed one bounded status query at
+  `2026-07-31T17:46:23Z`; private Kaggle kernel version 1
+  `itsthang333/btxrd-rad-dino-mask-bag-family-balanced-s1-pair-v1` was
+  `COMPLETE`. No repeated status poll was made. Central HEAD/origin remained
+  clean and synchronized at `e9c8fb9466fef24a8ef0d4feba6d9d1b15256544`;
+  collaborator HEAD remained `797f191fcae8a5bb0b4ccb920d1adf635af1eff8`
+  with no newer terminal G1 evidence.
+- Official-inventory compact retrieval selected all `1,870/1,870` files under
+  `btxrd_mask_bag_family_balanced_s1_pair_v1/`: `155,399,027` bytes, zero
+  remaining `.part` files, 372 shared candidate-family files, 747 standard-arm
+  files, 747 family-balanced-arm files and four pair-root files. Two initial
+  local shell timeouts left one downloader child process alive; concurrent
+  resume then hit Windows file locking on one `.part`. The exact stale
+  downloader PID was identity-checked and stopped, after which one bounded
+  resume downloaded the final file and independently confirmed the complete
+  official inventory. This was a transport/process-management error only; no
+  output was interpreted while incomplete. Direct Kaggle log SHA-256 is
+  `4f5cda2e390c1d1445f3849a7fcad2c9ed890f213ee2a22f6c4cfd3d352e6432`.
+- Frozen root hashes before any validation GT are: pair prediction freeze
+  `b393174c6cf8ce8a6aaea551ab36a1893280140529336a702d9b7aceb9b6af16`,
+  run manifest
+  `e79e335e79f6fa9913e06286cfc433e90b673c5c0d90253d3a8b601b8ea3b252`,
+  wrapper output audit
+  `ea1bc6626ceabfba428755cca824eed573f24a9b723edad4c47e1915efa1460c`,
+  and matched initial state
+  `babcd9e31c795680ed47038ab7563e8cb8ce754dc80685b039314d37009f729a`.
+  Protocol and launch-binding hashes remain exactly
+  `62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413`
+  and
+  `9e77ef03d77162674bc1305440f05a09257ad4d6ac1c0157987c36a6030fe442`.
+- The frozen independent GT-blind auditor stopped before writing a pass audit:
+  one family-balanced bag logit for `IMG001934.jpeg` was stored as
+  `-10.748274803161621` and independently reconstructed in NumPy float64 as
+  `-10.748272689228461`, absolute delta `2.113933160075021e-06`, narrowly above
+  the prelaunch absolute tolerance `2.0e-06`. No validation GT, baseline
+  per-image table, evaluator, matched comparator, decision tool, consumer or
+  BTXRD test was opened.
+- A full 371-row output-only numerical diagnostic found no structural/hash or
+  cohort exception before this boundary. Standard-arm maximum float64
+  reconstruction delta is `1.2513269211922307e-06`. For family-balanced, only
+  the single row above exceeds `2.0e-06`; the second-largest delta is
+  `1.3723830765144385e-06`, and no row exceeds `3.0e-06`. Reproduction with the
+  exact PyTorch float32 pooling operator gives maximum stored-vs-CPU deltas
+  `1.9073486328125e-06` standard and `9.5367431640625e-07`
+  family-balanced. Maximum sigmoid-probability deltas from the independent
+  float64 logits are `8.53041076664951e-08` and
+  `8.157106268225078e-08`, both inside the separately frozen `1.0e-07` bound.
+  The evidence localizes the failure to the auditor's fixed absolute tolerance
+  across GPU-float32 hierarchical reductions versus CPU-float64 reconstruction,
+  not to a scientific prediction change; nevertheless the audit remains failed
+  until a fail-closed, ULP-grounded correction is frozen and rerun.
+- `EXP-20260731-codex-s1-family-balanced-v1` therefore remains `ĐANG LÀM` at a
+  GT-blind audit boundary. Before any auditor correction or rerun, this exact
+  error record must be committed/pushed. Any correction must retain the original
+  failure, change no producer/prediction/protocol/scientific bytes, derive its
+  tolerance from float32 representation rather than the observed metric, add
+  regression tests and a machine-readable addendum, and pass the full physical
+  audit before validation GT may be opened.
+
