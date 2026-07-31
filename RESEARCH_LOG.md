@@ -7666,4 +7666,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   It changes no cache/scientific bytes or protocol and authorizes only rerunning
   the same independent audit against the immutable downloaded version-5 output.
   Cache acceptance, R1 launch, validation GT, consumer and test remain locked.
+- **Progress — selector-cache v5 independently accepted:** the corrected
+  fail-closed audit completed successfully against the immutable version-5
+  output. Independent audit JSON SHA-256 is
+  `7d9f693dd5d1d9206b01cc2c8a0ed4aed497f9f17d9dedf670a97771b0f78334`;
+  cache freeze/wrapper audit/cache manifest/baseline reproduction audit/run
+  manifest SHA-256 values are respectively
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
+  `cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd`,
+  `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`,
+  `9eb6280570bdb2568db6b574dbc24c6af2eb63f272f9a63818e09761e1d1875e`
+  and
+  `90c4e5b231453cfe6afe199c01e9d575c76b78d7f11554cece3d60249ec15a2b`.
+  The audit independently verified all 3,352 physical records and
+  921,137,925 cache bytes, cohorts train/validation `2,981/371`, candidate
+  counts `173,376/20,778`, all 371 validation packed-mask geometries, and exact
+  reproduction of all 371 baseline selected indices and maps with maximum
+  logit/probability delta `0.0`. Corrected scientific source/protocol remain
+  `c0e38628069ff3bedd4493c4ff004b75bd32e008` and
+  `be9c91b53926eda2f8bf8dba894385f03dc6accd15d3fa9646da0d1a17a635f2`.
+  The direct Kaggle log SHA-256 is
+  `f9ce546212d4e64076366e253d94b35ea0fe43ae2c5b925495460b17914abb20`;
+  it records two Tesla T4 devices, `DataParallel=True`, 45 focused tests and
+  the complete Kaggle regression (`333 passed, 1 skipped`). Training labels
+  remain image-level only; `validation_gt_read=false`,
+  `consumer_trained=false`, and `test_evaluated=false`. The cache gate is now
+  operationally passed, but R1 remains unbound and unlaunched until the newly
+  announced collaborator log branch is fully synchronized and checked for an
+  overlapping `ĐANG LÀM` claim.
 
