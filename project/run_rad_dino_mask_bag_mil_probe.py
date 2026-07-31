@@ -557,8 +557,8 @@ def main() -> None:
     if args.encoder_batch_size < 2:
         raise ValueError("Mask-bag v1 requires encoder batch >=2")
     if args.rich_gallery_union:
-        if not 82 <= args.maximum_candidates <= 162:
-            raise ValueError("Rich gallery union cap must be in [82, 162]")
+        if not 1 <= args.maximum_candidates <= 162:
+            raise ValueError("Rich gallery union cap must be in [1, 162]")
     elif args.maximum_candidates != 81:
         raise ValueError("Mask-bag v1 requires candidate cap 81")
     seed_everything(args.seed)
