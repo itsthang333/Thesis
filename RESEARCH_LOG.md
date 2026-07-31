@@ -9935,3 +9935,63 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   the positive medium/large observation only as bounded terminal evidence, not
   as permission to relabel S3 as successful or to tune on validation GT.
 
+### EXP-20260801-codex-s4-oof-proposal-cluster-v1
+
+- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Registered:** `2026-07-31T23:17:34Z` (`2026-08-01` ICT), after terminal S3
+  commit `1488a99daa2e2e40a2fee734eaf4899b2e2468f1` was pushed centrally.
+  Exact registration commit will be added and pushed in the next log-only
+  provenance update before any scientific launch.
+- **Hypothesis:** a distinct group-excluded OOF image-label-only teacher can
+  identify recurring candidate modes without S3's per-image over-smoothing;
+  using its stable original/flip seeds to form mask-IoU/containment proposal
+  clusters, then training normalized cluster bags with a predeclared
+  smooth-to-sharp continuation, may reduce selected-to-oracle regret while
+  leaving out-of-cluster candidates unlabeled rather than falsely negative.
+- **Scope/non-duplicate boundary:** this is the already finite-predeclared S4
+  row and inherits terminal evidence from
+  `EXP-20260801-codex-s3-same-family-graph-v1` and
+  `EXP-20260731-codex-r1-normal-prototype-v1`. It is not S3/R4 graph smoothing,
+  does not reuse rejected R1 OOF logits/checkpoints, and may not use the
+  all-train geometry-v3 checkpoint as an OOF teacher. It keeps the immutable
+  old same-gallery candidate supply and therefore does not launch, reproduce or
+  evaluate the collaborator-owned active
+  `EXP-20260731-codex-rich-gallery-g0g1-v1` proposal-supply/G1 scope.
+- **Frozen inherited inputs:** selector cache kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1`, freeze SHA-256
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
+  independent audit SHA-256
+  `7d9f693dd5d1d9206b01cc2c8a0ed4aed497f9f17d9dedf670a97771b0f78334`,
+  split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`,
+  accepted geometry-v3 baseline freeze `ec346276...` and per-image evaluator
+  table SHA-256
+  `a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f`.
+  S3 terminal audit SHA-256 is
+  `6a03b7294c1cd168bf1967c30fa4f16fc8a72e983bd128b854a23c274a2349eb`.
+- **Required new provenance before launch:** a fresh teacher must be trained in
+  fully group-excluded folds using only clean-train image labels; every teacher
+  checkpoint, fold membership, held-out/training-group exclusion, original/flip
+  logit, seed and cluster member must be serialized and independently audited
+  before optimizer construction. Teacher selection, cluster count,
+  IoU/containment thresholds and continuation schedule must be frozen using
+  train-only/image-label-only criteria and synthetic invariants before launch;
+  any material scope change requires another pushed log update.
+- **Compute:** static/synthetic preparation locally; all real BTXRD teacher
+  fitting, cluster-arm fitting and validation prediction only on one Kaggle
+  T4x2 or P100 job after fail-closed protocol/source/binding gates pass.
+- **Output/gate:** physically freeze all 371 validation predictions plus
+  all-candidate scores and cluster/teacher provenance before validation GT.
+  After independent GT-blind audit pass and a pushed audit commit, evaluate with
+  the common hash-locked selector evaluator. Mechanism pass still requires
+  regret reduction in at least two tumor subgroups, no overall Dice regression
+  and no increase in absolute candidate-count/miss association. Full adoption
+  additionally requires Dice overall/small/medium/large at least
+  `0.34024039/0.17895493/0.51244178/0.49370336`, positive overall paired CI95
+  lower bound, no tumor-subgroup mean decrease, no miss increase and image AUROC
+  at least `0.75`.
+- **Safety locks:** validation GT remains closed until physical prediction
+  freeze plus independent output audit; no consumer may be trained before the
+  full operational gate; BTXRD test remains locked; no validation Dice/subgroup
+  signal may select a teacher, cluster, threshold, schedule or checkpoint.
+
