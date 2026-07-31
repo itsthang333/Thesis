@@ -9995,4 +9995,38 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   freeze plus independent output audit; no consumer may be trained before the
   full operational gate; BTXRD test remains locked; no validation Dice/subgroup
   signal may select a teacher, cluster, threshold, schedule or checkpoint.
+- **Static S4 teacher/cluster training preparation:** the new dataset-agnostic
+  module `project/models/mask_bag_proposal_cluster_training.py`, canonical-LF
+  SHA-256
+  `374e1f03505c4b25bfb3f705b931e075f2794e07bfae0124b9e9a6de3bb40296`,
+  implements a genuinely new five-fold group-excluded teacher rather than
+  importing R1 outputs or the accepted all-train scorer as teacher weights.
+  Each fold teacher starts deterministically from scratch, uses the accepted
+  1,156-D scorer architecture and only image-bag labels, and exposes aligned
+  original/flip candidate logits. Conservative cluster-seed evidence is the
+  per-candidate minimum of the two view logits, so there is no fitted view
+  threshold.
+- Fixed draft controls now represented in code are five folds, 16 final-epoch
+  teacher/student epochs, batch 16, AdamW `3e-4`/`1e-4`, teacher instance and
+  view-consistency weights `0.25/0.10`, two-epoch instance warm-up, at most four
+  disjoint clusters, mask IoU at least `0.50` or containment at least `0.75`,
+  and normalized within/between cluster continuation from temperature `1.0` to
+  `0.20`. The cluster student is a zero-initialized residual over the frozen
+  accepted baseline; residuals are identically zero outside the OOF-seeded
+  cluster union, preserving those candidates exactly rather than labeling them
+  negative. The runner/protocol must freeze these exact values or update and
+  push the claim before launch; validation metrics cannot choose alternatives.
+- New tests
+  `tests/test_mask_bag_proposal_cluster_training.py`, SHA-256
+  `efb619481f310c1fd359859fcf7bdc652ed9be74e3a771ad5b5b252f7d206e67`,
+  verify the GT/subgroup-free API, conservative view scoring, fixed
+  IoU/containment membership, disjoint clustering, exact zero initialization,
+  exact outside-cluster fallback, OOF coverage and rejection of any held-out
+  group overlap. Together with the earlier cluster primitive/tests
+  `3fe2cab3...` / `b523bb0a...`, `py_compile`, focused tests and the full
+  repository regression pass (`446/446` in 18.80 seconds) under the documented
+  local Python-3.9 `zip(strict=...)` shim. This step uses only synthetic/static
+  inputs: no real BTXRD cache was opened by the new code, no teacher or selector
+  was fit, no validation prediction/GT/test was accessed and no consumer was
+  trained.
 
