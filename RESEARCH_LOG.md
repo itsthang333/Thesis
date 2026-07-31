@@ -9227,3 +9227,84 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   locked. Consolidated terminal audit SHA-256 is
   `d74d28ca66430524764fb5168955bcb0e710665d25caa5b65357190f08ef9632`.
 
+### EXP-20260801-codex-r4-orbit-averaged-relation-v1
+
+- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Registered:** `2026-07-31T19:57:24Z` (`2026-08-01` ICT); registration base
+  commit `dc4222fb78b0e6f6c055c90fe83be6400ea923ac`. Exact claim commit will be
+  recorded after this note is pushed. No R4 implementation, protocol, binding,
+  kernel launch, training or prediction exists at registration.
+- **Coordination/non-duplicate audit:** the complete central and collaborator
+  logs were reread after fetching both branches. Collaborator head remains
+  `797f191fcae8a5bb0b4ccb920d1adf635af1eff8`; active
+  `EXP-20260731-codex-rich-gallery-g0g1-v1` still changes proposal supply and has
+  no terminal audited actual-Dice result. R4 changes only same-gallery selector
+  view aggregation and does not create/merge proposals, so it does not
+  duplicate G0/G1. R1/R2/S1/R3 remain terminal negative evidence; none of their
+  mechanisms is claimed or adopted as a demonstrated improvement.
+- **GT-blind predecessor evidence and hypothesis:** R3 independently verified
+  371 rows show base/final flip-agreement transitions `0→0:102`, `0→1:27`,
+  `1→0:42`, `1→1:200`. Thus R3 created 15 net new disagreements; the 69 changed
+  rows have mean candidate count `56.5652` versus `55.8775` for unchanged rows,
+  so the failure is not explained by a simple high-count cohort. R4 tests a
+  distinct correction: before selecting a critical instance or applying any
+  relation, compute one aligned horizontal-flip orbit average for every
+  candidate descriptor and frozen-base logit. Select the detached critical
+  candidate from the averaged frozen-base logits and apply one zero-initialized
+  relation residual to the averaged descriptor. This makes view swapping
+  invariant by construction while testing whether relational ranking has value
+  after the R3 instability is removed.
+- **Exact inherited inputs:** selector-cache freeze
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
+  manifest `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`,
+  split `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`,
+  accepted checkpoint
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069`
+  and prediction freeze
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`.
+  Geometry-v3 Dice remains `0.2454823867797678 / 0.11708057891440651 /
+  0.37713551529480416 / 0.3894126471276201`; immutable oracle remains
+  `0.4090755342486002 / 0.2227494852063559 / 0.5941470844279589 /
+  0.6418253674184405`. Candidate identity/order, masks, family/source IDs, map
+  construction and evaluator are unchanged.
+- **Frozen fit intent before implementation:** create averaged descriptor
+  `0.5*(original+aligned_flip)` and averaged independent logit
+  `0.5*(base_original+base_flip)`; use the same 1,156→128 embedding and
+  `[h_i,h_m,h_i-h_m,h_i*h_m,cosine]` zero-initialized residual as an explicit
+  falsifiable variant, not as an inherited improvement. Keep the complete base
+  scorer frozen. Fit exactly 16 fixed-final epochs with normalized SmoothMax
+  temperature `0.2`, binary image BCE, self-guided instance loss weight `0.25`
+  after 2 warm-up epochs, AdamW `3e-4/1e-4`, batch 16, hidden 128 and seed 42.
+  There is no separate flip-consistency term because the orbit-averaged branch
+  is algebraically identical under view swap. No early stopping, validation
+  loss, alternative epoch/weight/architecture, candidate target, segmentation
+  pseudo-target or subgroup input is allowed.
+- **GT-blind gates before evaluation:** before optimization, freeze bit-exact
+  equality to accepted Geometry-v3 averaged TTA candidate logits and exact
+  equality after swapping original/flip inputs. After the fixed fit, physically
+  freeze all 371 candidate-score vectors/maps and independently verify exact
+  view-swap equality. Absolute candidate-count/bag-probability Spearman may not
+  exceed `0.5013777759365411`. Any failure rejects R4 before GT with no rerun,
+  sweep or rescue.
+- **Post-freeze decision:** only after independent physical audit and both
+  GT-blind gates pass may the unchanged evaluator read validation GT. Mechanism
+  pass still requires medium regret reduction, regret reduction in at least two
+  tumor subgroups, no overall Dice regression and no increase in absolute
+  candidate-count/miss association. Adoption/consumer additionally requires
+  simultaneous Dice at least `0.34024039 / 0.17895493 / 0.51244178 /
+  0.49370336`, overall CI95 lower bound above zero, no subgroup mean decrease,
+  no miss increase and image AUROC at least `0.75`.
+- **Compute/safety:** static local tests only; one future private Kaggle T4x2
+  kernel, training on T4:0 and disjoint validation shards on both T4s. Training
+  supervision is image-level labels only. Validation GT remains closed until
+  prediction freeze and independent gate pass; consumer and BTXRD test remain
+  locked.
+- **Technical basis:** R4 reuses only the relational-principle reference from
+  Li, Li and Eliceiri, DSMIL, CVPR 2021,
+  https://openaccess.thecvf.com/content/CVPR2021/html/Li_Dual-Stream_Multiple_Instance_Learning_Network_for_Whole_Slide_Image_Classification_With_Self-Supervised_CVPR_2021_paper.html ,
+  and the project’s already frozen aligned-flip TTA contract. It does not claim
+  DSMIL or R3 is beneficial; this new arm tests the failure-derived
+  orbit-averaging correction under the instance-ranking caution of Jang and
+  Kwon, NeurIPS 2024,
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html .
+
