@@ -8144,4 +8144,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   This is static preparation only: R2 remains unclaimed/unlaunched behind the
   active R1 claim, and no prediction, validation GT/test or consumer was
   opened.
+- The complete repository regression after adding the R2 auditor passes
+  `364/364` in 16.24 seconds under the same documented Python-3.9
+  `zip(strict=...)` diagnostic shim. No producer source/protocol or running
+  kernel was changed, and Kaggle was not queried during this regression.
 
