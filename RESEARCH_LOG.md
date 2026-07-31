@@ -9463,9 +9463,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
 - **Registered:** `2026-07-31T21:17:00Z` (`2026-08-01` ICT), after terminal R4
   evidence commit `28c53c6862e8c8025329fdbf6bf4924581a7a2c0` was pushed centrally.
-  Exact claim commit will be recorded after this note is pushed. No S3 source,
-  protocol, kernel binding, launch, prediction or metric exists at
-  registration.
+  Exact claim commit is `fad5ba66e72365ea12674aec41256f2e3bf582e9`.
+  No S3 source, protocol, kernel binding, launch, prediction or metric exists
+  at registration.
 - **Coordination/non-duplicate audit:** full central coordination state was
   reread and both remote branches were fetched. Collaborator head remains
   `797f191fcae8a5bb0b4ccb920d1adf635af1eff8`; active
