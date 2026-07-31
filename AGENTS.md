@@ -122,4 +122,3 @@ Một task/chat kế nhiệm phải:
 5. Tiếp tục từ artifact/protocol/hash mới nhất, không khởi động lại từ đầu.
 6. Không coi mô tả handoff hoặc lịch sử chat là mạnh hơn trạng thái repository và
    artifact thực tế.
-
