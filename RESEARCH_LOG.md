@@ -7190,4 +7190,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   R1/R2/S1 campaign are unchanged. The only authorized next action is the same
   cache rerun on Kaggle T4x2; validation GT, consumer training and BTXRD test
   remain locked.
+- From a clean, origin-synchronized worktree at commit
+  `e7eb6c4c77f60f85144a521e8c475d2135a1cbe0`, the wrapper, metadata,
+  protocol and version-3 prelaunch audit re-matched exact SHA-256 values
+  `0ac60591248d385bddf8aff6f26450feb6f40e0013b3c36f3aa993e1c1632e5e`,
+  `85a88e983bfc4707e7b3abfb1222ebc44a80c026739cdb8d757c0a4b006f6d54`,
+  `ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489`
+  and
+  `beb136fa01d5dafa6ad9b91b32932092b657eadf03bb5a745edcc474d1b9f391`.
+  Kaggle accepted selector-cache kernel version `3` at
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1.
+  No launch-time status poll or monitor was created. R1/R2/S1, validation GT,
+  consumer training and BTXRD test remain locked pending terminal cache
+  reproduction audit.
 
