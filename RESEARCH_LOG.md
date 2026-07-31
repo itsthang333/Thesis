@@ -8731,4 +8731,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   exact Git commits, protocol/source/package hashes, tests and launch binding are
   unaffected. The frozen artifact is preserved unchanged and this successor note
   is the correction, rather than rewriting prelaunch evidence.
+- **Overnight coordination/status:** on 2026-08-01 local time, the entire
+  `AGENTS.md` and central `RESEARCH_LOG.md` were reread; central HEAD/origin were
+  synchronized and clean at `6b2aeddb750e774f45352e962abcac8769255732`.
+  Collaborator branch advanced to
+  `797f191fcae8a5bb0b4ccb920d1adf635af1eff8`, but its log remains unchanged and
+  contains no terminal G1 result; its classifier-bound supply provenance code is
+  not performance evidence and is not adopted. One bounded S1 status check
+  returned `RUNNING`; no second poll or monitor was created.
+- **Post-freeze evaluation decision predeclared while RUNNING:** before seeing
+  any terminal output, prediction freeze, validation GT or metric, a result-gated
+  matched decision was committed/pushed at
+  `9779e80a285741879fa5fce7e188f4dc67e0557c`. Decision source/test SHA-256 are
+  `90bf0d92e6a53e3773418810fb81a12c0069a944e47d6c25a8a5c5956e8aaff7` /
+  `71dcf4604fa11d19f15b9439a2560a15bf4b216164f92670581ec606d8f0161c`.
+  After the independent GT-blind pair audit passes, standard and family-balanced
+  will each be evaluated against the same geometry-v3 baseline using 10,000
+  complete-group bootstrap replicates and the same seed `20261021`; then the
+  already frozen comparator performs `family_balanced minus standard` with
+  10,000 replicates/seed `20261101` without reopening GT.
+- The final decision independently binds pair freeze/audit, both evaluation
+  audits and physical output hashes, then requires family-balanced vs standard:
+  regret improvement in at least two tumor subgroups, no overall Dice regression
+  and no increase in absolute count/miss association. Consumer authorization and
+  learning/adoption additionally require the family-balanced arm's complete
+  operational pass against geometry-v3. Thus code availability or a partial
+  causal gain cannot be called an improvement. Static suite passes `19/19` in
+  1.29 s under the documented local Python-3.9 `zip(strict)` shim; no scientific
+  source was changed for that runtime issue. Full repository regression passes
+  `390/390` in 13.83 s under the same diagnostic shim.
+- Machine-readable readiness
+  `artifacts/research_protocols/rad_dino_mask_bag_family_balanced_s1_pair_v1_postfreeze_evaluation_readiness.json`
+  has SHA-256
+  `4497ab6e9a602a328c8a4d626e5741e138238cc2490159774117db7a4b68f8dd`.
+  This preparation opened no scientific data/prediction/GT, trained no consumer,
+  accessed no test and ran no heavy local compute.
 

@@ -1,0 +1,83 @@
+{
+  "artifact_id": "rad_dino_mask_bag_family_balanced_s1_pair_v1_postfreeze_evaluation_readiness",
+  "created_utc": "2026-07-31T17:10:48Z",
+  "status": "FROZEN_WHILE_KERNEL_RUNNING_BEFORE_TERMINAL_OUTPUT_OR_GT",
+  "experiment_id": "EXP-20260731-codex-s1-family-balanced-v1",
+  "timing_boundary": {
+    "last_bounded_kernel_status": "RUNNING",
+    "terminal_output_seen": false,
+    "prediction_freeze_seen": false,
+    "validation_gt_read": false,
+    "evaluation_metric_seen": false,
+    "repeat_poll_or_monitor_created": false
+  },
+  "required_order": [
+    "terminal direct compact output retrieval",
+    "independent GT-blind matched-pair physical audit",
+    "freeze exact pair-audit SHA-256",
+    "evaluate standard and family-balanced arms separately against the accepted geometry-v3 baseline",
+    "freeze both evaluation-audit and per-image SHA-256 values",
+    "compare family-balanced minus standard without reopening GT",
+    "freeze matched-comparison SHA-256",
+    "run the result-gated S1 matched decision"
+  ],
+  "frozen_inputs": {
+    "protocol_sha256": "62684fc7e01474ab64701c31a0a7d2fa1c802ffb2b5c4e8896848b94bc7e8413",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "evaluation": {
+    "source": "project/evaluate_mask_bag_selector_arm.py",
+    "source_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "bootstrap_replicates_per_arm": 10000,
+    "bootstrap_seed_for_both_arms": 20261021,
+    "arm_order": [
+      "standard",
+      "family_balanced"
+    ],
+    "same_seed_reason": "Use identical complete-group bootstrap draws for each arm's separate comparison with the same accepted geometry-v3 baseline.",
+    "output_must_bind_arm_freeze_and_score_manifest": true
+  },
+  "matched_comparison": {
+    "source": "project/compare_mask_bag_evaluated_arms.py",
+    "source_sha256": "24c625cfc50740d9cb633906d60ae81089e3960d3eec4b3ead6f3ce89ebaffad",
+    "candidate": "family_balanced",
+    "reference": "standard",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261101,
+    "ground_truth_reopened": false
+  },
+  "decision": {
+    "source": "project/decide_mask_bag_family_balanced_s1_pair.py",
+    "source_sha256": "90bf0d92e6a53e3773418810fb81a12c0069a944e47d6c25a8a5c5956e8aaff7",
+    "test": "tests/test_decide_mask_bag_family_balanced_s1_pair.py",
+    "test_sha256": "71dcf4604fa11d19f15b9439a2560a15bf4b216164f92670581ec606d8f0161c",
+    "commit": "9779e80a285741879fa5fce7e188f4dc67e0557c",
+    "causal_checks": [
+      "family-balanced selected-to-oracle regret lower than standard in at least two of small, medium and large",
+      "family-balanced overall selected Dice does not regress against standard",
+      "absolute overall candidate-count/miss association does not increase against standard"
+    ],
+    "family_operational_source": "family-balanced arm gate_decision.json must be OPERATIONAL_PASS against accepted geometry-v3 and all frozen goals",
+    "consumer_and_result_adoption_rule": "Both causal promotion and family-balanced operational pass are required; otherwise consumer_authorized and result_adoption_allowed are false.",
+    "ground_truth_reopened": false
+  },
+  "validation": {
+    "py_compile": "passed",
+    "focused_tests_without_local_compatibility_shim": "18 passed and the known Python-3.9 zip(strict=True) comparator test failed before scientific data access",
+    "focused_tests_with_documented_local_compatibility_shim": "19 passed in 1.29s",
+    "full_repository_with_documented_local_compatibility_shim": "390 passed in 13.83s",
+    "scientific_source_changed_for_local_runtime": false
+  },
+  "safety": {
+    "training_labels": "image_level_only",
+    "scientific_data_opened": false,
+    "prediction_opened": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}
