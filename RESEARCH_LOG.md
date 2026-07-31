@@ -7340,4 +7340,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   already supported and logged by TPMIL and Attention MIL, and binds the exact
   source/test hashes already covered by the R1 readiness audit. No prototype,
   adapter, prediction, validation GT access or consumer training occurred.
+- A complete but deliberately non-launchable R1 Kaggle wrapper is prepared in
+  ignored staging at
+  `tmp/kaggle/mask_bag_normal_prototype_r1_v1/`. Wrapper/metadata SHA-256 are
+  `4312a1410c1cf83894359895907c94840f55273f78b8593bc728328f1cb4688e`
+  and `e3144006ca18afdc7376b11545d8dcd9675c8c2eecc12545b3c2bf5393bad472`.
+  It attaches only the sanitized baseline dataset and selector-cache kernel
+  output—no raw BTXRD, validation GT or test source.
+- `CACHE_BINDING_READY=False` and two explicit pending cache hashes cause
+  `main()` to fail before filesystem creation, Git clone, input discovery or
+  CUDA access; this dynamic fail-closed test passes. After a cache gate pass,
+  the only permitted edits are those two audited cache hashes and the boolean.
+  Scientific source, protocol, K grid, losses, seeds and runtime controls may
+  not change.
+- The staged wrapper binds checkout `3647997...`, scientific source
+  `d66c899...`, protocol `dded9c63...`, all 24 protocol source/test hashes,
+  reconstructed split, baseline transport/checkpoint, exact cache freeze plus
+  wrapper audit, 3,352-record and 371-map reproduction gates, T4x2 real work,
+  focused/whole tests, 15 OOF folds, three aggregates, 371 all-candidate score
+  payloads/maps and the final prediction freeze. It never invokes the
+  evaluator.
+- Machine-readable readiness audit
+  `rad_dino_mask_bag_normal_prototype_r1_v1_wrapper_readiness_audit.json`,
+  SHA-256
+  `9f90668a84ba7320b42a3e29d48de98c3c81b83337cc5400d1f24b96d39ff56d`,
+  has status `WAITING_FOR_ACCEPTED_SELECTOR_CACHE_BINDING`, not prelaunch
+  approval. No R1 kernel was pushed; cache, GT, consumer and test locks remain.
 
