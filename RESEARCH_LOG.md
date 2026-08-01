@@ -11003,3 +11003,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa prediction/GT/consumer/test. Phải push binding/audit central thành công
   trước một launch duy nhất; không launch nếu push hoặc final status gate fail.
 
+- **N1 kernel-create ERROR trước scientific execution:** sau khi binding/audit
+  commit `dfe9e6b` đã push central, lệnh duy nhất `kaggle kernels push` trả
+  `400 Bad Request` từ `KernelsApiService/SaveKernel`. Server không tạo
+  kernel/version/job; một bounded status check chỉ trả `kernels.get permission
+  denied / most likely wrong slug`, không có RUNNING/terminal version. Vì lỗi ở
+  request-creation boundary nên không mở Kaggle input, không fit real cache,
+  không prediction/GT/consumer/test và không có scientific result.
+- Exact intended wrapper/binding/metadata vẫn là `fda247c9...` / `4d77c0d0...` /
+  `c8ec60d9...`. Kaggle CLI `2.2.3` không expose server error body. Static
+  localization ghi nhận slug/title dài `56` ký tự, trong khi working T1 slug
+  dài `46`; metadata identifier length là root-cause hypothesis kỹ thuật duy
+  nhất hiện tại nhưng **chưa** được coi là confirmed hay sửa trước khi note này
+  push. Error audit SHA-256 là
+  `bcca2138a6793729266ca679b48cf7de2d13facc7f61164dc8db621e71e977e5`.
+  Official Kaggle CLI kernel-push reference đã xem:
+  https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md; installed CLI
+  request source cũng xác nhận 400 xảy ra tại SaveKernel sau local metadata parse.
+  Package `__pycache__` phát sinh do prelaunch compile đã chuyển vào Recycle Bin.
+  Phải push error boundary này trước mọi identifier correction hoặc rerun.
+

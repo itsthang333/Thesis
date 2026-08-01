@@ -1,0 +1,39 @@
+{
+  "attempted_at": "2026-08-01T15:41:00+07:00",
+  "boundary": "Kaggle SaveKernel HTTP request rejected with 400 before a kernel/version/job was created or any Kaggle input was opened.",
+  "bound_wrapper_sha256": "fda247c98409311abcdd645d2c4e9f531893d9e1e3fff08d799ddd1a961fd8c2",
+  "cli": {
+    "command": "kaggle kernels push -p tmp/kaggle/mask_bag_normal_only_direct_anomaly_n1_v1",
+    "error": "400 Client Error: Bad Request for url: https://api.kaggle.com/v1/kernels.KernelsApiService/SaveKernel",
+    "version": "Kaggle CLI 2.2.3"
+  },
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "intended_kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1",
+  "intended_kernel_version": 1,
+  "kernel_metadata_sha256": "c8ec60d9777c6bcf6c8520d17c1a0d11dee5f0bf05f07cc04b011d273475f8fa",
+  "launch_binding_sha256": "4d77c0d0cd14ae48b77bf22263bf3660c48e7cf51a69a7e0060633ebf2d6a9c3",
+  "observations": {
+    "code_file_length": 59,
+    "followup_status_check": "kernels.get permission denied / most likely wrong slug; no terminal or running version was returned",
+    "kernel_slug_length": 56,
+    "known_working_t1_slug_length": 46,
+    "server_error_body_exposed_by_cli": false,
+    "title_length": 56
+  },
+  "root_cause_status": "SUSPECTED_METADATA_IDENTIFIER_LENGTH_NOT_YET_CORRECTED",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "kaggle_input_opened": false,
+    "real_cache_fit": false,
+    "scientific_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "scientific_result": false,
+  "source_reference": {
+    "description": "Official Kaggle CLI kernel-push documentation and installed Kaggle CLI 2.2.3 request implementation were inspected only to localize the pre-creation API boundary.",
+    "url": "https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md"
+  },
+  "status": "ERROR_BEFORE_KERNEL_CREATION",
+  "unchanged_scientific_contract": true
+}
