@@ -11807,3 +11807,82 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   commit/push, sau đó fetch central + collaborator, đọc collision claims và chỉ
   đăng ký `ĐANG LÀM` nếu scope vẫn unique.
 
+### Đồng bộ collaborator `f30e37b` và supersede B4 trước claim/launch (2026-08-02)
+
+- Đã fetch lại `origin/research-wsss-improvement` và
+  `origin/codex/research-sync-20260731`; central/HEAD cùng ở
+  `2deb5df1b58faaad0502105ceb10017cbdacc10c`, collaborator mới nhất ở
+  `f30e37b063682c4e79c50b58c53dd3fbadd64478`. Đã đọc toàn bộ log trung tâm,
+  toàn bộ delta collaborator và hai dossier mới. Theo chỉ đạo người dùng,
+  terminal result của collaborator được **tin cậy trực tiếp**; central không
+  list/download/audit lại output và không truy cập Kaggle/kernel của họ.
+  Exact Git-blob SHA-256 của collaborator log, post-BAS dossier và Softplus
+  design lần lượt là `901e553b3e79a27eda16d1d35a3b26425b6a4ee125b032ff4d9c8cb76012d7d4`,
+  `85dbe34f366a12924d1457b6a941b121b2c4f0024639ce4d918c3d680fec08ba`
+  và `9fbf7fa48dc3aa2b4e8f4fb48b3bdff7e54ad9c65c5a8fd896336961858b8107`.
+- Terminal `EXP-20260801-codex-rich-gallery-bas-b2-v1` giữ control G1/upstream
+  Dice/IoU `0.28872949/0.21683918`, nhưng equal three-way BAS chỉ đạt
+  `0.18110635/0.12789378`, subgroup Dice
+  `0.02745544/0.30171128/0.50108581`; paired overall CI95 của delta là
+  `[-0.140313,-0.057568]`, BAS-only `0.04877652`. Đây không phải cải thiện.
+  Exact root cause là terminal ReLU head chết: CE `0.693359375`, accuracy
+  `1493/2981=0.50083864`, validation AUROC `0.5`, nondegenerate-map fraction
+  `0`, range chỉ `9.70e-7`. BAS score vì thế gần như area rank
+  (mean/median within-image Spearman `0.999902/0.999922`) và chọn max-area
+  percentile ở mọi tumor; positive Dice mass `+5.8176` bị negative mass
+  `-25.6202` áp đảo. Eligible oracle vẫn `0.52790203`, truncation regret chỉ
+  `0.00039631`; thiếu observable tumor-specific candidate identity vẫn là
+  bottleneck.
+- Central B4 class-contrast BAS dùng cùng terminal-ReLU mechanism, nên mọi
+  protocol/binding/readiness B4 được giữ làm bằng chứng nhưng trạng thái khoa
+  học là **SUPERSEDED BEFORE CLAIM/LAUNCH**. Không đăng ký
+  `EXP-20260801-codex-b4-same-gallery-bas-semantic-v1`, không push Kaggle,
+  không mở real input/prediction/GT/consumer/test. Class contrast sau một head
+  đã chết không thể phục hồi thông tin không tồn tại; launch B4 sẽ lặp đúng
+  error mechanism vừa được chứng minh.
+- Collaborator Softplus B2.1 ở `f30e37b` mới là bounded static mechanics probe,
+  chưa có terminal Dice hay claim trong log. Central không chạy cạnh tranh và
+  không adopt Softplus như performance improvement. Chỉ khi collaborator sau
+  này có terminal audited result tốt hơn control thì kỹ thuật đó mới đủ điều
+  kiện kế thừa vì hiệu năng.
+- Successor phải thay **representation**, không đổi tên một residual cũ: R1
+  normal prototypes, R2 local affinity, R3/R4 relation, S1 family balance, S4
+  clustering, T1 count control, G2 negative-only/temperature, consensus,
+  top-10 relation, classifier deletion/insertion, direct dense RAD-DINO và BAS
+  dead-head đều đã có negative evidence. Hướng ưu tiên được mở lại từ transfer
+  audit trước đây là frozen SKELEX musculoskeletal foundation descriptor trên
+  exact immutable gallery. SKELEX được self-supervised pretrain trên khoảng
+  1.2 triệu musculoskeletal radiograph và paper báo cáo bone-tumor transfer;
+  đây là semantic source mới, không phải một objective/aggregation sweep.
+  Primary sources: https://www.nature.com/articles/s41746-026-02826-9,
+  https://arxiv.org/abs/2602.03076 và exact public model revision
+  https://huggingface.co/skhoha/SKELEX/tree/368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e.
+  Public checkpoint `model.safetensors` có 1,318,230,232 byte và LFS SHA-256
+  `81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8`;
+  config/preprocessor xác nhận ViT-MAE Large, 24 layer/1024 dim, patch 16,
+  224 px và ImageNet normalization. License CC-BY-NC-ND-4.0 được giữ rõ;
+  không redistribute/modify checkpoint trong repository hoặc output.
+- Do người dùng cấm truy cập collaborator output, central không thể score trực
+  tiếp physical rich-gallery union `0.28872949`. S5 vì thế là một
+  **transferable same-gallery representation ablation** trên gallery/hash mà
+  central sở hữu; nếu SKELEX tạo candidate evidence dương, exact scorer mới mới
+  đủ căn cứ để chuyển sang rich gallery qua một GT-blind score interface sau
+  này. Nó không regenerate/copy G0/G1/G2 và không được quảng bá là trực tiếp
+  vượt rich-gallery baseline trước khi có actual frozen-pair Dice.
+- Static S5 implementation now follows the exact Hugging Face Transformers
+  `v4.50.2` ViT-MAE encoder contract inspected at
+  https://github.com/huggingface/transformers/blob/v4.50.2/src/transformers/models/vit_mae/modeling_vit_mae.py:
+  `mask_ratio=0` keeps all 196 patches, deterministic increasing `noise`
+  preserves patch order, and the encoder still prepends one CLS token which
+  must be removed before the 14x14 reshape. Exact SKELEX revision files fetched
+  read-only have `config.json` SHA-256
+  `b48411f4313c2ee6357586b57d185befac8c7c77cc475bc2188ec4487b1bc6f7`
+  and `preprocessor_config.json` SHA-256
+  `a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea`.
+  `SKELEX_MASK_BAG_SELECTOR_S5_DESIGN.md`, the SKELEX descriptor/pooling
+  primitives, one-shot runner, independent GT-blind auditor and synthetic
+  tests were prepared without opening real scientific input. `py_compile` and
+  `git diff --check` pass; local PyTorch tests are unavailable because the host
+  environment has no PyTorch, so the fail-closed T4x2 wrapper must run them
+  before any real input. S5 remains **UNCLAIMED / NOT LAUNCHED** at this point.
+
