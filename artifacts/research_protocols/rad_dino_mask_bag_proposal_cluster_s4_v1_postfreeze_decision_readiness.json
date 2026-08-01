@@ -1,0 +1,45 @@
+{
+  "artifact_id": "rad_dino_mask_bag_proposal_cluster_s4_v1_postfreeze_decision_readiness",
+  "frozen_utc": "2026-08-01T06:04:08Z",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "status": "POSTFREEZE_DECISION_LAYER_STATIC_PASS_KERNEL_STILL_RUNNING",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-proposal-cluster-s4-v1",
+  "kernel_version": 1,
+  "kernel_status_at_last_bounded_check": "RUNNING",
+  "scientific_source_commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
+  "protocol_sha256": "fb39234a03890d7201531066e3ca7a11f2379eaa120bd503fe4b92e6de30a2a6",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "postfreeze_components": {
+    "decision_source": "project/decide_mask_bag_proposal_cluster_s4.py",
+    "decision_source_sha256": "389d77b0eaede89e4f194b8af94947e45c29ec3a940e9317511de9f97db4d8e1",
+    "decision_test": "tests/test_decide_mask_bag_proposal_cluster_s4.py",
+    "decision_test_sha256": "303adb45bc56cef73950e4c94f5f82e8e8a9ce5693f01f27cd44b407007ace77",
+    "generic_evaluator_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "independent_gt_blind_auditor_sha256": "a93bc7a237d0fc62275f7bd6230c3e06f3d1def94ca4a560b0b58ac305b689ff"
+  },
+  "decision_contract": {
+    "independent_gt_blind_audit_required_before_evaluation": true,
+    "physical_prediction_and_evaluation_hashes_required": true,
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed_family": 20261013,
+    "mechanism_only_status_keeps_consumer_locked": true,
+    "consumer_requires_mechanism_operational_oracle_and_safety_pass": true,
+    "decision_layer_opens_validation_gt_directly": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_decision_evaluator_auditor_tests": "14/14 PASS",
+    "full_repository_tests": "463/463 PASS",
+    "full_repository_seconds": 19.52,
+    "local_python39_zip_strict_diagnostic_shim_only": true
+  },
+  "terminal_output_downloaded": false,
+  "scientific_input_opened_by_this_step": false,
+  "validation_prediction_created_by_this_step": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

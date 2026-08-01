@@ -10238,4 +10238,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   status query returned `RUNNING`. This is not a scientific result. No repeat
   poll or additional monitor was created; prediction freeze, validation GT,
   consumer and BTXRD test remain locked.
+- **Post-freeze decision layer frozen while version 1 remains running:** no new
+  Kaggle status query was made in this static-preparation step. The fail-closed
+  decision source `project/decide_mask_bag_proposal_cluster_s4.py` and its test
+  have SHA-256
+  `389d77b0eaede89e4f194b8af94947e45c29ec3a940e9317511de9f97db4d8e1` /
+  `303adb45bc56cef73950e4c94f5f82e8e8a9ce5693f01f27cd44b407007ace77`.
+  They require the exact independent GT-blind output audit and evaluator audit,
+  all physical output hashes, 10,000 bootstrap replicates and fixed seed family
+  `20261013`; they independently recompute the generic mechanism, operational,
+  oracle and final-safety gates. A mechanism-only pass explicitly keeps the
+  consumer locked; authorization is possible only when every gate passes.
+- `py_compile`, focused decision/evaluator/auditor tests `14/14` and the full
+  repository regression `463/463` in 19.52 seconds pass under the documented
+  local Python-3.9 compatibility shim. Static readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1_postfreeze_decision_readiness.json`
+  has SHA-256
+  `e72e53b38e60ec9c10d8c85eca144f341a190a6db57910c52010f9595c995dc7`.
+  This step opened no scientific input or validation GT, created no prediction,
+  trained no consumer and evaluated no BTXRD test. S4 remains `ĐANG LÀM` until
+  one later bounded terminal check and the predeclared audit/evaluation chain.
 
