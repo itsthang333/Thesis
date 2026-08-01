@@ -12342,4 +12342,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   đúng một version-4 test-only correction rerun sau push central/prelaunch
   audit. Chưa launch v4, chưa mở real input, prediction/GT/consumer/test; mọi
   compute nặng và collaborator output vẫn khóa.
+- Correction/addendum/wrapper/log đã được push central tại commit
+  `59c3f3ce8906bf18601940114a2f1611b5ffd390`. Exact packaged version-4 wrapper
+  chỉ khác canonical ở ba binding constants (`version=4`, ready true, checkout
+  commit trên), SHA-256
+  `f6183ad252e7be289cb6cc54108a307e353db01837f8c4f8e825c3ef36a20ffd`;
+  metadata không đổi SHA-256 `33d4a8cb...f107`.
+- Prelaunch audit
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_kernel_v4_wrapper_audit.json`
+  có SHA-256
+  `843bd3799bccf4a645cc5ccc892b4b42b4ca7195111b38f526255dc58623b84b`.
+  Audit xác nhận exact protocol->numeric->test-only override chain, ancestry,
+  canonical/packaged identity ngoài binding, tests trước public model/real input,
+  T4x2, descriptor operational gate, physical prediction pair freeze và
+  independent GT-blind reproduction. Version 4 chưa push Kaggle tại mốc này.
 
