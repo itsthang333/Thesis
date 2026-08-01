@@ -10952,3 +10952,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tạo validation prediction, chưa mở GT/consumer/test. Bước kế là wrapper +
   launch binding fail-closed và phải push trước một Kaggle T4x2 launch duy nhất.
 
+- **N1 wrapper/binder static readiness:** fail-closed Kaggle template
+  `project/kaggle_wrappers/run_mask_bag_normal_only_direct_anomaly_n1_v1.py`
+  có SHA-256
+  `6228baf22e5b6a101ca9a9642cd404f2ec4ff944cb66bc9fb224eb66cea84868`;
+  binder SHA-256 là
+  `ed459a7f4725ffbb595b2c1455f3266aaf3c7b0ec4551c9b2750bf2ae84da25d`.
+  Template mặc định `KERNEL_VERSION=0`, binding false và checkout unbound;
+  binder chỉ được đổi đúng ba field này và phải inverse-reconstruct exact template.
+- Wrapper phải prove exact checkout/protocol/all canonical source/auditor hashes và
+  real T4 convolution trên cả hai GPU trước input preparation; sau đó dựng exact
+  CRLF split, xác minh safe baseline transport/cache, chạy tests, chạy runner một
+  lần, physical-freeze prediction, rồi mới gọi independent auditor. Runtime
+  launch binding được tạo trước scientific runner; independent audit phải pass
+  full bank/371 score/view/map recomputation trước wrapper audit cuối. Không có
+  evaluator/GT/consumer/test import hay execution trong wrapper.
+- Focused suite lần đầu có `1` assertion-only failure vì test match auditor
+  filename constant trước `main()`; correction giới hạn order assertion vào thân
+  `main()`, không đổi wrapper/protocol/mechanism. Sau correction focused `17/17`
+  trong 3.38 giây và full repository `507/507` trong 21.88 giây pass; cache test
+  đã chuyển vào Recycle Bin. Binder test chứng minh exact 3-field replacement,
+  inverse reconstruction và launch binding được independent auditor chấp nhận.
+  Test SHA-256 là
+  `7a2927e3901aa70ed58aa30d9648a680349305b872cef29c798025466da7f00f`;
+  readiness artifact SHA-256 là
+  `5b1730fe5785cdf5610e2240d4fda88c15b8350976d6d884d174c22a0fb88792`.
+  Vẫn chưa bind package, fit real cache, tạo prediction hay mở GT/consumer/test.
+

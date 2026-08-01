@@ -1,0 +1,42 @@
+{
+  "base_commit": "c714a5f42813d7cc385d70478764ff13e9b961e1",
+  "binder_sha256": "ed459a7f4725ffbb595b2c1455f3266aaf3c7b0ec4551c9b2750bf2ae84da25d",
+  "claim_commit": "0e1b5daa895d28809e13ba106fbe60236b2ac909",
+  "errors": [
+    {
+      "boundary": "The first wrapper focused suite had one assertion-only failure because the source-order test matched the auditor filename constant before main().",
+      "correction": "Restrict the order assertion to the main() body; wrapper, protocol and scientific mechanism were unchanged.",
+      "scientific_execution": false
+    }
+  ],
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "focused_tests": {
+    "passed": 17,
+    "seconds": 3.38,
+    "total": 17
+  },
+  "full_regression": {
+    "passed": 507,
+    "seconds": 21.88,
+    "total": 507
+  },
+  "protocol_sha256": "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d",
+  "recorded_at": "2026-08-01T15:37:27+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "generated_test_caches_recycled": true,
+    "real_cache_fit": false,
+    "scientific_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "status": "STATIC_WRAPPER_AND_BINDER_READY_NOT_BOUND_NOT_LAUNCHED",
+  "test_sha256": "7a2927e3901aa70ed58aa30d9648a680349305b872cef29c798025466da7f00f",
+  "wrapper_contract": {
+    "bound_fields": 3,
+    "independent_auditor_runs_after_physical_prediction_freeze": true,
+    "runtime_binding_written_before_scientific_runner": true,
+    "t4x2_required_before_input_preparation": true
+  },
+  "wrapper_template_sha256": "6228baf22e5b6a101ca9a9642cd404f2ec4ff944cb66bc9fb224eb66cea84868"
+}
