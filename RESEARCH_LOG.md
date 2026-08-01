@@ -11334,3 +11334,67 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   miss rank sâu cấm neo mù vào top-1/overlap; BAS được giữ vì trực tiếp thêm bản
   đồ class-aware, còn mọi choice vẫn phải freeze trước evaluator.
 
+### B2 rich-gallery BAS residual static transport readiness (2026-08-01)
+
+- Thiết kế kế nhiệm được ghi tại
+  `BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md`, canonical-LF SHA-256
+  `b5506df5ba2f66c5f05a6b9f5bed9d287367146e9d82032b794384b4c3adfb7d`.
+  B2 kế thừa đúng hai phần đã terminal tốt hơn ở
+  `EXP-20260801-codex-rich-gallery-g1-fusion-bottleneck-v3`: immutable rich
+  proposal union và fixed G1/upstream equal percentile-rank control
+  `0.28872949`. Nó không adopt G2/consensus âm và không tạo lại G0/G1/G2.
+- Primitive độc lập `project/models/rich_gallery_bas_residual.py` SHA-256
+  `9639c47f3f0f8aeb235f65e800adec0100612a9b57b003195daf6b47a973d582`
+  tái hiện exact average-tie percentile rank/tie-break của collaborator, align
+  kept candidate index/upstream/source với physical payload và chỉ thêm một
+  arm duy nhất: mean rank G1+upstream+BAS. Source identity được audit provenance
+  nhưng không được dùng làm score/router. BAS coverage/purity/harmonic vẫn dùng
+  primitive image-label-only đã audit ở B1.
+- Independent transport auditor
+  `project/audit_rich_gallery_stage_a_transport.py` SHA-256
+  `300812291a339ac7e096257fd1c328dc44f8c58a1e8802da8716bec1f74a2476`
+  không import runner G1/G2 của collaborator. Nó fail nếu có path Stage-B,
+  evaluation, per-image GT, ground-truth, polygon/annotation; kiểm tra exact
+  freeze/manifest/score-set/candidate hashes, cohort `371/184/187`, alignment
+  của từng score payload và tái lập 371/371 G1+upstream choice trước khi B2 được
+  phép dùng transport.
+- Input BAS được cố định một lần ở 448 px, không có 224/320 arm hoặc resolution
+  sweep. Lý do là bằng chứng BTXRD trước đó cho thấy 448 cải thiện small lesion,
+  classifier448 đang có source-oracle small tốt nhất, còn output-stride-8 tại
+  224 sẽ làm mất thêm tế bào kích hoạt của tổn thương rất nhỏ. Recipe BAS còn
+  lại giữ official-style 100 epoch/final checkpoint/T4x2/image-label-only.
+- Readiness JSON
+  `artifacts/research_protocols/rich_gallery_bas_residual_b2_transport_readiness.json`
+  SHA-256
+  `817968984aac300a97fdd3b83d6b94938bc1c108c562d796d3801a0eef4afde2`
+  khóa collaborator commit `d849155...`, G1 checkpoint
+  `634e1200...1bfe8c`, G2 Stage-A freeze `78970d41...cd167`, G2 protocol
+  `6dd6c66e...01be`, split `85511ee1...3c8c`, ImageNet weight
+  `11ad3fa6...9ca` và 7 canonical source hash. Các binding chưa biết được liệt
+  kê fail-closed, không đoán hash.
+- Focused primitive+auditor+BAS regression pass `23/23` trong 3.26 giây; full
+  repository pass `530/530` trong 22.82 giây trên pinned
+  `btxrd-pseudomask` Python 3.9 với documented local strict-zip diagnostic
+  shim; `py_compile`, Ruff, JSON parse, source-hash reproduction và
+  `git diff --check` pass. Lần focused đầu tiên dùng nhầm system Miniconda thiếu
+  NumPy/Ruff nên dừng ở collection trước data access; đây là environment error,
+  không phải scientific result.
+- Một read-only `kaggle kernels files
+  wanwin/btxrd-rich-gallery-g2-selector-pair` nhận HTTP 403 Forbidden. Không file
+  nào được list/download, không Stage-B/GT/test được mở và không status poll hay
+  job được tạo. Vì thế exact GT-blind transport vẫn là boundary còn thiếu:
+  `prediction_freeze.json`, `stage_a_selection_manifest.csv`, 371
+  `stage_a_scores`, validation candidate manifest/summary/payloads và một
+  inventory SHA-256 không chứa evaluation/annotation/test.
+- Nguồn bổ sung đã đọc nhưng chưa adopt là Xu et al., *CREAM: Weakly
+  Supervised Object Localization via Class RE-Activation Mapping*, CVPR 2022,
+  https://openaccess.thecvf.com/content/CVPR2022/html/Xu_CREAM_Weakly_Supervised_Object_Localization_via_Class_RE-Activation_Mapping_CVPR_2022_paper.html.
+  Foreground/background EM re-activation có thể tăng object extent, nhưng bị
+  defer vì consensus vừa chứng minh stable anatomy làm over-segment small
+  lesion; không combine trước khi BAS riêng có terminal positive result.
+- Đây chưa phải claim `ĐANG LÀM`: chưa mở real radiograph/candidate transport,
+  chưa fit, chưa prediction, chưa validation segmentation GT, chưa consumer và
+  chưa BTXRD test. Khi transport GT-blind xuất hiện, phải fetch/read lại hai log,
+  audit transport, freeze exact protocol/source rồi mới đăng ký/push claim trước
+  launch Kaggle.
+

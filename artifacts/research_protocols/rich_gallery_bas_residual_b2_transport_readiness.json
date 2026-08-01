@@ -1,0 +1,98 @@
+{
+  "readiness_id": "rich_gallery_bas_residual_b2_transport_readiness_v1",
+  "status": "STATIC_AWAITING_GT_BLIND_TRANSPORT_NO_CLAIM_NO_BINDING_NO_LAUNCH",
+  "successor_experiment_id": "EXP-20260801-codex-b2-rich-gallery-bas-residual-v1",
+  "supersedes_before_launch": {
+    "protocol": "bas_candidate_descriptor_b1_v1",
+    "sha256": "5b9a80c63331551ff2c4ba0140096c14fa27076e141b83129e774843a7a7fde8",
+    "reason": "use the actually better rich-gallery G1/upstream baseline instead of launching on the older gallery"
+  },
+  "collaborator_evidence": {
+    "commit": "d849155e49372c2027a1168fbe4a0b68e199470d",
+    "g1_checkpoint_sha256": "634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c",
+    "g2_stage_a_prediction_freeze_sha256": "78970d417de20dc884958dfb3fd9cb2bad9f2cda53240ae2207607ba827cd167",
+    "g2_protocol_sha256": "6dd6c66e396054157eb498cbca46635d1058c73d1139541d385bb769088801be",
+    "exploratory_baseline_dice": {
+      "overall": 0.28872948670665205,
+      "small": 0.15772329637374455,
+      "medium": 0.4352293348209193,
+      "large": 0.38687353265476676
+    },
+    "complete_misses": 49,
+    "gallery_oracle": {
+      "overall": 0.5282983321797708,
+      "small": 0.33187635032688717,
+      "medium": 0.730250922322223,
+      "large": 0.7462472101750204
+    }
+  },
+  "known_common_inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "imagenet_resnet50_url": "https://download.pytorch.org/models/resnet50-11ad3fa6.pth",
+    "imagenet_resnet50_bytes": 102540417,
+    "imagenet_resnet50_sha256": "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca"
+  },
+  "required_transport": {
+    "kaggle_access_attempt": "HTTP_403_FORBIDDEN_NO_FILES_LISTED_OR_DOWNLOADED",
+    "allowed_stage_a_paths": [
+      "prediction_freeze.json",
+      "stage_a_selection_manifest.csv",
+      "stage_a_scores/*.npz"
+    ],
+    "required_candidate_artifacts": [
+      "candidate_diagnostics_manifest.csv",
+      "candidate_diagnostics_summary.json",
+      "371 physical validation candidate payloads"
+    ],
+    "missing_exact_bindings": [
+      "transport dataset/owner/version",
+      "G2 scientific source commit recorded inside prediction_freeze.json",
+      "validation candidate manifest SHA-256",
+      "validation pseudo-manifest SHA-256",
+      "physical transport file inventory and SHA-256 manifest"
+    ],
+    "forbidden": [
+      "Stage-B evaluation",
+      "per-image GT-derived table",
+      "validation polygon or annotation",
+      "BTXRD test input"
+    ]
+  },
+  "fixed_scientific_change": {
+    "candidate_gallery": "immutable collaborator rich gallery",
+    "control": "exact equal percentile-rank G1 plus upstream",
+    "primary": "exact equal percentile-rank G1 plus upstream plus BAS activation harmonic evidence",
+    "bas_input_size": 448,
+    "bas_epochs": 100,
+    "rank_weight_sweep": false,
+    "source_or_area_router": false,
+    "proposal_generation": false
+  },
+  "static_sources": [
+    "project/models/bas_candidate_localizer.py",
+    "project/models/rich_gallery_bas_residual.py",
+    "project/audit_rich_gallery_stage_a_transport.py",
+    "tests/test_bas_candidate_localizer.py",
+    "tests/test_rich_gallery_bas_residual.py",
+    "tests/test_audit_rich_gallery_stage_a_transport.py",
+    "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md"
+  ],
+  "canonical_lf_source_hashes": {
+    "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md": "b5506df5ba2f66c5f05a6b9f5bed9d287367146e9d82032b794384b4c3adfb7d",
+    "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
+    "project/models/rich_gallery_bas_residual.py": "9639c47f3f0f8aeb235f65e800adec0100612a9b57b003195daf6b47a973d582",
+    "project/audit_rich_gallery_stage_a_transport.py": "300812291a339ac7e096257fd1c328dc44f8c58a1e8802da8716bec1f74a2476",
+    "tests/test_bas_candidate_localizer.py": "d57475ef12fb317199757a3e20e456d9373c96f2712195e53e28f0d50b776f46",
+    "tests/test_rich_gallery_bas_residual.py": "ceaae11db66e7f008511d8410c504b8b28d3c582f2bac4ce30704b44cec36163",
+    "tests/test_audit_rich_gallery_stage_a_transport.py": "a397034b79cf044934d47010e64ea1e5876aa734bebb04859bacd4da8ff00151"
+  },
+  "safety": {
+    "real_scientific_input_opened": false,
+    "validation_gt_read": false,
+    "prediction_created": false,
+    "consumer_trained": false,
+    "test_images_read": 0,
+    "test_evaluated": false,
+    "heavy_local_compute": false
+  }
+}
