@@ -712,6 +712,31 @@ def score_cluster_residual(
                 {
                     "image_id": str(record["image_id"]),
                     "candidate_logits": logits[row, :count].float().cpu().numpy(),
+                    "original_base_logits": original_base[row, :count]
+                    .float()
+                    .cpu()
+                    .numpy(),
+                    "flipped_base_logits": flipped_base[row, :count]
+                    .float()
+                    .cpu()
+                    .numpy(),
+                    "original_residual_logits": original_residual[row, :count]
+                    .float()
+                    .cpu()
+                    .numpy(),
+                    "flipped_residual_logits": flipped_residual[row, :count]
+                    .float()
+                    .cpu()
+                    .numpy(),
+                    "original_candidate_logits": original_logits[row, :count]
+                    .float()
+                    .cpu()
+                    .numpy(),
+                    "flipped_candidate_logits": flipped_logits[row, :count]
+                    .float()
+                    .cpu()
+                    .numpy(),
+                    "cluster_member_flags": member_row.byte().cpu().numpy(),
                     "bag_logit": float(bag_logits[row].item()),
                     "bag_probability": float(torch.sigmoid(bag_logits[row]).item()),
                     "candidate_count": count,

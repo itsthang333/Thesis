@@ -4,6 +4,7 @@ import ast
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 try:
@@ -96,7 +97,11 @@ def test_s4_runner_freezes_every_scientific_control() -> None:
 @pytest.mark.skipif(torch is None, reason="PyTorch is unavailable locally")
 def test_s4_gt_blind_count_gate_fails_before_prediction_serialization(tmp_path: Path) -> None:
     records = [
-        {"image_id": f"i{index}", "teacher_selected_view_agreement": True}
+        {
+            "image_id": f"i{index}",
+            "teacher_selected_view_agreement": True,
+            "candidate_indices": list(range(index + 1)),
+        }
         for index in range(3)
     ]
     scored = [
@@ -110,6 +115,14 @@ def test_s4_gt_blind_count_gate_fails_before_prediction_serialization(tmp_path: 
             "outside_cluster_count": index,
             "outside_cluster_original_residual_exact_zero": True,
             "outside_cluster_flipped_residual_exact_zero": True,
+            "candidate_logits": np.zeros(index + 1, dtype=np.float32),
+            "original_base_logits": np.zeros(index + 1, dtype=np.float32),
+            "flipped_base_logits": np.zeros(index + 1, dtype=np.float32),
+            "original_residual_logits": np.zeros(index + 1, dtype=np.float32),
+            "flipped_residual_logits": np.zeros(index + 1, dtype=np.float32),
+            "original_candidate_logits": np.zeros(index + 1, dtype=np.float32),
+            "flipped_candidate_logits": np.zeros(index + 1, dtype=np.float32),
+            "cluster_member_flags": np.ones(index + 1, dtype=np.uint8),
         }
         for index in range(3)
     ]

@@ -372,13 +372,69 @@ def _write_gt_blind_diagnostics(
     *,
     ceiling: float,
 ) -> tuple[str, float]:
+    evidence_root = output_dir / "validation_residual_evidence"
+    evidence_root.mkdir(parents=True, exist_ok=False)
     rows: list[dict[str, Any]] = []
-    for record, prediction in zip(records, scored, strict=True):
+    for index, (record, prediction) in enumerate(zip(records, scored, strict=True)):
         if str(record["image_id"]) != str(prediction["image_id"]):
             raise RuntimeError("S4 diagnostic order mismatch")
+        image_id = str(record["image_id"])
+        count = int(prediction["candidate_count"])
+        arrays = {
+            name: np.asarray(prediction[name], dtype=np.float32)
+            for name in (
+                "original_base_logits",
+                "flipped_base_logits",
+                "original_residual_logits",
+                "flipped_residual_logits",
+                "original_candidate_logits",
+                "flipped_candidate_logits",
+            )
+        }
+        members = np.asarray(prediction["cluster_member_flags"], dtype=np.uint8)
+        if (
+            any(array.shape != (count,) for array in arrays.values())
+            or members.shape != (count,)
+            or not all(np.isfinite(array).all() for array in arrays.values())
+            or not np.isin(members, (0, 1)).all()
+            or not np.array_equal(
+                arrays["original_candidate_logits"],
+                arrays["original_base_logits"] + arrays["original_residual_logits"],
+            )
+            or not np.array_equal(
+                arrays["flipped_candidate_logits"],
+                arrays["flipped_base_logits"] + arrays["flipped_residual_logits"],
+            )
+            or not np.array_equal(
+                np.asarray(prediction["candidate_logits"], dtype=np.float32),
+                0.5
+                * (
+                    arrays["original_candidate_logits"]
+                    + arrays["flipped_candidate_logits"]
+                ),
+            )
+            or np.count_nonzero(
+                arrays["original_residual_logits"][members == 0]
+            )
+            != 0
+            or np.count_nonzero(
+                arrays["flipped_residual_logits"][members == 0]
+            )
+            != 0
+        ):
+            raise RuntimeError("S4 physical residual evidence failed exact identity")
+        evidence_path = (
+            evidence_root / f"{index:04d}_{Path(image_id).stem}.npz"
+        )
+        np.savez_compressed(
+            evidence_path,
+            candidate_indices=np.asarray(record["candidate_indices"], dtype=np.int32),
+            cluster_member_flags=members,
+            **arrays,
+        )
         rows.append(
             {
-                "image_id": record["image_id"],
+                "image_id": image_id,
                 "candidate_count": prediction["candidate_count"],
                 "bag_probability": prediction["bag_probability"],
                 "teacher_selected_view_agreement": int(
@@ -396,6 +452,8 @@ def _write_gt_blind_diagnostics(
                 "outside_cluster_flipped_residual_exact_zero": int(
                     prediction["outside_cluster_flipped_residual_exact_zero"]
                 ),
+                "residual_evidence_path": evidence_path.name,
+                "residual_evidence_sha256": sha256_file(evidence_path),
             }
         )
     spearman = _absolute_spearman(
