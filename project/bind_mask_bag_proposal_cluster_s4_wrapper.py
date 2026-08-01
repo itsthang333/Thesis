@@ -10,12 +10,12 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "af550929841b305f4612d9ba6581e214d9964ec3454c86fbd7c770f6dcefe4db"
+TEMPLATE_SHA256 = "fdaa86c7e71ea50664d268b8e98458114a1d72871c42940ff1532b7315782ec7"
 PROTOCOL_PATH = (
     "artifacts/research_protocols/"
     "rad_dino_mask_bag_proposal_cluster_s4_v1.json"
 )
-PROTOCOL_SHA256 = "040227de1347c45bc1823bd5aef5d9614b8005619ecc35d9dceb45bb7eba71e8"
+PROTOCOL_SHA256 = "fb39234a03890d7201531066e3ca7a11f2379eaa120bd503fe4b92e6de30a2a6"
 SOURCE_COMMIT = "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f"
 KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-proposal-cluster-s4-v1"
 POST_FREEZE_ONLY_SOURCE_PATHS = {

@@ -18,7 +18,7 @@
   },
   "scientific_source": {
     "commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
-    "claim_commit": "fa8b0d64ea5571dedf3df2b1a98d221f4179a3f8",
+    "claim_commit": "fa8b0d6de4d1ad9d1372fd2c61ee8b78feec91a4",
     "parent_cache_protocol_sha256": "ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489",
     "accepted_cache_independent_audit_sha256": "7d9f693dd5d1d9206b01cc2c8a0ed4aed497f9f17d9dedf670a97771b0f78334",
     "r1_error_audit_sha256": "833c4814eee0891df1cd55a01fa008e0708ad3485dd30b730657f52508317719",

@@ -10161,4 +10161,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `1c2dafed3fe2d04c18b9dae3d26c547bd6eb3a72fe83bd7d0dd203faafa36961`.
   No binding, kernel package/push, scientific cache record, fit, prediction,
   validation GT/test access or consumer training occurred.
+- **Prelaunch provenance error and binding abort:** the first local version-1
+  binding was created but not committed or launched. Final ancestry checking
+  then proved that the full claim commit copied into the protocol,
+  `fa8b0d64ea5571dedf3df2b1a98d221f4179a3f8`, does not resolve; the actual
+  commit identified by short hash `fa8b0d6` is
+  `fa8b0d6de4d1ad9d1372fd2c61ee8b78feec91a4`. The failure occurred after
+  local binding but before binding/final-audit commit, kernel package commit or
+  Kaggle push, so it has no scientific output or metric.
+- The aborted protocol/binding/bound-wrapper/final-draft hashes are
+  `040227de1347c45bc1823bd5aef5d9614b8005619ecc35d9dceb45bb7eba71e8` /
+  `c47e9a63767ec8039fa5fb074812464e5b7686529b7b955e2b8c9d2f47c1a4d0` /
+  `8fe514c354661472eb99acebcb834d6e14df13e160f0ad4164f0c1625b6a30a5` /
+  `362f84f871141085072ddae4e105f97610a336e29adaddc70829411a7af1b9ac`.
+  Error audit
+  `artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1_prelaunch_invalid_claim_hash_audit.json`
+  has SHA-256
+  `b9a87e0c51b371832abd34ca4a75f47819887283ce06e77bb91de51d9afcc72d`.
+- **Implementation-only correction in progress:** the protocol claim field is
+  corrected to the actual existing commit and the resulting protocol SHA-256
+  is `fb39234a03890d7201531066e3ca7a11f2379eaa120bd503fe4b92e6de30a2a6`.
+  Only this provenance byte chain changes; source commit, teacher/student
+  algorithm, inputs, folds, thresholds, schedule and gates are unchanged.
+  Corrected independent auditor/wrapper-template/binder SHA-256 values are
+  `a93bc7a237d0fc62275f7bd6230c3e06f3d1def94ca4a560b0b58ac305b689ff` /
+  `fdaa86c7e71ea50664d268b8e98458114a1d72871c42940ff1532b7315782ec7` /
+  `186bb7472f1339df1f52a95c711e8729c55acd688c502c56d8908557665ebbce`.
+  The earlier static/wrapper readiness artifacts remain immutable evidence for
+  the aborted protocol chain and are superseded for launch. A corrected binding
+  may be created only after these bytes are committed/pushed and the complete
+  tests pass at that exact checkout. No scientific input, prediction, GT/test
+  or consumer access occurred.
 
