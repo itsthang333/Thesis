@@ -1,0 +1,113 @@
+{
+  "artifact_id": "skelex_mask_bag_selector_s5_v1_postfreeze_evaluation_readiness",
+  "created_utc": "2026-08-01T19:04:30Z",
+  "status": "FROZEN_WHILE_KERNEL_PENDING_BEFORE_TERMINAL_OUTPUT_OR_GT",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "kernel": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+  "kernel_version": 4,
+  "timing_boundary": {
+    "launch_state_seen": "QUEUED",
+    "terminal_output_seen": false,
+    "prediction_pair_freeze_seen": false,
+    "validation_gt_read": false,
+    "evaluation_metric_seen": false,
+    "repeat_poll_or_monitor_created": false
+  },
+  "required_order": [
+    "one later bounded terminal status check",
+    "terminal compact direct-output retrieval into a new ignored temp root",
+    "inventory and physical wrapper-output audit without validation GT",
+    "independent S5 descriptor-logit, float32-rank, candidate-score and map reproduction without validation GT",
+    "freeze exact pair and independent-audit SHA-256 values",
+    "evaluate control and primary arms separately against the accepted Geometry-v3 baseline",
+    "freeze both evaluation-audit and per-image SHA-256 values",
+    "compare primary minus control from frozen per-image tables without reopening GT",
+    "apply the predeclared promotion and operational-goal decision"
+  ],
+  "frozen_inputs": {
+    "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+    "execution_checkout_commit": "59c3f3ce8906bf18601940114a2f1611b5ffd390",
+    "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+    "numeric_addendum_sha256": "ded254883a13da9ec0b961970ebacbd2b61badd04c644b7b9c64747a6abd2f72",
+    "test_contract_addendum_sha256": "591858f1e5bfaefad55b9583f3904ae6447bc98986a77d7a52471a49586b74a8",
+    "bound_wrapper_sha256": "f6183ad252e7be289cb6cc54108a307e353db01837f8c4f8e825c3ef36a20ffd",
+    "prelaunch_audit_sha256": "843bd3799bccf4a645cc5ccc892b4b42b4ca7195111b38f526255dc58623b84b",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "arms": {
+    "control": "geometry_v3_plus_upstream_equal_rank",
+    "primary": "geometry_v3_plus_upstream_plus_skelex_equal_rank"
+  },
+  "independent_gt_blind_audit": {
+    "source": "project/audit_skelex_mask_bag_selector_s5_output.py",
+    "source_sha256": "dbf84451ae32b5fd819af53c48f3357da0c236defdaa5eda2d1b787640e01049",
+    "required_status": "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_DIAGNOSTICS_REPRODUCED",
+    "validation_predictions_per_arm": 371,
+    "must_reproduce": [
+      "descriptor operational gate before selector training",
+      "selector checkpoint from image-level labels only",
+      "baseline and SKELEX logits",
+      "all percentile ranks in float32",
+      "all candidate score arrays",
+      "all selected candidate identities and physical maps",
+      "pair-freeze hashes and safety flags"
+    ]
+  },
+  "evaluation": {
+    "source": "project/evaluate_mask_bag_selector_arm.py",
+    "source_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "bootstrap_replicates_per_arm": 10000,
+    "bootstrap_seed_for_both_arms": 20261101,
+    "same_seed_reason": "identical complete-group bootstrap draws for each arm versus the same accepted Geometry-v3 baseline",
+    "each_arm_must_bind": [
+      "arm prediction freeze SHA-256",
+      "arm source commit",
+      "scientific protocol SHA-256",
+      "candidate-score manifest SHA-256",
+      "selector-cache freeze SHA-256",
+      "baseline prediction freeze SHA-256",
+      "baseline per-image SHA-256"
+    ],
+    "gt_open_boundary": "only after all output, cache and baseline physical checks inside the evaluator pass"
+  },
+  "matched_comparison": {
+    "source": "project/compare_mask_bag_evaluated_arms.py",
+    "source_sha256": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119",
+    "candidate": "geometry_v3_plus_upstream_plus_skelex_equal_rank",
+    "reference": "geometry_v3_plus_upstream_equal_rank",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261101,
+    "ground_truth_reopened": false
+  },
+  "decision": {
+    "promotion_requires": [
+      "primary overall corrected Dice strictly exceeds control",
+      "no primary mean Dice decrease in small, medium or large",
+      "no complete-miss increase",
+      "predeclared mechanism and image-AUROC safety checks pass"
+    ],
+    "operational_goals": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    },
+    "consumer_authorized_only_if_operational_pass": true,
+    "negative_result_rule": "retire S5 without weight, layer, threshold, morphology or subgroup rescue sweep"
+  },
+  "static_validation": {
+    "evaluator_canonical_lf_hash_matches_protocol": true,
+    "comparator_canonical_lf_hash_matches_protocol": true,
+    "evaluator_py_compile": "PASS",
+    "comparator_py_compile": "PASS",
+    "scientific_data_opened": false,
+    "prediction_opened": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}

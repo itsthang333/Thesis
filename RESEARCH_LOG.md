@@ -12367,3 +12367,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   **ĐANG LÀM**; chưa có terminal output/prediction/Dice. Validation GT, consumer,
   BTXRD test và collaborator output tiếp tục khóa.
 
+### S5 v4 — post-freeze evaluation readiness khi kernel pending (2026-08-02)
+
+- Không thực hiện status check mới khi v4 vừa launch. Static readiness contract
+  được freeze tại
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_v1_postfreeze_evaluation_readiness.json`,
+  SHA-256
+  `e2f962b2c680dde1f387ec682410107d0b1f8044e5bd5901a01e6f99864ea254`.
+- Required order cố định: later bounded terminal check -> compact output
+  retrieval -> inventory/wrapper physical audit -> independent GT-blind
+  descriptor/logit/rank/score/map reproduction -> freeze audit/pair hashes ->
+  evaluate control và SKELEX-primary riêng -> freeze two per-image tables ->
+  matched comparator không mở lại GT -> predeclared decision. Evaluator chỉ
+  import segmentation dataset/mở baseline GT-derived table sau khi arm/cache/
+  baseline freezes, score manifests và physical maps đã pass.
+- Evaluator/comparator canonical-LF SHA-256 vẫn khớp scientific protocol:
+  `ccc3a493...084` / `2b868f93...19`; cả hai `py_compile` pass. Hai arm dùng
+  cùng `10,000` complete-group bootstrap draws seed `20261101`. Không prediction,
+  validation GT, metric, consumer, test hay local heavy compute được mở/chạy ở
+  bước readiness này.
+
