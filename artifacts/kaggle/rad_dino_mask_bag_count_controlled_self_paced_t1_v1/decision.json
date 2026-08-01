@@ -1,0 +1,91 @@
+{
+  "candidate_oracle_goal_checks": {
+    "large": {
+      "minimum": 0.49370336,
+      "observed": 0.6418253674184405,
+      "pass": true
+    },
+    "medium": {
+      "minimum": 0.51244178,
+      "observed": 0.5941470844279589,
+      "pass": true
+    },
+    "overall": {
+      "minimum": 0.34024039,
+      "observed": 0.4090755342486002,
+      "pass": true
+    },
+    "small": {
+      "minimum": 0.17895493,
+      "observed": 0.2227494852063559,
+      "pass": true
+    }
+  },
+  "consumer_authorized": false,
+  "consumer_trained": false,
+  "decision_id": "mask_bag_count_controlled_t1_decision_v1",
+  "evaluation_audit_sha256": "70b86f9a8955da1fb7618ad77a3c0789711a1f88daabdda70248e18329c1f638",
+  "evaluation_output_hashes": {
+    "gate_decision.json": "1162729bf629d037b0b87cf3c01db4e03bec793e75a1d396f7a571d5f888fe75",
+    "paired_comparison.json": "3d85a1d3b51d2ba5f176380374c0f8cef88984e4446a850bbc989ab85d0c8fc4",
+    "per_image.csv": "d03c8ac27337bce6dbc7a1b9cd005aac1b9a0ffea3488eeb1ef597842f17c3bd",
+    "summary.json": "df8640ede7e4ec5d5eac9c8f1916e2d793f33a70e63ce18326e59764c09d9d2d"
+  },
+  "final_safety_checks": {
+    "image_auroc_at_least_0_75": true,
+    "no_complete_miss_increase": false,
+    "no_tumor_subgroup_mean_decrease": false,
+    "overall_ci95_low_above_zero": false
+  },
+  "full_adoption_pass": false,
+  "independent_output_audit_sha256": "5f37c9d8b6b38a1c64293295ba51f64ae0fd8e55f0d7eac7c543f12edf974b29",
+  "mechanism_checks": {
+    "absolute_count_miss_association_no_increase": {
+      "arm": 0.2972182322822288,
+      "baseline": 0.3135074102409047,
+      "pass": true
+    },
+    "overall_selected_dice_no_regression": {
+      "delta": -0.0026613498706202455,
+      "minimum": 0.0,
+      "pass": false
+    },
+    "regret_reduced_in_at_least_two_tumor_subgroups": {
+      "improvements": {
+        "large": -0.018014088618569957,
+        "medium": -0.002199816459867887,
+        "overall": -0.00266134987062025,
+        "small": -7.497868031253185e-05
+      },
+      "minimum_count": 2,
+      "observed_subgroups": [],
+      "pass": false
+    }
+  },
+  "mechanism_pass": false,
+  "operational_goal_checks": {
+    "large": {
+      "minimum": 0.49370336,
+      "observed": 0.3713985585090501,
+      "pass": false
+    },
+    "medium": {
+      "minimum": 0.51244178,
+      "observed": 0.37493569883493627,
+      "pass": false
+    },
+    "overall": {
+      "minimum": 0.34024039,
+      "observed": 0.24282103690914755,
+      "pass": false
+    },
+    "small": {
+      "minimum": 0.17895493,
+      "observed": 0.11700560023409398,
+      "pass": false
+    }
+  },
+  "protocol_sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+  "status": "FAIL",
+  "test_evaluated": false
+}

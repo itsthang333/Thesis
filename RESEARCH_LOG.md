@@ -10724,3 +10724,40 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   BTXRD test chưa mở. Exact common post-freeze evaluator/decision đã
   predeclare nay được phép chạy; không được sửa prediction hay hyperparameter.
 
+- **Trạng thái cuối: HOÀN THÀNH (terminal decision `FAIL`).** Sau khi
+  independent freeze audit đã pass và được push, common evaluator mới mở
+  validation GT với exact corrected baseline per-image SHA-256 `a26143d0...`,
+  `10,000` complete-group bootstrap replicates và seed `20261014`. Lần gọi
+  đầu bằng `runpy` dừng ngay tại import `mae_reconstruction_io` do chưa
+  thêm `project` vào `sys.path`; nó chưa đọc input/GT, chưa tạo output.
+  Lần kế nhiệm giữ nguyên mọi argument/hash, chỉ bổ sung module path và pass.
+- Corrected T1 Dice validation overall/small/medium/large là
+  `0.24282104 / 0.11700560 / 0.37493570 / 0.37139856`, so với accepted
+  Geometry-v3 `0.24548239 / 0.11708058 / 0.37713552 / 0.38941265` chênh
+  `-0.00266135 / -0.00007498 / -0.00219982 / -0.01801409`.
+  Paired complete-group CI95 cho chênh lệch overall/small/medium/large là
+  `[-0.00663235,-0.00003937] / [-0.00019516,0] / [-0.00669240,0] /
+  [-0.05147943,0]`. Complete misses tăng `53 -> 54`; không baseline miss nào
+  được recover và một baseline hit bị mất. Image AUROC là
+  `0.81606022`.
+- T1 có một kết quả cơ chế hẹp đúng mong đợi: absolute
+  candidate-count/miss Spearman giảm `0.31350741 -> 0.29721823`. Tuy nhiên
+  selected-to-oracle regret xấu hơn trong cả bốn cohort:
+  overall/small/medium/large `+0.00266135 / +0.00007498 / +0.00219982 /
+  +0.01801409`; overall score-quality Spearman chỉ `0.44337370`. Do đó
+  count-control/self-paced residual không được adopt như performance
+  improvement; nó chỉ là negative evidence rằng gỡ shortcut count chưa đủ
+  để giảm selector regret, đặc biệt large extent.
+- Evaluation hashes: `evaluation_audit.json`
+  `70b86f9a8955da1fb7618ad77a3c0789711a1f88daabdda70248e18329c1f638`,
+  `gate_decision.json` `1162729bf629d037b0b87cf3c01db4e03bec793e75a1d396f7a571d5f888fe75`,
+  `paired_comparison.json` `3d85a1d3b51d2ba5f176380374c0f8cef88984e4446a850bbc989ab85d0c8fc4`,
+  `per_image.csv` `d03c8ac27337bce6dbc7a1b9cd005aac1b9a0ffea3488eeb1ef597842f17c3bd`,
+  `summary.json` `df8640ede7e4ec5d5eac9c8f1916e2d793f33a70e63ce18326e59764c09d9d2d`.
+  Final decision SHA-256 là
+  `71e6e10381e97f7fdeafe36bbba3954d6b64f52b83a3876d7097380fe1bcf93f`;
+  mechanism/full-adoption/operational gates đều fail, bốn oracle goal vẫn pass.
+  Consumer không được authorize/trained; BTXRD test không đọc.
+  Bước tiếp theo là sync terminal evidence với nhánh cộng tác và
+  chọn successor selector/aggregation không trùng, không rerun T1.
+

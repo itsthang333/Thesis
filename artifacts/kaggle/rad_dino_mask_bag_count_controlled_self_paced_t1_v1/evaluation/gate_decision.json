@@ -1,0 +1,82 @@
+{
+  "candidate_oracle_goal_checks": {
+    "large": {
+      "minimum": 0.49370336,
+      "observed": 0.6418253674184405,
+      "pass": true
+    },
+    "medium": {
+      "minimum": 0.51244178,
+      "observed": 0.5941470844279589,
+      "pass": true
+    },
+    "overall": {
+      "minimum": 0.34024039,
+      "observed": 0.4090755342486002,
+      "pass": true
+    },
+    "small": {
+      "minimum": 0.17895493,
+      "observed": 0.2227494852063559,
+      "pass": true
+    }
+  },
+  "consumer_authorized": false,
+  "consumer_trained": false,
+  "final_safety_checks": {
+    "image_auroc_at_least_0_75": true,
+    "no_complete_miss_increase": false,
+    "no_tumor_subgroup_mean_decrease": false,
+    "overall_ci95_low_above_zero": false
+  },
+  "gate_id": "mask_bag_selector_arm_gate_v1",
+  "mechanism_checks": {
+    "absolute_count_miss_association_no_increase": {
+      "arm": 0.2972182322822288,
+      "baseline": 0.3135074102409047,
+      "pass": true
+    },
+    "overall_selected_dice_no_regression": {
+      "delta": -0.0026613498706202455,
+      "minimum": 0.0,
+      "pass": false
+    },
+    "regret_reduced_in_at_least_two_tumor_subgroups": {
+      "improvements": {
+        "large": -0.018014088618569957,
+        "medium": -0.002199816459867887,
+        "overall": -0.00266134987062025,
+        "small": -7.497868031253185e-05
+      },
+      "minimum_count": 2,
+      "observed_subgroups": [],
+      "pass": false
+    }
+  },
+  "on_fail": "reject this mechanism and advance to the next finite selector row without changing the selector bottleneck",
+  "on_mechanism_pass_only": "retain as a candidate for predeclared complementary composition; do not train a consumer",
+  "operational_goal_checks": {
+    "large": {
+      "minimum": 0.49370336,
+      "observed": 0.3713985585090501,
+      "pass": false
+    },
+    "medium": {
+      "minimum": 0.51244178,
+      "observed": 0.37493569883493627,
+      "pass": false
+    },
+    "overall": {
+      "minimum": 0.34024039,
+      "observed": 0.24282103690914755,
+      "pass": false
+    },
+    "small": {
+      "minimum": 0.17895493,
+      "observed": 0.11700560023409398,
+      "pass": false
+    }
+  },
+  "status": "FAIL",
+  "test_evaluated": false
+}
