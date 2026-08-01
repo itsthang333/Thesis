@@ -10475,3 +10475,64 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   real cache execution, fit, target, prediction, validation GT/test or downstream
   consumer access occurred.
 
+### Đồng bộ terminal G1 và readiness G2 từ nhánh cộng tác (2026-08-01)
+
+- Toàn bộ `AGENTS.md`, log trung tâm và toàn bộ `RESEARCH_LOG.md` 8,107 dòng tại
+  `origin/codex/research-sync-20260731` commit
+  `f22700be9f74aaa560e0da95326d318f29c9a59b` đã được đọc sau khi fetch cả hai
+  nhánh. Nhánh cộng tác giữ `EXP-20260731-codex-rich-gallery-g0g1-v1` ở trạng
+  thái `ĐANG LÀM`; phần mới được ghi dưới mã
+  `EXP-20260801-codex-rich-gallery-g1-root-cause-and-g2-v1`. Central không chạy
+  cạnh tranh hoặc copy implementation G2.
+- **G1 terminal evidence từ workstream cộng tác:** rich-gallery Geometry-v3
+  đạt Dice validation overall/small/medium/large
+  `0.20602633/0.10958465/0.30070545/0.33094975`, thấp hơn accepted same-gallery
+  Geometry-v3 `0.24548239/0.11708058/0.37713552/0.38941265` ở cả bốn cohort,
+  trong khi immutable gallery oracle là
+  `0.52790203/0.33110060/0.73025092/0.74624721`. G1 có 29 complete misses
+  (`27/2/0`). Checkpoint, independent Stage-A freeze và Stage-B summary/per-image
+  SHA-256 được branch cộng tác ghi lần lượt là
+  `634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c`,
+  `c4e80a0c9bd8a1d4e5ef6204d23123d2d4f7b4deabb4c4b38aa4578b8b899e1c`,
+  `3be34a5765c14c68a7be68773e37ac66b03abf4951a165d83c8229048621da98`
+  và `8c8c12f9129351e842587c80f91fdd368de326f06029adc83d2ceb4e73b92d21`.
+  Đây là terminal result xấu hơn baseline, nên rich-gallery G1 scorer không được
+  kế thừa như một cải tiến hiệu năng.
+- **Transferable negative evidence:** merged gallery tăng proposal khoảng
+  `56 -> 150` mỗi validation image; external proposal xuất hiện ở `184/184`
+  tumor và `0/187` normal, làm candidate count riêng đạt image AUROC `0.89449`.
+  Với normalized LogSumExp temperature `0.2`, median effective candidate count
+  chỉ `1.63`; detached hard winner có Dice dưới `0.1` ở `60.9%` tumor và `83.0%`
+  small. Tổng regret `0.32187569` gồm wrong-source `0.08236474` (`25.6%`) và
+  within-source candidate/extent `0.23951095` (`74.4%`). Bằng chứng âm này củng
+  cố việc phải kiểm soát shortcut count/composition và extent, nhưng không chứng
+  minh một kỹ thuật G2 cụ thể tốt hơn.
+- **Exploratory post-freeze diagnostic:** loại external candidates tăng overall
+  Dice lên `0.24062584`. Equal percentile-rank fusion của G1 với frozen upstream
+  coverage/purity đạt
+  `0.28872949/0.15772330/0.43522933/0.38687353`, tương ứng chênh so với accepted
+  Geometry-v3 khoảng
+  `+0.04324710/+0.04064272/+0.05809381/-0.00253912`; complete misses tăng từ G1
+  `29` lên `49`. Choice/summary/audit SHA-256 do branch cộng tác báo là
+  `403d290b2b9582ec52eb75831fa621918d329e8d0aa26125aa9c900faf942bd9`,
+  `2ac9beb4a6d77fc339f7dc5b5bb06879bdb42c6bd25341d2f08329d4ead52b02`
+  và `44974376a6652af4a5992ab5ebb4f7a30932c043ee98e9ffb6dbf0f644983a48`.
+  Chính log nguồn gọi đây là exploratory vì rule được thiết kế sau Stage-B
+  analysis; large còn giảm, bốn operational goal đều chưa đạt, và các output
+  audit vật lý được tham chiếu không có trong Git tree của branch để central
+  kiểm tra độc lập. Do đó fusion chưa được adopt như validated improvement và
+  không được dùng để chọn/tune T1 trên validation GT.
+- **G2 boundary:** commit `f22700b` chỉ thêm thiết kế, source-safe pooling,
+  negative-only/source-balanced objectives, runner/auditor/evaluator và tests;
+  focused regression `40/40`, nhưng log xác nhận chưa launch G2 GPU. Đây là
+  readiness của claim cộng tác đang hoạt động, không phải terminal performance
+  evidence. Central không chạy lại G2 hoặc dùng code/protocol đó trong T1.
+- **Quyết định cho T1:** `EXP-20260801-codex-t1-count-controlled-self-paced-v1`
+  vẫn là same-gallery producer/selector scope đã đăng ký, không đổi proposal
+  supply, không dùng G1/G2 logits/checkpoints/fusion và không trùng G2. Nó tiếp
+  tục đúng predeclared count-independence gate từ bằng chứng S4; phát hiện G1 chỉ
+  được giữ như negative constraint rằng image-label fit phải fail closed trước
+  target construction nếu còn khai thác count/composition shortcut. Không có
+  prediction, validation GT, consumer hoặc BTXRD test nào được mở trong bước
+  đồng bộ này.
+
