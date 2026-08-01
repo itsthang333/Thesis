@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "recorded_local_date": "2026-08-02",
+  "status": "STATIC_WRAPPER_AND_BINDER_READY_NOT_BOUND_NOT_CLAIMED_NOT_LAUNCHED",
+  "experiment_id": "EXP-20260801-codex-b4-same-gallery-bas-semantic-v1",
+  "kernel": "itsthang333/btxrd-same-gallery-class-contrast-bas-b4-v1",
+  "scientific_source_commit": "69b9af26c3de12ac10550b9262b2ff8f5e4424e8",
+  "protocol_sha256": "958c414863c64f5160b4882feda44451add008fd000ca1120164925a0b2d298d",
+  "wrapper_template_sha256": "0a0293500de2128ab80c64b220f37b1d1eb8e675f7675b14dbcec94d37ea9eb6",
+  "binder_sha256": "eaf8982644265f70e6b7a666017c3828b211b66015a88c4a17bf1d2736432bbc",
+  "wrapper_test_sha256": "500e675c848e8702da0c309f8387e834e1f84f4115ddaf2110513f535869306b",
+  "focused_tests": {"passed": 19, "total": 19},
+  "wrapper_contract": {
+    "t4x2_before_input_preparation": true,
+    "image_label_only_adapter": true,
+    "annotation_path_or_hash_access": false,
+    "test_split_access": false,
+    "prediction_pair_always_frozen_after_technical_pass": true,
+    "independent_gt_blind_auditor_after_pair_freeze": true,
+    "postfreeze_evaluator_in_wrapper": false,
+    "bound_fields": 3,
+    "inverse_reconstruction_required": true
+  },
+  "safety": {
+    "real_data_opened": false,
+    "scientific_fit_run": false,
+    "prediction_created": false,
+    "validation_gt_opened": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}

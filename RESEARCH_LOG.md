@@ -11736,3 +11736,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   binder, output auditor và post-freeze evaluator; claim chỉ được đăng ký/push
   sau khi toàn bộ static readiness và collision check pass.
 
+### B4 fail-closed Kaggle wrapper/binder readiness (2026-08-02)
+
+- Wrapper template `project/kaggle_wrappers/run_same_gallery_class_contrast_bas_b4_v1.py`
+  canonical-LF SHA-256 `0a0293500de2128ab80c64b220f37b1d1eb8e675f7675b14dbcec94d37ea9eb6`
+  và one-shot binder `project/bind_same_gallery_class_contrast_bas_b4_wrapper.py`
+  SHA-256 `eaf8982644265f70e6b7a666017c3828b211b66015a88c4a17bf1d2736432bbc`.
+  Binder chỉ thay đúng kernel version, ready flag và execution checkout; inverse
+  reconstruction phải trả exact template, đồng thời re-hash protocol, auditor
+  và toàn bộ source inventory từ checkout.
+- Wrapper fail trước scientific input nếu không đúng source ancestor/protocol,
+  exact T4x2 real-convolution guard, frozen split, cache, baseline transport,
+  validation-candidate archive và ImageNet checkpoint. Dataset adapter chỉ đọc
+  train/val radiograph + binary image label; không có annotation/test/evaluator
+  path. Producer luôn freeze hai arm sau technical pass, independent no-GT
+  auditor chạy sau pair freeze, wrapper sau cùng xác minh vật lý `742` maps,
+  `742` score payloads và `371` activation payloads.
+- Test wrapper SHA-256 `500e675c848e8702da0c309f8387e834e1f84f4115ddaf2110513f535869306b`;
+  focused wrapper+safety+B4 suite pass `19/19`, `py_compile` và
+  `git diff --check` pass. Static-readiness artifact
+  `artifacts/research_protocols/same_gallery_class_contrast_bas_b4_wrapper_readiness.json`
+  SHA-256 `5fa0ab51aa0a2250a42f2475a0a206ae8d6534c1aa27320a1eedb17ebefca8a8`;
+  đây vẫn chưa phải claim/binding/launch và chưa có scientific input.
+
