@@ -37,6 +37,42 @@ only candidate evidence.
 
 Thus the experiment tests a missing signal, not a renamed parameter sweep.
 
+## Primary-literature transferability check
+
+The BAS authors motivate activation-value supervision by observing that image
+cross-entropy can saturate after only a discriminative object fragment is
+covered, whereas activation continues to change as the foreground expands
+toward the object boundary. This directly targets the BTXRD medium/large
+under-extent regime, but it does not prove benefit for tiny lesions where the
+current selector already over-expands. For that reason B2 uses BAS only as
+candidate evidence and retains both coverage and purity; it does not threshold
+the BAS map into the final mask or treat expansion as universally beneficial.
+
+Reference: Wu, Zhai and Cao, *Background Activation Suppression for Weakly
+Supervised Object Localization*, CVPR 2022:
+https://openaccess.thecvf.com/content/CVPR2022/html/Wu_Background_Activation_Suppression_for_Weakly_Supervised_Object_Localization_CVPR_2022_paper.html
+
+Choe et al. show that WSOL is ill-posed under image labels alone and that many
+reported gains arise from inconsistent use of localization supervision for
+hyperparameter/model selection. Therefore B2 has one frozen recipe, reports
+actual masks for every finite arm, and treats any validation-selected fusion
+weight as exploratory rather than reusable.
+
+Reference: Choe et al., *Evaluating Weakly Supervised Object Localization
+Methods Right*, CVPR 2020:
+https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html
+
+The image-label-only chest-X-ray pipeline of Viniavskyi et al. reports only a
+small positive-case mIoU increase from CAM to IRNet (`0.117 -> 0.122`) before
+the segmentation stage reaches `0.148` on SIIM-ACR validation. This supports
+boundary propagation only after a usable seed exists; it does not justify
+rescuing a weak BTXRD selector with another pseudo-label/student loop. B2 must
+first demonstrate material candidate Dice and rank improvements on its own.
+
+Reference: Viniavskyi, Dobko and Dobosevych, *Weakly-Supervised Segmentation
+for Disease Localization in Chest X-Ray Images*:
+https://arxiv.org/abs/2007.00748
+
 ## Frozen representation and training
 
 Adopt the tested BAS primitive from the central branch:

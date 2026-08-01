@@ -8300,6 +8300,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   recoverability, border reliance, hit/miss transitions and subgroup
   precision/recall/extent. No later GPU run is allowed from only a low mean
   score; the complete failure dossier must identify the remaining mechanism.
+- Primary-paper transfer was checked rather than assumed. BAS's activation
+  objective addresses discriminative-fragment under-extent, but may aggravate
+  the already severe small-lesion over-extent; therefore BAS is candidate
+  evidence with coverage/purity, not a directly thresholded final mask. The
+  WSOL evaluation literature also rules out validation-tuned fusion weights.
+  Chest-X-ray CAM-to-affinity-to-student evidence shows only incremental seed
+  improvement, so no pseudo-student rescue is authorized unless B2 first adds
+  material standalone candidate identity.
 
 ### EXP-20260801-codex-g1-two-score-identifiability-v1
 
