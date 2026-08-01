@@ -10297,9 +10297,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 ### EXP-20260801-codex-t1-count-controlled-self-paced-v1
 
 - **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
-- **Registered:** `2026-08-01T06:24Z` (`2026-08-01` ICT). The exact first
-  registration commit will be recorded in an immediate follow-up log update
-  after this claim is pushed; no scientific execution may precede that update.
+- **Registered:** `2026-08-01T06:24Z` (`2026-08-01` ICT). Exact first
+  registration commit `d8cd1608b6886f51cc5240ddcc81c1dc2a5e1e2a` was pushed
+  to the central branch before any T1 scientific execution.
 - **Inheritance and coordination:** this is the predeclared T1 row after terminal
   `EXP-20260801-codex-s4-oof-proposal-cluster-v1`, whose GT-blind error audit
   SHA-256 is
