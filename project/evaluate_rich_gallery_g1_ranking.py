@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import torch
 
 from mae_reconstruction_io import load_split_rows_without_annotations, sha256_file
 from models.mask_bag_ranking_diagnostics import (
@@ -18,6 +19,7 @@ from models.mask_bag_ranking_diagnostics import (
     summarize_ranking_diagnostics,
 )
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
+from models.rad_dino_mask_bag_mil import MaskBagMILConfig, RadDinoMaskBagMIL
 
 
 TOP_K = (1, 3, 5, 10, 20, 50)
@@ -36,6 +38,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-diagnostic-freeze-sha256", required=True)
     parser.add_argument("--expected-source-commit", required=True)
     parser.add_argument("--expected-protocol-sha256", required=True)
+    parser.add_argument("--baseline-root", type=Path, required=True)
+    parser.add_argument("--expected-baseline-checkpoint-sha256", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
 
@@ -186,6 +190,125 @@ def _summary_stats(values: list[float]) -> dict[str, float]:
     }
 
 
+def _score_descriptors(
+    model: RadDinoMaskBagMIL,
+    descriptors: np.ndarray,
+    flipped_descriptors: np.ndarray,
+) -> np.ndarray:
+    count = len(descriptors)
+    valid = torch.ones((1, count), dtype=torch.bool)
+    with torch.inference_mode():
+        original, _ = model.score_descriptors(
+            torch.from_numpy(descriptors.astype(np.float32))[None],
+            valid,
+        )
+        flipped, _ = model.score_descriptors(
+            torch.from_numpy(flipped_descriptors.astype(np.float32))[None],
+            valid,
+        )
+    return (0.5 * (original + flipped))[0].numpy().astype(np.float64)
+
+
+def _replace_candidate_block_with_bag_mean(
+    values: np.ndarray,
+    start: int,
+    stop: int,
+) -> np.ndarray:
+    result = np.asarray(values, dtype=np.float32).copy()
+    result[:, start:stop] = result[:, start:stop].mean(axis=0, keepdims=True)
+    return result
+
+
+def _source_z_scores(scores: np.ndarray, sources: np.ndarray) -> np.ndarray:
+    result = np.zeros(len(scores), dtype=np.float64)
+    for source in np.unique(sources):
+        selected = sources == source
+        values = scores[selected]
+        scale = float(values.std())
+        result[selected] = (
+            values - float(values.mean())
+        ) / max(scale, 1.0e-6)
+    return result
+
+
+def _freeze_selector_variants(
+    args: argparse.Namespace,
+    freeze: dict[str, object],
+    evidence_rows: dict[str, dict[str, str]],
+) -> tuple[dict[str, dict[str, int]], str]:
+    checkpoint_path = args.baseline_root / "rad_dino_mask_bag_mil.pt"
+    if sha256_file(checkpoint_path) != args.expected_baseline_checkpoint_sha256:
+        raise ValueError("G1 checkpoint differs before selector ablation")
+    if freeze.get("baseline_checkpoint_sha256") != args.expected_baseline_checkpoint_sha256:
+        raise ValueError("Stage-A freeze is not bound to the G1 checkpoint")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    config = MaskBagMILConfig(**checkpoint["config"])
+    model = RadDinoMaskBagMIL(config).eval()
+    model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+    model.requires_grad_(False)
+    selections: dict[str, dict[str, int]] = {}
+    for image_id, row in evidence_rows.items():
+        path = args.diagnostic_root / "descriptor_evidence" / row["evidence_path"]
+        with np.load(path, allow_pickle=False) as payload:
+            descriptors = payload["descriptors"].astype(np.float32)
+            flipped = payload["flipped_descriptors"].astype(np.float32)
+            frozen_logits = payload["candidate_logits"].astype(np.float64)
+            sam = payload["sam_scores"].astype(np.float64)
+            upstream = payload["selection_scores"].astype(np.float64)
+            causal = payload["classifier_causal_scores"].astype(np.float64)
+            metadata = payload["descriptor_metadata"].astype(np.float64)
+            sources = np.asarray(
+                [_canonical_source(str(value)) for value in payload["proposal_source_ids"]]
+            )
+        if descriptors.shape[1] != 1156:
+            raise ValueError("unexpected G1 descriptor dimension")
+        variants = {
+            "g1": frozen_logits,
+            "upstream_selection": upstream,
+            "sam_score": sam,
+            "classifier_causal_score": causal,
+            "anchor_prompt_mass": metadata[:, 2],
+            "anchor_prompt_inside": metadata[:, 3],
+            "source_zscore_g1": _source_z_scores(frozen_logits, sources),
+        }
+        for name, start, stop in (
+            ("without_inside_discrimination", 0, 384),
+            ("without_context_discrimination", 384, 768),
+            ("without_contrast_discrimination", 768, 1152),
+            ("without_metadata_discrimination", 1152, 1156),
+        ):
+            variants[name] = _score_descriptors(
+                model,
+                _replace_candidate_block_with_bag_mean(descriptors, start, stop),
+                _replace_candidate_block_with_bag_mean(flipped, start, stop),
+            )
+        for name, values in variants.items():
+            if values.shape != (len(descriptors),) or not np.isfinite(values).all():
+                raise ValueError(f"invalid frozen selector variant: {image_id}/{name}")
+        selections[image_id] = {
+            name: int(np.argmax(values)) for name, values in variants.items()
+        }
+        if selections[image_id]["g1"] != int(np.argmax(frozen_logits)):
+            raise RuntimeError("G1 variant selection does not reproduce frozen logits")
+    variant_freeze = {
+        "stage": "rich_gallery_g1_selector_variant_freeze_v1",
+        "stage_a_diagnostic_freeze_sha256": args.expected_diagnostic_freeze_sha256,
+        "checkpoint_sha256": args.expected_baseline_checkpoint_sha256,
+        "selection_variants": sorted(next(iter(selections.values()))),
+        "validation_images": len(selections),
+        "selections": selections,
+        "validation_gt_read": False,
+        "test_images_read": 0,
+        "test_evaluated": False,
+    }
+    path = args.output_dir / "selector_variant_freeze.json"
+    path.write_text(
+        json.dumps(variant_freeze, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return selections, sha256_file(path)
+
+
 def main() -> None:
     args = parse_args()
     val_rows = load_split_rows_without_annotations(
@@ -208,8 +331,16 @@ def main() -> None:
         if row["candidate_payload_sha256"] != candidate["diagnostic_sha256"]:
             raise ValueError(f"frozen evidence/candidate hash mismatch: {image_id}")
 
+    args.output_dir.mkdir(parents=True, exist_ok=False)
+    variant_selections, variant_freeze_sha256 = _freeze_selector_variants(
+        args,
+        freeze,
+        evidence_rows,
+    )
+
     # Annotation boundary: every continuous score, descriptor and candidate payload
-    # is physically verified above before validation polygons are imported/opened.
+    # and every selector-ablation choice are frozen above before validation
+    # polygons are imported/opened.
     from datasets.factory import build_segmentation_dataset
 
     dataset = build_segmentation_dataset(
@@ -227,6 +358,7 @@ def main() -> None:
     source_candidate_counts: Counter[str] = Counter()
     source_wins: Counter[str] = Counter()
     source_oracles: Counter[str] = Counter()
+    variant_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for index in range(len(dataset)):
         _image, mask_tensor, image_name = dataset[index]
         image_id = str(image_name)
@@ -318,6 +450,19 @@ def main() -> None:
             "hard_positive_is_low_quality": int(float(ranking["selected_quality"]) < 0.1),
         }
         per_image.append(record)
+        for variant, variant_local in variant_selections[image_id].items():
+            variant_mask = masks[variant_local]
+            variant_rows[variant].append(
+                {
+                    "size_group": subgroup,
+                    "dice": float(dice[variant_local]),
+                    "complete_miss": int(
+                        not np.logical_and(variant_mask, target).any()
+                    ),
+                    "area_ratio": float(areas[variant_local]),
+                    "source": str(sources[variant_local]),
+                }
+            )
         for position, source in enumerate(sources):
             bucket = pooled[str(source)]
             bucket["logit"].append(float(logits[position]))
@@ -390,6 +535,25 @@ def main() -> None:
         }
         for selected in sorted({key[0] for key in source_matrix})
     }
+    selector_variants: dict[str, dict[str, Any]] = {}
+    for variant, all_rows in sorted(variant_rows.items()):
+        subgroup_result: dict[str, Any] = {}
+        for subgroup in ("overall", "small", "medium", "large"):
+            rows = [
+                row
+                for row in all_rows
+                if subgroup == "overall" or row["size_group"] == subgroup
+            ]
+            subgroup_result[subgroup] = {
+                "n": len(rows),
+                "dice": float(np.mean([row["dice"] for row in rows])),
+                "complete_misses": int(sum(row["complete_miss"] for row in rows)),
+                "selected_area_ratio": _summary_stats(
+                    [row["area_ratio"] for row in rows]
+                ),
+                "source_counts": dict(Counter(row["source"] for row in rows)),
+            }
+        selector_variants[variant] = subgroup_result
     summary = {
         "stage": "rich_gallery_g1_post_freeze_ranking_diagnostic_v1",
         "cohort": {"validation": 371, "tumor": 184, **dict(subgroup_counts)},
@@ -398,12 +562,13 @@ def main() -> None:
         "source_diagnostics": source_diagnostics,
         "selected_source_by_oracle_source": matrix,
         "source_candidate_counts": dict(source_candidate_counts),
+        "selector_variant_actual_dice": selector_variants,
+        "selector_variant_freeze_sha256": variant_freeze_sha256,
         "candidate_scores_frozen_before_gt": True,
         "complete_misses_included": True,
         "test_images_read": 0,
         "test_evaluated": False,
     }
-    args.output_dir.mkdir(parents=True, exist_ok=False)
     per_image_path = args.output_dir / "per_image.jsonl"
     with per_image_path.open("w", encoding="utf-8") as handle:
         for row in per_image:
@@ -419,6 +584,7 @@ def main() -> None:
         "protocol_sha256": args.expected_protocol_sha256,
         "split_sha256": args.expected_split_sha256,
         "diagnostic_freeze_sha256": args.expected_diagnostic_freeze_sha256,
+        "selector_variant_freeze_sha256": variant_freeze_sha256,
         "candidate_manifest_sha256": args.expected_val_candidate_manifest_sha256,
         "per_image_sha256": sha256_file(per_image_path),
         "summary_sha256": sha256_file(summary_path),
