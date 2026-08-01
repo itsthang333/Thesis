@@ -8025,3 +8025,83 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   audit is narrowed to exact split/model hashes, complete gallery/mask counts,
   no-GT/no-test and prediction freeze before the polygon evaluator.
 
+### EXP-20260801-codex-rich-gallery-g1-root-cause-and-g2-v1
+
+- **G1 terminal evidence:** the retrained rich-gallery Geometry-v3 selector is
+  complete and audit-accepted on the canonical validation cohort. Its actual
+  tumor Dice is `0.20602633/0.10958465/0.30070545/0.33094975` for
+  overall/small/medium/large, while the same immutable gallery oracle is
+  `0.52790203/0.33110060/0.73025092/0.74624721`. It has `29` complete misses
+  (`27/2/0`). This is an achieved validation result, not test and not a
+  consumer result. Test remains unopened.
+- **Why oracle rose while selected Dice fell:** the merged gallery nearly
+  triples retained proposals from about `56` to `150` per validation image.
+  Tumor bags average `176.7` candidates. External proposals occur in all
+  `184/184` tumor bags and no `0/187` normal bags because the external
+  saliency generator writes known-normal maps as exactly zero. Candidate count
+  alone reaches image AUROC `0.89449`, above G1's approximately `0.865`.
+  The bag classifier can therefore exploit candidate composition rather than
+  lesion evidence.
+- **Objective-level cause:** with normalized LogSumExp temperature `0.2`, the
+  median effective candidate count is only `1.63`, median selected gradient
+  weight is `0.756`, and median oracle weight is `8.14e-15`. After epoch two,
+  the detached argmax is the only invented positive instance label. That
+  winner has Dice below `0.1` in `60.9%` of tumors and `83.0%` of the small
+  subgroup, so the loss explicitly reinforces wrong candidates. Lower final
+  image BCE is therefore not evidence of better localization.
+- **Regret/extent decomposition:** total selected-to-oracle regret is
+  `0.32187569`; wrong source contributes `0.08236474` (`25.6%`) and wrong
+  candidate/extent inside the selected source contributes `0.23951095`
+  (`74.4%`). Oracle median rank is `35.5`; only `3.26%/10.33%/23.37%` of
+  oracle masks lie at selector top `1/3/10`. Selected/GT area ratio has median
+  `13.02` overall and `46.62` for small lesions. Dice versus absolute log-area
+  error is `-0.705/-0.865/-0.957` overall/medium/large. Thus source
+  calibration alone cannot close the gap; within-source extent is primary.
+- **Stage-A/Stage-B provenance:** exact G1 checkpoint SHA-256 is
+  `634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c`.
+  Independent Stage-A freeze SHA-256 is
+  `c4e80a0c9bd8a1d4e5ef6204d23123d2d4f7b4deabb4c4b38aa4578b8b899e1c`;
+  Stage-B summary/per-image SHA-256 values are
+  `3be34a5765c14c68a7be68773e37ac66b03abf4951a165d83c8229048621da98`
+  and
+  `8c8c12f9129351e842587c80f91fdd368de326f06029adc83d2ceb4e73b92d21`.
+  All `371` score payloads and `184` tumor rows reproduce exactly before GT;
+  no test input was read.
+- **Post-freeze mechanism diagnostic:** choices were frozen before polygon
+  import in
+  `outputs/analysis/rich_gallery_g1_shortcut_extent_followup_v2_20260801`.
+  Choice/summary/audit SHA-256 values are
+  `403d290b2b9582ec52eb75831fa621918d329e8d0aa26125aa9c900faf942bd9`,
+  `2ac9beb4a6d77fc339f7dc5b5bb06879bdb42c6bd25341d2f08329d4ead52b02`
+  and
+  `44974376a6652af4a5992ab5ebb4f7a30932c043ee98e9ffb6dbf0f644983a48`.
+  Excluding external candidates at inference raises Dice to `0.24062584`,
+  confirming a source shortcut. Equal percentile-rank fusion of G1 and frozen
+  upstream coverage/purity reaches the new exploratory best
+  `0.28872949/0.15772330/0.43522933/0.38687353`; median selected area falls
+  from `4.77%` to `2.12%`, but complete misses rise `29 -> 49`. G1 carries
+  hit/localization information; upstream carries complementary extent/purity
+  information. The result is exploratory because the fusion was designed
+  after Stage-B analysis, but the rule itself is GT-blind and was frozen
+  before its evaluation.
+- **G2 causal correction frozen before execution:** design
+  `RICH_GALLERY_G2_CAUSAL_SELECTOR_DESIGN.md` defines three matched train-label
+  arms: shared-source old hard-top control, shared-source negative-only MIL,
+  and hierarchical source-balanced negative-only MIL with a fixed
+  `1.0 -> 0.2` temperature continuation. Every arm emits raw and equal-rank
+  fusion selections. The external source is excluded from training loss to
+  remove its perfect label-presence shortcut but remains eligible at
+  inference through the shared source-agnostic scorer. Actual binary-mask Dice
+  is primary; AUROC/effective count are diagnostics only.
+- **Implementation readiness:** source-safe pooling, negative-only loss,
+  continuation and rank fusion are implemented in
+  `project/models/rich_gallery_g2_objective.py`; the one-cache matched trainer,
+  independent Stage-A auditor and post-freeze evaluator are implemented in
+  `project/run_rich_gallery_g2_selector_pair.py`,
+  `project/audit_rich_gallery_g2_selector_output.py` and
+  `project/evaluate_rich_gallery_g2_selector_pair.py`. Exact G1 reproduction
+  is a mandatory pre-GT gate. Mathematical/gradient and realistic CPU smoke
+  tests pass `7/7`; the focused G1/G2/descriptor/gallery regression passes
+  `40/40`. No G2 GPU job has yet been launched in this log entry; test remains
+  locked.
+
