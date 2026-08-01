@@ -11718,3 +11718,21 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   an toàn. Phải commit/push source correction, phát hành protocol v2 đóng băng
   lại exact source hashes, rồi mới tiếp tục wrapper/binding/claim.
 
+### B4 image-label-only protocol v2 freeze (2026-08-02)
+
+- Safety-corrected scientific source đã được commit/push ở
+  `69b9af26c3de12ac10550b9262b2ff8f5e4424e8`. Protocol kế nhiệm
+  `artifacts/research_protocols/same_gallery_class_contrast_bas_b4_v2.json`
+  SHA-256 `958c414863c64f5160b4882feda44451add008fd000ca1120164925a0b2d298d`,
+  trạng thái `FROZEN_PRECLAIM_NO_BINDING_NO_LAUNCH`, supersede v1 chỉ vì
+  validation-GT input boundary. Scientific variable, exact two-arm pair,
+  training recipe, input artifacts, endpoint và decision gate không đổi.
+- Independent source-closure check từ exact Git commit xác nhận đủ `27/27`
+  canonical-LF source/test SHA-256. V2 bind rõ adapter chỉ cho train/val,
+  binary `tumor` image label, `annotation_paths_resolved=false`,
+  `annotation_bytes_opened_or_hashed=false`, và `test_images_read=0`.
+- Đây vẫn là protocol freeze trước claim: không real data/cache/image/GT,
+  fit/prediction/evaluation/consumer/test/Kaggle. Tiếp tục chuẩn bị wrapper,
+  binder, output auditor và post-freeze evaluator; claim chỉ được đăng ký/push
+  sau khi toàn bộ static readiness và collision check pass.
+

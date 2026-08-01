@@ -1,0 +1,174 @@
+{
+  "protocol_id": "same_gallery_class_contrast_bas_b4_v2",
+  "frozen_local_time": "2026-08-02T00:32:00+07:00",
+  "status": "FROZEN_PRECLAIM_NO_BINDING_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-b4-same-gallery-bas-semantic-v1",
+  "supersedes": {
+    "path": "artifacts/research_protocols/same_gallery_class_contrast_bas_b4_v1.json",
+    "sha256": "814f5ca32c080dea4d39d64fed716c5563de524743016055b10217c85d1ffdf1",
+    "reason": "v1 shared classification construction hashed segmentation annotations before prediction freeze; v2 binds a dedicated image-label-only adapter without changing the scientific arm"
+  },
+  "scientific_source": {
+    "commit": "69b9af26c3de12ac10550b9262b2ff8f5e4424e8",
+    "collaborator_evidence_commit": "d4e0a5fd13e132e0bc8861437bacfebb4115b309",
+    "collaborator_output_accessed": false,
+    "trusted_reference_dice": {
+      "overall": 0.2887294867,
+      "small": 0.1577232964,
+      "medium": 0.4352293348,
+      "large": 0.3868735327
+    },
+    "transferred_bottleneck": {
+      "eligible_selector_regret": 0.23917254,
+      "score_dominance_gap": 0.1373382,
+      "score_dominance_fraction": 0.5742,
+      "eligible_oracle_absent_from_two_score_pareto": 154,
+      "severe_dominance_images": 104
+    }
+  },
+  "required_inputs": {
+    "raw_dataset": "itsthang333/btxrd-raw",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache": {
+      "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+      "freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+      "manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+      "cohort": {"train": 2981, "validation": 371}
+    },
+    "baseline": {
+      "archive_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+      "transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da",
+      "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+      "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+      "prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+      "source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+      "protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+    },
+    "validation_candidates": {
+      "dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1",
+      "version": 1,
+      "zip_sha256": "426fbe9cb01ce5063e7897b1b1c424ab4ce9f0310086434aec5163759422687a",
+      "manifest_sha256": "3e9396f532c793258919a1d99aa3dcef00523436c853207b8d7123e5dc133090",
+      "pseudo_manifest_sha256": "286d1fce0bcbd0f96a15b6b386ad27a0edac3500a63c5b87e16f9075d6c6320e",
+      "physical_payloads": 371
+    },
+    "imagenet_initialization": {
+      "url": "https://download.pytorch.org/models/resnet50-11ad3fa6.pth",
+      "bytes": 102540417,
+      "sha256": "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca"
+    }
+  },
+  "image_label_only_boundary": {
+    "adapter": "project/datasets/btxrd_image_label_only.py",
+    "allowed_splits": ["train", "val"],
+    "allowed_labels": ["tumor"],
+    "annotation_paths_resolved": false,
+    "annotation_bytes_opened_or_hashed": false,
+    "test_images_read": 0
+  },
+  "training": {
+    "supervision": "binary image-level normal/tumor labels only",
+    "architecture": "ResNet-50 BAS, output-stride-8 localization and output-stride-16 classification",
+    "input_size": 448,
+    "epochs": 100,
+    "checkpoint_selection": "fixed final epoch",
+    "batch_size_total": 32,
+    "parallelism": "torch.nn.DataParallel over exactly two Tesla T4",
+    "augmentation": "horizontal flip only",
+    "optimizer": "SGD Nesterov",
+    "backbone_learning_rate": 0.001,
+    "momentum": 0.9,
+    "weight_decay": 0.0005,
+    "loss": "full CE + 0.5 foreground CE + background/full activation ratio + 1.2 activation area",
+    "seed": 42,
+    "validation_segmentation_gt_used": false
+  },
+  "finite_arms": {
+    "control": "geometry_v3_plus_upstream_equal_rank",
+    "primary": "geometry_v3_plus_upstream_plus_class_contrast_bas",
+    "class_contrast": "tumor / max(tumor + normal, 1e-8)",
+    "aggregation": "equal tie-aware within-image percentile-rank mean",
+    "weight_or_threshold_alternatives": false
+  },
+  "gt_blind_diagnostics": {
+    "minimum_image_auroc": 0.75,
+    "minimum_sensitivity": 0.6,
+    "minimum_specificity": 0.6,
+    "minimum_raw_and_contrast_nondegenerate_fraction": 0.95,
+    "maximum_mean_contrast_control_rank_correlation": 0.95,
+    "minimum_changed_selection_fraction": 0.05,
+    "diagnostics_block_prediction_freeze": false,
+    "independent_physical_audit_required_before_gt": true
+  },
+  "prediction_freeze": {
+    "validation_predictions_per_arm": 371,
+    "arms_frozen_as_one_pair": true,
+    "independent_auditor": "project/audit_same_gallery_bas_semantic_b4_output.py",
+    "validation_gt_read_before_pair_freeze": false
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "comparator": "project/compare_mask_bag_evaluated_arms.py",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261201,
+    "goals": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    },
+    "promotion": "positive overall paired CI95 lower bound, no subgroup decrease, no complete-miss increase, image AUROC at least 0.75",
+    "consumer_authorized_only_if_full_promotion_gate_passes": true
+  },
+  "execution": {
+    "runtime": "Kaggle",
+    "accelerator": "NvidiaTeslaT4",
+    "physical_gpu_count": 2,
+    "deterministic_algorithms": true,
+    "heavy_compute_local": false
+  },
+  "primary_sources": [
+    "https://openaccess.thecvf.com/content/CVPR2022/html/Wu_Background_Activation_Suppression_for_Weakly_Supervised_Object_Localization_CVPR_2022_paper.html",
+    "https://github.com/wpy1999/BAS",
+    "https://openaccess.thecvf.com/content/CVPR2022/html/Chen_Class_Re-Activation_Maps_for_Weakly-Supervised_Semantic_Segmentation_CVPR_2022_paper.html",
+    "https://openaccess.thecvf.com/content/ICCV2023/html/Chen_FPR_False_Positive_Rectification_for_Weakly_Supervised_Semantic_Segmentation_ICCV_2023_paper.html"
+  ],
+  "canonical_lf_source_hashes": {
+    "SAME_GALLERY_BAS_SEMANTIC_B4_DESIGN.md": "c7b29e9db9bbcd5a3654a66eec7ae34833af6d4f5ded0e028f8390da05a66785",
+    "project/run_bas_candidate_descriptor_core.py": "a9b69da1c524ddbd70e439ee5986ace843711993e2150bde17c75aafcc75b2dc",
+    "project/audit_bas_candidate_descriptor_core.py": "82112c773a07ff4b18f54698769beeb4eedc78c7404d87a0b9253543dfb83a4d",
+    "project/run_same_gallery_bas_semantic_b4.py": "cbc40ad138124fa87e7033dca65269b3f4de6effefcdb11e2c812b5aa95dc487",
+    "project/audit_same_gallery_bas_semantic_b4_output.py": "dcd570dce08f8df1911010fc9bd306e5401d2187dcd9d1a1bfc66a3fd4529962",
+    "project/datasets/btxrd_image_label_only.py": "6e23ce9dc6848f5681dbdedc760f1d4fe07296d41e02891ef21197478a993a77",
+    "project/datasets/common.py": "1927eb358a9db1a0e9c2571be5e222c3edd9d69814dfb4bc3375bd3f8593b98a",
+    "project/datasets/factory.py": "e8307d32baf10b4b5183a2ab0ac2cca7dad264f7ab8f782e92d0fa75b410455b",
+    "project/datasets/btxrd.py": "d8f0804be4e81cdb4d58e4673708c1067eb7d9b49b42bb78cb6051188c156001",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/models/mask_bag_same_family_graph.py": "0c65a2bfa2ad9a190f860bf51bfdc28c8af2b03b7a4e8ec9f2327e3cfed67287",
+    "project/models/mask_bag_orbit_relation_training.py": "44ecd9c6ad1779942e9cc0df31634fd5d83204a97c7e89c75c64507d66fecf71",
+    "project/models/mask_bag_critical_relation_training.py": "b29ffc4b77680f9e9b0046238506f738cf1c855cfc2f33769726b034d6d67042",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/pseudo/candidate_diagnostics.py": "b50e789ab99a76306e45cc771c60f58fb63cbc7538630d81ed912a337777324b",
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/compare_mask_bag_evaluated_arms.py": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119",
+    "project/models/mask_bag_ranking_diagnostics.py": "c8b95cde03006c78aad624f060684d2f4d3acad2bdfeb6fc42bfc05762abefe8",
+    "tests/test_btxrd_image_label_only.py": "972c333281a3a554dd059e0be178f7d4d27a065f3402fd7d89c8ef1318367285",
+    "tests/test_same_gallery_bas_semantic_b4.py": "61999e4dfbda400177f65bea9a8309cb2c2eb641432a85c9e18732522d095a98",
+    "tests/test_bas_candidate_localizer.py": "d57475ef12fb317199757a3e20e456d9373c96f2712195e53e28f0d50b776f46",
+    "tests/test_evaluate_mask_bag_selector_arm.py": "21fafe74740588ae02a897e387a639a7723575334ce2ff4fe6df4fcd36aa8e29",
+    "tests/test_compare_mask_bag_evaluated_arms.py": "f29650ad9139bc2c894274cfe338bb69890ecb77133286e5e90ce0825324c7b6"
+  },
+  "prohibited": [
+    "segmentation annotation paths or bytes before pair freeze and independent audit",
+    "collaborator output or Kaggle access",
+    "proposal generation or gallery modification",
+    "weight, threshold, source, subgroup, resolution, epoch or morphology sweep",
+    "consumer training before every promotion gate passes",
+    "BTXRD test access"
+  ]
+}
