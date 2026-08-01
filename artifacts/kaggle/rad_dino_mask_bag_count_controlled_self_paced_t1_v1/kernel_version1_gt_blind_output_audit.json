@@ -1,0 +1,54 @@
+{
+  "audit_id": "independent_mask_bag_count_controlled_self_paced_t1_output_v1",
+  "bound_wrapper_sha256": "662217040edecfcad1d7187dc7cc40daa3f1007a1f9344821076df0623d3d85e",
+  "cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "checkout_commit": "97c4cf322a7ad329e62338cc8e7a2bbfa6e368d5",
+  "confirmation_residual_trained_after_producer_gate": true,
+  "consumer_trained": false,
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-count-controlled-t1-v1",
+  "kernel_version": 1,
+  "launch_binding_sha256": "588901fb4640d0f0854867daf7858a826c1a1821e43d65dc1001b9f4b9ef9be1",
+  "oof": {
+    "absolute_candidate_count_probability_spearman": 0.3125463730294633,
+    "checks": {
+      "count_spearman": true,
+      "group_exclusion": true,
+      "image_auroc": true,
+      "view_agreement": true
+    },
+    "folds": 5,
+    "image_auroc": 0.8335525462912948,
+    "original_flip_top1_agreement": 0.6205971150620597,
+    "physical_oof_bytes_verified": 11082236,
+    "records": 2981
+  },
+  "physical_output_and_cache_bytes_verified": 95252346,
+  "prediction_freeze_sha256": "4f317fc7af45804aff0b084398bebe35582a7ae2039a29982586e90358ea096d",
+  "protocol_sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+  "run_manifest_sha256": "041a18d215f75bf1925cab25de94706c3cadbc2cf0e3017907d175e65861a6d3",
+  "source_commit": "c7f0937d515ded9bbd8928a2236cbe44b7a25f79",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS",
+  "targets": {
+    "eligible_positive_bags": 964,
+    "negative_candidates": 106160,
+    "physical_target_bytes_verified": 5022295,
+    "positive_stage_counts": [
+      193,
+      386,
+      579
+    ]
+  },
+  "test_evaluated": false,
+  "training_labels": "image_level_only",
+  "validation": {
+    "absolute_candidate_count_probability_spearman": 0.4771398920620165,
+    "count_gate_pass": true,
+    "physical_candidate_score_payloads_verified": 371,
+    "physical_residual_evidence_payloads_verified": 371,
+    "physical_validation_bytes_verified": 77776930,
+    "physical_validation_maps_verified": 371
+  },
+  "validation_gt_read": false,
+  "wrapper_output_audit_sha256": "ffd2f4cb76d4724186a5b4ba09e42e4d0bada1a26e2391f2106cb5366abe71a5"
+}

@@ -10704,3 +10704,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Scientific source/protocol/prediction không đổi, kernel không rerun; chỉ
   corrected independent audit trên exact immutable output được phép tiếp theo.
 
+- **Corrected independent GT-blind audit PASS:** exact immutable version-1
+  output và accepted selector cache đã được audit vật lý độc lập; artifact
+  `artifacts/kaggle/rad_dino_mask_bag_count_controlled_self_paced_t1_v1/kernel_version1_gt_blind_output_audit.json`
+  có SHA-256
+  `5f37c9d8b6b38a1c64293295ba51f64ae0fd8e55f0d7eac7c543f12edf974b29`
+  và status `PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS`.
+  Auditor tái lập đủ `2,981` OOF record/5 fold, group exclusion zero;
+  OOF `|rho(count,prob)|=0.3125463730294633`, image AUROC
+  `0.8335525462912948`, original/flip top-1 agreement
+  `0.6205971150620597`, nên cả bốn producer gate pass. Target freeze có
+  `106,160` negative candidates, `964` eligible positive bags và nested stage
+  counts `193/386/579`; confirmation residual chỉ train sau producer pass.
+- Validation freeze độc lập xác minh đủ `371` candidate-score payload,
+  `371` residual-evidence payload và `371` physical map; final
+  `|rho(count,prob)|=0.4771398920620165 <= 0.5013777759365411` pass.
+  Tổng `95,252,346` byte output+cache được hash/content verify. Training label
+  chỉ image-level; validation GT chưa đọc, downstream consumer chưa train,
+  BTXRD test chưa mở. Exact common post-freeze evaluator/decision đã
+  predeclare nay được phép chạy; không được sửa prediction hay hyperparameter.
+
