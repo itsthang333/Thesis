@@ -16,9 +16,9 @@ from urllib.request import urlopen
 
 
 KERNEL = "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1"
-KERNEL_VERSION = 0
-LAUNCH_BINDING_READY = False
-CHECKOUT_COMMIT = "UNBOUND"
+KERNEL_VERSION = 1
+LAUNCH_BINDING_READY = True
+CHECKOUT_COMMIT = "8abb4943a618effa50f065c54f06cf43ab79b910"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "61927cc84ef2340768ea37f9686bf8036c81db30"
 PROTOCOL_RELATIVE = Path("artifacts/research_protocols/skelex_mask_bag_selector_s5_v1.json")
@@ -500,4 +500,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

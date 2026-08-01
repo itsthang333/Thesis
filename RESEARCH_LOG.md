@@ -11969,4 +11969,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa GT, chưa train consumer, chưa test. Collaborator output/Kaggle không
   được truy cập. BTXRD test khóa; heavy compute chỉ T4x2.
 - Exact registration commit: `151e8e643fa15fb3c22cda21f155339dff85b192`.
+- Fail-closed Kaggle wrapper đã được chuẩn bị ở execution checkout
+  `8abb4943a618effa50f065c54f06cf43ab79b910`, sau đó bind version 1 với
+  canonical wrapper SHA-256
+  `519732f8895981979b71a66d8c3aeeab23ffce00fda023584522b0a0b72e1607`.
+  Prelaunch audit
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_kernel_v1_wrapper_audit.json`
+  xác nhận test tĩnh/synthetic chạy trước khi resolve BTXRD input, exact public
+  SKELEX hashes, T4x2 guard, candidate/cache/baseline provenance, descriptor
+  gate trước selector training, pair freeze và independent no-GT audit. Tại
+  thời điểm ghi mục này: chưa push Kaggle, chưa real input/prediction/GT/test.
 

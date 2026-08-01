@@ -1,0 +1,45 @@
+{
+  "audit_id": "skelex_mask_bag_selector_s5_kernel_v1_wrapper_audit",
+  "status": "FROZEN_PRELAUNCH_NOT_PUSHED_TO_KAGGLE",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "kernel": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+  "kernel_version": 1,
+  "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+  "execution_checkout_commit": "8abb4943a618effa50f065c54f06cf43ab79b910",
+  "registration_commit": "151e8e643fa15fb3c22cda21f155339dff85b192",
+  "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+  "bound_wrapper_sha256": "519732f8895981979b71a66d8c3aeeab23ffce00fda023584522b0a0b72e1607",
+  "checks": {
+    "py_compile": "PASS",
+    "protocol_source_inventory": "19/19 PASS against scientific source commit",
+    "t4x2_fail_closed_guard": true,
+    "tests_before_resolving_btxrd_input": true,
+    "exact_public_skelex_revision_and_three_file_hashes": true,
+    "public_checkpoint_deleted_before_kernel_exit": true,
+    "train_and_validation_candidate_manifests_verified": true,
+    "accepted_selector_cache_and_baseline_verified": true,
+    "descriptor_gate_before_selector_training": true,
+    "physical_pair_freeze_before_gt": true,
+    "independent_gt_blind_logit_rank_score_map_reproduction": true,
+    "collaborator_output_accessed": false,
+    "annotation_paths_resolved": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "datasets": [
+    "itsthang333/btxrd-raw",
+    "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+    "itsthang333/btxrd-mask-bag-selector-baseline-v1"
+  ],
+  "kernel_inputs": [
+    "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+  ],
+  "compute": "Kaggle NvidiaTeslaT4 x2",
+  "heavy_compute_started": false,
+  "real_input_opened": false,
+  "prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
