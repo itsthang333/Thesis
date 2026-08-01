@@ -1,0 +1,38 @@
+{
+  "artifact_id": "rad_dino_mask_bag_proposal_cluster_s4_v1_claim_hash_correction_readiness",
+  "frozen_utc": "2026-08-01T05:53:24Z",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "status": "CORRECTED_PROTOCOL_WRAPPER_BINDER_AUDITOR_PASS_READY_FOR_FRESH_BINDING",
+  "correction_commit": "da6c82ce646ece7a60d99c2ce41f31895ea5b07d",
+  "error_audit_sha256": "b9a87e0c51b371832abd34ca4a75f47819887283ce06e77bb91de51d9afcc72d",
+  "claim_commit": "fa8b0d6de4d1ad9d1372fd2c61ee8b78feec91a4",
+  "claim_is_ancestor_of_correction_commit": true,
+  "scientific_source_commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
+  "scientific_source_is_ancestor_of_correction_commit": true,
+  "corrected_hashes": {
+    "protocol_sha256": "fb39234a03890d7201531066e3ca7a11f2379eaa120bd503fe4b92e6de30a2a6",
+    "independent_auditor_sha256": "a93bc7a237d0fc62275f7bd6230c3e06f3d1def94ca4a560b0b58ac305b689ff",
+    "wrapper_template_sha256": "fdaa86c7e71ea50664d268b8e98458114a1d72871c42940ff1532b7315782ec7",
+    "binder_sha256": "186bb7472f1339df1f52a95c711e8729c55acd688c502c56d8908557665ebbce"
+  },
+  "verification": {
+    "protocol_json_parse": "PASS",
+    "claim_ancestry": "PASS",
+    "scientific_source_ancestry": "PASS",
+    "auditor_wrapper_binder_focused_tests": "9/9 PASS",
+    "full_repository_tests": "459/459 PASS",
+    "full_repository_seconds": 18.36,
+    "local_python39_zip_strict_diagnostic_shim_only": true,
+    "py_compile": "PASS",
+    "git_diff_check": "PASS",
+    "central_head_origin_synchronized": true
+  },
+  "scientific_change": false,
+  "kernel_push_performed": false,
+  "scientific_input_opened": false,
+  "teacher_or_student_fit": false,
+  "validation_prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

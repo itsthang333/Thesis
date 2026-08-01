@@ -10192,4 +10192,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   may be created only after these bytes are committed/pushed and the complete
   tests pass at that exact checkout. No scientific input, prediction, GT/test
   or consumer access occurred.
+- **Corrected-chain readiness pass:** correction commit
+  `da6c82ce646ece7a60d99c2ce41f31895ea5b07d` is pushed centrally. Both actual
+  claim `fa8b0d6de4d1ad9d1372fd2c61ee8b78feec91a4` and scientific source
+  `95c4a3378eaf8463c57d57a0dd4e4cac6c69021f` are verified ancestors.
+  Corrected auditor/wrapper/binder focused closure passes `9/9` and the full
+  repository passes `459/459` in 18.36 seconds. Correction-readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1_claim_hash_correction_readiness.json`
+  has SHA-256
+  `17546d299db02f34ea6b6c8a85a609cb022be334dd059ced60b8e01e08b21d1f`.
+  This authorizes only creation of a fresh local version-1 binding at a pushed
+  checkout; it is not a launch or scientific result.
 
