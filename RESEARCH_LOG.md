@@ -11886,3 +11886,86 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   environment has no PyTorch, so the fail-closed T4x2 wrapper must run them
   before any real input. S5 remains **UNCLAIMED / NOT LAUNCHED** at this point.
 
+### Đồng bộ collaborator `d4bb653` và đăng ký S5 (2026-08-02)
+
+- Đã fetch `origin/codex/research-sync-20260731` mới nhất tại
+  `d4bb653e449adc6b9d78a6aaddbcb3615dd458b0` và đọc toàn bộ delta log từ
+  `f30e37b`. Theo chỉ đạo người dùng, chỉ tin terminal statements trong log;
+  không list/download/audit output và không truy cập Kaggle của collaborator.
+  `EXP-20260802-codex-rich-gallery-bas-b21-softplus-probe-v1` sửa được dead
+  classifier ở cấp ảnh (`train accuracy=0.839651`, validation AUROC
+  `0.743199`) nhưng không sửa localization: foreground CE vẫn đúng
+  `log(2)=0.693147182`, map max trung bình `2.237e-7`, median effective support
+  `0.001338`, top-1%-mass `0.931514` và 184/184 argmax ở viền 10%. Vì vậy
+  Softplus/BAS B2.1 không được kế thừa như cải thiện hiệu năng.
+- Post-freeze oracle-feature-gap diagnostic cho rich gallery chỉ ra oracle bị
+  xếp thấp hơn selected trong `84.2%/87.0%/70.7%` ảnh theo
+  G1/upstream/SAM-score; median oracle-minus-selected ranks đều âm. Extent
+  oracle-minus-selected đổi dấu theo subgroup: small `-0.001299`, medium
+  `+0.001538`, large `+0.060391`; source mismatch cũng tăng theo scale.
+  Insight chuyển giao là phải thêm **candidate-conditioned positive semantic
+  evidence**, không sweep tiếp G1/upstream/SAM/area/source hoặc dùng một global
+  extent prior. Điều này củng cố S5: SKELEX thay semantic representation nhưng
+  giữ exact candidate/extent và phép rank control.
+- Collaborator B2.2 foreground-control mới chỉ là static mechanics design,
+  chưa có claim/Dice terminal. S5 không chạy lại BAS và không cạnh tranh B2.2;
+  collision check trên cả hai log không thấy claim SKELEX descriptor đang làm.
+
+#### `EXP-20260802-codex-s5-skelex-selector-v1`
+
+- **Owner/time/status:** Codex central workstream; đăng ký
+  `2026-08-02T00:44:00+07:00`; **ĐANG LÀM**. Registration commit là commit
+  chứa mục này và sẽ được bổ sung exact hash trước launch.
+- **Hypothesis/mục tiêu:** trên exact immutable Geometry-v3 gallery mà central
+  sở hữu, frozen SKELEX ViT-MAE musculoskeletal proposal descriptor cung cấp
+  candidate-conditioned tumor semantics bổ sung cho Geometry-v3/upstream,
+  giảm selector regret và tạo corrected Dice cao hơn identity control. Đây là
+  transferable same-gallery representation ablation; không tuyên bố score
+  trực tiếp physical rich-gallery output `0.2887294867` vì output đó bị khóa
+  theo chỉ đạo người dùng.
+- **Khác biệt duy nhất:** giữ exact proposal masks/indices, accepted four-column
+  metadata, selector recipe 16 epoch và equal percentile-rank aggregation; chỉ
+  thay representation branch mới bằng frozen SKELEX layers `[8,16,24]`,
+  projection `1024->128` seed 42. Không sweep layer/weight/source/resolution,
+  không regenerate gallery, không global extent correction. Exact 128-square
+  geometry bridge bảo toàn fractional support trước 14x14 pooling; zero support
+  fail-closed, không được drop candidate.
+- **Kế thừa:** trusted collaborator controls/diagnostics
+  `EXP-20260801-codex-rich-gallery-bas-b2-v1`,
+  `EXP-20260802-codex-rich-gallery-oracle-feature-gap-v1`,
+  `EXP-20260802-codex-rich-gallery-bas-b21-softplus-probe-v1`; central accepted
+  Geometry-v3 selector/cache và same-gallery rank control. Negative evidence
+  R1/R2/R3/R4/T1/S1/S3/S4/G2/B2/B2.1 được dùng để loại descriptor/objective
+  trùng, không quảng bá như cải thiện.
+- **Frozen source/protocol:** scientific source commit
+  `61927cc84ef2340768ea37f9686bf8036c81db30`; protocol
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_v1.json` SHA-256
+  `036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280`.
+  SKELEX exact revision `368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e`,
+  weight SHA-256 `81cd6e9c...d69ef8`, license CC-BY-NC-ND-4.0; checkpoint
+  không được redistribute.
+- **Input/provenance:** split `85511ee1...3c8c`; train/val `2981/371`;
+  train gallery dataset `itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1@1`
+  manifests `ad3b52d6...58d1`/`5aec58ce...c21`; validation transport
+  `itsthang333/btxrd-mask-bag-selector-baseline-v1@1` zip
+  `426fbe9c...2687a`, manifests `3e9396f5...3090`/`286d1fce...6320e`;
+  selector-cache freeze `2f6290cd...e4f2c`; accepted baseline checkpoint/freeze
+  `58b82642...e1069`/`ec346276...e3ec3`. Raw images only từ
+  `itsthang333/btxrd-raw`; training target duy nhất là image-level tumor.
+- **Compute/run:** đúng một Kaggle kernel version mới
+  `itsthang333/btxrd-skelex-mask-bag-selector-s5-v1`, accelerator T4x2. Wrapper
+  phải chạy static/synthetic tests trước real input, verify exact public model,
+  split/cache/gallery/baseline hashes và descriptor operational gate trước khi
+  train selector.
+- **Frozen outputs/gate:** hai arms
+  `geometry_v3_plus_upstream_equal_rank` và
+  `geometry_v3_plus_upstream_plus_skelex_equal_rank`; physical pair freeze +
+  independent GT-blind reproduction of descriptor logits/ranks/maps trước GT.
+  Sau đó evaluator/comparator cố định (`10,000` bootstrap, seed `20261101`,
+  baseline per-image SHA `a26143d0...605f`) mới đọc validation GT. Promote chỉ
+  khi overall corrected Dice tăng nghiêm ngặt và không regression subgroup bắt
+  buộc; âm thì đóng terminal, không rescue sweep.
+- **Safety at registration:** chưa mở real image/candidate, chưa prediction,
+  chưa GT, chưa train consumer, chưa test. Collaborator output/Kaggle không
+  được truy cập. BTXRD test khóa; heavy compute chỉ T4x2.
+
