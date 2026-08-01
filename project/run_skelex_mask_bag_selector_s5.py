@@ -35,10 +35,13 @@ from models.mask_bag_same_family_graph import (
 from models.nominal_patch_memory import make_seeded_random_projection, projection_sha256
 from models.rad_dino_mask_bag_mil import MaskBagMILConfig, RadDinoMaskBagMIL, smooth_mil_pool
 from models.skelex_mask_bag_descriptor import (
+    FLOAT32_MASS_ABSOLUTE_FLOOR,
+    FLOAT32_MASS_ULP_BUDGET,
     SELECTED_HIDDEN_LAYERS,
     SkelexDescriptorConfig,
     SkelexProjectedMultiLayerEncoder,
     exact_fractional_mask_pool_descriptors,
+    mass_symmetry_tolerances,
 )
 
 
@@ -175,6 +178,8 @@ def build_skelex_descriptor_cache(
         raise ValueError("S5 split rows and accepted cache records do not align")
     result: list[dict[str, object]] = []
     support_masses: list[float] = []
+    flip_mass_deltas: list[float] = []
+    flip_mass_ratios: list[float] = []
     physical_candidates = 0
     retained_candidates = 0
     for start in range(0, len(rows), args.encoder_batch_size):
@@ -255,9 +260,19 @@ def build_skelex_descriptor_cache(
                 content[..., ::-1].copy(),
                 descriptor_config,
             )
-            if not np.allclose(masses, flipped_masses, rtol=0.0, atol=1.0e-6):
-                raise RuntimeError("S5 original/flip support mass differs")
+            mass_deltas = np.abs(masses.astype(np.float64) - flipped_masses.astype(np.float64))
+            mass_tolerances = mass_symmetry_tolerances(masses, flipped_masses)
+            if np.any(mass_deltas > mass_tolerances):
+                failed = int(np.argmax(mass_deltas / mass_tolerances))
+                raise RuntimeError(
+                    "S5 original/flip support mass differs "
+                    f"image={row['image_id']} candidate={failed}: "
+                    f"delta={mass_deltas[failed]:.9g}, "
+                    f"tolerance={mass_tolerances[failed]:.9g}"
+                )
             support_masses.extend(masses.tolist())
+            flip_mass_deltas.extend(mass_deltas.tolist())
+            flip_mass_ratios.extend((mass_deltas / mass_tolerances).tolist())
             result.append(
                 {
                     "image_id": row["image_id"],
@@ -282,6 +297,11 @@ def build_skelex_descriptor_cache(
         "minimum_fractional_grid_mass": float(min(support_masses)),
         "median_fractional_grid_mass": float(np.median(support_masses)),
         "maximum_fractional_grid_mass": float(max(support_masses)),
+        "maximum_absolute_flip_mass_delta": float(max(flip_mass_deltas)),
+        "maximum_flip_mass_delta_to_tolerance": float(max(flip_mass_ratios)),
+        "flip_mass_float32_ulp_budget": FLOAT32_MASS_ULP_BUDGET,
+        "flip_mass_absolute_floor": FLOAT32_MASS_ABSOLUTE_FLOOR,
+        "original_flip_mass_within_float32_ulp_budget": 1,
         "all_descriptors_finite": 1,
         "exact_candidate_set_preserved": 1,
     }

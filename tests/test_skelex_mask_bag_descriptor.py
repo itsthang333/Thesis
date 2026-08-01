@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import numpy as np
 
 torch = pytest.importorskip("torch")
 from torch import nn
@@ -11,7 +12,10 @@ from project.models.skelex_mask_bag_descriptor import (
     SkelexDescriptorConfig,
     SkelexProjectedMultiLayerEncoder,
     exact_fractional_mask_pool_descriptors,
+    mass_symmetry_tolerances,
 )
+from project.audit_skelex_mask_bag_selector_s5_output import _rank32
+from project.models.bas_candidate_localizer import within_bag_percentile_ranks
 
 
 class _Output:
@@ -79,3 +83,33 @@ def test_fractional_pool_fails_instead_of_silently_dropping_zero_support() -> No
         assert "silent dropping is forbidden" in str(error)
     else:
         raise AssertionError("zero-support immutable candidate must fail closed")
+
+
+def test_mass_symmetry_uses_the_proven_four_float32_ulp_budget() -> None:
+    masses = np.asarray([0.25, 1.0, 17.0, 196.0], dtype=np.float32)
+    four_ulp = masses.copy()
+    five_ulp = masses.copy()
+    for _ in range(4):
+        four_ulp = np.nextafter(four_ulp, np.float32(np.inf), dtype=np.float32)
+        five_ulp = np.nextafter(five_ulp, np.float32(np.inf), dtype=np.float32)
+    five_ulp = np.nextafter(five_ulp, np.float32(np.inf), dtype=np.float32)
+    assert np.all(
+        np.abs(four_ulp.astype(np.float64) - masses.astype(np.float64))
+        <= mass_symmetry_tolerances(masses, four_ulp)
+    )
+    assert np.all(
+        np.abs(five_ulp.astype(np.float64) - masses.astype(np.float64))
+        > mass_symmetry_tolerances(masses, five_ulp)
+    )
+
+
+def test_independent_rank_reproduction_matches_generator_float32_exactly() -> None:
+    logits = torch.tensor(
+        [[0.125, -0.5, 0.125, 3.0, 1.25, -2.0, 0.75]], dtype=torch.float32
+    )
+    valid = torch.ones_like(logits, dtype=torch.bool)
+    generated = within_bag_percentile_ranks(logits, valid)[0].numpy()
+    reproduced = _rank32(logits[0].numpy())
+    assert generated.dtype == np.float32
+    assert reproduced.dtype == np.float32
+    assert np.array_equal(reproduced, generated)

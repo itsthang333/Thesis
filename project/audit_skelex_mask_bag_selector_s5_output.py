@@ -44,6 +44,12 @@ def _rows(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+def _rank32(values: np.ndarray) -> np.ndarray:
+    """Reproduce the generator's torch.float32 percentile-rank arithmetic."""
+
+    return np.asarray(common._rank(values), dtype=np.float32)
+
+
 def _safety(payload: dict[str, Any], name: str) -> None:
     if (
         payload.get("validation_gt_read") is not False
@@ -271,9 +277,9 @@ def audit_output(
                 raise ValueError(f"S5 candidate payload differs: {image_id}")
             with np.load(candidate_path, allow_pickle=False) as candidate:
                 upstream = np.asarray(candidate["selection_scores"], dtype=np.float32)[indices]
-            base_rank = common._rank(stored_base)
-            upstream_rank = common._rank(upstream)
-            skelex_rank = common._rank(stored_skelex)
+            base_rank = _rank32(stored_base)
+            upstream_rank = _rank32(upstream)
+            skelex_rank = _rank32(stored_skelex)
             control = np.asarray(0.5 * (base_rank + upstream_rank), dtype=np.float32)
             primary = np.asarray(
                 (base_rank + upstream_rank + skelex_rank) / 3.0, dtype=np.float32

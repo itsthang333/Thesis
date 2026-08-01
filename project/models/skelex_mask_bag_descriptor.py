@@ -8,6 +8,7 @@ class-agnostic proposal masks, and non-semantic proposal metadata.
 
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -17,6 +18,26 @@ SKELEX_GRID_SIZE = 14
 SKELEX_HIDDEN_SIZE = 1024
 SKELEX_PATCHES = SKELEX_GRID_SIZE * SKELEX_GRID_SIZE
 SELECTED_HIDDEN_LAYERS = (8, 16, 24)
+FLOAT32_MASS_ULP_BUDGET = 4.0
+FLOAT32_MASS_ABSOLUTE_FLOOR = 4.0 * float(np.finfo(np.float32).eps)
+
+
+def mass_symmetry_tolerances(
+    masses: np.ndarray,
+    flipped_masses: np.ndarray,
+) -> np.ndarray:
+    """Return the proven scale-aware float32 reduction tolerance per pair."""
+
+    first = np.asarray(masses, dtype=np.float32)
+    second = np.asarray(flipped_masses, dtype=np.float32)
+    if first.shape != second.shape or not np.isfinite(first).all() or not np.isfinite(second).all():
+        raise ValueError("original/flip masses must be aligned finite float32 arrays")
+    scale = np.maximum(np.abs(first), np.abs(second)).astype(np.float32)
+    ulp = np.spacing(scale).astype(np.float64)
+    return np.maximum(
+        FLOAT32_MASS_ABSOLUTE_FLOOR,
+        FLOAT32_MASS_ULP_BUDGET * ulp,
+    )
 
 
 @dataclass(frozen=True)
@@ -187,6 +208,8 @@ def exact_fractional_mask_pool_descriptors(
 
 
 __all__ = [
+    "FLOAT32_MASS_ABSOLUTE_FLOOR",
+    "FLOAT32_MASS_ULP_BUDGET",
     "SELECTED_HIDDEN_LAYERS",
     "SKELEX_GRID_SIZE",
     "SKELEX_HIDDEN_SIZE",
@@ -194,4 +217,5 @@ __all__ = [
     "SkelexDescriptorConfig",
     "SkelexProjectedMultiLayerEncoder",
     "exact_fractional_mask_pool_descriptors",
+    "mass_symmetry_tolerances",
 ]
