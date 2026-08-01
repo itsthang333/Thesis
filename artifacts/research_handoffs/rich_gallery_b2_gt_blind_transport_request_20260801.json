@@ -1,0 +1,57 @@
+{
+  "request_id": "rich_gallery_b2_gt_blind_transport_request_20260801_v1",
+  "status": "AWAITING_COLLABORATOR_PACKAGING_AND_ACCESS_GRANT",
+  "purpose": "continue from the trusted 0.2887294867 rich-gallery G1/upstream pipeline without rerunning G0/G1/G2 or transporting validation GT",
+  "consumer_experiment_id": "EXP-20260801-codex-b2-rich-gallery-bas-residual-v1",
+  "trusted_inputs": {
+    "collaborator_latest_read_commit": "013244aded5aa1b154d2f433de9b4bc7e005d1e7",
+    "g2_protocol_sha256": "6dd6c66e396054157eb498cbca46635d1058c73d1139541d385bb769088801be",
+    "g2_stage_a_prediction_freeze_sha256": "78970d417de20dc884958dfb3fd9cb2bad9f2cda53240ae2207607ba827cd167",
+    "g1_checkpoint_sha256": "634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "packager": {
+    "path": "project/package_rich_gallery_stage_a_transport.py",
+    "canonical_lf_sha256": "2e6bbf3b41a7da7f5dd77782e98a09b42f8442ccc29e6a5c44e3b21a326741d6",
+    "test_path": "tests/test_package_rich_gallery_stage_a_transport.py",
+    "test_canonical_lf_sha256": "4acb5ecf8aed8ce8050020dd4cf378ce86861f7f0456ba425b7cb62b8d9cf61b",
+    "expected_output_layout": {
+      "stage_a_root_files": [
+        "prediction_freeze.json",
+        "stage_a_selection_manifest.csv",
+        "stage_a_scores/*.npz"
+      ],
+      "candidate_root": "val_candidates",
+      "candidate_files": [
+        "candidate_diagnostics_manifest.csv",
+        "candidate_diagnostics_summary.json",
+        "371 manifest-referenced NPZ payloads"
+      ],
+      "packaging_evidence": [
+        "transport_inventory.csv",
+        "transport_freeze.json"
+      ]
+    }
+  },
+  "values_that_must_be_copied_exactly_from_the_physical_freeze_not_guessed": [
+    "G2 source_commit",
+    "validation candidate manifest SHA-256",
+    "validation pseudo-manifest SHA-256",
+    "Stage-A root and validation candidate root"
+  ],
+  "sharing_requirement": "upload the produced directory as a Kaggle dataset or other byte-preserving artifact readable by itsthang333; do not expose the original private kernel",
+  "forbidden_content": [
+    "Stage-B output",
+    "evaluation summary",
+    "per-image GT-derived table",
+    "validation polygon or annotation",
+    "BTXRD test file",
+    "consumer output"
+  ],
+  "safety": {
+    "rerun_requested": false,
+    "validation_gt_requested": false,
+    "test_requested": false,
+    "consumer_requested": false
+  }
+}

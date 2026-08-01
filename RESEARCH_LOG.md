@@ -11559,3 +11559,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   active experiment. Ruff giới hạn đúng 8 source/test B2 pass; đây là technical
   lint-debt observation, không phải scientific error/result.
 
+### B2 GT-blind collaborator transport packager (2026-08-01)
+
+- Sau khi static B2 được push ở commit `adf24fd78a1e24821b676ca674df8a2de8cb29b7`,
+  đã kiểm tra filesystem ignored, Git tree cộng tác và một bounded Kaggle dataset
+  search `btxrd rich gallery`; không nơi nào có physical rich-gallery Stage-A
+  transport, và search trả `No datasets found`. Private kernel `wanwin` vẫn
+  không đọc được bằng credential `itsthang333`, nên B2 **chưa đăng ký claim và
+  chưa launch Kaggle**; không tự tái tạo G0/G1/G2 để lách provenance boundary.
+- Packager tĩnh `project/package_rich_gallery_stage_a_transport.py` canonical-LF
+  SHA-256 `2e6bbf3b41a7da7f5dd77782e98a09b42f8442ccc29e6a5c44e3b21a326741d6`
+  tạo allow-list transport gồm exact Stage-A freeze/selection/371 score payload,
+  candidate manifest/summary/371 physical gallery payload, rồi sinh inventory
+  bytes+SHA và transport freeze. Nó kiểm tra exact source/protocol/split/G1/
+  candidate hashes, cohort `371/184/187`, score-set và mọi NPZ key; path/key có
+  Stage-B/evaluation/per-image/GT/polygon/test hoặc object array đều bị reject.
+  Nó không mở radiograph, segmentation GT, consumer hay test.
+- Ba test mới canonical-LF SHA-256
+  `4acb5ecf8aed8ce8050020dd4cf378ce86861f7f0456ba425b7cb62b8d9cf61b`
+  kiểm tra path escape, forbidden token, NPZ object/GT key và deterministic
+  inventory. Lần chạy đầu có `2` lỗi assertion tĩnh: tokenizer chưa giữ compound
+  stem `ground_truth`, và expected byte count của literal `{}\n` ghi nhầm `3`
+  thay vì `4`. Sửa tokenizer giữ cả compound stem và hiệu chính assertion; sau
+  đó focused packager+transport audit pass `7/7`, scoped Ruff/py_compile/
+  `git diff --check` pass, full repository pass `551/551` trong 20.46 giây.
+- Yêu cầu handoff cụ thể nằm tại
+  `artifacts/research_handoffs/rich_gallery_b2_gt_blind_transport_request_20260801.json`,
+  SHA-256 `852cd562fd1dac7d890dd7923788593fb994f94b1ebc1fdfef89b362d41adf87`.
+  Cộng tác viên chỉ cần chạy packager trên output/input vật lý của họ rồi upload
+  directory sinh ra dưới dạng byte-preserving artifact mà `itsthang333` đọc
+  được. Các giá trị source commit/candidate hashes phải lấy exact từ freeze,
+  không đoán. Đây chỉ là technical handoff, chưa có experiment/prediction/metric.
+
