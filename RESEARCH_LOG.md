@@ -12033,3 +12033,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   recipe, arms, freeze/audit/evaluator đều bất biến. Theo rule, chưa sửa hoặc
   rerun trước khi bản ghi `LỖI` này được commit và push lên branch điều phối.
 
+### S5 version 2 — correction đã freeze, chờ launch (2026-08-02)
+
+- Sau khi bản ghi lỗi v1 được push ở commit
+  `97144cfa8f4b0124c4ac4abeb52951a2a87fdcfe`, correction implementation-only đã
+  được chuẩn bị và push code canonical ở commits
+  `52d0b8630142a12c2bddd715353045024fc5e557` và
+  `ad441e1de1cd4df7fddebb2ff4a9dda03f3e9998`. Trạng thái
+  `EXP-20260802-codex-s5-skelex-selector-v1` trở lại **ĐANG LÀM** cho đúng một
+  corrected rerun version 2; đây không phải experiment/hypothesis mới.
+- Wrapper v2 cài exact `transformers==4.50.2` bằng
+  `--disable-pip-version-check --no-input --no-cache-dir`, kiểm tra lại exact
+  imported version trước khi tiếp tục và đặt `TOKENIZERS_PARALLELISM=false`.
+  T4x2 guard vẫn chạy trước cài đặt; static/synthetic tests nay chạy trước lần
+  tải public SKELEX checkpoint `1,318,230,232` byte để các lỗi môi trường/code
+  tương lai dừng sớm và không lãng phí network/compute.
+- Canonical wrapper được giữ fail-closed/unbound trong Git; packaged Kaggle v2
+  chỉ khác ba binding constants, checkout exact
+  `ad441e1de1cd4df7fddebb2ff4a9dda03f3e9998`. `py_compile` pass và wrapper tests
+  `2 passed in 0.03s`. Bound wrapper SHA-256
+  `dbd8cd8cfb613a19ca1d789900f3a1d9f33c1caa8a6b6212e3dee37b3cdbeb04`;
+  metadata giữ nguyên SHA-256
+  `33d4a8cb2fba94c1ad2a1742004d26390faae4de989b5fca4adace2a2bd5f107`.
+  Prelaunch audit
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_kernel_v2_wrapper_audit.json`
+  SHA-256
+  `259673147bff6f22d2523d06a89c05ba3d6ebb965373d4514f35f8b1b99f5c0b`.
+- Scientific source commit `61927cc...`, protocol SHA `036e9d1d...`, public
+  SKELEX revision/weights, split, candidate gallery, accepted cache/baseline,
+  selector recipe, two arms, prediction-freeze, independent GT-blind audit,
+  evaluator/comparator và decision gate đều không đổi. Chưa launch v2, chưa mở
+  real input/prediction/GT/consumer/test ở bước correction này; phải push mục
+  **ĐANG LÀM** này lên branch điều phối trước Kaggle launch.
+

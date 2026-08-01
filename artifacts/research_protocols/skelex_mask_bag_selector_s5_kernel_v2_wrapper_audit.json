@@ -1,0 +1,62 @@
+{
+  "audit_id": "skelex_mask_bag_selector_s5_kernel_v2_wrapper_audit",
+  "audited_utc": "2026-08-01T18:21:27Z",
+  "status": "FROZEN_PRELAUNCH_NOT_PUSHED_TO_KAGGLE",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "kernel": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+  "kernel_version": 2,
+  "supersedes_kernel_version": 1,
+  "version1_error_audit_sha256": "329ad59b715677f7b4aa11c9644234fc5cf7f65dd2da140c119b058c2c629683",
+  "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+  "execution_checkout_commit": "ad441e1de1cd4df7fddebb2ff4a9dda03f3e9998",
+  "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+  "bound_wrapper_sha256": "dbd8cd8cfb613a19ca1d789900f3a1d9f33c1caa8a6b6212e3dee37b3cdbeb04",
+  "kernel_metadata_sha256": "33d4a8cb2fba94c1ad2a1742004d26390faae4de989b5fca4adace2a2bd5f107",
+  "implementation_correction": {
+    "classification": "environment packaging only",
+    "exact_dependency": "transformers==4.50.2",
+    "pip_flags": [
+      "--disable-pip-version-check",
+      "--no-input",
+      "--no-cache-dir"
+    ],
+    "post_install_exact_version_assertion": true,
+    "tokenizers_parallelism": false,
+    "static_tests_moved_before_1318230232_byte_public_model_download": true,
+    "scientific_source_changed": false,
+    "scientific_protocol_changed": false
+  },
+  "checks": {
+    "wrapper_py_compile": "PASS",
+    "wrapper_binding_tests": "2 passed in 0.03s",
+    "canonical_and_packaged_wrapper_equal_except_binding_constants": true,
+    "scientific_source_is_ancestor_of_execution_checkout": true,
+    "protocol_sha256_matches_version1": true,
+    "public_skelex_revision_and_hashes_unchanged": true,
+    "split_gallery_cache_baseline_and_recipe_unchanged": true,
+    "t4x2_fail_closed_guard_unchanged": true,
+    "tests_before_public_model_download_and_real_input": true,
+    "descriptor_gate_before_selector_training": true,
+    "physical_pair_freeze_before_gt": true,
+    "independent_gt_blind_reproduction_before_gt": true,
+    "collaborator_output_accessed": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "datasets": [
+    "itsthang333/btxrd-raw",
+    "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+    "itsthang333/btxrd-mask-bag-selector-baseline-v1"
+  ],
+  "kernel_inputs": [
+    "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+  ],
+  "compute": "Kaggle NvidiaTeslaT4 x2",
+  "heavy_compute_started": false,
+  "real_input_opened": false,
+  "prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
