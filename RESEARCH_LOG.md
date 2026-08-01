@@ -10221,4 +10221,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   directory rather than deleted. At this boundary there is still no kernel
   push, scientific input execution, fit, prediction, validation GT/test access
   or consumer training.
+- **S4 version 1 launched:** after corrected binding/final audit were committed
+  and pushed at `975345919faf245a1c71cc11efa4316260a19eef`, central HEAD/origin
+  were synchronized with a clean tracked worktree. The ignored launch package
+  contained exactly the bound wrapper
+  `7abbb0b569f0df610fd1d4e84027242a92fe4ad6f70b5c9a4f346fba6ff1011c`
+  and metadata
+  `39ce8e274bcf293f540599bcf24ad7dc13060118d79ba67fa9d587ceb3c92666`.
+  Kaggle accepted exactly one private push as version `1` of
+  `itsthang333/btxrd-rad-dino-mask-bag-proposal-cluster-s4-v1` at about
+  `2026-08-01T05:56:48Z`. The wrapper must observe two physical T4 devices and
+  every GT-blind gate or fail closed. Prediction freeze, validation GT,
+  consumer and BTXRD test remain locked pending terminal output plus independent
+  physical audit.
 
