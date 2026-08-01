@@ -65,8 +65,8 @@ The deterministic match order is:
 5. SHA-256 tie break on query/donor IDs.
 
 Two recipient/sham pairs are frozen per query. Every image is transformed by
-the classifier's existing 448-pixel letterbox. Candidate masks are projected
-from their frozen square grid by nearest-neighbor interpolation. Paste masks
+the classifier's existing 448-by-448 square resize. Candidate masks are projected
+from their frozen 320-by-320 square grid by nearest-neighbor interpolation. Paste masks
 use one fixed seven-pixel feather. Source content is matched to the recipient
 with one fixed robust affine intensity transform estimated from full valid
 image content, never from a polygon or lesion area.
@@ -94,6 +94,52 @@ These are a finite mechanistic panel, not a validation-selected weight sweep.
 The baseline is the only promoted endpoint before Stage B. Any other variant
 is promotable only if its formula was frozen in Stage A and its actual Dice is
 better than the baseline.
+
+## Frozen layer-by-layer bottleneck decomposition
+
+The experiment must not return only a terminal Dice.  For every candidate,
+positive/sham recipient pair, it freezes compact statistics at five exact
+DenseNet-121 stages before any polygon is opened:
+
+1. `pool0` (stem/high-resolution appearance);
+2. `transition1`;
+3. `transition2`;
+4. `transition3`;
+5. `norm5` followed by the classifier's exact ReLU (final spatial evidence).
+
+At each stage the candidate mask is area-projected to the feature grid.  The
+runner records positive-minus-sham feature L2 and relative L2 inside the mask
+and in a one-cell outer ring, inside-minus-ring contrast, positive/sham cosine,
+and the fraction of difference energy inside the candidate.  At `norm5` it
+also projects the spatial feature difference through the immutable tumor-class
+weight vector and records signed class-response delta inside, in the ring and
+globally.  The global class-response delta must reconstruct the classifier
+logit delta to numerical tolerance; otherwise the run fails integrity audit.
+
+Only compact per-candidate summaries are retained for the full 371-image
+validation set.  Full tensors may be retained only for a small image-label-only
+probe list frozen before Stage B, never chosen by polygon overlap.  The matched
+random-donor control receives the identical decomposition.
+
+This yields predeclared failure localization rather than a post-hoc story:
+
+- weak `pool0` inside-minus-ring difference versus sham: copied candidate
+  content is not distinguishable after style matching, so transplantation is
+  invalid at the input mechanism;
+- strong early difference that collapses across transitions: the frozen
+  classifier backbone erases small/local tumor evidence;
+- final feature difference survives but signed tumor-class response does not:
+  representation change is not tumor-specific;
+- signed spatial tumor response survives but global/logit response collapses:
+  global average pooling dilutes small lesions;
+- stable logit effect but poor oracle rank/actual Dice: candidate scoring or
+  fusion, rather than the classifier representation, is the bottleneck;
+- matched and random controls have the same layer trajectory: anatomy matching
+  does not isolate a causal tumor signal and the mechanism is retired.
+
+Stage B may relate these frozen statistics to candidate overlap to identify the
+first failing stage, but it cannot tune layers, masks, thresholds or fusion
+weights.  Actual binary-mask Dice remains the promotion endpoint.
 
 ## Mandatory actual-Dice and failure decomposition
 

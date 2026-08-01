@@ -8531,3 +8531,29 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   learned head or sweep. Full design:
   `RICH_GALLERY_MATCHED_NORMAL_TRANSPLANT_DESIGN.md`. Test remains locked.
 
+### EXP-20260802-codex-rich-gallery-matched-normal-transplant-stage-a-v1
+
+- The bounded inference-only runner is implemented against the immutable
+  classifier448 checkpoint and frozen rich gallery. Deterministic references
+  use two group-disjoint train-normal recipient/sham pairs; the matched-random
+  donor arm preserves the same computation as a causal control. No candidate
+  winner, polygon, threshold or segmentation loss is used.
+- A required layer-by-layer decomposition now accompanies every candidate.
+  Positive-minus-sham evidence is frozen at DenseNet `pool0`, `transition1`,
+  `transition2`, `transition3` and `norm5`: inside/ring feature deltas, relative
+  deltas, cosine, difference-energy concentration, final signed tumor-class
+  response and exact global logit response. Compact summaries are retained;
+  full feature tensors are not saved for the full cohort.
+- The decomposition makes a failed endpoint informative. It distinguishes
+  absent input-level evidence, backbone erasure, non-tumor-specific final
+  features, global-pooling dilution and final selector/fusion error. Stage B
+  writes candidate-level layer statistics joined to overlap only after all
+  scores/selections pass Stage-A audit; these diagnostics cannot tune the
+  selector.
+- The real checkpoint integration is finite at all five stages and reconstructs
+  its logit delta with zero numerical residual. Core, no-GT boundary and
+  bottleneck-branch tests pass `15/15`. Stage A and actual-Dice Stage B runners
+  plus a compact independent auditor are ready for private/offline preflight.
+  The promotion endpoint remains actual Dice above `0.2887294867` without a
+  small/medium collapse; test remains locked.
+
