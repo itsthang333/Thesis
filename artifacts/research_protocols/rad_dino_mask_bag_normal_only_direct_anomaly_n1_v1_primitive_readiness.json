@@ -1,0 +1,40 @@
+{
+  "claim_commit": "0e1b5daa895d28809e13ba106fbe60236b2ac909",
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "focused_tests": {
+    "passed": 4,
+    "seconds": 2.5,
+    "total": 4
+  },
+  "full_regression": {
+    "passed": 494,
+    "seconds": 20.35,
+    "total": 494
+  },
+  "mechanism": {
+    "candidate_score": "mean original/aligned-flip nearest spherical normal-prototype cosine distance",
+    "classification_probability": "must remain exact accepted Geometry-v3 probability",
+    "image_weighting": "equal image then family then candidate/view mass",
+    "positive_bags_used": 0,
+    "prototype_count": 32,
+    "residual_or_mil_optimizer": false,
+    "seed": 42
+  },
+  "primitive_sha256": "e74fb687168620d84317d57b240b1007af75586ca3c16a7dd5052e35aa1f6cbd",
+  "recorded_at": "2026-08-01T15:02:00+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "real_cache_fit": false,
+    "real_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "source": {
+    "paper": "Towards Total Recall in Industrial Anomaly Detection",
+    "transfer_limit": "nominal feature bank and nearest-feature anomaly scoring only",
+    "url": "https://openaccess.thecvf.com/content/CVPR2022/html/Roth_Towards_Total_Recall_in_Industrial_Anomaly_Detection_CVPR_2022_paper.html"
+  },
+  "status": "STATIC_SYNTHETIC_PRIMITIVE_READY",
+  "test_environment": "Python 3.9 btxrd-pseudomask; full suite used documented strict-zip compatibility shim",
+  "test_sha256": "c1a7d432192b2445d51ced3794bdd7b4802ab47b8c7cf1b68f4372c6d0a7fc3f"
+}

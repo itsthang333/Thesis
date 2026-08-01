@@ -10834,3 +10834,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   trước full operational pass; BTXRD test khóa. Fail thì reject N1, không
   sweep K/blend/threshold hoặc post-hoc rescue.
 
+- **Primitive static/synthetic readiness:** exact claim commit
+  `0e1b5daa895d28809e13ba106fbe60236b2ac909` đã push trung tâm trước
+  implementation. Dataset-agnostic primitive
+  `project/models/mask_bag_normal_anomaly.py` và test có SHA-256
+  `e74fb687168620d84317d57b240b1007af75586ca3c16a7dd5052e35aa1f6cbd` /
+  `c1a7d432192b2445d51ced3794bdd7b4802ab47b8c7cf1b68f4372c6d0a7fc3f`.
+  Nó fail closed nếu có positive image label, duplicate image, sai view/family/
+  dimension, nonfinite/zero-norm descriptor hoặc khác frozen `K=32, seed=42`;
+  audit equal image→family→candidate/view mass và exact averaged-view score.
+- `py_compile`, focused synthetic tests `4/4` trong 2.50 giây và full repository
+  regression `494/494` trong 20.35 giây pass bằng documented Python-3.9
+  strict-zip shim. Primitive-readiness artifact SHA-256 là
+  `5d4b07c8b902960fcce689d5702a07da198b43008cd8f7b670a8cf4d73c1fe86`.
+  Đây chỉ là static/synthetic readiness: chưa fit real cache, chưa tạo
+  validation prediction, chưa mở GT/consumer/test. Bước kế là runner,
+  protocol và independent auditor fail-closed; chưa authorize Kaggle launch.
+
