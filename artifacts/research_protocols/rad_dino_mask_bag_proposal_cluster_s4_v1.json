@@ -1,0 +1,217 @@
+{
+  "protocol_id": "rad_dino_mask_bag_proposal_cluster_s4_v1",
+  "frozen_utc": "2026-08-01T05:22:24Z",
+  "status": "STATIC_PREDECLARED_ACTIVE_CLAIM_NO_WRAPPER_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "scientific_role": "same-gallery selector arm testing a distinct group-excluded image-label-only proposal-cluster teacher and a zero-initialized cluster-member residual",
+  "hypothesis": "A distinct group-excluded OOF teacher can seed stable mask-overlap proposal modes, and normalized smooth-to-sharp cluster bags can improve selection without assigning false-negative targets to candidates outside those clusters.",
+  "non_duplicate_scope": {
+    "terminal_predecessors": [
+      "EXP-20260731-codex-r1-normal-prototype-v1",
+      "EXP-20260801-codex-s3-same-family-graph-v1"
+    ],
+    "collaborator_active_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "difference_from_r1": "fresh five-fold teacher initialized from scratch; no R1 logits, checkpoints, prototypes or rejected count-shortcut mechanism are reused",
+    "difference_from_s3": "learns recurring train-only cluster-member residuals rather than applying per-image graph propagation",
+    "difference_from_collaborator": "uses only the immutable old same-gallery selector cache and does not generate, merge or evaluate the collaborator rich gallery",
+    "negative_mechanism_claimed_as_improvement": false
+  },
+  "scientific_source": {
+    "commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
+    "claim_commit": "fa8b0d64ea5571dedf3df2b1a98d221f4179a3f8",
+    "parent_cache_protocol_sha256": "ee810fd8b4e2253533b2fe145046f1ad6349f69e09745bde46b3ee4612e34489",
+    "accepted_cache_independent_audit_sha256": "7d9f693dd5d1d9206b01cc2c8a0ed4aed497f9f17d9dedf670a97771b0f78334",
+    "r1_error_audit_sha256": "833c4814eee0891df1cd55a01fa008e0708ad3485dd30b730657f52508317719",
+    "s3_terminal_result_audit_sha256": "6a03b7294c1cd168bf1967c30fa4f16fc8a72e983bd128b854a23c274a2349eb"
+  },
+  "required_inputs": {
+    "selector_cache": {
+      "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+      "freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+      "wrapper_output_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+      "manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+      "cohort": {"train": 2981, "validation": 371},
+      "physical_records": 3352,
+      "descriptor_dim": 1156,
+      "pairwise_iou_and_containment_cached": true,
+      "train_masks_discarded": true,
+      "validation_masks_bitpacked": true,
+      "validation_gt_read": false,
+      "consumer_trained": false,
+      "test_evaluated": false
+    },
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline": {
+      "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+      "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+      "prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+      "source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+      "protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+    }
+  },
+  "teacher_crossfit": {
+    "fold_count": 5,
+    "unit": "whole frozen group",
+    "fold_assignment_seed": 42,
+    "expected_fold_summary": [
+      {"fold": 0, "images": 596, "groups": 196, "normal_images": 298, "tumor_images": 298},
+      {"fold": 1, "images": 596, "groups": 196, "normal_images": 298, "tumor_images": 298},
+      {"fold": 2, "images": 596, "groups": 197, "normal_images": 299, "tumor_images": 297},
+      {"fold": 3, "images": 596, "groups": 197, "normal_images": 299, "tumor_images": 297},
+      {"fold": 4, "images": 597, "groups": 198, "normal_images": 299, "tumor_images": 298}
+    ],
+    "initialization": "distinct deterministic from-scratch state for every fold",
+    "derived_fold_seed": "42 + 1000 + heldout_fold",
+    "epochs": 16,
+    "batch_size": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "bag_temperature": 0.2,
+    "teacher_instance_loss_weight": 0.25,
+    "aligned_flip_consistency_weight": 0.1,
+    "instance_warmup_epochs": 2,
+    "supervision": "binary image-level label only",
+    "final_epoch_only": true,
+    "validation_loss_or_segmentation_quality_used": false,
+    "oof_absolute_candidate_count_probability_spearman_maximum": 0.5013777759365411,
+    "on_count_gate_failure": "reject S4 before cluster-student optimizer construction"
+  },
+  "proposal_clusters": {
+    "seed_score": "minimum of original and aligned-flip OOF teacher candidate logits",
+    "maximum_clusters": 4,
+    "membership": "same immutable image candidates connected to the current seed by mask IoU >= 0.50 or containment >= 0.75",
+    "minimum_iou": 0.5,
+    "minimum_containment": 0.75,
+    "disjoint": true,
+    "isolated_seed_retained": true,
+    "outside_cluster_candidate_target": "unlabeled",
+    "teacher_view_threshold_or_sweep": false
+  },
+  "cluster_student": {
+    "baseline": "accepted Geometry-v3 scorer frozen and used only as the student base",
+    "trainable": "zero-initialized 1156-to-128-to-1 descriptor residual applied only to cluster members",
+    "epochs": 16,
+    "batch_size": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "aligned_flip_consistency_weight": 0.1,
+    "pooling": "normalized SmoothMax within clusters then across clusters",
+    "continuation": {"schedule": "geometric", "start_temperature": 1.0, "end_temperature": 0.2},
+    "outside_cluster_residual": "exactly zero in original and aligned-flip views",
+    "initial_combined_logits": "bit-exact frozen baseline logits",
+    "supervision": "binary image-level label only",
+    "candidate_or_segmentation_target": false
+  },
+  "validation_teacher": {
+    "fit": "one distinct from-scratch teacher on all 2981 clean-train image bags",
+    "derived_seed": 100042,
+    "validation_group_overlap": 0,
+    "group_exclusion_audit_before_optimizer": true,
+    "validation_segmentation_quality_used": false
+  },
+  "execution": {
+    "runtime": "Kaggle",
+    "accelerator": "NvidiaTeslaT4",
+    "physical_gpu_count": 2,
+    "oof_parallel_workers": 2,
+    "oof_folds_by_device": [[0, 2, 4], [1, 3]],
+    "validation_shards": [186, 185],
+    "deterministic_algorithms": true,
+    "device_local_dropout_rng": true,
+    "cublas_workspace_config": ":4096:8",
+    "heavy_compute_local": false
+  },
+  "gt_blind_pre_evaluation_gates": {
+    "crossfit_records": 2981,
+    "crossfit_group_overlap": 0,
+    "oof_fold_checkpoints": 5,
+    "oof_absolute_candidate_count_probability_spearman_maximum": 0.5013777759365411,
+    "full_teacher_train_validation_group_overlap": 0,
+    "pretraining_identity_records": {"train": 2981, "validation": 371},
+    "outside_cluster_residual_exact_zero_records": 371,
+    "validation_absolute_candidate_count_probability_spearman_maximum": 0.5013777759365411,
+    "validation_maps_and_candidate_score_payloads": 371,
+    "failure_action": "reject S4 before validation GT; no parameter change, rerun, sweep or rescue"
+  },
+  "prediction_freeze": {
+    "validation_predictions": 371,
+    "candidate_scores": "all immutable candidate logits in original gallery order",
+    "candidate_tta": "mean original and aligned-horizontal-flip logits",
+    "map": "selected bit-packed candidate mask multiplied by cluster-bag probability",
+    "must_bind": [
+      "scientific source commit and this protocol SHA-256",
+      "split, selector-cache freeze and manifest",
+      "accepted baseline checkpoint",
+      "cross-fit assignment and five group-excluded teacher checkpoints/scores",
+      "all train and validation cluster seed/member payloads",
+      "full-train teacher and train-validation group-exclusion audit",
+      "zero-initialized identity audit and final residual checkpoint",
+      "GT-blind count diagnostics, all candidate scores and 371 physical maps",
+      "T4x2 runtime and independent physical output audit"
+    ],
+    "validation_gt_read_before_freeze": false
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "validation_cohort": {"all": 371, "tumor": 184, "normal": 187, "small": 94, "medium": 72, "large": 18},
+    "paired_complete_group_bootstrap_replicates": 10000,
+    "bootstrap_seed_family": 20261013,
+    "mechanism_gate": {
+      "minimum_tumor_subgroups_with_regret_reduction": 2,
+      "overall_dice_regression_allowed": false,
+      "absolute_candidate_count_miss_association_increase_allowed": false
+    },
+    "adoption_gate": {
+      "operational_goals": {"overall": 0.34024039, "small": 0.17895493, "medium": 0.51244178, "large": 0.49370336},
+      "overall_ci95_lower_bound_above_zero": true,
+      "subgroup_mean_decrease_allowed": false,
+      "miss_increase_allowed": false,
+      "minimum_image_auroc": 0.75
+    },
+    "consumer_authorized_only_if_full_adoption_gate_passes": true
+  },
+  "literature_basis": [
+    {"technique": "Proposal Cluster Learning for grouping spatially related weakly supervised proposals", "url": "https://arxiv.org/abs/1807.03342", "doi": "10.1109/TPAMI.2018.2876304"},
+    {"technique": "C-MIL smooth-to-sharp continuation for weakly supervised proposal selection", "url": "https://openaccess.thecvf.com/content_CVPR_2019/papers/Wan_C-MIL_Continuation_Multiple_Instance_Learning_for_Weakly_Supervised_Object_Detection_CVPR_2019_paper.pdf"},
+    {"technique": "OICR confirmation-bias boundary motivating a group-excluded rather than online same-model teacher", "url": "https://openaccess.thecvf.com/content_cvpr_2017/html/Tang_Multiple_Instance_Detection_CVPR_2017_paper.html"}
+  ],
+  "canonical_lf_source_hashes": {
+    "project/run_mask_bag_proposal_cluster_s4_arm.py": "52e870bdc0c669131072a3f7a28680004f412df2873dc1f78bce917591520ef7",
+    "project/models/mask_bag_proposal_cluster_training.py": "75fc8efc128d110a0030ceb062cd589f839f1483331b2461eee6f828088d1a88",
+    "project/models/mask_bag_proposal_clusters.py": "3fe2cab3054156256c03f1887fb3d38c9daf74dc7dc631192afd228c1a637721",
+    "project/models/mask_bag_crossfit.py": "4f7b27d98250c00db5ed42bbd707d02bb2ae81e7d19beed74070189228e52bd6",
+    "project/run_mask_bag_normal_prototype_arm.py": "5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mask_bag_descriptor_residual.py": "9bb062d4ee1a100ab3bd108dfe52e846bf0df69aca29d58f2cdd2d8adb9eade9",
+    "project/models/mask_bag_normal_crossfit.py": "30ea542734f9223942faf9f8ba29a4629089af2c2c3fb22e42b43e1adc1cb9f4",
+    "project/models/mask_bag_normal_residual_training.py": "8a2ca06585a2e718a29cda8c93f54f8c42743fb56f45a5ea134cad92cfcf5703",
+    "project/models/mask_bag_normal_prototypes.py": "d20be292be6a4828f337c6f3348998e56d7c51245bb4e6d8a2d193b5e914c876",
+    "project/models/mask_bag_oof_selection.py": "4f3bacb75ad10b6751f90fbe8b4321d48db7ec03192382de0fe7eff82b460ff9",
+    "project/models/mask_bag_residual_objective.py": "7b176c955408fb14b59e0c901243be12791f1d68540484ab06e99f2ba14b92df",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/models/mask_bag_ranking_diagnostics.py": "c8b95cde03006c78aad624f060684d2f4d3acad2bdfeb6fc42bfc05762abefe8",
+    "tests/test_run_mask_bag_proposal_cluster_s4_arm.py": "9fc0b7b0f08f117a45943936b192228541cd39f56e05b7aa899e4fb0c7c4f41e",
+    "tests/test_mask_bag_proposal_cluster_training.py": "8b843b5879a483b6041f0f5525bac7b9c2603913d3c85027490c8c9a185c5cb5",
+    "tests/test_mask_bag_proposal_clusters.py": "b523bb0a6ce76c8590e86ed0319aef2ec9646dbb7476f7e1382744f315fe8f2d",
+    "tests/test_mask_bag_crossfit.py": "ec2c026882fe565dc38e60fccb6e464865e206a7c2f57c82ab4b0a633b6536f1",
+    "tests/test_run_mask_bag_normal_prototype_arm.py": "2655563f47214a598837762af237bf6bcc8e23f5b837e13ec9e10704bda76470",
+    "tests/test_mask_bag_score_evidence.py": "206d3fecd2688b244a7ba8a1124731df3b8fe436e9559068da60a6ed8ebcddf1"
+  },
+  "prohibited": [
+    "validation segmentation GT before prediction freeze and independent physical audit",
+    "validation subgroup, Dice, candidate Dice or oracle rank during teacher or student fit",
+    "reuse of R1 OOF logits/checkpoints or the accepted all-train scorer as a cluster teacher",
+    "proposal generation, rich-gallery merge or collaborator G1 output consumption",
+    "fold, loss, cluster, threshold, temperature, seed or gate sweep",
+    "consumer training before every adoption gate passes",
+    "BTXRD test access",
+    "post-hoc parameter, threshold or rescue alternatives"
+  ]
+}

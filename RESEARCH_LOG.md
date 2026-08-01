@@ -10074,4 +10074,62 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   shim. This remains static/synthetic work only: no real cache execution,
   teacher/student fit, validation prediction/GT/test or consumer training has
   occurred. Protocol/auditor/wrapper binding remain required before launch.
+- **Collaboration sync before the S4 protocol freeze:** central
+  `origin/research-wsss-improvement` was exact at local HEAD before each source
+  commit. `origin/codex/research-sync-20260731` advanced from `797f191...` to
+  `32b73fc4e7c98711bf028ca618443811dd2bfd45` through three code-only commits:
+  support for the collaborator's three-source rich-gallery cap and a staged G1
+  all-candidate ranking/extent diagnostic plus post-freeze mechanism
+  ablations. Its `RESEARCH_LOG.md` did not change and still marks G0/G1
+  `ĐANG LÀM`. The new design note mentions G1 Dice `0.206026` versus
+  same-gallery `0.245482` and a higher rich-gallery oracle `0.528298`, but
+  supplies no new log-bound terminal audit/artifact hash; achieved Dice is also
+  worse, not better. Therefore none of that code/mechanism is adopted as a
+  demonstrated improvement, and S4 remains confined to the old immutable
+  same-gallery cache without duplicating proposal supply.
+- **Physical residual-evidence closure:** pre-protocol independent review found
+  that the runner's Boolean outside-cluster fallback flags were not sufficient
+  for a separate auditor to prove the claim from downloaded bytes. Evidence-only
+  source commit `95c4a3378eaf8463c57d57a0dd4e4cac6c69021f` is pushed centrally.
+  It does not change any teacher/student logit, cluster, loss, threshold,
+  schedule or gate. For every validation image it now freezes candidate order,
+  cluster-member flags and original/flip base, residual and combined logits;
+  exact base-plus-residual, averaged-logit and zero-outside-cluster identities
+  must pass before the ordinary prediction manifest can be written.
+- Final protocol-bound runner/training/test SHA-256 values are
+  `52e870bdc0c669131072a3f7a28680004f412df2873dc1f78bce917591520ef7` /
+  `75fc8efc128d110a0030ceb062cd589f839f1483331b2461eee6f828088d1a88` /
+  `9fc0b7b0f08f117a45943936b192228541cd39f56e05b7aa899e4fb0c7c4f41e`.
+  These supersede only the unlaunched preparation hashes above.
+- **S4 protocol and independent-auditor freeze:** exact protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1.json`
+  has SHA-256
+  `040227de1347c45bc1823bd5aef5d9614b8005619ecc35d9dceb45bb7eba71e8`.
+  It binds source commit `95c4a33`, all fixed five-fold teacher, conservative
+  seed, mask-IoU/containment cluster, continuation, zero-residual, count-gate,
+  T4x2, prediction-freeze and post-freeze operational rules, plus all 24 runtime
+  source/test hashes.
+- Independent GT-blind auditor
+  `project/audit_mask_bag_proposal_cluster_s4_output.py` SHA-256
+  `1058f5f8c69e9906576d7803eb70665f199d690348b6b80427f60ba86f8e0014`
+  requires a future exact launch binding and terminal cache freeze. It
+  independently reconstructs the 2,981-row group-stratified fold assignment,
+  every OOF exclusion/score payload, all train/validation clusters from the
+  hash-locked cache IoU/containment matrices, the final cluster SmoothMax,
+  physical residual fallback, candidate winners and 371 selected-mask maps.
+  Auditor test SHA-256 is
+  `faf88a9cce59f0efac13bc263cb10ae30b72ba4f6d0d727a4257dd4e98c452a5`.
+- Metadata-only verification against the accepted cache manifest reproduces
+  exactly 2,981 train rows, the frozen five-fold summary and row-payload
+  SHA-256 `407be430a6aa4408e1baf961ce0cd8eb55e6fe06b34640ceecb3bdfe0cb67ec5`;
+  no cache record payload, radiograph or annotation was opened in that check.
+  Focused closure passes `17/17`; the full repository passes `454/454` in
+  18.47 seconds under the documented local Python-3.9 `zip(strict=...)` shim.
+  Static-readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1_static_readiness.json`
+  has SHA-256
+  `d0fe3a1a94fe36d7e401cbb5364da6b77ec3f913614750c7dc63f3efb36521cc`.
+  Wrapper/binder/final prelaunch audit remain absent; no real S4 cache record
+  execution, teacher/student fit, Kaggle launch, validation prediction/GT/test
+  access or consumer training has occurred.
 

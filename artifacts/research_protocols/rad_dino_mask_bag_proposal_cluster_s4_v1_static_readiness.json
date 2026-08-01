@@ -1,0 +1,49 @@
+{
+  "artifact_id": "rad_dino_mask_bag_proposal_cluster_s4_v1_static_readiness",
+  "frozen_utc": "2026-08-01T05:38:03Z",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "status": "STATIC_PROTOCOL_AND_INDEPENDENT_AUDITOR_READY_NO_WRAPPER_NO_BINDING_NO_LAUNCH",
+  "scientific_source_commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1.json",
+    "sha256": "040227de1347c45bc1823bd5aef5d9614b8005619ecc35d9dceb45bb7eba71e8",
+    "canonical_lf_source_hashes_verified": 24
+  },
+  "independent_gt_blind_auditor": {
+    "path": "project/audit_mask_bag_proposal_cluster_s4_output.py",
+    "sha256": "1058f5f8c69e9906576d7803eb70665f199d690348b6b80427f60ba86f8e0014",
+    "test_path": "tests/test_audit_mask_bag_proposal_cluster_s4_output.py",
+    "test_sha256": "faf88a9cce59f0efac13bc263cb10ae30b72ba4f6d0d727a4257dd4e98c452a5",
+    "selector_cache_metadata_only_recomputed_crossfit_rows": 2981,
+    "selector_cache_metadata_only_recomputed_fold_summary_exact": true,
+    "selector_cache_metadata_only_recomputed_row_payload_sha256": "407be430a6aa4408e1baf961ce0cd8eb55e6fe06b34640ceecb3bdfe0cb67ec5",
+    "cluster_membership_recomputed_from_frozen_cache_iou_and_containment": true,
+    "physical_validation_residual_identity_recomputed": true,
+    "validation_gt_required": false
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_tests": "17/17 PASS",
+    "full_repository_tests": "454/454 PASS",
+    "full_repository_seconds": 18.47,
+    "local_python39_zip_strict_diagnostic_shim_only": true,
+    "git_diff_check": "PASS"
+  },
+  "scientific_execution": {
+    "real_selector_cache_records_opened_by_s4_producer": 0,
+    "teacher_fits": 0,
+    "student_fits": 0,
+    "validation_predictions": 0,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_images_read": 0,
+    "test_evaluated": false
+  },
+  "remaining_before_launch": [
+    "fail-closed Kaggle T4x2 wrapper",
+    "one-time launch binder",
+    "wrapper/binder regression and readiness",
+    "source commit and exact launch binding",
+    "final prelaunch audit"
+  ]
+}
