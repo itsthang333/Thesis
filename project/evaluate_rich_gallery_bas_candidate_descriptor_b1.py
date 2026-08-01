@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Post-freeze spatial evaluator and failure decomposition for rich BAS-B1."""
+"""Post-freeze spatial evaluator and failure decomposition for rich BAS-B2."""
 
 import argparse
 from collections import Counter, defaultdict
@@ -83,7 +83,7 @@ def verify_stage_a(
         raise ValueError("rich BAS prediction-freeze SHA-256 mismatch")
     freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
     if (
-        freeze.get("stage") != "rich_gallery_bas_b1_stage_a_v1"
+        freeze.get("stage") != "rich_gallery_bas_b2_stage_a_v1"
         or freeze.get("split_sha256") != args.expected_split_sha256
         or freeze.get("val_candidate_manifest_sha256")
         != args.expected_val_candidate_manifest_sha256
@@ -173,8 +173,28 @@ def _summarize_variant(rows: list[dict[str, object]], variant: str) -> dict[str,
                 np.median([row["selected_gt_area_ratio"] for row in chosen])
             ),
             "selector_regret": float(np.mean([row["selector_regret"] for row in chosen])),
+            "eligible_oracle_dice": float(
+                np.mean([row["eligible_oracle_dice"] for row in chosen])
+            ),
+            "candidate_truncation_regret": float(
+                np.mean([row["candidate_truncation_regret"] for row in chosen])
+            ),
+            "cross_source_regret": float(
+                np.mean([row["cross_source_regret"] for row in chosen])
+            ),
+            "within_selected_source_regret": float(
+                np.mean([row["within_selected_source_regret"] for row in chosen])
+            ),
             "oracle_rank_median": float(np.median([row["oracle_rank"] for row in chosen])),
             "oracle_rank_p90": float(np.quantile([row["oracle_rank"] for row in chosen], 0.90)),
+            "top3_oracle_dice": float(np.mean([row["top3_oracle_dice"] for row in chosen])),
+            "top5_oracle_dice": float(np.mean([row["top5_oracle_dice"] for row in chosen])),
+            "top10_oracle_dice": float(np.mean([row["top10_oracle_dice"] for row in chosen])),
+            "top20_oracle_dice": float(np.mean([row["top20_oracle_dice"] for row in chosen])),
+            "top50_oracle_dice": float(np.mean([row["top50_oracle_dice"] for row in chosen])),
+            "selected_border_fraction_mean": float(
+                np.mean([row["selected_border_fraction"] for row in chosen])
+            ),
             "score_quality_rank_correlation_mean": float(
                 np.mean([row["score_quality_rank_correlation"] for row in chosen])
             ),
@@ -250,6 +270,16 @@ def _failure_decomposition(
         and primary_metrics["overall"]["dice"] <= baseline_metrics["overall"]["dice"]
     ):
         branches.append("equal_three_way_fusion_dilutes_complementary_bas_signal")
+    total_regret = float(primary_metrics["overall"]["selector_regret"])
+    within_regret = float(primary_metrics["overall"]["within_selected_source_regret"])
+    cross_regret = float(primary_metrics["overall"]["cross_source_regret"])
+    truncation_regret = float(primary_metrics["overall"]["candidate_truncation_regret"])
+    if truncation_regret < 0.01:
+        branches.append("candidate_supply_is_saturated_not_the_primary_bottleneck")
+    if within_regret > cross_regret and within_regret > 0.5 * total_regret:
+        branches.append("within_selected_source_ranking_is_the_primary_bottleneck")
+    if primary_metrics["overall"]["top10_oracle_dice"] - primary_metrics["overall"]["dice"] > 0.08:
+        branches.append("strong_candidates_reach_top10_but_top1_evidence_is_insufficient")
     return {
         "primary_delta": {
             group: primary_metrics[group]["dice"] - baseline_metrics[group]["dice"]
@@ -267,6 +297,22 @@ def _failure_decomposition(
             "gallery_oracle_dice": baseline_metrics["overall"]["oracle_dice"],
             "baseline_selector_regret": baseline_metrics["overall"]["selector_regret"],
             "primary_selector_regret": primary_metrics["overall"]["selector_regret"],
+            "primary_regret_decomposition": {
+                "candidate_truncation": truncation_regret,
+                "cross_source": cross_regret,
+                "within_selected_source": within_regret,
+                "sum": truncation_regret + cross_regret + within_regret,
+            },
+            "primary_rank_depth": {
+                key: primary_metrics["overall"][key]
+                for key in (
+                    "top3_oracle_dice",
+                    "top5_oracle_dice",
+                    "top10_oracle_dice",
+                    "top20_oracle_dice",
+                    "top50_oracle_dice",
+                )
+            },
         },
         "identified_failure_branches": branches,
         "no_next_gpu_run_before_manual_dossier_review": True,
@@ -322,6 +368,7 @@ def main() -> None:
         with np.load(candidate_path, allow_pickle=False) as payload:
             proposals = payload["sam_masks"].astype(bool)
             sources = payload["proposal_source_ids"].astype(str)
+        canonical_sources = np.asarray([canonical_source(value) for value in sources])
         candidate_dice = np.asarray([dice(mask, target) for mask in proposals])
         oracle_index = int(candidate_dice.argmax())
         oracle_dice = float(candidate_dice[oracle_index])
@@ -329,10 +376,14 @@ def main() -> None:
         score_path = args.prediction_root / selections[(BASELINE, image_id)]["score_path"]
         with np.load(score_path, allow_pickle=False) as score_payload:
             candidate_indices = score_payload["candidate_indices"].astype(np.int64)
+            g1_logits = score_payload["g1_logits"].astype(np.float64)
             variant_scores = {
                 variant: score_payload[variant].astype(np.float64) for variant in VARIANTS
             }
         eligible_quality = candidate_dice[candidate_indices]
+        eligible_sources = canonical_sources[candidate_indices]
+        eligible_oracle_local = int(eligible_quality.argmax())
+        eligible_oracle_dice = float(eligible_quality[eligible_oracle_local])
         for variant in VARIANTS:
             selection = selections[(variant, image_id)]
             selected_index = int(selection["selected_candidate_index"])
@@ -340,9 +391,34 @@ def main() -> None:
             intersection = int(np.logical_and(prediction, target).sum())
             prediction_area = int(prediction.sum())
             scores = variant_scores[variant]
-            order = np.argsort(-scores, kind="stable")
-            eligible_oracle_local = int(eligible_quality.argmax())
+            order = np.asarray(
+                sorted(
+                    range(len(scores)),
+                    key=lambda local: (scores[local], g1_logits[local], -local),
+                    reverse=True,
+                ),
+                dtype=np.int64,
+            )
             oracle_rank = int(np.flatnonzero(order == eligible_oracle_local)[0]) + 1
+            selected_source = canonical_source(sources[selected_index])
+            source_quality = eligible_quality[eligible_sources == selected_source]
+            if not len(source_quality):
+                raise RuntimeError("selected candidate source is absent from eligible bag")
+            selected_source_oracle = float(source_quality.max())
+            selected_dice = dice(prediction, target)
+            border_width = max(1, int(round(0.10 * min(prediction.shape))))
+            border = np.zeros_like(prediction, dtype=bool)
+            border[:border_width] = True
+            border[-border_width:] = True
+            border[:, :border_width] = True
+            border[:, -border_width:] = True
+            selected_border_fraction = float(
+                np.logical_and(prediction, border).sum() / max(1, prediction_area)
+            )
+            topk = {
+                k: float(eligible_quality[order[: min(k, len(order))]].max())
+                for k in (3, 5, 10, 20, 50)
+            }
             per_image.append(
                 {
                     "variant": variant,
@@ -350,17 +426,28 @@ def main() -> None:
                     "group_id": selection["group_id"],
                     "size_group": subgroup,
                     "gt_area_ratio": float(target.mean()),
-                    "dice": dice(prediction, target),
+                    "dice": selected_dice,
                     "iou": iou(prediction, target),
                     "precision": float(intersection / max(1, prediction_area)),
                     "recall": float(intersection / max(1, target_area)),
                     "complete_miss": int(intersection == 0),
                     "selected_area_ratio": float(prediction.mean()),
                     "selected_gt_area_ratio": float(prediction_area / max(1, target_area)),
-                    "selected_source": canonical_source(sources[selected_index]),
+                    "selected_source": selected_source,
+                    "selected_border_fraction": selected_border_fraction,
                     "oracle_dice": oracle_dice,
-                    "selector_regret": oracle_dice - dice(prediction, target),
+                    "eligible_oracle_dice": eligible_oracle_dice,
+                    "selected_source_oracle_dice": selected_source_oracle,
+                    "selector_regret": oracle_dice - selected_dice,
+                    "candidate_truncation_regret": oracle_dice - eligible_oracle_dice,
+                    "cross_source_regret": eligible_oracle_dice - selected_source_oracle,
+                    "within_selected_source_regret": selected_source_oracle - selected_dice,
                     "oracle_rank": oracle_rank,
+                    "top3_oracle_dice": topk[3],
+                    "top5_oracle_dice": topk[5],
+                    "top10_oracle_dice": topk[10],
+                    "top20_oracle_dice": topk[20],
+                    "top50_oracle_dice": topk[50],
                     "score_quality_rank_correlation": rank_correlation(scores, eligible_quality),
                 }
             )
@@ -438,7 +525,7 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(per_image)
     result = {
-        "stage": "rich_gallery_bas_b1_post_freeze_evaluation_v1",
+        "stage": "rich_gallery_bas_b2_post_freeze_evaluation_v1",
         "cohort": {"validation": 371, "tumor": 184, "normal": 187, "small": 94, "medium": 72, "large": 18},
         "actual_binary_mask_metrics": summary,
         "paired_bootstrap_primary_vs_baseline": bootstrap,

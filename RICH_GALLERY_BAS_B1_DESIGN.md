@@ -1,7 +1,7 @@
-# Rich-gallery BAS-B1 candidate-evidence design
+# Rich-gallery BAS-B2 candidate-evidence design
 
-Status: static design; no real fit, frozen prediction, validation polygon read,
-or BTXRD test access under this protocol yet.
+Status: supersedes the unlaunched 224-pixel B1 draft; no real fit, frozen
+prediction, validation polygon read, or BTXRD test access under B2 yet.
 
 ## Scientific question
 
@@ -46,11 +46,20 @@ Adopt the tested BAS primitive from the central branch:
 - full-image cross entropy;
 - foreground cross entropy weight `0.5`;
 - erased-background/full activation ratio plus area penalty `1.2`;
-- 224-pixel input, horizontal flip only;
+- 448-pixel input, horizontal flip only. This is fixed from prior BTXRD
+  evidence rather than swept: classifier448 has the strongest small-lesion
+  source oracle, while an output-stride-8 map at 224 would quantize the known
+  `<1%` bottleneck too aggressively;
 - SGD Nesterov, backbone LR `0.001`, official body/head multipliers,
   momentum `0.9`, weight decay `0.0005`;
 - fixed final epoch 100, total batch 32 on T4x2, seed 42;
 - binary image-level normal/tumor labels only.
+
+The exact 448-pixel BAS forward/backward memory preflight passed with physical
+batch 32 on Tesla T4x2: peak reserved memory was `7,038,042,112` and
+`6,945,767,424` bytes. Therefore no gradient accumulation, resolution change,
+or batch workaround is needed. The preflight used random tensors only and read
+no BTXRD data, annotation, or test image.
 
 No validation segmentation metric, pseudo mask, candidate Dice, oracle rank,
 lesion size or early stopping enters training.
@@ -96,7 +105,9 @@ explicitly requires the spatial endpoint.
 Report overall and `94/72/18` subgroups, complete misses, hit/miss transitions,
 source transitions, selected/GT area ratio, precision/recall, selector regret,
 oracle-rank movement, wins/losses/ties, signed Dice mass and paired complete-
-group bootstrap intervals.
+group bootstrap intervals. Selector regret must be decomposed exactly into
+candidate truncation, cross-source choice and within-selected-source ranking.
+Also report top-3/5/10/20/50 recoverability and selected-mask border reliance.
 
 Promotion requires the three-way arm to improve overall Dice over `0.2887294867`
 without reducing any subgroup mean or increasing complete misses. A positive

@@ -51,6 +51,14 @@ def test_failure_decomposition_detects_fusion_dilution() -> None:
                 "recall": value,
                 "oracle_dice": 0.8,
                 "selector_regret": 0.8 - value,
+                "candidate_truncation_regret": 0.001,
+                "cross_source_regret": 0.1,
+                "within_selected_source_regret": 0.8 - value - 0.101,
+                "top3_oracle_dice": 0.5,
+                "top5_oracle_dice": 0.6,
+                "top10_oracle_dice": 0.7,
+                "top20_oracle_dice": 0.75,
+                "top50_oracle_dice": 0.78,
             }
             for group in groups
         }

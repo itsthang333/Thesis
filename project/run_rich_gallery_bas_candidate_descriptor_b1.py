@@ -17,6 +17,11 @@ from pathlib import Path
 import random
 from typing import Any, Mapping
 
+# PyTorch requires this before the first CUDA context/GEMM when deterministic
+# algorithms are enabled.  Setting it after torch.cuda device inspection is too
+# late on some Kaggle images.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -40,11 +45,11 @@ from models.rich_gallery_g2_objective import (
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
 
 
-EXPERIMENT_ID = "EXP-20260801-codex-rich-gallery-bas-b1-v1"
+EXPERIMENT_ID = "EXP-20260801-codex-rich-gallery-bas-b2-v1"
 EXPECTED_PRETRAINED_SHA256 = (
     "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca"
 )
-EXPECTED_IMAGE_SIZE = 224
+EXPECTED_IMAGE_SIZE = 448
 EXPECTED_EPOCHS = 100
 EXPECTED_BATCH_SIZE = 32
 EXPECTED_BACKBONE_LR = 1.0e-3
@@ -478,7 +483,6 @@ def main() -> None:
         raise RuntimeError(f"rich-gallery BAS requires T4 x2, got {device_names}")
     args.output_dir.mkdir(parents=True, exist_ok=False)
     started = datetime.now(timezone.utc)
-    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     _seed_everything(args.seed)
     torch.use_deterministic_algorithms(True)
     train_rows = load_split_rows_without_annotations(
@@ -588,7 +592,7 @@ def main() -> None:
         encoding="utf-8",
     )
     freeze = {
-        "stage": "rich_gallery_bas_b1_stage_a_v1",
+        "stage": "rich_gallery_bas_b2_stage_a_v1",
         "experiment_id": EXPERIMENT_ID,
         "source_commit": args.source_commit,
         "protocol_sha256": args.protocol_sha256,

@@ -8284,3 +8284,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   dossier will separate lesion-hit absence, extent duplication, source bias and
   ranking-depth failure before any next run. BTXRD test remains locked.
 
+### EXP-20260801-codex-rich-gallery-bas-b2-v1 readiness correction
+
+- The unlaunched 224-pixel B1 draft was superseded before data access. BAS-B2
+  fixes input at 448 pixels because `<1%` lesions are the dominant bottleneck,
+  classifier448 has the strongest small-lesion source oracle, and an
+  output-stride-8 map at 224 would quantize that signal too aggressively.
+- A bounded random-tensor preflight on exact Tesla T4x2 proved that physical
+  batch 32 fits without accumulation: peak reserved memory is
+  `7,038,042,112/6,945,767,424` bytes. The preflight opened no BTXRD data,
+  validation annotation or test image.
+- The post-freeze evaluator now reports actual binary-mask Dice regardless of
+  proxy diagnostics and decomposes failure into candidate truncation,
+  cross-source regret and within-selected-source regret, plus top-3/5/10/20/50
+  recoverability, border reliance, hit/miss transitions and subgroup
+  precision/recall/extent. No later GPU run is allowed from only a low mean
+  score; the complete failure dossier must identify the remaining mechanism.
+
