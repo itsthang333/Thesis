@@ -36,6 +36,33 @@ class BASLossConfig:
             raise ValueError("epsilon must be positive")
 
 
+@dataclass(frozen=True)
+class ForegroundControlLossConfig:
+    """Weights for the continuous foreground-control replacement probe.
+
+    The published chest-X-ray objective uses the target-class activation kept
+    by the foreground map instead of a hard-gated background ratio.  Detaching
+    the full-image reference preserves the matched BAS probe semantics: the
+    localization branch must explain a fixed classifier signal rather than
+    moving its denominator.
+    """
+
+    foreground_control_weight: float = 1.5
+    area_weight: float = 1.2
+    reference_ratio: float = 0.5
+    epsilon: float = 1.0e-8
+
+    def __post_init__(self) -> None:
+        if self.foreground_control_weight <= 0:
+            raise ValueError("foreground_control_weight must be positive")
+        if self.area_weight < 0:
+            raise ValueError("area_weight must be nonnegative")
+        if not 0.0 <= self.reference_ratio <= 1.0:
+            raise ValueError("reference_ratio must lie in [0,1]")
+        if self.epsilon <= 0:
+            raise ValueError("epsilon must be positive")
+
+
 class BASForwardOutput(NamedTuple):
     class_logits: torch.Tensor
     foreground_logits: torch.Tensor
@@ -115,6 +142,51 @@ def bas_activation_suppression_loss(
     loss = ratio + config.area_weight * area
     if not torch.isfinite(loss).all():
         raise RuntimeError("BAS loss is non-finite")
+    return loss.mean()
+
+
+def foreground_control_area_loss(
+    output: BASForwardOutput,
+    labels: torch.Tensor,
+    *,
+    config: ForegroundControlLossConfig = ForegroundControlLossConfig(),
+) -> torch.Tensor:
+    """Continuous foreground-control ratio plus area constraint.
+
+    This is the bounded B2.2 scientific delta.  Unlike the transferred BAS
+    background ratio, it has no ``background >= full -> 0`` branch.  At an
+    empty map its derivative is spatially selective: cells whose target-class
+    evidence exceeds the area/control balance are pushed upward, while weak
+    cells are pushed downward.
+    """
+
+    labels = labels.reshape(-1).long()
+    for name, logits in (
+        ("class_logits", output.class_logits),
+        ("foreground_logits", output.foreground_logits),
+    ):
+        if logits.ndim != 2 or logits.shape[0] != labels.shape[0]:
+            raise ValueError(f"{name} must have shape [B,C]")
+    if output.class_logits.shape != output.foreground_logits.shape:
+        raise ValueError("full/foreground logits must share shape")
+    if output.localization_maps.ndim != 4 or output.localization_maps.shape[:2] != (
+        labels.shape[0],
+        1,
+    ):
+        raise ValueError("localization_maps must have shape [B,1,H,W]")
+
+    rows = torch.arange(labels.shape[0], device=labels.device)
+    full = output.class_logits[rows, labels].float().detach()
+    foreground = output.foreground_logits[rows, labels].float()
+    ratio = foreground / (full + config.epsilon)
+    control = config.reference_ratio - ratio
+    area = output.localization_maps.float().flatten(start_dim=1).mean(dim=1)
+    loss = (
+        config.foreground_control_weight * control
+        + config.area_weight * area
+    )
+    if not torch.isfinite(loss).all():
+        raise RuntimeError("foreground-control loss is non-finite")
     return loss.mean()
 
 
@@ -412,11 +484,13 @@ __all__ = [
     "BASLossConfig",
     "BASResNet50Localizer",
     "ClassifierOutputActivation",
+    "ForegroundControlLossConfig",
     "bas_activation_suppression_loss",
     "candidate_activation_evidence",
     "classifier_output_activation",
     "equal_rank_fusion",
     "equal_rank_aggregate",
+    "foreground_control_area_loss",
     "minmax_normalize_activation",
     "within_bag_percentile_ranks",
 ]

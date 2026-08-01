@@ -1,0 +1,56 @@
+{
+  "stage": "rich_gallery_oracle_feature_gap_diagnostic_v1",
+  "baseline": {
+    "method": "0.5*percentile_rank(G1)+0.5*percentile_rank(upstream)",
+    "validation_tumor_dice": 0.28872948670665205
+  },
+  "gallery_oracle_dice": 0.5282983321797708,
+  "tumor_images": 184,
+  "subgroup_counts": {
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "oracle_lower_rank_fraction": {
+    "g1": 0.842391304347826,
+    "upstream": 0.8695652173913043,
+    "sam": 0.7065217391304348
+  },
+  "oracle_minus_selected_area_median": {
+    "small": -0.001298828125,
+    "medium": 0.0015380859374999997,
+    "large": 0.060390625
+  },
+  "external_saliency_source_fraction": {
+    "selected": {
+      "small": 0.10638297872340426,
+      "medium": 0.125,
+      "large": 0.2777777777777778
+    },
+    "oracle": {
+      "small": 0.24468085106382978,
+      "medium": 0.4166666666666667,
+      "large": 0.5555555555555556
+    }
+  },
+  "decision": {
+    "weight_sweep_authorized": false,
+    "area_or_global_morphology_rule_authorized": false,
+    "source_only_router_authorized": false,
+    "required_new_evidence": "candidate-conditioned tumor-positive evidence with image-conditioned extent",
+    "current_test": "BAS-B2.1 terminal Softplus mechanics probe"
+  },
+  "input_hashes": {
+    "candidate_manifest_sha256": "30e734e223839ee2ed7b445c71b3731a39f0549ee88e2ba77f7bf722d8d9943d",
+    "g1_per_image_sha256": "8c8c12f9129351e842587c80f91fdd368de326f06029adc83d2ceb4e73b92d21",
+    "selection_manifest_sha256": "3753a36b04afca9b9cc9315967fdac37b28e0edc27eba4ba823db4af6f75b47d",
+    "stage_b_per_image_sha256": "7fb1fb5874c2ca40749faf5189f9e150e634f1faed06af2cfb0208eebdb57936"
+  },
+  "generated_output_hashes": {
+    "per_image_sha256": "f2b65a1f77307b559dc41606ebfa6d8c82d64329ec39d43b2bef2737def7c18a",
+    "dossier_sha256": "4c00456458f31a3baa8e0c57c8ff0c8812ec9696588f3aa744f403e9b3c403a2"
+  },
+  "validation_gt_derived_oracle_used_for_diagnosis": true,
+  "training_authorized": false,
+  "test_opened": false
+}

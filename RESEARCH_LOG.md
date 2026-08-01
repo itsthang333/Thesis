@@ -8388,3 +8388,75 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   The complete formulas, regimes and cross-experiment elimination table are in
   `RICH_GALLERY_G1_POST_BAS_B2_BOTTLENECK_DOSSIER.md`.
 
+### EXP-20260802-codex-rich-gallery-oracle-feature-gap-v1
+
+- **Question:** what observable difference separates the immutable
+  G1/upstream choice (Dice `0.28872949`) from the already available gallery
+  oracle (Dice `0.52829833`)? This is a post-freeze validation diagnostic only;
+  it does not train a selector, tune a rule or open test.
+- **Existing signals jointly suppress the oracle:** the oracle is lower-ranked
+  than the selected mask in `84.2%` of images under G1, `87.0%` under upstream
+  and `70.7%` under SAM score. Median oracle-minus-selected percentile-rank
+  deltas are `-0.1621/-0.2167/-0.2291`. Therefore another fusion-weight sweep
+  cannot expose the missing candidate.
+- **Extent correction reverses by subgroup:** the median oracle-minus-selected
+  area is `-0.001299` for small, `+0.001538` for medium and `+0.060391` for
+  large lesions. Oracle masks are larger in `83.3%` of large cases but smaller
+  in `57.4%` of small cases. This formally explains why global expansion,
+  area priors and consensus repeatedly trade small-lesion precision for
+  medium/large recall.
+- **Source mismatch is scale-dependent:** external-saliency is selected in only
+  `10.6/12.5/27.8%` of small/medium/large images but is the oracle source in
+  `24.5/41.7/55.6%`; classifier-derived masks show the opposite bias. G2 could
+  not solve this because source identity is not the missing lesion-scale or
+  tumor-evidence variable.
+- **Decision:** preserve the gallery and baseline; retire further monotone
+  G1/upstream/SAM/area/source fusion. A successor must add candidate-conditioned
+  positive evidence with scale-calibrated extent. The bounded BAS-Softplus
+  probe is the current exact test of that missing variable. Full evidence and
+  reproducible analysis are in
+  `RICH_GALLERY_G1_ORACLE_FEATURE_GAP_DOSSIER.md` and
+  `project/analyze_rich_gallery_oracle_feature_gap.py`.
+
+### EXP-20260802-codex-rich-gallery-bas-b21-softplus-probe-v1
+
+- **Matched result:** Softplus repaired the B2 dead ReLU classifier: final
+  train accuracy `0.839651`, validation image AUROC `0.743199` and full-image
+  CE `0.378285`. However, foreground CE stayed exactly at
+  `0.693147182 = log(2)`, so the localization map carried no class evidence.
+- **Tensor-level failure:** over all 184 tumor images, mean map maximum is only
+  `2.237e-7`, implied maximum preactivation is `-15.501`, median effective
+  support is `0.001338`, median top-1%-mass is `0.931514`, and 184/184 maxima
+  lie in the outer 10% border. This is a saturated empty map with a padding
+  spike, not weak lesion localization.
+- **Exact root cause:** the transferred hard-gated background ratio is set to
+  zero when `S_bg >= S`. At `M=0`, `S_bg=S` and the area penalty is also zero,
+  hence `L_BAS(M=0)=0`. Area shrinkage drives the sigmoid toward zero and its
+  remaining gradients are then attenuated by about four to seven million.
+  More epochs, thresholds or resolution cannot repair this objective-level
+  global minimum.
+- **Decision:** retire the hard-gated ratio and never fuse B2.1 maps. The only
+  allowed successor is the matched B2.2 foreground-control probe, whose
+  continuous `R-S_fg/S` derivative is spatially selective at an empty map.
+  It must pass frozen border/support/foreground-CE mechanics gates before any
+  candidate selection or spatial-GT evaluation. Full evidence is in
+  `RICH_GALLERY_BAS_B21_SOFTPLUS_FAILURE_DOSSIER.md`.
+
+### EXP-20260802-codex-rich-gallery-bas-b22-foreground-control-design-v1
+
+- B2.2 keeps the B2.1 backbone, 448 input, ImageNet checkpoint, optimizer,
+  seed, five passes, Softplus classifier and image labels. The sole scientific
+  delta replaces the zero-map hard gate by
+  `1.5*(0.5-S_fg/stopgrad(S)) + 1.2*mean(M)` while retaining foreground CE at
+  weight `0.5`.
+- At `M=0`, the spatial derivative is
+  `(1.2-1.5*C_i/S)/N`: strong target-evidence cells receive expansion while
+  weak cells shrink. Unit tests demonstrate the opposite signs and also
+  reproduce the old objective's all-cells-shrink behavior.
+- The mechanics probe is explicitly not a Dice result. Every predeclared gate
+  must pass, including foreground CE `<0.68`, nondegenerate maps, border
+  argmax `<=0.50`, top-1%-mass `<=0.75`, effective support `>=0.003`, and
+  non-area-proxy candidate evidence. Only then may an immutable gallery scorer
+  run and report actual Dice against `0.2887294867`. The full contract is in
+  `RICH_GALLERY_BAS_B22_FOREGROUND_CONTROL_DESIGN.md`.
+

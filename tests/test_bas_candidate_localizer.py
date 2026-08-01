@@ -7,11 +7,13 @@ torch = pytest.importorskip("torch")
 from project.models.bas_candidate_localizer import (
     BASForwardOutput,
     BASLossConfig,
+    ForegroundControlLossConfig,
     bas_activation_suppression_loss,
     candidate_activation_evidence,
     classifier_output_activation,
     equal_rank_aggregate,
     equal_rank_fusion,
+    foreground_control_area_loss,
     minmax_normalize_activation,
     within_bag_percentile_ranks,
 )
@@ -68,6 +70,52 @@ def test_bas_loss_keeps_epsilon_arithmetic_in_float32() -> None:
     loss = bas_activation_suppression_loss(output, torch.tensor([1]))
     assert loss.dtype == torch.float32
     assert float(loss) == pytest.approx(0.5 + 1.2 * 0.25, abs=1.0e-5)
+
+
+def test_hard_gated_bas_empty_map_only_pushes_all_cells_down() -> None:
+    localization = torch.zeros((1, 1, 1, 2), requires_grad=True)
+    output = BASForwardOutput(
+        class_logits=torch.tensor([[0.0, 1.0]]),
+        foreground_logits=torch.zeros(1, 2),
+        class_activation_maps=torch.zeros(1, 2, 1, 2),
+        localization_maps=localization,
+        # Empty-map erasing leaves the full activation unchanged; the hard
+        # gate removes the ratio and only the shrinking area gradient remains.
+        background_logits=torch.tensor([[0.0, 1.0]]),
+    )
+    loss = bas_activation_suppression_loss(output, torch.tensor([1]))
+    loss.backward()
+    assert float(loss) == pytest.approx(0.0)
+    assert torch.all(localization.grad > 0)
+
+
+def test_foreground_control_empty_map_has_spatially_selective_gradient() -> None:
+    localization = torch.zeros((1, 1, 1, 2), requires_grad=True)
+    evidence = torch.tensor([[[[2.0, 0.0]]]])
+    target_foreground = (evidence * localization).mean(dim=(2, 3))
+    foreground_logits = torch.cat(
+        (torch.zeros_like(target_foreground), target_foreground), dim=1
+    )
+    output = BASForwardOutput(
+        class_logits=torch.tensor([[0.0, 1.0]]),
+        foreground_logits=foreground_logits,
+        class_activation_maps=torch.zeros(1, 2, 1, 2),
+        localization_maps=localization,
+        background_logits=torch.zeros(1, 2),
+    )
+    loss = foreground_control_area_loss(
+        output,
+        torch.tensor([1]),
+        config=ForegroundControlLossConfig(
+            foreground_control_weight=1.5,
+            area_weight=1.2,
+            reference_ratio=0.5,
+        ),
+    )
+    loss.backward()
+    assert float(loss) == pytest.approx(0.75)
+    assert float(localization.grad[0, 0, 0, 0]) < 0.0
+    assert float(localization.grad[0, 0, 0, 1]) > 0.0
 
 
 def test_forward_output_is_namedtuple_for_data_parallel_gather() -> None:
