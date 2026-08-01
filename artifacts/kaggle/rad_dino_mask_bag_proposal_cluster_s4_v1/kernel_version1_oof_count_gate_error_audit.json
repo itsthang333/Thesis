@@ -1,0 +1,115 @@
+{
+  "audit_id": "independent_mask_bag_proposal_cluster_s4_v1_oof_count_gate_error_v1",
+  "created_utc": "2026-08-01T06:17:12Z",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "status": "OOF_COUNT_SHORTCUT_GATE_REJECTION_PHYSICALLY_RECOMPUTED_GT_BLIND",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-proposal-cluster-s4-v1",
+  "kernel_version": 1,
+  "kernel_terminal_status": "ERROR",
+  "execution_checkout": "1ee46bb184ce63612baaaf922522265438d39d8d",
+  "scientific_source_commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
+  "protocol_sha256": "fb39234a03890d7201531066e3ca7a11f2379eaa120bd503fe4b92e6de30a2a6",
+  "launch_binding_sha256": "2c4c60673218dcc63f1f58b11ac9932dff73656aca2046fe4f01bbd7358a766a",
+  "bound_wrapper_sha256": "7abbb0b569f0df610fd1d4e84027242a92fe4ad6f70b5c9a4f346fba6ff1011c",
+  "kernel_metadata_sha256": "39ce8e274bcf293f540599bcf24ad7dc13060118d79ba67fa9d587ceb3c92666",
+  "final_prelaunch_audit_sha256": "d395d0f800f22b9e6f2cd64666c1aacb549c35f6db99b54a19af363c98b858c1",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "direct_log": {
+    "path": "tmp/kaggle/proposal_cluster_s4_v1_error_20260801_1308/btxrd-rad-dino-mask-bag-proposal-cluster-s4-v1.log",
+    "sha256": "952251f769a5e54003e6dda95f068d86670085d2fb3f526afa0cbbd415d9c52a",
+    "bytes": 18810,
+    "terminal_exception": "RuntimeError: S4 OOF teacher count/probability gate failed"
+  },
+  "runtime": {
+    "t4x2_guard_passed_before_runner": true,
+    "focused_tests": "37 passed in 6.36s",
+    "full_repository_tests": "458 passed, 1 skipped, 4 warnings in 14.67s",
+    "runner_invocations": 1,
+    "runner_exception_line": 603,
+    "runner_elapsed_seconds_at_exception": 417.630512101
+  },
+  "compact_official_inventory": {
+    "official_files": 3004,
+    "selected_json_csv_files": 18,
+    "selected_json_csv_bytes": 652324,
+    "log_bytes": 18810,
+    "crossfit_assignment_sha256": "84ed881e982fbc70fa50129dafabf638dc6e2a864c0ebb60d5e3c2b512d9eeb8",
+    "full_teacher_group_exclusion_audit_sha256": "0f4d138587329608a4e39e2fc2f2c0a4a6bc7ae9a3b5cdeff6e14f7663d8c4bc",
+    "oof_coverage_audit_sha256": "2861e0da884e3e2a3ea24942d3254072042345070904ae76a50145e554f338e9",
+    "folds": [
+      {
+        "fold": 0,
+        "rows": 596,
+        "fold_audit_sha256": "f616acd6756592ce7128cd14d5b7da7a9f4cf28d5ad0bd82522f7eaf8319bc21",
+        "score_manifest_sha256": "7eb11a1d651661680596ce0321ee8c1ad8f423962d4c466fb6ba6e07e51f63b3",
+        "training_history_sha256": "f88f56a26d2cf295dafb85ba05354d2031c0447f0b7741c52fa9e4f873a36de6"
+      },
+      {
+        "fold": 1,
+        "rows": 596,
+        "fold_audit_sha256": "442b170c3430f2ba1201ec4804dcf48d829047584993d1f0601915faa48add8b",
+        "score_manifest_sha256": "296eb6fa46aec0dbf187a9d53426f8ba95250cae361f2ff6c9e9b62680ece5a8",
+        "training_history_sha256": "0332f845dc9cba2fa8aeba71bf46018c2f2f10c39fb5b4138a47f9ebdff123e2"
+      },
+      {
+        "fold": 2,
+        "rows": 596,
+        "fold_audit_sha256": "320bcc4a4083474329a0ec763b260226d5240a012d071b5e127361e2a3b8bd6e",
+        "score_manifest_sha256": "5c0d574c40e9d9f03c88428320c5b85310d49aa03df75d66f16d6198a3cb39f4",
+        "training_history_sha256": "c0eb8bfe54d218af7c054eeb8ce7db84a51fecb6763d884045cdc2f1103429a6"
+      },
+      {
+        "fold": 3,
+        "rows": 596,
+        "fold_audit_sha256": "ee0b6031f87fb0315827366fb77539e61fa57e7a446ea09ae4641b38900935ab",
+        "score_manifest_sha256": "9e3c5fc8e53a3985a824302ba56a0e36803b45bea396138ca7ee521cc1c0bccf",
+        "training_history_sha256": "ac3ad2255d90158e26426a09ea03d17ff2b084f1a3a45e75ab94d1871d2f022f"
+      },
+      {
+        "fold": 4,
+        "rows": 597,
+        "fold_audit_sha256": "81954ba0b6a0b15eb9c067921566cabba13e1a9e18d28e25fe2c5a637e29e93d",
+        "score_manifest_sha256": "7fc24176cec8609ead4c3df07dac1ae003c06ad919579e905ad8a3607ab1da20",
+        "training_history_sha256": "34251884ec17b68eddfa33a2eb242224a8cedb6e5aaa62c672dbb2faef300bd3"
+      }
+    ]
+  },
+  "independent_recomputation": {
+    "selector_cache_provenance_verified": true,
+    "crossfit_row_payload_sha256": "407be430a6aa4408e1baf961ce0cd8eb55e6fe06b34640ceecb3bdfe0cb67ec5",
+    "records": 2981,
+    "folds": 5,
+    "groups": 984,
+    "training_history_epochs_per_fold": 16,
+    "group_overlap_each_fold": 0,
+    "absolute_candidate_count_probability_spearman": 0.5715729179616584,
+    "frozen_baseline_absolute_candidate_count_probability_spearman": 0.48137777593654113,
+    "frozen_gate_ceiling": 0.5013777759365411,
+    "excess_over_gate": 0.0701951420251173,
+    "count_gate_pass": false
+  },
+  "error_boundary": {
+    "description": "All five group-excluded OOF image-label-only teachers and all 2,981 OOF score-manifest rows completed. The predeclared count/probability gate failed before cluster attachment, cluster-student optimizer construction, full-teacher fitting, validation scoring, prediction serialization or post-freeze evaluation.",
+    "train_cluster_evidence_written": false,
+    "cluster_student_optimizer_constructed": false,
+    "full_teacher_fit": false,
+    "validation_prediction_created": false,
+    "prediction_freeze_created": false,
+    "validation_gt_read": false,
+    "scientific_dice_available": false
+  },
+  "transport_notes": {
+    "direct_cli_output_timed_out_after_seconds": 124,
+    "direct_cli_partial_files": 300,
+    "direct_cli_partial_bytes": 600701,
+    "official_compact_inventory_downloader_first_parallel_attempt_error": "Windows resolved-parent race at safe_target",
+    "official_compact_inventory_sequential_resume_pass": true,
+    "transport_errors_changed_scientific_output": false
+  },
+  "scientific_conclusion": "The distinct S4 OOF teacher is substantially more candidate-count-associated than the frozen allowed ceiling, so S4 is rejected at its predeclared GT-blind gate. The threshold is not widened and version 1 is not rerun or evaluated for Dice.",
+  "training_labels": "image_level_only",
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

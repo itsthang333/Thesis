@@ -9937,7 +9937,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 ### EXP-20260801-codex-s4-oof-proposal-cluster-v1
 
-- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Owner/status:** Codex main task on `research-wsss-improvement`;
+  `HOÀN THÀNH — TERMINAL REJECTED AT GT-BLIND COUNT GATE`.
 - **Registered:** `2026-07-31T23:17:34Z` (`2026-08-01` ICT), after terminal S3
   commit `1488a99daa2e2e40a2fee734eaf4899b2e2468f1` was pushed centrally.
   Exact registration commit is
@@ -10258,4 +10259,38 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   This step opened no scientific input or validation GT, created no prediction,
   trained no consumer and evaluated no BTXRD test. S4 remains `ĐANG LÀM` until
   one later bounded terminal check and the predeclared audit/evaluation chain.
+- **S4 version-1 terminal GT-blind count-gate rejection:** after a fresh complete
+  coordination read/fetch, exactly one bounded status query at about
+  `2026-08-01T06:08Z` returned Kaggle terminal `ERROR`. No repeat status poll or
+  monitor was made. The UTF-8 direct log has SHA-256
+  `952251f769a5e54003e6dda95f068d86670085d2fb3f526afa0cbbd415d9c52a`
+  and proves exact checkout `1ee46bb...`, source/protocol binding, T4x2 wrapper
+  progression, focused tests `37/37`, full checkout tests `458 passed, 1
+  skipped`, and one runner invocation ending at line 603 with
+  `RuntimeError: S4 OOF teacher count/probability gate failed`.
+- The compact official inventory contains `3,004` files; all `18` JSON/CSV
+  boundary files plus the direct log were downloaded without another status
+  query. Independent local recomputation against the frozen selector cache and
+  exact five-fold assignment verifies `2,981/2,981` OOF rows, fold sizes
+  `596/596/596/596/597`, 16 training epochs per fold and zero held-out/training
+  group overlap. Absolute candidate-count/bag-probability Spearman is exactly
+  `0.5715729179616584`, versus frozen baseline `0.48137777593654113` and maximum
+  allowed `0.5013777759365411`; it fails by `0.0701951420251173`.
+- Tracked error audit
+  `artifacts/kaggle/rad_dino_mask_bag_proposal_cluster_s4_v1/kernel_version1_oof_count_gate_error_audit.json`
+  has SHA-256
+  `248663692942b2fdf996f3fd8c76674b8b4287529230a0a0d161018e577b2366`.
+  The direct bulk CLI download timed out locally after 124 seconds with 300
+  small partial files, and the first parallel compact-inventory attempt hit a
+  Windows resolved-parent race; a sequential resume completed all compact
+  evidence. These are retrieval-only boundaries and did not change the result.
+- **Error boundary/conclusion:** all five distinct group-excluded OOF teachers
+  completed using image-level labels, but the predeclared scientific shortcut
+  gate failed before train-cluster attachment, cluster-student optimizer, full
+  teacher fitting, validation scoring, prediction freeze or evaluator. There is
+  no Dice to report and no tolerance/threshold rescue or version-1 rerun is
+  permitted. S4 is terminal rejected rather than an implementation error;
+  validation GT, consumer and BTXRD test remain locked. A successor must be a
+  new non-duplicate registered hypothesis and may use this result only as
+  negative evidence against unconstrained image-label teacher probabilities.
 
