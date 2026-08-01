@@ -1,0 +1,70 @@
+{
+  "audit_id": "skelex_mask_bag_selector_s5_v1_kernel_version1_error",
+  "audited_utc": "2026-08-01T18:14:38Z",
+  "status": "IMPLEMENTATION_ERROR_BEFORE_ENCODER_LOAD_OR_TRAINING",
+  "kernel": {
+    "id": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+    "version": 1,
+    "terminal_status": "ERROR",
+    "runtime_seconds": 328.4,
+    "accelerator": "GPU T4 x2",
+    "output_bytes": 0,
+    "checkout_commit": "8abb4943a618effa50f065c54f06cf43ab79b910",
+    "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+    "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+    "wrapper_sha256": "519732f8895981979b71a66d8c3aeeab23ffce00fda023584522b0a0b72e1607",
+    "direct_log_sha256": "fa3fed30b31c304f86fe3ab442aa8e07b80382cf1bceb658a1b7b5953e5239b0",
+    "direct_log_bytes": 7520,
+    "direct_log_lines": 32
+  },
+  "passed_before_failure": {
+    "exact_git_checkout": true,
+    "scientific_source_ancestry": true,
+    "t4x2_guard": true,
+    "public_skelex_snapshot_download_and_hash_guard": true,
+    "python_compile": true,
+    "synthetic_and_evaluator_tests": "24 passed in 9.43s",
+    "frozen_split_reconstruction": true,
+    "dataset_and_candidate_transport_discovery": true,
+    "baseline_and_selector_cache_transport_discovery": true,
+    "scientific_recipe_guard": true,
+    "public_skelex_snapshot_verification": true,
+    "selector_cache_freeze_verification": true,
+    "frozen_train_val_cohort_guard": true,
+    "train_val_candidate_manifest_audit": true,
+    "selector_cache_record_load": true
+  },
+  "failure": {
+    "boundary": "explicit transformers version guard after all transport/manifests/cache records were verified, but before ViT-MAE from_pretrained, radiograph opening, SKELEX descriptor extraction, MIL training, scoring, prediction freeze or evaluation",
+    "exception": "RuntimeError: S5 transformers version mismatch",
+    "expected_transformers_version": "4.50.2",
+    "observed_transformers_version": "not printed by the v1 guard and therefore not asserted by this audit",
+    "root_cause": "The S5 wrapper omitted installation of the protocol-pinned transformers==4.50.2 and relied on the mutable Kaggle base image. The runner correctly failed closed when the ambient version differed.",
+    "classification": "implementation-only environment packaging omission; recurrence of the already documented failure mode at RESEARCH_LOG.md section 2026-07-26 RAD-DINO dense-MIL probe v1 environment error",
+    "scientific_result_produced": false
+  },
+  "access_and_safety": {
+    "radiographs_opened": false,
+    "validation_prediction_created": false,
+    "prediction_pair_frozen": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "authorized_correction": {
+    "method": "Install transformers==4.50.2 with no cache before static tests and scientific execution, set TOKENIZERS_PARALLELISM=false, and preserve the fail-closed runtime version guard.",
+    "scientific_source_commit_unchanged": true,
+    "protocol_sha256_unchanged": true,
+    "split_gallery_recipe_and_evaluator_unchanged": true,
+    "new_research_mechanism": false
+  },
+  "local_retrieval": {
+    "method": "authenticated in-app Kaggle Logs tab because the local Kaggle CLI credential was unavailable",
+    "raw_log_path": "tmp/kaggle/skelex_s5_v1_terminal_error_20260802/kernel.log",
+    "raw_log_tracked": false,
+    "local_copy_sha256": "2e52730f45ca041069198fc354062ece8a02583dde3f0dd11fd38a3cee1cbdbf",
+    "local_copy_bytes": 7521,
+    "normalization": "The local text copy has one terminal LF added by apply_patch; the direct Kaggle data payload hash and byte count above exclude that added LF."
+  }
+}

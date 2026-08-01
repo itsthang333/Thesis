@@ -11992,3 +11992,44 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prediction-freeze/audit result hay validation GT/Dice. BTXRD test và mọi
   consumer kế nhiệm tiếp tục khóa.
 
+### S5 kernel version 1 — LỖI môi trường trước encoder/training (2026-08-02)
+
+- `EXP-20260802-codex-s5-skelex-selector-v1`, kernel private
+  `itsthang333/btxrd-skelex-mask-bag-selector-s5-v1` version 1, đã terminal
+  **LỖI** sau `328.4 s` trên đúng `GPU T4 x2`; Kaggle báo `Output 0 B`.
+  Direct Logs payload có `7,520` byte/`32` dòng, SHA-256
+  `fa3fed30b31c304f86fe3ab442aa8e07b80382cf1bceb658a1b7b5953e5239b0`.
+  Do credential Kaggle CLI cục bộ không còn hợp lệ, log của chính kernel S5
+  được đọc read-only qua phiên Kaggle đã đăng nhập trong in-app browser; không
+  list/download/audit bất kỳ output/kernel nào của collaborator.
+- Boundary chính xác: checkout `8abb4943a618effa50f065c54f06cf43ab79b910`,
+  ancestry scientific source `61927cc84ef2340768ea37f9686bf8036c81db30`,
+  T4x2, public SKELEX snapshot/hash, `py_compile`, `24 passed in 9.43s`, split,
+  train/val candidate manifests, accepted baseline, selector-cache freeze và
+  cache records đều qua guard. Runner sau đó dừng tại dòng 472, trước
+  `ViTMAEForPreTraining.from_pretrained`, với
+  `RuntimeError: S5 transformers version mismatch`.
+- Root cause là omission đóng gói implementation-only: protocol/source pin
+  `transformers==4.50.2`, nhưng wrapper S5 v1 không cài pin này và phụ thuộc
+  mutable Kaggle base image. Guard đã fail-closed đúng; log v1 không in ambient
+  version nên audit không suy đoán giá trị thực tế. Đây là tái diễn failure mode
+  đã được ghi ở mục `2026-07-26 - RAD-DINO dense-MIL probe v1 environment
+  error`, vì vậy là regression kỹ thuật có thể tránh, không phải bằng chứng âm
+  cho SKELEX hay selector hypothesis.
+- Không radiograph nào được mở, không encoder inference/descriptor/training,
+  không validation prediction/pair freeze, không validation GT, không consumer
+  và không BTXRD test; version 1 không tạo scientific result/Dice. Raw local copy
+  được giữ ignored tại
+  `tmp/kaggle/skelex_s5_v1_terminal_error_20260802/kernel.log`; copy này thêm một
+  terminal LF nên có SHA-256
+  `2e52730f45ca041069198fc354062ece8a02583dde3f0dd11fd38a3cee1cbdbf`
+  và `7,521` byte. Error audit tracked tại
+  `artifacts/kaggle/skelex_mask_bag_selector_s5_v1/kernel_version1_error_audit.json`,
+  SHA-256
+  `329ad59b715677f7b4aa11c9644234fc5cf7f65dd2da140c119b058c2c629683`.
+- Correction được phép chỉ là cài exact `transformers==4.50.2` với no-cache
+  trước tests/execution, đặt `TOKENIZERS_PARALLELISM=false`, và giữ nguyên guard.
+  Scientific source commit, protocol SHA, SKELEX weights, split/gallery/cache,
+  recipe, arms, freeze/audit/evaluator đều bất biến. Theo rule, chưa sửa hoặc
+  rerun trước khi bản ghi `LỖI` này được commit và push lên branch điều phối.
+
