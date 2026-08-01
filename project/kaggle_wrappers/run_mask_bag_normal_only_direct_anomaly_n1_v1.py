@@ -15,7 +15,7 @@ import sys
 import zipfile
 
 
-KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1"
+KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-normal-anomaly-n1-v1"
 KERNEL_VERSION = 0
 LAUNCH_BINDING_READY = False
 CHECKOUT_COMMIT = "UNBOUND"
@@ -26,7 +26,7 @@ PROTOCOL_RELATIVE = Path(
 )
 PROTOCOL_SHA256 = "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d"
 AUDITOR_RELATIVE = Path("project/audit_mask_bag_normal_only_direct_anomaly_n1_output.py")
-AUDITOR_SHA256 = "5b8e239793e2816839e2b74e80b077d619eb9650f49073df1038ce5b648b56ee"
+AUDITOR_SHA256 = "562a3d4bce2ed8e27cc11147577fbca9600c2b19273c16ce1970d1f3faddfdf1"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 GIT_SPLIT_SHA256 = "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
 CACHE_FREEZE_SHA256 = "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c"

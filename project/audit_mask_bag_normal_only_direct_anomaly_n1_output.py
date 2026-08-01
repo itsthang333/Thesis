@@ -18,7 +18,7 @@ import numpy as np
 
 
 EXPERIMENT_ID = "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1"
-KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1"
+KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-normal-anomaly-n1-v1"
 SOURCE_COMMIT = "c7ba620ce4492485ba0faa6dd42998e267be872d"
 PROTOCOL_SHA256 = "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"

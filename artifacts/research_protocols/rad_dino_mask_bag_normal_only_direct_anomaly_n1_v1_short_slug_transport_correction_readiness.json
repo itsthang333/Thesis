@@ -1,0 +1,31 @@
+{
+  "base_error_commit": "560aee4f0022c23a0f210c7efb4cad2444c1901b",
+  "binder_sha256": "5ae8a052e2fc4d07b687fd140bc590112e224edb95bff6b4d55a2c3242dbc603",
+  "correction": {
+    "new_kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-anomaly-n1-v1",
+    "new_slug_length": 44,
+    "old_kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1",
+    "old_slug_length": 56,
+    "transport_only": true
+  },
+  "error_audit_sha256": "bcca2138a6793729266ca679b48cf7de2d13facc7f61164dc8db621e71e977e5",
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "focused_static_tests": {
+    "passed": 16,
+    "seconds": 3.2,
+    "total": 16
+  },
+  "independent_auditor_sha256": "562a3d4bce2ed8e27cc11147577fbca9600c2b19273c16ce1970d1f3faddfdf1",
+  "protocol_sha256": "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d",
+  "recorded_at": "2026-08-01T15:45:41+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "real_cache_fit": false,
+    "scientific_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "scientific_contract_changed": false,
+  "status": "STATIC_TRANSPORT_CORRECTION_READY_FOR_COMMIT_BEFORE_REBIND",
+  "wrapper_template_sha256": "b5d7c6b90796aeb9e338ae2a1559d7fedcd7a06d23cb883f518c4da8cbc113ec"
+}

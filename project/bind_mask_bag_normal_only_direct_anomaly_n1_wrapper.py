@@ -10,16 +10,16 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "6228baf22e5b6a101ca9a9642cd404f2ec4ff944cb66bc9fb224eb66cea84868"
+TEMPLATE_SHA256 = "b5d7c6b90796aeb9e338ae2a1559d7fedcd7a06d23cb883f518c4da8cbc113ec"
 PROTOCOL_PATH = (
     "artifacts/research_protocols/"
     "rad_dino_mask_bag_normal_only_direct_anomaly_n1_v1.json"
 )
 PROTOCOL_SHA256 = "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d"
 AUDITOR_PATH = "project/audit_mask_bag_normal_only_direct_anomaly_n1_output.py"
-AUDITOR_SHA256 = "5b8e239793e2816839e2b74e80b077d619eb9650f49073df1038ce5b648b56ee"
+AUDITOR_SHA256 = "562a3d4bce2ed8e27cc11147577fbca9600c2b19273c16ce1970d1f3faddfdf1"
 SOURCE_COMMIT = "c7ba620ce4492485ba0faa6dd42998e267be872d"
-KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1"
+KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-normal-anomaly-n1-v1"
 
 
 def canonical_bytes(path: Path) -> bytes:

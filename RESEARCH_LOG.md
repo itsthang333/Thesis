@@ -11023,3 +11023,21 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Package `__pycache__` phát sinh do prelaunch compile đã chuyển vào Recycle Bin.
   Phải push error boundary này trước mọi identifier correction hoặc rerun.
 
+- **N1 short-slug transport correction ready, chưa rebind/rerun:** sau error
+  commit `560aee4` đã push, kernel identifier được rút gọn từ slug 56 ký tự
+  `btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1` xuống 44 ký tự
+  `btxrd-rad-dino-mask-bag-normal-anomaly-n1-v1`. Đây chỉ là transport metadata/
+  binding identity correction; scientific source commit, protocol SHA
+  `1112515d...`, cache/baseline/split, K32/seed42, output và evaluation gates
+  không đổi. Không tuyên bố root cause confirmed cho tới khi SaveKernel accept.
+- Vì kernel identity nằm trong independent auditor và wrapper binding, exact
+  auditor/template/binder hashes mới lần lượt là
+  `562a3d4bce2ed8e27cc11147577fbca9600c2b19273c16ce1970d1f3faddfdf1` /
+  `b5d7c6b90796aeb9e338ae2a1559d7fedcd7a06d23cb883f518c4da8cbc113ec` /
+  `5ae8a052e2fc4d07b687fd140bc590112e224edb95bff6b4d55a2c3242dbc603`.
+  `py_compile` và 16/16 test tĩnh không cần execution-checkout mới pass trong
+  3.20 giây. Correction-readiness SHA-256 là
+  `e45b15417272c03c9a027163d4cfc22b5f036df2860661ff1af5c45af03d1d98`.
+  Chưa rebind package, chưa gửi SaveKernel lần hai, chưa fit/prediction/GT/
+  consumer/test. Phải commit/push correction source trước full binder regression.
+
