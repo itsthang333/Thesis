@@ -1,0 +1,172 @@
+{
+  "protocol_id": "bas_candidate_descriptor_b1_v1",
+  "frozen_local_time": "2026-08-01T16:41:42+07:00",
+  "status": "STATIC_PREDECLARED_NO_CLAIM_NO_BINDING_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-b1-bas-candidate-descriptor-v1",
+  "scientific_role": "same-gallery class-aware positive-instance descriptor added to the audited Geometry-v3 and upstream rank pair",
+  "hypothesis": "Image-label-only BAS training supplies tumor-specific candidate hit evidence that is complementary to both Geometry-v3 and immutable upstream proposal scores, improving selector Dice without changing proposal supply.",
+  "scientific_source": {
+    "commit": "c2ef1322b6e28436b29d45b2d47459ea4b1e2dd9",
+    "design": "BAS_CANDIDATE_DESCRIPTOR_B1_DESIGN.md",
+    "collaborator_evidence_commit": "53ac916c13525946d8cfa7662857694bb6c33dde",
+    "collaborator_reference_dice": {
+      "overall": 0.28872949,
+      "small": 0.15772330,
+      "medium": 0.43522933,
+      "large": 0.38687353,
+      "status": "validation-adaptive audited mechanism evidence, not independently promoted baseline"
+    }
+  },
+  "required_inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache": {
+      "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+      "freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+      "manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+      "cohort": {"train": 2981, "validation": 371},
+      "validation_masks_bitpacked": true,
+      "validation_gt_read": false,
+      "test_evaluated": false
+    },
+    "baseline": {
+      "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+      "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+      "prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+      "source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+      "protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+    },
+    "validation_candidates": {
+      "dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1",
+      "version": 1,
+      "zip_sha256": "426fbe9cb01ce5063e7897b1b1c424ab4ce9f0310086434aec5163759422687a",
+      "manifest_sha256": "3e9396f532c793258919a1d99aa3dcef00523436c853207b8d7123e5dc133090",
+      "pseudo_manifest_sha256": "286d1fce0bcbd0f96a15b6b386ad27a0edac3500a63c5b87e16f9075d6c6320e",
+      "physical_payloads": 371
+    },
+    "imagenet_initialization": {
+      "url": "https://download.pytorch.org/models/resnet50-11ad3fa6.pth",
+      "bytes": 102540417,
+      "sha256": "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca"
+    }
+  },
+  "training": {
+    "supervision": "binary image-level normal/tumor labels only",
+    "train_images": 2981,
+    "validation_image_labels_for_operational_gate_only": 371,
+    "architecture": "official-resolution ResNet-50 BAS with output-stride-8 localization and output-stride-16 classification",
+    "input_size": 224,
+    "epochs": 100,
+    "checkpoint_selection": "fixed final epoch; no segmentation metric or early stopping",
+    "batch_size_total": 32,
+    "parallelism": "torch.nn.DataParallel over exactly two Tesla T4",
+    "augmentation": "horizontal flip only",
+    "optimizer": "SGD Nesterov",
+    "backbone_learning_rate": 0.001,
+    "body_bias_multiplier": 2,
+    "head_weight_multiplier": 10,
+    "head_bias_multiplier": 20,
+    "momentum": 0.9,
+    "weight_decay": 0.0005,
+    "loss": "full CE + 0.5 foreground CE + background/full activation ratio + 1.2 activation area",
+    "amp": true,
+    "bas_ratio_arithmetic": "float32",
+    "seed": 42,
+    "validation_segmentation_gt_used": false
+  },
+  "candidate_evidence": {
+    "inference_tta": "mean original and aligned horizontal-flip tumor localization maps",
+    "normalization": "per-image min-max with 1e-10 constant-map guard",
+    "coverage": "candidate-overlap activation mass divided by total activation mass",
+    "purity": "candidate-overlap activation mass divided by area-resampled candidate mass",
+    "bas_score": "harmonic mean of coverage and purity",
+    "candidate_gallery_changed": false,
+    "proposal_generation": false
+  },
+  "finite_arms": {
+    "transfer_control": {
+      "name": "transferred_geometry_upstream",
+      "score": "mean of tie-aware within-image percentile ranks for Geometry-v3 and immutable upstream selection score"
+    },
+    "primary_b1": {
+      "name": "three_way_geometry_upstream_bas",
+      "score": "unweighted mean of tie-aware within-image percentile ranks for Geometry-v3, upstream and BAS evidence"
+    },
+    "weight_or_threshold_alternatives": false
+  },
+  "gt_blind_operational_gate": {
+    "minimum_final_image_auroc": 0.75,
+    "minimum_sensitivity_at_0_5": 0.60,
+    "minimum_specificity_at_0_5": 0.60,
+    "minimum_tumor_nondegenerate_activation_fraction": 0.95,
+    "activation_range_threshold": 0.0001,
+    "maximum_mean_bas_upstream_rank_correlation": 0.80,
+    "minimum_three_way_changed_selection_fraction": 0.05,
+    "baseline_identity_records": 371,
+    "independent_physical_audit_required": true,
+    "on_fail": "freeze GT-blind failure, do not create/evaluate predictions, do not rerun or tune"
+  },
+  "prediction_freeze": {
+    "validation_predictions_per_arm": 371,
+    "arms_frozen_as_one_pair": true,
+    "candidate_scores": "all immutable candidate scores in cache order",
+    "map": "selected immutable candidate mask multiplied by exact accepted baseline bag probability",
+    "validation_gt_read_before_pair_freeze": false,
+    "independent_auditor": "project/audit_bas_candidate_descriptor_b1_output.py"
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "validation_cohort": {"all": 371, "tumor": 184, "normal": 187, "small": 94, "medium": 72, "large": 18},
+    "bootstrap_replicates": 10000,
+    "primary_comparison": "three_way_geometry_upstream_bas minus transferred_geometry_upstream",
+    "secondary_comparison": "three_way_geometry_upstream_bas minus accepted Geometry-v3",
+    "promotion_gate": {
+      "primary_overall_ci95_lower_bound_above_zero": true,
+      "subgroup_mean_decrease_allowed": false,
+      "complete_miss_increase_allowed": false,
+      "operational_goals": {"overall": 0.34024039, "small": 0.17895493, "medium": 0.51244178, "large": 0.49370336}
+    },
+    "consumer_authorized_only_if_full_promotion_gate_passes": true
+  },
+  "execution": {
+    "runtime": "Kaggle",
+    "accelerator": "NvidiaTeslaT4",
+    "physical_gpu_count": 2,
+    "deterministic_algorithms": true,
+    "cublas_workspace_config": ":4096:8",
+    "heavy_compute_local": false
+  },
+  "primary_sources": [
+    "https://openaccess.thecvf.com/content/CVPR2022/html/Wu_Background_Activation_Suppression_for_Weakly_Supervised_Object_Localization_CVPR_2022_paper.html",
+    "https://github.com/wpy1999/BAS",
+    "https://raw.githubusercontent.com/wpy1999/BAS/main/CUB/Model/resnet.py",
+    "https://raw.githubusercontent.com/wpy1999/BAS/main/CUB/train.py",
+    "https://raw.githubusercontent.com/wpy1999/BAS/main/CUB/utils/optimizer.py"
+  ],
+  "canonical_lf_source_hashes": {
+    "project/run_bas_candidate_descriptor_b1.py": "7ba49e38cb829fd8cdf7d20bd142713f5a9887d3011ec3e2a2b62fbe2295e20e",
+    "project/audit_bas_candidate_descriptor_b1_output.py": "81713f74a854ae5cd681302a71be266e271e64b831940a4582efe90dd7a5f55c",
+    "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/models/mask_bag_same_family_graph.py": "0c65a2bfa2ad9a190f860bf51bfdc28c8af2b03b7a4e8ec9f2327e3cfed67287",
+    "project/models/mask_bag_orbit_relation_training.py": "44ecd9c6ad1779942e9cc0df31634fd5d83204a97c7e89c75c64507d66fecf71",
+    "project/models/mask_bag_critical_relation_training.py": "b29ffc4b77680f9e9b0046238506f738cf1c855cfc2f33769726b034d6d67042",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/pseudo/candidate_diagnostics.py": "b50e789ab99a76306e45cc771c60f58fb63cbc7538630d81ed912a337777324b",
+    "project/datasets/btxrd.py": "96f5abaa7e5a0e7d2fa3a97adc261623bdb2534e76cccc8f55ec853394d24844",
+    "project/datasets/factory.py": "3278be5b0ef694e8aff796634b9ac7edd7dd0177c46ceadb2456a70160baf268",
+    "project/datasets/common.py": "21d5efb20c09cbd69989cb9dfe9b5849707d3aa8000411b9518e3bf5f8fbda96",
+    "tests/test_bas_candidate_localizer.py": "d57475ef12fb317199757a3e20e456d9373c96f2712195e53e28f0d50b776f46",
+    "tests/test_run_bas_candidate_descriptor_b1.py": "03ec652823e36612ddb473a9e0398ff5b03eb48c99ff08108da1d20a5fad720a"
+  },
+  "prohibited": [
+    "validation segmentation GT, lesion size, candidate Dice or oracle rank before pair freeze and independent audit",
+    "proposal generation or gallery modification",
+    "BAS, rank-weight, threshold, resolution, epoch or morphology sweep",
+    "consumer training before every promotion gate passes",
+    "BTXRD test access"
+  ]
+}

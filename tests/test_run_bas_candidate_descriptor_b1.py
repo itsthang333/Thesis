@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
+
 import numpy as np
 
 from project.audit_bas_candidate_descriptor_b1_output import _activation_scores, _rank
 from project.models.mask_bag_selector_cache import pack_candidate_masks
 from project.run_bas_candidate_descriptor_b1 import _score_arms
 from project.models.mask_bag_selector_cache_io import sha256_file
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_score_arms_freezes_transferred_and_three_way_borda(tmp_path) -> None:
@@ -81,3 +88,19 @@ def test_independent_auditor_reproduces_ties_and_activation_evidence() -> None:
     assert np.allclose(purity, [1.0, 0.5, 0.0])
     assert np.allclose(harmonic, [1.0, 2.0 / 3.0, 0.0])
     assert np.allclose(ranks, [1.0, 0.5, 0.0])
+
+
+def test_b1_protocol_closes_every_declared_source() -> None:
+    protocol_path = (
+        REPO_ROOT
+        / "artifacts"
+        / "research_protocols"
+        / "bas_candidate_descriptor_b1_v1.json"
+    )
+    protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+    assert protocol["status"] == "STATIC_PREDECLARED_NO_CLAIM_NO_BINDING_NO_LAUNCH"
+    assert protocol["training"]["supervision"] == "binary image-level normal/tumor labels only"
+    assert protocol["finite_arms"]["weight_or_threshold_alternatives"] is False
+    for relative, expected in protocol["canonical_lf_source_hashes"].items():
+        actual = hashlib.sha256((REPO_ROOT / relative).read_bytes()).hexdigest()
+        assert actual == expected, relative

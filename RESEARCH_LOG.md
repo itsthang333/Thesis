@@ -11256,3 +11256,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `7ba49e38cb829fd8cdf7d20bd142713f5a9887d3011ec3e2a2b62fbe2295e20e`;
   focused `11/11` vẫn pass trong 3.19 giây. Không scientific boundary nào đổi.
 
+### B1 frozen static protocol readiness (2026-08-01)
+
+- Protocol `artifacts/research_protocols/bas_candidate_descriptor_b1_v1.json`
+  đã freeze với SHA-256
+  `5b9a80c63331551ff2c4ba0140096c14fa27076e141b83129e774843a7a7fde8`
+  trên scientific-source commit
+  `c2ef1322b6e28436b29d45b2d47459ea4b1e2dd9`. Nó khóa exact split/cache/
+  baseline/candidate/ImageNet hashes, official-style 100-epoch BAS recipe,
+  transfer control, duy nhất một three-way B1 arm, GT-blind classification +
+  complementarity gates, pair prediction freeze, independent auditor, paired
+  post-freeze evaluator và no-sweep/no-consumer/no-test rules.
+- Protocol-source closure test tái hash 17 canonical file; focused primitive +
+  runner + auditor + protocol suite pass `12/12` trong 3.16 giây. Protocol hiện
+  ghi rõ `STATIC_PREDECLARED_NO_CLAIM_NO_BINDING_NO_LAUNCH`: chưa có experiment
+  registration, wrapper, Kaggle job, real training/prediction hay validation GT.
+
