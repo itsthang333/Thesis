@@ -1,0 +1,91 @@
+{
+  "stage": "rich_gallery_g1_fixed_rank_fusion_bottleneck_v3",
+  "status": "exploratory_validation_best_with_deep_failure_analysis",
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "baseline": {
+    "formula": "0.5 * percentile_rank(g1_logit) + 0.5 * percentile_rank(upstream_score)",
+    "dice": 0.28872948670665205,
+    "iou": 0.2168391812852014,
+    "subgroup_dice": {
+      "small": 0.15772329637374455,
+      "medium": 0.4352293348209193,
+      "large": 0.38687353265476676
+    },
+    "complete_misses": 49,
+    "selected_gt_area_ratio_median": {
+      "overall": 2.044808437365476,
+      "small": 14.60260210803689,
+      "medium": 1.0980762702331863,
+      "large": 0.3824165612684055
+    }
+  },
+  "gallery_oracle": {
+    "overall": 0.5282983321797708,
+    "small": 0.33187635032688717,
+    "medium": 0.730250922322223,
+    "large": 0.7462472101750204
+  },
+  "regret_decomposition": {
+    "total": 0.23956884547311869,
+    "cross_source": 0.0707963339,
+    "cross_source_fraction": 0.2955,
+    "within_selected_source": 0.1683762053,
+    "within_selected_source_fraction": 0.7029,
+    "candidate_truncation": 0.0003963
+  },
+  "top_k_oracle_dice": {
+    "1": 0.28872948670665205,
+    "3": 0.341837,
+    "5": 0.364894,
+    "10": 0.399326,
+    "20": 0.426336,
+    "50": 0.4755
+  },
+  "miss_recoverability": {
+    "misses": 49,
+    "gallery_recoverable": 49,
+    "oracle_dice_median": 0.242165,
+    "oracle_rank_median": 95,
+    "oracle_ge_0_1": 31,
+    "oracle_ge_0_3": 20,
+    "oracle_ge_0_5": 12
+  },
+  "cross_source_consensus": {
+    "decision": "retired_no_sweep",
+    "baseline_dice": 0.28872948670665205,
+    "consensus_only_dice": 0.16045251133932226,
+    "equal_fusion_dice": 0.26707272474921956,
+    "product_fusion_dice": 0.25399300977407885,
+    "root_cause": "geometric agreement ranks repeated large anatomy rather than tumor-specific evidence"
+  },
+  "decision": {
+    "primary_bottleneck": "within_source_positive_instance_ranking",
+    "secondary_bottleneck": "cross_source_calibration",
+    "extent_failure": "small lesions oversegmented, large lesions undersegmented",
+    "next_mechanism": "matched group-cross-fitted relational residual reranker with normal-bag negatives",
+    "forbidden_rescues": [
+      "threshold_sweep",
+      "resolution_sweep",
+      "seed_sweep",
+      "global_consensus_weight_sweep",
+      "source_count_routing",
+      "validation_gt_area_routing"
+    ]
+  },
+  "sha256": {
+    "bottleneck_summary": "e0228fef2b4360d766e9188e66178be5365788411a8ef6878d058850b77641a1",
+    "bottleneck_per_image": "c58a6f1afd6173ac1e99ef3b66fa290a97dc01bcf36380b6f02b0ff032574b75",
+    "bottleneck_audit": "0b005822b605461dba41bbdaed22fdca71bb8cb68341d1a24ad0f15f386bbe6d",
+    "consensus_stage_a_freeze": "30fd0bf766743a3ae9fc5bc2a2710aaa779808e9456ea7011925ae2613216641",
+    "consensus_stage_b_summary": "1a1e8020f7fb9a9290e8e253ed854f7cad2d862ba69e0a7f5a4ceef590c59d50",
+    "consensus_stage_b_per_image": "4b4a5c3c11159812037f14b0f3d4ef0b42f95feeecbf81a9939d8a1ad4641e7d"
+  }
+}

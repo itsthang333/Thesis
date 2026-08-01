@@ -1,0 +1,40 @@
+{
+  "protocol_id": "rich_gallery_cross_source_consensus_v1",
+  "purpose": "cheap post-freeze diagnostic of annotation-free positive-instance evidence on the audited rich gallery",
+  "immutable_baseline": {
+    "name": "g1_upstream_baseline",
+    "overall_dice": 0.28872948670665205,
+    "subgroup_dice": {
+      "small": 0.15772329637374455,
+      "medium": 0.4352293348209193,
+      "large": 0.38687353265476676
+    },
+    "complete_misses": 49
+  },
+  "candidate_evidence": {
+    "definition": "exact maximum mask IoU against every retained candidate from a different source",
+    "candidate_grid": "native frozen 320x320 proposal masks",
+    "same_source_pairs": "excluded",
+    "fitted_parameters": false
+  },
+  "variants": {
+    "g1_upstream_baseline": "mean of global percentile ranks of frozen G1 logit and frozen upstream score",
+    "cross_source_consensus_only": "raw exact cross-source maximum IoU",
+    "g1_upstream_consensus_equal": "equal mean of G1, upstream and consensus percentile ranks",
+    "g1_upstream_consensus_product": "geometric mean of the frozen two-score baseline and consensus percentile rank"
+  },
+  "decision": {
+    "primary": "actual binary-mask mean tumor Dice must exceed 0.28872948670665205",
+    "subgroup_noninferiority_margin": 0.02,
+    "complete_misses_must_not_exceed": 49,
+    "all_conditions_required": true,
+    "failure_action": "retire cross-source-consensus selection without weight, threshold, resolution, source or morphology sweep"
+  },
+  "safety": {
+    "choices_frozen_before_validation_polygons": true,
+    "spatial_ground_truth_used_for_selection": false,
+    "per_image_area_router": false,
+    "test_images_read": 0,
+    "test_evaluated": false
+  }
+}

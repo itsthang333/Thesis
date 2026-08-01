@@ -8152,3 +8152,63 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   remain complementary to upstream score. Full analysis is recorded in
   `RICH_GALLERY_G2_FAILURE_DOSSIER.md`. Test remains locked.
 
+### EXP-20260801-codex-rich-gallery-g1-fusion-bottleneck-v3
+
+- **Active baseline:** G1 plus fixed equal percentile-rank fusion remains the
+  best observed WSSS validation pipeline at Dice/IoU
+  `0.28872949/0.21683918`, with subgroup Dice
+  `0.15772330/0.43522933/0.38687353`. It has 49 complete misses. The result is
+  reproducible and prediction-frozen before GT, but remains exploratory
+  because the equal fusion was designed after earlier validation analysis.
+- **Exact bottleneck decomposition:** gallery oracle is
+  `0.52829833/0.33187635/0.73025092/0.74624721`. Mean selector regret is
+  `0.23956885`: cross-source regret is only `0.07079633` (29.55%), while
+  within-selected-source ranking regret is `0.16837621` (70.29%). Candidate
+  truncation regret is `0.0003963`, so retaining/generating more of the same
+  proposals is not the next justified intervention.
+- **Rank-depth evidence:** the oracle proposal has median fusion rank 32 and
+  p90 rank 138. Top-3/5/10/20/50 oracle-restricted upper-bound Dice is
+  `0.341837/0.364894/0.399326/0.426336/0.475500`. The 49 current misses are all
+  gallery-recoverable but have median oracle rank 95; 31/20/12 have oracle
+  Dice at least 0.1/0.3/0.5. A bounded top-rank reranker and deep-rank miss
+  recovery must therefore be treated as separate mechanisms.
+- **Extent evidence:** selected/GT median area ratio is
+  `2.045/14.603/1.098/0.382` overall/small/medium/large. Small lesions are
+  grossly over-segmented while large lesions are under-segmented; a shared
+  area prior, threshold or morphology rule cannot correct both directions.
+- **Source evidence:** selected external masks are strong when used (Dice
+  0.481614, 1 miss) but are underselected. Source-oracle ceilings are size
+  dependent: classifier448 is best for small (0.255548), external is best for
+  medium/large (0.637033/0.709747), and their union is best throughout. Source
+  removal or forced source balance would destroy useful complementarity.
+- **Metadata ruled out:** G1/upstream/fusion mean candidate-Dice rank
+  correlations are `0.563249/0.332841/0.529201`; SAM confidence is `0.015965`
+  and yields Dice 0.098983 with 125 misses. Cached causal scores are identically
+  zero. Prompt/source/area metadata alone cannot provide tumor identity.
+- **Full dossier:** exact tables, formulas, failure branches and literature
+  mapping are recorded in `RICH_GALLERY_G1_FUSION_BOTTLENECK_DOSSIER.md` and
+  machine-readable form in
+  `artifacts/research_handoffs/rich_gallery_g1_fusion_bottleneck_20260801.json`.
+
+### EXP-20260801-codex-rich-gallery-cross-source-consensus-v1
+
+- **Question:** can annotation-free spatial agreement across the three proposal
+  sources supply the positive candidate evidence missing from G1/G2? Four
+  fixed variants covering 371 images were frozen before validation GT:
+  baseline, consensus-only, equal G1/upstream/consensus, and product fusion.
+- **Actual result:** consensus-only Dice is `0.16045251`; equal fusion
+  `0.26707272`; product fusion `0.25399301`, all below the frozen baseline
+  `0.28872949`. Equal/product reduce complete misses from 49 to 44/41 and
+  slightly improve medium/large Dice, but small Dice falls
+  `0.157723 -> 0.106249/0.104109`.
+- **Root cause:** geometric agreement measures repeated anatomy, not tumor
+  identity. Small-lesion median selected/GT area ratio rises from 14.60 to
+  38.99/53.10. Consensus-only masks have median cross-source agreement near
+  0.966 yet Dice only 0.160453, which is direct evidence that stable bone
+  structures dominate the agreement signal.
+- **Decision:** retire global consensus and do not sweep its weight, neighbor
+  count, IoU threshold, mask scale or fusion formula. Spatial relations can be
+  reconsidered only as tumor-conditioned context inside a bounded candidate
+  neighborhood, with train-normal negative evidence and direct paired binary
+  Dice against 0.288729. Test remains locked.
+
