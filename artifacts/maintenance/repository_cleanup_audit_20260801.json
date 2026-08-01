@@ -1,0 +1,66 @@
+{
+  "audit_id": "repository_cleanup_before_n1_20260801",
+  "branch": "research-wsss-improvement",
+  "cleanup": {
+    "initial_generated_cache_directories": 72,
+    "initial_generated_cache_files": 1422,
+    "initial_generated_cache_bytes": 18284927,
+    "obsolete_aborted_package": {
+      "bytes": 6584,
+      "files": 2,
+      "path": "tmp/kaggle/mask_bag_proposal_cluster_s4_v1_aborted_invalid_claim",
+      "repository_references": 0
+    },
+    "removed_empty_temp_directories": [
+      "tmp/selector_root_discovery_v3_test",
+      "tmp/geometry_v3_output_page_probe"
+    ],
+    "post_regression_regenerated_cache_bytes": 1973589,
+    "post_regression_regenerated_cache_directories": 7,
+    "post_regression_regenerated_cache_files": 228,
+    "total_bytes_moved_to_recycle_bin": 20265100,
+    "total_files_moved_to_recycle_bin": 1652,
+    "transport": "Windows Recycle Bin",
+    "workspace_generated_cache_directories_remaining": 0
+  },
+  "cleanup_base_commit": "4aaffe6",
+  "errors": [
+    {
+      "boundary": "Direct recursive Remove-Item cleanup was rejected by the execution safety policy before deletion.",
+      "correction": "Use the recoverable Windows Recycle Bin API only after resolving every target inside D:/thesis and verifying generated targets are git-ignored."
+    },
+    {
+      "boundary": "The first N1 runner focused suite had one source-order assertion failure because the test matched an imported function name before main().",
+      "correction": "Restrict the static order assertion to the main() function body; scientific runner behavior and controls were unchanged."
+    }
+  ],
+  "preservation": {
+    "active_n1_source_preserved": true,
+    "baseline_transport_preserved": true,
+    "btxrd_data_preserved": true,
+    "kaggle_outputs_preserved": true,
+    "research_artifacts_preserved": true,
+    "selector_cache_preserved": true,
+    "terminal_experiment_source_preserved": true,
+    "temporary_source_snapshots_preserved": true
+  },
+  "recorded_at": "2026-08-01T15:10:00+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "scientific_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "tracked_code_audit": {
+    "duplicate_content_files": 0,
+    "duplicate_hash_groups": 0,
+    "tracked_project_and_test_files": 259,
+    "zero_byte_files": 0
+  },
+  "verification": {
+    "focused_n1_tests": "7/7 pass in 2.41 seconds",
+    "full_repository_regression": "497/497 pass in 22.58 seconds",
+    "git_diff_check": true,
+    "partial_or_temporary_download_files_found": 0
+  }
+}

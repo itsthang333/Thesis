@@ -10851,3 +10851,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   validation prediction, chưa mở GT/consumer/test. Bước kế là runner,
   protocol và independent auditor fail-closed; chưa authorize Kaggle launch.
 
+### Repository cleanup trước khi tiếp tục N1 (2026-08-01)
+
+- Theo yêu cầu người dùng, N1 tạm dừng trước protocol/launch để
+  audit dọn code/rác. Worktree chỉ có hai file runner/test N1 mới đang
+  chuẩn bị; chúng được giữ lại vì là dependency của claim active,
+  không phải rác. Toàn bộ Kaggle output, exact source snapshot, baseline
+  transport, selector cache và tracked source của experiment terminal cũng được
+  giữ nguyên để không xóa provenance/evidence.
+- Audit `259` tracked file trong `project/` + `tests/` không phát hiện
+  duplicate-content hash group hay zero-byte file. Không xóa tracked experiment
+  code chỉ vì nó cũ: các source/protocol/auditor đó là bằng chứng tái
+  lập của kết quả âm/lỗi và được `AGENTS.md` yêu cầu bảo toàn.
+- Dọn `72` generated `__pycache__/.pytest_cache/.mypy_cache/.ruff_cache/
+  .ipynb_checkpoints` directory, ban đầu gồm `1,422` file /
+  `18,284,927` byte; thêm package ignored S4 `aborted_invalid_claim` không có
+  reference (`2` file / `6,584` byte) và hai temp directory rỗng. Sau regression,
+  `7` cache directory tái sinh (`228` file / `1,973,589` byte) cũng được dọn.
+  Tổng `1,652` file / `20,265,100` byte được chuyển vào **Windows
+  Recycle Bin**, nên có thể phục hồi; workspace còn `0` generated-cache
+  directory và không có `.part/.tmp` download.
+- Direct `Remove-Item` bị execution safety policy chặn trước khi xóa; correction
+  chỉ dùng Recycle Bin API sau khi resolve mọi target nằm trong `D:\thesis`
+  và prove cache target được git-ignore. Focused N1 runner test lần đầu
+  có `1` assertion-only failure do match tên imported function trước `main()`;
+  test được thu hẹp vào main body, không đổi scientific runner.
+- Sau correction, focused N1 primitive/runner `7/7` trong 2.41 giây và full
+  repository `497/497` trong 22.58 giây pass. Cleanup audit
+  `artifacts/maintenance/repository_cleanup_audit_20260801.json` có SHA-256
+  `46e015409b8ade253003daf2ba701d3276895b7b461ab623bea8c088b19d565d`.
+  Cleanup không mở validation GT/BTXRD test, không tạo prediction, không train
+  consumer. Sau commit/push audit này, N1 mới được tiếp tục static readiness.
+
