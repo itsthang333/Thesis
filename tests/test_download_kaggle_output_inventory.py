@@ -30,6 +30,20 @@ def test_safe_target_rejects_absolute_and_escape_paths(tmp_path: Path) -> None:
     ).resolve()
 
 
+def test_nested_targets_can_be_precreated_before_parallel_download(tmp_path: Path) -> None:
+    module = _load_module()
+    items = [
+        module.OutputItem(relative=f"fold_{fold}/scores/{row}.npz", url="unused")
+        for fold in range(5)
+        for row in range(4)
+    ]
+    targets = [module.safe_target(tmp_path, item.relative) for item in items]
+    for target in targets:
+        target.parent.mkdir(parents=True, exist_ok=True)
+    assert all(target.parent.is_dir() for target in targets)
+    assert len({target.parent for target in targets}) == 5
+
+
 def test_download_is_atomic_and_skips_existing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

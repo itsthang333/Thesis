@@ -10293,6 +10293,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   validation GT, consumer and BTXRD test remain locked. A successor must be a
   new non-duplicate registered hypothesis and may use this result only as
   negative evidence against unconstrained image-label teacher probabilities.
+- **Full S4 error-output preservation after compact conclusion:** responding to
+  the observation that the output itself is small, the generic official
+  inventory downloader was corrected for a Windows concurrent parent-resolve
+  race by validating and creating all parent directories sequentially before
+  workers start. Downloader/test SHA-256 values are
+  `82d62afd036c5a6f63b773848ebf0df103cf5e0efe0b9e0500997effb4a4a96a` /
+  `80c506edd0985fe72efd803dd270217b80f9467ef333217692abe1ecead54916`;
+  focused tests pass `4/4` and full regression passes `471/471` in 19.73 seconds.
+- Without another Kaggle status query, the corrected downloader resumed and a
+  final inventory-only pass confirmed exact `3,004/3,004` official files,
+  `12,506,968` bytes, zero partial files and `0` remaining downloads. Independent
+  physical verification opens all five OOF checkpoints/histories/manifests and
+  all `2,981` candidate-score NPZ payloads (`12,469,175` verified OOF bytes),
+  checks every locked hash/schema/dtype, reconstructs conservative logits as the
+  exact original/flip minimum, proves zero group overlap and recomputes the same
+  failed Spearman `0.5715729179616584`.
+- Full physical retrieval audit
+  `artifacts/kaggle/rad_dino_mask_bag_proposal_cluster_s4_v1/kernel_version1_full_oof_physical_retrieval_audit.json`
+  has SHA-256
+  `de4c1f07cffc094a548df7e2b04b79de07d0bc4ced68b0b96aeb65051be38d5e`.
+  This strengthens preservation/auditability only: the S4 terminal rejection,
+  no-Dice boundary and all GT/consumer/test locks are unchanged.
 
 ### EXP-20260801-codex-t1-count-controlled-self-paced-v1
 

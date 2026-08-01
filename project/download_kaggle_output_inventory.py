@@ -140,6 +140,13 @@ def main() -> None:
     args.destination.mkdir(parents=True, exist_ok=True)
     items, log, slug = list_official_output(args.kernel)
     selected = select_items(items, include)
+    # On Windows, resolving and creating the same not-yet-existing parent from
+    # multiple worker threads can race. Validate every target and materialize
+    # its parent sequentially before starting any download worker.
+    for item in selected:
+        safe_target(args.destination, item.relative).parent.mkdir(
+            parents=True, exist_ok=True
+        )
     outcomes = {"existing": 0, "downloaded": 0}
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [

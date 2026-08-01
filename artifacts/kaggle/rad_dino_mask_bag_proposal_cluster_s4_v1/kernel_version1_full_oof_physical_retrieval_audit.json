@@ -1,0 +1,67 @@
+{
+  "audit_id": "independent_mask_bag_proposal_cluster_s4_v1_full_oof_physical_retrieval_v1",
+  "created_utc": "2026-08-01T06:38:40Z",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "status": "FULL_ERROR_OUTPUT_OOF_PAYLOADS_PHYSICALLY_VERIFIED_GT_BLIND_COUNT_GATE_FAIL",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-proposal-cluster-s4-v1",
+  "kernel_version": 1,
+  "compact_error_audit_sha256": "248663692942b2fdf996f3fd8c76674b8b4287529230a0a0d161018e577b2366",
+  "official_inventory": {
+    "files": 3004,
+    "bytes": 12506968,
+    "existing_on_final_resume": 3004,
+    "downloaded_on_final_resume": 0,
+    "partial_files": 0,
+    "status_queried": false
+  },
+  "physical_oof_verification": {
+    "score_payloads": 2981,
+    "bytes": 12469175,
+    "teacher_checkpoints": 5,
+    "training_histories": 5,
+    "score_manifests": 5,
+    "fold_audits": 5,
+    "fold_rows": [
+      596,
+      596,
+      596,
+      596,
+      597
+    ],
+    "group_overlap_each_fold": 0,
+    "candidate_index_dtype": "int32",
+    "candidate_logit_dtype": "float32",
+    "conservative_seed_is_exact_original_flipped_minimum": true,
+    "all_payload_hashes_match_locked_manifests": true
+  },
+  "recomputed_gate": {
+    "records": 2981,
+    "absolute_candidate_count_probability_spearman": 0.5715729179616584,
+    "maximum_allowed": 0.5013777759365411,
+    "count_gate_pass": false
+  },
+  "provenance": {
+    "selector_cache_metadata_bytes_verified": 746146,
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "crossfit_assignment_sha256": "84ed881e982fbc70fa50129dafabf638dc6e2a864c0ebb60d5e3c2b512d9eeb8",
+    "crossfit_row_payload_sha256": "407be430a6aa4408e1baf961ce0cd8eb55e6fe06b34640ceecb3bdfe0cb67ec5",
+    "full_teacher_group_exclusion_audit_sha256": "0f4d138587329608a4e39e2fc2f2c0a4a6bc7ae9a3b5cdeff6e14f7663d8c4bc",
+    "oof_coverage_audit_sha256": "2861e0da884e3e2a3ea24942d3254072042345070904ae76a50145e554f338e9",
+    "direct_log_sha256": "952251f769a5e54003e6dda95f068d86670085d2fb3f526afa0cbbd415d9c52a"
+  },
+  "retrieval_tool_correction": {
+    "cause": "Windows concurrent resolve/create race for not-yet-existing nested output parents",
+    "correction": "validate every official relative path and pre-create its parent sequentially before starting download workers",
+    "downloader_sha256": "82d62afd036c5a6f63b773848ebf0df103cf5e0efe0b9e0500997effb4a4a96a",
+    "downloader_test_sha256": "80c506edd0985fe72efd803dd270217b80f9467ef333217692abe1ecead54916",
+    "focused_tests": "4/4 PASS",
+    "full_repository_tests": "471/471 PASS",
+    "full_repository_seconds": 19.73,
+    "scientific_source_or_output_changed": false
+  },
+  "scientific_conclusion_changed": false,
+  "validation_prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
