@@ -11695,3 +11695,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chỉ sau khi các audit tĩnh pass và fetch/collision check mới đăng ký
   `EXP-20260801-codex-b4-same-gallery-bas-semantic-v1` là `ĐANG LÀM` rồi launch.
 
+### B4 prelaunch validation-GT boundary correction (2026-08-01)
+
+- Static wrapper review phát hiện shared `BTXRDClassificationDataset` gọi loader
+  integrity chung; loader này hash file `Annotations/*.json` khi manifest có
+  `annotation_sha256`. Mask không đi vào loss, nhưng đọc/hash `184` validation
+  annotation trước prediction freeze vẫn vi phạm protocol. Phát hiện xảy ra
+  trước wrapper/claim/data/Kaggle, nên không có leakage khoa học thực tế.
+- Không sửa loader lịch sử và không tái sử dụng implementation BAS của cộng tác
+  viên. B4 nay có adapter riêng `project/datasets/btxrd_image_label_only.py`:
+  chỉ đọc exact split manifest, nhãn ảnh train/val và radiograph đã xác minh
+  SHA-256; không resolve/open/hash annotation và từ chối split `test`. B4 runner
+  bind adapter này trước khi gọi reusable training core; architecture, loss,
+  gallery, hai arm và mọi hyperparameter khoa học không đổi.
+- Hai regression test mới chứng minh adapter đọc được radiograph/nhãn ảnh khi
+  thư mục `Annotations` không tồn tại và fail-closed với split `test`. Focused
+  safety+B4 suite pass `16/16`; `py_compile` và `git diff --check` pass. Đây là
+  implementation/safety correction tĩnh, chưa mở real data/cache/image/GT,
+  chưa train/prediction/consumer/test và không heavy compute local.
+- Protocol B4 v1 SHA `814f5ca3...df1` được giữ nguyên như bằng chứng preclaim
+  nhưng sẽ bị supersede trước launch vì source commit của nó chưa có adapter
+  an toàn. Phải commit/push source correction, phát hành protocol v2 đóng băng
+  lại exact source hashes, rồi mới tiếp tục wrapper/binding/claim.
+

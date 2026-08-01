@@ -29,6 +29,14 @@ This execution uses only central same-gallery artifacts owned by `itsthang333`.
 Collaborator outputs, checkpoints, predictions and Kaggle access are not read;
 the published metrics and architecture are trusted as requested.
 
+The B4 runtime uses a dedicated image-label-only dataset adapter. It reads the
+frozen manifest, verified train/validation radiographs and binary image labels,
+but never resolves, opens or hashes an `Annotations` file. This is required
+because the shared historical classification constructor also verifies
+annotation hashes as a general dataset-integrity check, which would cross the
+validation-GT boundary before prediction freeze even though mask values never
+enter its loss.
+
 ## One new scientific variable
 
 B4 trains an ImageNet-initialized ResNet-50 Background Activation Suppression

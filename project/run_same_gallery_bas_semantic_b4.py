@@ -19,6 +19,9 @@ import torch
 from torch.utils.data import DataLoader
 
 import run_bas_candidate_descriptor_core as base
+from datasets.btxrd_image_label_only import (
+    build_image_label_only_classification_dataset,
+)
 
 
 EXPERIMENT_ID = "EXP-20260801-codex-b4-same-gallery-bas-semantic-v1"
@@ -293,6 +296,7 @@ def main() -> None:
     base.MAXIMUM_CORRELATION = 0.95
     base.MINIMUM_CHANGE_FRACTION = 0.05
     base.EXTRA_PROVENANCE = EXTRA_PROVENANCE
+    base.build_classification_dataset = build_image_label_only_classification_dataset
     base._score_arms = _score_arms
     base._validation_activations = _validation_activations
     base.main()
