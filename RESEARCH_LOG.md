@@ -11272,3 +11272,65 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   ghi rõ `STATIC_PREDECLARED_NO_CLAIM_NO_BINDING_NO_LAUNCH`: chưa có experiment
   registration, wrapper, Kaggle job, real training/prediction hay validation GT.
 
+### Đồng bộ rich-gallery `0.28872949` và supersede B1 trước claim (2026-08-01)
+
+- Đã fetch và đọc toàn bộ `RESEARCH_LOG.md` của
+  `origin/codex/research-sync-20260731` tại commit
+  `d849155e49372c2027a1168fbe4a0b68e199470d`, gồm toàn bộ dossier
+  `RICH_GALLERY_G1_FUSION_BOTTLENECK_DOSSIER.md`, handoff máy đọc được và
+  protocol consensus mới. Không có claim B1 cạnh tranh; workstream cộng tác đã
+  hoàn tất thêm hai phân tích terminal sau G2.
+- Kết quả tốt nhất đã quan sát vẫn là lựa chọn rich-gallery theo trung bình hai
+  percentile-rank G1 và upstream: Dice/IoU
+  `0.28872949/0.21683918`, subgroup Dice
+  `0.15772330/0.43522933/0.38687353`, `49` complete misses. Toàn bộ `371`
+  choice đã freeze trước validation polygon và tái lập được, test read/evaluate
+  bằng `0`; tuy nhiên đây vẫn là exploratory validation best vì rule equal-rank
+  được thiết kế sau một Stage-B validation trước đó, không phải confirmatory
+  endpoint độc lập.
+- Gallery oracle đạt `0.52829833/0.33187635/0.73025092/0.74624721`. Selector
+  regret `0.23956885` được phân rã thành cross-source `0.07079633` (`29.55%`),
+  within-selected-source `0.16837621` (`70.29%`) và truncation chỉ `0.0003963`.
+  Oracle trong top-3/5/10/20/50 của ordering hiện tại cho upper-bound Dice
+  `0.341837/0.364894/0.399326/0.426336/0.475500`; cả `49` miss đều có proposal
+  tốt hơn trong gallery nhưng oracle rank median là `95`. Vì vậy next mechanism
+  phải thêm tumor-specific positive-instance evidence; tạo/giữ thêm cùng loại
+  proposal hoặc chỉ rerank top-k không giải quyết toàn bộ miss branch.
+- Global cross-source consensus đã terminal-reject: consensus-only/equal/product
+  đạt Dice `0.16045251/0.26707272/0.25399301`, đều thấp hơn `0.28872949`.
+  Equal/product giảm miss `49 -> 44/41` nhưng small Dice giảm
+  `0.157723 -> 0.106249/0.104109`; small selected/GT area ratio tăng
+  `14.60 -> 38.99/53.10`. Agreement gần `0.966` chủ yếu đo giải phẫu xương lặp
+  lại, không phải tumor identity. Không adopt và không sweep consensus.
+- Bằng chứng dương được adopt là **rich proposal union + fixed G1/upstream rank
+  pair**; bằng chứng âm G2/consensus chỉ dùng để loại hypothesis. Protocol tĩnh
+  `bas_candidate_descriptor_b1_v1` SHA-256
+  `5b9a80c63331551ff2c4ba0140096c14fa27076e141b83129e774843a7a7fde8`
+  vì thế được supersede trước claim/launch: không chạy nguyên trạng trên old
+  gallery/baseline thấp hơn. Successor B1 sẽ giữ BAS image-label-only như một
+  tumor-specific residual descriptor nhưng phải score chính rich gallery và so
+  trực tiếp với fixed G1/upstream baseline `0.28872949`; không regenerate/copy
+  G0/G1/G2, không source-presence routing và không dùng GT-derived per-image
+  table trước prediction freeze.
+- Artifact boundary để successor có thể launch mà không lặp compute là một
+  transport GT-blind từ workstream `wanwin`: exact train/validation candidate
+  payloads+manifests, G1 checkpoint, G1 frozen selection manifest, upstream
+  scores, source/protocol/split hashes và audit xác nhận không chứa validation
+  segmentation GT/test. Chỉ chuẩn bị adapter/unit test tĩnh được phép trước khi
+  transport này tồn tại và được audit; không mở claim hoặc launch trên dữ liệu
+  thật trong entry này.
+- Cơ sở phương pháp đã đối chiếu lại: Wu et al., *Background Activation
+  Suppression for Weakly Supervised Object Localization*, CVPR 2022,
+  https://openaccess.thecvf.com/content/CVPR2022/html/Wu_Background_Activation_Suppression_for_Weakly_Supervised_Object_Localization_CVPR_2022_paper.html;
+  Tang et al., OICR, CVPR 2017,
+  https://openaccess.thecvf.com/content_cvpr_2017/html/Tang_Multiple_Instance_Detection_CVPR_2017_paper.html;
+  Tang et al., PCL, TPAMI/arXiv `1807.03342`,
+  https://arxiv.org/abs/1807.03342; Wan et al., C-MIL, CVPR 2019,
+  https://openaccess.thecvf.com/content_CVPR_2019/html/Wan_C-MIL_Continuation_Multiple_Instance_Learning_for_Weakly_Supervised_Object_Detection_CVPR_2019_paper.html;
+  và Choe et al., *Evaluating Weakly Supervised Object Localization Methods
+  Right*, CVPR 2020,
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html.
+  OICR/PCL/C-MIL ủng hộ refinement theo instance/cluster nhưng consensus âm và
+  miss rank sâu cấm neo mù vào top-1/overlap; BAS được giữ vì trực tiếp thêm bản
+  đồ class-aware, còn mọi choice vẫn phải freeze trước evaluator.
+
