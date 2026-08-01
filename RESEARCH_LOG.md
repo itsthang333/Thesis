@@ -10761,3 +10761,76 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Bước tiếp theo là sync terminal evidence với nhánh cộng tác và
   chọn successor selector/aggregation không trùng, không rerun T1.
 
+### EXP-20260801-codex-n1-normal-only-direct-anomaly-v1
+
+- **Owner/registered/status:** Codex main task trên `research-wsss-improvement`;
+  đăng ký `2026-08-01T14:57:11+07:00`; trạng thái `ĐANG LÀM`.
+  Registration base là terminal-T1 commit
+  `a496bf1c184beece7c794e1f504a568cc175b755`; exact claim commit sẽ được
+  ghi sau khi note này được push. Chưa có N1 source/protocol/fit/prediction.
+- **Coordination audit:** đã fetch central và collaborator. Collaborator head
+  vẫn là `f22700be9f74aaa560e0da95326d318f29c9a59b`; G1 terminal official
+  `0.20602633/0.10958465/0.30070545/0.33094975` xấu hơn same-gallery
+  Geometry-v3, exploratory fusion `0.28872949/...` không đủ audit/adoption,
+  còn G2 là claim rich-gallery source-balanced MIL đang làm và chưa có
+  terminal metric. N1 không dùng rich gallery, external proposals, G1/G2
+  logits/checkpoints/fusion/objective và không chạy cạnh tranh G2.
+- **Inherited evidence, not adopted success:** N1 tham chiếu terminal rejected
+  `EXP-20260731-codex-r1-normal-prototype-v1` error-audit SHA-256
+  `833c4814eee0891df1cd55a01fa008e0708ad3485dd30b730657f52508317719`
+  và `EXP-20260801-codex-t1-count-controlled-self-paced-v1` decision SHA-256
+  `71e6e10381e97f7fdeafe36bbba3954d6b64f52b83a3876d7097380fe1bcf93f`.
+  R1 cho thấy learned MIL residual trên normal-prototype features làm count
+  shortcut tăng; T1 chứng minh gỡ shortcut có thể pass nhưng selector regret
+  vẫn xấu hơn. Không mechanism nào được relabel là improvement.
+- **New hypothesis/scope:** tách hẳn classification khỏi candidate ranking.
+  Fit duy nhất một weighted spherical `K=32` nominal bank trên original +
+  aligned-flip 1,156-D candidate descriptors của **train image-label-normal**;
+  mỗi normal image có equal mass, sau đó equal family mass và equal
+  candidate/view mass. Candidate score là mean original/flip nearest-prototype
+  cosine distance; không BCE, positive pseudo-instance, residual, SmoothMax,
+  learned selector hay threshold. Candidate có anomaly distance cao nhất được
+  chọn. `K=32` là fixed largest bank trong finite R1 design để cover normal
+  heterogeneity; không sweep/chọn bằng validation GT hoặc Dice.
+- **Classification/selection decoupling:** all 371 bag logits/probabilities giữ
+  exact accepted Geometry-v3 values; chỉ selected candidate/map thay đổi. Map
+  là selected immutable bit-packed mask nhân exact accepted bag probability.
+  Vì vậy image AUROC và count/probability Spearman phải reproduce baseline
+  exact, còn all-candidate anomaly scores có contract riêng và không được
+  diễn giải như classification logits. Đây là causal test mới của
+  normal-only direct anomaly ranking, không lặp learned residual R1.
+- **Primary technical source:** Roth et al., *Towards Total Recall in Industrial
+  Anomaly Detection* (PatchCore), CVPR 2022,
+  https://openaccess.thecvf.com/content/CVPR2022/html/Roth_Towards_Total_Recall_in_Industrial_Anomaly_Detection_CVPR_2022_paper.html.
+  Chỉ transfer nguyên tắc nominal-feature memory/prototype bank và nearest
+  feature-distance anomaly scoring; không transfer industrial benchmark,
+  ImageNet encoder, pixel threshold, coreset ratio hay claimed performance.
+- **Exact inputs:** selector-cache kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1`, freeze SHA-256
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
+  manifest `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`;
+  split `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  accepted baseline checkpoint/freeze
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069` /
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`.
+  Gallery/order/family/mask geometry/evaluator không đổi; oracle vẫn
+  `0.40907553/0.22274949/0.59414708/0.64182537`.
+- **Compute/protocol/gates:** static/synthetic implementation và tests local;
+  mọi fit/scoring trên real cache chỉ chạy trong một Kaggle T4x2 hoặc P100
+  job sau khi source/protocol/wrapper/binding fail-closed được push. Trước
+  GT, independent auditor phải prove normal-only fit cohort/weights, exact
+  K/prototypes, original/flip arithmetic, all 371 score payloads/maps, exact
+  baseline probabilities/AUROC/count association và prediction freeze.
+  Common evaluator sau freeze dùng exact corrected baseline per-image
+  `a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f`,
+  10,000 complete-group bootstrap và fixed seed mới. Mechanism pass vẫn yêu
+  cầu regret giảm trong ít nhất hai tumor subgroup, overall Dice không giảm
+  và count/miss association không tăng. Full adoption/consumer cần đủ
+  `0.34024039/0.17895493/0.51244178/0.49370336`, positive overall CI95 lower
+  bound, không subgroup decrease/miss increase và AUROC `>=0.75`.
+- **Safety:** training chỉ image-level normal label; không validation GT,
+  candidate Dice/oracle rank/subgroup/lesion-size routing trong fit/scoring;
+  prediction phải freeze vật lý trước GT. Không train downstream consumer
+  trước full operational pass; BTXRD test khóa. Fail thì reject N1, không
+  sweep K/blend/threshold hoặc post-hoc rescue.
+
