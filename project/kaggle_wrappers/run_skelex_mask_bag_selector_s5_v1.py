@@ -16,9 +16,9 @@ from urllib.request import urlopen
 
 
 KERNEL = "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1"
-KERNEL_VERSION = 1
-LAUNCH_BINDING_READY = True
-CHECKOUT_COMMIT = "8abb4943a618effa50f065c54f06cf43ab79b910"
+KERNEL_VERSION = 0
+LAUNCH_BINDING_READY = False
+CHECKOUT_COMMIT = "UNBOUND"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "61927cc84ef2340768ea37f9686bf8036c81db30"
 PROTOCOL_RELATIVE = Path("artifacts/research_protocols/skelex_mask_bag_selector_s5_v1.json")
@@ -48,6 +48,7 @@ SKELEX_FILES = {
     "model.safetensors": "81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8",
 }
 SKELEX_WEIGHT_BYTES = 1_318_230_232
+EXPECTED_TRANSFORMERS_VERSION = "4.50.2"
 ARMS = (
     "geometry_v3_plus_upstream_equal_rank",
     "geometry_v3_plus_upstream_plus_skelex_equal_rank",
@@ -128,6 +129,34 @@ def verify_t4x2() -> dict[str, object]:
     return {"cuda_device_count": 2, "cuda_device_names": names, "real_convolution_checksums": checksums}
 
 
+def install_runtime() -> None:
+    run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--disable-pip-version-check",
+            "--no-input",
+            "--no-cache-dir",
+            f"transformers=={EXPECTED_TRANSFORMERS_VERSION}",
+        ],
+        cwd=SOURCE,
+    )
+    run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import transformers; "
+                f"assert transformers.__version__ == '{EXPECTED_TRANSFORMERS_VERSION}', "
+                "transformers.__version__"
+            ),
+        ],
+        cwd=SOURCE,
+    )
+
+
 def download_skelex() -> tuple[Path, dict[str, object]]:
     root = RUNTIME / "skelex"
     root.mkdir(parents=True, exist_ok=False)
@@ -171,6 +200,7 @@ def run_static_tests() -> None:
             "tests/test_rad_dino_mask_bag_mil.py",
             "tests/test_evaluate_mask_bag_selector_arm.py",
             "tests/test_compare_mask_bag_evaluated_arms.py",
+            "tests/test_kaggle_wrapper_skelex_s5_v1.py",
         ],
         cwd=SOURCE,
     )
@@ -403,14 +433,22 @@ def audit_wrapper_output(
 
 
 def main() -> None:
-    os.environ.update({"PYTHONHASHSEED": "42", "CUBLAS_WORKSPACE_CONFIG": ":4096:8"})
+    os.environ.update(
+        {
+            "PYTHONHASHSEED": "42",
+            "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+            "TOKENIZERS_PARALLELISM": "false",
+        }
+    )
     RUNTIME.mkdir(parents=True, exist_ok=False)
     try:
         source_hashes, _protocol = clone_and_verify()
         t4 = verify_t4x2()
-        skelex_root, model_audit = download_skelex()
-        # Static and synthetic tests run before resolving any BTXRD input path.
+        install_runtime()
+        # Static and synthetic tests run before the large public-model download
+        # and before resolving any BTXRD input path.
         run_static_tests()
+        skelex_root, model_audit = download_skelex()
         split = prepare_split()
         dataset_root = find_dataset_root()
         train_root, train_audit = find_candidate_root(
