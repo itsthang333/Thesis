@@ -11398,3 +11398,40 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   audit transport, freeze exact protocol/source rồi mới đăng ký/push claim trước
   launch Kaggle.
 
+### Đồng bộ top-10 relational failure và hiệu chính vai trò B2 (2026-08-01)
+
+- Sau pre-push fetch, nhánh cộng tác tiến từ `d849155...` lên
+  `8b1a38d459e3b4681f7ef5722451cc38deb7d67f`. Toàn bộ log mới,
+  `RICH_GALLERY_TOP10_RELATIONAL_FAILURE_DOSSIER.md` và protocol
+  `rich_gallery_top10_relational_diagnostic_v1` đã được đọc. Đây là terminal
+  audited result mới, không phải code/readiness chưa chạy.
+- Fixed top-10 cross-source relational product đạt Dice/IoU
+  `0.28564683/0.21473672`, subgroup
+  `0.12276538/0.46376513/0.42377677`, 45 misses; thấp hơn baseline
+  `0.28872949` overall `-0.00308265`, CI95 `[-0.024322,0.016844]`. Small giảm
+  `-0.03495792` với CI95 strictly negative `[-0.063430,-0.011129]`, dù medium,
+  large và miss-count tốt hơn. Rule đổi 123/184 choice, recover 12 miss nhưng
+  làm mất 8 hit; positive Dice mass `+5.66698` nhỏ hơn loss `-6.23419`.
+- Root cause tái lập consensus failure ở neighborhood hẹp: median selected/GT
+  area tăng `2.045 -> 2.769` overall và `14.603 -> 27.094` small, trong khi
+  tăng extent lại có ích cho large `0.382 -> 0.666`. Relation support tương quan
+  `0.4366` với selected Dice nhưng gần bằng 0 (`-0.00016`) với paired
+  improvement, nên không có label-free confidence threshold hợp lệ để router.
+  Protocol/freeze/Stage-B summary/per-image SHA-256 lần lượt là
+  `6cb03b67...3541 / c208be23...8597 / 29653612...49aa /
+  e5e97f36...2e70`; test vẫn khóa.
+- Quyết định được adopt là **retire mọi post-hoc geometric reranker** và không
+  sweep top-K/IoU/weight/source/resolution/morphology. B2 không dùng relation,
+  consensus hoặc top-k nên không trùng/falsified bởi experiment này. Tuy nhiên
+  vai trò được hiệu chính trước claim: B2 chỉ là matched independent semantic
+  descriptor control cho BAS, chưa phải zero-initialized baseline-preserving
+  learned relational residual. Relation chỉ có thể được xem xét sau nếu B2
+  riêng terminal positive; B2 fail thì không combine relation để rescue.
+- Design sau addendum có canonical-LF SHA-256
+  `562f001cd9f8db1ffab7d97a044d49c943d1f0b78e94e73acf16a6472bb8114d`;
+  readiness JSON mới SHA-256
+  `8efe1858b62bbbd943cd770d8d87fa6db34ee30e2c8e92671c9443cb44de5e7c`
+  và ghi cả commit/result top-10. Seven source hashes, JSON parse và
+  `git diff --check` pass. Scientific primitive/auditor bytes không đổi; không
+  real-data access, fit, prediction, GT, consumer, test hay Kaggle launch.
+

@@ -30,6 +30,22 @@ the equal-rank rule was designed after earlier validation Stage-B evidence.
 B2 is consequently another development experiment, not a claim of independent
 generalization.
 
+The later collaborator commit
+`8b1a38d459e3b4681f7ef5722451cc38deb7d67f` also rejected a fixed top-10
+cross-source relational product: Dice `0.28564683`, subgroup
+`0.12276538/0.46376513/0.42377677`, 45 misses. Its overall delta was
+`-0.00308265` with CI95 `[-0.024322,0.016844]`, and its small-lesion delta
+`-0.03495792` had strictly negative CI95 `[-0.063430,-0.011129]`. Relation
+expanded stable anatomy and doubled the already excessive small-lesion area
+ratio. B2 therefore contains no geometric relation, top-k or consensus score.
+
+The term "residual" in the B2 identifier means one extra semantic evidence
+rank in a fixed comparison; it does **not** claim to implement the later
+recommended zero-initialized learned relational residual. Scientifically, B2
+is the required independent-descriptor control: only if BAS alone has a
+terminal paired gain may a future relational head use it as the matched control.
+If B2 fails, relation may not be combined with BAS as a rescue.
+
 ## New scientific variable
 
 B2 keeps every rich-gallery proposal, G1 logit and upstream score immutable. It

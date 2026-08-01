@@ -8,7 +8,8 @@
     "reason": "use the actually better rich-gallery G1/upstream baseline instead of launching on the older gallery"
   },
   "collaborator_evidence": {
-    "commit": "d849155e49372c2027a1168fbe4a0b68e199470d",
+    "fusion_bottleneck_commit": "d849155e49372c2027a1168fbe4a0b68e199470d",
+    "latest_read_commit": "8b1a38d459e3b4681f7ef5722451cc38deb7d67f",
     "g1_checkpoint_sha256": "634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c",
     "g2_stage_a_prediction_freeze_sha256": "78970d417de20dc884958dfb3fd9cb2bad9f2cda53240ae2207607ba827cd167",
     "g2_protocol_sha256": "6dd6c66e396054157eb498cbca46635d1058c73d1139541d385bb769088801be",
@@ -24,6 +25,18 @@
       "small": 0.33187635032688717,
       "medium": 0.730250922322223,
       "large": 0.7462472101750204
+    },
+    "top10_relational_rejection": {
+      "overall": 0.28564683,
+      "small": 0.12276538,
+      "medium": 0.46376513,
+      "large": 0.42377677,
+      "complete_misses": 45,
+      "overall_delta": -0.00308265,
+      "overall_ci95": [-0.024322, 0.016844],
+      "small_delta": -0.03495792,
+      "small_ci95": [-0.063430, -0.011129],
+      "decision": "exclude geometric relation from B2; BAS is the independent semantic-descriptor control"
     }
   },
   "known_common_inputs": {
@@ -68,6 +81,12 @@
     "source_or_area_router": false,
     "proposal_generation": false
   },
+  "interpretation_boundary": {
+    "b2_role": "independent BAS semantic-descriptor control",
+    "zero_initialized_learned_relational_residual_implemented": false,
+    "geometric_relation_or_consensus_used": false,
+    "future_relation_authorized_only_after_terminal_positive_b2": true
+  },
   "static_sources": [
     "project/models/bas_candidate_localizer.py",
     "project/models/rich_gallery_bas_residual.py",
@@ -78,7 +97,7 @@
     "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md"
   ],
   "canonical_lf_source_hashes": {
-    "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md": "b5506df5ba2f66c5f05a6b9f5bed9d287367146e9d82032b794384b4c3adfb7d",
+    "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md": "562f001cd9f8db1ffab7d97a044d49c943d1f0b78e94e73acf16a6472bb8114d",
     "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
     "project/models/rich_gallery_bas_residual.py": "9639c47f3f0f8aeb235f65e800adec0100612a9b57b003195daf6b47a973d582",
     "project/audit_rich_gallery_stage_a_transport.py": "300812291a339ac7e096257fd1c328dc44f8c58a1e8802da8716bec1f74a2476",
