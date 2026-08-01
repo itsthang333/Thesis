@@ -10659,3 +10659,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `511b2aec036785f3477b3c88b7db04f73a90a444ebc936f984a5ffc85d61cdc1`.
   Không prediction/output/GT được mở, không consumer được train và test vẫn khóa.
 
+- **Kernel version 1 COMPLETE; independent audit dừng fail-closed trước GT:**
+  một bounded status query trả `KernelWorkerStatus.COMPLETE`. Compact downloader
+  lấy đủ official inventory `4,130/4,130` file và direct log vào ignored
+  `tmp/kaggle/count_controlled_t1_v1_complete_20260801`; scientific root có
+  `4,130` file / `94,506,200` byte, toàn thư mục có `4,131` file /
+  `94,523,514` byte, không còn `.part`. Direct-log SHA-256 là
+  `ca126401509ba33facfece74772660a6a993c260c12373d92b73ff761b877d14`;
+  observed immutable `prediction_freeze.json` và candidate-score manifest có
+  SHA-256 `4f317fc7af45804aff0b084398bebe35582a7ae2039a29982586e90358ea096d` /
+  `8412868756b8cb64e6032ee215f2e9081f9e8c8564bf93bada49ddc443245927`.
+  Các hash này mới là observed output, chưa được chấp nhận khoa học.
+- Auditor source frozen `31ab993b...` dừng tại validation payload đầu tiên
+  với `ValueError: T1 candidate-score schema mismatch: IMG000001.jpeg`. Audit
+  GT-blind của toàn bộ `371/371` score payload cho thấy chúng có cùng exact
+  schema `schema_version:int32 scalar=1`, `candidate_indices:int64`,
+  `candidate_logits:float32`, đúng contract của shared writer
+  `project/models/mask_bag_score_evidence.py` SHA-256 `02371b4d...`; auditor lại
+  sai khi chỉ chấp nhận hai field cuối. Sample payload SHA-256 là
+  `63a315e0611024d8263294ddefa2c30d708d19b7a434b66aa49b0583e567e6f5`.
+  Default Python 3.13 không có NumPy dừng trước auditor; Python 3.9 đúng
+  env cần strict-zip shim đã ghi trong readiness. Hai lỗi runtime này không
+  phải kết quả khoa học và không làm thay đổi output.
+- Error-boundary artifact
+  `artifacts/kaggle/rad_dino_mask_bag_count_controlled_self_paced_t1_v1/kernel_version1_gt_blind_auditor_schema_error.json`
+  SHA-256 `2a3fefed9cdbb410b4d47c802cc3e46ef242621cce7470d6de52e2f57df47224`
+  đã được ghi trước mọi correction. Cho phép duy nhất auditor-only
+  correction để chấp nhận và kiểm tra `schema_version==1`, kèm regression
+  test; không đổi scientific source/protocol/prediction, không rerun kernel.
+  Cho tới khi corrected independent audit pass, không được mở validation GT
+  hay chạy evaluator/decision. Trạng thái experiment vẫn `ĐANG LÀM`;
+  validation GT chưa đọc, downstream consumer chưa train, BTXRD test vẫn khóa.
+

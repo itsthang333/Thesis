@@ -1,0 +1,65 @@
+{
+  "artifact_type": "independent_gt_blind_auditor_error_boundary",
+  "candidate_score_contract_evidence": {
+    "actual_fields": [
+      "schema_version",
+      "candidate_indices",
+      "candidate_logits"
+    ],
+    "actual_schema_version": 1,
+    "all_payloads_share_exact_schema": true,
+    "candidate_indices_dtype": "int64",
+    "candidate_logits_dtype": "float32",
+    "payloads_inspected_without_gt": 371,
+    "producer_shared_writer": "project/models/mask_bag_score_evidence.py::save_candidate_score_evidence",
+    "producer_shared_writer_sha256": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "sample_payload": "candidate_scores/scores/0000_IMG000001.npz",
+    "sample_payload_sha256": "63a315e0611024d8263294ddefa2c30d708d19b7a434b66aa49b0583e567e6f5"
+  },
+  "download": {
+    "direct_log_sha256": "ca126401509ba33facfece74772660a6a993c260c12373d92b73ff761b877d14",
+    "files_including_direct_log": 4131,
+    "files_in_scientific_root": 4130,
+    "official_inventory": 4130,
+    "partial_files": 0,
+    "scientific_root_bytes": 94506200,
+    "selected_inventory": 4130,
+    "total_bytes_including_direct_log": 94523514
+  },
+  "error_boundary": {
+    "auditor_expected_fields": [
+      "candidate_indices",
+      "candidate_logits"
+    ],
+    "exception": "ValueError: T1 candidate-score schema mismatch: IMG000001.jpeg",
+    "first_default_python_attempt": "ModuleNotFoundError: No module named 'numpy' before auditor execution",
+    "first_scientific_file_reached": "candidate_scores/scores/0000_IMG000001.npz",
+    "python39_compatibility_shim": "builtins.zip wrapper accepting strict=False and delegating to Python 3.9 zip",
+    "python39_unshimmed_attempt": "TypeError: zip() takes no keyword arguments before output verification",
+    "root_cause": "The frozen T1 auditor omitted the schema_version field required and written by the shared candidate-score evidence contract.",
+    "scientific_output_mutated": false
+  },
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "independent_audit_pass": false,
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-count-controlled-t1-v1",
+  "kernel_status": "COMPLETE",
+  "kernel_version": 1,
+  "observed_immutable_output": {
+    "candidate_score_manifest_sha256": "8412868756b8cb64e6032ee215f2e9081f9e8c8564bf93bada49ddc443245927",
+    "prediction_freeze_sha256": "4f317fc7af45804aff0b084398bebe35582a7ae2039a29982586e90358ea096d"
+  },
+  "protocol_sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+  "recorded_at": "2026-08-01T14:42:25+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "downstream_consumer_trained": false,
+    "evaluation_authorized": false,
+    "validation_gt_opened": false
+  },
+  "scientific_source_commit": "c7f0937d515ded9bbd8928a2236cbe44b7a25f79",
+  "scientific_source_sha256": "9fb05756bc44c6b9c12063d18706df76eab1c99137425540006c264292b2a5c3",
+  "status": "AUDITOR_ERROR_RECORDED_BEFORE_CORRECTION",
+  "unchanged_scientific_protocol": true,
+  "unchanged_scientific_source": true,
+  "validator_source_sha256": "31ab993baa2f641355aa024212360f157a6ebab9f8839a02ffd95d024490ead6"
+}
