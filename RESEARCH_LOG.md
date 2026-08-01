@@ -10629,3 +10629,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `btxrd-pseudomask` trả đúng bound-wrapper SHA; không source/protocol/binding
   nào thay đổi. Validation GT, downstream consumer và BTXRD test vẫn khóa.
 
+- **T1 version 1 launched:** sau khi binding/final prelaunch audit được
+  commit/push tại `c86da4c3bfeac58f369ce8cc5ab7ba8e9f7b07a3`, ignored
+  package được kiểm tra lại đúng bound-wrapper `66221704...` và metadata
+  `67f4c4b1...`. Kaggle chấp nhận đúng một private push làm version `1` của
+  `itsthang333/btxrd-rad-dino-mask-bag-count-controlled-t1-v1` lúc khoảng
+  `2026-08-01T07:24:23Z`. Không status poll ngay sau push và không monitor mới
+  được tạo. Launch audit
+  `artifacts/kaggle/rad_dino_mask_bag_count_controlled_self_paced_t1_v1/kernel_version1_launch_audit.json`
+  có SHA-256
+  `61428bbd9e3d4b430d0111a9c0256c71042a22210f7ccc7ebd761919ede46858`.
+  Prediction freeze chưa được quan sát; validation GT, downstream consumer và
+  BTXRD test tiếp tục khóa cho tới terminal output và independent audit.
+
