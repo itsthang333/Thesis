@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 WRAPPER = Path("project/kaggle_wrappers/run_skelex_mask_bag_selector_s5_v1.py")
@@ -28,4 +29,21 @@ def test_s5_packaged_wrapper_matches_canonical_source() -> None:
         "btxrd-skelex-mask-bag-selector-s5-v1.py"
     )
     if packaged.is_file():
-        assert packaged.read_bytes() == WRAPPER.read_bytes()
+        def normalize_binding(text: str) -> str:
+            text = re.sub(r"^KERNEL_VERSION = .*$", "KERNEL_VERSION = <BOUND>", text, flags=re.M)
+            text = re.sub(
+                r"^LAUNCH_BINDING_READY = .*$",
+                "LAUNCH_BINDING_READY = <BOUND>",
+                text,
+                flags=re.M,
+            )
+            return re.sub(
+                r'^CHECKOUT_COMMIT = ".*"$',
+                'CHECKOUT_COMMIT = "<BOUND>"',
+                text,
+                flags=re.M,
+            )
+
+        canonical = normalize_binding(WRAPPER.read_text(encoding="utf-8"))
+        packaged_source = normalize_binding(packaged.read_text(encoding="utf-8"))
+        assert packaged_source == canonical
