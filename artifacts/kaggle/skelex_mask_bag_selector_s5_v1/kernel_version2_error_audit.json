@@ -1,0 +1,73 @@
+{
+  "audit_id": "skelex_mask_bag_selector_s5_v1_kernel_version2_error",
+  "audited_utc": "2026-08-01T18:38:14Z",
+  "status": "IMPLEMENTATION_ERROR_DURING_TRAIN_DESCRIPTOR_CACHE_BEFORE_OPERATIONAL_GATE",
+  "kernel": {
+    "id": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+    "version": 2,
+    "terminal_status": "ERROR",
+    "runtime_seconds": 413.2,
+    "accelerator": "GPU T4 x2",
+    "container_image_sha256": "37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461",
+    "output_bytes": 0,
+    "checkout_commit": "ad441e1de1cd4df7fddebb2ff4a9dda03f3e9998",
+    "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+    "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+    "wrapper_sha256": "dbd8cd8cfb613a19ca1d789900f3a1d9f33c1caa8a6b6212e3dee37b3cdbeb04",
+    "direct_log_sha256": "1c7a302b93d819e82f479c73382a3e53d33f00cb181b30162b67c26ed829a444",
+    "direct_log_bytes": 12198,
+    "direct_log_lines": 78
+  },
+  "passed_before_failure": {
+    "exact_git_checkout": true,
+    "scientific_source_ancestry": true,
+    "t4x2_guard": true,
+    "ambient_transformers_version": "5.0.0",
+    "pinned_transformers_install": "4.50.2",
+    "post_install_exact_version_assertion": true,
+    "python_compile": true,
+    "synthetic_and_wrapper_tests": "26 passed in 11.93s",
+    "public_skelex_snapshot_download_and_hash_guard": true,
+    "frozen_split_and_input_transport_guards": true,
+    "public_skelex_model_load": true,
+    "train_radiograph_encoder_inference_started": true
+  },
+  "failure": {
+    "boundary": "inside build_skelex_descriptor_cache for the train split, after SKELEX model load and some train-radiograph inference, but before completion of the train descriptor cache, descriptor operational gate, validation descriptor cache, selector training, scoring, prediction freeze or independent audit",
+    "exception": "RuntimeError: S5 original/flip support mass differs",
+    "source_location": "project/run_skelex_mask_bag_selector_s5.py:259",
+    "observed_mass_delta": "not printed by the v2 guard and therefore not asserted",
+    "root_cause": "The S5 runner required absolute original/flip fractional support-mass equality within 1e-6 after float32 128-to-14 area reductions. Horizontal flip changes floating-point reduction order, so mathematically symmetric support can differ by multiple float32 ULPs. The runner failed to reuse the previously proven four-ULP scale-aware mass-symmetry contract from geometry-v3 correction commit 24f374fcce9100b0a56d2a85c562eb10d1fdf058.",
+    "classification": "implementation-only numerical guard regression",
+    "scientific_result_produced": false
+  },
+  "prior_terminal_evidence": {
+    "source": "RESEARCH_LOG.md geometry-v3 correction-v9",
+    "images": 2981,
+    "candidates": 174669,
+    "maximum_absolute_flip_mass_delta": 0.0001220703125,
+    "maximum_delta_to_four_ulp_tolerance": 0.75,
+    "commit": "24f374fcce9100b0a56d2a85c562eb10d1fdf058"
+  },
+  "additional_prelaunch_blocker": {
+    "audit_sha256": "68e8e8d1c972a2415681d79af8d7abf955eaedbe563796054dbfff6ae44c5954",
+    "description": "The independent S5 auditor also mixes float32 generator ranks with float64 reproduced SKELEX ranks under a 1e-12 correlation identity guard; this auditor-only defect must be corrected before any successor launch."
+  },
+  "access_and_safety": {
+    "train_radiographs_opened": true,
+    "validation_prediction_created": false,
+    "prediction_pair_frozen": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "authorized_correction": {
+    "runner": "Reuse the proven per-candidate four-float32-ULP mass-symmetry tolerance with four-epsilon absolute floor, retain exact original/flip candidate validity and positive-support gates, and record maximum delta/tolerance ratio.",
+    "auditor": "Cast all independently reproduced rank vectors to numpy.float32 before aggregation and correlation so the auditor exactly reproduces generator arithmetic.",
+    "scientific_descriptor_values_changed": false,
+    "selector_recipe_changed": false,
+    "prediction_contract_changed": false,
+    "protocol_mechanism_changed": false
+  }
+}

@@ -12112,3 +12112,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   bị cancel và chưa có terminal scientific result; validation GT/consumer/test
   vẫn khóa.
 
+### S5 kernel version 2 — LỖI fractional-mass guard trước training (2026-08-02)
+
+- Trong lúc static-defect record được push, version 2 tự terminal **LỖI** sau
+  `413.2 s`; vì vậy không có thao tác cancel thực tế. Kaggle báo đúng `GPU T4
+  x2`, container SHA-256 `37c64f7d...d461`, `Output 0 B`. Direct Logs payload
+  có `12,198` byte/`78` dòng, SHA-256
+  `1c7a302b93d819e82f479c73382a3e53d33f00cb181b30162b67c26ed829a444`.
+- Environment correction v2 được xác nhận hoàn toàn: ambient transformers
+  `5.0.0` được thay bằng `4.50.2`, exact import assertion pass, `py_compile`
+  pass và `26 passed in 11.93s`. Checkout/ancestry/T4x2/public SKELEX
+  download+hash/split/input/cache/gallery guards và model load đều qua. Failure
+  xảy ra trong train `build_skelex_descriptor_cache`, sau khi đã mở/infer một
+  phần train radiographs nhưng trước khi hoàn tất train cache, trước descriptor
+  operational gate, validation descriptor cache, selector training, scoring,
+  prediction freeze hay independent audit:
+  `RuntimeError: S5 original/flip support mass differs` tại runner dòng 259.
+- Root cause là regression numerical guard: S5 đòi absolute agreement
+  `atol=1e-6` sau float32 `128->14` area reductions. Horizontal flip đổi thứ tự
+  reduction nên support toán học đối xứng có thể lệch vài float32 ULP. S5 đã
+  không kế thừa correction-v9 đã được terminal-prove ở commit
+  `24f374fcce9100b0a56d2a85c562eb10d1fdf058`: trên `2,981` ảnh/`174,669`
+  candidates, max absolute delta `0.0001220703125` nhưng chỉ bằng `0.75` của
+  per-candidate four-ULP tolerance. Log v2 không in delta thực tế nên không suy
+  đoán con số cho S5.
+- Không có scientific result/Dice: chưa prediction/pair freeze, chưa validation
+  GT, chưa consumer và chưa BTXRD test. Error audit tracked tại
+  `artifacts/kaggle/skelex_mask_bag_selector_s5_v1/kernel_version2_error_audit.json`,
+  SHA-256
+  `bd525398ca033f014f55e3bd13d5a083cf1421842ed77c50be11d824de7e82b3`.
+- Trước successor, phải sửa cả hai implementation-only blockers đã biết: runner
+  dùng exact four-ULP mass-symmetry contract, giữ validity/positive-support và
+  ghi max delta/tolerance; independent auditor cast mọi reproduced rank về
+  float32 trước aggregation/correlation. Không thay descriptor values, selector
+  recipe, gallery, arms, prediction hay protocol mechanism. Theo rule, chưa sửa
+  hoặc rerun trước khi mục `LỖI` v2 này được commit/push trung tâm.
+
