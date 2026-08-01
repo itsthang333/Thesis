@@ -10604,3 +10604,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `f35e8fab59799f713dee550bda1890b35e6d42bf5079b15d967db1b7a5d36523`.
   Chưa có binding/package/Kaggle push; mọi GT/consumer/test lock giữ nguyên.
 
+- **Version-1 binding/final prelaunch frozen, not launched:** sau khi wrapper/
+  binder readiness được commit/push tại
+  `97c4cf322a7ad329e62338cc8e7a2bbfa6e368d5`, one-time binder khóa version 1
+  nhắm đúng checkout đó. Bound-wrapper canonical SHA-256 là
+  `662217040edecfcad1d7187dc7cc40daa3f1007a1f9344821076df0623d3d85e`;
+  launch-binding SHA-256 là
+  `588901fb4640d0f0854867daf7858a826c1a1821e43d65dc1001b9f4b9ef9be1`;
+  metadata SHA-256 là
+  `67f4c4b1fb3bf30cb8da2ee2559bd437bb448de1185e9b7072ac0ef602c426d3`.
+  Binding schema, exact three-field inverse reconstruction, protocol/source
+  hashes, scientific-source/claim ancestry, metadata parse và bound-wrapper
+  `py_compile` đều pass. Ignored launch package chứa đúng hai file.
+- Full repository tại exact execution checkout tiếp tục pass `484/484` trong
+  18.90 giây (wall 20.34 giây) bằng documented Python-3.9 shim. Final prelaunch
+  audit
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_kernel_v1_final_prelaunch_audit.json`
+  có SHA-256
+  `6dea35315516842fca620b4783ea10b32d219c63d47e8cb1750960b324bc34bf`.
+  Nó authorize duy nhất một private Kaggle push sau khi binding/audit được
+  commit/push; chưa có kernel version hay scientific execution ở boundary này.
+- Local binding verifier đầu tiên dùng nhầm Python 3.13.5 không có NumPy và dừng
+  khi import independent auditor trước khi đọc binding. Cùng verifier trong env
+  `btxrd-pseudomask` trả đúng bound-wrapper SHA; không source/protocol/binding
+  nào thay đổi. Validation GT, downstream consumer và BTXRD test vẫn khóa.
+

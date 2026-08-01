@@ -1,0 +1,88 @@
+{
+  "audit_id": "rad_dino_mask_bag_count_controlled_self_paced_t1_v1_kernel_v1_final_prelaunch_audit",
+  "created_utc": "2026-08-01T07:22:47Z",
+  "status": "READY_FOR_SINGLE_PRIVATE_KAGGLE_KERNEL_PUSH",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-count-controlled-t1-v1",
+  "kernel_version": 1,
+  "execution_checkout": "97c4cf322a7ad329e62338cc8e7a2bbfa6e368d5",
+  "execution_checkout_equals_origin_central": true,
+  "scientific_source_commit": "c7f0937d515ded9bbd8928a2236cbe44b7a25f79",
+  "scientific_source_is_ancestor": true,
+  "claim_commit": "d8cd1608b6886f51cc5240ddcc81c1dc2a5e1e2a",
+  "claim_commit_is_ancestor": true,
+  "protocol_sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+  "independent_auditor_sha256": "31ab993baa2f641355aa024212360f157a6ebab9f8839a02ffd95d024490ead6",
+  "wrapper_template_sha256": "6bbe6a5dda3bb35db88e27b2b1c117b7c8c199ad7a9b004450727ddec9f2c4a0",
+  "binder_sha256": "e8c842ee888b1a780701fa7cdb3d6af6dbdbc0224ea705b7bb51925f65f5df98",
+  "launch_binding": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_kernel_v1_launch_binding.json",
+    "sha256": "588901fb4640d0f0854867daf7858a826c1a1821e43d65dc1001b9f4b9ef9be1",
+    "schema_version": 1,
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true,
+    "runtime_source_hashes": 20,
+    "post_freeze_only_hashes_excluded_from_runtime": 2
+  },
+  "kernel_package": {
+    "ignored_directory": "tmp/kaggle/mask_bag_count_controlled_t1_v1",
+    "files": 2,
+    "bound_wrapper": {
+      "name": "btxrd-rad-dino-mask-bag-count-controlled-t1-v1.py",
+      "bytes": 19748,
+      "canonical_lf_sha256": "662217040edecfcad1d7187dc7cc40daa3f1007a1f9344821076df0623d3d85e",
+      "matches_launch_binding": true,
+      "py_compile_pass": true
+    },
+    "metadata": {
+      "name": "kernel-metadata.json",
+      "bytes": 615,
+      "sha256": "67f4c4b1fb3bf30cb8da2ee2559bd437bb448de1185e9b7072ac0ef602c426d3",
+      "json_parse_pass": true,
+      "private": true,
+      "internet_enabled": true,
+      "machine_shape": "NvidiaTeslaT4",
+      "dataset_source": "itsthang333/btxrd-mask-bag-r1-baseline-transport-v1",
+      "kernel_source": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+    }
+  },
+  "fail_closed_runtime_order": [
+    "clone exact execution checkout and verify protocol/all source hashes",
+    "install frozen runtime dependencies",
+    "require exactly two T4 devices and real convolution on both",
+    "reconstruct exact CRLF split",
+    "verify no-GT/no-test baseline transport and accepted selector cache",
+    "run focused and full checkout tests",
+    "invoke the T1 runner exactly once",
+    "physically audit all complete output before writing wrapper_output_audit"
+  ],
+  "frozen_gates": {
+    "oof_records": 2981,
+    "oof_group_overlap": 0,
+    "maximum_absolute_count_probability_spearman": 0.5013777759365411,
+    "minimum_oof_image_auroc": 0.75,
+    "minimum_oof_view_agreement": 0.6,
+    "target_pace_fractions": [0.2, 0.4, 0.6],
+    "validation_predictions": 371,
+    "prediction_freeze_before_validation_gt": true
+  },
+  "tests_at_exact_execution_checkout": {
+    "full_repository_passed": 484,
+    "full_repository_failed": 0,
+    "seconds_pytest": 18.9,
+    "seconds_wall": 20.34,
+    "python": "3.9.23",
+    "documented_zip_strict_compatibility_shim": true,
+    "git_diff_check_pass": true
+  },
+  "local_verifier_error_boundary": {
+    "first_call": "default Python 3.13.5 lacked NumPy and stopped while importing the independent auditor before reading the binding",
+    "correction": "same binding/protocol verifier ran in btxrd-pseudomask and returned exact bound wrapper SHA-256",
+    "scientific_source_or_binding_changed": false
+  },
+  "kaggle_kernel_pushed": false,
+  "scientific_execution_started": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
