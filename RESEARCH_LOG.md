@@ -11170,3 +11170,55 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Trước khi mở claim B1 phải fetch lại hai branch điều phối, kiểm tra collision và
   push `ĐANG LÀM` theo `AGENTS.md`.
 
+### Đồng bộ audit `0.28872949` và hiệu chính thiết kế tĩnh B1 (2026-08-01)
+
+- Theo yêu cầu người dùng, đã fetch/`ls-remote` lại branch cộng tác, đọc toàn bộ
+  `RESEARCH_LOG.md` 8,154 dòng và toàn bộ
+  `RICH_GALLERY_G2_FAILURE_DOSSIER.md` tại
+  `origin/codex/research-sync-20260731` commit
+  `53ac916c13525946d8cfa7662857694bb6c33dde`. GitHub remote vẫn trỏ đúng commit
+  này ở hai lần fetch độc lập; chưa có commit mới hơn bị bỏ sót. G2 v3 đã audit
+  lại 371/371 G1 choices và xác nhận rich-gallery G1 + upstream equal-rank
+  diagnostic đạt Dice `0.28872949/0.15772330/0.43522933/0.38687353`, tốt hơn
+  same-gallery Geometry-v3 ở overall/small/medium nhưng large giảm; complete
+  misses tăng `29 -> 49`. G2 tốt nhất vẫn chỉ `0.25432565` và thua reference này
+  có CI95 hoàn toàn âm. Vì vậy insight được kế thừa là **complementarity của hai
+  rank**, không phải G1/G2 model hay proposal-supply implementation.
+- Ranh giới thống kê vẫn được giữ: fusion `0.28872949` được thiết kế sau khi xem
+  Stage-B trên cùng validation nên là evidence thích nghi, không phải endpoint
+  độc lập để quảng bá. Nó không được dùng để tune weight/threshold. B1 không tải
+  private rich-gallery output và không chạy lại G2; candidate gallery vẫn là
+  same-gallery cache đã chứng minh oracle support.
+- Thiết kế B1 ban đầu đã được hiệu chính **trước claim/real-data execution** vì
+  raw BAS coverage/purity có nguy cơ chỉ sao chép upstream extent signal. Frozen
+  finite comparison mới gồm transfer control
+  `(Geometry-v3 rank + immutable upstream selection-score rank)/2` và duy nhất
+  một B1 arm không weight sweep
+  `(Geometry-v3 rank + upstream rank + BAS rank)/3`. GT-blind gate mới yêu cầu
+  mean BAS/upstream rank correlation `<=0.80` và ít nhất `5%` lựa chọn thay đổi;
+  nếu fail thì cấm đọc validation polygons. Thiết kế đầy đủ nằm ở
+  `BAS_CANDIDATE_DESCRIPTOR_B1_DESIGN.md` SHA-256
+  `5b8884f08209a9293cc75535d80106e83746a465430cae4cf3a92a3ade16cda2`.
+- Runner tĩnh `project/run_bas_candidate_descriptor_b1.py` SHA-256
+  `d62c4b3b2d388927e5f7c297850a43b7af97db3574f6b77b7e7b50de173f43b0`
+  khóa official-style 100-epoch/224px/SGD BAS recipe, exact official ImageNet
+  weight `resnet50-11ad3fa6.pth` 102,540,417 bytes SHA-256
+  `11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca`,
+  baseline/upstream/cache identity, T4x2 và pair prediction freeze. Model
+  primitive mới SHA-256
+  `8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c`;
+  AMP BAS ratio được ép float32 để `1e-8` không underflow và output đổi sang
+  namedtuple tương thích DataParallel. Focused primitive+runner suite pass
+  `10/10` trong 3.11 giây; test đã phát hiện và sửa một Python-3.9
+  `zip(strict=True)` boundary trước launch. Full repository regression pass
+  `517/517` trong 21.93 giây bằng pinned environment và documented strict-zip
+  compatibility shim.
+- Correction-readiness
+  `artifacts/research_protocols/bas_candidate_descriptor_b1_transfer_correction_readiness.json`
+  có SHA-256
+  `97cb666ed502e18d324f5f50ba267a9e68980325256d1790cfaad7b21c235179`.
+  Đây vẫn chỉ là chuẩn bị tĩnh: không real radiograph/gallery/cache được mở,
+  không training/prediction/validation segmentation GT/consumer/test và không
+  compute nặng local. B1 chưa có claim; protocol độc lập, auditor, wrapper và
+  launch binding vẫn phải hoàn tất trước đăng ký/chạy.
+

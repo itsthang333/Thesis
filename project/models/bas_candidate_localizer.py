@@ -9,8 +9,9 @@ activation map into coverage/purity evidence for an already frozen candidate
 gallery.
 """
 
-from dataclasses import dataclass
 import copy
+from dataclasses import dataclass
+from typing import Mapping, NamedTuple, Sequence
 
 import torch
 import torch.nn.functional as F
@@ -35,8 +36,7 @@ class BASLossConfig:
             raise ValueError("epsilon must be positive")
 
 
-@dataclass(frozen=True)
-class BASForwardOutput:
+class BASForwardOutput(NamedTuple):
     class_logits: torch.Tensor
     foreground_logits: torch.Tensor
     class_activation_maps: torch.Tensor
@@ -86,11 +86,13 @@ def bas_activation_suppression_loss(
         raise ValueError("localization_maps must have shape [B,1,H,W]")
 
     rows = torch.arange(labels.shape[0], device=labels.device)
-    full = output.class_logits[rows, labels]
-    background = output.background_logits[rows, labels]
+    # The official epsilon is below float16's normal range.  Keep the ratio and
+    # area arithmetic in float32 even when the surrounding runner uses AMP.
+    full = output.class_logits[rows, labels].float()
+    background = output.background_logits[rows, labels].float()
     ratio = background / (full.detach() + config.epsilon)
     ratio = torch.where(background < full.detach(), ratio, torch.zeros_like(ratio))
-    area = output.localization_maps.flatten(start_dim=1).mean(dim=1)
+    area = output.localization_maps.float().flatten(start_dim=1).mean(dim=1)
     loss = ratio + config.area_weight * area
     if not torch.isfinite(loss).all():
         raise RuntimeError("BAS loss is non-finite")
@@ -108,18 +110,28 @@ class BASResNet50Localizer(nn.Module):
     without allocating a new block for every batch.
     """
 
-    def __init__(self, *, pretrained: bool = True, num_classes: int = 2) -> None:
+    def __init__(
+        self,
+        *,
+        pretrained: bool = True,
+        backbone_state_dict: Mapping[str, torch.Tensor] | None = None,
+        num_classes: int = 2,
+    ) -> None:
         super().__init__()
         if num_classes != 2:
             raise ValueError("BTXRD BAS localizer is fixed to normal/tumor classes")
         if resnet50 is None:
             raise RuntimeError("torchvision ResNet-50 is unavailable")
+        if pretrained and backbone_state_dict is not None:
+            raise ValueError("choose torchvision weights or an explicit state dict")
         weights = (
             ResNet50_Weights.DEFAULT
             if pretrained and ResNet50_Weights is not None
             else None
         )
         backbone = resnet50(weights=weights)
+        if backbone_state_dict is not None:
+            backbone.load_state_dict(backbone_state_dict, strict=True)
         self._configure_large_feature_map(backbone)
         self.stem = nn.Sequential(
             backbone.conv1,
@@ -234,6 +246,28 @@ class BASResNet50Localizer(nn.Module):
             raise RuntimeError("tumor activation is non-finite")
         return maps
 
+    @torch.no_grad()
+    def classify_and_tumor_activation(
+        self,
+        images: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return class logits and class-1 map without the training-only branch."""
+
+        if images.ndim != 4 or images.shape[1] != 3:
+            raise ValueError("images must have shape [B,3,H,W]")
+        x = self.stem(images)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        stage3 = self.layer3(x)
+        maps = self.localization_head(stage3)[:, 1:2]
+        class_maps = self.classifier_head(
+            self.layer4(F.max_pool2d(stage3, kernel_size=2))
+        )
+        logits = F.adaptive_avg_pool2d(class_maps, 1).flatten(1)
+        if not torch.isfinite(logits).all() or not torch.isfinite(maps).all():
+            raise RuntimeError("BAS inference output is non-finite")
+        return logits, maps
+
 
 def minmax_normalize_activation(activation: torch.Tensor) -> torch.Tensor:
     """Per-image BAS normalization used by the official localization path."""
@@ -326,11 +360,28 @@ def equal_rank_fusion(
 ) -> torch.Tensor:
     """Fixed 1:1 rank fusion; no scale, area, subgroup, or GT-dependent weight."""
 
-    if baseline_scores.shape != activation_scores.shape:
-        raise ValueError("baseline/activation scores must share shape")
-    baseline_rank = within_bag_percentile_ranks(baseline_scores, candidate_valid)
-    activation_rank = within_bag_percentile_ranks(activation_scores, candidate_valid)
-    return 0.5 * (baseline_rank + activation_rank)
+    return equal_rank_aggregate(
+        (baseline_scores, activation_scores),
+        candidate_valid,
+    )
+
+
+def equal_rank_aggregate(
+    score_vectors: Sequence[torch.Tensor],
+    candidate_valid: torch.Tensor,
+) -> torch.Tensor:
+    """Unweighted Borda mean of two or more within-bag percentile ranks."""
+
+    if len(score_vectors) < 2:
+        raise ValueError("rank aggregation requires at least two score vectors")
+    expected = candidate_valid.shape
+    if candidate_valid.ndim != 2 or any(value.shape != expected for value in score_vectors):
+        raise ValueError("all rank-aggregation scores must share shape with validity")
+    ranks = [
+        within_bag_percentile_ranks(value, candidate_valid)
+        for value in score_vectors
+    ]
+    return torch.stack(ranks, dim=0).mean(dim=0)
 
 
 __all__ = [
@@ -340,6 +391,7 @@ __all__ = [
     "bas_activation_suppression_loss",
     "candidate_activation_evidence",
     "equal_rank_fusion",
+    "equal_rank_aggregate",
     "minmax_normalize_activation",
     "within_bag_percentile_ranks",
 ]

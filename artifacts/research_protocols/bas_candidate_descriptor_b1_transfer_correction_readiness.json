@@ -1,0 +1,61 @@
+{
+  "readiness_id": "bas_candidate_descriptor_b1_transfer_correction_readiness_v1",
+  "status": "static_only_no_scientific_input_opened",
+  "prepared_at": "2026-08-01T16:28:24+07:00",
+  "base_commit": "bc6495c534f8944ca24e7bbf451161e6051a3319",
+  "supersedes_readiness_only": "bas_candidate_descriptor_b1_primitive_readiness_v1",
+  "collaborator_head_read_in_full": "53ac916c13525946d8cfa7662857694bb6c33dde",
+  "collaborator_evidence": {
+    "experiment": "EXP-20260801-codex-rich-gallery-g2-terminal-v3",
+    "g1_rank_fusion_dice": {
+      "overall": 0.28872949,
+      "small": 0.15772330,
+      "medium": 0.43522933,
+      "large": 0.38687353
+    },
+    "g1_rank_fusion_complete_misses": 49,
+    "g1_raw_complete_misses": 29,
+    "interpretation": "The 371-choice G2 audit confirms model/upstream rank complementarity, but the rule remains validation-adaptive evidence rather than an independently promoted endpoint."
+  },
+  "scientific_change_from_initial_static_design": {
+    "transfer_control": "equal percentile-rank mean of accepted Geometry-v3 and immutable upstream selection score",
+    "sole_b1_arm": "equal percentile-rank mean of Geometry-v3, upstream selection score, and BAS activation evidence",
+    "removed_arm": "raw BAS-only selection",
+    "reason": "The new descriptor must improve positive-instance ranking while retaining the two complementary signals behind the best observed collaborator diagnostic.",
+    "hyperparameter_sweep": false
+  },
+  "gt_blind_complementarity_gates": {
+    "maximum_mean_bas_upstream_rank_correlation": 0.8,
+    "minimum_changed_selection_fraction": 0.05
+  },
+  "exact_imagenet_initialization": {
+    "url": "https://download.pytorch.org/models/resnet50-11ad3fa6.pth",
+    "bytes": 102540417,
+    "sha256": "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca"
+  },
+  "files": {
+    "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
+    "project/run_bas_candidate_descriptor_b1.py": "d62c4b3b2d388927e5f7c297850a43b7af97db3574f6b77b7e7b50de173f43b0",
+    "tests/test_bas_candidate_localizer.py": "d57475ef12fb317199757a3e20e456d9373c96f2712195e53e28f0d50b776f46",
+    "tests/test_run_bas_candidate_descriptor_b1.py": "fb21b355cb2d491425d36db4e82c164af6e56d3856bc3568817b68fe8aac6435",
+    "BAS_CANDIDATE_DESCRIPTOR_B1_DESIGN.md": "5b8884f08209a9293cc75535d80106e83746a465430cae4cf3a92a3ade16cda2"
+  },
+  "verification": {
+    "python": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe",
+    "py_compile": "pass",
+    "focused_pytest": "10 passed in 3.11s",
+    "full_repository_pytest": "517 passed in 21.93s with the documented Python-3.9 strict-zip compatibility shim",
+    "python39_strict_zip_boundary_found_and_fixed": true,
+    "cli_import_help": "pass"
+  },
+  "scientific_boundary": {
+    "real_btxrd_images_opened": false,
+    "real_candidate_gallery_opened": false,
+    "validation_segmentation_gt_opened": false,
+    "prediction_created": false,
+    "consumer_trained": false,
+    "btxrd_test_opened": false,
+    "heavy_local_compute": false
+  },
+  "registration": "No experiment is claimed or launched by this readiness artifact."
+}

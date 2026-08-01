@@ -9,6 +9,7 @@ from project.models.bas_candidate_localizer import (
     BASLossConfig,
     bas_activation_suppression_loss,
     candidate_activation_evidence,
+    equal_rank_aggregate,
     equal_rank_fusion,
     minmax_normalize_activation,
     within_bag_percentile_ranks,
@@ -33,6 +34,29 @@ def test_bas_loss_matches_background_ratio_and_area() -> None:
     # Row 0: 1/4 + 1.2*0.25. Row 1 has background >= full, so ratio is zero.
     expected = ((0.25 + 0.3) + (0.0 + 0.6)) / 2.0
     assert float(loss) == pytest.approx(expected)
+
+
+def test_bas_loss_keeps_epsilon_arithmetic_in_float32() -> None:
+    output = BASForwardOutput(
+        class_logits=torch.tensor([[0.0, 2.0]], dtype=torch.float16),
+        foreground_logits=torch.zeros(1, 2, dtype=torch.float16),
+        class_activation_maps=torch.zeros(1, 2, 1, 1, dtype=torch.float16),
+        localization_maps=torch.full((1, 1, 2, 2), 0.25, dtype=torch.float16),
+        background_logits=torch.tensor([[0.0, 1.0]], dtype=torch.float16),
+    )
+    loss = bas_activation_suppression_loss(output, torch.tensor([1]))
+    assert loss.dtype == torch.float32
+    assert float(loss) == pytest.approx(0.5 + 1.2 * 0.25, abs=1.0e-5)
+
+
+def test_forward_output_is_namedtuple_for_data_parallel_gather() -> None:
+    assert BASForwardOutput._fields == (
+        "class_logits",
+        "foreground_logits",
+        "class_activation_maps",
+        "localization_maps",
+        "background_logits",
+    )
 
 
 def test_candidate_activation_evidence_balances_coverage_and_purity() -> None:
@@ -86,6 +110,15 @@ def test_equal_rank_fusion_can_preserve_complementary_order() -> None:
     fused = equal_rank_fusion(baseline, activation, valid)
     assert torch.allclose(fused, torch.tensor([[0.5, 0.75, 0.25]]))
     assert int(fused.argmax(dim=1).item()) == 1
+
+
+def test_equal_three_way_rank_aggregate_has_no_hidden_weight() -> None:
+    first = torch.tensor([[3.0, 2.0, 1.0]])
+    second = torch.tensor([[1.0, 3.0, 2.0]])
+    third = torch.tensor([[2.0, 1.0, 3.0]])
+    valid = torch.ones_like(first, dtype=torch.bool)
+    combined = equal_rank_aggregate((first, second, third), valid)
+    assert torch.allclose(combined, torch.full_like(first, 0.5))
 
 
 def test_invalid_shapes_fail_closed() -> None:
