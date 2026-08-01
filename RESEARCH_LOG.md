@@ -12079,3 +12079,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   launch. Experiment vẫn **ĐANG LÀM**; chưa có output/prediction freeze/audit,
   chưa đọc validation GT, chưa train consumer và BTXRD test tiếp tục khóa.
 
+### S5 v2 — phát hiện static auditor precision defect sau launch (2026-08-02)
+
+- Một bounded status check duy nhất lúc khoảng `01:33+07:00` thấy version 2 vẫn
+  `RUNNING` ở `404.1 s`, đúng `GPU T4 x2`, output lúc đó `0 B`. Log xác nhận
+  correction môi trường đã hoạt động: ambient `transformers 5.0.0` được thay
+  bằng exact `4.50.2`, explicit imported-version assertion pass, sau đó toàn bộ
+  suite mở rộng `26 passed in 11.93s`. Không status-poll hay monitor tiếp theo.
+- Static pre-mortem sau launch phát hiện một defect hậu kỳ độc lập với khoa học.
+  Generator tạo base/upstream/SKELEX percentile ranks bằng `torch.float32`, nên
+  correlation lưu trong `gt_blind_diagnostics.json` dùng hai vector float32.
+  Independent auditor dùng `_rank` trả `numpy.float64`, chỉ cast control về
+  float32 nhưng để SKELEX rank float64, rồi yêu cầu reproduced mean correlation
+  khớp ở tolerance phi thực tế `1e-12`.
+- Synthetic no-input/no-GT reproduction seed `20261101` trên candidate counts
+  `2..81` cho `7,289/7,922` finite single bags vượt `1e-12`, max delta
+  `3.2557e-8`. Quan trọng hơn, `100/100` synthetic cohorts 371 ảnh đều vượt
+  guard; absolute mean delta min/median/max là
+  `9.9179e-12 / 2.8593e-10 / 1.1858e-9`. Vì auditor chạy sau descriptor cache,
+  16-epoch selector, prediction pair freeze và physical reproduction, v2 gần
+  như chắc chắn sẽ lãng phí toàn bộ compute rồi fail ở bước cuối dù prediction
+  bytes đúng.
+- Evidence tracked tại
+  `artifacts/research_protocols/skelex_s5_v2_postlaunch_rank_precision_audit.json`,
+  SHA-256
+  `68e8e8d1c972a2415681d79af8d7abf955eaedbe563796054dbfff6ae44c5954`.
+  Quyết định fail-early là cancel đúng running version 2 sau khi mục này được
+  push, không launch competing job. Correction được phép chỉ ở auditor: cast
+  tất cả rank tái tạo về `numpy.float32` trước aggregation/correlation và thêm
+  regression test; generator, descriptor, selector, prediction, scientific
+  protocol, freeze/GT boundary đều bất biến. Tại thời điểm ghi mục này v2 chưa
+  bị cancel và chưa có terminal scientific result; validation GT/consumer/test
+  vẫn khóa.
+

@@ -1,0 +1,57 @@
+{
+  "audit_id": "skelex_s5_v2_postlaunch_rank_precision_audit",
+  "audited_utc": "2026-08-01T18:33:54Z",
+  "status": "PREDICTED_FATAL_POST_FREEZE_AUDITOR_DTYPE_MISMATCH",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "kernel": {
+    "id": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+    "version": 2,
+    "bounded_observation": "RUNNING at 404.1 seconds on GPU T4 x2",
+    "output_bytes_at_observation": 0,
+    "environment_correction_passed": true,
+    "transformers_install": "4.50.2",
+    "kaggle_static_tests": "26 passed in 11.93s"
+  },
+  "frozen_sources": {
+    "generator": "project/run_skelex_mask_bag_selector_s5.py",
+    "generator_sha256": "61eef4b98d096cc009617dd479d629f3e7d926162a674f1d0272afb476ff74da",
+    "auditor": "project/audit_skelex_mask_bag_selector_s5_output.py",
+    "auditor_sha256": "732436424604c01f62f6f2690a9dd0c9e7f36077a0128bbb3bdd3ade7a9136b6",
+    "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280"
+  },
+  "defect": {
+    "generator_contract": "within_bag_percentile_ranks returns torch.float32 for base, upstream and SKELEX ranks; generator correlation therefore consumes float32 control and float32 SKELEX rank",
+    "auditor_contract": "common._rank returns numpy.float64; the auditor casts control to float32 but leaves SKELEX rank float64 before numpy.corrcoef",
+    "failing_guard": "absolute difference between reproduced and stored mean_skelex_control_rank_correlation must be <= 1e-12",
+    "why_fatal": "rank rational values are rounded differently in float32 and float64, producing correlation deltas orders of magnitude above the guard even though prediction bytes are scientifically identical"
+  },
+  "synthetic_reproduction": {
+    "scientific_input_opened": false,
+    "validation_gt_read": false,
+    "rng_seed": 20261101,
+    "candidate_count_range": [2, 81],
+    "single_bag_finite_cases": 7922,
+    "single_bag_cases_over_1e_12": 7289,
+    "single_bag_max_absolute_delta": 3.255726788164992e-08,
+    "cohorts": 100,
+    "images_per_cohort": 371,
+    "cohorts_over_1e_12": 100,
+    "cohort_min_absolute_mean_delta": 9.917926289265688e-12,
+    "cohort_median_absolute_mean_delta": 2.8593368124607554e-10,
+    "cohort_max_absolute_mean_delta": 1.1858351037230541e-09
+  },
+  "decision": {
+    "cancel_running_version_2_early": true,
+    "reason": "avoid continuing expensive descriptor extraction/training for a run predicted to fail deterministically only in the final independent auditor",
+    "launch_competing_job_before_cancel": false,
+    "authorized_correction": "auditor-only cast all independently reproduced rank vectors to numpy.float32 before aggregation/correlation, add a regression test, and preserve generator, descriptors, selector, predictions, scientific protocol and GT boundary",
+    "scientific_hypothesis_changed": false
+  },
+  "safety": {
+    "prediction_pair_frozen_at_observation": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  }
+}
