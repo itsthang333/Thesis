@@ -10294,3 +10294,94 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   new non-duplicate registered hypothesis and may use this result only as
   negative evidence against unconstrained image-label teacher probabilities.
 
+### EXP-20260801-codex-t1-count-controlled-self-paced-v1
+
+- **Owner/status:** Codex main task on `research-wsss-improvement`; `ĐANG LÀM`.
+- **Registered:** `2026-08-01T06:24Z` (`2026-08-01` ICT). The exact first
+  registration commit will be recorded in an immediate follow-up log update
+  after this claim is pushed; no scientific execution may precede that update.
+- **Inheritance and coordination:** this is the predeclared T1 row after terminal
+  `EXP-20260801-codex-s4-oof-proposal-cluster-v1`, whose GT-blind error audit
+  SHA-256 is
+  `248663692942b2fdf996f3fd8c76674b8b4287529230a0a0d161018e577b2366`.
+  It also inherits terminal negative evidence from R1/R2/S1/R3/R4/S3 and the
+  accepted Geometry-v3/cache, but inherits none of those rejected mechanisms as
+  a demonstrated improvement. The collaborator-owned
+  `EXP-20260731-codex-rich-gallery-g0g1-v1` remains a separate candidate-supply
+  scope with no log-bound terminal result better than same-gallery Geometry-v3;
+  T1 changes no proposal, candidate order or gallery and does not duplicate it.
+- **Hypothesis:** S4's fresh group-excluded teacher retained strong OOF image
+  classification (`AUROC 0.92145064`) and modest original/flip top-1 stability
+  (`0.62328078`) but failed because bag probability remained strongly tied to
+  candidate count (`|rho|=0.57157292`). A fresh producer trained with an explicit
+  differentiable count-independence penalty may retain image-label signal while
+  removing this shortcut. Only if that producer passes a frozen OOF gate may
+  conservative cross-fitted targets drive the already predeclared ItS2CLR-style
+  self-paced confirmation residual.
+- **Non-duplicate/scientific delta:** this is not an S4 rerun or threshold rescue.
+  It does not load S4 checkpoints, candidate logits, seeds or clusters and uses
+  no mask-IoU/containment cluster objective. Five fresh group-excluded producers
+  use the accepted `1,156`-D candidate representation and image labels, with the
+  new project-specific nuisance loss equal to squared Pearson correlation
+  between bag probability and standardized `log1p(candidate_count)` in
+  deterministic group- and label-balanced batches. The coefficient is fixed at
+  `1.0`; it is not selected by validation GT or a post-hoc lambda search.
+- **Frozen producer controls:** exact five-fold assignment row-payload SHA-256
+  `407be430a6aa4408e1baf961ce0cd8eb55e6fe06b34640ceecb3bdfe0cb67ec5`;
+  each producer starts from a separately serialized deterministic initialization;
+  16 final-epoch fits, batch 16, AdamW learning rate `3e-4`, weight decay `1e-4`,
+  image BCE plus original/flip consistency weight `0.10` and count-independence
+  weight `1.0`. The producer may read only clean-train descriptors, image labels,
+  group IDs and candidate counts. Every checkpoint, training/held-out group,
+  history, original/flip candidate logit and scalar diagnostic must be frozen.
+- **Producer-only operational gate before any target/consumer:** independently
+  verify exact `2,981/2,981` OOF coverage, zero held-out/training group overlap,
+  absolute candidate-count/bag-probability Spearman no greater than
+  `0.5013777759365411`, OOF image AUROC at least `0.75`, and original/flip top-1
+  agreement at least `0.60`. Failure terminates T1 before target construction;
+  the count ceiling is not widened and no consumer is fit. This gate uses only
+  image labels and GT-blind metadata.
+- **Frozen consumer controls, conditional on the complete producer gate:** for
+  every image-label-positive training bag, only an OOF producer's original/flip
+  agreeing top candidate is eligible; conservative original/flip margin orders
+  eligible positives through fixed `20%→40%→60%` self-paced stages. All candidates
+  in image-label-negative bags are admissible negatives but receive equal total
+  mass per image, family and candidate. The consumer is a zero-initialized
+  residual over the frozen accepted scorer, trained for 12 epochs with AdamW
+  `1e-4`, supervised-contrastive weight `0.25`, image BCE weight `1.0` and the
+  same count-independence weight `1.0`. Each target row binds the producer fold
+  and proves that producer did not train on its group.
+- **Inputs/provenance:** selector-cache kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1`, freeze SHA-256
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
+  split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`,
+  accepted Geometry-v3 checkpoint SHA-256
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069`
+  and baseline per-image evaluator SHA-256
+  `a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f`.
+- **Sources and transfer limit:** ItS2CLR motivates reliability-ordered
+  pseudo-instance contrastive refinement
+  (https://openaccess.thecvf.com/content/CVPR2023/html/Liu_Multiple_Instance_Learning_via_Iterative_Self-Paced_Supervised_Contrastive_Learning_CVPR_2023_paper.html),
+  while self-guided radiograph MIL motivates soft/cross-fitted rather than
+  same-model hard targets
+  (https://openaccess.thecvf.com/content/ACCV2020/html/Seibold_Self-Guided_Multiple_Instance_Learning_for_Weakly_Supervised_Thoracic_DiseaseClassification_and_ACCV_2020_paper.html).
+  The count-correlation penalty is a transparent BTXRD-specific response to the
+  terminal S4 diagnostic, not a claimed reproduction of either paper.
+- **Compute/output/gates:** static and synthetic work locally; every real OOF
+  producer fit, conditional consumer fit and validation prediction only in one
+  registered Kaggle T4x2/P100 run. If the producer passes, all targets and 371
+  validation predictions/all-candidate scores must freeze physically and pass
+  an independent GT-blind audit before the common evaluator opens validation
+  GT. Mechanism pass remains regret reduction in at least two tumor subgroups,
+  no overall Dice regression and no increase in count/miss association. Full
+  adoption additionally requires Dice overall/small/medium/large at least
+  `0.34024039/0.17895493/0.51244178/0.49370336`, positive overall paired CI95
+  lower bound, no tumor-subgroup decrease, no miss increase and image AUROC at
+  least `0.75`.
+- **Safety:** training remains image-label-only. No validation segmentation GT
+  may select a producer, penalty, target, pace, epoch, residual or checkpoint.
+  No target/consumer is created before the full producer gate; no downstream
+  consumer is authorized before the full operational gate. BTXRD test remains
+  locked. This registration launches nothing and opens no new scientific input.
+
