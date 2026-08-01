@@ -12356,4 +12356,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   canonical/packaged identity ngoài binding, tests trước public model/real input,
   T4x2, descriptor operational gate, physical prediction pair freeze và
   independent GT-blind reproduction. Version 4 chưa push Kaggle tại mốc này.
+- Sau khi prelaunch claim/audit đã được push central tại commit
+  `ca08c2cb762ccb75553e78ae3a94e14eba050980`, exact bound wrapper version 4
+  được thay vào chính private kernel và kiểm tra trực quan đầy đủ version/checkout,
+  three-source ancestry constants, both correction addenda và corrected test
+  override. Kaggle Save & Run All lúc `2026-08-02T02:02:54+07:00` xác nhận
+  `Version #4 with GPU T4 x2`, trạng thái launch ban đầu `Queued`.
+- Đây là launch duy nhất của wrapper SHA `f6183ad2...0ffd`; không competing job,
+  không monitor và không status-poll sau launch trong nhịp này. Experiment vẫn
+  **ĐANG LÀM**; chưa có terminal output/prediction/Dice. Validation GT, consumer,
+  BTXRD test và collaborator output tiếp tục khóa.
 
