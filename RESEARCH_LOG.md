@@ -12263,3 +12263,55 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Validation GT, consumer và BTXRD test tiếp tục khóa; collaborator output không
   được truy cập.
 
+### Đồng bộ collaborator `f5c0ff6` — duplicate audit cho inside/ring (2026-08-02)
+
+- Đã fetch/read exact 29-line log delta mới tại
+  `origin/codex/research-sync-20260731@f5c0ff6d2027e243ffca4509e2a7759cfb3b7c25`;
+  chỉ đọc terminal statements/design trong Git, không truy cập output/Kaggle
+  collaborator. Collaborator xác định draft inside/ring residual tái hiện gần
+  như đầy đủ class-agnostic mask-bag v6: RAD-DINO inside/context/difference,
+  all-normal candidate negatives, tumor-bag objective và detached positive
+  winner; v6 đạt image AUROC `0.813386` nhưng Dice chỉ `0.217899`, dưới
+  Geometry-v3 `0.245482`.
+- Insight chuyển giao là normal negatives + local ring không đủ khi positive
+  candidate vẫn là latent self-reinforcing winner. Vì vậy collaborator retire
+  draft trước code/GPU và chuyển sang inference-only matched-normal candidate
+  transplant/sham causal diagnostic. S5 không trùng exact rerun: scientific
+  delta đã đóng băng của S5 là thay RAD-DINO bằng musculoskeletal SKELEX frozen
+  representation trong cùng family, nhằm trả lời representation bottleneck.
+  Tuy nhiên prior thành công của selector-MIL S5 được hạ xuống; nếu terminal
+  audited result không vượt identity, retire ngay, không rescue sweep hoặc lặp
+  transplant mà collaborator đang chuẩn bị.
+
+### S5 kernel version 3 — LỖI synthetic floor/ULP contract trước real input (2026-08-02)
+
+- Đúng một bounded status check sau launch thấy version 3 terminal **LỖI** sau
+  `50.2 s` trên `GPU T4 x2`, `0` output files. Direct log được tải từ link Logs
+  của chính kernel vào ignored temp
+  `tmp/kaggle/skelex_s5_v3_terminal_error_20260802/kernel.log`: `9,932` byte,
+  `106` dòng, SHA-256
+  `aa6d3d7b93ff58ca330e76c7fef8c1e0f8e91cf4dda779a1354b951a13e4f66e`.
+  Không polling lặp/monitor và không truy cập collaborator output.
+- Checkout `5954be469b82a545ac797e831be0bf3563338fbc`, scientific/correction
+  ancestry, exact protocol/addendum/source guards, T4x2, cài/import assertion
+  `transformers==4.50.2` và `py_compile` đều pass. Wrapper dừng trong suite
+  synthetic trước public SKELEX download và trước resolve bất kỳ BTXRD input:
+  `1 failed, 27 passed in 9.91s`, tại
+  `test_mass_symmetry_uses_the_proven_four_float32_ulp_budget`.
+- Root cause là **test contract error**, không phải production tolerance. Test
+  yêu cầu mọi five-ULP delta đều lớn hơn `max(4 ULP, 4 epsilon)`. Với mass
+  `0.25`, five ULP chỉ `1.49011612e-7`, nhỏ hơn intentional absolute floor
+  `4.76837158e-7`; implementation chấp nhận điểm floor-dominated này là đúng,
+  nhưng `np.all` rejection assertion sai. Ba mass `1/17/196` còn lại đều chứng
+  minh five ULP vượt tolerance như dự kiến.
+- Error audit tracked tại
+  `artifacts/kaggle/skelex_mask_bag_selector_s5_v1/kernel_version3_test_contract_error_audit.json`,
+  SHA-256
+  `1785bc25e2d4c5f539746a0673ecd496db6577ec1a2edf1d5b7d42bb1d771962`.
+  Không scientific result/Dice: không checkpoint download, radiograph,
+  descriptor, selector, prediction/freeze, validation GT, consumer hay test.
+- Correction duy nhất được phép trước successor là test-only: tách case
+  floor-dominated `0.25` khỏi ULP-dominated `1/17/196`, assert rõ cả hai nhánh;
+  không đổi model/runner/auditor/tolerance/protocol. Theo coordination rule,
+  chưa sửa/rerun cho tới khi record `LỖI` này được commit và push central.
+

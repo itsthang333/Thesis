@@ -1,0 +1,81 @@
+{
+  "audit_id": "skelex_mask_bag_selector_s5_v1_kernel_version3_test_contract_error",
+  "audited_utc": "2026-08-01T18:55:00Z",
+  "status": "ERROR_BEFORE_PUBLIC_MODEL_AND_REAL_INPUT",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "kernel": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+  "kernel_version": 3,
+  "kaggle_runtime_seconds": 50.2,
+  "accelerator": "GPU T4 x2",
+  "reported_output_files": 0,
+  "execution_checkout_commit": "5954be469b82a545ac797e831be0bf3563338fbc",
+  "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+  "numeric_correction_source_commit": "664578758225501dc163a6fc35d9ecdb9a1947d7",
+  "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+  "numeric_correction_addendum_sha256": "ded254883a13da9ec0b961970ebacbd2b61badd04c644b7b9c64747a6abd2f72",
+  "bound_wrapper_sha256": "51b09f66edd34a23d4d17401db473b65759da4e5ad26a7ef84dce97250906c7e",
+  "prelaunch_audit_sha256": "f9f4a69cc4501dad749527a7efe0fb74bc5dd9a00e5106c9bc19ec612c719676",
+  "direct_log": {
+    "local_ignored_path": "tmp/kaggle/skelex_s5_v3_terminal_error_20260802/kernel.log",
+    "bytes": 9932,
+    "lines": 106,
+    "sha256": "aa6d3d7b93ff58ca330e76c7fef8c1e0f8e91cf4dda779a1354b951a13e4f66e"
+  },
+  "passed_boundary": {
+    "checkout_exact": true,
+    "scientific_source_ancestry": true,
+    "numeric_correction_ancestry": true,
+    "protocol_and_addendum_and_source_hash_guards": true,
+    "t4x2_guard": true,
+    "transformers_4_50_2_install_and_import_assertion": true,
+    "py_compile": true,
+    "focused_tests_passed": 27
+  },
+  "failed_boundary": {
+    "stage": "static synthetic tests before public SKELEX model download and before resolving any BTXRD input",
+    "test": "tests/test_skelex_mask_bag_descriptor.py::test_mass_symmetry_uses_the_proven_four_float32_ulp_budget",
+    "result": "1 failed, 27 passed in 9.91s",
+    "assertion": "all five-ULP perturbations must exceed the combined ULP/floor tolerance",
+    "observed_five_ulp_absolute_deltas": [
+      1.49011612e-7,
+      5.96046448e-7,
+      9.53674316e-6,
+      7.62939453e-5
+    ],
+    "observed_tolerances": [
+      4.76837158e-7,
+      4.76837158e-7,
+      7.62939453e-6,
+      6.10351562e-5
+    ]
+  },
+  "root_cause": {
+    "classification": "synthetic test contract error; production correction did not execute on scientific input",
+    "details": "The test simultaneously predeclared a four-float32-ULP relative budget and a four-epsilon absolute floor, but then required every five-ULP perturbation to be rejected. At mass 0.25 one float32 ULP is 2.98023224e-8, so five ULPs are 1.49011612e-7, below the intentionally larger four-epsilon floor 4.76837158e-7. The implementation correctly accepts that floor-dominated perturbation; the np.all rejection assertion is inconsistent with the frozen tolerance formula.",
+    "production_mass_tolerance_changed_by_error": false,
+    "descriptor_or_prediction_values_generated": false
+  },
+  "allowed_correction_before_any_rerun": {
+    "scope": "test-only",
+    "change": "separate floor-dominated and ULP-dominated cases; require five-ULP rejection only where the ULP term exceeds the absolute floor, while explicitly asserting the intended floor behavior at 0.25",
+    "model_code_changed": false,
+    "runner_code_changed": false,
+    "auditor_code_changed": false,
+    "scientific_protocol_changed": false
+  },
+  "safety": {
+    "public_skelex_model_download_started": false,
+    "real_btxrd_input_resolved": false,
+    "radiograph_opened": false,
+    "descriptor_cache_started": false,
+    "selector_trained": false,
+    "validation_prediction_created": false,
+    "prediction_frozen": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "scientific_result": null,
+  "dice_result": null
+}
