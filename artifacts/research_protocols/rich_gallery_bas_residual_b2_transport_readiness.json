@@ -9,7 +9,7 @@
   },
   "collaborator_evidence": {
     "fusion_bottleneck_commit": "d849155e49372c2027a1168fbe4a0b68e199470d",
-    "latest_read_commit": "8b1a38d459e3b4681f7ef5722451cc38deb7d67f",
+    "latest_read_commit": "013244aded5aa1b154d2f433de9b4bc7e005d1e7",
     "g1_checkpoint_sha256": "634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c",
     "g2_stage_a_prediction_freeze_sha256": "78970d417de20dc884958dfb3fd9cb2bad9f2cda53240ae2207607ba827cd167",
     "g2_protocol_sha256": "6dd6c66e396054157eb498cbca46635d1058c73d1139541d385bb769088801be",
@@ -83,27 +83,63 @@
   },
   "interpretation_boundary": {
     "b2_role": "independent BAS semantic-descriptor control",
+    "collaborator_terminal_metrics_trusted_not_rerun": true,
+    "control_reproduction_is_transport_integrity_only": true,
+    "sole_new_scientific_question": "BAS semantic arm minus frozen G1/upstream control",
     "zero_initialized_learned_relational_residual_implemented": false,
     "geometric_relation_or_consensus_used": false,
     "future_relation_authorized_only_after_terminal_positive_b2": true
+  },
+  "coordination_after_collaborator_static_bas_design": {
+    "collaborator_commit": "013244aded5aa1b154d2f433de9b4bc7e005d1e7",
+    "collaborator_bas_status": "STATIC_NO_CLAIM_NO_FIT_NO_PREDICTION_NO_METRIC",
+    "duplicate_224px_launch_forbidden": true,
+    "sole_planned_resolution": 448,
+    "failure_analysis_contract_integrated_as_procedure_not_performance_evidence": true
+  },
+  "postfreeze_failure_analysis_invariants": {
+    "regret_components": [
+      "candidate_truncation_regret",
+      "wrong_source_regret",
+      "within_selected_source_regret"
+    ],
+    "components_nonnegative_and_sum_to_gallery_oracle_minus_selected_dice": true,
+    "candidate_manifest_and_pseudo_manifest_both_bound": true,
+    "independently_recomputed_from_physical_gallery": true
   },
   "static_sources": [
     "project/models/bas_candidate_localizer.py",
     "project/models/rich_gallery_bas_residual.py",
     "project/audit_rich_gallery_stage_a_transport.py",
+    "project/run_rich_gallery_bas_semantic_b2.py",
+    "project/audit_rich_gallery_bas_semantic_b2_output.py",
+    "project/evaluate_rich_gallery_bas_semantic_b2.py",
+    "project/audit_rich_gallery_bas_semantic_b2_evaluation.py",
     "tests/test_bas_candidate_localizer.py",
     "tests/test_rich_gallery_bas_residual.py",
     "tests/test_audit_rich_gallery_stage_a_transport.py",
+    "tests/test_run_rich_gallery_bas_semantic_b2.py",
+    "tests/test_audit_rich_gallery_bas_semantic_b2_output.py",
+    "tests/test_evaluate_rich_gallery_bas_semantic_b2.py",
+    "tests/test_audit_rich_gallery_bas_semantic_b2_evaluation.py",
     "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md"
   ],
   "canonical_lf_source_hashes": {
-    "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md": "562f001cd9f8db1ffab7d97a044d49c943d1f0b78e94e73acf16a6472bb8114d",
+    "BAS_RICH_GALLERY_RESIDUAL_B2_DESIGN.md": "4775f69c12bf6269823e01c47aaac9969f205467056b7904c5b858ea45c30969",
     "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
     "project/models/rich_gallery_bas_residual.py": "9639c47f3f0f8aeb235f65e800adec0100612a9b57b003195daf6b47a973d582",
     "project/audit_rich_gallery_stage_a_transport.py": "300812291a339ac7e096257fd1c328dc44f8c58a1e8802da8716bec1f74a2476",
+    "project/run_rich_gallery_bas_semantic_b2.py": "03457dd079b388c454a436dd2162f1ce56f3638592c13fa56bddd302c48efda5",
+    "project/audit_rich_gallery_bas_semantic_b2_output.py": "c2ddac26cfdf4ccc6c762e4b7484cc2ccf064366490d3b3fb3ba9b446fd872a2",
+    "project/evaluate_rich_gallery_bas_semantic_b2.py": "98bf92fb186f5682e17f1bfb052a202d7a5a8b34abc1c03cc31cfb6ced39dfc7",
+    "project/audit_rich_gallery_bas_semantic_b2_evaluation.py": "3c0ada81f602b1c71e79206406f538cd21e20036773141fee6a389fc085282b7",
     "tests/test_bas_candidate_localizer.py": "d57475ef12fb317199757a3e20e456d9373c96f2712195e53e28f0d50b776f46",
     "tests/test_rich_gallery_bas_residual.py": "ceaae11db66e7f008511d8410c504b8b28d3c582f2bac4ce30704b44cec36163",
-    "tests/test_audit_rich_gallery_stage_a_transport.py": "a397034b79cf044934d47010e64ea1e5876aa734bebb04859bacd4da8ff00151"
+    "tests/test_audit_rich_gallery_stage_a_transport.py": "a397034b79cf044934d47010e64ea1e5876aa734bebb04859bacd4da8ff00151",
+    "tests/test_run_rich_gallery_bas_semantic_b2.py": "a79b016765d4aca9f0a7dac483fdf85be0984a9f1f9e569fd67689967a146cb2",
+    "tests/test_audit_rich_gallery_bas_semantic_b2_output.py": "58839caba3e53d10cdf30593b48f9212d678e5d798512522e08a9dad44a66072",
+    "tests/test_evaluate_rich_gallery_bas_semantic_b2.py": "bccdaf6f6b6610c9aa7e386a91206f70ab2ebb3209b319cc275874c458a8f56c",
+    "tests/test_audit_rich_gallery_bas_semantic_b2_evaluation.py": "296adac315a27967a4619c51993b54c5be8ea6ebe400588ae5d01846b403eddd"
   },
   "safety": {
     "real_scientific_input_opened": false,

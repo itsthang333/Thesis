@@ -11435,3 +11435,127 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `git diff --check` pass. Scientific primitive/auditor bytes không đổi; không
   real-data access, fit, prediction, GT, consumer, test hay Kaggle launch.
 
+### Tin cậy pipeline cộng tác và B2 semantic execution closure (2026-08-01)
+
+- Theo chỉ đạo người dùng, kết quả terminal của workstream cộng tác được tin cậy
+  và kế thừa, không chạy lại để xác nhận. Pipeline nguồn chính xác là rich
+  proposal union + equal percentile-rank G1/upstream tại
+  `0.2887294867/0.1577232964/0.4352293348/0.3868735327`, oracle
+  `0.52829833/0.33187635/0.73025092/0.74624721`. B2 không train/evaluate lại
+  G0/G1/G2/top-10; việc tái lập 371 control choice từ Stage-A transport chỉ là
+  kiểm tra byte/schema/provenance. Câu hỏi khoa học mới duy nhất là BAS semantic
+  arm trừ fixed control này.
+- Phân rã bottleneck được giữ nguyên từ terminal dossier: selector regret
+  `0.239569`, trong đó `70.29%` nằm trong selected source; oracle top-10 đã
+  `0.399326` nhưng 49 complete miss có oracle-rank median `95`. Small có median
+  selected/GT area `14.603` trong khi large là `0.382`. Top-10 relation đổi
+  123/184 choice, recover 12 miss nhưng mất 8 hit và làm small Dice giảm
+  `-0.03495792` với CI95 strictly negative. Vì vậy không proposal regeneration,
+  geometric reranker, top-k/IoU/area/source/resolution/morphology sweep; tín hiệu
+  mới phải nhận diện tumor, score cả deep rank và không đồng nhất anatomy với
+  foreground.
+- B2 static producer `project/run_rich_gallery_bas_semantic_b2.py` canonical-LF
+  SHA-256 `03457dd079b388c454a436dd2162f1ce56f3638592c13fa56bddd302c48efda5`
+  nay khóa một ResNet-50 BAS 448px/100 epoch/image-label-only/T4x2, exact
+  ImageNet weight `11ad3fa6...9ca`, fixed control và duy nhất một semantic arm.
+  Nó yêu cầu classification + complementarity gate GT-blind, lưu activation/
+  candidate-score evidence và chỉ materialize 742 binary prediction file sau
+  operational pass. Constant semantic rank fail-closed như redundant thay vì
+  gây runtime error.
+- Independent no-GT physical auditor
+  `project/audit_rich_gallery_bas_semantic_b2_output.py` SHA-256
+  `c2ddac26cfdf4ccc6c762e4b7484cc2ccf064366490d3b3fb3ba9b446fd872a2`
+  không import producer và không nhận dataset/GT path. Nó tái tính BAS evidence,
+  ranks, 371 control/semantic choice, 742 physical mask, exact checkpoint/
+  history/gate/T4x2/source/protocol/input hashes trước khi evaluator được phép
+  chạy.
+- Post-freeze evaluator
+  `project/evaluate_rich_gallery_bas_semantic_b2.py` SHA-256
+  `98bf92fb186f5682e17f1bfb052a202d7a5a8b34abc1c03cc31cfb6ced39dfc7`
+  chỉ import segmentation dataset sau pair freeze và no-GT audit pass. Nó dùng
+  trusted `0.28872949` như integrity anchor, không như experiment mới; báo paired
+  group-bootstrap 10,000, subgroup, miss recover/loss, positive/negative Dice
+  mass, source transition và selected/GT-area ratio. Auditor hậu-GT độc lập
+  `project/audit_rich_gallery_bas_semantic_b2_evaluation.py` SHA-256
+  `3c0ada81f602b1c71e79206406f538cd21e20036773141fee6a389fc085282b7`
+  không import producer/evaluator và tái tính raw physical-mask metrics/gate.
+- B2 design/readiness mới có SHA-256
+  `4775f69c12bf6269823e01c47aaac9969f205467056b7904c5b858ea45c30969` /
+  `aefa5fb44bbe2cb91ccc7023da0d22a0ac29f4b8a280cac60251ca5d5d76f4bd`.
+  Focused BAS/rich-gallery/producer/two-auditor/evaluator suite pass `38/38`;
+  full repository regression pass `548/548` trong 21.53 giây bằng pinned
+  Python-3.9 environment và documented strict-zip diagnostic shim;
+  `py_compile`, Ruff, JSON parse và `git diff --check` pass. Đây vẫn là static preparation:
+  chưa mở real transport/radiograph, chưa claim/fit/prediction/validation GT,
+  chưa consumer/test và không heavy compute local. Boundary còn thiếu là exact
+  GT-blind collaborator Stage-A/candidate transport; Kaggle access trước đó trả
+  HTTP 403 nên không được phép tự tái tạo pipeline đã tin cậy.
+
+### Deep-search successor nếu BAS còn bị anatomy false positive (2026-08-01)
+
+- Primary evidence mới được đọc: Chen et al., *FPR: False Positive
+  Rectification for Weakly Supervised Semantic Segmentation*, ICCV 2023,
+  https://openaccess.thecvf.com/content/ICCV2023/html/Chen_FPR_False_Positive_Rectification_for_Weakly_Supervised_Semantic_Segmentation_ICCV_2023_paper.html;
+  official repo https://github.com/mt-cly/FPR và exact training implementation
+  https://raw.githubusercontent.com/mt-cly/FPR/master/step/train_fpr.py. FPR dùng
+  activation của class vắng mặt để thu co-occurring-background prototype, sau
+  đó region contrast/pixel rectification suppress pixel gần negative prototype.
+  Với BTXRD binary, train image-label-normal là absent-tumor cohort trực tiếp,
+  nên high tumor activation trên normal image có thể mô hình hóa bone/anatomy
+  false positive mà relation vừa chứng minh.
+- Không adopt FPR như cải tiến đã chứng minh trên BTXRD. Official implementation
+  có validation-mIoU model selection/threshold loop nên phần đó bị cấm chuyển
+  giao. Hypothesis có điều kiện được ghi ở
+  `RICH_GALLERY_FALSE_POSITIVE_RECTIFICATION_B3_DESIGN.md`, canonical-LF SHA-256
+  `5f65f481cfb97d6dfaf96c1f3565dc0a9652308b07fbbe2fe39181b13aa2e0e3`.
+  B3 chỉ được xem xét sau terminal audited B2 nếu BAS thực sự complementary
+  nhưng negative mass còn gắn với anatomy activation: giữ exact B2 checkpoint,
+  dùng train-only positive/absent-tumor regional prototypes và FPR closer-
+  positive pixel retain rule, rồi so rectified-BAS với raw B2 trong matched
+  pair. Không relation/consensus/count/source/size router hay sweep.
+- B3 hiện chỉ là successor hypothesis: không claim/protocol/code/fit/prediction/
+  GT/consumer/test/compute. Nếu B2 không cho bằng chứng semantic hữu ích hoặc B3
+  sau này fail, family này phải dừng thay vì rescue post-hoc. Đây giữ đúng quy
+  tắc chỉ học/adopt hiệu năng khi có terminal audited BTXRD result tốt hơn.
+
+### Đồng bộ collaborator `013244a` và tránh duplicate BAS resolution (2026-08-01)
+
+- Pre-push fetch phát hiện nhánh cộng tác tăng từ `8b1a38d...` lên
+  `013244aded5aa1b154d2f433de9b4bc7e005d1e7`. Delta gồm mandatory
+  failure-analysis contract và một BAS-B1 static design/runner/evaluator 224px.
+  Không có claim `ĐANG LÀM`, real fit, frozen prediction, validation metric hay
+  terminal improvement mới; vì vậy không adopt code/224px như bằng chứng hiệu
+  năng và không chạy competing BAS experiment.
+- Hypothesis BAS-B1 trùng family với central B2 đã chuẩn bị trước ở commit
+  `d053bcf`; khác biệt chính là 224px so với fixed 448px. Chạy cả hai sẽ thành
+  resolution sweep chưa có kết quả tốt hơn làm căn cứ. Coordination decision:
+  chỉ central B2 448px được giữ làm planned experiment vì prior BTXRD evidence
+  đã chỉ ra 448 cải thiện small-lesion representation và classifier448 có
+  small-source oracle cao nhất. Collaborator 224px design chỉ là static evidence
+  và không được launch song song; phải fetch/read lại log trước claim.
+- Phần được kế thừa là **quy trình phân tích failure**, không phải performance
+  technique: metric proxy không được che endpoint Dice, và mọi rejected arm phải
+  giữ per-image precision/recall/extent, gallery/eligible/selected-source oracle,
+  truncation/wrong-source/within-source regret, oracle-rank depth,
+  top-1/3/5/10/20/50 restricted oracle, recoverable misses, rank correlation,
+  source/hit transition và signed Dice mass trước GPU successor tiếp theo.
+- B2 được hiệu chính trước claim/protocol/real data: classification và
+  complementarity vẫn là GT-blind diagnostics nhưng không còn chặn việc
+  materialize pair. Nếu transport/runtime/cohort/finiteness pass, 742 prediction
+  file luôn freeze trước GT để actual Dice/failure dossier có thể được audit;
+  diagnostics yếu vẫn khóa consumer/adoption. Evaluator và independent
+  post-GT auditor nay tự tái lập complete rich-gallery candidate quality và toàn
+  bộ decomposition trên, trong khi trusted `0.28872949` vẫn chỉ là integrity
+  anchor. Đây là protocol/readiness correction, chưa có scientific run/result.
+- Regret audit được siết thêm trước claim: ba thành phần truncation/wrong-source/
+  within-source phải không âm và cộng đúng bằng full-gallery oracle trừ selected
+  Dice cho từng image/arm; cả evaluator lẫn auditor độc lập đều fail-closed.
+  Evaluation summary nay bind cả candidate manifest lẫn pseudo-manifest vật lý.
+  Test evaluator tương ứng SHA-256
+  `bccdaf6f6b6610c9aa7e386a91206f70ab2ebb3209b319cc275874c458a8f56c`.
+- Một lần chạy Ruff trên **toàn bộ** legacy `project/` và `tests/` trả `1,038`
+  lỗi lint đã tồn tại ngoài scope B2, chủ yếu `E402` do pattern chèn `sys.path`
+  của repository. Không dùng auto-fix và không sửa code người dùng/legacy trong
+  active experiment. Ruff giới hạn đúng 8 source/test B2 pass; đây là technical
+  lint-debt observation, không phải scientific error/result.
+

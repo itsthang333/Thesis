@@ -25,6 +25,12 @@ consensus) is worse. The old static same-gallery B1 protocol SHA-256
 `5b9a80c63331551ff2c4ba0140096c14fa27076e141b83129e774843a7a7fde8`
 is superseded before claim or launch.
 
+These terminal collaborator results are trusted rather than rerun. B2 neither
+re-trains nor re-evaluates G0/G1/G2/top-10. Reproducing the fixed control choice
+from the transported Stage-A scores is only a byte/schema/provenance integrity
+check. The single new scientific question is whether independent BAS semantic
+evidence improves that already frozen control.
+
 The `0.28872949` result remains exploratory rather than confirmatory because
 the equal-rank rule was designed after earlier validation Stage-B evidence.
 B2 is consequently another development experiment, not a claim of independent
@@ -58,7 +64,7 @@ average-tie percentile rank.
 The finite prediction pair is:
 
 1. `g1_upstream_control`: exact mean of frozen G1 and upstream percentile ranks;
-2. `g1_upstream_bas_residual`: exact unweighted mean of G1, upstream and BAS
+2. `g1_upstream_bas_semantic`: exact unweighted mean of G1, upstream and BAS
    percentile ranks.
 
 There is no rank weight, source weight, threshold, candidate deletion, top-k
@@ -76,6 +82,14 @@ that 448-pixel training improved small-lesion localization, classifier448 has
 the strongest small-source oracle in the rich gallery, and a 224-pixel
 output-stride-8 activation grid would reduce already tiny lesions to very few
 cells. No 224/320 comparator is authorized.
+
+A later collaborator static design at commit
+`013244aded5aa1b154d2f433de9b4bc7e005d1e7` independently proposed the same
+BAS evidence family at 224 pixels, but has no claim, real fit, frozen
+prediction or terminal metric. It is therefore not adopted as a proven
+improvement and must not be launched as a competing resolution arm. The
+earlier central 448-pixel choice remains the sole planned run because prior
+BTXRD evidence specifically favored its small-lesion representation.
 
 The remaining BAS recipe is fixed from the official implementation:
 
@@ -124,10 +138,12 @@ Before either arm can be emitted as a prediction:
 - exact T4 x2, split, ImageNet initialization, source, protocol and no-test
   contracts pass.
 
-Failure freezes a GT-blind negative result and forbids Dice evaluation. On
-pass, both 371-choice arms, candidate scores and selected immutable masks are
-physically frozen as one pair before a separate evaluator can import validation
-polygons.
+These quantities are label-safe diagnostics, not substitutes for the spatial
+endpoint. Once transport/runtime/cohort/finiteness checks pass, both 371-choice
+arms, candidate scores and selected immutable masks are physically frozen even
+if a diagnostic point value is weak. Only after this pair freeze may a separate
+evaluator import validation polygons. Diagnostics can reject later consumer
+use, but they cannot erase the actual Dice evidence needed for failure analysis.
 
 ## Post-freeze decision
 
@@ -137,9 +153,49 @@ lower 95% complete-group bootstrap bound overall, no negative subgroup mean,
 and no increase in complete misses. It is a full goal pass only at Dice at
 least `0.34024039/0.17895493/0.51244178/0.49370336`. A consumer remains locked
 unless the full operational goal gate passes. Regardless of outcome, report
-source transitions, changed-case Dice, top-rank gains, deep-rank miss
-recoveries/losses and remaining within/cross-source regret. No rescue sweep is
-authorized.
+source transitions, changed-case Dice, positive/negative Dice mass, complete
+miss recoveries/losses and selected-to-GT area ratios. The rich-gallery oracle
+and prior control metrics are inherited unchanged from the collaborator. The
+post-freeze evaluator re-derives them from the transported physical gallery
+only as an integrity anchor and to decompose the new arm's regret; this is not
+a second proposal-generation or control-training experiment. No rescue sweep
+is authorized.
+
+## Static execution and audit closure
+
+The fail-closed producer `project/run_rich_gallery_bas_semantic_b2.py` trains
+only BAS and emits exactly the trusted control plus the semantic arm. It stores
+activation/candidate-score evidence and materializes all 742 binary masks after
+transport/runtime/cohort/finiteness pass, irrespective of diagnostic proxy
+values. Classification and complementarity remain label-safe explanatory
+diagnostics and always keep consumer authorization false until actual spatial
+evaluation; they cannot suppress the predeclared Dice endpoint.
+`project/audit_rich_gallery_bas_semantic_b2_output.py` independently recomputes
+all BAS scores, choices and physical masks without importing the producer and
+without accepting a dataset/annotation path.
+
+Only after that no-GT audit passes may
+`project/evaluate_rich_gallery_bas_semantic_b2.py` import the validation
+segmentation dataset. A second independent program,
+`project/audit_rich_gallery_bas_semantic_b2_evaluation.py`, reopens the frozen
+physical predictions and recomputes every paired metric/bootstrap/gate without
+importing either the producer or evaluator. The trusted `0.28872949` control is
+checked solely as an integrity anchor; any drift fails closed instead of being
+treated as a new result.
+
+If B2 is rejected, the evaluator must still preserve the complete per-image
+failure evidence before another GPU run: precision/recall and extent; full,
+eligible and selected-source oracle; truncation, wrong-source and
+within-selected-source regret; eligible-oracle rank; top-1/3/5/10/20/50
+restricted oracle; recoverable misses at Dice 0.1/0.3/0.5; score-quality rank
+correlation; source/hit transitions and signed Dice mass. This incorporates the
+procedural failure-analysis contract from collaborator commit `013244a` without
+adopting its unrun 224-pixel method as performance evidence.
+Every per-image regret triple must be non-negative (up to numerical tolerance)
+and sum exactly to full-gallery oracle minus selected Dice; evaluator and
+independent post-GT auditor both fail closed on any mismatch. The evaluation
+summary also binds both the candidate manifest and the pseudo-manifest that
+created the physical gallery.
 
 ## Primary sources and transfer boundary
 
