@@ -1,0 +1,41 @@
+{
+  "base_commit": "ea0ecc429ea076882ef5adb72c142377a577319f",
+  "claim_commit": "0e1b5daa895d28809e13ba106fbe60236b2ac909",
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "focused_tests": {
+    "passed": 7,
+    "seconds": 2.82,
+    "total": 7
+  },
+  "full_regression": {
+    "environment": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe with the documented Python-3.9 strict-zip test shim",
+    "passed": 497,
+    "seconds": 22.18,
+    "total": 497
+  },
+  "implementation_change": {
+    "description": "The N1 runner now validates and loads the frozen selector cache directly through mask_bag_selector_cache_io instead of importing the complete R1 scientific runner.",
+    "mechanism_changed": false,
+    "protocol_changed": false,
+    "source_closure_reduced": true,
+    "supersedes_runner_readiness_sha256": "fba7f143aefa9cbe0e698e0333f1620b90e0d10048c5c62332dc58247d4583ee"
+  },
+  "non_scientific_error": {
+    "boundary": "The first full-regression invocation used the system Python executable and stopped during collection because NumPy was absent.",
+    "correction": "Rerun the unchanged tree with the pinned btxrd-pseudomask environment; all 497 tests passed.",
+    "prediction_created": false,
+    "real_cache_opened": false
+  },
+  "recorded_at": "2026-08-01T15:21:15+07:00",
+  "runner_sha256": "c1c34a5ef6c64a0f46339ea435a8566fc8ae4e327d5fb6ff243a5052b8ddcc9a",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "generated_test_caches_recycled": true,
+    "real_cache_fit": false,
+    "scientific_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "status": "STATIC_SYNTHETIC_RUNNER_REFINED",
+  "test_sha256": "a3f90444f8e2f94f8d220122b91c5a98d2c7d9dd4a1c5b2bfbfc6c5528c27fb5"
+}

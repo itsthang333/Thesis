@@ -22,7 +22,10 @@ from models.mask_bag_normal_anomaly import (
 )
 from models.mask_bag_score_evidence import save_candidate_score_evidence, write_candidate_score_manifest
 from models.mask_bag_selector_cache import unpack_candidate_masks
-from run_mask_bag_normal_prototype_arm import _load_cache_records, _verify_cache_freeze
+from models.mask_bag_selector_cache_io import (
+    load_selector_cache_record,
+    validate_selector_cache_manifest,
+)
 
 
 EXPECTED_BASELINE_COUNT_PROBABILITY_SPEARMAN = 0.48137777593654113
@@ -70,6 +73,84 @@ def _absolute_spearman(first: Sequence[float], second: Sequence[float]) -> float
     if not math.isfinite(value):
         raise ValueError("N1 Spearman is not finite")
     return abs(value)
+
+
+def _verify_cache_freeze(
+    args: argparse.Namespace,
+) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    freeze_path = args.selector_cache_root / "selector_cache_freeze.json"
+    if sha256_file(freeze_path) != args.expected_selector_cache_freeze_sha256:
+        raise ValueError("N1 selector-cache freeze hash mismatch")
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    if (
+        freeze.get("split_sha256") != args.expected_split_sha256
+        or freeze.get("baseline_checkpoint_sha256")
+        != args.expected_baseline_checkpoint_sha256
+        or freeze.get("baseline_source_commit")
+        != args.expected_baseline_source_commit
+        or freeze.get("baseline_protocol_sha256")
+        != args.expected_baseline_protocol_sha256
+        or freeze.get("cohort") != {"train": 2981, "validation": 371}
+        or freeze.get("validation_selected_indices_reproduced") != 371
+        or freeze.get("validation_map_hashes_reproduced") != 371
+        or freeze.get("train_masks_discarded") is not True
+        or freeze.get("validation_masks_bitpacked") is not True
+        or freeze.get("validation_gt_read") is not False
+        or freeze.get("consumer_trained") is not False
+        or freeze.get("test_evaluated") is not False
+    ):
+        raise ValueError("N1 selector-cache provenance/safety mismatch")
+    manifest_path = args.selector_cache_root / "selector_cache_manifest.csv"
+    if sha256_file(manifest_path) != freeze.get("selector_cache_manifest_sha256"):
+        raise ValueError("N1 selector-cache manifest differs from freeze")
+    with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return freeze, list(csv.DictReader(handle))
+
+
+def _load_cache_records(
+    args: argparse.Namespace,
+    split_rows: Mapping[str, list[dict[str, str]]],
+    manifest_rows: list[dict[str, str]],
+) -> dict[str, list[dict[str, Any]]]:
+    indexed = {(row["split"], row["image_id"]): row for row in manifest_rows}
+    expected: dict[str, dict[str, dict[str, object]]] = {"train": {}, "val": {}}
+    for split in ("train", "val"):
+        for row in split_rows[split]:
+            manifest = indexed.get((split, row["image_id"]))
+            if manifest is None:
+                raise ValueError(f"N1 selector cache omits {split}/{row['image_id']}")
+            expected[split][row["image_id"]] = {
+                "group_id": row["group_id"],
+                "tumor": row["tumor"],
+                "candidate_payload_sha256": manifest["candidate_payload_sha256"],
+            }
+    validated = validate_selector_cache_manifest(
+        args.selector_cache_root,
+        expected_manifest_sha256=sha256_file(
+            args.selector_cache_root / "selector_cache_manifest.csv"
+        ),
+        expected_images=expected,
+    )
+    loaded: dict[str, list[dict[str, Any]]] = {"train": [], "val": []}
+    for split in ("train", "val"):
+        validated_by_id = {row["image_id"]: row for row in validated[split]}
+        for split_row in split_rows[split]:
+            row = validated_by_id[split_row["image_id"]]
+            payload = load_selector_cache_record(
+                args.selector_cache_root / row["cache_path"],
+                expected_sha256=row["cache_sha256"],
+                require_packed_masks=split == "val",
+            )
+            loaded[split].append(
+                {
+                    "image_id": split_row["image_id"],
+                    "group_id": split_row["group_id"],
+                    "label": int(split_row["tumor"]),
+                    "candidate_payload_sha256": row["candidate_payload_sha256"],
+                    **payload,
+                }
+            )
+    return loaded
 
 
 def _verify_baseline(
@@ -252,7 +333,7 @@ def main() -> None:
     }
     if len(split_rows["train"]) != 2981 or len(split_rows["val"]) != 371:
         raise RuntimeError("N1 frozen cohort mismatch")
-    cache, _validated = _load_cache_records(args, split_rows, cache_manifest)
+    cache = _load_cache_records(args, split_rows, cache_manifest)
     baseline = _verify_baseline(args, split_rows["val"])
     args.output_dir.mkdir(parents=True)
     normal_records = [

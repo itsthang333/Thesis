@@ -10903,3 +10903,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Vẫn chưa có protocol/auditor/wrapper/binding hay real-cache fit/prediction;
   validation GT, consumer và BTXRD test giữ khóa.
 
+- **N1 runner source-closure refinement (static, supersedes initial runner
+  readiness):** trước khi đóng băng protocol, audit dependency phát hiện runner
+  N1 đang import toàn bộ scientific runner R1 chỉ để dùng hai helper đọc/kiểm
+  tra selector cache. N1 nay tự kiểm tra freeze/manifest/cohort/safety và chỉ gọi
+  primitive I/O `models/mask_bag_selector_cache_io`; hypothesis, `K=32/seed42`,
+  equal image→family→candidate/view weighting, score, output contract và mọi gate
+  khoa học không đổi. Runner mới có SHA-256
+  `c1c34a5ef6c64a0f46339ea435a8566fc8ae4e327d5fb6ff243a5052b8ddcc9a`;
+  test giữ SHA-256
+  `a3f90444f8e2f94f8d220122b91c5a98d2c7d9dd4a1c5b2bfbfc6c5528c27fb5`.
+- Focused suite `7/7` trong 2.82 giây và full repository `497/497` trong
+  22.18 giây pass bằng pinned `btxrd-pseudomask` environment cùng documented
+  Python-3.9 strict-zip shim. Lần gọi full regression đầu tiên dùng nhầm system
+  Python không có NumPy nên dừng tại collection; không mở real cache/dữ liệu và
+  không có scientific result. Rerun trên đúng environment pass toàn bộ, cache
+  test phát sinh đã chuyển vào Recycle Bin. Refinement-readiness artifact SHA-256
+  là `4fe530618fffb91444b8c5fe01b0b215e986719719be5cc51f707facdabb8573`.
+  Chưa fit real cache, chưa tạo prediction, chưa mở validation GT/consumer/test;
+  initial runner-readiness được supersede chỉ ở source closure.
+
