@@ -11249,3 +11249,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   heavy local compute. Đây vẫn là static readiness; protocol/claim/launch chưa
   tồn tại.
 
+- **Source-closure correction before protocol:** runner còn một import private
+  `_audit_candidate_input` từ RAD-DINO probe. Nó nay gọi trực tiếp primitive
+  `validate_candidate_diagnostics_manifest` và tự khóa `cohort=all/371`; không
+  còn import scientific runner nào khác. Runner SHA-256 cuối là
+  `7ba49e38cb829fd8cdf7d20bd142713f5a9887d3011ec3e2a2b62fbe2295e20e`;
+  focused `11/11` vẫn pass trong 3.19 giây. Không scientific boundary nào đổi.
+

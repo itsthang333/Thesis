@@ -48,7 +48,7 @@ from models.mask_bag_selector_cache_io import (
     validate_selector_cache_manifest,
 )
 from models.rad_dino_mask_bag_mil import MaskBagMILConfig, RadDinoMaskBagMIL
-from run_rad_dino_mask_bag_mil_probe import _audit_candidate_input
+from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
 
 
 EXPECTED_PRETRAINED_SHA256 = (
@@ -700,13 +700,15 @@ def main() -> None:
     }
     if len(split_rows["train"]) != 2981 or len(split_rows["val"]) != 371:
         raise RuntimeError("B1 frozen cohort mismatch")
-    val_candidate_rows, val_candidate_audit = _audit_candidate_input(
+    val_candidate_rows, val_candidate_audit = validate_candidate_diagnostics_manifest(
         args.val_candidate_root,
-        split_rows["val"],
+        expected_image_names=[row["image_id"] for row in split_rows["val"]],
         split="val",
         expected_manifest_sha256=args.val_candidate_manifest_sha256,
         expected_pseudo_manifest_sha256=args.val_pseudo_manifest_sha256,
     )
+    if val_candidate_audit.get("cohort") != "all" or len(val_candidate_rows) != 371:
+        raise ValueError("B1 requires complete all-image validation candidates")
     cache = _load_cache_records(args, split_rows, cache_manifest_rows)
     train_dataset = build_classification_dataset(
         root=args.dataset_root,
