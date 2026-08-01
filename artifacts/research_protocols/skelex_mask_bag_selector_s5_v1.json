@@ -1,0 +1,154 @@
+{
+  "protocol_id": "skelex_mask_bag_selector_s5_v1",
+  "frozen_local_time": "2026-08-02T00:40:05+07:00",
+  "status": "FROZEN_PRELAUNCH",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "owner": "Codex central workstream",
+  "hypothesis": "a frozen musculoskeletal-radiograph SKELEX representation will reduce candidate-selector regret while the immutable gallery, image-label-only MIL recipe and equal-rank control remain fixed",
+  "inherits_terminal_evidence": {
+    "collaborator_commit": "f30e37b063682c4e79c50b58c53dd3fbadd64478",
+    "trusted_rich_gallery_control_dice": 0.2887294867,
+    "trusted_rich_gallery_oracle_dice": 0.52829833,
+    "trusted_bas_b2_dice": 0.18110635,
+    "collaborator_output_accessed": false,
+    "scientific_boundary": "transferable representation ablation on central-owned same-gallery artifacts; no claim of direct rich-gallery improvement before a later physical transport"
+  },
+  "scientific_source": {
+    "commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+    "design": "SKELEX_MASK_BAG_SELECTOR_S5_DESIGN.md",
+    "single_changed_variable": "frozen proposal representation source: generic RAD-DINO to musculoskeletal SKELEX",
+    "unchanged": [
+      "accepted candidate indices and masks",
+      "candidate non-semantic metadata",
+      "16-epoch image-label-only MIL selector recipe",
+      "Geometry-v3 plus upstream equal-rank control",
+      "unweighted percentile-rank fusion"
+    ]
+  },
+  "external_model": {
+    "repository": "skhoha/SKELEX",
+    "revision": "368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e",
+    "architecture": "ViTMAEForPreTraining ViT-Large encoder",
+    "license": "CC-BY-NC-ND-4.0",
+    "redistribute_checkpoint": false,
+    "files": {
+      "config.json": "b48411f4313c2ee6357586b57d185befac8c7c77cc475bc2188ec4487b1bc6f7",
+      "preprocessor_config.json": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea",
+      "model.safetensors": "81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8"
+    },
+    "model_safetensors_bytes": 1318230232,
+    "transformers_version": "4.50.2",
+    "model_source_urls": [
+      "https://www.nature.com/articles/s41746-026-02826-9",
+      "https://arxiv.org/abs/2602.03076",
+      "https://huggingface.co/skhoha/SKELEX/tree/368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e",
+      "https://github.com/huggingface/transformers/blob/v4.50.2/src/transformers/models/vit_mae/modeling_vit_mae.py"
+    ]
+  },
+  "image_label_only_boundary": {
+    "split": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "cohort": {"train": 2981, "validation": 371},
+    "training_labels": ["tumor image-level binary label"],
+    "full_square_padded_radiographs_only": true,
+    "tumor_or_anatomy_crop": false,
+    "annotation_paths_resolved": false,
+    "annotation_bytes_opened_or_hashed": false,
+    "test_images_read": 0
+  },
+  "immutable_inputs": {
+    "raw_dataset": "itsthang333/btxrd-raw",
+    "train_gallery_dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1@1",
+    "train_candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "train_pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "validation_transport_dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1@1",
+    "validation_candidates_zip_sha256": "426fbe9cb01ce5063e7897b1b1c424ab4ce9f0310086434aec5163759422687a",
+    "validation_candidate_manifest_sha256": "3e9396f532c793258919a1d99aa3dcef00523436c853207b8d7123e5dc133090",
+    "validation_pseudo_manifest_sha256": "286d1fce0bcbd0f96a15b6b386ad27a0edac3500a63c5b87e16f9075d6c6320e",
+    "selector_cache_dataset": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+    "baseline_protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+  },
+  "descriptor": {
+    "input_size": 224,
+    "normalization": "checkpoint ImageNet mean/std",
+    "mask_ratio": 0.0,
+    "noise": "deterministic strictly increasing patch indices",
+    "remove_cls_before_grid": true,
+    "selected_hidden_layers": [8, 16, 24],
+    "native_grid": "14x14",
+    "projection": {"input_dim": 1024, "output_dim": 128, "seed": 42},
+    "geometry_bridge": "accepted 128x128 square-corrected fractional masks then area interpolation to 14x14",
+    "minimum_grid_mass_cutoff": false,
+    "zero_support_policy": "fail closed; never silently drop an accepted candidate",
+    "pooling": "per-layer inside mean, local-context mean, contrast, plus exact accepted four-column metadata"
+  },
+  "training": {
+    "encoder_frozen": true,
+    "epochs": 16,
+    "batch_size": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "smoothmax_temperature": 0.2,
+    "instance_loss_weight": 0.25,
+    "instance_warmup_epochs": 2,
+    "horizontal_flip_consistency_weight": 0.1,
+    "seed": 42,
+    "sweep": false
+  },
+  "finite_arms": {
+    "control": "geometry_v3_plus_upstream_equal_rank",
+    "primary": "geometry_v3_plus_upstream_plus_skelex_equal_rank",
+    "weights": "equal within-image percentile ranks",
+    "weight_or_threshold_alternatives": false
+  },
+  "execution": {
+    "compute": "Kaggle T4x2 only",
+    "one_kernel_version": true,
+    "static_and_synthetic_tests_before_real_input": true,
+    "descriptor_operational_gate_before_selector_training": true,
+    "independent_gt_blind_physical_audit_before_validation_gt": true,
+    "diagnostics_block_prediction_freeze": false
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "comparator": "project/compare_mask_bag_evaluated_arms.py",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261101,
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "primary_gate": "strict overall corrected Dice improvement and no mandatory subgroup regression under the frozen comparator"
+  },
+  "canonical_lf_source_hashes": {
+    "SKELEX_MASK_BAG_SELECTOR_S5_DESIGN.md": "4071bb262aa1782afa630bcc108e34f58748b1ca936dbad9493e0c7ae0f81f4b",
+    "project/models/skelex_mask_bag_descriptor.py": "c55cfe12ca7860961799124fdae3096d21baf8a02b967e48968ba0f29bd7daaf",
+    "project/run_skelex_mask_bag_selector_s5.py": "61eef4b98d096cc009617dd479d629f3e7d926162a674f1d0272afb476ff74da",
+    "project/audit_skelex_mask_bag_selector_s5_output.py": "732436424604c01f62f6f2690a9dd0c9e7f36077a0128bbb3bdd3ade7a9136b6",
+    "project/run_bas_candidate_descriptor_core.py": "a9b69da1c524ddbd70e439ee5986ace843711993e2150bde17c75aafcc75b2dc",
+    "project/audit_bas_candidate_descriptor_core.py": "82112c773a07ff4b18f54698769beeb4eedc78c7404d87a0b9253543dfb83a4d",
+    "project/run_rad_dino_mask_bag_mil_probe.py": "0a220933343212dd3f4cc349f459db54b2b492d04240a7aa28fb85c475d54ae8",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+    "project/models/nominal_patch_memory.py": "a7fbf3e4042623b1b2817f8bb02a87072db55c21bb5b9380cc259aca3a7dd526",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/models/mask_bag_same_family_graph.py": "0c65a2bfa2ad9a190f860bf51bfdc28c8af2b03b7a4e8ec9f2327e3cfed67287",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/pseudo/candidate_diagnostics.py": "b50e789ab99a76306e45cc771c60f58fb63cbc7538630d81ed912a337777324b",
+    "tests/test_skelex_mask_bag_descriptor.py": "7e7a7fffcac0c1c070fd2f28adf877058ada98b53e8c7f2ff36461f73d369cd9",
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/compare_mask_bag_evaluated_arms.py": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119"
+  },
+  "prohibited": [
+    "validation segmentation GT before physical pair freeze and independent audit",
+    "collaborator experimental output or Kaggle access",
+    "tumor-containing or anatomy crop",
+    "proposal regeneration or accepted-index modification",
+    "weight, layer, source, resolution, threshold, subgroup or morphology sweep",
+    "consumer training before operational gate pass",
+    "BTXRD test access"
+  ]
+}
