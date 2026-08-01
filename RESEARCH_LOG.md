@@ -8105,3 +8105,50 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `40/40`. No G2 GPU job has yet been launched in this log entry; test remains
   locked.
 
+### EXP-20260801-codex-rich-gallery-g2-terminal-v3
+
+- **Terminal status:** private/offline T4x2 kernel
+  `wanwin/btxrd-rich-gallery-g2-selector-pair` version 3 completed. Versions 1
+  and 2 failed before data/GPU on wrapper-only CRLF and read-only pycache
+  issues; version 3 changed only `PYTHONPYCACHEPREFIX`. The scientific protocol
+  remained SHA-256
+  `6dd6c66e396054157eb498cbca46635d1058c73d1139541d385bb769088801be`.
+- **Audit boundary:** in-kernel independent Stage-A and Stage-B audits pass;
+  G1 choices reproduce 371/371, eight variants contain 2,968 frozen selection
+  rows, validation is 371/184 tumors with subgroups 94/72/18, spatial GT was
+  opened only after freeze, and test reads remain zero. Prediction-freeze and
+  evaluation-summary SHA-256 values are
+  `78970d417de20dc884958dfb3fd9cb2bad9f2cda53240ae2207607ba827cd167`
+  and `813b5a0c9506d2052508f1a8ffe2a401e947183bef452eaef3330b3a48cdd9b6`.
+- **Actual result:** the best G2 variant is hierarchical shared-source
+  negative-only plus rank fusion at Dice/IoU `0.25432565/0.19066102`, subgroup
+  Dice `0.13792543/0.37614745/0.37490625`, with 62 complete misses. It fails
+  every primary subgroup gate and is below frozen G1 rank fusion
+  `0.28872949/0.21683918` by `-0.03440384`; paired complete-group bootstrap
+  CI95 is `[-0.058333, -0.014022]`. G1 rank fusion remains the best observed
+  rich-gallery validation result.
+- **Causal partial success:** flat shared-source hard-top raw improves G1 raw
+  `0.20602633 -> 0.24850185`; paired delta `+0.04247552`, CI95
+  `[0.010932, 0.075269]`. Removing the external-source training shortcut is
+  therefore beneficial, but insufficient. Median selected/GT area ratio falls
+  `13.02 -> 3.05`, while misses rise `29 -> 44`.
+- **Failure mechanism:** every arm collapses to about 1.74-1.87 effective
+  candidates at final temperature 0.2. Negative-only supervision cannot
+  identify a positive instance in tumor bags; hierarchy removes source
+  multiplicity but not latent-instance ambiguity. G2 fusion further loses the
+  complementarity of G1: fusion adds `+0.082703` to G1 raw but only
+  `+0.003239/+0.010234/+0.030551` to the three G2 raw arms. G2 model/upstream
+  rank correlation rises from 0.1868 to 0.2273-0.2454.
+- **Paired localization evidence:** G2 fusion keeps the G1-fusion candidate on
+  only 47.8-51.1% of tumors; changed cases lose about 0.070 Dice on average.
+  The largest concentrated loss is classifier448-to-LayerCAM switching:
+  30 images/-3.665 total Dice for hard-top fusion and 28/-4.206 for
+  hierarchical fusion. G2 fusion has median selected/GT area ratio 1.96-1.99,
+  comparable to G1 fusion 2.04, but 62-64 misses versus 49. The remaining
+  bottleneck is positive-instance ranking/hit recall, not gross extent.
+- **Decision:** retire G2 temperature/epoch/threshold/resolution/rank-weight
+  sweeps. The next diagnostic must introduce annotation-free candidate-level
+  positive evidence, preserve hit recall, improve within-source ordering and
+  remain complementary to upstream score. Full analysis is recorded in
+  `RICH_GALLERY_G2_FAILURE_DOSSIER.md`. Test remains locked.
+
