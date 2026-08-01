@@ -11911,6 +11911,54 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa có claim/Dice terminal. S5 không chạy lại BAS và không cạnh tranh B2.2;
   collision check trên cả hai log không thấy claim SKELEX descriptor đang làm.
 
+### EXP-20260802-codex-rich-gallery-bas-b22-final-failure-v1
+
+- **Nguồn đồng bộ:** tin cậy terminal statement mới trong
+  `origin/codex/research-sync-20260731@added53690ed94c69d6c39cd619c0aced506bb85`
+  theo chỉ đạo người dùng; không truy cập, download hoặc audit output/Kaggle của
+  collaborator. Mục này supersede nhận định trước đó rằng B2.2 mới chỉ là static
+  design.
+- **Mechanics:** B2.2 repaired the B2.1 empty-map optimum, reaching validation
+  image AUROC `0.735294` and foreground CE `0.463459`. It nevertheless failed
+  the frozen mechanics contract because full-image CE worsened to `0.985558`.
+  The generated tumor maps are broad anatomy maps: median activation mean
+  `0.496241`, effective support `0.576708`, and 35.28% of cells exceed 0.90.
+- **Exact formula:** for fixed class map `C`, B2.2 has
+  `dL/dM_i=(1.2-1.5*C_i/mean(C))/N`; its box optimum activates every cell with
+  above-average class evidence ratio `>0.8`. The written foreground reference
+  `0.5` is an additive constant with no gradient effect. The tumor channel also
+  receives no dense-negative supervision on train-normal images.
+- **Area-proxy proof:** within each tumor gallery, BAS score versus candidate
+  area has mean/median Spearman `0.933174/0.950055`; 81.52% of images exceed
+  `0.90`. The mechanism learned common anatomy/extent rather than candidate
+  tumor identity.
+- **Frozen actual endpoint:** the primary G1+upstream+B2.2 fusion reaches Dice
+  `0.19172607`, delta `-0.09700342` with paired CI95
+  `[-0.128452,-0.047141]`. Subgroup deltas are
+  `-0.129408/-0.117096/+0.152591`: B2.2 helps large lesions by expansion but
+  catastrophically magnifies small/medium over-extent. It recovers three old
+  misses and creates 27 new misses.
+- **No metadata rescue:** a GT-only per-image oracle switch would reach
+  `0.322338`, proving limited complementarity. A deterministic group-separated
+  ridge using every current label-safe area/border/classifier/activation/source
+  observable reaches only `0.287786`, below the immutable `0.288729` baseline.
+  The B2.2 benefit cannot be safely routed with existing metadata.
+- **Bottleneck update:** gallery truncation remains negligible (`0.000396`).
+  B2.2 raises selector regret from `0.239569` to `0.336572`, worsening both
+  within-source and cross-source terms. The missing observable is
+  candidate-conditioned tumor identity plus signed extent: tumor evidence
+  inside the mask, normal/tumor contrast at its boundary, and direct tumor-
+  channel negatives on normal candidates.
+- **Decision:** retire all BAS variants and sweeps. Preserve G1+upstream fixed
+  fusion at Dice `0.2887294867`. The collaborator successor is a bounded
+  candidate inside-versus-local-ring residual with train-normal candidate
+  negatives, tumor-bag MIL, no global/coordinate bypass, and zero initialization
+  on the immutable baseline. S5 không copy/rerun successor đó: S5 giữ gallery
+  Geometry-v3 riêng, frozen SKELEX descriptors đã predeclare gồm inside,
+  dilated-local-context và signed inside-minus-context, rồi chỉ sửa hai identity
+  guard số học trước một correction rerun. Không đổi science sau khi thấy metric.
+  Test remains locked.
+
 #### `EXP-20260802-codex-s5-skelex-selector-v1`
 
 - **Owner/time/status:** Codex central workstream; đăng ký
@@ -12147,4 +12195,42 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   float32 trước aggregation/correlation. Không thay descriptor values, selector
   recipe, gallery, arms, prediction hay protocol mechanism. Theo rule, chưa sửa
   hoặc rerun trước khi mục `LỖI` v2 này được commit/push trung tâm.
+
+### S5 version 3 — numeric identity correction đã chuẩn bị, chưa launch (2026-08-02)
+
+- Sau khi failure v2 được audit và push ở commit
+  `367f6fcf82d5d1e248d6c7f8dc065a4d904fd4ff`, hai correction implementation-only
+  được đóng băng ở source commit
+  `664578758225501dc163a6fc35d9ecdb9a1947d7`. Runner thay duy nhất equality
+  guard bằng per-candidate maximum của four float32 ULP và four-epsilon floor đã
+  có terminal evidence ở `24f374fc...`; validity, positive support, descriptor
+  bytes, selector recipe và decision gate không đổi. Auditor thay duy nhất
+  reproduced percentile ranks sang `numpy.float32`, đúng arithmetic của
+  generator; prediction bytes không đổi.
+- Numeric correction addendum
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_v1_numeric_correction_addendum.json`
+  có SHA-256
+  `ded254883a13da9ec0b961970ebacbd2b61badd04c644b7b9c64747a6abd2f72`.
+  Nó giữ scientific source `61927cc...` và protocol `036e9d1d...`, đồng thời
+  đóng băng corrected model/runner/auditor/test SHA-256 lần lượt là
+  `c0119775...9b3` / `b23b61db...0bc` / `dbf84451...049` /
+  `385a4c17...779`.
+- Fail-closed canonical wrapper nay xác minh exact addendum, correction ancestry
+  và đúng bốn source overrides trước tests/input; wrapper/test canonical SHA-256
+  là `949e3a37aff7d56dd510c6dd3027c0e10705cd9b1d33bdaf1c19646d3d54f923` /
+  `fb6d122838940dc62588eab7d0710f7185477339b204faa2a66d8484bcd2d490`.
+  Local `py_compile`, `git diff --check` và wrapper tests `2 passed in 0.06s`.
+  Host thiếu PyTorch/NumPy nên exact four-ULP và rank32 regression tests phải
+  pass trên T4x2 wrapper trước public-model download và trước mọi real input.
+- Đồng bộ log collaborator `added536...` xác nhận B2.2 terminal Dice
+  `0.19172607`, area-score Spearman mean/median `0.933174/0.950055` và selector
+  regret tăng `0.239569 -> 0.336572`; chỉ tin log, không truy cập output/Kaggle
+  collaborator. Bằng chứng này củng cố candidate-conditioned signed
+  inside-vs-local-context của S5, nhưng không làm thay đổi arm đã predeclare và
+  không được dùng để rescue/sweep sau metric.
+- Trạng thái `EXP-20260802-codex-s5-skelex-selector-v1` trở lại **ĐANG LÀM** cho
+  đúng một version-3 correction rerun sau khi mục này/code được push central và
+  prelaunch binding pass. Hiện chưa launch v3, chưa mở real input sau lỗi v2,
+  chưa prediction/validation GT/consumer/test; collaborator output không được
+  truy cập.
 

@@ -1,0 +1,72 @@
+{
+  "addendum_id": "skelex_mask_bag_selector_s5_v1_numeric_correction",
+  "status": "FROZEN_IMPLEMENTATION_ONLY_CORRECTION",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "correction_source_commit": "664578758225501dc163a6fc35d9ecdb9a1947d7",
+  "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+  "scientific_protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+  "predecessor_error_audits": {
+    "kernel_version1": "329ad59b715677f7b4aa11c9644234fc5cf7f65dd2da140c119b058c2c629683",
+    "kernel_version2": "bd525398ca033f014f55e3bd13d5a083cf1421842ed77c50be11d824de7e82b3",
+    "postlaunch_rank_precision": "68e8e8d1c972a2415681d79af8d7abf955eaedbe563796054dbfff6ae44c5954"
+  },
+  "canonical_lf_source_overrides": {
+    "project/models/skelex_mask_bag_descriptor.py": {
+      "previous_sha256": "c55cfe12ca7860961799124fdae3096d21baf8a02b967e48968ba0f29bd7daaf",
+      "corrected_sha256": "c01197750f289aab31d4cb34c914fd211c70c49214789aa2379f4bcdbb1899b3"
+    },
+    "project/run_skelex_mask_bag_selector_s5.py": {
+      "previous_sha256": "61eef4b98d096cc009617dd479d629f3e7d926162a674f1d0272afb476ff74da",
+      "corrected_sha256": "b23b61db262bb67b5ef3faefcd0ae3565c35bfb124925a279060a10340f070bc"
+    },
+    "project/audit_skelex_mask_bag_selector_s5_output.py": {
+      "previous_sha256": "732436424604c01f62f6f2690a9dd0c9e7f36077a0128bbb3bdd3ade7a9136b6",
+      "corrected_sha256": "dbf84451ae32b5fd819af53c48f3357da0c236defdaa5eda2d1b787640e01049"
+    },
+    "tests/test_skelex_mask_bag_descriptor.py": {
+      "previous_sha256": "7e7a7fffcac0c1c070fd2f28adf877058ada98b53e8c7f2ff36461f73d369cd9",
+      "corrected_sha256": "385a4c17eeeaccd55f9a19864b28dd95b6bd41cfaf24eb57c6432755373ee779"
+    }
+  },
+  "corrections": {
+    "mass_symmetry": {
+      "mechanism": "per-candidate maximum of four float32 ULPs and a four-epsilon absolute floor",
+      "terminal_evidence_source_commit": "24f374fcce9100b0a56d2a85c562eb10d1fdf058",
+      "exact_candidate_validity_still_required": true,
+      "positive_support_still_required": true,
+      "descriptor_values_changed": false,
+      "diagnostics_added": [
+        "maximum_absolute_flip_mass_delta",
+        "maximum_flip_mass_delta_to_tolerance"
+      ]
+    },
+    "independent_rank_reproduction": {
+      "mechanism": "cast all independently reproduced percentile ranks to numpy.float32 before aggregation and correlation",
+      "generator_arithmetic_changed": false,
+      "prediction_values_changed": false,
+      "auditor_identity_only": true
+    }
+  },
+  "unchanged_scientific_contract": {
+    "public_skelex_revision": "368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e",
+    "public_skelex_weight_sha256": "81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8",
+    "selected_layers": [8, 16, 24],
+    "projection": "1024-to-128 seed 42",
+    "split_gallery_cache_baseline": true,
+    "selector_recipe": true,
+    "arms_and_equal_rank_aggregation": true,
+    "prediction_freeze_and_evaluator": true,
+    "image_label_only_training": true
+  },
+  "prelaunch_state": {
+    "py_compile": "PASS",
+    "local_wrapper_tests": "2 passed",
+    "full_torch_numeric_tests_required_on_kaggle_before_public_model_download": true,
+    "real_input_opened_after_version2_error": false,
+    "prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "successor_launched": false
+  }
+}
