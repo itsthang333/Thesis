@@ -7,6 +7,7 @@ import numpy as np
 
 from project.evaluate_rich_gallery_bas_candidate_descriptor_b1 import (
     _failure_decomposition,
+    _render_mechanism_dossier,
     dice,
     iou,
     rank_correlation,
@@ -83,3 +84,20 @@ def test_failure_decomposition_detects_fusion_dilution() -> None:
     result = _failure_decomposition(per_image, summary, {"mean_bas_upstream_rank_correlation": 0.2})
     assert "equal_three_way_fusion_dilutes_complementary_bas_signal" in result["identified_failure_branches"]
     assert result["no_next_gpu_run_before_manual_dossier_review"] is True
+
+    dossier = _render_mechanism_dossier(
+        summary,
+        {
+            "overall": {"ci95_low": -0.02, "ci95_high": 0.01},
+            "small": {"ci95_low": -0.03, "ci95_high": 0.01},
+            "medium": {"ci95_low": -0.02, "ci95_high": 0.02},
+            "large": {"ci95_low": -0.05, "ci95_high": 0.03},
+        },
+        result,
+        {"pass": False},
+    )
+    assert "Exact selector-regret decomposition" in dossier
+    assert "within_selected_source" in dossier
+    assert "equal_three_way_fusion_dilutes_complementary_bas_signal" in dossier
+    assert "Promotion pass: `false`" in dossier
+    assert "BTXRD test remains locked" in dossier

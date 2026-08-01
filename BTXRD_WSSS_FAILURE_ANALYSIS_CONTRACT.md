@@ -125,7 +125,23 @@ The dossier must answer all of the following before another GPU run:
 If these questions cannot be answered, the correct action is further analysis
 or literature study, not a new run.
 
-## 6. Current consequence for the next experiment
+## 6. Evidence-exhaustion requirement
+
+A failure dossier must use every available evidence layer that can distinguish
+the competing causes without opening test: frozen per-image outputs, candidate
+and source metadata, continuous score maps, training logs, image-label scores,
+matched controls, subgroup anatomy, prior terminal experiments, analytical
+identities and relevant primary literature. Conclusions based on one aggregate
+metric, a few visual examples, or a plausible narrative are insufficient.
+
+The analysis must triangulate each claimed bottleneck with at least two
+independent observables when possible. It must also state which alternatives
+were ruled out, which remain observationally indistinguishable, and what cheap
+diagnostic would separate the remaining alternatives. A proposed intervention
+is authorized only when it targets the dominant measured regret component and
+adds an observable signal absent from the failed method.
+
+## 7. Current consequence for the next experiment
 
 The central research log now contains terminal evidence that critical-instance
 and orbit-averaged relational residuals (R3/R4), local affinity (R2),

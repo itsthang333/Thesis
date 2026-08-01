@@ -320,6 +320,123 @@ def _failure_decomposition(
     }
 
 
+def _render_mechanism_dossier(
+    summary: Mapping[str, Any],
+    bootstrap: Mapping[str, Any],
+    failure: Mapping[str, Any],
+    promotion: Mapping[str, Any],
+) -> str:
+    """Render the mandatory evidence dossier before any successor GPU run."""
+
+    lines = [
+        "# Rich-gallery BAS-B2 mechanism dossier",
+        "",
+        "## Frozen question",
+        "",
+        "The immutable control is `0.5*rank(G1) + 0.5*rank(upstream)`. ",
+        "The sole primary change is `(rank(G1)+rank(upstream)+rank(BAS))/3`.",
+        "All candidate choices were frozen before validation polygons; BTXRD test was not opened.",
+        "",
+        "## Actual binary-mask result",
+        "",
+        "| Variant | Overall | <1% | 1-<5% | >=5% | Misses |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for variant in VARIANTS:
+        metrics = summary[variant]
+        lines.append(
+            f"| `{variant}` | {metrics['overall']['dice']:.6f} | "
+            f"{metrics['small']['dice']:.6f} | {metrics['medium']['dice']:.6f} | "
+            f"{metrics['large']['dice']:.6f} | {metrics['overall']['complete_misses']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Exact selector-regret decomposition",
+            "",
+            "For every tumor image: `full oracle - selected = truncation + cross-source + within-source`.",
+            "",
+            "| Component | Mean regret |",
+            "|---|---:|",
+        ]
+    )
+    decomposition = failure["candidate_supply"]["primary_regret_decomposition"]
+    for key in ("candidate_truncation", "cross_source", "within_selected_source", "sum"):
+        lines.append(f"| {key} | {float(decomposition[key]):.6f} |")
+    lines.extend(
+        [
+            f"| total selector regret | {summary[PRIMARY]['overall']['selector_regret']:.6f} |",
+            "",
+            "## Rank-depth recoverability",
+            "",
+            "| Bound | Mean best attainable Dice |",
+            "|---|---:|",
+            f"| top-1 selected | {summary[PRIMARY]['overall']['dice']:.6f} |",
+        ]
+    )
+    for key, label in (
+        ("top3_oracle_dice", "top-3"),
+        ("top5_oracle_dice", "top-5"),
+        ("top10_oracle_dice", "top-10"),
+        ("top20_oracle_dice", "top-20"),
+        ("top50_oracle_dice", "top-50"),
+    ):
+        lines.append(f"| {label} | {summary[PRIMARY]['overall'][key]:.6f} |")
+    lines.extend(
+        [
+            "",
+            "## Localization versus extent by subgroup",
+            "",
+            "| Group | Base/primary Dice | Primary precision | Primary recall | Primary area/GT median | Base/primary misses |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for group, label in (("small", "<1% (n=94)"), ("medium", "1-<5% (n=72)"), ("large", ">=5% (n=18)")):
+        before = summary[BASELINE][group]
+        after = summary[PRIMARY][group]
+        lines.append(
+            f"| {label} | {before['dice']:.6f}/{after['dice']:.6f} | "
+            f"{after['precision']:.6f} | {after['recall']:.6f} | "
+            f"{after['selected_gt_area_ratio_median']:.3f} | "
+            f"{before['complete_misses']}/{after['complete_misses']} |"
+        )
+    overall_bootstrap = bootstrap["overall"]
+    lines.extend(
+        [
+            "",
+            "## Paired evidence",
+            "",
+            f"- Wins/losses/ties: `{failure['wins']}/{failure['losses']}/{failure['ties']}`.",
+            f"- Positive/negative signed Dice mass: `{failure['positive_dice_mass']:.6f}/{failure['negative_dice_mass']:.6f}`.",
+            f"- Overall paired group-bootstrap delta CI95: `[{overall_bootstrap['ci95_low']:.6f}, {overall_bootstrap['ci95_high']:.6f}]`.",
+            f"- Hit/miss transitions: `{json.dumps(failure['hit_miss_transitions'], sort_keys=True)}`.",
+            f"- Source transition Dice mass: `{json.dumps(failure['source_transition_dice_mass'], sort_keys=True)}`.",
+            "",
+            "## Falsified or supported branches",
+            "",
+        ]
+    )
+    branches = list(failure["identified_failure_branches"])
+    if branches:
+        lines.extend(f"- `{branch}`" for branch in branches)
+    else:
+        lines.append("- No predeclared failure branch fired; inspect the complete per-image table before interpreting the result.")
+    lines.extend(
+        [
+            "",
+            "## Decision boundary",
+            "",
+            f"Promotion pass: `{str(bool(promotion['pass'])).lower()}`.",
+            "No successor GPU run is authorized from the mean score alone. If promotion fails,",
+            "the per-image table, subgroup effects, regret identity, shortcuts and prior negative",
+            "families must be reviewed under `BTXRD_WSSS_FAILURE_ANALYSIS_CONTRACT.md`.",
+            "BTXRD test remains locked.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def main() -> None:
     args = parse_args()
     if args.bootstrap_replicates != 10000 or args.bootstrap_seed != 20260801:
@@ -524,6 +641,11 @@ def main() -> None:
         writer = csv.DictWriter(handle, fieldnames=list(per_image[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(per_image)
+    dossier_path = args.output_dir / "BAS_B2_MECHANISM_DOSSIER.md"
+    dossier_path.write_text(
+        _render_mechanism_dossier(summary, bootstrap, failure, promotion),
+        encoding="utf-8",
+    )
     result = {
         "stage": "rich_gallery_bas_b2_post_freeze_evaluation_v1",
         "cohort": {"validation": 371, "tumor": 184, "normal": 187, "small": 94, "medium": 72, "large": 18},
@@ -531,6 +653,7 @@ def main() -> None:
         "paired_bootstrap_primary_vs_baseline": bootstrap,
         "promotion": promotion,
         "failure_decomposition": failure,
+        "mechanism_dossier_sha256": sha256_file(dossier_path),
         "label_safe_diagnostics": label_safe,
         "candidate_choices_frozen_before_validation_gt": True,
         "validation_gt_read_only_after_prediction_freeze": True,
@@ -545,6 +668,7 @@ def main() -> None:
         "prediction_freeze_sha256": args.expected_prediction_freeze_sha256,
         "per_image_sha256": sha256_file(per_image_path),
         "summary_sha256": sha256_file(summary_path),
+        "mechanism_dossier_sha256": sha256_file(dossier_path),
         "test_images_read": 0,
         "test_evaluated": False,
     }
