@@ -329,3 +329,28 @@ threshold or fusion-weight sweep.
   `30fd0bf766743a3ae9fc5bc2a2710aaa779808e9456ea7011925ae2613216641`
 - Validation cohort: 371 images, 184 tumors, subgroup 94/72/18.
 - Test evaluated: false; test images read: 0.
+
+## 2026-08-01 post-BAS correction to the next-mechanism plan
+
+The relational residual proposed above was subsequently tested by matched
+central R3/R4-style diagnostics and did not supply tumor-specific evidence; it
+is no longer the active next mechanism. BAS-B2 was then tested against this
+same immutable baseline. Equal three-way fusion produced Dice `0.181106`, but
+the failure was traced to a dead binary classifier and constant label maps,
+not to a functioning BAS localizer: tail CE is `log(2)`, accuracy is exactly
+the normal-class prior, and BAS score has mean correlation `0.999902` with
+candidate area.
+
+The current improvement boundary is therefore narrower:
+
+1. no additional proposal supply, two-score weight, relation, consensus or
+   area rule is justified;
+2. a single terminal-activation correction may test whether class-aware BAS
+   evidence can exist in the binary setting without collapse;
+3. if that mechanics gate fails, BAS is retired;
+4. if BAS mechanics pass but Dice does not, the next representation must score
+   candidate content against its local ring/background using train-normal hard
+   negatives while preserving the frozen G1/upstream baseline.
+
+See `RICH_GALLERY_G1_POST_BAS_B2_BOTTLENECK_DOSSIER.md` for the exact formulas,
+regime table and reproducibility hashes.

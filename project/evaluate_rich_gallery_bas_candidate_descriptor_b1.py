@@ -14,7 +14,11 @@ import numpy as np
 from mae_reconstruction_io import load_split_rows_without_annotations, sha256_file
 from models.rich_gallery_g2_objective import average_percentile_rank, stable_select
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
-from run_rich_gallery_bas_candidate_descriptor_b1 import VARIANTS, canonical_source
+from run_rich_gallery_bas_candidate_descriptor_b1 import (
+    VARIANTS,
+    build_variant_scores,
+    canonical_source,
+)
 
 
 BASELINE = "g1_upstream_baseline"
@@ -74,6 +78,37 @@ def _read_rows(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+def reproduce_frozen_selection(
+    payload: Mapping[str, np.ndarray],
+    variant: str,
+) -> int:
+    """Reproduce the pre-serialization selector without float32 tie drift.
+
+    Stage A computes percentile-rank fusions in float64 and then stores the
+    fused vectors as float32.  Different exact rational rank sums can collapse
+    to the same float32 value, changing the G1-logit tie break even though the
+    frozen manifest was correct.  Rebuild the fusion from the three raw
+    float32 inputs (which are the inputs used by Stage A), while still checking
+    that the stored fused vector is a faithful float32 transport copy.
+    """
+
+    if variant not in VARIANTS:
+        raise ValueError(f"unknown rich BAS variant: {variant}")
+    g1 = np.asarray(payload["g1_logits"], dtype=np.float64)
+    upstream = np.asarray(payload["upstream_scores"], dtype=np.float64)
+    bas = np.asarray(payload["bas_scores"], dtype=np.float64)
+    rebuilt = build_variant_scores(g1, upstream, bas)[variant]
+    transported = np.asarray(payload[variant], dtype=np.float64)
+    if transported.shape != rebuilt.shape or not np.allclose(
+        transported,
+        rebuilt,
+        rtol=0.0,
+        atol=float(np.finfo(np.float32).eps),
+    ):
+        raise ValueError(f"rich BAS transported score vector changed: {variant}")
+    return stable_select(rebuilt, g1)
+
+
 def verify_stage_a(
     args: argparse.Namespace,
     val_rows: list[dict[str, str]],
@@ -122,7 +157,7 @@ def verify_stage_a(
         scores = np.asarray(payload[row["variant"]], dtype=np.float64)
         if not (len(candidate_indices) == len(g1_logits) == len(scores)):
             raise ValueError("rich BAS frozen arrays are misaligned")
-        local = stable_select(scores, g1_logits)
+        local = reproduce_frozen_selection(payload, row["variant"])
         if (
             local != int(row["selected_local_index"])
             or int(candidate_indices[local]) != int(row["selected_candidate_index"])
@@ -494,9 +529,11 @@ def main() -> None:
         with np.load(score_path, allow_pickle=False) as score_payload:
             candidate_indices = score_payload["candidate_indices"].astype(np.int64)
             g1_logits = score_payload["g1_logits"].astype(np.float64)
-            variant_scores = {
-                variant: score_payload[variant].astype(np.float64) for variant in VARIANTS
-            }
+            variant_scores = build_variant_scores(
+                g1_logits,
+                score_payload["upstream_scores"].astype(np.float64),
+                score_payload["bas_scores"].astype(np.float64),
+            )
         eligible_quality = candidate_dice[candidate_indices]
         eligible_sources = canonical_sources[candidate_indices]
         eligible_oracle_local = int(eligible_quality.argmax())

@@ -109,14 +109,18 @@ is missing tumor-specific candidate identity: G1 and upstream often agree on
 the wrong anatomy. This explains why consensus, relational smoothing and
 metadata ablations repeatedly move masks without reliably increasing Dice.
 
-The current BAS-B2 experiment is therefore correctly targeted: it keeps the
-gallery and frozen baseline fixed and adds a third class-aware spatial signal
-trained from image labels. Its decisive test is not classification AUROC but
-whether BAS moves high-Dice masks onto the score frontier, reduces dominance
-and within-source regret, recovers misses without worsening small-lesion
-over-extent, and raises actual binary-mask Dice above 0.288729.
+BAS-B2 was targeted at the correct missing observable but did not actually
+instantiate it. Its binary classifier collapsed to tied zero logits and its
+localization branch to a constant label map. The resulting BAS score had mean
+Spearman `0.999902` with candidate area, so equal three-way fusion fell to Dice
+`0.181106`. This separates hypothesis from implementation: the experiment
+does not show that independent class-aware spatial evidence is unnecessary;
+it shows that the transferred terminal-ReLU BAS head never produced that
+evidence.
 
-If BAS-B2 fails, the next analysis must determine whether BAS lacks lesion-hit
-signal, duplicates the two existing rankings, detects tumor but assigns the
-wrong extent, or supplies useful evidence that equal three-way fusion dilutes.
-No alpha/weight sweep is authorized from this validation analysis.
+The next bounded action is therefore not alpha/weight tuning. It is a matched
+terminal-activation correction with fail-fast proof that classification is
+non-constant, maps are spatially nondegenerate and candidate evidence is not
+an area proxy. Only then is actual binary-mask Dice against `0.288729` worth
+computing. Full causal evidence is in
+`RICH_GALLERY_G1_POST_BAS_B2_BOTTLENECK_DOSSIER.md`.

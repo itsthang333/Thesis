@@ -11,8 +11,10 @@ from project.evaluate_rich_gallery_bas_candidate_descriptor_b1 import (
     dice,
     iou,
     rank_correlation,
+    reproduce_frozen_selection,
     size_group,
 )
+from project.run_rich_gallery_bas_candidate_descriptor_b1 import build_variant_scores
 
 
 def test_overlap_metrics_and_groups() -> None:
@@ -28,6 +30,34 @@ def test_overlap_metrics_and_groups() -> None:
 def test_rank_correlation_is_tie_aware_and_finite() -> None:
     assert np.isclose(rank_correlation(np.asarray([0.0, 1.0, 2.0]), np.asarray([2.0, 1.0, 0.0])), -1.0)
     assert rank_correlation(np.ones(3), np.arange(3)) == 0.0
+
+
+def test_frozen_selection_rebuilds_float64_rank_fusion_before_tie_break() -> None:
+    count = 155
+    g1 = np.arange(count, dtype=np.float32)
+    g1[[48, 152]] = g1[[152, 48]]
+    g1[[60, 151]] = g1[[151, 60]]
+    # Pair every non-target G1 rank with its reverse BAS rank, then reserve
+    # BAS ranks 152/153 for the two target candidates.  They are therefore the
+    # only global maxima of the two-way fusion.
+    bas = (count - 1 - g1).astype(np.float32)
+    bas_rank_152 = int(np.flatnonzero(bas == 152)[0])
+    bas[[48, bas_rank_152]] = bas[[bas_rank_152, 48]]
+    bas_rank_153 = int(np.flatnonzero(bas == 153)[0])
+    bas[[60, bas_rank_153]] = bas[[bas_rank_153, 60]]
+    upstream = np.arange(count, dtype=np.float32)
+    rebuilt = build_variant_scores(g1, upstream, bas)
+    payload = {
+        "g1_logits": g1,
+        "upstream_scores": upstream,
+        "bas_scores": bas,
+        **{name: values.astype(np.float32) for name, values in rebuilt.items()},
+    }
+
+    # The transported fusion ties at float32, where a direct tie break would
+    # choose index 48.  The immutable Stage-A float64 decision is index 60.
+    assert payload["g1_bas_two_way"][48] == payload["g1_bas_two_way"][60]
+    assert reproduce_frozen_selection(payload, "g1_bas_two_way") == 60
 
 
 def test_evaluator_is_the_only_file_that_imports_segmentation_after_verification() -> None:

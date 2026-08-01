@@ -8344,3 +8344,47 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   preserving the gallery and baseline. Full formulas and subgroup evidence are
   in `RICH_GALLERY_G1_TWO_SCORE_IDENTIFIABILITY_DOSSIER.md`.
 
+### EXP-20260801-codex-rich-gallery-bas-b2-v1 final result and root cause
+
+- **Actual frozen endpoint:** the immutable G1/upstream baseline reproduces
+  Dice/IoU `0.28872949/0.21683918`. Equal three-way BAS fusion reaches only
+  `0.18110635/0.12789378`, with subgroup Dice
+  `0.02745544/0.30171128/0.50108581`; paired overall CI95 of the Dice delta is
+  `[-0.140313,-0.057568]`. BAS-only is `0.04877652`. Test remained locked.
+- **Technical transport correction:** Stage A chose on exact float64 percentile
+  ranks but saved fused arrays as float32. Ten of 1,855 rows developed a
+  serialization tie. The evaluator now reconstructs every fused score from
+  the three raw frozen vectors; 1,855/1,855 choices reproduce. Actual Dice is
+  unchanged, while oracle/rank reports now follow the immutable decisions.
+- **Optimization root cause:** epoch-2-to-100 full and foreground CE are fixed
+  at `0.693359375`; accuracy is exactly `1493/2981=0.50083864`, and validation
+  AUROC is `0.5`. The official terminal class-map ReLU transferred to the
+  binary head reached an all-negative preactivation state and emitted tied
+  zero logits. This is a dead-head technical failure, not evidence that the
+  original BAS mechanism was successfully tested and found ineffective.
+- **Independent localization proof:** the tail BAS loss is
+  `0.5989936437`, numerically identical to the label-prior solution
+  `1.2*1488/2981=0.5989936263` (residual `1.74e-8`). Frozen tumor maps are
+  spatially constant with nondegenerate fraction zero and activation range
+  `9.70e-7`. The localization branch encoded normal/tumor as constant maps
+  rather than locating a lesion.
+- **Candidate-score consequence:** for constant `A(x)=mu`, BAS coverage is
+  `|M|/|Omega|`, purity is `mu`, and their harmonic mean is strictly increasing
+  in candidate area. Empirically mean/median within-image Spearman between BAS
+  and area is `0.999902/0.999922`; BAS-only selects the maximum-area percentile
+  on every tumor. The apparent miss recovery is broad-mask recall, not tumor
+  identity: positive Dice mass `+5.8176` is overwhelmed by `-25.6202` loss.
+- **Baseline bottleneck after this failure:** eligible oracle is `0.52790203`
+  and candidate truncation regret only `0.00039631`. The eligible gap
+  `0.23917254` is 57.42% jointly dominated candidate identity, 3.85% nonlinear
+  frontier and 38.73% image-specific weighting. The missing signal must
+  distinguish small-lesion anatomy overreach from medium/large fragments;
+  area, source, consensus and another G1/upstream reweight cannot do so.
+- **Decision:** never fuse B2's score and do not sweep its weight, threshold,
+  epoch, seed or resolution. One bounded Softplus terminal-head correction is
+  justified because it tests the identified dead-ReLU transfer while holding
+  every scientific variable fixed. It must pass early label-safe non-collapse,
+  spatial nondegeneracy and non-area-proxy gates before consuming a full run.
+  The complete formulas, regimes and cross-experiment elimination table are in
+  `RICH_GALLERY_G1_POST_BAS_B2_BOTTLENECK_DOSSIER.md`.
+

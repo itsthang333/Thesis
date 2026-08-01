@@ -1,7 +1,26 @@
 # Rich-gallery BAS-B2 candidate-evidence design
 
-Status: supersedes the unlaunched 224-pixel B1 draft; no real fit, frozen
-prediction, validation polygon read, or BTXRD test access under B2 yet.
+Status: BAS-B2 completed and failed its actual-Dice endpoint after an exact
+binary-transfer optimization collapse. It is retired as a selector score. One
+bounded terminal-activation correction is allowed solely to test the proven
+technical root cause; BTXRD test remains locked.
+
+## Final B2 result
+
+The frozen G1/upstream baseline reproduces Dice `0.2887294867`. BAS-only,
+G1+BAS, upstream+BAS and equal three-way fusion obtain respectively
+`0.04877652/0.09966775/0.15935165/0.18110635`. Three-way subgroup Dice is
+`0.02745544/0.30171128/0.50108581`, so BAS helps the under-extent/large regime
+but severely damages small and medium lesions.
+
+This is not an ambiguous efficacy failure. From epoch 2, the classifier is the
+exact tied-logit solution: CE `0.693359375`, accuracy
+`1493/2981=0.50083864`, validation AUROC `0.5`. The BAS loss equals the exact
+constant label-map solution within `1.74e-8`; all tumor activation maps are
+spatially degenerate. Consequently BAS score and candidate area have mean
+Spearman `0.999902`, and BAS-only always selects the maximum area percentile.
+The complete causal derivation is in
+`RICH_GALLERY_G1_POST_BAS_B2_BOTTLENECK_DOSSIER.md`.
 
 ## Scientific question
 
