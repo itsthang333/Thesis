@@ -23,9 +23,9 @@ CHECKOUT_COMMIT = "UNBOUND"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "69b9af26c3de12ac10550b9262b2ff8f5e4424e8"
 PROTOCOL_RELATIVE = Path(
-    "artifacts/research_protocols/same_gallery_class_contrast_bas_b4_v2.json"
+    "artifacts/research_protocols/same_gallery_class_contrast_bas_b4_v3.json"
 )
-PROTOCOL_SHA256 = "958c414863c64f5160b4882feda44451add008fd000ca1120164925a0b2d298d"
+PROTOCOL_SHA256 = "a4fc4f26e184150e90b4c5da83bbf0808ff51c465f5af285109329d10178a6dc"
 AUDITOR_RELATIVE = Path("project/audit_same_gallery_bas_semantic_b4_output.py")
 AUDITOR_SHA256 = "dcd570dce08f8df1911010fc9bd306e5401d2187dcd9d1a1bfc66a3fd4529962"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"

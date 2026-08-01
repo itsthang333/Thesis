@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "recorded_local_date": "2026-08-02",
+  "status": "STATIC_WRAPPER_AND_BINDER_READY_NOT_BOUND_NOT_CLAIMED_NOT_LAUNCHED",
+  "experiment_id": "EXP-20260801-codex-b4-same-gallery-bas-semantic-v1",
+  "supersedes_readiness_sha256": "5fa0ab51aa0a2250a42f2475a0a206ae8d6534c1aa27320a1eedb17ebefca8a8",
+  "correction": "bind protocol v3 comparator-compatible seed; scientific model and arms unchanged",
+  "protocol_sha256": "a4fc4f26e184150e90b4c5da83bbf0808ff51c465f5af285109329d10178a6dc",
+  "scientific_source_commit": "69b9af26c3de12ac10550b9262b2ff8f5e4424e8",
+  "wrapper_template_sha256": "8c6c13ddc052784dacef52b136d53c1414d44d09c16ab191012eae97b5c56740",
+  "binder_sha256": "726e6452d3b7219d1852a8752f98bcc3c5f09526db94eb5a77619c4d597967a2",
+  "wrapper_test_sha256": "500e675c848e8702da0c309f8387e834e1f84f4115ddaf2110513f535869306b",
+  "focused_tests": {
+    "python39_native": "27 pass, 1 known zip(strict=True) compatibility failure",
+    "python39_diagnostic_compatibility_shim": "28/28 pass",
+    "kaggle_requirement": "Python 3.10 or newer"
+  },
+  "safety": {
+    "real_data_opened": false,
+    "scientific_fit_run": false,
+    "prediction_created": false,
+    "validation_gt_opened": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "heavy_compute_local": false
+  }
+}

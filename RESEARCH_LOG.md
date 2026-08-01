@@ -11759,3 +11759,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   SHA-256 `5fa0ab51aa0a2250a42f2475a0a206ae8d6534c1aa27320a1eedb17ebefca8a8`;
   đây vẫn chưa phải claim/binding/launch và chưa có scientific input.
 
+### B4 comparator-seed protocol/readiness correction (2026-08-02)
+
+- Static post-freeze review phát hiện protocol v2 ghi bootstrap seed `20261201`
+  nhưng generic comparator frozen ở source commit chỉ chấp nhận `20261101`.
+  Nếu không sửa, prediction có thể hợp lệ nhưng evaluation sẽ fail tại argument
+  gate. Không có data/prediction/GT nào đã mở; đây là preclaim execution error.
+- Protocol v3
+  `artifacts/research_protocols/same_gallery_class_contrast_bas_b4_v3.json`
+  SHA-256 `a4fc4f26e184150e90b4c5da83bbf0808ff51c465f5af285109329d10178a6dc`
+  supersede v2 và chỉ đổi seed thành `20261101`; model, BAS recipe, gallery,
+  two-arm scores, endpoint và gate không đổi. Exact Git source closure vẫn
+  `27/27`, collaborator output access vẫn `false`.
+- Wrapper/binder đã rebind tĩnh sang protocol v3: template SHA-256
+  `8c6c13ddc052784dacef52b136d53c1414d44d09c16ab191012eae97b5c56740`,
+  binder SHA-256 `726e6452d3b7219d1852a8752f98bcc3c5f09526db94eb5a77619c4d597967a2`.
+  Focused suite trên Python 3.9 pass `27`, có đúng `1` known
+  `zip(strict=True)` compatibility failure; documented diagnostic shim pass
+  `28/28`. Kaggle Python 3.10+ phải pass native. Readiness-v2 artifact được ghi
+  ở `artifacts/research_protocols/same_gallery_class_contrast_bas_b4_wrapper_readiness_v2.json`,
+  SHA-256 `7750c31816a32b633e8e8cadb0bf2c382ad8f36bb7b14c24c9f0dbfc85847c45`.
+- Chưa claim/bind/launch. Sau commit/push này, binder phải chạy trên exact clean
+  checkout, sau đó fetch hai branch/collision check và đăng ký `ĐANG LÀM` trước
+  khi `kaggle kernels push`.
+
