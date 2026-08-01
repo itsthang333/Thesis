@@ -11,7 +11,7 @@ gallery.
 
 import copy
 from dataclasses import dataclass
-from typing import Mapping, NamedTuple, Sequence
+from typing import Literal, Mapping, NamedTuple, Sequence
 
 import torch
 import torch.nn.functional as F
@@ -42,6 +42,25 @@ class BASForwardOutput(NamedTuple):
     class_activation_maps: torch.Tensor
     localization_maps: torch.Tensor
     background_logits: torch.Tensor
+
+
+ClassifierOutputActivation = Literal["relu", "softplus"]
+
+
+def classifier_output_activation(name: ClassifierOutputActivation) -> nn.Module:
+    """Return a nonnegative class-map activation with explicit semantics.
+
+    ``relu`` preserves the official multi-class BAS implementation. ``softplus``
+    is the single bounded binary-transfer correction: it keeps class maps
+    nonnegative for the activation-ratio objective but cannot enter a dead
+    negative-preactivation state with exactly zero gradient.
+    """
+
+    if name == "relu":
+        return nn.ReLU(inplace=True)
+    if name == "softplus":
+        return nn.Softplus(beta=1.0, threshold=20.0)
+    raise ValueError(f"unsupported BAS classifier output activation: {name}")
 
 
 def _gather_class_map(maps: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
@@ -116,10 +135,13 @@ class BASResNet50Localizer(nn.Module):
         pretrained: bool = True,
         backbone_state_dict: Mapping[str, torch.Tensor] | None = None,
         num_classes: int = 2,
+        classifier_activation: ClassifierOutputActivation = "relu",
     ) -> None:
         super().__init__()
         if num_classes != 2:
             raise ValueError("BTXRD BAS localizer is fixed to normal/tumor classes")
+        if classifier_activation not in ("relu", "softplus"):
+            raise ValueError("classifier_activation must be relu or softplus")
         if resnet50 is None:
             raise RuntimeError("torchvision ResNet-50 is unavailable")
         if pretrained and backbone_state_dict is not None:
@@ -143,13 +165,14 @@ class BASResNet50Localizer(nn.Module):
         self.layer2 = backbone.layer2
         self.layer3 = backbone.layer3
         self.layer4 = backbone.layer4
+        self.classifier_activation = classifier_activation
         self.classifier_head = nn.Sequential(
             nn.Conv2d(2048, 1024, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(1024, num_classes, kernel_size=1),
-            nn.ReLU(inplace=True),
+            classifier_output_activation(classifier_activation),
         )
         self.localization_head = nn.Sequential(
             nn.Conv2d(1024, num_classes, kernel_size=3, padding=1),
@@ -388,8 +411,10 @@ __all__ = [
     "BASForwardOutput",
     "BASLossConfig",
     "BASResNet50Localizer",
+    "ClassifierOutputActivation",
     "bas_activation_suppression_loss",
     "candidate_activation_evidence",
+    "classifier_output_activation",
     "equal_rank_fusion",
     "equal_rank_aggregate",
     "minmax_normalize_activation",

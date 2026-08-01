@@ -9,11 +9,32 @@ from project.models.bas_candidate_localizer import (
     BASLossConfig,
     bas_activation_suppression_loss,
     candidate_activation_evidence,
+    classifier_output_activation,
     equal_rank_aggregate,
     equal_rank_fusion,
     minmax_normalize_activation,
     within_bag_percentile_ranks,
 )
+
+
+def test_softplus_binary_transfer_preserves_nonnegative_map_and_negative_gradient() -> None:
+    relu_leaf = torch.tensor([-2.0, -0.5], requires_grad=True)
+    relu_input = relu_leaf * 1.0
+    relu_output = classifier_output_activation("relu")(relu_input)
+    relu_output.sum().backward()
+    assert torch.count_nonzero(relu_output) == 0
+    assert torch.count_nonzero(relu_leaf.grad) == 0
+
+    softplus_input = torch.tensor([-2.0, -0.5], requires_grad=True)
+    softplus_output = classifier_output_activation("softplus")(softplus_input)
+    softplus_output.sum().backward()
+    assert torch.all(softplus_output > 0)
+    assert torch.all(softplus_input.grad > 0)
+
+
+def test_unknown_classifier_output_activation_fails_closed() -> None:
+    with pytest.raises(ValueError, match="unsupported BAS"):
+        classifier_output_activation("sigmoid")  # type: ignore[arg-type]
 
 
 def test_bas_loss_matches_background_ratio_and_area() -> None:
