@@ -1,0 +1,169 @@
+{
+  "protocol_id": "rad_dino_mask_bag_normal_only_direct_anomaly_n1_v1",
+  "frozen_utc": "2026-08-01T08:25:00Z",
+  "status": "STATIC_PREDECLARED_ACTIVE_CLAIM_NO_WRAPPER_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "scientific_role": "same-gallery image-label-normal-only direct anomaly candidate ranking with classification held bit-exact to accepted Geometry-v3",
+  "hypothesis": "A fixed nominal descriptor bank can expose lesion-like candidates through nearest-normal cosine distance without learning a positive-bag residual or inheriting the candidate-count classification shortcut.",
+  "coordination": {
+    "claim_commit": "0e1b5daa895d28809e13ba106fbe60236b2ac909",
+    "scientific_source_commit": "c7ba620ce4492485ba0faa6dd42998e267be872d",
+    "collaborator_head_read": "f22700be9f74aaa560e0da95326d318f29c9a59b",
+    "collaborator_active_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "non_duplicate_scope": "N1 uses only the accepted old same-gallery cache and neither generates nor merges rich-gallery candidates nor imports collaborator logits, checkpoints, fusion or source-balanced objective code.",
+    "terminal_negative_predecessors": [
+      "EXP-20260731-codex-r1-normal-prototype-v1",
+      "EXP-20260801-codex-t1-count-controlled-self-paced-v1"
+    ],
+    "negative_mechanism_claimed_as_improvement": false
+  },
+  "required_inputs": {
+    "selector_cache": {
+      "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+      "freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+      "manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+      "wrapper_output_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+      "cohort": {"train": 2981, "validation": 371},
+      "descriptor_dim": 1156,
+      "train_masks_discarded": true,
+      "validation_masks_bitpacked": true,
+      "validation_gt_read": false,
+      "consumer_trained": false,
+      "test_evaluated": false
+    },
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "baseline": {
+      "checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+      "prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+      "prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+      "source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+      "protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555",
+      "absolute_candidate_count_probability_spearman": 0.48137777593654113
+    }
+  },
+  "normal_bank": {
+    "training_images": 1493,
+    "allowed_training_label": 0,
+    "positive_bags_used": 0,
+    "views": ["original", "aligned_horizontal_flip"],
+    "weighting": "equal total mass per image, then per family within image, then per candidate and view within family",
+    "algorithm": "deterministic weighted spherical k-means",
+    "prototype_count": 32,
+    "seed": 42,
+    "maximum_iterations": 100,
+    "convergence_tolerance": 0.000001,
+    "descriptor_dimension": 1156,
+    "residual_or_mil_optimizer": false,
+    "validation_data_used_for_fit": false
+  },
+  "candidate_ranking": {
+    "original_score": "one minus maximum cosine similarity to the 32 normalized nominal prototypes",
+    "flipped_score": "one minus maximum cosine similarity to the same 32 normalized nominal prototypes",
+    "combined_score": "float32 mean of aligned original and flip normal distances",
+    "winner": "first argmax in immutable ascending candidate-index order",
+    "classification_logit_interpretation_for_candidate_score": false,
+    "bag_logits_and_probabilities": "bit-exact accepted Geometry-v3 values",
+    "prediction_map": "selected immutable bit-packed candidate mask multiplied by accepted baseline bag probability",
+    "blend_or_threshold": false
+  },
+  "execution": {
+    "runtime": "Kaggle",
+    "accelerator": "NvidiaTeslaT4",
+    "physical_gpu_count": 2,
+    "prototype_fit_device": "CPU inside the T4x2 Kaggle job",
+    "heavy_compute_local": false,
+    "single_run_no_sweep": true
+  },
+  "gt_blind_independent_audit_before_evaluation": {
+    "must_not_import": [
+      "project/run_mask_bag_normal_only_direct_anomaly_n1.py",
+      "project/models/mask_bag_normal_anomaly.py",
+      "project/evaluate_mask_bag_selector_arm.py"
+    ],
+    "must_recompute": [
+      "the complete equal image-family-candidate-view weight vector from 1493 image-label-normal cache records",
+      "the deterministic K32 seed42 spherical prototype bank and cluster assignments",
+      "all original and flip nearest-prototype distances and their float32 mean for 371 validation bags",
+      "all first-argmax selected candidate identities",
+      "all physical prediction maps from bit-packed masks and frozen baseline probabilities",
+      "the exact validation candidate-count versus preserved probability Spearman"
+    ],
+    "required_records": {
+      "normal_bank": 1,
+      "prediction_maps": 371,
+      "candidate_score_payloads": 371,
+      "normal_anomaly_evidence_payloads": 371
+    },
+    "required_absolute_candidate_count_probability_spearman": 0.48137777593654113,
+    "required_safety": {
+      "validation_gt_read": false,
+      "consumer_trained": false,
+      "test_evaluated": false
+    },
+    "failure_action": "reject N1 before validation GT; record the error boundary before any correction or rerun"
+  },
+  "prediction_freeze": {
+    "validation_predictions": 371,
+    "candidate_scores": "all candidates in immutable gallery order",
+    "must_bind": [
+      "scientific source commit and this protocol SHA-256",
+      "split, selector-cache freeze, manifest and physical cache records",
+      "accepted baseline freeze, manifest, logits and probabilities",
+      "normal bank, bank audit, all candidate scores and view evidence",
+      "371 prediction maps, manifests, T4x2 runtime and safety fields",
+      "independent GT-blind recomputation audit"
+    ],
+    "validation_gt_read_before_physical_freeze_audit": false
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "validation_cohort": {"all": 371, "tumor": 184, "normal": 187, "small": 94, "medium": 72, "large": 18},
+    "paired_complete_group_bootstrap_replicates": 10000,
+    "bootstrap_seed_family": 20261015,
+    "mechanism_gate": {
+      "minimum_tumor_subgroups_with_regret_reduction": 2,
+      "overall_dice_regression_allowed": false,
+      "absolute_candidate_count_miss_association_increase_allowed": false
+    },
+    "adoption_gate": {
+      "operational_goals": {"overall": 0.34024039, "small": 0.17895493, "medium": 0.51244178, "large": 0.49370336},
+      "overall_ci95_lower_bound_above_zero": true,
+      "subgroup_mean_decrease_allowed": false,
+      "miss_increase_allowed": false,
+      "minimum_image_auroc": 0.75
+    },
+    "consumer_authorized_only_if_full_adoption_gate_passes": true
+  },
+  "literature_basis": [
+    {
+      "technique": "PatchCore nominal feature memory and nearest-normal feature distance",
+      "url": "https://openaccess.thecvf.com/content/CVPR2022/html/Roth_Towards_Total_Recall_in_Industrial_Anomaly_Detection_CVPR_2022_paper.html",
+      "transfer_boundary": "Only the nominal-memory and nearest-feature-distance principle is transferred; no industrial benchmark claim, ImageNet encoder, coreset ratio or pixel threshold is transferred."
+    }
+  ],
+  "canonical_lf_source_hashes": {
+    "project/run_mask_bag_normal_only_direct_anomaly_n1.py": "c1c34a5ef6c64a0f46339ea435a8566fc8ae4e327d5fb6ff243a5052b8ddcc9a",
+    "project/models/mask_bag_normal_anomaly.py": "e74fb687168620d84317d57b240b1007af75586ca3c16a7dd5052e35aa1f6cbd",
+    "project/models/mask_bag_normal_prototypes.py": "d20be292be6a4828f337c6f3348998e56d7c51245bb4e6d8a2d193b5e914c876",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/models/mask_bag_ranking_diagnostics.py": "c8b95cde03006c78aad624f060684d2f4d3acad2bdfeb6fc42bfc05762abefe8",
+    "tests/test_run_mask_bag_normal_only_direct_anomaly_n1.py": "a3f90444f8e2f94f8d220122b91c5a98d2c7d9dd4a1c5b2bfbfc6c5528c27fb5",
+    "tests/test_mask_bag_normal_anomaly.py": "c1a7d432192b2445d51ced3794bdd7b4802ab47b8c7cf1b68f4372c6d0a7fc3f"
+  },
+  "prohibited": [
+    "validation segmentation GT before prediction freeze and independent physical audit",
+    "validation subgroup, Dice, candidate Dice or oracle rank during bank fit or candidate scoring",
+    "positive-bag training, inferred positive candidate targets, BCE, residual or MIL optimizer",
+    "reuse of R1/T1 learned outputs or collaborator G1/G2 logits, checkpoints, fusion or objective",
+    "proposal generation, rich-gallery merge or candidate-gallery change",
+    "K, seed, blend, threshold, score, prototype or evaluator sweep",
+    "downstream consumer training before every adoption gate passes",
+    "BTXRD test access",
+    "post-hoc parameter or threshold rescue"
+  ]
+}

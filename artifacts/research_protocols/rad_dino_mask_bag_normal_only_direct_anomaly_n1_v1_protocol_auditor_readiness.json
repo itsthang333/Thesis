@@ -1,0 +1,37 @@
+{
+  "auditor_independence": {
+    "full_bank_recomputed": true,
+    "imports_evaluator": false,
+    "imports_scientific_primitive": false,
+    "imports_scientific_runner": false,
+    "physical_maps_recomputed": 371,
+    "score_and_view_payloads_recomputed": 371
+  },
+  "auditor_sha256": "5b8e239793e2816839e2b74e80b077d619eb9650f49073df1038ce5b648b56ee",
+  "base_scientific_source_commit": "c7ba620ce4492485ba0faa6dd42998e267be872d",
+  "claim_commit": "0e1b5daa895d28809e13ba106fbe60236b2ac909",
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "focused_tests": {
+    "passed": 14,
+    "seconds": 2.69,
+    "total": 14
+  },
+  "full_regression": {
+    "environment": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe with the documented Python-3.9 strict-zip test shim",
+    "passed": 504,
+    "seconds": 23.93,
+    "total": 504
+  },
+  "protocol_sha256": "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d",
+  "recorded_at": "2026-08-01T15:31:20+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "generated_test_caches_recycled": true,
+    "real_cache_fit": false,
+    "scientific_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "status": "STATIC_PROTOCOL_AND_INDEPENDENT_AUDITOR_READY",
+  "test_sha256": "3b892c46aa4e204c3e996b6c935a8412d778b3e7927e7ef7c963298c8db21751"
+}

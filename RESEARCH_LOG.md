@@ -10923,3 +10923,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Chưa fit real cache, chưa tạo prediction, chưa mở validation GT/consumer/test;
   initial runner-readiness được supersede chỉ ở source closure.
 
+- **N1 protocol + independent auditor static readiness:** protocol duy nhất
+  `artifacts/research_protocols/rad_dino_mask_bag_normal_only_direct_anomaly_n1_v1.json`
+  đã freeze với SHA-256
+  `1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d`
+  trên scientific-source commit
+  `c7ba620ce4492485ba0faa6dd42998e267be872d`. Nó pin normal-only cohort
+  `1493`, descriptor `1156-D`, weighted spherical `K=32/seed42`, tối đa 100
+  iteration/tolerance `1e-6`, score mean original/flip nearest-normal distance,
+  accepted Geometry-v3 logits/probabilities, T4x2, `371` freeze records và
+  post-freeze bootstrap seed `20261015`; không K/seed/blend/threshold sweep.
+- Auditor độc lập
+  `project/audit_mask_bag_normal_only_direct_anomaly_n1_output.py` có SHA-256
+  `5b8e239793e2816839e2b74e80b077d619eb9650f49073df1038ce5b648b56ee`.
+  Nó không import N1 runner, scientific normal-anomaly primitive hay evaluator;
+  tự đọc physical hash-bound cache, tái dựng toàn bộ equal
+  image→family→candidate/view weights và spherical bank, rồi tái tính mọi
+  original/flip distance, score, first-argmax candidate, bit-packed mask × exact
+  baseline probability map và count/probability Spearman trước GT. Binding phải
+  khớp protocol/source hashes và exact self-hash của auditor.
+- Protocol/auditor/runner focused suite `14/14` trong 2.69 giây và full
+  repository `504/504` trong 23.93 giây pass; generated test caches đã chuyển
+  lại vào Recycle Bin. Test SHA-256 là
+  `3b892c46aa4e204c3e996b6c935a8412d778b3e7927e7ef7c963298c8db21751`;
+  readiness artifact SHA-256 là
+  `137d84b52d73a3e1e2426767ce7a3154f7726d1c9b9a9d6bc6efa9ae7599f070`.
+  Đây vẫn chỉ là static/synthetic readiness: chưa mở real cache để fit, chưa
+  tạo validation prediction, chưa mở GT/consumer/test. Bước kế là wrapper +
+  launch binding fail-closed và phải push trước một Kaggle T4x2 launch duy nhất.
+
