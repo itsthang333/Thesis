@@ -11041,3 +11041,100 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Chưa rebind package, chưa gửi SaveKernel lần hai, chưa fit/prediction/GT/
   consumer/test. Phải commit/push correction source trước full binder regression.
 
+### Đồng bộ G2 terminal và deep-search sau chuỗi selector reject (2026-08-01)
+
+- Đã fetch lại `origin/research-wsss-improvement` và
+  `origin/codex/research-sync-20260731`, đọc lại toàn bộ trạng thái điều phối trên
+  nền hai log đầy đủ đã audit. Central/HEAD ở `ec2e6b26d1b4016b8b06c6cacb9a518e34a5ed7b`;
+  nhánh cộng tác mới tăng từ `f22700b...` lên
+  `53ac916c13525946d8cfa7662857694bb6c33dde`. Delta log duy nhất là kết quả
+  terminal G2 dưới đây; commit cộng tác không được merge code vào central và
+  không ghi đè bằng chứng của workstream nào.
+- **Kết quả terminal cộng tác —
+  `EXP-20260801-codex-rich-gallery-g2-terminal-v3`:** private/offline T4x2
+  kernel `wanwin/btxrd-rich-gallery-g2-selector-pair` version 3 hoàn tất, audit
+  Stage-A/Stage-B pass, freeze đủ `2,968` lựa chọn (`8 x 371`) trước khi mở
+  validation polygons, cohort `371/184` với subgroup `94/72/18`, zero test read.
+  Protocol SHA-256 là
+  `6dd6c66e396054157eb498cbca46635d1058c73d1139541d385bb769088801be`;
+  prediction-freeze/evaluation-summary SHA-256 là
+  `78970d417de20dc884958dfb3fd9cb2bad9f2cda53240ae2207607ba827cd167` /
+  `813b5a0c9506d2052508f1a8ffe2a401e947183bef452eaef3330b3a48cdd9b6`.
+- G2 tốt nhất (hierarchical shared-source negative-only + rank fusion) chỉ đạt
+  Dice overall/small/medium/large
+  `0.25432565/0.13792543/0.37614745/0.37490625`, `62` complete misses; thấp
+  hơn frozen G1 rank-fusion reference `0.28872949` một lượng `-0.03440384`,
+  paired complete-group CI95 `[-0.058333,-0.014022]`. Do đó G2 fail mọi primary
+  subgroup gate; không adopt negative-only/hierarchy/temperature continuation
+  như cải tiến.
+- Một causal partial result dương được giữ làm bằng chứng, không đổi thành full
+  promotion: loại external-source shortcut khỏi training loss giúp flat hard-top
+  raw tăng G1 raw `0.20602633 -> 0.24850185`, delta `+0.04247552`, CI95
+  `[0.010932,0.075269]`, đồng thời median selected/GT area giảm `13.02 -> 3.05`.
+  Tuy nhiên misses tăng `29 -> 44`; mọi arm cuối cùng vẫn collapse về khoảng
+  `1.74-1.87` effective candidates. Bỏ shortcut là cần thiết nhưng không sinh ra
+  positive-instance identity trong tumor bag.
+- Failure dossier cộng tác chứng minh bottleneck kế tiếp là hit/positive-instance
+  ranking hơn là gross area: G2 fusion có median area ratio gần G1 fusion
+  (`1.96-1.99` so với `2.04`) nhưng có `62-64` misses thay vì `49`; trên các ca
+  đổi lựa chọn mất trung bình khoảng `0.070` Dice. Fusion G1 từng thêm
+  `+0.082703` trên raw G1, còn chỉ thêm `+0.003239/+0.010234/+0.030551` trên ba
+  raw arm G2 vì scorer G2 đã trở nên trùng thông tin upstream. Kết luận: phải có
+  candidate-level positive evidence mới, đồng thời giữ complementarity/hit
+  recall; không sweep tiếp temperature/epoch/threshold/resolution/rank weight.
+- **N1 chuyển `TẠM DỪNG` trước scientific execution:** claim
+  `EXP-20260801-codex-n1-normal-only-direct-anomaly-v1` chưa từng qua
+  `SaveKernel`, chưa mở real cache, chưa fit hay sinh prediction. Deep audit phát
+  hiện hypothesis nominal-only bị bằng chứng terminal cũ phản đối trực tiếp:
+  healthy K32 density pixel AUC chỉ `0.563712`, true-area Dice `0.024037`,
+  feature-normal replacement `0.023373`, causal-patch `0.014293`; R1 normal
+  residual còn làm count shortcut tăng. Vì vậy không dùng short-slug correction
+  để chi thêm T4x2 cho N1. Toàn bộ source/protocol/error/readiness vẫn được giữ
+  như bằng chứng; trạng thái pause này không phải scientific reject và không có
+  Dice N1 để báo cáo.
+- **Loại các ý tưởng trùng trước khi chọn successor:** classifier-causal
+  deletion/insertion đã được chạy ở Gate-C và bị reject (`0.22671749` so với
+  `0.23433922`, delta `-0.00762174`, CI95
+  `[-0.02707981,+0.01175732]`); fixed source-consensus cũng bị reject
+  (`0.21250531` so với `0.23433922`). Do đó không được đổi tên rồi chạy lại hai
+  selector này. R2/R4/T1 còn chứng minh AUROC, flip invariance hoặc count-control
+  có thể pass trong khi Dice/regret xấu hơn; chúng chỉ là operational guards,
+  không phải surrogate localization gate.
+- **Deep-search primary evidence:** BAS chỉ ra CE có thể bão hòa khi mask mới phủ
+  phần discriminative, trong khi foreground/background activation tiếp tục thay
+  đổi tới biên; phương pháp dùng activation suppression + foreground guidance +
+  area constraint:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Wu_Background_Activation_Suppression_for_Weakly_Supervised_Object_Localization_CVPR_2022_paper.html
+  và official code https://github.com/wpy1999/BAS. Kim et al. phân rã CAM thành
+  feature norm và cosine alignment với class vector, rồi dùng feature-direction
+  alignment + attentive-dropout consistency để đưa evidence từ classification
+  sang localization:
+  https://openaccess.thecvf.com/content/CVPR2022/papers/Kim_Bridging_the_Gap_Between_Classification_and_Localization_for_Weakly_Supervised_CVPR_2022_paper.pdf.
+  Extremal Perturbations định nghĩa preservation/deletion theo fixed mask area và
+  tìm vùng nhỏ nhất còn giữ đủ activation, phù hợp cho discrete candidate curve:
+  https://openaccess.thecvf.com/content_ICCV_2019/html/Fong_Understanding_Deep_Networks_via_Extremal_Perturbations_and_Smooth_Masks_ICCV_2019_paper.html.
+- ToCo cho thấy intermediate ViT tokens giữ semantic diversity tốt hơn final
+  oversmoothed tokens và dùng local-global class-token contrast cho vùng không
+  chắc chắn:
+  https://openaccess.thecvf.com/content/CVPR2023/html/Ru_Token_Contrast_for_Weakly-Supervised_Semantic_Segmentation_CVPR_2023_paper.html.
+  L2G cho thấy local crops có thể lộ chi tiết object mà global classification bỏ
+  qua và transfer local attention về global:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html.
+  MIL-Dropout báo cáo top-instance dropout có thể giảm winner concentration,
+  nhưng BTXRD chỉ có một proposal hữu ích ở nhiều small bag nên chỉ là
+  regularizer bậc hai, không phải successor chính:
+  https://proceedings.mlr.press/v267/zhu25q.html.
+- **Synthesis cho successor:** proposal supply same-gallery vẫn đủ vì oracle
+  `0.40907553/0.22274949/0.59414708/0.64182537` vượt cả bốn goal. Hướng có expected
+  value cao nhất không phải thêm một MIL residual mà là tạo một class-aware
+  localization descriptor bằng image-label-only activation training, sau đó
+  score chính các immutable candidate masks bằng foreground capture/background
+  suppression và fuse theo within-image rank với accepted Geometry-v3/upstream
+  evidence. Candidate gallery, split và masks không đổi; không hard pseudo-positive,
+  validation-size routing hay GT-tuned area/threshold. Một arm BAS-like/fixed-area
+  candidate rerank phải được thiết kế và test tĩnh riêng; chỉ đăng ký `ĐANG LÀM`
+  và launch sau khi exact architecture/default losses, OOF image-label gates,
+  prediction-freeze contract và independent auditor được freeze. Hiện chưa có
+  experiment successor, real-data training, prediction, validation-GT read,
+  consumer training hay BTXRD-test access trong mục synthesis này.
+
