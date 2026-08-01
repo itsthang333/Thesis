@@ -10979,3 +10979,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `5b1730fe5785cdf5610e2240d4fda88c15b8350976d6d884d174c22a0fb88792`.
   Vẫn chưa bind package, fit real cache, tạo prediction hay mở GT/consumer/test.
 
+- **N1 kernel-v1 bound prelaunch gate:** ngay trước binding đã fetch central và
+  collaborator; central/HEAD cùng ở
+  `a6106e6e6fd35040ad2f82e2128c012462c40ac1`, collaborator vẫn
+  `f22700be9f74aaa560e0da95326d318f29c9a59b`. Claim collaborator duy nhất liên
+  quan vẫn là rich-gallery G2; N1 giữ old same-gallery cache nên không overlap.
+  Worktree sạch trước binding và không có claim mới cạnh tranh.
+- Binder đã đóng băng kernel version 1 với execution checkout `a6106e6e...`.
+  Bound wrapper SHA-256 là
+  `fda247c98409311abcdd645d2c4e9f531893d9e1e3fff08d799ddd1a961fd8c2`;
+  launch binding SHA-256
+  `4d77c0d0cd14ae48b77bf22263bf3660c48e7cf51a69a7e0060633ebf2d6a9c3`;
+  metadata SHA-256
+  `c8ec60d9777c6bcf6c8520d17c1a0d11dee5f0bf05f07cc04b011d273475f8fa`.
+  `py_compile`, exact inverse reconstruction và independent-auditor acceptance
+  pass. One-off static runtime test cũng prove wrapper tái dựng exact launch-
+  binding core từ checkout/protocol/source/auditor/bound-wrapper hashes.
+- Final prelaunch audit SHA-256 là
+  `db9a414e1a9bac234d6c8850226b7cea8509ba45fe78be09f0acc3b9d5b54b76`;
+  status `READY_FOR_SINGLE_KAGGLE_T4X2_PUSH_NOT_YET_LAUNCHED`. Exact inputs vẫn
+  là selector-cache freeze `2f6290...`, cache audit `cc2528...`, baseline archive
+  `8857eb...`, baseline freeze `ec3462...` và split `85511e...`. Chưa fit cache,
+  chưa prediction/GT/consumer/test. Phải push binding/audit central thành công
+  trước một launch duy nhất; không launch nếu push hoặc final status gate fail.
+

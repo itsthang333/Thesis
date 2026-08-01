@@ -1,0 +1,52 @@
+{
+  "binding": {
+    "bound_wrapper_sha256": "fda247c98409311abcdd645d2c4e9f531893d9e1e3fff08d799ddd1a961fd8c2",
+    "inverse_reconstruction_matches_template": true,
+    "launch_binding_sha256": "4d77c0d0cd14ae48b77bf22263bf3660c48e7cf51a69a7e0060633ebf2d6a9c3",
+    "replacement_count": 3,
+    "runtime_binding_reproduces_launch_binding_core": true,
+    "template_sha256": "6228baf22e5b6a101ca9a9642cd404f2ec4ff944cb66bc9fb224eb66cea84868"
+  },
+  "coordination": {
+    "active_collaborator_claim": "EXP-20260731-codex-rich-gallery-g0g1-v1",
+    "active_current_claim": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+    "collaborator_head": "f22700be9f74aaa560e0da95326d318f29c9a59b",
+    "duplicate_scope_found": false,
+    "origin_central_head_before_binding_commit": "a6106e6e6fd35040ad2f82e2128c012462c40ac1"
+  },
+  "execution_checkout": "a6106e6e6fd35040ad2f82e2128c012462c40ac1",
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "inputs": {
+    "baseline_archive_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da"
+  },
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1",
+  "kernel_metadata_sha256": "c8ec60d9777c6bcf6c8520d17c1a0d11dee5f0bf05f07cc04b011d273475f8fa",
+  "kernel_version": 1,
+  "protocol_and_source": {
+    "independent_auditor_sha256": "5b8e239793e2816839e2b74e80b077d619eb9650f49073df1038ce5b648b56ee",
+    "protocol_sha256": "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d",
+    "scientific_source_commit": "c7ba620ce4492485ba0faa6dd42998e267be872d"
+  },
+  "recorded_at": "2026-08-01T15:40:19+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "real_cache_fit": false,
+    "scientific_prediction_created": false,
+    "validation_gt_opened": false
+  },
+  "status": "READY_FOR_SINGLE_KAGGLE_T4X2_PUSH_NOT_YET_LAUNCHED",
+  "verification": {
+    "bound_py_compile": true,
+    "focused_tests": "17/17 pass",
+    "full_regression": "507/507 pass",
+    "runtime_binding_reproduction": "PASS",
+    "t4x2_and_input_checks_execute_before_scientific_fit": true
+  }
+}

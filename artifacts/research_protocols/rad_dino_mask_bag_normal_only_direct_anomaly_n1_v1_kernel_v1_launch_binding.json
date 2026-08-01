@@ -1,0 +1,31 @@
+{
+  "bound_wrapper_sha256": "fda247c98409311abcdd645d2c4e9f531893d9e1e3fff08d799ddd1a961fd8c2",
+  "checkout_commit": "a6106e6e6fd35040ad2f82e2128c012462c40ac1",
+  "consumer_trained": false,
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "independent_auditor_sha256": "5b8e239793e2816839e2b74e80b077d619eb9650f49073df1038ce5b648b56ee",
+  "inverse_reconstruction_matches_template": true,
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-normal-only-direct-anomaly-n1-v1",
+  "kernel_version": 1,
+  "protocol_sha256": "1112515d00ed9db80a05670404ad16127109844788a44018834ff82f452d9b7d",
+  "replacement_count": 3,
+  "schema_version": 1,
+  "scientific_source_commit": "c7ba620ce4492485ba0faa6dd42998e267be872d",
+  "source_hashes": {
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mask_bag_normal_anomaly.py": "e74fb687168620d84317d57b240b1007af75586ca3c16a7dd5052e35aa1f6cbd",
+    "project/models/mask_bag_normal_prototypes.py": "d20be292be6a4828f337c6f3348998e56d7c51245bb4e6d8a2d193b5e914c876",
+    "project/models/mask_bag_ranking_diagnostics.py": "c8b95cde03006c78aad624f060684d2f4d3acad2bdfeb6fc42bfc05762abefe8",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/run_mask_bag_normal_only_direct_anomaly_n1.py": "c1c34a5ef6c64a0f46339ea435a8566fc8ae4e327d5fb6ff243a5052b8ddcc9a",
+    "tests/test_mask_bag_normal_anomaly.py": "c1a7d432192b2445d51ced3794bdd7b4802ab47b8c7cf1b68f4372c6d0a7fc3f",
+    "tests/test_run_mask_bag_normal_only_direct_anomaly_n1.py": "a3f90444f8e2f94f8d220122b91c5a98d2c7d9dd4a1c5b2bfbfc6c5528c27fb5"
+  },
+  "status": "FROZEN_PRELAUNCH",
+  "template_sha256": "6228baf22e5b6a101ca9a9642cd404f2ec4ff944cb66bc9fb224eb66cea84868",
+  "test_evaluated": false,
+  "validation_gt_read": false
+}
