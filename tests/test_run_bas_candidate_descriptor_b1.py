@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from project.audit_bas_candidate_descriptor_b1_output import _activation_scores, _rank
 from project.models.mask_bag_selector_cache import pack_candidate_masks
 from project.run_bas_candidate_descriptor_b1 import _score_arms
 from project.models.mask_bag_selector_cache_io import sha256_file
@@ -62,3 +63,21 @@ def test_score_arms_freezes_transferred_and_three_way_borda(tmp_path) -> None:
     assert len(manifest_sha) == 64
     assert diagnostics["correlation_images"] == 1
     assert (tmp_path / "output" / "activation_evidence" / "activation_manifest.csv").is_file()
+
+
+def test_independent_auditor_reproduces_ties_and_activation_evidence() -> None:
+    assert np.allclose(_rank(np.asarray([3.0, 1.0, 3.0])), [0.75, 0.0, 0.75])
+    activation = np.asarray([[1.0, 1.0], [0.0, 0.0]], dtype=np.float32)
+    masks = np.asarray(
+        [
+            [[1, 1], [0, 0]],
+            [[1, 1], [1, 1]],
+            [[0, 0], [1, 1]],
+        ],
+        dtype=np.float32,
+    )
+    coverage, purity, harmonic, ranks = _activation_scores(activation, masks)
+    assert np.allclose(coverage, [1.0, 1.0, 0.0])
+    assert np.allclose(purity, [1.0, 0.5, 0.0])
+    assert np.allclose(harmonic, [1.0, 2.0 / 3.0, 0.0])
+    assert np.allclose(ranks, [1.0, 0.5, 0.0])

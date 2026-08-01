@@ -11222,3 +11222,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   compute nặng local. B1 chưa có claim; protocol độc lập, auditor, wrapper và
   launch binding vẫn phải hoàn tất trước đăng ký/chạy.
 
+### B1 source-closure và independent-auditor readiness (2026-08-01)
+
+- Static dependency audit sau commit `6d026d6` phát hiện runner B1 còn import
+  private helper từ toàn bộ R1/S3 scientific runners chỉ để verify cache,
+  baseline và ghi output. Coupling này đã được loại: runner nay tự thực hiện các
+  kiểm tra provenance/output tương ứng và chỉ dùng primitive cache/score/model
+  I/O chung. Activation evidence được lưu float32 thay vì float16 để auditor có
+  thể tái tính coverage/purity/rank đúng tolerance trước GT. Runner mới SHA-256
+  là `65366f42080a44d0f1f678e37f917922d0938d8c9c428173958b3bddd8d2e6bc`;
+  recipe/arms/gates khoa học không đổi.
+- Independent GT-blind auditor mới
+  `project/audit_bas_candidate_descriptor_b1_output.py` SHA-256
+  `81713f74a854ae5cd681302a71be266e271e64b831940a4582efe90dd7a5f55c`
+  không import runner/BAS scientific source. Nó independently reload scorer
+  Geometry-v3 từ checkpoint, tái tính original/aligned-flip base logits, đọc
+  immutable upstream score, min-max BAS coverage/purity/harmonic, tie-aware
+  ranks, hai arm Borda, selected indices/maps, pair freeze và complementarity
+  gate trên đủ 371 ảnh. Auditor không nhận dataset root/annotation/test path nên
+  không thể mở segmentation GT trong Stage-A.
+- Test runner/auditor SHA-256
+  `4b7df9282ae1053ea00133520ef22c236db8516ff8a594ba16df0fefad262d4b`;
+  focused suite pass `11/11` trong 3.19 giây, bao gồm independent tie-rank và
+  activation-evidence reproduction. `py_compile`/`git diff --check` pass. Chưa
+  mở real image/gallery/cache, chưa fit/prediction/GT/consumer/test và chưa có
+  heavy local compute. Đây vẫn là static readiness; protocol/claim/launch chưa
+  tồn tại.
+

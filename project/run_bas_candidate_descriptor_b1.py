@@ -11,8 +11,7 @@ import json
 import os
 from pathlib import Path
 import random
-from types import SimpleNamespace
-from typing import Any
+from typing import Any, Mapping
 
 import numpy as np
 import torch
@@ -22,7 +21,11 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from datasets.factory import build_classification_dataset
-from mae_reconstruction_io import load_split_rows_without_annotations, sha256_file
+from mae_reconstruction_io import (
+    load_split_rows_without_annotations,
+    save_float_map,
+    sha256_file,
+)
 from models.bas_candidate_localizer import (
     BASLossConfig,
     BASResNet50Localizer,
@@ -36,13 +39,15 @@ from models.mask_bag_same_family_graph import (
     score_same_family_graph_records,
 )
 from models.mask_bag_selector_cache import unpack_candidate_masks
-from run_mask_bag_normal_prototype_arm import (
-    _load_baseline_model,
-    _load_cache_records,
-    _verify_cache_freeze,
-    _write_validation_outputs,
+from models.mask_bag_score_evidence import (
+    save_candidate_score_evidence,
+    write_candidate_score_manifest,
 )
-from run_mask_bag_same_family_graph_s3_arm import _verify_baseline_freeze
+from models.mask_bag_selector_cache_io import (
+    load_selector_cache_record,
+    validate_selector_cache_manifest,
+)
+from models.rad_dino_mask_bag_mil import MaskBagMILConfig, RadDinoMaskBagMIL
 from run_rad_dino_mask_bag_mil_probe import _audit_candidate_input
 
 
@@ -87,6 +92,211 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
+
+
+def _verify_cache_freeze(
+    args: argparse.Namespace,
+) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    freeze_path = args.selector_cache_root / "selector_cache_freeze.json"
+    if sha256_file(freeze_path) != args.expected_selector_cache_freeze_sha256:
+        raise ValueError("selector cache freeze SHA-256 mismatch")
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    if (
+        freeze.get("split_sha256") != args.expected_split_sha256
+        or freeze.get("baseline_checkpoint_sha256")
+        != args.expected_baseline_checkpoint_sha256
+        or freeze.get("baseline_source_commit")
+        != args.expected_baseline_source_commit
+        or freeze.get("baseline_protocol_sha256")
+        != args.expected_baseline_protocol_sha256
+        or freeze.get("cohort") != {"train": 2981, "validation": 371}
+        or freeze.get("validation_selected_indices_reproduced") != 371
+        or freeze.get("validation_map_hashes_reproduced") != 371
+        or freeze.get("train_masks_discarded") is not True
+        or freeze.get("validation_masks_bitpacked") is not True
+        or freeze.get("validation_gt_read") is not False
+        or freeze.get("consumer_trained") is not False
+        or freeze.get("test_evaluated") is not False
+    ):
+        raise ValueError("selector cache freeze provenance/safety mismatch")
+    manifest_path = args.selector_cache_root / "selector_cache_manifest.csv"
+    if sha256_file(manifest_path) != freeze["selector_cache_manifest_sha256"]:
+        raise ValueError("selector cache manifest differs from freeze")
+    with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return freeze, list(csv.DictReader(handle))
+
+
+def _load_cache_records(
+    args: argparse.Namespace,
+    split_rows: Mapping[str, list[dict[str, str]]],
+    manifest_rows: list[dict[str, str]],
+) -> dict[str, list[dict[str, Any]]]:
+    indexed = {(row["split"], row["image_id"]): row for row in manifest_rows}
+    expected: dict[str, dict[str, dict[str, object]]] = {"train": {}, "val": {}}
+    for split in ("train", "val"):
+        for row in split_rows[split]:
+            manifest = indexed.get((split, row["image_id"]))
+            if manifest is None:
+                raise ValueError(f"selector cache omits {split}/{row['image_id']}")
+            expected[split][row["image_id"]] = {
+                "group_id": row["group_id"],
+                "tumor": row["tumor"],
+                "candidate_payload_sha256": manifest["candidate_payload_sha256"],
+            }
+    validated = validate_selector_cache_manifest(
+        args.selector_cache_root,
+        expected_manifest_sha256=sha256_file(
+            args.selector_cache_root / "selector_cache_manifest.csv"
+        ),
+        expected_images=expected,
+    )
+    loaded: dict[str, list[dict[str, Any]]] = {"train": [], "val": []}
+    for split in ("train", "val"):
+        validated_by_id = {row["image_id"]: row for row in validated[split]}
+        for split_row in split_rows[split]:
+            row = validated_by_id[split_row["image_id"]]
+            payload = load_selector_cache_record(
+                args.selector_cache_root / row["cache_path"],
+                expected_sha256=row["cache_sha256"],
+                require_packed_masks=split == "val",
+            )
+            loaded[split].append(
+                {
+                    "image_id": split_row["image_id"],
+                    "group_id": split_row["group_id"],
+                    "label": int(split_row["tumor"]),
+                    "candidate_payload_sha256": row["candidate_payload_sha256"],
+                    **payload,
+                }
+            )
+    return loaded
+
+
+def _load_baseline_model(
+    args: argparse.Namespace,
+    *,
+    device: torch.device,
+) -> tuple[RadDinoMaskBagMIL, MaskBagMILConfig]:
+    checkpoint_path = args.baseline_root / "rad_dino_mask_bag_mil.pt"
+    if sha256_file(checkpoint_path) != args.expected_baseline_checkpoint_sha256:
+        raise ValueError("baseline checkpoint SHA-256 mismatch")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    if (
+        checkpoint.get("source_commit") != args.expected_baseline_source_commit
+        or checkpoint.get("protocol_sha256")
+        != args.expected_baseline_protocol_sha256
+        or checkpoint.get("split_sha256") != args.expected_split_sha256
+        or checkpoint.get("validation_gt_read") is not False
+        or checkpoint.get("consumer_trained") is not False
+        or checkpoint.get("test_evaluated") is not False
+    ):
+        raise ValueError("baseline checkpoint provenance/safety mismatch")
+    config = MaskBagMILConfig(**checkpoint["config"])
+    model = RadDinoMaskBagMIL(config)
+    model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+    model.requires_grad_(False).to(device).eval()
+    return model, config
+
+
+def _verify_baseline_freeze(
+    args: argparse.Namespace,
+) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    freeze_path = args.baseline_root / "prediction_freeze.json"
+    if sha256_file(freeze_path) != args.expected_baseline_freeze_sha256:
+        raise ValueError("accepted baseline prediction-freeze SHA-256 mismatch")
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    manifest_path = args.baseline_root / "predictions" / "prediction_manifest.csv"
+    if (
+        sha256_file(manifest_path) != freeze.get("prediction_manifest_sha256")
+        or freeze.get("source_commit") != args.expected_baseline_source_commit
+        or freeze.get("protocol_sha256") != args.expected_baseline_protocol_sha256
+        or freeze.get("split_sha256") != args.expected_split_sha256
+        or freeze.get("validation_gt_read") is not False
+        or freeze.get("consumer_trained") is not False
+        or freeze.get("test_evaluated") is not False
+    ):
+        raise ValueError("accepted baseline prediction-freeze provenance mismatch")
+    with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    if len(rows) != 371 or len({row["image_id"] for row in rows}) != 371:
+        raise ValueError("accepted baseline prediction cohort mismatch")
+    return freeze, rows
+
+
+def _write_validation_outputs(
+    output_dir: Path,
+    records: list[dict[str, Any]],
+    scored: list[dict[str, Any]],
+) -> tuple[str, str]:
+    prediction_root = output_dir / "predictions"
+    map_root = prediction_root / "maps"
+    score_root = output_dir / "candidate_scores"
+    score_payload_root = score_root / "scores"
+    map_root.mkdir(parents=True, exist_ok=False)
+    score_payload_root.mkdir(parents=True, exist_ok=False)
+    if len(records) != len(scored):
+        raise ValueError("B1 output records/scores do not align")
+    prediction_rows: list[dict[str, object]] = []
+    score_rows: list[dict[str, object]] = []
+    for index, (record, prediction) in enumerate(zip(records, scored)):
+        if record["image_id"] != prediction["image_id"]:
+            raise RuntimeError("B1 validation scoring order differs from cache")
+        candidate_indices = np.asarray(record["candidate_indices"], dtype=np.int64)
+        logits = np.asarray(prediction["candidate_logits"], dtype=np.float32)
+        if logits.shape != candidate_indices.shape:
+            raise RuntimeError("B1 validation score count differs from cache")
+        stem = f"{index:04d}_{Path(str(record['image_id'])).stem}"
+        score_relative = Path("scores") / f"{stem}.npz"
+        saved_score = save_candidate_score_evidence(
+            score_root / score_relative,
+            candidate_indices=candidate_indices,
+            candidate_logits=logits,
+        )
+        masks = unpack_candidate_masks(record["packed_masks"]).astype(np.float32)
+        local_winner = int(np.argmax(logits))
+        original_winner = int(candidate_indices[local_winner])
+        bag_probability = float(prediction["bag_probability"])
+        map_path = map_root / f"{stem}.npy"
+        save_float_map(map_path, masks[local_winner] * bag_probability)
+        score_rows.append(
+            {
+                "image_id": record["image_id"],
+                "group_id": record["group_id"],
+                "tumor": record["label"],
+                "candidate_payload_sha256": record["candidate_payload_sha256"],
+                **saved_score,
+                "score_path": str(score_relative),
+            }
+        )
+        prediction_rows.append(
+            {
+                "image_id": record["image_id"],
+                "group_id": record["group_id"],
+                "tumor": record["label"],
+                "candidate_payload_sha256": record["candidate_payload_sha256"],
+                "candidate_count": len(candidate_indices),
+                "selected_candidate_index": original_winner,
+                "selected_candidate_logit": saved_score["selected_candidate_logit"],
+                "candidate_logit_tta": "mean_original_aligned_horizontal_flip",
+                "bag_logit": prediction["bag_logit"],
+                "bag_probability": bag_probability,
+                "selected_area_ratio": float(masks[local_winner].mean()),
+                "fallback_count": int(np.asarray(record["fallback_flags"]).sum()),
+                "map_path": str(Path("maps") / map_path.name),
+                "map_sha256": sha256_file(map_path),
+            }
+        )
+    prediction_manifest = prediction_root / "prediction_manifest.csv"
+    with prediction_manifest.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=list(prediction_rows[0]),
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerows(prediction_rows)
+    score_manifest = write_candidate_score_manifest(score_root, score_rows)
+    return sha256_file(prediction_manifest), str(score_manifest["manifest_sha256"])
 
 
 def _seed_everything(seed: int) -> None:
@@ -403,7 +613,7 @@ def _score_arms(
         evidence_path = evidence_root / relative
         np.savez_compressed(
             evidence_path,
-            activation=np.asarray(activations[image_id], dtype=np.float16),
+            activation=np.asarray(activations[image_id], dtype=np.float32),
             candidate_indices=np.asarray(record["candidate_indices"], dtype=np.int32),
             coverage=coverage[0].numpy().astype(np.float32),
             purity=purity[0].numpy().astype(np.float32),
@@ -497,9 +707,7 @@ def main() -> None:
         expected_manifest_sha256=args.val_candidate_manifest_sha256,
         expected_pseudo_manifest_sha256=args.val_pseudo_manifest_sha256,
     )
-    cache, _validated = _load_cache_records(
-        args, split_rows, cache_manifest_rows
-    )
+    cache = _load_cache_records(args, split_rows, cache_manifest_rows)
     train_dataset = build_classification_dataset(
         root=args.dataset_root,
         split="train",
@@ -643,9 +851,8 @@ def main() -> None:
     arm_freezes: dict[str, str] = {}
     for arm_name, scored in arms.items():
         arm_root = args.output_dir / arm_name
-        arm_args = SimpleNamespace(output_dir=arm_root)
         prediction_sha256, score_sha256 = _write_validation_outputs(
-            arm_args,
+            arm_root,
             cache["val"],
             scored,
         )
