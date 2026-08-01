@@ -1,0 +1,71 @@
+{
+  "artifact_id": "rad_dino_mask_bag_count_controlled_self_paced_t1_v1_primitive_readiness",
+  "frozen_utc": "2026-08-01T06:31:04Z",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "status": "STATIC_PRODUCER_GATE_AND_TARGET_PRIMITIVES_PASS_RUNNER_NOT_READY",
+  "registration_commit": "d8cd1608b6886f51cc5240ddcc81c1dc2a5e1e2a",
+  "registration_confirmation_commit": "999376ddd961bdc8eb68040f66bca4b6d11eb996",
+  "inherited_s4_terminal_audit_sha256": "248663692942b2fdf996f3fd8c76674b8b4287529230a0a0d161018e577b2366",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+  "source": {
+    "path": "project/models/mask_bag_count_controlled_self_paced.py",
+    "sha256": "e01f6ab1b2790689420bb244c284157a5709cccc7b10959d4c55d27cba7ac6b1"
+  },
+  "test": {
+    "path": "tests/test_mask_bag_count_controlled_self_paced.py",
+    "sha256": "1662d405b6cd6dbf8e72b7cc14a22224c6d1e6293fd28d48928b2d72958f8290"
+  },
+  "frozen_controls": {
+    "fold_count": 5,
+    "producer_epochs": 16,
+    "producer_batch_size": 16,
+    "producer_learning_rate": 0.0003,
+    "producer_weight_decay": 0.0001,
+    "view_consistency_weight": 0.1,
+    "count_independence_weight": 1.0,
+    "maximum_count_spearman": 0.5013777759365411,
+    "minimum_oof_auroc": 0.75,
+    "minimum_view_agreement": 0.6,
+    "pace_fractions": [
+      0.2,
+      0.4,
+      0.6
+    ],
+    "consumer_epochs": 12,
+    "consumer_learning_rate": 0.0001,
+    "supervised_contrastive_weight": 0.25,
+    "residual_hidden_dim": 128,
+    "seed": 42
+  },
+  "verified_invariants": {
+    "dataset_agnostic_no_segmentation_or_subgroup_api": true,
+    "fresh_serializable_producer_initialization": true,
+    "deterministic_label_group_balanced_batches": true,
+    "differentiable_probability_count_independence_loss": true,
+    "singleton_remainder_has_zero_count_penalty_without_dropping_image": true,
+    "exact_oof_group_exclusion_and_coverage_audit": true,
+    "producer_count_auroc_and_view_gate": true,
+    "consumer_refuses_failed_producer_gate": true,
+    "nested_20_40_60_positive_target_stages": true,
+    "negative_equal_image_family_candidate_mass": true,
+    "zero_initialized_residual_equals_accepted_base": true
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_tests": "7/7 PASS",
+    "full_repository_tests": "470/470 PASS",
+    "full_repository_seconds": 16.22,
+    "local_python39_zip_strict_diagnostic_shim_only": true
+  },
+  "runner_implemented": false,
+  "protocol_frozen": false,
+  "kaggle_launch_performed": false,
+  "scientific_input_opened": false,
+  "producer_fit_performed": false,
+  "targets_created": false,
+  "consumer_trained": false,
+  "validation_prediction_created": false,
+  "validation_gt_read": false,
+  "test_evaluated": false
+}

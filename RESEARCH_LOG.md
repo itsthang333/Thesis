@@ -10384,4 +10384,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   No target/consumer is created before the full producer gate; no downstream
   consumer is authorized before the full operational gate. BTXRD test remains
   locked. This registration launches nothing and opens no new scientific input.
+- **Static producer/target primitive readiness:** dataset-agnostic source
+  `project/models/mask_bag_count_controlled_self_paced.py` and tests have
+  SHA-256
+  `e01f6ab1b2790689420bb244c284157a5709cccc7b10959d4c55d27cba7ac6b1` /
+  `1662d405b6cd6dbf8e72b7cc14a22224c6d1e6293fd28d48928b2d72958f8290`.
+  The source implements fresh serializable producer initialization,
+  deterministic label/group-balanced batches, image BCE plus aligned-view and
+  differentiable probability/count-correlation losses, complete OOF
+  exclusion/coverage and count/AUROC/view gates, a hard consumer lock, nested
+  `20/40/60%` positive stages, equal negative image/family/candidate mass and a
+  zero-initialized accepted-baseline residual. A final singleton batch keeps its
+  image-label loss and receives a differentiable zero count penalty rather than
+  dropping a training image.
+- `py_compile`, focused synthetic tests `7/7` and full repository regression
+  `470/470` in 16.22 seconds pass under the documented local Python-3.9
+  compatibility shim. Primitive-readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_primitive_readiness.json`
+  has SHA-256
+  `79319ceb1c677544ca291a41a77725ec643a9402e5024016e4c830014df7f5ae`.
+  Runner, protocol, independent auditor and wrapper remain absent, so this does
+  not authorize Kaggle launch. No real cache record, producer fit, target,
+  consumer, validation prediction/GT or BTXRD test was opened or created.
 
