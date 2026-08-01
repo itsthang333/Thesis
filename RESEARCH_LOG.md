@@ -11783,3 +11783,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   checkout, sau đó fetch hai branch/collision check và đăng ký `ĐANG LÀM` trước
   khi `kaggle kernels push`.
 
+### B4 kernel-v1 one-shot binding (2026-08-02)
+
+- Lần gọi binder đầu tiên truyền nhầm full checkout SHA suy đoán
+  `a1c3fef2499fd5173d952ab8eb53d7e44372cf92` thay vì exact HEAD. Binder dừng
+  tại `git show` protocol trước khi tạo bound wrapper/binding, trước mọi input,
+  data hay Kaggle; không có scientific result. Exact target được đọc trực tiếp
+  rồi binder chạy lại trên clean checkout
+  `a1c3fefeeca74d961d6a585409c553686a15610c`.
+- One-shot binding pass: protocol/source/auditor closure `27/27`, source commit
+  `69b9af2...` là ancestor, đúng `3` replacement và inverse reconstruction exact.
+  Launch binding
+  `artifacts/research_protocols/same_gallery_class_contrast_bas_b4_kernel_v1_launch_binding.json`
+  SHA-256 `8be3a815bf44ebc43d431b7f9db308c3545b2b7baf38bf7cf6262b988a6f264a`;
+  bound wrapper canonical-LF SHA-256
+  `53359efd5eddc8ebb173531e202d763608c22c7d892e5d1d7dae8546b75f764d`.
+- Kaggle metadata SHA-256
+  `d156f47084b987946f10a45b1330718e741dae17d981ec9eed54a55f21cc5890`
+  bind raw dataset + accepted baseline transport dataset + accepted selector
+  cache kernel, private internet-enabled exact T4. Bound `py_compile`, metadata/
+  binding JSON parse và independent inverse check đều pass.
+- Vẫn chưa claim/launch/data/prediction/GT/consumer/test. Binding phải được
+  commit/push, sau đó fetch central + collaborator, đọc collision claims và chỉ
+  đăng ký `ĐANG LÀM` nếu scope vẫn unique.
+
