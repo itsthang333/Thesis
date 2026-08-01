@@ -8557,3 +8557,21 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   The promotion endpoint remains actual Dice above `0.2887294867` without a
   small/medium collapse; test remains locked.
 
+### 2026-08-02 — matched-normal Stage-A launch root-cause corrections
+
+- Kaggle versions 1–3 did not produce efficacy evidence. Version 1 failed
+  before data/GPU because the source archive omitted `project/config.py`;
+  version 2 passed imports but the replacement dataset version omitted the
+  locked classifier448 checkpoint; version 3 passed both and exposed a
+  canonical-identity bug before candidate scoring.
+- The version-3 traceback was `KeyError: 'img002739.jpeg'`: reference selection
+  lowercased `image_id`, while the canonical manifest and case-sensitive Kaggle
+  filesystem retain `IMG002739.jpeg`. The repair preserves exact canonical
+  image/group identifiers in returned reference pairs while using `casefold()`
+  only for duplicate/exclusion comparisons and deterministic hash keys. It does
+  not change reference ranking, masks, classifier, fusion weights or protocol.
+- Regression evidence: focused matched-normal tests pass `11/11`; a real
+  canonical manifest traversal verifies all `1,484` matched/random pairs
+  (`2,968` recipient/sham identifiers) resolve exactly and preserve case.
+  Test remains locked and no Dice claim is made from these technical failures.
+

@@ -87,6 +87,21 @@ def test_reference_pairing_prioritizes_anatomy_view_and_distinct_groups() -> Non
     ) == 4
 
 
+def test_reference_pairing_preserves_canonical_image_id_case() -> None:
+    query = _row("IMG000001.jpeg", "Group-Q", anatomy="tibia", view="frontal", tumor="1")
+    normals = [
+        _row(f"IMG{i:06d}.jpeg", f"Group-{i}", anatomy="tibia", view="frontal")
+        for i in range(2, 6)
+    ]
+    pairs = select_normal_reference_pairs(query, normals)
+    selected = {
+        image_id
+        for pair in pairs
+        for image_id in (pair.recipient_image_id, pair.sham_image_id)
+    }
+    assert selected == {f"IMG{i:06d}.jpeg" for i in range(2, 6)}
+
+
 def test_random_control_is_deterministic_but_not_metadata_sorted() -> None:
     query = _row("q", "gq", anatomy="tibia", view="frontal", tumor="1")
     normals = [

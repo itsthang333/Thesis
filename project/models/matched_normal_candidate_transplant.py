@@ -40,6 +40,12 @@ def _text(row: Mapping[str, object], key: str) -> str:
     return str(row.get(key, "")).strip().lower()
 
 
+def _identity(row: Mapping[str, object], key: str) -> str:
+    """Return canonical identifiers without changing filesystem-significant case."""
+
+    return str(row.get(key, "")).strip()
+
+
 def _aspect_ratio(row: Mapping[str, object]) -> float:
     width = float(row.get("width", 0.0))
     height = float(row.get("height", 0.0))
@@ -74,42 +80,45 @@ def select_normal_reference_pairs(
 
     if pair_count <= 0:
         raise ValueError("pair_count must be positive")
-    query_group = _text(query, "group_id")
-    query_id = _text(query, "image_id")
+    query_group = _identity(query, "group_id")
+    query_id = _identity(query, "image_id")
     eligible: list[Mapping[str, object]] = []
     seen_ids: set[str] = set()
     for row in normal_rows:
-        image_id = _text(row, "image_id")
-        group_id = _text(row, "group_id")
+        image_id = _identity(row, "image_id")
+        group_id = _identity(row, "group_id")
         if str(row.get("tumor", "")) not in {"0", "0.0", "false", "False"}:
             raise ValueError("normal_rows contain a tumor-positive record")
         if not image_id or not group_id:
             raise ValueError("Reference metadata omit image_id/group_id")
-        if image_id == query_id or group_id == query_group:
+        image_key = image_id.casefold()
+        group_key = group_id.casefold()
+        if image_key == query_id.casefold() or group_key == query_group.casefold():
             continue
-        if image_id in seen_ids:
+        if image_key in seen_ids:
             raise ValueError("Duplicate normal image_id in reference metadata")
-        seen_ids.add(image_id)
+        seen_ids.add(image_key)
         eligible.append(row)
     ordered = sorted(eligible, key=lambda row: _reference_key(query, row))
     selected: list[Mapping[str, object]] = []
     selected_groups: set[str] = set()
     for row in ordered:
-        group_id = _text(row, "group_id")
-        if group_id in selected_groups:
+        group_id = _identity(row, "group_id")
+        group_key = group_id.casefold()
+        if group_key in selected_groups:
             continue
         selected.append(row)
-        selected_groups.add(group_id)
+        selected_groups.add(group_key)
         if len(selected) == 2 * pair_count:
             break
     if len(selected) != 2 * pair_count:
         raise ValueError("Insufficient group-distinct normal references")
     return [
         NormalReferencePair(
-            recipient_image_id=_text(selected[2 * index], "image_id"),
-            recipient_group_id=_text(selected[2 * index], "group_id"),
-            sham_image_id=_text(selected[2 * index + 1], "image_id"),
-            sham_group_id=_text(selected[2 * index + 1], "group_id"),
+            recipient_image_id=_identity(selected[2 * index], "image_id"),
+            recipient_group_id=_identity(selected[2 * index], "group_id"),
+            sham_image_id=_identity(selected[2 * index + 1], "image_id"),
+            sham_group_id=_identity(selected[2 * index + 1], "group_id"),
         )
         for index in range(pair_count)
     ]
@@ -126,47 +135,50 @@ def select_random_normal_reference_pairs(
 
     if pair_count <= 0:
         raise ValueError("pair_count must be positive")
-    query_id = _text(query, "image_id")
-    query_group = _text(query, "group_id")
+    query_id = _identity(query, "image_id")
+    query_group = _identity(query, "group_id")
     eligible: list[Mapping[str, object]] = []
     seen_ids: set[str] = set()
     for row in normal_rows:
-        image_id = _text(row, "image_id")
-        group_id = _text(row, "group_id")
+        image_id = _identity(row, "image_id")
+        group_id = _identity(row, "group_id")
         if str(row.get("tumor", "")) not in {"0", "0.0", "false", "False"}:
             raise ValueError("normal_rows contain a tumor-positive record")
         if not image_id or not group_id:
             raise ValueError("Reference metadata omit image_id/group_id")
-        if image_id == query_id or group_id == query_group:
+        image_key = image_id.casefold()
+        group_key = group_id.casefold()
+        if image_key == query_id.casefold() or group_key == query_group.casefold():
             continue
-        if image_id in seen_ids:
+        if image_key in seen_ids:
             raise ValueError("Duplicate normal image_id in reference metadata")
-        seen_ids.add(image_id)
+        seen_ids.add(image_key)
         eligible.append(row)
     ordered = sorted(
         eligible,
         key=lambda row: hashlib.sha256(
-            f"{seed}|{query_id}|{_text(row, 'image_id')}".encode("utf-8")
+            f"{seed}|{query_id.casefold()}|{_identity(row, 'image_id').casefold()}".encode("utf-8")
         ).hexdigest(),
     )
     selected: list[Mapping[str, object]] = []
     selected_groups: set[str] = set()
     for row in ordered:
-        group_id = _text(row, "group_id")
-        if group_id in selected_groups:
+        group_id = _identity(row, "group_id")
+        group_key = group_id.casefold()
+        if group_key in selected_groups:
             continue
         selected.append(row)
-        selected_groups.add(group_id)
+        selected_groups.add(group_key)
         if len(selected) == 2 * pair_count:
             break
     if len(selected) != 2 * pair_count:
         raise ValueError("Insufficient group-distinct random normal references")
     return [
         NormalReferencePair(
-            recipient_image_id=_text(selected[2 * index], "image_id"),
-            recipient_group_id=_text(selected[2 * index], "group_id"),
-            sham_image_id=_text(selected[2 * index + 1], "image_id"),
-            sham_group_id=_text(selected[2 * index + 1], "group_id"),
+            recipient_image_id=_identity(selected[2 * index], "image_id"),
+            recipient_group_id=_identity(selected[2 * index], "group_id"),
+            sham_image_id=_identity(selected[2 * index + 1], "image_id"),
+            sham_group_id=_identity(selected[2 * index + 1], "group_id"),
         )
         for index in range(pair_count)
     ]
