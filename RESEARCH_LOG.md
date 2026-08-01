@@ -10234,4 +10234,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   every GT-blind gate or fail closed. Prediction freeze, validation GT,
   consumer and BTXRD test remain locked pending terminal output plus independent
   physical audit.
+- **Single bounded post-launch status:** at `2026-08-01T05:57:19Z`, exactly one
+  status query returned `RUNNING`. This is not a scientific result. No repeat
+  poll or additional monitor was created; prediction freeze, validation GT,
+  consumer and BTXRD test remain locked.
 
