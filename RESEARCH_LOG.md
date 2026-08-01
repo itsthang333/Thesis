@@ -10203,4 +10203,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `17546d299db02f34ea6b6c8a85a609cb022be334dd059ced60b8e01e08b21d1f`.
   This authorizes only creation of a fresh local version-1 binding at a pushed
   checkout; it is not a launch or scientific result.
+- **Corrected version-1 binding and final prelaunch freeze:** the fresh
+  one-time binder targets exact pushed checkout
+  `1ee46bb184ce63612baaaf922522265438d39d8d`. Corrected bound-wrapper,
+  launch-binding and unchanged metadata SHA-256 values are
+  `7abbb0b569f0df610fd1d4e84027242a92fe4ad6f70b5c9a4f346fba6ff1011c` /
+  `2c4c60673218dcc63f1f58b11ac9932dff73656aca2046fe4f01bbd7358a766a` /
+  `39ce8e274bcf293f540599bcf24ad7dc13060118d79ba67fa9d587ceb3c92666`.
+  The independent binding schema, exact three-field inverse reconstruction,
+  all 24 protocol source hashes, both claim/scientific-source ancestry checks,
+  metadata parse and bound-wrapper `py_compile` pass.
+- Final prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1_kernel_v1_final_prelaunch_audit.json`
+  is frozen before any Kaggle push with SHA-256
+  `d395d0f800f22b9e6f2cd64666c1aacb549c35f6db99b54a19af363c98b858c1`.
+  The invalid binding/draft were moved intact to an ignored error-evidence
+  directory rather than deleted. At this boundary there is still no kernel
+  push, scientific input execution, fit, prediction, validation GT/test access
+  or consumer training.
 

@@ -1,0 +1,68 @@
+{
+  "artifact_id": "rad_dino_mask_bag_proposal_cluster_s4_v1_kernel_v1_final_prelaunch_audit",
+  "frozen_utc": "2026-08-01T05:55:09Z",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "status": "CORRECTED_VERSION_1_BOUND_FINAL_PRELAUNCH_PASS_NOT_LAUNCHED",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-proposal-cluster-s4-v1",
+  "kernel_version": 1,
+  "scientific_source_commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
+  "execution_checkout": "1ee46bb184ce63612baaaf922522265438d39d8d",
+  "claim_commit": "fa8b0d6de4d1ad9d1372fd2c61ee8b78feec91a4",
+  "protocol_sha256": "fb39234a03890d7201531066e3ca7a11f2379eaa120bd503fe4b92e6de30a2a6",
+  "prelaunch_error_audit_sha256": "b9a87e0c51b371832abd34ca4a75f47819887283ce06e77bb91de51d9afcc72d",
+  "correction_readiness_sha256": "17546d299db02f34ea6b6c8a85a609cb022be334dd059ced60b8e01e08b21d1f",
+  "wrapper": {
+    "template_sha256": "fdaa86c7e71ea50664d268b8e98458114a1d72871c42940ff1532b7315782ec7",
+    "bound_sha256": "7abbb0b569f0df610fd1d4e84027242a92fe4ad6f70b5c9a4f346fba6ff1011c",
+    "launch_binding_sha256": "2c4c60673218dcc63f1f58b11ac9932dff73656aca2046fe4f01bbd7358a766a",
+    "metadata_sha256": "39ce8e274bcf293f540599bcf24ad7dc13060118d79ba67fa9d587ceb3c92666",
+    "binding_schema_version": 1,
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true,
+    "py_compile": "PASS",
+    "independent_binding_schema_check": "PASS"
+  },
+  "runtime_source": {
+    "protocol_source_hashes_verified_at_execution_checkout": 24,
+    "runtime_source_hashes_in_binding": 22,
+    "scientific_source_is_ancestor_of_execution_checkout": true,
+    "claim_is_ancestor_of_execution_checkout": true
+  },
+  "inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "baseline_archive_sha256": "8857eb6d1393683a21efaed3e3f33dee763e32203ac7665a76ff9fd809eee0c4",
+    "baseline_transport_audit_sha256": "9377ce5bb86e5d3aea32117b1f1f338824cfa94ff6e655f543489733204bb3da",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069"
+  },
+  "execution_contract": {
+    "private_kernel": true,
+    "internet_enabled_only_for_exact_runtime_install_and_git_checkout": true,
+    "accelerator": "NvidiaTeslaT4",
+    "physical_gpu_count_required": 2,
+    "focused_and_full_tests_before_scientific_runner": true,
+    "image_level_training_labels_only": true,
+    "prediction_freeze_before_validation_gt": true,
+    "independent_gt_blind_audit_required_after_download": true,
+    "consumer_locked": true,
+    "btxrd_test_locked": true
+  },
+  "verification": {
+    "corrected_auditor_wrapper_binder_focused_tests": "9/9 PASS",
+    "full_repository_tests": "459/459 PASS",
+    "full_repository_seconds": 18.36,
+    "git_diff_check": "PASS",
+    "metadata_json_parse": "PASS",
+    "launch_binding_json_parse": "PASS"
+  },
+  "launch": {
+    "kernel_push_performed": false,
+    "scientific_input_opened": false,
+    "teacher_or_student_fit": false,
+    "validation_prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}
