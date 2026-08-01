@@ -90,5 +90,8 @@ def test_runtime_is_hard_bound_to_t4x2_and_frozen_geometry() -> None:
     assert 'all("T4" in name for name in device_names)' in source
     assert "args.input_size != 448" in source
     assert "args.projection_dim != 128" in source
-    assert "args.maximum_candidates != 81" in source
+    assert "expected_maximum_candidates = 243 if args.rich_gallery_union else 81" in source
+    assert "args.maximum_candidates != expected_maximum_candidates" in source
+    assert '"maximum_candidates": args.maximum_candidates' in source
+    assert '"rich_gallery_union": args.rich_gallery_union' in source
     assert "projection_sha256(projection) != baseline_freeze" in source

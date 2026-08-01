@@ -76,6 +76,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--projection-seed", type=int, default=42)
     parser.add_argument("--encoder-batch-size", type=int, default=4)
     parser.add_argument("--maximum-candidates", type=int, default=81)
+    parser.add_argument(
+        "--rich-gallery-union",
+        action="store_true",
+        help=(
+            "Bind the cache to the audited three-source rich gallery. "
+            "This changes only the frozen candidate cap from 81 to 243."
+        ),
+    )
     parser.add_argument("--logit-tolerance", type=float, default=5.0e-6)
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
@@ -348,11 +356,12 @@ def _serialize_cache_split(
 
 def main() -> None:
     args = parse_args()
+    expected_maximum_candidates = 243 if args.rich_gallery_union else 81
     if (
         args.input_size != 448
         or args.projection_dim != 128
         or args.projection_seed != 42
-        or args.maximum_candidates != 81
+        or args.maximum_candidates != expected_maximum_candidates
         or args.logit_tolerance != 5.0e-6
     ):
         raise ValueError("selector cache builder differs from the frozen contract")
@@ -526,6 +535,8 @@ def main() -> None:
         "validation_masks_bitpacked": True,
         "affinity_features_cached": True,
         "affinity_feature_dim": 8 * len(SELECTED_HIDDEN_LAYERS),
+        "maximum_candidates": args.maximum_candidates,
+        "rich_gallery_union": args.rich_gallery_union,
         "validation_gt_read": False,
         "consumer_trained": False,
         "test_evaluated": False,
@@ -544,6 +555,8 @@ def main() -> None:
             "train": train_candidate_audit,
             "validation": val_candidate_audit,
         },
+        "maximum_candidates": args.maximum_candidates,
+        "rich_gallery_union": args.rich_gallery_union,
         "runtime": {
             "python": platform.python_version(),
             "torch": torch.__version__,
