@@ -8212,3 +8212,44 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   neighborhood, with train-normal negative evidence and direct paired binary
   Dice against 0.288729. Test remains locked.
 
+### EXP-20260801-codex-rich-gallery-top10-relational-v1
+
+- **Fixed question:** after global consensus failed, restrict spatial relation
+  to the immutable G1/upstream top-10. For each candidate, support is the mean
+  across other sources of maximum `IoU * peer baseline rank`; selection uses
+  the geometric mean of candidate baseline rank and support. No fitted
+  parameter, threshold, GT area, subgroup router or test enters the rule.
+- **Technical correction before GT:** the first Stage-A attempt stopped because
+  the existing fail-closed selector rejects the non-finite `-inf` sentinel used
+  outside top-10. It produced no file. Replacing it by finite `-1` is exactly
+  equivalent because all valid scores lie in `[0,1]`; hypothesis, top-K and
+  selection order are unchanged. Tests pass 4/4.
+- **Actual result:** the relational rule reaches Dice/IoU
+  `0.28564683/0.21473672`, subgroup Dice
+  `0.12276538/0.46376513/0.42377677`, with 45 misses. Relative to baseline it
+  is `-0.00308265` overall, `-0.03495792` small, `+0.02853580` medium and
+  `+0.03690323` large. Overall group-bootstrap CI95 is
+  `[-0.024322, 0.016844]`; small CI95 is strictly negative
+  `[-0.063430, -0.011129]`. The rule fails promotion.
+- **Paired mechanism:** choices change on 123/184 images. There are 53 wins,
+  51 losses and 80 ties; positive Dice mass `+5.66698` is exceeded by negative
+  mass `-6.23419`. Twelve misses are recovered but eight hits are lost.
+  Miss-count improvement therefore does not imply Dice improvement.
+- **Size-dependent root cause:** median selected/GT area changes
+  `2.045 -> 2.769` overall, `14.603 -> 27.094` small, `1.098 -> 1.313`
+  medium and `0.382 -> 0.666` large. Relation expands stable masks, correctly
+  helping under-segmented large tumors but severely worsening already
+  over-segmented small tumors.
+- **No safe confidence router:** relation support correlates with selected
+  Dice (`Spearman 0.4366`) but not with paired improvement over baseline
+  (`-0.00016`). A support threshold cannot be justified without validation-GT
+  tuning. The favorable classifier-to-LayerCAM transition is concentrated in
+  medium lesions and is recorded only as a training hypothesis, not a valid
+  post-hoc source router.
+- **Decision:** retire every post-hoc geometric relational reranker without a
+  top-K/threshold/weight/source/resolution/morphology sweep. Preserve relation
+  only as context inside a zero-initialized, baseline-preserving learned
+  residual with group-cross-fitted positive targets and train-normal candidate
+  negatives. The complete analysis is in
+  `RICH_GALLERY_TOP10_RELATIONAL_FAILURE_DOSSIER.md`. Test remains locked.
+
