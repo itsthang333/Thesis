@@ -124,6 +124,20 @@ def _close(actual: object, expected: object, *, name: str, atol: float = 1.0e-7)
         raise ValueError(f"{name} differs: {actual} versus {expected}")
 
 
+def _load_candidate_score_payload(path: Path, *, image_id: str) -> tuple[np.ndarray, np.ndarray]:
+    """Load the shared version-1 all-candidate score evidence contract."""
+
+    with np.load(path, allow_pickle=False) as payload:
+        if set(payload.files) != {"schema_version", "candidate_indices", "candidate_logits"}:
+            raise ValueError(f"T1 candidate-score schema mismatch: {image_id}")
+        schema_version = payload["schema_version"].copy()
+        indices = payload["candidate_indices"].copy()
+        logits = payload["candidate_logits"].copy()
+    if schema_version.dtype != np.int32 or schema_version.shape != () or int(schema_version) != 1:
+        raise ValueError(f"T1 candidate-score schema version mismatch: {image_id}")
+    return indices, logits
+
+
 def _rankdata(values: Sequence[float]) -> np.ndarray:
     array = np.asarray(values, dtype=np.float64)
     if array.ndim != 1 or len(array) < 2 or not np.isfinite(array).all():
@@ -709,11 +723,7 @@ def _verify_validation(
         score_path = _safe_child(root / "candidate_scores", score["score_path"])
         if sha256_file(score_path) != score["score_sha256"]:
             raise ValueError(f"T1 candidate-score hash mismatch: {image_id}")
-        with np.load(score_path, allow_pickle=False) as payload:
-            if set(payload.files) != {"candidate_indices", "candidate_logits"}:
-                raise ValueError(f"T1 candidate-score schema mismatch: {image_id}")
-            indices = payload["candidate_indices"].copy()
-            logits = payload["candidate_logits"].copy()
+        indices, logits = _load_candidate_score_payload(score_path, image_id=image_id)
         count = int(prediction["candidate_count"])
         if (
             indices.dtype != np.int64

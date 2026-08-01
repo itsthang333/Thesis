@@ -95,6 +95,30 @@ def test_t1_independent_rank_metrics_handle_ties() -> None:
     assert audit._binary_auroc([0, 0, 1, 1], [0.1, 0.2, 0.8, 0.9]) == pytest.approx(1.0)
 
 
+def test_t1_candidate_score_loader_accepts_shared_versioned_contract(tmp_path: Path) -> None:
+    path = tmp_path / "scores.npz"
+    np.savez_compressed(
+        path,
+        schema_version=np.asarray(1, dtype=np.int32),
+        candidate_indices=np.asarray([1, 4], dtype=np.int64),
+        candidate_logits=np.asarray([-0.5, 0.25], dtype=np.float32),
+    )
+    indices, logits = audit._load_candidate_score_payload(path, image_id="fixture")
+    assert np.array_equal(indices, np.asarray([1, 4], dtype=np.int64))
+    assert np.array_equal(logits, np.asarray([-0.5, 0.25], dtype=np.float32))
+
+
+def test_t1_candidate_score_loader_rejects_missing_schema_version(tmp_path: Path) -> None:
+    path = tmp_path / "scores.npz"
+    np.savez_compressed(
+        path,
+        candidate_indices=np.asarray([1], dtype=np.int64),
+        candidate_logits=np.asarray([0.25], dtype=np.float32),
+    )
+    with pytest.raises(ValueError, match="candidate-score schema mismatch"):
+        audit._load_candidate_score_payload(path, image_id="fixture")
+
+
 def _target_fixture(root: Path, *, corrupt_weight: bool) -> tuple[dict, dict, dict]:
     target_root = root / "self_paced_targets"
     cache_rows = {

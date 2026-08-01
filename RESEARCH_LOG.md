@@ -10691,3 +10691,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   hay chạy evaluator/decision. Trạng thái experiment vẫn `ĐANG LÀM`;
   validation GT chưa đọc, downstream consumer chưa train, BTXRD test vẫn khóa.
 
+- **Auditor-only schema correction ready, chưa mở GT:** sau khi error boundary
+  đã được commit/push, auditor chỉ được sửa để yêu cầu exact ba field
+  của shared evidence và kiểm tra scalar `schema_version:int32 == 1` trước
+  khi đọc indices/logits. Corrected auditor/test SHA-256 là
+  `cc66b53ce88bdc16b70ab39d0eaa874b94a10463fbd5bf058d43af02486c1f88` /
+  `7438edb2f927c3bf5c5e2d0c9510e0f466524db317274112fe4424ca93f9b0c0`.
+  Regression mới chấp nhận contract versioned và fail nếu thiếu schema; focused
+  `7/7`, full repository `490/490` trong 21.86 giây pass bằng documented
+  Python-3.9 strict-zip shim. Readiness artifact SHA-256 là
+  `21071c267228224eb6f7369c8bfb0094bfea70c0b21faf62cf471464e81f0007`.
+  Scientific source/protocol/prediction không đổi, kernel không rerun; chỉ
+  corrected independent audit trên exact immutable output được phép tiếp theo.
+

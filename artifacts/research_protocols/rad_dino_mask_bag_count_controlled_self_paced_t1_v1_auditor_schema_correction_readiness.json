@@ -1,0 +1,39 @@
+{
+  "auditor_correction": {
+    "accepted_fields": [
+      "schema_version",
+      "candidate_indices",
+      "candidate_logits"
+    ],
+    "accepted_schema_version": 1,
+    "change": "Require and validate the shared candidate-score evidence schema_version field before loading indices and logits.",
+    "corrected_auditor_sha256": "cc66b53ce88bdc16b70ab39d0eaa874b94a10463fbd5bf058d43af02486c1f88",
+    "frozen_auditor_sha256": "31ab993baa2f641355aa024212360f157a6ebab9f8839a02ffd95d024490ead6",
+    "test_sha256": "7438edb2f927c3bf5c5e2d0c9510e0f466524db317274112fe4424ca93f9b0c0"
+  },
+  "error_boundary_artifact_sha256": "2a3fefed9cdbb410b4d47c802cc3e46ef242621cce7470d6de52e2f57df47224",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "focused_tests": {
+    "passed": 7,
+    "total": 7
+  },
+  "full_regression": {
+    "elapsed_seconds": 21.86,
+    "passed": 490,
+    "total": 490
+  },
+  "kernel_rerun_required": false,
+  "protocol_sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+  "recorded_at": "2026-08-01T14:45:32+07:00",
+  "safety": {
+    "btxrd_test_opened": false,
+    "downstream_consumer_trained": false,
+    "scientific_output_mutated": false,
+    "scientific_protocol_changed": false,
+    "scientific_source_changed": false,
+    "validation_gt_opened": false
+  },
+  "scientific_source_commit": "c7f0937d515ded9bbd8928a2236cbe44b7a25f79",
+  "status": "READY_TO_REAUDIT_IMMUTABLE_OUTPUT",
+  "test_environment": "Python 3.9 btxrd-pseudomask with documented strict-zip compatibility shim"
+}
