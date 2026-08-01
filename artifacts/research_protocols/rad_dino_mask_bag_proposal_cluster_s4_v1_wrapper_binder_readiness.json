@@ -1,0 +1,59 @@
+{
+  "artifact_id": "rad_dino_mask_bag_proposal_cluster_s4_v1_wrapper_binder_readiness",
+  "frozen_utc": "2026-08-01T05:46:44Z",
+  "experiment_id": "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+  "status": "FAIL_CLOSED_WRAPPER_BINDER_READY_UNBOUND_NO_LAUNCH",
+  "scientific_source_commit": "95c4a3378eaf8463c57d57a0dd4e4cac6c69021f",
+  "protocol_sha256": "040227de1347c45bc1823bd5aef5d9614b8005619ecc35d9dceb45bb7eba71e8",
+  "wrapper_template": {
+    "path": "project/kaggle_wrappers/run_mask_bag_proposal_cluster_s4_v1.py",
+    "sha256": "af550929841b305f4612d9ba6581e214d9964ec3454c86fbd7c770f6dcefe4db",
+    "kernel_version": 0,
+    "launch_binding_ready": false,
+    "checkout_commit": "UNBOUND",
+    "exact_cleanup_roots": [
+      "/kaggle/working/s4_source",
+      "/kaggle/working/s4_runtime"
+    ]
+  },
+  "one_time_binder": {
+    "path": "project/bind_mask_bag_proposal_cluster_s4_wrapper.py",
+    "sha256": "190c889d6ed3b05c270c880161af38620ea9a2281f68630febea7cf780a5b2b5",
+    "template_sha256": "af550929841b305f4612d9ba6581e214d9964ec3454c86fbd7c770f6dcefe4db",
+    "permitted_replacements": [
+      "KERNEL_VERSION",
+      "LAUNCH_BINDING_READY",
+      "CHECKOUT_COMMIT"
+    ],
+    "inverse_reconstruction_required": true,
+    "refuses_existing_output": true
+  },
+  "tests": {
+    "wrapper_test_path": "tests/test_mask_bag_proposal_cluster_s4_wrapper.py",
+    "wrapper_test_sha256": "eab917457c02ad7df0b9db9e62dcec155f31796196ac7e67160491688fa27e4a",
+    "binder_test_path": "tests/test_bind_mask_bag_proposal_cluster_s4_wrapper.py",
+    "binder_test_sha256": "a8c6b609b6c9dcd1c70d81d8caab0aefbcb95686368b7995eabae039f664c7e2",
+    "focused_closure": "22/22 PASS",
+    "full_repository": "459/459 PASS",
+    "full_repository_seconds": 18.82,
+    "local_python39_zip_strict_diagnostic_shim_only": true,
+    "py_compile": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "runtime_fail_closed_contracts": {
+    "t4x2_required": true,
+    "exact_protocol_and_24_source_hashes_required": true,
+    "selector_cache_freeze_and_wrapper_audit_required": true,
+    "baseline_transport_freeze_required": true,
+    "focused_and_full_tests_before_runner": true,
+    "physical_oof_cluster_residual_score_and_map_outputs_verified": true,
+    "validation_gt_available_to_wrapper": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "launch": {
+    "binding_created": false,
+    "kernel_push": false,
+    "prediction_created": false
+  }
+}

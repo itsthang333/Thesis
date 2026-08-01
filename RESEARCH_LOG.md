@@ -10132,4 +10132,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Wrapper/binder/final prelaunch audit remain absent; no real S4 cache record
   execution, teacher/student fit, Kaggle launch, validation prediction/GT/test
   access or consumer training has occurred.
+- **Fail-closed wrapper/binder readiness:** unbound Kaggle wrapper
+  `project/kaggle_wrappers/run_mask_bag_proposal_cluster_s4_v1.py` has
+  canonical-LF SHA-256
+  `af550929841b305f4612d9ba6581e214d9964ec3454c86fbd7c770f6dcefe4db`.
+  It remains deliberately impossible to launch at kernel version `0`,
+  `LAUNCH_BINDING_READY=False` and `CHECKOUT_COMMIT=UNBOUND`. After a future
+  one-time binding, it must verify the exact Git checkout, protocol and all 24
+  source hashes, reconstruct the CRLF split, verify accepted cache/baseline
+  transport, require two physical T4 devices, pass focused plus full tests,
+  execute S4 once and physically verify all 2,981 OOF scores, 2,981 train
+  clusters, 371 validation-teacher scores/clusters/residual payloads,
+  all-candidate scores and maps before writing its wrapper audit.
+- One-time binder
+  `project/bind_mask_bag_proposal_cluster_s4_wrapper.py` SHA-256
+  `190c889d6ed3b05c270c880161af38620ea9a2281f68630febea7cf780a5b2b5`
+  permits exactly three external launch-field replacements, proves inverse
+  reconstruction to template
+  `af550929841b305f4612d9ba6581e214d9964ec3454c86fbd7c770f6dcefe4db`,
+  verifies source/protocol bytes at the future execution checkout and refuses
+  any existing bound output. Wrapper/binder test SHA-256 values are
+  `eab917457c02ad7df0b9db9e62dcec155f31796196ac7e67160491688fa27e4a` /
+  `a8c6b609b6c9dcd1c70d81d8caab0aefbcb95686368b7995eabae039f664c7e2`.
+- Focused closure passes `22/22` and the full repository passes `459/459` in
+  18.82 seconds under the documented Python-3.9 shim. Wrapper/binder readiness
+  `artifacts/research_protocols/rad_dino_mask_bag_proposal_cluster_s4_v1_wrapper_binder_readiness.json`
+  has SHA-256
+  `1c2dafed3fe2d04c18b9dae3d26c547bd6eb3a72fe83bd7d0dd203faafa36961`.
+  No binding, kernel package/push, scientific cache record, fit, prediction,
+  validation GT/test access or consumer training occurred.
 
