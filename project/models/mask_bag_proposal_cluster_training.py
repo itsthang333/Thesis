@@ -26,6 +26,7 @@ from models.rad_dino_mask_bag_mil import (
     aligned_candidate_consistency_loss,
     image_bag_loss,
     self_guided_instance_loss,
+    smooth_mil_pool,
 )
 
 
@@ -193,15 +194,27 @@ def train_proposal_teacher(
     *,
     device: torch.device,
     seed_offset: int,
+    initial_state: Mapping[str, torch.Tensor] | None = None,
 ) -> tuple[RadDinoMaskBagMIL, list[dict[str, float]]]:
     """Fit one image-label-only teacher with fixed final-epoch selection."""
 
     if not records:
         raise ValueError("S4 teacher training records cannot be empty")
     derived_seed = int(training_config.seed) + int(seed_offset)
-    _seed_torch(derived_seed)
+    if initial_state is None:
+        initial_state = initial_teacher_state(model_config, seed=derived_seed)
+    elif device.type != "cuda":
+        raise ValueError("S4 precomputed teacher state requires a CUDA device")
+    if device.type == "cuda":
+        # OOF folds run concurrently on distinct GPUs. Seed only the current
+        # device here; manual_seed_all would race with the sibling worker and
+        # change its dropout stream.
+        with torch.cuda.device(device):
+            torch.cuda.manual_seed(derived_seed)
+    else:
+        torch.manual_seed(derived_seed)
     model = RadDinoMaskBagMIL(model_config).to(device)
-    model.load_state_dict(initial_teacher_state(model_config, seed=derived_seed))
+    model.load_state_dict(initial_state, strict=True)
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=training_config.learning_rate,
@@ -277,6 +290,12 @@ def score_proposal_teacher(
         with torch.inference_mode():
             original_logits, _ = model.score_descriptors(original, valid)
             flipped_logits, _ = model.score_descriptors(flipped, valid)
+            averaged_logits = 0.5 * (original_logits + flipped_logits)
+            bag_logits = smooth_mil_pool(
+                averaged_logits,
+                valid,
+                temperature=model.config.bag_temperature,
+            )
         for row, record_index in enumerate(indices):
             record = records[int(record_index)]
             count = len(record["candidate_indices"])
@@ -290,12 +309,70 @@ def score_proposal_teacher(
                     "original_logits": original_row,
                     "flipped_logits": flipped_row,
                     "conservative_seed_logits": np.minimum(original_row, flipped_row),
+                    "candidate_count": count,
+                    "bag_logit": float(bag_logits[row].item()),
+                    "bag_probability": float(torch.sigmoid(bag_logits[row]).item()),
                     "selected_view_agreement": bool(
                         int(np.argmax(original_row)) == int(np.argmax(flipped_row))
                     ),
                 }
             )
     return output
+
+
+def fit_proposal_teacher_oof_fold(
+    records: Sequence[Mapping[str, Any]],
+    fold_ids: np.ndarray,
+    *,
+    heldout_fold: int,
+    model_config: MaskBagMILConfig,
+    training_config: ProposalClusterTrainingConfig,
+    device: torch.device,
+    initial_state: Mapping[str, torch.Tensor],
+) -> dict[str, Any]:
+    """Fit and score one teacher fold with complete group exclusion."""
+
+    folds = np.asarray(fold_ids, dtype=np.int32)
+    if folds.shape != (len(records),) or heldout_fold not in set(folds.tolist()):
+        raise ValueError("S4 fold IDs do not align with records")
+    training_indices = np.flatnonzero(folds != heldout_fold)
+    heldout_indices = np.flatnonzero(folds == heldout_fold)
+    training = [records[int(index)] for index in training_indices]
+    heldout = [records[int(index)] for index in heldout_indices]
+    training_groups = sorted({str(record["group_id"]) for record in training})
+    heldout_groups = sorted({str(record["group_id"]) for record in heldout})
+    if set(training_groups) & set(heldout_groups):
+        raise RuntimeError("S4 teacher fold trained on a held-out group")
+    teacher, history = train_proposal_teacher(
+        training,
+        model_config,
+        training_config,
+        device=device,
+        seed_offset=1000 + heldout_fold,
+        initial_state=initial_state,
+    )
+    scores = score_proposal_teacher(
+        heldout,
+        teacher,
+        batch_size=training_config.batch_size,
+        device=device,
+    )
+    for row in scores:
+        row["heldout_fold"] = int(heldout_fold)
+    return {
+        "heldout_fold": int(heldout_fold),
+        "derived_seed": int(training_config.seed) + 1000 + int(heldout_fold),
+        "training_groups": training_groups,
+        "heldout_groups": heldout_groups,
+        "group_overlap": 0,
+        "teacher_state_dict": {
+            key: value.detach().cpu().clone()
+            for key, value in teacher.state_dict().items()
+        },
+        "training_history": history,
+        "heldout_scores": scores,
+        "validation_segmentation_quality_used": False,
+    }
 
 
 def attach_teacher_clusters(
@@ -386,13 +463,103 @@ def audit_oof_teacher_coverage(
             or int(row["heldout_fold"]) != int(fold)
         ):
             raise RuntimeError("S4 OOF score identity/fold mismatch")
+    counts = np.asarray([row["candidate_count"] for row in predictions], dtype=np.float64)
+    probabilities = np.asarray(
+        [row["bag_probability"] for row in predictions], dtype=np.float64
+    )
+    count_order = np.argsort(counts, kind="mergesort")
+    probability_order = np.argsort(probabilities, kind="mergesort")
+    count_ranks = np.empty(len(counts), dtype=np.float64)
+    probability_ranks = np.empty(len(probabilities), dtype=np.float64)
+    for values, order, ranks in (
+        (counts, count_order, count_ranks),
+        (probabilities, probability_order, probability_ranks),
+    ):
+        start = 0
+        while start < len(values):
+            stop = start + 1
+            while stop < len(values) and values[order[stop]] == values[order[start]]:
+                stop += 1
+            ranks[order[start:stop]] = 0.5 * (start + stop - 1) + 1.0
+            start = stop
+    if np.std(count_ranks) == 0 or np.std(probability_ranks) == 0:
+        raise RuntimeError("S4 OOF teacher count/probability ranks are constant")
+    count_probability_spearman = abs(
+        float(np.corrcoef(count_ranks, probability_ranks)[0, 1])
+    )
     return {
         "complete": True,
         "records": len(records),
         "folds": len(expected_folds),
         "group_overlap": 0,
+        "absolute_candidate_count_probability_spearman": count_probability_spearman,
         "crossfit_exclusion": exclusion,
         "ordered_scores": [by_id[str(record["image_id"])] for record in records],
+    }
+
+
+def initial_cluster_residual_state(
+    descriptor_dim: int,
+    training_config: ProposalClusterTrainingConfig,
+) -> dict[str, torch.Tensor]:
+    _seed_torch(training_config.seed + 9000)
+    residual = ProposalClusterResidual(
+        descriptor_dim, training_config.residual_hidden_dim
+    )
+    return {
+        key: value.detach().cpu().clone()
+        for key, value in residual.state_dict().items()
+    }
+
+
+def audit_cluster_residual_identity(
+    records: Sequence[Mapping[str, Any]],
+    frozen_base_scorer: nn.Module,
+    residual: ProposalClusterResidual,
+    *,
+    batch_size: int,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Prove the pretraining S4 student is exact accepted-base identity."""
+
+    if not records or batch_size < 1:
+        raise ValueError("S4 identity audit needs records and a positive batch")
+    frozen_base_scorer.requires_grad_(False).eval()
+    residual.eval()
+    audited_records = 0
+    audited_candidates = 0
+    audited_outside = 0
+    with torch.inference_mode():
+        for start in range(0, len(records), batch_size):
+            indices = np.arange(start, min(start + batch_size, len(records)))
+            original, flipped, valid, _labels, clusters, _cluster_valid = _padded_batch(
+                records, indices, device, require_clusters=True
+            )
+            members = clusters.any(dim=1) & valid
+            original_base, _ = frozen_base_scorer.score_descriptors(original, valid)
+            flipped_base, _ = frozen_base_scorer.score_descriptors(flipped, valid)
+            original_combined, original_residual = residual(
+                original, original_base, members
+            )
+            flipped_combined, flipped_residual = residual(
+                flipped, flipped_base, members
+            )
+            if (
+                not torch.equal(original_combined, original_base)
+                or not torch.equal(flipped_combined, flipped_base)
+                or torch.count_nonzero(original_residual).item() != 0
+                or torch.count_nonzero(flipped_residual).item() != 0
+            ):
+                raise RuntimeError("S4 zero initialization is not exact identity")
+            audited_records += len(indices)
+            audited_candidates += int(valid.sum().item())
+            audited_outside += int((valid & ~members).sum().item())
+    return {
+        "records": audited_records,
+        "candidates": audited_candidates,
+        "outside_cluster_candidates": audited_outside,
+        "zero_residual_exact": True,
+        "combined_equals_frozen_base_exact": True,
     }
 
 
@@ -403,6 +570,7 @@ def train_cluster_residual(
     training_config: ProposalClusterTrainingConfig,
     *,
     device: torch.device,
+    initial_state: Mapping[str, torch.Tensor] | None = None,
 ) -> tuple[ProposalClusterResidual, list[dict[str, float]]]:
     """Fit only cluster-member residuals with normalized continuation bags."""
 
@@ -413,6 +581,8 @@ def train_cluster_residual(
     residual = ProposalClusterResidual(
         model_config.descriptor_dim, training_config.residual_hidden_dim
     ).to(device)
+    if initial_state is not None:
+        residual.load_state_dict(initial_state, strict=True)
     optimizer = torch.optim.AdamW(
         residual.parameters(),
         lr=training_config.learning_rate,
@@ -487,14 +657,100 @@ def train_cluster_residual(
     return residual, history
 
 
+def score_cluster_residual(
+    records: Sequence[Mapping[str, Any]],
+    frozen_base_scorer: nn.Module,
+    residual: ProposalClusterResidual,
+    training_config: ProposalClusterTrainingConfig,
+    *,
+    batch_size: int,
+    device: torch.device,
+) -> list[dict[str, Any]]:
+    """Score final S4 candidates while retaining exact outside-cluster fallback."""
+
+    if batch_size < 1:
+        raise ValueError("S4 scoring batch size must be positive")
+    frozen_base_scorer.requires_grad_(False).eval()
+    residual.eval()
+    output: list[dict[str, Any]] = []
+    for start in range(0, len(records), batch_size):
+        indices = np.arange(start, min(start + batch_size, len(records)))
+        original, flipped, valid, _labels, clusters, cluster_valid = _padded_batch(
+            records, indices, device, require_clusters=True
+        )
+        members = clusters.any(dim=1) & valid
+        with torch.inference_mode():
+            original_base, _ = frozen_base_scorer.score_descriptors(original, valid)
+            flipped_base, _ = frozen_base_scorer.score_descriptors(flipped, valid)
+            original_logits, original_residual = residual(
+                original, original_base, members
+            )
+            flipped_logits, flipped_residual = residual(
+                flipped, flipped_base, members
+            )
+            logits = 0.5 * (original_logits + flipped_logits)
+            _cluster_logits, bag_logits = proposal_cluster_smooth_pool(
+                logits,
+                clusters,
+                cluster_valid,
+                within_temperature=training_config.end_temperature,
+                between_temperature=training_config.end_temperature,
+            )
+        for row, record_index in enumerate(indices):
+            record = records[int(record_index)]
+            count = len(record["candidate_indices"])
+            member_row = members[row, :count]
+            if not torch.equal(
+                original_logits[row, :count][~member_row],
+                original_base[row, :count][~member_row],
+            ) or not torch.equal(
+                flipped_logits[row, :count][~member_row],
+                flipped_base[row, :count][~member_row],
+            ):
+                raise RuntimeError("S4 changed an outside-cluster candidate")
+            output.append(
+                {
+                    "image_id": str(record["image_id"]),
+                    "candidate_logits": logits[row, :count].float().cpu().numpy(),
+                    "bag_logit": float(bag_logits[row].item()),
+                    "bag_probability": float(torch.sigmoid(bag_logits[row]).item()),
+                    "candidate_count": count,
+                    "cluster_count": int(cluster_valid[row].sum().item()),
+                    "cluster_member_count": int(member_row.sum().item()),
+                    "outside_cluster_count": int((~member_row).sum().item()),
+                    "outside_cluster_original_residual_exact_zero": bool(
+                        torch.count_nonzero(
+                            original_residual[row, :count][~member_row]
+                        ).item()
+                        == 0
+                    ),
+                    "outside_cluster_flipped_residual_exact_zero": bool(
+                        torch.count_nonzero(
+                            flipped_residual[row, :count][~member_row]
+                        ).item()
+                        == 0
+                    ),
+                    "final_selected_view_agreement": bool(
+                        int(original_logits[row, :count].argmax().item())
+                        == int(flipped_logits[row, :count].argmax().item())
+                    ),
+                }
+            )
+    return output
+
+
 __all__ = [
     "ProposalClusterResidual",
     "ProposalClusterTrainingConfig",
     "attach_teacher_clusters",
+    "audit_cluster_residual_identity",
     "audit_oof_teacher_coverage",
     "default_teacher_model_config",
+    "fit_proposal_teacher_oof_fold",
+    "initial_cluster_residual_state",
     "initial_teacher_state",
     "score_proposal_teacher",
+    "score_cluster_residual",
     "train_cluster_residual",
     "train_proposal_teacher",
 ]

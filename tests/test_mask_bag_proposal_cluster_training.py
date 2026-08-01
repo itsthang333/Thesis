@@ -114,14 +114,26 @@ def test_s4_oof_audit_rejects_training_on_heldout_group() -> None:
             "heldout_fold": 0,
             "training_groups": ["g-a", "g-b"],
             "heldout_scores": [
-                {"image_id": "a", "group_id": "g-a", "heldout_fold": 0}
+                {
+                    "image_id": "a",
+                    "group_id": "g-a",
+                    "heldout_fold": 0,
+                    "candidate_count": 2,
+                    "bag_probability": 0.4,
+                }
             ],
         },
         {
             "heldout_fold": 1,
             "training_groups": ["g-a"],
             "heldout_scores": [
-                {"image_id": "b", "group_id": "g-b", "heldout_fold": 1}
+                {
+                    "image_id": "b",
+                    "group_id": "g-b",
+                    "heldout_fold": 1,
+                    "candidate_count": 3,
+                    "bag_probability": 0.6,
+                }
             ],
         },
     ]
@@ -141,14 +153,26 @@ def test_s4_oof_audit_accepts_exact_group_exclusion_and_coverage() -> None:
             "heldout_fold": 0,
             "training_groups": ["g-b"],
             "heldout_scores": [
-                {"image_id": "a", "group_id": "g-a", "heldout_fold": 0}
+                {
+                    "image_id": "a",
+                    "group_id": "g-a",
+                    "heldout_fold": 0,
+                    "candidate_count": 2,
+                    "bag_probability": 0.6,
+                }
             ],
         },
         {
             "heldout_fold": 1,
             "training_groups": ["g-a"],
             "heldout_scores": [
-                {"image_id": "b", "group_id": "g-b", "heldout_fold": 1}
+                {
+                    "image_id": "b",
+                    "group_id": "g-b",
+                    "heldout_fold": 1,
+                    "candidate_count": 3,
+                    "bag_probability": 0.4,
+                }
             ],
         },
     ]
@@ -156,4 +180,5 @@ def test_s4_oof_audit_accepts_exact_group_exclusion_and_coverage() -> None:
     assert audit["complete"] is True
     assert audit["records"] == 2
     assert audit["group_overlap"] == 0
+    assert audit["absolute_candidate_count_probability_spearman"] == pytest.approx(1.0)
     assert [row["image_id"] for row in audit["ordered_scores"]] == ["a", "b"]

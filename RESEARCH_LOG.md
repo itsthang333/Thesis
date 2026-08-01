@@ -10029,4 +10029,49 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   inputs: no real BTXRD cache was opened by the new code, no teacher or selector
   was fit, no validation prediction/GT/test was accessed and no consumer was
   trained.
+- **Runner-integrated S4 preparation:** the training module above is extended,
+  not rewritten historically; its new canonical-LF SHA-256 is
+  `8f13560192055de0e9fbb68cf9a7dadddd9e9b11d19b0f244984cfc6fbc10ac9`
+  and test SHA-256 is
+  `8b843b5879a483b6041f0f5525bac7b9c2603913d3c85027490c8c9a185c5cb5`.
+  It now fits each teacher fold from scratch, scores every held-out train image
+  exactly once, audits full group exclusion/coverage and computes the OOF
+  absolute candidate-count/probability Spearman before any student fit. It also
+  supplies an exact all-record zero-initialization audit and final scoring that
+  proves outside-cluster residuals remain zero in both aligned views.
+- The fail-closed real-run source
+  `project/run_mask_bag_proposal_cluster_s4_arm.py`, canonical-LF SHA-256
+  `be11aed8fc114c20ccca6eba82d4e2bb8fe634827aa87df2179255fa84f9d7bc`,
+  fixes the complete five-fold assignment to the already audited cohort, splits
+  folds `3/2` across T4x2, and requires the OOF teacher count/probability value
+  to stay at or below `0.5013777759365411`. Before constructing the residual
+  optimizer it serializes all five teacher checkpoints/training-group lists,
+  every OOF candidate score, the exclusion audit, all train cluster
+  seeds/members, a distinct all-train teacher used only on unseen validation
+  groups, all validation teacher scores and all validation cluster
+  seeds/members. The accepted all-train geometry-v3 scorer is loaded only as a
+  frozen zero-residual student baseline, never as cluster teacher.
+- After the student fit, the runner scores validation in fixed `186/185` shards
+  on both T4s, requires the final GT-blind count/probability ceiling and exact
+  outside-cluster fallback, then writes all-candidate scores, 371 maps and the
+  prediction freeze. Runner tests SHA-256
+  `35b7f36814564026d3caced2a1b6460f90b082398cbeecb7622a3247e5d6729c`
+  prove serialization/gate ordering, frozen controls, T4x2/safety contracts and
+  failure before prediction serialization when the count gate is exceeded.
+  A final precommit fail-closed audit found two implementation risks before any
+  scientific execution: the two OOF GPU threads could call global
+  `manual_seed_all` concurrently and perturb each other's dropout stream, and
+  the distinct full-train teacher recorded `validation_groups_seen=False`
+  without proving the train/validation group sets were disjoint. The corrected
+  runner now constructs all five initial teacher states serially, then each
+  worker seeds only its own current CUDA device; it also writes and hash-binds
+  an exact train/validation group-exclusion audit before the full-teacher
+  optimizer is constructed. These are implementation/provenance corrections;
+  the teacher architecture, loss, folds, cluster thresholds, continuation,
+  residual and every scientific gate are unchanged.
+  `py_compile`, focused closure `13/13` and full repository regression
+  `450/450` in 24.57 seconds pass under the documented Python-3.9 compatibility
+  shim. This remains static/synthetic work only: no real cache execution,
+  teacher/student fit, validation prediction/GT/test or consumer training has
+  occurred. Protocol/auditor/wrapper binding remain required before launch.
 
