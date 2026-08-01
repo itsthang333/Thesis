@@ -41,6 +41,7 @@ class CountControlledSelfPacedConfig:
     consumer_epochs: int = 12
     consumer_learning_rate: float = 1.0e-4
     supervised_contrastive_weight: float = 0.25
+    contrastive_temperature: float = 0.10
     residual_hidden_dim: int = 128
     seed: int = 42
 
@@ -53,6 +54,8 @@ class CountControlledSelfPacedConfig:
             raise ValueError("T1 learning rates must be positive")
         if self.producer_weight_decay < 0:
             raise ValueError("T1 weight decay must be nonnegative")
+        if self.contrastive_temperature <= 0:
+            raise ValueError("T1 contrastive temperature must be positive")
         for name, value in (
             ("view consistency", self.view_consistency_weight),
             ("count independence", self.count_independence_weight),
@@ -83,15 +86,19 @@ class CountControlledResidual(nn.Module):
         super().__init__()
         if descriptor_dim < 1 or hidden_dim < 2:
             raise ValueError("T1 residual dimensions are invalid")
-        self.network = nn.Sequential(
+        self.encoder = nn.Sequential(
             nn.LayerNorm(descriptor_dim),
             nn.Linear(descriptor_dim, hidden_dim),
             nn.GELU(),
-            nn.Linear(hidden_dim, 1),
         )
-        final = self.network[-1]
-        nn.init.zeros_(final.weight)
-        nn.init.zeros_(final.bias)
+        self.residual_head = nn.Linear(hidden_dim, 1)
+        nn.init.zeros_(self.residual_head.weight)
+        nn.init.zeros_(self.residual_head.bias)
+
+    def embed(self, descriptors: torch.Tensor) -> torch.Tensor:
+        if descriptors.ndim != 3:
+            raise ValueError("T1 descriptors must have shape [batch, candidate, feature]")
+        return self.encoder(descriptors)
 
     def forward(
         self,
@@ -103,8 +110,45 @@ class CountControlledResidual(nn.Module):
             raise ValueError("T1 descriptors/base logits must align")
         if valid.shape != base_logits.shape:
             raise ValueError("T1 validity mask must align with logits")
-        residual = self.network(descriptors).squeeze(-1).masked_fill(~valid.bool(), 0.0)
+        residual = self.residual_head(self.embed(descriptors)).squeeze(-1)
+        residual = residual.masked_fill(~valid.bool(), 0.0)
         return base_logits + residual, residual
+
+
+def weighted_supervised_contrastive_loss(
+    embeddings: torch.Tensor,
+    labels: torch.Tensor,
+    weights: torch.Tensor,
+    *,
+    temperature: float,
+) -> torch.Tensor:
+    """Weighted supervised contrastive loss over already trusted targets."""
+
+    if embeddings.ndim != 2 or labels.shape != embeddings.shape[:1]:
+        raise ValueError("T1 contrastive embeddings/labels must align")
+    if weights.shape != labels.shape or len(labels) < 2:
+        raise ValueError("T1 contrastive weights must align with >=2 targets")
+    if temperature <= 0 or not torch.isfinite(embeddings).all():
+        raise ValueError("T1 contrastive temperature/embeddings are invalid")
+    if not torch.isfinite(weights).all() or torch.any(weights < 0):
+        raise ValueError("T1 contrastive weights must be finite and nonnegative")
+    normalized = torch.nn.functional.normalize(embeddings, dim=1)
+    similarities = normalized @ normalized.T / temperature
+    identity = torch.eye(len(labels), dtype=torch.bool, device=labels.device)
+    allowed = ~identity
+    positive = labels[:, None].eq(labels[None, :]) & allowed
+    valid_anchor = positive.any(dim=1) & (weights > 0)
+    if not valid_anchor.any():
+        return embeddings.sum() * 0.0
+    masked = similarities.masked_fill(~allowed, float("-inf"))
+    log_denominator = torch.logsumexp(masked, dim=1)
+    positive_count = positive.sum(dim=1).clamp_min(1)
+    positive_mean = (
+        similarities.masked_fill(~positive, 0.0).sum(dim=1) / positive_count
+    )
+    per_anchor = log_denominator - positive_mean
+    anchor_weights = weights * valid_anchor.to(weights.dtype)
+    return (per_anchor * anchor_weights).sum() / anchor_weights.sum()
 
 
 def default_producer_model_config() -> MaskBagMILConfig:
@@ -664,6 +708,227 @@ def build_self_paced_targets(
     }
 
 
+def initial_consumer_state(
+    descriptor_dim: int,
+    config: CountControlledSelfPacedConfig,
+) -> dict[str, torch.Tensor]:
+    _seed_torch(config.seed + 9000)
+    residual = CountControlledResidual(descriptor_dim, config.residual_hidden_dim)
+    return {
+        key: value.detach().cpu().clone()
+        for key, value in residual.state_dict().items()
+    }
+
+
+def _target_lookup(
+    target_bundle: Mapping[str, Any], stage_index: int
+) -> dict[tuple[str, int], tuple[int, float]]:
+    stages = target_bundle.get("stages")
+    negatives = target_bundle.get("negative_targets")
+    if not isinstance(stages, list) or not isinstance(negatives, list):
+        raise ValueError("T1 target bundle schema is invalid")
+    if not 0 <= stage_index < len(stages):
+        raise ValueError("T1 target stage index is invalid")
+    lookup: dict[tuple[str, int], tuple[int, float]] = {}
+    for row in [*negatives, *stages[stage_index]["positive_targets"]]:
+        key = (str(row["image_id"]), int(row["candidate_index"]))
+        if key in lookup:
+            raise ValueError("T1 target bundle labels one candidate twice")
+        target = int(row["target"])
+        weight = float(row["weight"])
+        if target not in (0, 1) or not math.isfinite(weight) or weight <= 0:
+            raise ValueError("T1 target label/weight is invalid")
+        lookup[key] = (target, weight)
+    return lookup
+
+
+def _batch_target_tensors(
+    records: Sequence[Mapping[str, Any]],
+    indices: np.ndarray,
+    maximum: int,
+    lookup: Mapping[tuple[str, int], tuple[int, float]],
+    device: torch.device,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    labels = np.full((len(indices), maximum), -1, dtype=np.int64)
+    weights = np.zeros((len(indices), maximum), dtype=np.float32)
+    for row, index in enumerate(indices):
+        record = records[int(index)]
+        image_id = str(record["image_id"])
+        for candidate in range(len(record["candidate_indices"])):
+            target = lookup.get((image_id, candidate))
+            if target is not None:
+                labels[row, candidate], weights[row, candidate] = target
+    return torch.from_numpy(labels).to(device), torch.from_numpy(weights).to(device)
+
+
+def train_self_paced_consumer(
+    records: Sequence[Mapping[str, Any]],
+    target_bundle: Mapping[str, Any],
+    frozen_base_scorer: nn.Module,
+    model_config: MaskBagMILConfig,
+    training_config: CountControlledSelfPacedConfig,
+    *,
+    device: torch.device,
+    initial_state: Mapping[str, torch.Tensor] | None = None,
+) -> tuple[CountControlledResidual, list[dict[str, float]]]:
+    """Fit the conditional 12-epoch residual through three fixed pace stages."""
+
+    if not records or target_bundle.get("validation_gt_read") is not False:
+        raise ValueError("T1 consumer requires GT-blind frozen targets")
+    stages = target_bundle.get("stages")
+    if not isinstance(stages, list) or len(stages) != len(training_config.pace_fractions):
+        raise ValueError("T1 target stages do not match the frozen schedule")
+    frozen_base_scorer.requires_grad_(False).eval()
+    _seed_torch(training_config.seed + 9000)
+    residual = CountControlledResidual(
+        model_config.descriptor_dim, training_config.residual_hidden_dim
+    ).to(device)
+    if initial_state is not None:
+        residual.load_state_dict(initial_state, strict=True)
+    optimizer = torch.optim.AdamW(
+        residual.parameters(),
+        lr=training_config.consumer_learning_rate,
+        weight_decay=training_config.producer_weight_decay,
+    )
+    history: list[dict[str, float]] = []
+    for epoch in range(1, training_config.consumer_epochs + 1):
+        stage_index = min(
+            len(stages) - 1,
+            (epoch - 1) * len(stages) // training_config.consumer_epochs,
+        )
+        lookup = _target_lookup(target_bundle, stage_index)
+        batches = deterministic_label_group_balanced_batches(
+            records,
+            batch_size=training_config.producer_batch_size,
+            seed=training_config.seed + 9000 + epoch,
+        )
+        residual.train()
+        sums = {"total": 0.0, "image": 0.0, "contrastive": 0.0, "count": 0.0}
+        for indices in batches:
+            original, flipped, valid, labels, counts = _padded_batch(
+                records, indices, device
+            )
+            with torch.inference_mode():
+                original_base, _ = frozen_base_scorer.score_descriptors(original, valid)
+                flipped_base, _ = frozen_base_scorer.score_descriptors(flipped, valid)
+            original_logits, _ = residual(original, original_base, valid)
+            flipped_logits, _ = residual(flipped, flipped_base, valid)
+            averaged_logits = 0.5 * (original_logits + flipped_logits)
+            bag_logits = smooth_mil_pool(
+                averaged_logits,
+                valid,
+                temperature=model_config.bag_temperature,
+            )
+            image_loss = image_bag_loss(bag_logits, labels)
+            count_loss = count_independence_loss(bag_logits, counts)
+            target_labels, target_weights = _batch_target_tensors(
+                records, indices, valid.shape[1], lookup, device
+            )
+            target_mask = valid & (target_weights > 0)
+            if int(target_mask.sum().item()) >= 1:
+                original_embeddings = residual.embed(original)[target_mask]
+                flipped_embeddings = residual.embed(flipped)[target_mask]
+                embeddings = torch.cat((original_embeddings, flipped_embeddings), dim=0)
+                contrastive_labels = torch.cat(
+                    (target_labels[target_mask], target_labels[target_mask]), dim=0
+                )
+                contrastive_weights = 0.5 * torch.cat(
+                    (target_weights[target_mask], target_weights[target_mask]), dim=0
+                )
+                contrastive = weighted_supervised_contrastive_loss(
+                    embeddings,
+                    contrastive_labels,
+                    contrastive_weights,
+                    temperature=training_config.contrastive_temperature,
+                )
+            else:
+                contrastive = averaged_logits.sum() * 0.0
+            total = (
+                image_loss
+                + training_config.supervised_contrastive_weight * contrastive
+                + training_config.count_independence_weight * count_loss
+            )
+            optimizer.zero_grad(set_to_none=True)
+            total.backward()
+            optimizer.step()
+            for key, value in (
+                ("total", total),
+                ("image", image_loss),
+                ("contrastive", contrastive),
+                ("count", count_loss),
+            ):
+                sums[key] += float(value.detach().item())
+        history.append(
+            {
+                "epoch": float(epoch),
+                "stage": float(stage_index + 1),
+                "pace_fraction": float(training_config.pace_fractions[stage_index]),
+                **{key: value / len(batches) for key, value in sums.items()},
+            }
+        )
+    if any(parameter.requires_grad for parameter in frozen_base_scorer.parameters()):
+        raise RuntimeError("T1 accepted base scorer became trainable")
+    return residual, history
+
+
+def score_self_paced_consumer(
+    records: Sequence[Mapping[str, Any]],
+    frozen_base_scorer: nn.Module,
+    residual: CountControlledResidual,
+    model_config: MaskBagMILConfig,
+    *,
+    batch_size: int,
+    device: torch.device,
+) -> list[dict[str, Any]]:
+    """Score both views and retain base/residual evidence for every candidate."""
+
+    if batch_size < 1:
+        raise ValueError("T1 consumer scoring batch size must be positive")
+    frozen_base_scorer.requires_grad_(False).eval()
+    residual.eval()
+    output: list[dict[str, Any]] = []
+    for start in range(0, len(records), batch_size):
+        indices = np.arange(start, min(start + batch_size, len(records)))
+        original, flipped, valid, _labels, _counts = _padded_batch(
+            records, indices, device
+        )
+        with torch.inference_mode():
+            original_base, _ = frozen_base_scorer.score_descriptors(original, valid)
+            flipped_base, _ = frozen_base_scorer.score_descriptors(flipped, valid)
+            original_logits, original_residual = residual(original, original_base, valid)
+            flipped_logits, flipped_residual = residual(flipped, flipped_base, valid)
+            averaged = 0.5 * (original_logits + flipped_logits)
+            bag_logits = smooth_mil_pool(
+                averaged, valid, temperature=model_config.bag_temperature
+            )
+        for row, record_index in enumerate(indices):
+            record = records[int(record_index)]
+            count = len(record["candidate_indices"])
+            output.append(
+                {
+                    "image_id": str(record["image_id"]),
+                    "candidate_logits": averaged[row, :count].float().cpu().numpy(),
+                    "original_base_logits": original_base[row, :count]
+                    .float().cpu().numpy(),
+                    "flipped_base_logits": flipped_base[row, :count]
+                    .float().cpu().numpy(),
+                    "original_residual_logits": original_residual[row, :count]
+                    .float().cpu().numpy(),
+                    "flipped_residual_logits": flipped_residual[row, :count]
+                    .float().cpu().numpy(),
+                    "bag_logit": float(bag_logits[row].item()),
+                    "bag_probability": float(torch.sigmoid(bag_logits[row]).item()),
+                    "candidate_count": count,
+                    "selected_index": int(averaged[row, :count].argmax().item()),
+                    "selected_view_agreement": bool(
+                        int(original_logits[row, :count].argmax().item())
+                        == int(flipped_logits[row, :count].argmax().item())
+                    ),
+                }
+            )
+    return output
+
+
 __all__ = [
     "CountControlledResidual",
     "CountControlledSelfPacedConfig",
@@ -673,7 +938,11 @@ __all__ = [
     "default_producer_model_config",
     "deterministic_label_group_balanced_batches",
     "fit_count_controlled_oof_fold",
+    "initial_consumer_state",
     "initial_producer_state",
     "score_count_controlled_producer",
+    "score_self_paced_consumer",
     "train_count_controlled_producer",
+    "train_self_paced_consumer",
+    "weighted_supervised_contrastive_loss",
 ]

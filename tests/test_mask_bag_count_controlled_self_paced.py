@@ -19,6 +19,7 @@ if torch is not None:
         build_self_paced_targets,
         count_independence_loss,
         deterministic_label_group_balanced_batches,
+        weighted_supervised_contrastive_loss,
     )
 
 
@@ -68,6 +69,25 @@ def test_t1_residual_starts_as_exact_accepted_baseline_identity() -> None:
     combined, values = residual(descriptors, base, valid)
     assert torch.equal(combined, base)
     assert torch.count_nonzero(values).item() == 0
+
+
+@pytest.mark.skipif(torch is None, reason="PyTorch is unavailable locally")
+def test_t1_supervised_contrastive_prefers_same_label_alignment() -> None:
+    labels = torch.tensor([1, 1, 0, 0])
+    weights = torch.full((4,), 0.25)
+    coherent = torch.tensor(
+        [[1.0, 0.0], [0.9, 0.1], [-1.0, 0.0], [-0.9, -0.1]]
+    )
+    mixed = torch.tensor(
+        [[1.0, 0.0], [-1.0, 0.0], [0.9, 0.1], [-0.9, -0.1]]
+    )
+    coherent_loss = weighted_supervised_contrastive_loss(
+        coherent, labels, weights, temperature=0.1
+    )
+    mixed_loss = weighted_supervised_contrastive_loss(
+        mixed, labels, weights, temperature=0.1
+    )
+    assert float(coherent_loss.item()) < float(mixed_loss.item())
 
 
 def _record(image_id: str, group_id: str, label: int, count: int) -> dict[str, object]:

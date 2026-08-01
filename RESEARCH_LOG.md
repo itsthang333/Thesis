@@ -10371,8 +10371,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   mass per image, family and candidate. The consumer is a zero-initialized
   residual over the frozen accepted scorer, trained for 12 epochs with AdamW
   `1e-4`, supervised-contrastive weight `0.25`, image BCE weight `1.0` and the
-  same count-independence weight `1.0`. Each target row binds the producer fold
-  and proves that producer did not train on its group.
+  same count-independence weight `1.0`; contrastive temperature is fixed at
+  `0.10`. Each target row binds the producer fold and proves that producer did
+  not train on its group.
 - **Inputs/provenance:** selector-cache kernel
   `itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1`, freeze SHA-256
   `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
@@ -10428,4 +10429,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Runner, protocol, independent auditor and wrapper remain absent, so this does
   not authorize Kaggle launch. No real cache record, producer fit, target,
   consumer, validation prediction/GT or BTXRD test was opened or created.
+- **Conditional consumer-core readiness:** the same source is extended, without
+  changing producer controls, to SHA-256
+  `3b59930f7d048d20ac3218790e5257a46f8b05a39b6ad0c33adb188bed5c9ad4`;
+  updated test SHA-256 is
+  `0d1b35ea82c45a800ba449c51475c965e65498261e89b07a7ac16e787c44a48a`.
+  The consumer refuses non-GT-blind/failed producer targets, uses exactly four
+  epochs per `20/40/60%` stage, keeps the accepted scorer frozen, and learns a
+  zero-initialized scalar residual plus projection embedding. Each trusted
+  candidate contributes separate original/flip contrastive views, guaranteeing
+  a cross-view positive even when a batch contains only one target of a class;
+  final scoring retains base and residual evidence for every candidate.
+- `py_compile`, focused tests `8/8` and full regression `472/472` in 17.39
+  seconds pass. Consumer-core readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_consumer_core_readiness.json`
+  has SHA-256
+  `86989a26646a547ede66513b636de963e2bd0fd2d82193152422c9c0c67bd95d`.
+  This is still synthetic/static: runner/protocol/auditor/wrapper are absent and
+  no real cache, target, fit, prediction, validation GT/test or consumer was
+  opened or created.
 

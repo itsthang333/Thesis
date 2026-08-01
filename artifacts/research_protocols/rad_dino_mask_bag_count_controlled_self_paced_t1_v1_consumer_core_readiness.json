@@ -1,0 +1,51 @@
+{
+  "artifact_id": "rad_dino_mask_bag_count_controlled_self_paced_t1_v1_consumer_core_readiness",
+  "frozen_utc": "2026-08-01T06:43:08Z",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "status": "STATIC_CONDITIONAL_CONSUMER_CORE_PASS_RUNNER_NOT_READY",
+  "registration_commit": "d8cd1608b6886f51cc5240ddcc81c1dc2a5e1e2a",
+  "supersedes_source_hash_only": "e01f6ab1b2790689420bb244c284157a5709cccc7b10959d4c55d27cba7ac6b1",
+  "source": {
+    "path": "project/models/mask_bag_count_controlled_self_paced.py",
+    "sha256": "3b59930f7d048d20ac3218790e5257a46f8b05a39b6ad0c33adb188bed5c9ad4"
+  },
+  "test": {
+    "path": "tests/test_mask_bag_count_controlled_self_paced.py",
+    "sha256": "0d1b35ea82c45a800ba449c51475c965e65498261e89b07a7ac16e787c44a48a"
+  },
+  "conditional_consumer": {
+    "producer_gate_required": true,
+    "epochs": 12,
+    "pace_fractions": [
+      0.2,
+      0.4,
+      0.6
+    ],
+    "learning_rate": 0.0001,
+    "image_bce_weight": 1.0,
+    "supervised_contrastive_weight": 0.25,
+    "contrastive_temperature": 0.1,
+    "count_independence_weight": 1.0,
+    "original_and_flipped_target_views_are_separate_positive_views": true,
+    "accepted_base_frozen": true,
+    "residual_head_zero_initialized": true,
+    "every_candidate_base_and_residual_score_returned": true
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_tests": "8/8 PASS",
+    "full_repository_tests": "472/472 PASS",
+    "full_repository_seconds": 17.39,
+    "local_python39_zip_strict_diagnostic_shim_only": true
+  },
+  "runner_implemented": false,
+  "protocol_frozen": false,
+  "kaggle_launch_performed": false,
+  "scientific_input_opened": false,
+  "producer_fit_performed": false,
+  "targets_created": false,
+  "consumer_trained": false,
+  "validation_prediction_created": false,
+  "validation_gt_read": false,
+  "test_evaluated": false
+}
