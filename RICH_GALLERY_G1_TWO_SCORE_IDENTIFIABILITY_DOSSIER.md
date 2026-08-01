@@ -61,6 +61,33 @@ an artifact of the 94 small lesions.
   It only quantifies conditional heterogeneity that a valid image-label-only
   mechanism would need to explain.
 
+### Where the dominance mass concentrates
+
+The 104 cases with dominance gap at least 0.05 contain 96.1% of the total
+dominance mass. They are not one homogeneous failure mode:
+
+- 64 choose a different source from the eligible oracle and 40 fail within the
+  same source. Thus neither a source router alone nor a within-source reranker
+  alone is sufficient.
+- The selected source is classifier448 in 54 severe cases, LayerCAM320 in 42
+  and external saliency in only 8. Conversely, external saliency is the oracle
+  source in 38 severe cases and contributes the largest dominance mass
+  (`10.868`). It contains strong masks that the current scores systematically
+  under-promote, but prior source-forcing/consensus failures prohibit a fixed
+  external-source preference.
+- Twenty-six severe cases are under-extent: 8 large, 17 medium and only 1
+  small. Thirty-one are extreme over-extent, of which 30 are small lesions.
+  This is a direct two-regime contradiction: a shared expansion or area prior
+  will help the former and damage the latter.
+- In severe cases the median eligible-oracle percentile ranks are only 0.747
+  for G1 and 0.700 for upstream, while selected candidates are about
+  0.968/0.965. The useful mask is not merely losing a tie; both observables
+  assign it materially weaker evidence.
+
+The candidate signal required next must therefore be source-agnostic and
+tumor-specific, while its extent evidence must discriminate small-lesion
+overreach from medium/large discriminative fragments.
+
 ## Shared-alpha falsification
 
 A dense 1001-point alpha sweep is diagnostic only. The best shared alpha is
@@ -93,4 +120,3 @@ If BAS-B2 fails, the next analysis must determine whether BAS lacks lesion-hit
 signal, duplicates the two existing rankings, detects tumor but assigns the
 wrong extent, or supplies useful evidence that equal three-way fusion dilutes.
 No alpha/weight sweep is authorized from this validation analysis.
-

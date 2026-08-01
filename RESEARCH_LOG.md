@@ -8318,6 +8318,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   wrong mask scores no worse under both G1 and upstream. Of 49 complete misses,
   at least 11 cannot be recovered by any monotone two-score rule and at least
   12 cannot be recovered by linear rank reweighting.
+- **Dominance localization:** those 104 severe cases contain 96.1% of total
+  dominance mass. Sixty-four select the wrong source and 40 fail within the
+  oracle source. Twenty-six are under-extent (8 large, 17 medium, 1 small),
+  while 31 are extreme over-extent (30 small). External saliency is the oracle
+  in 38 severe cases and carries the largest dominance mass, but source forcing
+  is ruled out by earlier consensus evidence. The needed evidence must be both
+  tumor-specific and capable of separating the two opposite extent regimes.
 - **Weight sweep ruled out:** the best shared alpha on a dense 1001-point
   diagnostic grid is 0.632 with Dice `0.29147261`, only `+0.00274313`; large
   lesions regress. This value is not reusable because it was observed through
