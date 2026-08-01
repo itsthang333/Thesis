@@ -12386,4 +12386,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   cùng `10,000` complete-group bootstrap draws seed `20261101`. Không prediction,
   validation GT, metric, consumer, test hay local heavy compute được mở/chạy ở
   bước readiness này.
+- Đúng một bounded status check lúc `2026-08-02T02:10:56+07:00`, sau khoảng
+  thời gian dài hơn failure boundary v2/v3, thấy version 4 vẫn `RUNNING` ở
+  `483.3 s`, đúng `GPU T4 x2`, output tạm thời `0 B`. Không mở partial log,
+  không repeat poll/monitor, không output/GT/test access; experiment tiếp tục
+  **ĐANG LÀM** chờ một nhịp terminal hợp lý sau.
 
