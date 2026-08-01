@@ -7,6 +7,7 @@ torch = pytest.importorskip("torch")
 from torch import nn
 
 from project.models.skelex_mask_bag_descriptor import (
+    FLOAT32_MASS_ABSOLUTE_FLOOR,
     SKELEX_HIDDEN_SIZE,
     SKELEX_PATCHES,
     SkelexDescriptorConfig,
@@ -93,14 +94,19 @@ def test_mass_symmetry_uses_the_proven_four_float32_ulp_budget() -> None:
         four_ulp = np.nextafter(four_ulp, np.float32(np.inf), dtype=np.float32)
         five_ulp = np.nextafter(five_ulp, np.float32(np.inf), dtype=np.float32)
     five_ulp = np.nextafter(five_ulp, np.float32(np.inf), dtype=np.float32)
-    assert np.all(
-        np.abs(four_ulp.astype(np.float64) - masses.astype(np.float64))
-        <= mass_symmetry_tolerances(masses, four_ulp)
-    )
-    assert np.all(
-        np.abs(five_ulp.astype(np.float64) - masses.astype(np.float64))
-        > mass_symmetry_tolerances(masses, five_ulp)
-    )
+    four_ulp_deltas = np.abs(four_ulp.astype(np.float64) - masses.astype(np.float64))
+    four_ulp_tolerances = mass_symmetry_tolerances(masses, four_ulp)
+    assert np.all(four_ulp_deltas <= four_ulp_tolerances)
+
+    five_ulp_deltas = np.abs(five_ulp.astype(np.float64) - masses.astype(np.float64))
+    five_ulp_tolerances = mass_symmetry_tolerances(masses, five_ulp)
+    # At 0.25 the deliberately frozen four-epsilon absolute floor dominates
+    # four ULPs, so a five-ULP perturbation remains admissible by design.
+    assert five_ulp_tolerances[0] == FLOAT32_MASS_ABSOLUTE_FLOOR
+    assert five_ulp_deltas[0] <= five_ulp_tolerances[0]
+    # For the remaining representative masses the ULP term dominates the
+    # floor, so a fifth ULP must be rejected.
+    assert np.all(five_ulp_deltas[1:] > five_ulp_tolerances[1:])
 
 
 def test_independent_rank_reproduction_matches_generator_float32_exactly() -> None:
