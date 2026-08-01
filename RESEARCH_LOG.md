@@ -11138,3 +11138,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   experiment successor, real-data training, prediction, validation-GT read,
   consumer training hay BTXRD-test access trong mục synthesis này.
 
+### B1 BAS candidate descriptor — chuẩn bị primitive tĩnh (2026-08-01)
+
+- Đã hiện thực primitive image-label-only trong
+  `project/models/bas_candidate_localizer.py` (SHA-256
+  `f285a69aaec47ab19adf26a9b979bd838eb1959b69252756be8005dcc85e37c9`).
+  Kiến trúc giữ đúng resolution path của BAS ResNet chính thức: layer3 stride 1
+  tạo localization map output-stride 8, max-pool 2x rồi layer4 stride 1 tạo
+  classification map output-stride 16. Nhánh erased-background được đồng bộ từ
+  trọng số hiện tại ở **mỗi forward**, frozen parameter nhưng vẫn truyền gradient
+  tới localization map; như vậy không còn sai khác epoch-stale so với semantic
+  per-forward deep copy của source chính thức. Loss primitive là background/full
+  activation ratio cùng area weight cố định `1.2`; candidate descriptor là
+  harmonic mean của activation coverage và purity sau per-image min-max
+  normalization. Hai primitive selector chỉ gồm raw harmonic rank và fixed `1:1`
+  within-bag rank fusion với score Geometry-v3; không có area/subgroup/GT weight.
+- Test `tests/test_bas_candidate_localizer.py` (SHA-256
+  `51c83144866b84ab7f081fdda36b3870b6180e9e2200952cd67ea41682149ceb`) kiểm
+  tra công thức BAS, normalization constant-safe, coverage/purity, tie-aware rank,
+  fixed fusion và fail-closed shape. `py_compile` pass; focused suite pass `6/6`
+  trong 2.51 giây bằng pinned `btxrd-pseudomask` environment. Synthetic forward
+  `1x3x64x64` xác nhận localization `1x1x8x8`, classification `1x2x4x4` và BAS
+  loss finite. Không có real image/cache/GT/test được mở trong các kiểm tra này.
+- Readiness tĩnh
+  `artifacts/research_protocols/bas_candidate_descriptor_b1_primitive_readiness.json`
+  có SHA-256
+  `e840853dfdcdae11843d006788c933cf3bb81a6a897933626b6f2a960f858385`; nó ghi
+  exact mechanism, primary source URLs, file hashes và scientific boundary.
+  Đây **chưa phải** đăng ký thực nghiệm: chưa fit real data, chưa tạo prediction,
+  chưa đọc validation segmentation GT, chưa train consumer và chưa mở BTXRD test.
+  Trước khi mở claim B1 phải fetch lại hai branch điều phối, kiểm tra collision và
+  push `ĐANG LÀM` theo `AGENTS.md`.
+

@@ -1,0 +1,54 @@
+{
+  "readiness_id": "bas_candidate_descriptor_b1_primitive_readiness_v1",
+  "status": "static_only_no_scientific_input_opened",
+  "prepared_at": "2026-08-01T16:10:22+07:00",
+  "source_commit_before_static_files": "e41b3d1824fa768e06c8995055419d503226d9a2",
+  "hypothesis": "A class-aware BAS foreground map can add positive-instance localization evidence that is absent from the frozen geometry-v3 selector while leaving the proven candidate gallery unchanged.",
+  "scientific_boundary": {
+    "real_btxrd_images_opened": false,
+    "candidate_cache_opened": false,
+    "validation_segmentation_gt_opened": false,
+    "btxrd_test_opened": false,
+    "prediction_created": false,
+    "consumer_trained": false,
+    "heavy_local_compute": false
+  },
+  "mechanism": {
+    "backbone": "ImageNet-pretrained ResNet-50 with official BAS output-stride-8 localization and output-stride-16 classification paths",
+    "training_labels": "binary image-level normal/tumor labels only",
+    "localization_loss": "background activation ratio plus fixed 1.2 activation-area constraint",
+    "foreground_guidance": "0.5 times foreground classification cross-entropy, matching the official ResNet objective",
+    "candidate_descriptor": "per-image min-max-normalized tumor activation coverage/purity harmonic mean",
+    "selector_arms": [
+      "raw activation harmonic rank",
+      "fixed equal within-image rank fusion with accepted geometry-v3 score"
+    ],
+    "proposal_generation_changed": false,
+    "gt_or_subgroup_dependent_weight": false
+  },
+  "primary_sources": [
+    "https://openaccess.thecvf.com/content/CVPR2022/html/Wu_Background_Activation_Suppression_for_Weakly_Supervised_Object_Localization_CVPR_2022_paper.html",
+    "https://github.com/wpy1999/BAS",
+    "https://raw.githubusercontent.com/wpy1999/BAS/main/CUB/Model/resnet.py",
+    "https://raw.githubusercontent.com/wpy1999/BAS/main/CUB/train.py",
+    "https://raw.githubusercontent.com/wpy1999/BAS/main/CUB/utils/optimizer.py"
+  ],
+  "files": {
+    "project/models/bas_candidate_localizer.py": "f285a69aaec47ab19adf26a9b979bd838eb1959b69252756be8005dcc85e37c9",
+    "tests/test_bas_candidate_localizer.py": "51c83144866b84ab7f081fdda36b3870b6180e9e2200952cd67ea41682149ceb"
+  },
+  "verification": {
+    "python": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe",
+    "py_compile": "pass",
+    "focused_pytest": "6 passed in 2.51s",
+    "manual_shape_probe": {
+      "input": "1x3x64x64 synthetic tensor",
+      "localization_map": "1x1x8x8",
+      "classification_map": "1x2x4x4",
+      "layer3_stride": [1, 1],
+      "layer4_stride": [1, 1],
+      "result": "pass"
+    }
+  },
+  "registration": "No scientific experiment is registered or launched by this static artifact. Fetch and collision-check both coordination branches before registration."
+}
