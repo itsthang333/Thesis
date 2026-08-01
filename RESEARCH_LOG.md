@@ -11667,3 +11667,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   wrapper/binding/evaluator/decision, fetch lại hai branch, kiểm tra collision,
   rồi đăng ký/push `ĐANG LÀM` trung tâm.
 
+### B4 class-contrast BAS protocol freeze (2026-08-01)
+
+- Scientific source đã được đóng băng ở commit
+  `d8f7a650822b52a6b4f0c1a0253683f51ce8e2c2`; protocol
+  `artifacts/research_protocols/same_gallery_class_contrast_bas_b4_v1.json`
+  SHA-256 `814f5ca32c080dea4d39d64fed716c5563de524743016055b10217c85d1ffdf1`,
+  trạng thái `FROZEN_PRECLAIM_NO_BINDING_NO_LAUNCH`. Kiểm tra độc lập tại
+  thời điểm freeze xác nhận toàn bộ 25 source/test SHA-256 trong protocol khớp,
+  collaborator output access là `false`, GT-blind diagnostics không được chặn
+  việc materialize/freeze pair, và không tồn tại weight/threshold alternative.
+- Input/provenance cố định gồm split CRLF SHA-256 `85511ee1...3c8c`, selector-cache
+  freeze `2f6290cd...e4f2c`, square-corrected baseline checkpoint
+  `58b82642...e1069`, candidate zip `426fbe9c...2687a`, ImageNet ResNet50
+  `11ad3fa6...9ca` và comparator bootstrap 10,000 lần seed `20261201`.
+  Hai arm, công thức class contrast, 448 px/100 epoch/batch 32 và T4x2 giữ nguyên;
+  actual frozen-pair Dice là endpoint chính.
+- Lần test lại trước freeze bằng Python mặc định và bundled runtime dừng ở
+  collection vì môi trường đó không có `numpy`/`pytest`; đây là local dependency
+  boundary trước data, không phải scientific run. Conda Python 3.9 có dependency
+  chạy `25` test pass và đúng `1` known compatibility failure tại
+  `zip(..., strict=True)` (Python 3.10+ API); `py_compile` và `git diff --check`
+  vẫn pass. Full suite với documented compatibility shim đã pass `556/556` ở
+  static-readiness commit nên không sửa scientific source vì lỗi runtime cục bộ.
+- Vẫn chưa có claim/launch/data/prediction/GT/consumer/test. Bước kế tiếp là tạo
+  wrapper fail-closed, execution binding và post-freeze evaluation readiness;
+  chỉ sau khi các audit tĩnh pass và fetch/collision check mới đăng ký
+  `EXP-20260801-codex-b4-same-gallery-bas-semantic-v1` là `ĐANG LÀM` rồi launch.
+
