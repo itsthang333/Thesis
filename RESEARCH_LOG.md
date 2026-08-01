@@ -11968,4 +11968,5 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - **Safety at registration:** chưa mở real image/candidate, chưa prediction,
   chưa GT, chưa train consumer, chưa test. Collaborator output/Kaggle không
   được truy cập. BTXRD test khóa; heavy compute chỉ T4x2.
+- Exact registration commit: `151e8e643fa15fb3c22cda21f155339dff85b192`.
 
