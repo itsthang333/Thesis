@@ -8301,3 +8301,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   precision/recall/extent. No later GPU run is allowed from only a low mean
   score; the complete failure dossier must identify the remaining mechanism.
 
+### EXP-20260801-codex-g1-two-score-identifiability-v1
+
+- **Question:** can any reweighting of the existing G1 and upstream ranks close
+  the gap from frozen Dice `0.28872949` to eligible oracle `0.52790203`?
+  Immutable score/candidate files were verified before the 184 validation
+  polygons were opened; test remained locked. The alpha sweep is explicitly a
+  post-hoc explanatory bound and not a promotable selector.
+- **Exact result:** total eligible-selector regret `0.23917254` decomposes into
+  score-dominance identifiability `0.13733820` (57.42%), nonlinear Pareto-
+  frontier selection `0.00920597` (3.85%), and image-specific weighting
+  `0.09262837` (38.73%). The Pareto-frontier oracle is only `0.39056382`; the
+  per-image alpha oracle is `0.38135785`.
+- **Strong falsification:** 154/184 eligible oracle candidates are absent from
+  the two-score Pareto frontier and 104/184 lose at least 0.05 Dice because a
+  wrong mask scores no worse under both G1 and upstream. Of 49 complete misses,
+  at least 11 cannot be recovered by any monotone two-score rule and at least
+  12 cannot be recovered by linear rank reweighting.
+- **Weight sweep ruled out:** the best shared alpha on a dense 1001-point
+  diagnostic grid is 0.632 with Dice `0.29147261`, only `+0.00274313`; large
+  lesions regress. This value is not reusable because it was observed through
+  validation GT, but even its optimistic gain is negligible.
+- **Decision:** global fusion-weight tuning, monotone recalibration of the same
+  two scores and mildly nonlinear two-score fusion are ruled out. The dominant
+  missing quantity is independent tumor-specific candidate identity. BAS-B2
+  is a justified matched test because it adds that missing observable while
+  preserving the gallery and baseline. Full formulas and subgroup evidence are
+  in `RICH_GALLERY_G1_TWO_SCORE_IDENTIFIABILITY_DOSSIER.md`.
+
