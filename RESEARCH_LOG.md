@@ -11591,3 +11591,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   được. Các giá trị source commit/candidate hashes phải lấy exact từ freeze,
   không đoán. Đây chỉ là technical handoff, chưa có experiment/prediction/metric.
 
+### B2 external transport blocker audit (2026-08-01)
+
+- Sau khi packager/handoff commit `71696e7e664abb9c700db6fe744fbffc6a91bb81`
+  đã push central, một fetch mới xác nhận central/HEAD cùng ở commit này và nhánh
+  cộng tác vẫn ở `013244aded5aa1b154d2f433de9b4bc7e005d1e7`; không có transport
+  commit, claim hay terminal result mới.
+- Một bounded public Kaggle dataset query duy nhất
+  `kaggle datasets list --user wanwin --search btxrd --sort-by updated` chỉ trả
+  `wanwin/data-btxrd` cập nhật `2026-07-18`, size `843,837,713` bytes. Không có
+  Stage-A/rich-gallery transport công khai; không download/mở dataset ảnh gốc.
+  Không lặp lại private-kernel output request đã biết trả HTTP 403 và không tạo
+  poll/monitor/job.
+- B2 execution hiện bị chặn bởi đúng một external boundary: cộng tác viên phải
+  package và cấp quyền đọc byte-preserving artifact theo handoff SHA
+  `852cd562...f87`. Mọi static source/auditor/evaluator/packager đã hoàn tất;
+  chạy tiếp không có artifact chỉ có thể bằng cách regenerate G0/G1/G2 hoặc bỏ
+  provenance audit, đều bị cấm theo yêu cầu người dùng. Vì vậy chưa đăng ký
+  `ĐANG LÀM`, chưa launch Kaggle, chưa prediction/validation GT/consumer/test.
+
