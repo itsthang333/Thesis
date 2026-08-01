@@ -1,4 +1,16 @@
-# Candidate-conditioned contrast residual: bounded successor design
+# Candidate-conditioned contrast residual: retired pre-launch draft
+
+> **Status: RETIRED BEFORE IMPLEMENTATION.** A complete cross-experiment audit
+> after this draft was written found that its frozen inside-mask/local-ring
+> RAD-DINO representation, normal-candidate negatives, and tumor-bag MIL are
+> materially the same mechanism family as the already executed mask-bag MIL
+> v6/Geometry-v3/R1 campaign. Mask-bag v6 reached Dice `0.217899` despite image
+> AUROC `0.813386`; its detached positive winner reinforced wrong candidates.
+> Geometry-v3 reached `0.245482`, still below the present `0.288729` baseline.
+> Re-implementing the family end-to-end would not be a clean causal test of a
+> new observable. This file is retained as an audit trail, not authorization to
+> launch. The non-duplicate successor is frozen in
+> `RICH_GALLERY_MATCHED_NORMAL_TRANSPLANT_DESIGN.md`.
 
 ## Decision target
 

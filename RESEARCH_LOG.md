@@ -8502,3 +8502,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `RICH_GALLERY_BAS_B22_SPATIAL_FAILURE_DOSSIER.md`, and
   `RICH_GALLERY_CANDIDATE_CONDITIONED_CONTRAST_DESIGN.md`. Test remains locked.
 
+### 2026-08-02 — successor duplicate audit and causal correction
+
+- Before implementing the candidate inside/ring residual, the complete shared
+  log was searched for equivalent mechanisms. The draft duplicates the already
+  completed class-agnostic mask-bag family: v6 used RAD-DINO inside/context/
+  difference descriptors, all normal candidates as negatives, a tumor-bag
+  objective and detached positive winner. It achieved image AUROC `0.813386`
+  but Dice `0.217899`; Geometry-v3 reached `0.245482`. Rebuilding this family
+  end-to-end would be repetition, not a justified new experiment.
+- The draft is therefore explicitly retired before code/GPU in
+  `RICH_GALLERY_CANDIDATE_CONDITIONED_CONTRAST_DESIGN.md`. This correction is
+  new negative knowledge: direct normal negatives and local-ring descriptors
+  are insufficient while the positive candidate remains a latent, self-
+  reinforcing winner.
+- The bounded non-duplicate diagnostic is matched-normal candidate transplant.
+  Each frozen gallery candidate is copied into two anatomy/view-matched
+  train-normal recipients. A normal-to-normal sham uses the exact same mask,
+  position, recipient, feather and style transform. The candidate score is the
+  frozen classifier logit difference between tumor-source transplant and sham.
+  This tests whether tumor evidence travels with candidate content while
+  cancelling mask-area/seam/background shortcuts; it assigns no latent winner
+  as a training target.
+- The first experiment is inference-only and finite: baseline, transplant-only,
+  equal fusion, 3:1 baseline fusion and matched-random-donor control are frozen
+  before validation polygons. Actual binary Dice/IoU and 94/72/18 subgroups
+  are mandatory. A failed causal signature retires the mechanism without a
+  learned head or sweep. Full design:
+  `RICH_GALLERY_MATCHED_NORMAL_TRANSPLANT_DESIGN.md`. Test remains locked.
+
