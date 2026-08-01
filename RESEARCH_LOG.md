@@ -11979,4 +11979,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   SKELEX hashes, T4x2 guard, candidate/cache/baseline provenance, descriptor
   gate trước selector training, pair freeze và independent no-GT audit. Tại
   thời điểm ghi mục này: chưa push Kaggle, chưa real input/prediction/GT/test.
+- Sau final fetch/collision check, version 1 đã được push thành công lên
+  `itsthang333/btxrd-skelex-mask-bag-selector-s5-v1` lúc
+  `2026-08-02T00:50+07:00`. Exact package wrapper SHA-256
+  `519732f8895981979b71a66d8c3aeeab23ffce00fda023584522b0a0b72e1607`;
+  `kernel-metadata.json` SHA-256
+  `33d4a8cb2fba94c1ad2a1742004d26390faae4de989b5fca4adace2a2bd5f107`;
+  branch execution binding commit
+  `2819b173d0436ff918a30f1dacb29252f1af580a`. Kaggle CLI xác nhận đúng
+  `Kernel version 1 successfully pushed`. Không status poll/monitor được tạo ở
+  nhịp launch. Experiment vẫn **ĐANG LÀM**; chưa có terminal result,
+  prediction-freeze/audit result hay validation GT/Dice. BTXRD test và mọi
+  consumer kế nhiệm tiếp tục khóa.
 
