@@ -10448,4 +10448,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   This is still synthetic/static: runner/protocol/auditor/wrapper are absent and
   no real cache, target, fit, prediction, validation GT/test or consumer was
   opened or created.
+- **Fail-closed T1 runner readiness:** final model/runner/test SHA-256 values are
+  `b8acab98594c55526e6aa13b7dca02ba751f790e83126594ae62762214d19d28` /
+  `9fb05756bc44c6b9c12063d18706df76eab1c99137425540006c264292b2a5c3` /
+  `0d1b35ea82c45a800ba449c51475c965e65498261e89b07a7ac16e787c44a48a` /
+  `28cbc21694a26389e4fc69cba2d9d9ceeaa2a2744c1a4d49ae5ee3532f9cad75`.
+  The runner validates the exact cache/split/accepted baseline and T4x2 runtime,
+  builds five initial states serially, fits folds `0/2/4` and `1/3` on separate
+  GPUs, writes every producer checkpoint/history/OOF score before the producer
+  gate, and raises before target construction if any count/AUROC/view/exclusion
+  check fails.
+- Only after producer pass does it freeze negative plus all three positive target
+  manifests, audit accepted-base identity on train and validation, fit the
+  confirmation residual, and score validation in fixed `186/185` shards. It
+  freezes every base/residual/combined candidate logit, independently checks
+  exact arithmetic and final count Spearman, then writes all-candidate scores,
+  371 maps and prediction freeze. No validation evaluator or GT import exists.
+  The confirmation residual is part of this selector arm; the separate downstream
+  consumer remains untrained and unauthorized.
+- `py_compile`, focused model/runner tests `12/12` and full regression `476/476`
+  in 17.81 seconds pass. Runner-readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_runner_readiness.json`
+  has SHA-256
+  `0840750f331accdd02a9e1905a4bccca1eeb51107d305f7bdf79523869371213`.
+  Protocol, independent auditor, wrapper/binder and launch remain absent; no
+  real cache execution, fit, target, prediction, validation GT/test or downstream
+  consumer access occurred.
 

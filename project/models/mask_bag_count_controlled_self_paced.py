@@ -720,6 +720,53 @@ def initial_consumer_state(
     }
 
 
+def audit_consumer_residual_identity(
+    records: Sequence[Mapping[str, Any]],
+    frozen_base_scorer: nn.Module,
+    residual: CountControlledResidual,
+    *,
+    batch_size: int,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Prove the untrained conditional consumer is exact accepted identity."""
+
+    if not records or batch_size < 1:
+        raise ValueError("T1 identity audit needs records and a positive batch")
+    frozen_base_scorer.requires_grad_(False).eval()
+    residual.eval()
+    audited_records = 0
+    audited_candidates = 0
+    with torch.inference_mode():
+        for start in range(0, len(records), batch_size):
+            indices = np.arange(start, min(start + batch_size, len(records)))
+            original, flipped, valid, _labels, _counts = _padded_batch(
+                records, indices, device
+            )
+            original_base, _ = frozen_base_scorer.score_descriptors(original, valid)
+            flipped_base, _ = frozen_base_scorer.score_descriptors(flipped, valid)
+            original_combined, original_residual = residual(
+                original, original_base, valid
+            )
+            flipped_combined, flipped_residual = residual(
+                flipped, flipped_base, valid
+            )
+            if (
+                not torch.equal(original_combined, original_base)
+                or not torch.equal(flipped_combined, flipped_base)
+                or torch.count_nonzero(original_residual).item() != 0
+                or torch.count_nonzero(flipped_residual).item() != 0
+            ):
+                raise RuntimeError("T1 zero initialization is not exact identity")
+            audited_records += len(indices)
+            audited_candidates += int(valid.sum().item())
+    return {
+        "records": audited_records,
+        "candidates": audited_candidates,
+        "zero_residual_exact": True,
+        "combined_equals_frozen_base_exact": True,
+    }
+
+
 def _target_lookup(
     target_bundle: Mapping[str, Any], stage_index: int
 ) -> dict[tuple[str, int], tuple[int, float]]:
@@ -916,6 +963,10 @@ def score_self_paced_consumer(
                     .float().cpu().numpy(),
                     "flipped_residual_logits": flipped_residual[row, :count]
                     .float().cpu().numpy(),
+                    "original_candidate_logits": original_logits[row, :count]
+                    .float().cpu().numpy(),
+                    "flipped_candidate_logits": flipped_logits[row, :count]
+                    .float().cpu().numpy(),
                     "bag_logit": float(bag_logits[row].item()),
                     "bag_probability": float(torch.sigmoid(bag_logits[row]).item()),
                     "candidate_count": count,
@@ -932,6 +983,7 @@ def score_self_paced_consumer(
 __all__ = [
     "CountControlledResidual",
     "CountControlledSelfPacedConfig",
+    "audit_consumer_residual_identity",
     "audit_count_controlled_oof_producer",
     "build_self_paced_targets",
     "count_independence_loss",

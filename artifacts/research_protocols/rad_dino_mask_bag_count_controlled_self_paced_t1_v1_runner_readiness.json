@@ -1,0 +1,73 @@
+{
+  "artifact_id": "rad_dino_mask_bag_count_controlled_self_paced_t1_v1_runner_readiness",
+  "frozen_utc": "2026-08-01T06:49:57Z",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "status": "STATIC_FAIL_CLOSED_RUNNER_PASS_PROTOCOL_AUDITOR_WRAPPER_NOT_READY",
+  "registration_commit": "d8cd1608b6886f51cc5240ddcc81c1dc2a5e1e2a",
+  "source_hashes": {
+    "project/models/mask_bag_count_controlled_self_paced.py": "b8acab98594c55526e6aa13b7dca02ba751f790e83126594ae62762214d19d28",
+    "project/run_mask_bag_count_controlled_self_paced_t1_arm.py": "9fb05756bc44c6b9c12063d18706df76eab1c99137425540006c264292b2a5c3",
+    "tests/test_mask_bag_count_controlled_self_paced.py": "0d1b35ea82c45a800ba449c51475c965e65498261e89b07a7ac16e787c44a48a",
+    "tests/test_run_mask_bag_count_controlled_self_paced_t1_arm.py": "28cbc21694a26389e4fc69cba2d9d9ceeaa2a2744c1a4d49ae5ee3532f9cad75"
+  },
+  "ordering_invariants": {
+    "all_oof_producer_artifacts_written_before_producer_gate": true,
+    "producer_gate_failure_precedes_target_construction": true,
+    "target_freeze_precedes_confirmation_residual_fit": true,
+    "accepted_base_identity_audited_before_confirmation_residual_fit": true,
+    "final_count_gate_precedes_prediction_manifest": true,
+    "prediction_freeze_precedes_any_validation_gt": true
+  },
+  "physical_evidence": {
+    "five_producer_checkpoints_histories_fold_audits_and_score_payloads": true,
+    "producer_gate_audit": true,
+    "negative_and_three_positive_target_manifests": true,
+    "target_freeze": true,
+    "train_and_validation_zero_identity_audit": true,
+    "confirmation_residual_checkpoint_and_history": true,
+    "all_validation_base_residual_and_combined_logits": true,
+    "all_candidate_scores_and_371_maps": true,
+    "prediction_freeze_and_run_manifest": true
+  },
+  "runtime_contract": {
+    "cuda": "Tesla T4 x2",
+    "oof_folds_by_device": [
+      [
+        0,
+        2,
+        4
+      ],
+      [
+        1,
+        3
+      ]
+    ],
+    "validation_shards": [
+      186,
+      185
+    ],
+    "training_labels": "image_level_only",
+    "validation_gt_read": false,
+    "downstream_consumer_trained": false,
+    "test_evaluated": false
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_model_runner_tests": "12/12 PASS",
+    "full_repository_tests": "476/476 PASS",
+    "full_repository_seconds": 17.81,
+    "local_python39_zip_strict_diagnostic_shim_only": true
+  },
+  "protocol_frozen": false,
+  "independent_auditor_implemented": false,
+  "wrapper_implemented": false,
+  "kaggle_launch_performed": false,
+  "scientific_input_opened": false,
+  "producer_fit_performed": false,
+  "targets_created": false,
+  "confirmation_residual_trained": false,
+  "validation_prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
