@@ -1,0 +1,48 @@
+{
+  "claim_commit": "0e1b5daa895d28809e13ba106fbe60236b2ac909",
+  "experiment_id": "EXP-20260801-codex-n1-normal-only-direct-anomaly-v1",
+  "focused_tests": {
+    "passed": 7,
+    "seconds": 2.78,
+    "total": 7
+  },
+  "full_regression": {
+    "passed": 497,
+    "seconds": 20.93,
+    "total": 497
+  },
+  "output_contract": {
+    "all_candidate_score_payloads": 371,
+    "baseline_bag_logits_and_probabilities_preserved_exactly": true,
+    "candidate_score_semantics": "direct normal anomaly distance, not a classification logit",
+    "normal_anomaly_evidence_payloads": 371,
+    "physical_prediction_maps": 371,
+    "prediction_map": "selected immutable candidate mask times accepted baseline probability"
+  },
+  "primitive_sha256": "e74fb687168620d84317d57b240b1007af75586ca3c16a7dd5052e35aa1f6cbd",
+  "recorded_at": "2026-08-01T15:16:00+07:00",
+  "runner_sha256": "6a279ea568c2bcbf2a6ea89998e24141e9ebaf33b7d7a15a7056f778aa9ed85d",
+  "safety": {
+    "btxrd_test_opened": false,
+    "consumer_trained": false,
+    "output_directory_created_only_after_input_verification": true,
+    "real_cache_fit": false,
+    "segmentation_dataset_imported": false,
+    "validation_gt_opened": false
+  },
+  "status": "STATIC_SYNTHETIC_RUNNER_READY",
+  "test_sha256": "a3f90444f8e2f94f8d220122b91c5a98d2c7d9dd4a1c5b2bfbfc6c5528c27fb5",
+  "training_contract": {
+    "image_label_normal_records": 1493,
+    "positive_bags_used": 0,
+    "prototype_count": 32,
+    "residual_or_mil_optimizer": false,
+    "seed": 42
+  },
+  "transport_contract": {
+    "expected_accelerator": "NvidiaTeslaT4 x2",
+    "heavy_compute_local": false,
+    "protocol_required_before_launch": true,
+    "wrapper_binding_required_before_launch": true
+  }
+}

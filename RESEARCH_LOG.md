@@ -10883,3 +10883,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Cleanup không mở validation GT/BTXRD test, không tạo prediction, không train
   consumer. Sau commit/push audit này, N1 mới được tiếp tục static readiness.
 
+- **N1 fail-closed runner static readiness sau cleanup:** runner
+  `project/run_mask_bag_normal_only_direct_anomaly_n1.py` và test có SHA-256
+  `6a279ea568c2bcbf2a6ea89998e24141e9ebaf33b7d7a15a7056f778aa9ed85d` /
+  `a3f90444f8e2f94f8d220122b91c5a98d2c7d9dd4a1c5b2bfbfc6c5528c27fb5`.
+  Runner fail closed trên exact split/cache/baseline freeze/checkpoint/source/
+  protocol và `1493` normal training images trước khi tạo output directory;
+  yêu cầu exact T4x2, `K=32/seed42`, fit không positive bag/optimizer,
+  giữ exact accepted bag logits/probabilities, và freeze `371` all-candidate
+  anomaly-score payloads, `371` original/flip evidence payloads cùng `371` maps.
+- Candidate score được khai báo rõ là normal-distance ranking, không phải
+  classification logit; map là selected immutable mask nhân accepted baseline
+  probability. Runner tự yêu cầu final count/probability Spearman reproduce exact
+  `0.48137777593654113`. Nó không import segmentation dataset/evaluator/consumer.
+  Focused primitive+runner `7/7` trong 2.78 giây và full repository `497/497`
+  trong 20.93 giây pass; cache sinh ra bởi test đã được dọn lại.
+  Runner-readiness artifact SHA-256 là
+  `fba7f143aefa9cbe0e698e0333f1620b90e0d10048c5c62332dc58247d4583ee`.
+  Vẫn chưa có protocol/auditor/wrapper/binding hay real-cache fit/prediction;
+  validation GT, consumer và BTXRD test giữ khóa.
+
