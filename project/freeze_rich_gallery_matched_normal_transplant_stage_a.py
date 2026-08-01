@@ -13,6 +13,7 @@ from functools import lru_cache
 import json
 from pathlib import Path
 import time
+from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -31,10 +32,6 @@ from models.matched_normal_candidate_transplant import (
 )
 from models.rich_gallery_g2_objective import average_percentile_rank, stable_select
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
-from run_rich_gallery_bas_candidate_descriptor_b1 import (
-    _verify_g1_stage_a,
-    canonical_source,
-)
 
 
 VARIANTS = (
@@ -48,6 +45,57 @@ IMAGE_SIZE = 448
 PAIR_COUNT = 2
 FEATHER_KERNEL = 7
 RANDOM_CONTROL_SEED = 20260802
+
+
+def canonical_source(value: object) -> str:
+    lowered = str(value).lower()
+    if "classifier448" in lowered:
+        return "classifier448"
+    if "external" in lowered or "biomed" in lowered:
+        return "external_saliency"
+    if "layer" in lowered or "anchor" in lowered:
+        return "layercam320"
+    raise ValueError(f"unknown rich-gallery source: {value!r}")
+
+
+def _verify_g1_stage_a(
+    root: Path,
+    *,
+    expected_freeze_sha256: str,
+    expected_split_sha256: str,
+    expected_val_manifest_sha256: str,
+    expected_val_pseudo_sha256: str,
+) -> tuple[dict[str, Any], dict[str, dict[str, str]]]:
+    freeze_path = root / "prediction_freeze.json"
+    if sha256_file(freeze_path) != expected_freeze_sha256:
+        raise ValueError("G1/G2 Stage-A freeze SHA-256 mismatch")
+    freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    if (
+        freeze.get("stage") != "rich_gallery_g2_selector_pair_stage_a_v1"
+        or freeze.get("split_sha256") != expected_split_sha256
+        or freeze.get("val_candidate_manifest_sha256") != expected_val_manifest_sha256
+        or freeze.get("val_pseudo_manifest_sha256") != expected_val_pseudo_sha256
+        or freeze.get("g1_reproduction_max_selected_index_delta") != 0
+        or freeze.get("validation_images") != 371
+        or freeze.get("candidate_choices_frozen_before_validation_gt") is not True
+        or freeze.get("validation_gt_read") is not False
+        or freeze.get("test_images_read") != 0
+        or freeze.get("test_evaluated") is not False
+    ):
+        raise ValueError("G1/G2 Stage-A safety/provenance mismatch")
+    manifest_path = root / "stage_a_selection_manifest.csv"
+    if sha256_file(manifest_path) != freeze.get("selection_manifest_sha256"):
+        raise ValueError("G1/G2 selection manifest changed")
+    with manifest_path.open("r", newline="", encoding="utf-8-sig") as handle:
+        rows = list(csv.DictReader(handle))
+    selected = {
+        row["image_id"]: row
+        for row in rows
+        if row["variant"] == "g1_frozen__rank_fusion"
+    }
+    if len(selected) != 371:
+        raise ValueError("G1 rank-fusion Stage-A cohort mismatch")
+    return freeze, selected
 
 
 def parse_args() -> argparse.Namespace:

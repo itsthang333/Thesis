@@ -18,7 +18,6 @@ from models.matched_normal_candidate_transplant import (
 )
 from models.rich_gallery_g2_objective import average_percentile_rank, stable_select
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
-from run_rich_gallery_bas_candidate_descriptor_b1 import canonical_source
 
 
 VARIANTS = (
@@ -32,6 +31,17 @@ BASELINE = "g1_upstream_baseline"
 PRIMARY = "baseline_transplant_three_to_one"
 RANDOM_CONTROL = "baseline_random_control_three_to_one"
 EXPECTED_BASELINE_DICE = 0.28872948670665205
+
+
+def canonical_source(value: object) -> str:
+    lowered = str(value).lower()
+    if "classifier448" in lowered:
+        return "classifier448"
+    if "external" in lowered or "biomed" in lowered:
+        return "external_saliency"
+    if "layer" in lowered or "anchor" in lowered:
+        return "layercam320"
+    raise ValueError(f"unknown rich-gallery source: {value!r}")
 
 
 def parse_args() -> argparse.Namespace:
