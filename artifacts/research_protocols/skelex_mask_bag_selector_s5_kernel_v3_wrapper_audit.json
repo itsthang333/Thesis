@@ -1,0 +1,77 @@
+{
+  "audit_id": "skelex_mask_bag_selector_s5_kernel_v3_wrapper_audit",
+  "audited_utc": "2026-08-01T18:49:05Z",
+  "status": "FROZEN_PRELAUNCH_NOT_PUSHED_TO_KAGGLE",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "kernel": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+  "kernel_version": 3,
+  "supersedes_kernel_version": 2,
+  "predecessor_error_audits": {
+    "kernel_version1": "329ad59b715677f7b4aa11c9644234fc5cf7f65dd2da140c119b058c2c629683",
+    "kernel_version2": "bd525398ca033f014f55e3bd13d5a083cf1421842ed77c50be11d824de7e82b3",
+    "postlaunch_rank_precision": "68e8e8d1c972a2415681d79af8d7abf955eaedbe563796054dbfff6ae44c5954"
+  },
+  "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+  "numeric_correction_source_commit": "664578758225501dc163a6fc35d9ecdb9a1947d7",
+  "execution_checkout_commit": "5954be469b82a545ac797e831be0bf3563338fbc",
+  "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+  "numeric_correction_addendum_sha256": "ded254883a13da9ec0b961970ebacbd2b61badd04c644b7b9c64747a6abd2f72",
+  "canonical_wrapper_sha256": "949e3a37aff7d56dd510c6dd3027c0e10705cd9b1d33bdaf1c19646d3d54f923",
+  "bound_wrapper_sha256": "51b09f66edd34a23d4d17401db473b65759da4e5ad26a7ef84dce97250906c7e",
+  "kernel_metadata_sha256": "33d4a8cb2fba94c1ad2a1742004d26390faae4de989b5fca4adace2a2bd5f107",
+  "implementation_corrections": {
+    "classification": "numeric identity guards and independent-auditor arithmetic only",
+    "mass_symmetry": "per-candidate maximum of four float32 ULPs and a four-epsilon absolute floor",
+    "rank_reproduction": "all independently reproduced percentile ranks cast to numpy.float32 before aggregation and correlation",
+    "descriptor_values_changed": false,
+    "generator_prediction_values_changed": false,
+    "selector_recipe_changed": false,
+    "scientific_source_changed": false,
+    "scientific_protocol_changed": false
+  },
+  "source_overrides": {
+    "project/models/skelex_mask_bag_descriptor.py": "c01197750f289aab31d4cb34c914fd211c70c49214789aa2379f4bcdbb1899b3",
+    "project/run_skelex_mask_bag_selector_s5.py": "b23b61db262bb67b5ef3faefcd0ae3565c35bfb124925a279060a10340f070bc",
+    "project/audit_skelex_mask_bag_selector_s5_output.py": "dbf84451ae32b5fd819af53c48f3357da0c236defdaa5eda2d1b787640e01049",
+    "tests/test_skelex_mask_bag_descriptor.py": "385a4c17eeeaccd55f9a19864b28dd95b6bd41cfaf24eb57c6432755373ee779"
+  },
+  "checks": {
+    "wrapper_py_compile": "PASS",
+    "wrapper_binding_tests": "2 passed in 0.03s",
+    "numeric_addendum_json_parse": "PASS",
+    "numeric_addendum_exact_hash": "PASS",
+    "all_four_previous_protocol_hashes_match_addendum": true,
+    "all_four_corrected_checkout_hashes_match_addendum": true,
+    "canonical_and_packaged_wrapper_equal_except_binding_constants": true,
+    "scientific_and_correction_sources_are_ancestors_of_execution_checkout": true,
+    "protocol_sha256_matches_versions1_and2": true,
+    "public_skelex_revision_and_hashes_unchanged": true,
+    "split_gallery_cache_baseline_and_recipe_unchanged": true,
+    "t4x2_fail_closed_guard_unchanged": true,
+    "full_numeric_tests_required_before_public_model_download": true,
+    "tests_before_public_model_download_and_real_input": true,
+    "descriptor_gate_before_selector_training": true,
+    "physical_pair_freeze_before_gt": true,
+    "independent_gt_blind_reproduction_before_gt": true,
+    "collaborator_terminal_log_commit_read": "added53690ed94c69d6c39cd619c0aced506bb85",
+    "collaborator_output_accessed": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "datasets": [
+    "itsthang333/btxrd-raw",
+    "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+    "itsthang333/btxrd-mask-bag-selector-baseline-v1"
+  ],
+  "kernel_inputs": [
+    "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+  ],
+  "compute": "Kaggle NvidiaTeslaT4 x2",
+  "heavy_compute_started": false,
+  "real_input_opened_after_version2_error": false,
+  "prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

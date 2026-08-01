@@ -12233,4 +12233,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prelaunch binding pass. Hiện chưa launch v3, chưa mở real input sau lỗi v2,
   chưa prediction/validation GT/consumer/test; collaborator output không được
   truy cập.
+- Correction/code/log sync đã được push central ở commit
+  `5954be469b82a545ac797e831be0bf3563338fbc`. Exact packaged version-3 wrapper
+  chỉ thay ba launch-binding constants (`version=3`, ready true, checkout commit
+  trên) so với canonical unbound wrapper; SHA-256 là
+  `51b09f66edd34a23d4d17401db473b65759da4e5ad26a7ef84dce97250906c7e`.
+  Metadata không đổi, SHA-256
+  `33d4a8cb2fba94c1ad2a1742004d26390faae4de989b5fca4adace2a2bd5f107`.
+- Prelaunch audit
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_kernel_v3_wrapper_audit.json`
+  có SHA-256
+  `f9f4a69cc4501dad749527a7efe0fb74bc5dd9a00e5106c9bc19ec612c719676`.
+  Nó xác nhận exact addendum/4 source overrides, scientific và correction
+  ancestry, canonical-vs-packaged identity ngoài binding, T4x2 fail-closed,
+  numeric tests trước public-model download/real input, descriptor gate trước
+  selector training, physical pair freeze và independent GT-blind audit trước
+  evaluator. Version 3 vẫn chưa được push Kaggle tại mốc này; mọi khóa giữ nguyên.
 
