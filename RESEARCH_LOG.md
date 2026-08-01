@@ -8575,3 +8575,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   (`2,968` recipient/sham identifiers) resolve exactly and preserve case.
   Test remains locked and no Dice claim is made from these technical failures.
 
+### 2026-08-02 — matched-normal Stage-B deep bottleneck schema (ĐANG LÀM)
+
+- Stage-A version 4 remains the only active private/offline run.  This update
+  does not change or relaunch its classifier, donors, candidates, scores,
+  selections, protocol or prediction freeze.  The immutable baseline remains
+  G1+upstream fixed percentile-rank fusion at Dice `0.2887294867`.
+- Static review found that the first Stage-B draft consumed only matched-arm
+  relative-L2 contrast although Stage A freezes a substantially richer compact
+  payload.  The evaluator now retains, for both matched and random controls,
+  inside/ring/contrast absolute and relative feature deltas, cosine,
+  difference-energy concentration and recipient variability at `pool0`,
+  `transition1`, `transition2`, `transition3` and `norm5`.  With exactly two
+  recipients, sign agreement is recovered exactly from their population mean
+  and standard deviation.
+- The frozen statistics will be stratified after the annotation boundary by
+  lesion size 94/72/18, baseline complete miss/overlap, correct/wrong proposal
+  source and under/near/over extent.  A separate decomposition reports gallery
+  supply, eligible selector, cross-source and within-source regret.  Actual
+  binary-mask Dice/IoU for all five predeclared selectors remains the endpoint;
+  the added analysis cannot tune candidates, weights or thresholds.
+- Stage-B output schema advances to `rich_gallery_matched_normal_transplant_stage_b_v2`
+  and records its own evaluator SHA-256.  Focused evaluator/model regression
+  passes `13/13`, including exact two-recipient sign reconstruction and the
+  matched-versus-random failure branch.  Test remains locked; no efficacy
+  conclusion is claimed before the 371-image Stage-A freeze is independently
+  audited and the exact 184 validation polygons are evaluated.
+

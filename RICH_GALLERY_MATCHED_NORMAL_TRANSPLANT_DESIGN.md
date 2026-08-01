@@ -137,6 +137,19 @@ This yields predeclared failure localization rather than a post-hoc story:
 - matched and random controls have the same layer trajectory: anatomy matching
   does not isolate a causal tumor signal and the mechanism is retired.
 
+Stage B must consume the complete compact Stage-A payload rather than reducing
+the diagnosis to one relative-L2 statistic.  For both matched and random arms
+it reports inside/ring/contrast L2, relative L2, cosine, difference-energy
+concentration and recipient variability at every stage.  Because exactly two
+recipient pairs are frozen, their population mean and standard deviation also
+recover whether both recipient effects have the same sign.  These quantities
+are related to candidate Dice only after prediction freeze and are stratified
+by lesion size, baseline complete miss versus overlap, wrong versus correct
+proposal source, and under/near/over extent.  The evaluator additionally
+separates proposal-supply, cross-source, within-source and remaining selector
+regret.  None of these expanded diagnostics changes a candidate score,
+selection, fusion formula or promotion gate.
+
 Stage B may relate these frozen statistics to candidate overlap to identify the
 first failing stage, but it cannot tune layers, masks, thresholds or fusion
 weights.  Actual binary-mask Dice remains the promotion endpoint.
