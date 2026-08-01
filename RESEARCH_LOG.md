@@ -8253,3 +8253,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   negatives. The complete analysis is in
   `RICH_GALLERY_TOP10_RELATIONAL_FAILURE_DOSSIER.md`. Test remains locked.
 
+### 2026-08-01 — mandatory deep-failure gate and successor correction
+
+- The user requires every future failure or bottleneck to be analyzed deeply
+  with all available per-image outputs, generated intermediates, formulas,
+  prior negative evidence and primary literature before another experiment is
+  allowed. This requirement is now frozen in
+  `BTXRD_WSSS_FAILURE_ANALYSIS_CONTRACT.md`; a mean Dice row alone is not an
+  acceptable failure analysis.
+- A fresh coordination fetch exposed terminal central-branch results that were
+  not yet present in this branch: R2 local affinity, R3 critical-instance
+  relation, R4 orbit-averaged relation, S3 same-family graph, S4 OOF proposal
+  clustering and T1 count-controlled self-paced confirmation all fail their
+  scientific gates. In particular, R4 is view-invariant but regresses Dice in
+  every subgroup, while T1 reduces the count shortcut yet worsens selector
+  regret in every subgroup. Therefore shortcut removal and relational residual
+  fitting are not sufficient tumor-specific positive evidence.
+- This new evidence supersedes the tentative plan to implement another learned
+  relational residual on the rich gallery. It would duplicate R3/R4 and repeat
+  a falsified mechanism, so it is retired before GPU use. The favorable
+  medium/large effect of geometric relation remains diagnostic context only;
+  the small-lesion over-extent failure is causal evidence against direct
+  relation-based selection.
+- The next non-duplicate mechanism is the central branch's BAS-style
+  class-aware activation descriptor, adapted to the immutable rich gallery and
+  compared directly with G1 plus upstream equal-rank fusion at Dice
+  `0.2887294867`. BAS is not treated as proven: it must demonstrate new
+  candidate evidence rather than duplicate upstream coverage/purity, and every
+  choice must freeze before validation polygons. If it fails, the mandatory
+  dossier will separate lesion-hit absence, extent duplication, source bias and
+  ranking-depth failure before any next run. BTXRD test remains locked.
+
