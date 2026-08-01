@@ -1,0 +1,57 @@
+{
+  "artifact_id": "same_gallery_class_contrast_bas_b4_static_readiness_v1",
+  "status": "STATIC_READINESS_PASS_NO_CLAIM_NO_REAL_DATA_NO_LAUNCH",
+  "created_at": "2026-08-01T23:41:46.0490509+07:00",
+  "experiment_candidate": "EXP-20260801-codex-b4-same-gallery-bas-semantic-v1",
+  "coordination": {
+    "central_commit": "793b8797185ac99ca7d7dac49d32c8e6db6e09b7",
+    "collaborator_commit": "d4e0a5fd13e132e0bc8861437bacfebb4115b309",
+    "collaborator_result_trusted_without_output_access": true,
+    "trusted_architecture": "rich-gallery G1 plus upstream equal percentile-rank fusion",
+    "trusted_dice_overall_small_medium_large": [
+      0.2887294867,
+      0.1577232964,
+      0.4352293348,
+      0.3868735327
+    ],
+    "new_identifiability_evidence": {
+      "score_dominance_fraction_of_regret": 0.5742,
+      "shared_alpha_posthoc_upper_dice": 0.29147261,
+      "interpretation": "a third tumor-specific observable is required; reweighting the two trusted scores is retired"
+    }
+  },
+  "scientific_change": {
+    "control": "mean rank of accepted Geometry-v3 and immutable upstream scores",
+    "new_observable": "tumor/(tumor+normal) competition between the two BAS localization maps",
+    "primary_arm": "equal rank of Geometry-v3, upstream, and class-contrast BAS candidate evidence",
+    "input_size": 448,
+    "weight_search": false,
+    "threshold_search": false,
+    "source_or_subgroup_router": false
+  },
+  "canonical_lf_source_hashes": {
+    "SAME_GALLERY_BAS_SEMANTIC_B4_DESIGN.md": "895a76cc9c5f79fdb8e98bc385e52290cefaf141d0ad6fdb885242d4294bcff5",
+    "project/run_bas_candidate_descriptor_core.py": "a9b69da1c524ddbd70e439ee5986ace843711993e2150bde17c75aafcc75b2dc",
+    "project/audit_bas_candidate_descriptor_core.py": "82112c773a07ff4b18f54698769beeb4eedc78c7404d87a0b9253543dfb83a4d",
+    "project/run_same_gallery_bas_semantic_b4.py": "b916ec79446d0740fdd0b608dd2dfe272d6ee95168e1baac711b572f2b5eb998",
+    "project/audit_same_gallery_bas_semantic_b4_output.py": "dcd570dce08f8df1911010fc9bd306e5401d2187dcd9d1a1bfc66a3fd4529962",
+    "tests/test_same_gallery_bas_semantic_b4.py": "61999e4dfbda400177f65bea9a8309cb2c2eb641432a85c9e18732522d095a98"
+  },
+  "verification": {
+    "focused_tests": "17 passed",
+    "full_repository_tests_with_documented_python39_strict_zip_shim": "556 passed",
+    "py_compile": true,
+    "git_diff_check": true,
+    "real_data_opened": false,
+    "heavy_compute_local": false
+  },
+  "safety": {
+    "training_labels": "binary image-level normal/tumor only",
+    "validation_gt_read": false,
+    "predictions_created": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false,
+    "kaggle_launched": false
+  }
+}

@@ -11610,3 +11610,60 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   provenance audit, đều bị cấm theo yêu cầu người dùng. Vì vậy chưa đăng ký
   `ĐANG LÀM`, chưa launch Kaggle, chưa prediction/validation GT/consumer/test.
 
+### Đồng bộ `d4e0a5f` và B4 class-contrast BAS static readiness (2026-08-01)
+
+- Đã fetch central `793b8797185ac99ca7d7dac49d32c8e6db6e09b7` và nhánh cộng
+  tác mới `d4e0a5fd13e132e0bc8861437bacfebb4115b309`, đọc toàn bộ delta log,
+  design BAS-B2 và dossier identifiability mới. Theo chỉ đạo người dùng, kết
+  quả/pipeline cộng tác được **tin cậy trực tiếp**, không audit lại và không
+  list/download/truy cập output hay Kaggle của cộng tác viên. Không có terminal
+  BAS metric mới trong delta; kết quả tốt được kế thừa vẫn là rich-gallery G1 +
+  upstream equal percentile-rank Dice overall/small/medium/large
+  `0.28872949/0.15772330/0.43522933/0.38687353`.
+- Chẩn đoán mới được adopt như evidence, không như selector promotable: trong
+  eligible-selector regret `0.23917254`, score-dominance identifiability chiếm
+  `0.13733820` (`57.42%`); `154/184` eligible oracle vắng khỏi two-score Pareto
+  frontier và `104/184` mất ít nhất `0.05` Dice do một mask sai không kém hơn ở
+  cả G1 lẫn upstream. Dense shared-alpha hậu nghiệm tốt nhất chỉ
+  `0.29147261` (`+0.00274313`) và làm large giảm, nên weight/monotone/nonlinear
+  two-score tuning bị loại. Trong severe dominance, `30/31` extreme over-extent
+  là small còn `25/26` under-extent là medium/large; area expansion, source
+  forcing và một global extent prior đều bị loại.
+- Collaborator BAS-B2 hiện là static readiness/memory preflight, chưa có claim
+  `ĐANG LÀM`, real-data fit, prediction hay terminal Dice. Để không chạy nguyên
+  implementation đó, successor trung tâm B4 giữ kiến trúc hai-score đã chứng
+  minh nhưng thêm observable khác: class-contrast map cố định
+  `tumor/(tumor+normal)` từ hai BAS localization map, rồi harmonic coverage/
+  purity và equal three-way rank với Geometry-v3 + upstream. ReCAM hỗ trợ
+  cross-class competition để giảm pixel ambiguity:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Chen_Class_Re-Activation_Maps_for_Weakly-Supervised_Semantic_Segmentation_CVPR_2022_paper.html.
+  FPR chứng minh activation của class vắng mặt chứa co-occurring-background cue
+  và có thể rectification mà không thêm supervision:
+  https://openaccess.thecvf.com/content/ICCV2023/html/Chen_FPR_False_Positive_Rectification_for_Weakly_Supervised_Semantic_Segmentation_ICCV_2023_paper.html.
+  B4 chỉ dùng parameter-free class competition; full prototype FPR vẫn defer.
+- B4 execution dùng exclusively accepted same-gallery cache/baseline và raw
+  BTXRD input do `itsthang333` kiểm soát; không dùng rich-gallery physical
+  output/checkpoint/prediction của cộng tác viên. Hai arm cố định là
+  `geometry_v3_plus_upstream_equal_rank` và
+  `geometry_v3_plus_upstream_plus_class_contrast_bas`; 448 px/100 epoch/batch
+  32/T4x2, không weight/threshold/source/subgroup/resolution sweep. Proxy chỉ là
+  diagnostics; sau technical/cohort/finiteness pass vẫn phải freeze cả hai arm
+  trước GT để đo actual Dice.
+- Static source tách hẳn reusable core mới, giữ nguyên mọi byte/hashes của B1
+  lịch sử. Design/core runner/core auditor/B4 runner/B4 auditor/test SHA-256 lần
+  lượt là `895a76cc...bcff5 / a9b69da1...5b2dc /
+  82112c77...b83a4d / b916ec79...eb998 / dcd570dc...529962 /
+  61999e4d...95a98`. Independent no-GT auditor không import producer hay
+  segmentation dataset, tái lập class-contrast identity, ranks, score payload,
+  choices, maps và pair freeze. Focused suite pass `17/17`; full repository lần
+  đầu bằng Python 3.9 pass `544` và có đúng `12` known `zip(strict=True)` lỗi
+  compatibility, sau documented diagnostic shim pass `556/556` trong 19.47 s.
+  `py_compile` và `git diff --check` pass.
+- Static-readiness artifact
+  `artifacts/research_protocols/same_gallery_class_contrast_bas_b4_static_readiness.json`
+  SHA-256 `b93474fee39c2a49c57fcea9d7de12ca18c92667b3eca4b22c73804bb41f31c6`.
+  Đây chưa phải claim: chưa mở real data/cache, chưa train/prediction/GT/
+  consumer/test và chưa launch Kaggle. Trước claim phải freeze protocol/source,
+  wrapper/binding/evaluator/decision, fetch lại hai branch, kiểm tra collision,
+  rồi đăng ký/push `ĐANG LÀM` trung tâm.
+
