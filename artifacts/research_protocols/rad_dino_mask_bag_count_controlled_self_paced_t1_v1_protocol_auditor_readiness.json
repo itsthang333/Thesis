@@ -1,0 +1,80 @@
+{
+  "readiness_id": "rad_dino_mask_bag_count_controlled_self_paced_t1_v1_protocol_auditor_readiness",
+  "created_utc": "2026-08-01T07:12:34Z",
+  "status": "STATIC_PROTOCOL_AND_INDEPENDENT_GT_BLIND_AUDITOR_READY_NO_WRAPPER_NO_LAUNCH",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "central_head_before_readiness_commit": "2bfd46fb8e4897f16149bb67c968f3699a150ddc",
+  "claim_commit": "d8cd1608b6886f51cc5240ddcc81c1dc2a5e1e2a",
+  "scientific_source_commit": "c7f0937d515ded9bbd8928a2236cbe44b7a25f79",
+  "collaborator_head_read": "f22700be9f74aaa560e0da95326d318f29c9a59b",
+  "collaborator_evidence_adopted_as_improvement": false,
+  "collaborator_boundary": "G1 terminal Dice is worse than accepted Geometry-v3; post-Stage-B fusion is exploratory and G2 has no GPU result, so T1 imports none of their code, logits, checkpoints, fusion or objectives",
+  "protocol": {
+    "path": "artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1.json",
+    "sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+    "json_parse_pass": true,
+    "source_hashes_verified": 22,
+    "producer_gate_before_targets": true,
+    "prediction_freeze_before_validation_gt": true,
+    "consumer_locked_before_operational_pass": true,
+    "test_locked": true
+  },
+  "independent_auditor": {
+    "path": "project/audit_mask_bag_count_controlled_self_paced_t1_output.py",
+    "sha256": "31ab993baa2f641355aa024212360f157a6ebab9f8839a02ffd95d024490ead6",
+    "test_path": "tests/test_audit_mask_bag_count_controlled_self_paced_t1_output.py",
+    "test_sha256": "4f39f6660442488940497d38d800629c4baff60eecc801a219fe430a9f2af1e8",
+    "imports_scientific_t1_model_or_runner": false,
+    "imports_evaluator_or_validation_gt": false,
+    "recomputes_crossfit_assignment_and_group_exclusion": true,
+    "physically_verifies_five_oof_checkpoints_histories_audits_and_2981_scores": true,
+    "recomputes_oof_count_spearman_auroc_and_view_agreement": true,
+    "reconstructs_negative_hierarchical_weights_and_nested_positive_targets": true,
+    "verifies_target_freeze_before_confirmation_checkpoint": true,
+    "verifies_exact_base_residual_combined_arithmetic": true,
+    "physically_verifies_371_candidate_scores_residual_payloads_and_maps": true,
+    "recomputes_final_count_gate": true
+  },
+  "frozen_scientific_files": {
+    "project/models/mask_bag_count_controlled_self_paced.py": "b8acab98594c55526e6aa13b7dca02ba751f790e83126594ae62762214d19d28",
+    "project/run_mask_bag_count_controlled_self_paced_t1_arm.py": "9fb05756bc44c6b9c12063d18706df76eab1c99137425540006c264292b2a5c3",
+    "tests/test_mask_bag_count_controlled_self_paced.py": "0d1b35ea82c45a800ba449c51475c965e65498261e89b07a7ac16e787c44a48a",
+    "tests/test_run_mask_bag_count_controlled_self_paced_t1_arm.py": "28cbc21694a26389e4fc69cba2d9d9ceeaa2a2744c1a4d49ae5ee3532f9cad75"
+  },
+  "tests": {
+    "focused": {
+      "passed": 17,
+      "failed": 0,
+      "seconds": 3.78
+    },
+    "full_repository": {
+      "passed": 481,
+      "failed": 0,
+      "seconds_pytest": 17.74,
+      "seconds_wall": 19.18
+    },
+    "python": "3.9.23",
+    "environment": "btxrd-pseudomask",
+    "documented_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "environment_error_boundary": {
+    "first_default_python": "3.13.5 without NumPy or PyTorch",
+    "result": "collection stopped with three ModuleNotFoundError imports before any test body or scientific input",
+    "second_unshimmed_environment": "btxrd-pseudomask Python 3.9.23",
+    "result_unshimmed": "four failures: three known zip(strict=True) compatibility failures and one overbroad static assertion",
+    "correction": "used the established strict-zip diagnostic shim and narrowed the assertion to import lines only; no scientific source or protocol control changed",
+    "scientific_execution_occurred": false
+  },
+  "launch_authorized": false,
+  "remaining_before_launch": [
+    "fail-closed Kaggle wrapper template",
+    "one-time wrapper binder and launch binding",
+    "wrapper/binder focused tests and final prelaunch audit",
+    "commit and push exact checkout before a single Kaggle kernel push"
+  ],
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

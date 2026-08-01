@@ -10536,3 +10536,44 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prediction, validation GT, consumer hoặc BTXRD test nào được mở trong bước
   đồng bộ này.
 
+### EXP-20260801-codex-t1-count-controlled-self-paced-v1 — protocol/auditor readiness
+
+- Sau collaboration sync commit `2bfd46fb8e4897f16149bb67c968f3699a150ddc`,
+  scientific model/runner tại commit `c7f0937d515ded9bbd8928a2236cbe44b7a25f79`
+  được audit tĩnh lại và không cần thay đổi khoa học. Protocol fail-closed
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1.json`
+  có SHA-256
+  `6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c`.
+  Nó khóa exact source/claim/cache/split/baseline, năm OOF producers, loss
+  image-BCE + view consistency `0.10` + squared count correlation `1.0`, gate
+  `|rho|<=0.5013777759365411`, AUROC `>=0.75`, top-1 view agreement `>=0.60`,
+  target stages `20/40/60%`, 12-epoch confirmation residual và mọi post-freeze
+  evaluation/adoption gate. Collaborator G1/G2/fusion không phải input.
+- Independent GT-blind physical auditor
+  `project/audit_mask_bag_count_controlled_self_paced_t1_output.py` SHA-256
+  `31ab993baa2f641355aa024212360f157a6ebab9f8839a02ffd95d024490ead6`
+  không import T1 scientific model/runner hoặc evaluator/GT. Nó độc lập tái tạo
+  exact cross-fit assignment/group exclusion; kiểm tra năm checkpoint/history/
+  fold audit và 2,981 OOF score payloads; tái tính count Spearman, image AUROC,
+  view agreement; dựng lại hierarchical negative weights cùng nested positive
+  targets; kiểm tra target freeze trước confirmation checkpoint; và kiểm tra
+  exact base+residual arithmetic, 371 candidate scores/residual payloads/maps và
+  final validation count gate. Auditor test SHA-256 là
+  `4f39f6660442488940497d38d800629c4baff60eecc801a219fe430a9f2af1e8`.
+- Focused T1 model/runner/auditor closure pass `17/17` trong 3.78 giây; full
+  repository regression pass `481/481` trong 17.74 giây bằng documented local
+  Python-3.9 strict-zip diagnostic shim. Protocol JSON parse, `py_compile` và
+  `git diff --check` đều pass. Readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_protocol_auditor_readiness.json`
+  có SHA-256
+  `24583c3221c1d22ad1ac5f56285b44e1189ee9ce3cdbe59cf3ea8d019a893126`.
+- **Static test error boundary:** Python mặc định 3.13.5 không có NumPy/PyTorch
+  nên ba test module dừng tại import trước test body. Lượt đầu trong đúng env
+  Python 3.9.23 còn ba known `zip(strict=True)` compatibility failure và một
+  assertion auditor quá rộng vì bắt cả evaluator path được hash-pin dù không
+  import. Chỉ assertion được thu hẹp về import lines và established strict-zip
+  shim được dùng lại; model, runner, protocol, metric, gate và dữ liệu không đổi.
+- Đây vẫn là static readiness: wrapper/binder/final prelaunch chưa tồn tại nên
+  chưa authorize Kaggle launch. Không real cache execution/fit/target/prediction,
+  không validation GT, không downstream consumer và không BTXRD test access.
+
