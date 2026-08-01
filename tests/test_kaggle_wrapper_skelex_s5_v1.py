@@ -7,7 +7,7 @@ import re
 WRAPPER = Path("project/kaggle_wrappers/run_skelex_mask_bag_selector_s5_v1.py")
 
 
-def test_s5_v3_pins_numeric_corrections_and_tests_before_large_download() -> None:
+def test_s5_v4_pins_correction_chain_and_tests_before_large_download() -> None:
     source = WRAPPER.read_text(encoding="utf-8")
     assert "KERNEL_VERSION = 0" in source
     assert "LAUNCH_BINDING_READY = False" in source
@@ -20,6 +20,16 @@ def test_s5_v3_pins_numeric_corrections_and_tests_before_large_download() -> Non
     assert (
         'NUMERIC_ADDENDUM_SHA256 = '
         '"ded254883a13da9ec0b961970ebacbd2b61badd04c644b7b9c64747a6abd2f72"'
+        in source
+    )
+    assert (
+        'TEST_CONTRACT_CORRECTION_SOURCE_COMMIT = '
+        '"f9e56111ddf98b474c3ea1532c2da77b68e90232"'
+        in source
+    )
+    assert (
+        'TEST_CONTRACT_ADDENDUM_SHA256 = '
+        '"591858f1e5bfaefad55b9583f3904ae6447bc98986a77d7a52471a49586b74a8"'
         in source
     )
     assert (
@@ -48,6 +58,12 @@ def test_s5_v3_pins_numeric_corrections_and_tests_before_large_download() -> Non
         "numeric correction addendum provenance mismatch"
     )
     assert clone.index("numeric correction addendum provenance mismatch") < clone.index(
+        "test-contract correction addendum provenance mismatch"
+    )
+    assert clone.index("test-contract correction addendum provenance mismatch") < clone.index(
+        "verified_hashes.update(TEST_CONTRACT_SOURCE_OVERRIDE)"
+    )
+    assert clone.index("verified_hashes.update(TEST_CONTRACT_SOURCE_OVERRIDE)") < clone.index(
         "for relative, expected in verified_hashes.items()"
     )
 

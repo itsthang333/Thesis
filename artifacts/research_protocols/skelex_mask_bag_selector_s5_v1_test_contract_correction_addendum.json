@@ -1,0 +1,83 @@
+{
+  "addendum_id": "skelex_mask_bag_selector_s5_v1_test_contract_correction",
+  "status": "FROZEN_TEST_ONLY_CORRECTION",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "correction_source_commit": "f9e56111ddf98b474c3ea1532c2da77b68e90232",
+  "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+  "scientific_protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+  "predecessor_numeric_addendum_sha256": "ded254883a13da9ec0b961970ebacbd2b61badd04c644b7b9c64747a6abd2f72",
+  "predecessor_kernel_version3_error_audit_sha256": "1785bc25e2d4c5f539746a0673ecd496db6577ec1a2edf1d5b7d42bb1d771962",
+  "canonical_lf_source_override": {
+    "relative_path": "tests/test_skelex_mask_bag_descriptor.py",
+    "previous_sha256": "385a4c17eeeaccd55f9a19864b28dd95b6bd41cfaf24eb57c6432755373ee779",
+    "corrected_sha256": "9efb49f903ce9343bcb96cc381e5315c949dd6f2d3e6942169bdc98152e687da"
+  },
+  "correction": {
+    "classification": "synthetic test contract only",
+    "floor_dominated_case": {
+      "mass": 0.25,
+      "five_ulp_delta": 1.4901161193847656e-7,
+      "four_epsilon_floor": 4.76837158203125e-7,
+      "expected": "accepted because the frozen absolute floor dominates"
+    },
+    "ulp_dominated_cases": {
+      "masses": [
+        1.0,
+        17.0,
+        196.0
+      ],
+      "expected": "four ULP accepted and five ULP rejected"
+    },
+    "model_code_changed": false,
+    "runner_code_changed": false,
+    "auditor_code_changed": false,
+    "production_tolerance_changed": false,
+    "descriptor_values_changed": false,
+    "prediction_values_changed": false
+  },
+  "local_no_torch_reproduction": {
+    "numpy_version": "2.3.5",
+    "four_ulp_deltas": [
+      1.1920928955078125e-7,
+      4.76837158203125e-7,
+      7.62939453125e-6,
+      6.103515625e-5
+    ],
+    "four_ulp_tolerances": [
+      4.76837158203125e-7,
+      4.76837158203125e-7,
+      7.62939453125e-6,
+      6.103515625e-5
+    ],
+    "five_ulp_deltas": [
+      1.4901161193847656e-7,
+      5.960464477539062e-7,
+      9.5367431640625e-6,
+      7.62939453125e-5
+    ],
+    "five_ulp_tolerances": [
+      4.76837158203125e-7,
+      4.76837158203125e-7,
+      7.62939453125e-6,
+      6.103515625e-5
+    ],
+    "status": "PASS"
+  },
+  "unchanged_scientific_contract": {
+    "public_skelex_revision_and_weights": true,
+    "selected_layers_projection_and_pooling": true,
+    "split_gallery_cache_baseline": true,
+    "selector_recipe": true,
+    "arms_and_equal_rank_aggregation": true,
+    "prediction_freeze_and_evaluator": true,
+    "image_label_only_training": true
+  },
+  "prelaunch_state": {
+    "real_input_opened_after_version2_error": false,
+    "prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "successor_launched": false
+  }
+}

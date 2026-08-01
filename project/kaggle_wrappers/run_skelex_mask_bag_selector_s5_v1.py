@@ -22,6 +22,7 @@ CHECKOUT_COMMIT = "UNBOUND"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "61927cc84ef2340768ea37f9686bf8036c81db30"
 CORRECTION_SOURCE_COMMIT = "664578758225501dc163a6fc35d9ecdb9a1947d7"
+TEST_CONTRACT_CORRECTION_SOURCE_COMMIT = "f9e56111ddf98b474c3ea1532c2da77b68e90232"
 PROTOCOL_RELATIVE = Path("artifacts/research_protocols/skelex_mask_bag_selector_s5_v1.json")
 PROTOCOL_SHA256 = "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280"
 NUMERIC_ADDENDUM_RELATIVE = Path(
@@ -29,6 +30,12 @@ NUMERIC_ADDENDUM_RELATIVE = Path(
     "skelex_mask_bag_selector_s5_v1_numeric_correction_addendum.json"
 )
 NUMERIC_ADDENDUM_SHA256 = "ded254883a13da9ec0b961970ebacbd2b61badd04c644b7b9c64747a6abd2f72"
+TEST_CONTRACT_ADDENDUM_RELATIVE = Path(
+    "artifacts/research_protocols/"
+    "skelex_mask_bag_selector_s5_v1_test_contract_correction_addendum.json"
+)
+TEST_CONTRACT_ADDENDUM_SHA256 = "591858f1e5bfaefad55b9583f3904ae6447bc98986a77d7a52471a49586b74a8"
+VERSION3_ERROR_AUDIT_SHA256 = "1785bc25e2d4c5f539746a0673ecd496db6577ec1a2edf1d5b7d42bb1d771962"
 AUDITOR_RELATIVE = Path("project/audit_skelex_mask_bag_selector_s5_output.py")
 AUDITOR_SHA256 = "dbf84451ae32b5fd819af53c48f3357da0c236defdaa5eda2d1b787640e01049"
 IMPLEMENTATION_SOURCE_OVERRIDES = {
@@ -40,6 +47,10 @@ IMPLEMENTATION_SOURCE_OVERRIDES = {
         "dbf84451ae32b5fd819af53c48f3357da0c236defdaa5eda2d1b787640e01049",
     "tests/test_skelex_mask_bag_descriptor.py":
         "385a4c17eeeaccd55f9a19864b28dd95b6bd41cfaf24eb57c6432755373ee779",
+}
+TEST_CONTRACT_SOURCE_OVERRIDE = {
+    "tests/test_skelex_mask_bag_descriptor.py":
+        "9efb49f903ce9343bcb96cc381e5315c949dd6f2d3e6942169bdc98152e687da",
 }
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 GIT_SPLIT_SHA256 = "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
@@ -105,16 +116,30 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
         ["git", "merge-base", "--is-ancestor", CORRECTION_SOURCE_COMMIT, CHECKOUT_COMMIT],
         cwd=SOURCE,
     )
+    run(
+        [
+            "git",
+            "merge-base",
+            "--is-ancestor",
+            TEST_CONTRACT_CORRECTION_SOURCE_COMMIT,
+            CHECKOUT_COMMIT,
+        ],
+        cwd=SOURCE,
+    )
     protocol_path = SOURCE / PROTOCOL_RELATIVE
     if hash_file(protocol_path) != PROTOCOL_SHA256:
         raise RuntimeError("S5 protocol hash mismatch")
     addendum_path = SOURCE / NUMERIC_ADDENDUM_RELATIVE
     if hash_file(addendum_path) != NUMERIC_ADDENDUM_SHA256:
         raise RuntimeError("S5 numeric correction addendum hash mismatch")
+    test_addendum_path = SOURCE / TEST_CONTRACT_ADDENDUM_RELATIVE
+    if hash_file(test_addendum_path) != TEST_CONTRACT_ADDENDUM_SHA256:
+        raise RuntimeError("S5 test-contract correction addendum hash mismatch")
     if canonical_hash(SOURCE / AUDITOR_RELATIVE) != AUDITOR_SHA256:
         raise RuntimeError("S5 auditor hash mismatch")
     protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
     addendum = json.loads(addendum_path.read_text(encoding="utf-8"))
+    test_addendum = json.loads(test_addendum_path.read_text(encoding="utf-8"))
     if (
         protocol.get("status") != "FROZEN_PRELAUNCH"
         or protocol.get("scientific_source", {}).get("commit") != SOURCE_COMMIT
@@ -146,6 +171,28 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
         ):
             raise RuntimeError(f"S5 numeric correction override mismatch: {relative}")
         verified_hashes[relative] = corrected
+    test_override = test_addendum.get("canonical_lf_source_override", {})
+    if (
+        test_addendum.get("status") != "FROZEN_TEST_ONLY_CORRECTION"
+        or test_addendum.get("experiment_id") != "EXP-20260802-codex-s5-skelex-selector-v1"
+        or test_addendum.get("correction_source_commit")
+        != TEST_CONTRACT_CORRECTION_SOURCE_COMMIT
+        or test_addendum.get("scientific_source_commit") != SOURCE_COMMIT
+        or test_addendum.get("scientific_protocol_sha256") != PROTOCOL_SHA256
+        or test_addendum.get("predecessor_numeric_addendum_sha256")
+        != NUMERIC_ADDENDUM_SHA256
+        or test_addendum.get("predecessor_kernel_version3_error_audit_sha256")
+        != VERSION3_ERROR_AUDIT_SHA256
+        or not isinstance(test_override, dict)
+        or test_override.get("relative_path") not in TEST_CONTRACT_SOURCE_OVERRIDE
+        or test_override.get("previous_sha256")
+        != IMPLEMENTATION_SOURCE_OVERRIDES.get(test_override.get("relative_path"))
+        or test_override.get("corrected_sha256")
+        != TEST_CONTRACT_SOURCE_OVERRIDE.get(test_override.get("relative_path"))
+        or set(TEST_CONTRACT_SOURCE_OVERRIDE) != {test_override.get("relative_path")}
+    ):
+        raise RuntimeError("S5 test-contract correction addendum provenance mismatch")
+    verified_hashes.update(TEST_CONTRACT_SOURCE_OVERRIDE)
     for relative, expected in verified_hashes.items():
         path = SOURCE / relative
         if not path.is_file() or canonical_hash(path) != expected:
@@ -361,8 +408,10 @@ def write_binding(source_hashes: dict[str, str]) -> Path:
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
         "numeric_correction_source_commit": CORRECTION_SOURCE_COMMIT,
+        "test_contract_correction_source_commit": TEST_CONTRACT_CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
         "numeric_correction_addendum_sha256": NUMERIC_ADDENDUM_SHA256,
+        "test_contract_correction_addendum_sha256": TEST_CONTRACT_ADDENDUM_SHA256,
         "bound_wrapper_sha256": canonical_hash(Path(__file__)),
         "independent_auditor_sha256": AUDITOR_SHA256,
         "source_hashes": source_hashes,
@@ -415,6 +464,10 @@ def audit_wrapper_output(
         or binding.get("source_hashes") != source_hashes
         or binding.get("numeric_correction_source_commit") != CORRECTION_SOURCE_COMMIT
         or binding.get("numeric_correction_addendum_sha256") != NUMERIC_ADDENDUM_SHA256
+        or binding.get("test_contract_correction_source_commit")
+        != TEST_CONTRACT_CORRECTION_SOURCE_COMMIT
+        or binding.get("test_contract_correction_addendum_sha256")
+        != TEST_CONTRACT_ADDENDUM_SHA256
         or run_manifest.get("cohort") != {"train": 2981, "validation": 371}
     ):
         raise RuntimeError("S5 frozen output contract mismatch")
@@ -453,8 +506,10 @@ def audit_wrapper_output(
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
         "numeric_correction_source_commit": CORRECTION_SOURCE_COMMIT,
+        "test_contract_correction_source_commit": TEST_CONTRACT_CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
         "numeric_correction_addendum_sha256": NUMERIC_ADDENDUM_SHA256,
+        "test_contract_correction_addendum_sha256": TEST_CONTRACT_ADDENDUM_SHA256,
         "independent_auditor_sha256": AUDITOR_SHA256,
         "source_hashes": source_hashes,
         "t4x2": t4,

@@ -12315,3 +12315,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   không đổi model/runner/auditor/tolerance/protocol. Theo coordination rule,
   chưa sửa/rerun cho tới khi record `LỖI` này được commit và push central.
 
+### S5 version 4 — test-only correction đã freeze, chưa launch (2026-08-02)
+
+- Error record v3 đã được commit/push central ở
+  `5d1cb8e4768aaf712a1014007f0d0235c174e5d2` trước mọi correction. Exact
+  test-only correction sau đó được commit/push ở
+  `f9e56111ddf98b474c3ea1532c2da77b68e90232`: case mass `0.25` nay assert
+  intentional absolute-floor acceptance; các mass `1/17/196` assert four ULP
+  accepted, five ULP rejected. Corrected test canonical-LF SHA-256 là
+  `9efb49f903ce9343bcb96cc381e5315c949dd6f2d3e6942169bdc98152e687da`.
+- Test-contract addendum mới
+  `artifacts/research_protocols/skelex_mask_bag_selector_s5_v1_test_contract_correction_addendum.json`
+  có SHA-256
+  `591858f1e5bfaefad55b9583f3904ae6447bc98986a77d7a52471a49586b74a8`;
+  nó kế thừa immutable numeric addendum `ded25488...`, error audit v3
+  `1785bc25...` và chỉ override một test hash. Local NumPy `2.3.5` reproduction
+  của exact deltas/tolerances pass; `py_compile`, `git diff --check`, wrapper
+  tests `2 passed in 0.06s`.
+- Canonical wrapper được mở rộng fail-closed để verify ancestry và exact hash
+  chain protocol -> numeric addendum -> test-only addendum trước tests/input;
+  model/runner/auditor hash, mass tolerance, descriptor/selector/prediction và
+  scientific protocol không đổi. Canonical wrapper/wrapper-test SHA-256 là
+  `f87b259c7f8491972540a55ba94290b3280a0a6c6e37d688085f024fe7ac8174` /
+  `c29dab0b79649972077a95b70f159468c1084f30f27e9ca7d693e40def410a1b`.
+- Trạng thái `EXP-20260802-codex-s5-skelex-selector-v1` trở lại **ĐANG LÀM** cho
+  đúng một version-4 test-only correction rerun sau push central/prelaunch
+  audit. Chưa launch v4, chưa mở real input, prediction/GT/consumer/test; mọi
+  compute nặng và collaborator output vẫn khóa.
+
