@@ -1,0 +1,48 @@
+{
+  "readiness_id": "rad_dino_mask_bag_count_controlled_self_paced_t1_v1_postfreeze_decision_readiness",
+  "created_utc": "2026-08-01T07:27:55Z",
+  "status": "POSTFREEZE_DECISION_LAYER_FROZEN_WHILE_KERNEL_RUNS",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-count-controlled-t1-v1",
+  "kernel_version": 1,
+  "kaggle_status_queried_in_this_step": false,
+  "protocol_sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+  "scientific_source_commit": "c7f0937d515ded9bbd8928a2236cbe44b7a25f79",
+  "decision_source": {
+    "path": "project/decide_mask_bag_count_controlled_t1.py",
+    "sha256": "617f2da17aa4c4f77113e271879cbd0046647159b0061c14f03a560754e6c981",
+    "test_path": "tests/test_decide_mask_bag_count_controlled_t1.py",
+    "test_sha256": "45901aed4f68154db17a6c33421b61e56a5e31bb48db682ab78b1737327413c1"
+  },
+  "required_inputs": {
+    "independent_output_audit_id": "independent_mask_bag_count_controlled_self_paced_t1_output_v1",
+    "independent_output_audit_status": "PREDICTION_FREEZE_PHYSICALLY_VERIFIED_GT_BLIND_GATE_PASS",
+    "evaluation_audit_exact_sha256_required": true,
+    "all_evaluation_output_hashes_required": true,
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed_family": 20261014
+  },
+  "decision_states": [
+    "FAIL",
+    "MECHANISM_PASS",
+    "OPERATIONAL_PASS"
+  ],
+  "mechanism_pass_keeps_consumer_locked": true,
+  "consumer_authorized_only_after_every_mechanism_operational_oracle_and_safety_check": true,
+  "tests": {
+    "focused_passed": 15,
+    "focused_failed": 0,
+    "focused_seconds": 2.13,
+    "full_repository_passed": 488,
+    "full_repository_failed": 0,
+    "full_repository_seconds": 20.13,
+    "full_repository_wall_seconds": 21.68,
+    "python": "3.9.23",
+    "documented_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

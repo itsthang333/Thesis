@@ -10642,3 +10642,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Prediction freeze chưa được quan sát; validation GT, downstream consumer và
   BTXRD test tiếp tục khóa cho tới terminal output và independent audit.
 
+- **Post-freeze decision layer frozen while version 1 runs:** không Kaggle
+  status query trong bước static này. Decision source
+  `project/decide_mask_bag_count_controlled_t1.py` và test có SHA-256
+  `617f2da17aa4c4f77113e271879cbd0046647159b0061c14f03a560754e6c981` /
+  `45901aed4f68154db17a6c33421b61e56a5e31bb48db682ab78b1737327413c1`.
+  Tool bắt buộc exact independent GT-blind output-audit pass, exact evaluator
+  audit/output hashes, 10,000 complete-group bootstrap replicates và seed
+  `20261014`; nó tái kiểm tra generic mechanism/operational/oracle/safety gates.
+  `MECHANISM_PASS` vẫn khóa consumer; chỉ `OPERATIONAL_PASS` với mọi check true
+  mới authorize consumer.
+- Focused decision/auditor/evaluator tests pass `15/15`; full repository pass
+  `488/488` trong 20.13 giây bằng documented Python-3.9 shim. Readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_postfreeze_decision_readiness.json`
+  có SHA-256
+  `511b2aec036785f3477b3c88b7db04f73a90a444ebc936f984a5ffc85d61cdc1`.
+  Không prediction/output/GT được mở, không consumer được train và test vẫn khóa.
+
