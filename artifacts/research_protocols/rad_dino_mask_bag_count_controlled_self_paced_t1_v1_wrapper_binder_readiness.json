@@ -1,0 +1,65 @@
+{
+  "readiness_id": "rad_dino_mask_bag_count_controlled_self_paced_t1_v1_wrapper_binder_readiness",
+  "created_utc": "2026-08-01T07:19:43Z",
+  "status": "STATIC_WRAPPER_BINDER_READY_NOT_BOUND_NOT_LAUNCHED",
+  "experiment_id": "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+  "central_head_before_readiness_commit": "f10965ea05d07d789305444ec5ddbe148e0a8b82",
+  "scientific_source_commit": "c7f0937d515ded9bbd8928a2236cbe44b7a25f79",
+  "protocol_sha256": "6a4379e896f3ea3862dce1edcdea20af09a90ec8f9cbbd6eb25bf8eca1306a7c",
+  "independent_auditor_sha256": "31ab993baa2f641355aa024212360f157a6ebab9f8839a02ffd95d024490ead6",
+  "wrapper_template": {
+    "path": "project/kaggle_wrappers/run_mask_bag_count_controlled_t1_v1.py",
+    "canonical_lf_sha256": "6bbe6a5dda3bb35db88e27b2b1c117b7c8c199ad7a9b004450727ddec9f2c4a0",
+    "kernel_version": 0,
+    "launch_binding_ready": false,
+    "checkout_commit": "UNBOUND",
+    "exact_t4x2_required": true,
+    "real_convolution_on_each_gpu_required": true,
+    "split_crlf_reconstruction_required": true,
+    "baseline_transport_hashes_required": true,
+    "selector_cache_physical_gate_required": true,
+    "focused_and_full_checkout_tests_required": true,
+    "output_physical_audit_before_wrapper_audit": true,
+    "validation_gt_imported": false,
+    "test_opened": false
+  },
+  "one_time_binder": {
+    "path": "project/bind_mask_bag_count_controlled_t1_wrapper.py",
+    "sha256": "e8c842ee888b1a780701fa7cdb3d6af6dbdbc0224ea705b7bb51925f65f5df98",
+    "test_path": "tests/test_bind_mask_bag_count_controlled_t1_wrapper.py",
+    "test_sha256": "0615069fa17c0a0aca004bf5e6a48fcf21fc916adf26d3b49740f2d7b261367b",
+    "exact_replacements": [
+      "kernel version",
+      "launch binding ready flag",
+      "execution checkout commit"
+    ],
+    "inverse_reconstruction_required": true,
+    "protocol_and_all_source_hashes_checked_at_checkout": true,
+    "scientific_source_ancestry_required": true,
+    "refuses_existing_bound_output": true
+  },
+  "tests": {
+    "focused_passed": 20,
+    "focused_failed": 0,
+    "focused_seconds": 4.68,
+    "full_repository_passed": 484,
+    "full_repository_failed": 0,
+    "full_repository_seconds": 18.37,
+    "full_repository_wall_seconds": 19.99,
+    "python": "3.9.23",
+    "documented_zip_strict_compatibility_shim": true,
+    "py_compile_pass": true,
+    "git_diff_check_pass": true
+  },
+  "static_test_boundary": {
+    "first_wrapper_assertion": "incorrectly searched the entire source for an evaluator path that is intentionally present only in the post-freeze source-hash exclusion set",
+    "correction": "assertion now inspects import lines; wrapper code, protocol and scientific controls are unchanged",
+    "scientific_execution_occurred": false
+  },
+  "binding_created": false,
+  "kernel_package_created": false,
+  "kaggle_kernel_pushed": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

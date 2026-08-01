@@ -10577,3 +10577,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa authorize Kaggle launch. Không real cache execution/fit/target/prediction,
   không validation GT, không downstream consumer và không BTXRD test access.
 
+- **Wrapper/binder static readiness:** fail-closed Kaggle wrapper template
+  `project/kaggle_wrappers/run_mask_bag_count_controlled_t1_v1.py` có
+  canonical-LF SHA-256
+  `6bbe6a5dda3bb35db88e27b2b1c117b7c8c199ad7a9b004450727ddec9f2c4a0`.
+  Nó còn khóa `KERNEL_VERSION=0`, `LAUNCH_BINDING_READY=False` và checkout
+  `UNBOUND`; yêu cầu exact T4x2 cùng real convolution trên từng GPU trước
+  split/baseline/cache/tests/runner, tái tạo exact CRLF split, kiểm tra transport
+  không GT/test, chạy focused/full checkout tests, và chỉ viết wrapper audit sau
+  khi đủ năm OOF inventories, target freeze, residual evidence, 371 score
+  payloads và 371 maps đã được kiểm tra vật lý.
+- One-time binder `project/bind_mask_bag_count_controlled_t1_wrapper.py` SHA-256
+  `e8c842ee888b1a780701fa7cdb3d6af6dbdbc0224ea705b7bb51925f65f5df98`
+  chỉ thay ba trường version/readiness/checkout, bắt buộc inverse-reconstruct exact
+  template, kiểm tra protocol và toàn bộ source hashes ở checkout, source
+  ancestry và từ chối output đã tồn tại. Binder/static wrapper test SHA-256 là
+  `0615069fa17c0a0aca004bf5e6a48fcf21fc916adf26d3b49740f2d7b261367b`.
+  Focused closure pass `20/20` trong 4.68 giây; full regression pass `484/484`
+  trong 18.37 giây bằng documented Python-3.9 shim.
+- Một static assertion đầu tiên sai phạm vi vì tìm evaluator path trên toàn file,
+  dù path đó chỉ nằm trong post-freeze hash-exclusion set và không được import.
+  Assertion đã được giới hạn về import lines; wrapper/scientific source/protocol
+  không đổi. Wrapper/binder readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_count_controlled_self_paced_t1_v1_wrapper_binder_readiness.json`
+  có SHA-256
+  `f35e8fab59799f713dee550bda1890b35e6d42bf5079b15d967db1b7a5d36523`.
+  Chưa có binding/package/Kaggle push; mọi GT/consumer/test lock giữ nguyên.
+
