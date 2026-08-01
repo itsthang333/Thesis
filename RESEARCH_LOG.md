@@ -12065,4 +12065,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   evaluator/comparator và decision gate đều không đổi. Chưa launch v2, chưa mở
   real input/prediction/GT/consumer/test ở bước correction này; phải push mục
   **ĐANG LÀM** này lên branch điều phối trước Kaggle launch.
+- Sau khi correction claim/audit đã được push tại commit
+  `e73d2cdb3c3f41c5cdc2747111e13180f94ac9bc`, Kaggle version 2 được launch lúc
+  `2026-08-02T01:26+07:00` bằng Save & Run All trên chính private kernel do CLI
+  credential cục bộ không còn hợp lệ. Trước Save, editor đã được kiểm tra trực
+  quan có đúng `KERNEL_VERSION = 2`, `LAUNCH_BINDING_READY = True`, checkout
+  `ad441e1de1cd4df7fddebb2ff4a9dda03f3e9998` và
+  `EXPECTED_TRANSFORMERS_VERSION = "4.50.2"`. Kaggle xác nhận
+  `Version #2 with GPU T4 x2` và `Running: just now`.
+- Đây là một launch duy nhất của corrected wrapper SHA
+  `dbd8cd8cfb613a19ca1d789900f3a1d9f33c1caa8a6b6212e3dee37b3cdbeb04`;
+  không tạo competing job, không tạo monitor và không status-poll thêm ở nhịp
+  launch. Experiment vẫn **ĐANG LÀM**; chưa có output/prediction freeze/audit,
+  chưa đọc validation GT, chưa train consumer và BTXRD test tiếp tục khóa.
 
