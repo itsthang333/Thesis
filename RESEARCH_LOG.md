@@ -8460,3 +8460,45 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   run and report actual Dice against `0.2887294867`. The full contract is in
   `RICH_GALLERY_BAS_B22_FOREGROUND_CONTROL_DESIGN.md`.
 
+### EXP-20260802-codex-rich-gallery-bas-b22-final-failure-v1
+
+- **Mechanics:** B2.2 repaired the B2.1 empty-map optimum, reaching validation
+  image AUROC `0.735294` and foreground CE `0.463459`. It nevertheless failed
+  the frozen mechanics contract because full-image CE worsened to `0.985558`.
+  The generated tumor maps are broad anatomy maps: median activation mean
+  `0.496241`, effective support `0.576708`, and 35.28% of cells exceed 0.90.
+- **Exact formula:** for fixed class map `C`, B2.2 has
+  `dL/dM_i=(1.2-1.5*C_i/mean(C))/N`; its box optimum activates every cell with
+  above-average class evidence ratio `>0.8`. The written foreground reference
+  `0.5` is an additive constant with no gradient effect. The tumor channel also
+  receives no dense-negative supervision on train-normal images.
+- **Area-proxy proof:** within each tumor gallery, BAS score versus candidate
+  area has mean/median Spearman `0.933174/0.950055`; 81.52% of images exceed
+  `0.90`. The mechanism learned common anatomy/extent rather than candidate
+  tumor identity.
+- **Frozen actual endpoint:** the primary G1+upstream+B2.2 fusion reaches Dice
+  `0.19172607`, delta `-0.09700342` with paired CI95
+  `[-0.128452,-0.047141]`. Subgroup deltas are
+  `-0.129408/-0.117096/+0.152591`: B2.2 helps large lesions by expansion but
+  catastrophically magnifies small/medium over-extent. It recovers three old
+  misses and creates 27 new misses.
+- **No metadata rescue:** a GT-only per-image oracle switch would reach
+  `0.322338`, proving limited complementarity. A deterministic group-separated
+  ridge using every current label-safe area/border/classifier/activation/source
+  observable reaches only `0.287786`, below the immutable `0.288729` baseline.
+  The B2.2 benefit cannot be safely routed with existing metadata.
+- **Bottleneck update:** gallery truncation remains negligible (`0.000396`).
+  B2.2 raises selector regret from `0.239569` to `0.336572`, worsening both
+  within-source and cross-source terms. The missing observable is
+  candidate-conditioned tumor identity plus signed extent: tumor evidence
+  inside the mask, normal/tumor contrast at its boundary, and direct tumor-
+  channel negatives on normal candidates.
+- **Decision:** retire all BAS variants and sweeps. Preserve G1+upstream fixed
+  fusion at Dice `0.2887294867`. The successor is a bounded candidate
+  inside-versus-local-ring residual with train-normal candidate negatives,
+  tumor-bag MIL, no global/coordinate bypass, and zero initialization on the
+  immutable baseline. See
+  `RICH_GALLERY_BAS_B22_FOREGROUND_CONTROL_FAILURE_DOSSIER.md`,
+  `RICH_GALLERY_BAS_B22_SPATIAL_FAILURE_DOSSIER.md`, and
+  `RICH_GALLERY_CANDIDATE_CONDITIONED_CONTRAST_DESIGN.md`. Test remains locked.
+

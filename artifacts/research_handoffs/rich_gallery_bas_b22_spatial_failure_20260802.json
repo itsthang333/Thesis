@@ -1,0 +1,204 @@
+{
+  "actual_metrics": {
+    "bas_only": {
+      "dice": 0.061326354817070376,
+      "iou": 0.03399472906791062,
+      "large": 0.263200026318288,
+      "medium": 0.081065938561707,
+      "misses": 8,
+      "small": 0.007550013150732555
+    },
+    "baseline": {
+      "dice": 0.28872948670665205,
+      "iou": 0.2168391812852014,
+      "large": 0.38687353265476676,
+      "medium": 0.4352293348209193,
+      "misses": 49,
+      "small": 0.15772329637374455
+    },
+    "g1_bas": {
+      "dice": 0.10784693111272237,
+      "iou": 0.06888800763522422,
+      "large": 0.3601800899308599,
+      "medium": 0.17016761911693432,
+      "misses": 10,
+      "small": 0.011792820527299634
+    },
+    "primary": {
+      "ci95_high": -0.04714127743706348,
+      "ci95_low": -0.12845195940974669,
+      "delta": -0.09700342096376541,
+      "dice": 0.19172606574288664,
+      "iou": 0.13781160880929147,
+      "large": 0.5394642389686597,
+      "large_delta": 0.15259070631389293,
+      "medium": 0.31813297772900423,
+      "medium_delta": -0.11709635709191507,
+      "misses": 25,
+      "small": 0.02831558934858476,
+      "small_delta": -0.1294077070251598
+    },
+    "upstream_bas": {
+      "dice": 0.17984430586544156,
+      "iou": 0.12462765634236886,
+      "large": 0.5486308038730151,
+      "medium": 0.29747976567459844,
+      "misses": 38,
+      "small": 0.019121858308041372
+    }
+  },
+  "baseline_or_b22_oracle_switch": {
+    "delta": 0.03360895702617017,
+    "dice": 0.3223384437328222,
+    "promotable": false,
+    "validation_gt_oracle_only": true
+  },
+  "compact_per_image_sha256": "b09f5bf97bc9cc8d8612b71710c6c14d35cb6445796c14c8a4582b7fab170eb8",
+  "decision": {
+    "bas_b22_retired": true,
+    "baseline_preserved": true,
+    "next_bottleneck": "candidate_conditioned_tumor_identity_and_signed_extent",
+    "no_sweep": true,
+    "observable_router_supported": false
+  },
+  "dossier_sha256": "3aeddcff9f57a76f41d9771c51e9338c77a54d71e5e2fa355c9dcc8cdef7b184",
+  "input_hashes": {
+    "b22_activation_manifest_sha256": "2b312151b722f9945b7a083092184670d4963a5d62bbc8fe819b87e1f8aeee4c",
+    "b22_probe_summary_sha256": "13b5f2123414cd631115bd2b879c90bdbe361ea50b38c0e0f27dbb70620a1c5d",
+    "b22_validation_predictions_sha256": "9a2cbf32709bccce0976ce7f3a3b292fa6b0d8725c7724aa8e7636752ad4afec",
+    "evaluation_audit_sha256": "42dbc316bb502926094b8b6478b691ca945b0dee3ce636af46fc1345534688d3",
+    "stage_b_per_image_sha256": "5f7bcd13bf8b201bbcbdf3327e87904a0a0a7527036c89215a9654ecda82922d",
+    "stage_b_summary_sha256": "d8bbe412cbe0688a10a1adb211c395b6117883c31d16c91e6596cde9a8a6629b"
+  },
+  "losses": 84,
+  "negative_dice_mass": -24.032677550148136,
+  "observable_gate_diagnostic": {
+    "chosen_primary_images": 55,
+    "decision_threshold": 0.0,
+    "delta": -0.000943818865484447,
+    "dice": 0.2877856678411676,
+    "features": [
+      "log_baseline_area",
+      "log_primary_area",
+      "log_area_expansion",
+      "baseline_border_fraction",
+      "primary_border_fraction",
+      "tumor_probability",
+      "activation_mean",
+      "activation_std",
+      "bas_area_spearman",
+      "log_candidate_count",
+      "baseline_source_one_hot",
+      "primary_source_one_hot"
+    ],
+    "fold_counts": [
+      34,
+      41,
+      23,
+      45,
+      41
+    ],
+    "non_tie_sign_accuracy": 0.5985401459854015,
+    "prediction_delta_spearman": 0.1824822623909873,
+    "promotable": false,
+    "ridge_lambda": 1.0,
+    "subgroups": {
+      "large": {
+        "baseline_dice": 0.38687353265476676,
+        "chosen_primary": 7,
+        "delta": 0.08840650148670592,
+        "dice": 0.4752800341414727,
+        "n": 18
+      },
+      "medium": {
+        "baseline_dice": 0.4352293348209193,
+        "chosen_primary": 20,
+        "delta": -0.008267853889381782,
+        "dice": 0.4269614809315375,
+        "n": 72
+      },
+      "small": {
+        "baseline_dice": 0.15772329637374455,
+        "chosen_primary": 28,
+        "delta": -0.012443555510365412,
+        "dice": 0.14527974086337914,
+        "n": 94
+      }
+    },
+    "validation_gt_trained_diagnostic_only": true
+  },
+  "positive_dice_mass": 6.184048092815307,
+  "selector_regret": {
+    "baseline": 0.23956884547311869,
+    "baseline_cross_source": 0.07079633390578521,
+    "baseline_within_source": 0.16837620529569058,
+    "candidate_truncation": 0.0003963062716429394,
+    "primary": 0.3365722664368841,
+    "primary_cross_source": 0.10542223032053012,
+    "primary_within_source": 0.23075372984471104
+  },
+  "stage": "rich_gallery_bas_b22_spatial_failure_analysis_v1",
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "ties": 47,
+  "transitions": {
+    "0->0": 132,
+    "0->1": 3,
+    "1->0": 27,
+    "1->1": 22
+  },
+  "univariate_observable_diagnostics": {
+    "activation_mean": {
+      "direction_free_auc": 0.6219213596428057,
+      "spearman_with_delta": 0.13509973745934692,
+      "win_auc": 0.6219213596428057
+    },
+    "activation_std": {
+      "direction_free_auc": 0.6150079216477027,
+      "spearman_with_delta": -0.1561733150272382,
+      "win_auc": 0.38499207835229726
+    },
+    "area_expansion": {
+      "direction_free_auc": 0.6822699121417255,
+      "spearman_with_delta": -0.09906566548825756,
+      "win_auc": 0.6822699121417255
+    },
+    "bas_area_spearman": {
+      "direction_free_auc": 0.5873541696672908,
+      "spearman_with_delta": 0.07868984204854074,
+      "win_auc": 0.5873541696672908
+    },
+    "baseline_area_ratio": {
+      "direction_free_auc": 0.6520236209131499,
+      "spearman_with_delta": 0.0016968839049407805,
+      "win_auc": 0.3479763790868501
+    },
+    "baseline_border_fraction": {
+      "direction_free_auc": 0.5283739017715685,
+      "spearman_with_delta": 0.09736827387823735,
+      "win_auc": 0.4716260982284315
+    },
+    "candidate_count": {
+      "direction_free_auc": 0.5653896010370157,
+      "spearman_with_delta": 0.2678823440018678,
+      "win_auc": 0.5653896010370157
+    },
+    "primary_area_ratio": {
+      "direction_free_auc": 0.6173124009794038,
+      "spearman_with_delta": -0.08075488950840977,
+      "win_auc": 0.6173124009794038
+    },
+    "primary_border_fraction": {
+      "direction_free_auc": 0.5447213020308224,
+      "spearman_with_delta": -0.06301938244178802,
+      "win_auc": 0.5447213020308224
+    },
+    "tumor_probability": {
+      "direction_free_auc": 0.5951317874117816,
+      "spearman_with_delta": 0.12098294404213078,
+      "win_auc": 0.5951317874117816
+    }
+  },
+  "validation_gt_read_only_after_prediction_freeze": true,
+  "wins": 53
+}
