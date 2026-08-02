@@ -14375,4 +14375,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Không status-poll sau launch và không tạo monitor. Version 2 không sinh
   prediction/inference; corrected audit PASS mới cho phép dynamic readiness
   freeze. Validation GT, consumer và BTXRD test tiếp tục khóa.
+- Bounded status check duy nhất sau launch trả `KernelWorkerStatus.RUNNING`.
+  Không poll lần hai, không download partial output/log và không tạo monitor;
+  claim S8 tiếp tục `ĐANG LÀM` chờ nhịp terminal sau.
 
