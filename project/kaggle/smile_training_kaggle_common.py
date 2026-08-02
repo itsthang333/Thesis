@@ -103,7 +103,9 @@ def run_arm(arm: str) -> None:
         "--device", "cuda",
     ]
     print(json.dumps({"arm": arm, "command": command}), flush=True)
-    subprocess.run(command, cwd=source_root, check=True, env=os.environ.copy())
+    child_env = os.environ.copy()
+    child_env["PYTHONPATH"] = str(source_root) + os.pathsep + child_env.get("PYTHONPATH", "")
+    subprocess.run(command, cwd=source_root, check=True, env=child_env)
     summary = json.loads((output / "training_summary.json").read_text(encoding="utf-8"))
     if (
         summary.get("arm") != arm
