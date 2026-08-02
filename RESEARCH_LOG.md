@@ -8743,8 +8743,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   verifies the freeze and reports actual Dice/IoU, subgroups `94/72/18`, misses,
   extent, source choices and supply/within-source/cross-source regret.  Focused
   code, exactness, tamper and full-243-candidate backward tests pass `15/15`.
-- Immutable protocol SHA-256 is
-  `37826b209afd8c897b07d91f20bcbf133cf06be3d175b206dad14dc19a36488f`.
+- Immutable Git-archive protocol SHA-256 is
+  `20e6ff644b12f0406deedfd83026111c3a3808ce7f70b90c1675c4a0b772c9eb`.
+  The initial worktree-byte hash was replaced before GPU launch because Git's
+  line-ending normalization changes transport bytes; scientific fields are
+  unchanged.
   Test remains locked; no efficacy claim is made before the matched Kaggle
   control/full result and independent Stage-A/Stage-B verification.
 
