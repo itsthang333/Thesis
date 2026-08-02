@@ -13844,3 +13844,105 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer và BTXRD test vẫn khóa. Chỉ sau commit/push note+dossier này mới được
   nghiên cứu, đăng ký và launch successor không trùng.
 
+### Deep-search sau S7 và lựa chọn decoder-reconstruction successor (2026-08-02)
+
+- Sau failure gate `EXP-20260802-codex-s7-global-local-instance-v1`, đã fetch/
+  đọc lại central `8c02ca0...104` và toàn bộ collaborator log tại
+  `d18e811b...864`; không có claim SKELEX-reconstruction đang `ĐANG LÀM`.
+  Collaborator cross-view co-witness đã terminal/retired và scale-conditional
+  chỉ là feasibility; không truy cập Kaggle/output của collaborator. S8 không
+  chạy lại G1/G2/BAS/cross-view/area gate của họ.
+- S7 chứng minh mọi target chỉ là hàm đơn điệu của current logit không thể sinh
+  candidate identity mới. Deep-search vì thế ưu tiên nguồn spatial evidence
+  ngoài selector. SKELEX chính thức là ViT-MAE Large pretrain self-supervised
+  trên `1,296,540` MSK radiograph và báo cáo bone-tumor AUROC `0.953`; quan trọng
+  hơn, decoder tạo unsupervised anomaly map bằng `10` random masks, average
+  masked-pixel squared reconstruction error và không fine-tune task. Paper còn
+  mô tả khi tumor bị mask hoàn toàn, model tái tạo bone trông bình thường. Nguồn:
+  https://www.nature.com/articles/s41746-026-02826-9 và
+  https://arxiv.org/abs/2602.03076 . Exact public revision
+  https://huggingface.co/skhoha/SKELEX/tree/368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e
+  có `model.safetensors` SHA-256
+  `81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8`;
+  license `CC-BY-NC-ND-4.0`, không redistribute/modify weights.
+- Đây không phải lặp MAE-base normality probe hay S5. Probe cũ dùng ImageNet
+  `facebook/vit-mae-base`, full-image pixel map và đã fail small; S5 dùng frozen
+  SKELEX **encoder descriptors** rồi learned MIL residual/equal-rank, không gọi
+  decoder. S8 dùng exact domain-specific **decoder reconstruction error** và
+  deterministic spatial-null abstention, không fit selector/pseudo-target. Nó
+  trực tiếp giải quyết S7 root cause: signal không phụ thuộc current argmax và
+  có baseline-preserving restraint. COIN (https://arxiv.org/abs/2404.12832)
+  hỗ trợ nguyên lý counterfactual reconstruction cho medical WSSS, nhưng S8
+  không train GAN/inpainter và chỉ chuyển nguyên lý anomaly-by-reconstruction.
+- Candidate score dùng signed `inside mean error - radius-2 local-ring mean
+  error`; do đó tight small candidate bị phạt nếu chứa nhiều normal anatomy,
+  còn large candidate chỉ được mở rộng khi phần mở rộng vẫn có reconstruction
+  anomaly. Đây là một shared scale-free rule, không GT-size router, không
+  selected-area heuristic. Spatial randomization giữ nguyên error histogram,
+  candidate/area/base score nhưng phá alignment, cho phép kiểm tra signal có
+  thật sự nằm đúng vị trí thay vì chỉ là area/anatomy proxy như BAS.
+
+### EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1
+
+- **Owner/status/time:** Codex central workstream; **ĐANG LÀM**; đăng ký
+  `2026-08-02T16:57:59+07:00` trên base
+  `8c02ca00dd6e94dbee3d9ddbac6b3dddd5704104`. Exact registration commit được
+  ghi sau push. Không real cache/image/SKELEX inference/prediction/Kaggle trước
+  khi claim visible trên `origin/research-wsss-improvement`.
+- **Kế thừa và khác biệt:** kế thừa terminal S7 audit/failure dossier
+  `b6bd5bb9...ebfef / 24ea8338...ef9b5`, accepted Geometry-v3 same-gallery
+  baseline, exact selector cache và SKELEX public weight proven transportable ở
+  S5. Không kế thừa S7 current-argmax target, S5 learned residual/equal-rank như
+  kỹ thuật tốt hơn, hay bất kỳ BAS/normal-prototype/local-affinity/graph/
+  subtype/cross-view mechanism đã reject. Scientific delta duy nhất là frozen
+  SKELEX decoder reconstruction evidence + spatial-null selective rerank trên
+  **same immutable candidates**; không regenerate proposal.
+- **Exact input/provenance:** split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  cache freeze `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`,
+  manifest `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`;
+  baseline checkpoint
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069`,
+  baseline freeze
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`;
+  SKELEX config/preprocessor/weight SHA-256
+  `b48411f4...c6f7 / a250969c...6cea / 81cd6e9c...69ef8`. Immutable oracle
+  vẫn `0.40907553/0.22274949/0.59414708/0.64182537`; evaluator-only baseline
+  per-image `a26143d0...605f` không phải producer input.
+- **Frozen intended algorithm trước implementation:** SKELEX 224px, public
+  `mask_ratio=0.75`, normalized-pixel-loss disabled, đúng `10` deterministic
+  seed-42 masks cho mỗi original và horizontal flip. Chỉ squared error trên
+  masked patches được tích lũy; mỗi patch phải có positive mask count. Candidate
+  và radius-2 ring được area-project chính xác lên `14x14`, nhân square-content
+  occupancy; ring zero-mass fail-closed. Mỗi candidate lấy mean signed
+  inside-minus-ring contrast qua `20` maps và conservative LCB
+  `mean - 1.96*SE`. Tie-aware within-bag rank fusion cố định
+  `0.75*Geometry-v3-rank + 0.25*reconstruction-LCB-rank`.
+- **Baseline-preserving randomization gate:** combined fused winner chỉ thay
+  accepted winner khi family của nó cũng là winning family ở cả original-only
+  và aligned-flip-only reconstruction branches, và max fused improvement đạt
+  exact permutation p-value `<=0.05` so với `255` seed-`20261203` permutations
+  độc lập của error values trong các content-valid patches. Null giữ error
+  histogram, candidate masks/areas/families và base rank nhưng phá spatial
+  alignment; statistic lấy max trên toàn bag để hiệu chỉnh multiplicity. Nếu
+  bất kỳ gate nào fail, output dùng accepted winner byte-identical. Không
+  threshold/weight/mask-count/seed/extent sweep hoặc validation-derived routing.
+- **Compute/output:** static/synthetic locally; mọi BTXRD image inference chỉ
+  private Kaggle T4x2/P100. Hai GPU chia `186/185` validation rows và phải chạy
+  real CUDA guard. Freeze trước GT: exact 20-mask bank/provenance, original/
+  flip patch-error payload, every candidate contrast/LCB/null p-value/family,
+  full baseline/S8 score vectors, `742` maps và pair freeze. Independent
+  producer-free auditor phải tái lập SKELEX input/noise/masked-error arithmetic,
+  candidate projection, 255-null selector, baseline fallback, bag probability
+  và physical maps trước evaluator.
+- **Gates:** mechanics require nonconstant reconstruction, exact original/flip/
+  null reproducibility, no baseline change when gate fails, overall+small Dice
+  strictly improve, medium/large do not regress and complete misses do not
+  increase. Operational pass remains simultaneous Dice
+  `0.34024039/0.17895493/0.51244178/0.49370336`, overall paired CI95 lower
+  `>0`, no subgroup regression/miss increase. Chỉ operational pass cho phép
+  consumer. Prediction phải freeze vật lý trước validation segmentation GT;
+  training supervision (nếu có; S8 frozen model không fit) không vượt image
+  labels; BTXRD test luôn khóa. Fail/error bắt buộc freeze + quantitative
+  failure analysis trước successor, không post-hoc rescue.
+
