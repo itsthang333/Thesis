@@ -128,19 +128,28 @@ Run exactly two canonical passes in two equal-capacity arms:
 - **full:** true heuristic different-view partner;
 - **control:** different-group partner matched on anatomy, tumor type and view.
 
-Both arms freeze all validation candidate residuals and final 371 binary masks
-before polygons.  Stage B always reports actual Dice/IoU, 94/72/18 subgroups,
-misses, source regret, within-source regret and selected/GT extent.
+Both arms freeze all validation candidate residuals and every candidate choice
+before polygons.  To avoid an unnecessarily strict single residual scale, the
+prediction-first stage predeclares multipliers `0.25/0.5/1.0/2.0` for both
+arms.  Stage B reports every variant and may select one *global* development
+multiplier; this is explicitly exploratory validation tuning, never a
+confirmatory test estimate.  No per-image, subgroup-specific or GT-area
+routing is allowed.  Stage B always reports actual Dice/IoU, 94/72/18
+subgroups, misses, source regret, within-source regret and selected/GT extent.
 
-The full arm is eligible for a longer run only if all hold:
+The primary development decision is deliberately not an AND gate over proxy
+metrics.  A longer run is justified when a pre-frozen full-arm variant beats
+both `0.2887294867` and its multiplier-matched control in actual Dice.  The
+following remain diagnostics and safeguards rather than automatic vetoes:
 
-1. actual Dice exceeds both `0.2887294867` and the matched control;
-2. small and medium Dice each regress by no more than `0.01`;
-3. within-selected-source regret decreases, not merely complete misses;
-4. full-control same-group co-witness margin is positive while residual-area
-   correlation and source concentration remain below their predeclared bounds;
-5. zero-residual baseline reproduction, exact group/split hashes,
-   prediction-before-GT and no-test audits pass.
+1. subgroup Dice and any small/medium regression;
+2. within-selected-source regret versus complete-miss changes;
+3. full-control same-group co-witness margin, residual-area correlation and
+   source concentration.
+
+Only the academic validity checks remain hard: zero-residual baseline
+reproduction, exact group/split hashes, prediction-before-GT, no spatial GT in
+training/selection and no test access.
 
 If full equals control, or only paired validation images improve, group
 supervision did not produce a generalizable tumor representation and this
@@ -149,8 +158,16 @@ sweeps.
 
 ## Provenance of the feasibility decision
 
-- Canonical split SHA-256:
+- Rich-gallery byte-exact split SHA-256:
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`.
+- Later canonical split SHA-256:
   `7b16771a634e423d2d4ce7d5a835e6ea5ff6d1a422f124aab8019ed53512529c`.
+- The semantic-bridge audit compares all 3,746 IDs and 32 shared scientific
+  fields exactly.  Only the volatile dataset-table hash differs and the later
+  file adds `dataset_table_semantic_sha256`; audit SHA-256:
+  `c711116aeafae2d76fe0f4c9e25efe16216526327357c7fdba47ac96188fadc9`.
+- Train-only pair manifest SHA-256:
+  `0950ed5063e932e3988b97fff590945ecaf37d27fbce84a50ba216e2045ead8a`.
 - G1 diagnostic freeze SHA-256:
   `c4e80a0c9bd8a1d4e5ef6204d23123d2d4f7b4deabb4c4b38aa4578b8b899e1c`.
 - Cross-view feasibility JSON SHA-256:

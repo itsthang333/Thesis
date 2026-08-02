@@ -8706,3 +8706,45 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   and `6d3f471916d77ca1fd58fa3356fd62a268a36f7c5bd4d142d2a376022c243e14`.
   Test remains locked.
 
+### EXP-20260802-codex-rich-gallery-cross-view-cowitness-pair-v1 (PRELAUNCH)
+
+- The next bounded experiment improves the immutable best selector directly,
+  rather than replacing it: the deployed score is the exact G1+upstream fixed
+  percentile-rank fusion (`0.2887294867` Dice) plus a zero-initialized learned
+  residual.  A zero residual therefore reproduces the baseline exactly and a
+  failed experiment cannot silently redefine the comparator.
+- The only new supervision is a cross-view co-witness relation available in
+  training image labels/metadata.  The full arm treats a same-heuristic-group,
+  different-view tumor image as a positive witness and a matched
+  different-group image as the negative; the capacity-matched control uses two
+  matched different-group images.  Both arms use the same `384` rows, candidate
+  gallery, RAD-DINO descriptors, architecture, steps and seed.  Because BTXRD
+  has no published patient/case ID, improvement must also exceed the control to
+  support a cross-view causal interpretation.
+- The historical rich-gallery split SHA `85511ee1...` and the later canonical
+  split SHA `7b16771a...` have identical `3,746` IDs, assignments and all 32
+  shared scientific fields; only the byte-level dataset-table provenance field
+  differs.  The semantic bridge audit SHA is `c711116a...`.  This experiment
+  binds to `85511ee1...` because the frozen G1/gallery artifacts bind to it.
+- The pair manifest contains `384` rows from `443` eligible multi-view train
+  groups and SHA `0950ed50...`.  The selector scores the full candidate bag
+  (maximum `243`), because retrospective oracle-rank analysis showed that a
+  small top-K would exclude useful candidates, especially for small lesions.
+- Development policy is deliberately less restrictive while preserving
+  academic validity.  Actual binary-mask Dice is the endpoint and is always
+  evaluated; AUROC/F1/border/consistency are diagnostics, not vetoes.  Four
+  global residual multipliers `[0.25, 0.5, 1.0, 2.0]` are frozen before spatial
+  GT, and exploratory validation may select one shared multiplier.  Per-image
+  or subgroup GT routing, spatial-GT training, prompts and test access remain
+  forbidden.  This makes the selection exploratory rather than confirmatory,
+  but does not make it academically invalid.
+- Stage A freezes `371` native validation selections and all score payloads for
+  baseline plus four control and four full variants before polygons.  Stage B
+  verifies the freeze and reports actual Dice/IoU, subgroups `94/72/18`, misses,
+  extent, source choices and supply/within-source/cross-source regret.  Focused
+  code, exactness, tamper and full-243-candidate backward tests pass `15/15`.
+- Immutable protocol SHA-256 is
+  `37826b209afd8c897b07d91f20bcbf133cf06be3d175b206dad14dc19a36488f`.
+  Test remains locked; no efficacy claim is made before the matched Kaggle
+  control/full result and independent Stage-A/Stage-B verification.
+

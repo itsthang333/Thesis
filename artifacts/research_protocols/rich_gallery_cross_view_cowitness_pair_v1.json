@@ -1,0 +1,89 @@
+{
+  "academic_status": "exploratory_validation_mechanism_diagnostic",
+  "arms": {
+    "control": "control1_positive_vs_control2_negative",
+    "full": "same_heuristic_group_different_view_positive_vs_control1_negative"
+  },
+  "baseline": {
+    "dice": 0.28872948670665205,
+    "iou": 0.2168391812852014,
+    "large_dice": 0.38687353265476676,
+    "medium_dice": 0.4352293348209193,
+    "selector": "0.5_percentile_rank_g1_plus_0.5_percentile_rank_upstream",
+    "small_dice": 0.15772329637374455
+  },
+  "candidate_gallery": {
+    "maximum_candidates": 243,
+    "train_candidate_manifest_sha256": "e260be427d3a35d1b6305f17cc8e2e3ed53eb92641a9f19e6cfa6c8b10f8a436",
+    "train_pseudo_manifest_sha256": "649ee4232bbcca930c099e888708fa6894a34229ce08e1b80a17446c745a1f13",
+    "val_candidate_manifest_sha256": "30e734e223839ee2ed7b445c71b3731a39f0549ee88e2ba77f7bf722d8d9943d",
+    "val_pseudo_manifest_sha256": "450c0f9cf7f7114da98df9002a54f3620ae952026bcf4113bbd47797f66e1a7c"
+  },
+  "development_policy": {
+    "actual_binary_mask_dice_is_primary": true,
+    "global_residual_multiplier_may_be_selected_on_validation": true,
+    "global_residual_multipliers_frozen_before_gt": [
+      0.25,
+      0.5,
+      1.0,
+      2.0
+    ],
+    "per_image_or_subgroup_gt_routing": false,
+    "proxy_metrics_are_hard_gates": false,
+    "selection_status": "exploratory_not_confirmatory"
+  },
+  "g1_checkpoint_sha256": "634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c",
+  "hard_validity_constraints": {
+    "candidate_choices_frozen_before_validation_gt": true,
+    "spatial_ground_truth_used_for_training_or_selection": false,
+    "test_evaluated": false,
+    "test_images_read": 0,
+    "zero_residual_reproduces_baseline": true
+  },
+  "model": {
+    "appearance_dim": 1152,
+    "embedding_dim": 64,
+    "hidden_dim": 256,
+    "metadata_fields_excluded": 4,
+    "rad_dino_config_sha256": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede",
+    "rad_dino_preprocessor_sha256": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56",
+    "rad_dino_weight_sha256": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae",
+    "residual_scale": 0.5
+  },
+  "pair_manifest": {
+    "matched_fields": [
+      "anatomy",
+      "tumor_type",
+      "target_view"
+    ],
+    "rows": 384,
+    "seed": 20260802,
+    "sha256": "0950ed5063e932e3988b97fff590945ecaf37d27fbce84a50ba216e2045ead8a"
+  },
+  "source_files": {
+    "RICH_GALLERY_CROSS_VIEW_CANDIDATE_REPRESENTATION_DESIGN.md": "1057af13010d9605fa597a3135edda3d63a1b6e37c5bf0d5b3f4d41495c155ec",
+    "project/audit_rich_gallery_cross_view_cowitness_output.py": "fa72f884cd4a99b1d07e9ba16a050340128d3a12435fb7a8b8639af6357d9182",
+    "project/audit_split_manifest_semantic_bridge.py": "3d7900e906455dc0c2bc2b7a13f0c90fc5108ab93add6d0f90efa58cd956a8bb",
+    "project/build_rich_gallery_cross_view_pairs.py": "17324e1428cc6e2cd73372369eb8c40bcc42379ffaea05d469cf242f2573622b",
+    "project/evaluate_rich_gallery_cross_view_cowitness_pair.py": "6d8e9a5ba6eac0a494b7f4c97c540845d94f34c8e6687d41ece32d90aa6063cf",
+    "project/models/rich_gallery_cross_view_cowitness.py": "f32c1b35bb0986dcad687cfc0ce9b3f24f2fde7007a74e67a6698627b6fd6414",
+    "project/run_rich_gallery_cross_view_cowitness_pair.py": "9b5fbeb1588dbdb041b2efe0c175974b30da6455217b5685f8853ecc5745e1e7"
+  },
+  "split": {
+    "later_canonical_sha256": "7b16771a634e423d2d4ce7d5a835e6ea5ff6d1a422f124aab8019ed53512529c",
+    "rich_gallery_byte_exact_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "semantic_bridge_audit_sha256": "c711116aeafae2d76fe0f4c9e25efe16216526327357c7fdba47ac96188fadc9"
+  },
+  "stage": "rich_gallery_cross_view_cowitness_pair_protocol_v1",
+  "training": {
+    "bag_temperature": 0.2,
+    "cosine_weight": 0.5,
+    "epochs_per_arm": 2,
+    "learning_rate": 0.0003,
+    "pair_margin": 0.2,
+    "pair_temperature": 0.2,
+    "seed": 20260802,
+    "steps_per_epoch": 384,
+    "weight_decay": 0.0001
+  }
+}
