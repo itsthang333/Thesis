@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_AFTER_PAIR_AUDIT_BEFORE_VALIDATION_GT",
+  "artifact_id": "rad_dino_mask_bag_global_local_instance_s7_v1_postfreeze_evaluation_readiness",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1",
+  "kernel_version": 1,
+  "evaluation_source_commit": "61a27241f2e186ebf91a2b27c7819f5ad650885e",
+  "scientific_source_commit": "0e524807937e6fb6effde1649993825f3923c43f",
+  "protocol_sha256": "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1",
+  "terminal_pre_gt_audit_sha256": "71923c21b8751f42f1880a9edf99b21b6572f17092628ac9f3dbc9179003caad",
+  "prediction_pair_freeze_sha256": "a3d37e43beb8e90d0d30fcf3a86c25bf071fcb340ec62a025ee429799f031a63",
+  "source": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "evaluator_canonical_lf_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "s7_matched_decision": "project/decide_mask_bag_global_local_instance_s7.py",
+    "s7_matched_decision_canonical_lf_sha256": "ae8d0c0611c1cfefaf5fa74156abee8448b2c908247364a30e279a3b35f3177c",
+    "s7_matched_decision_test_canonical_lf_sha256": "864d019d9774e2a51501634b63bb585b69c00d47ea486396c261bd9b794fdef2",
+    "generic_comparator_not_used_for_s7_matched_decision": true,
+    "generic_comparator_reason": "generic source hard-codes seed 20261101 while S7 protocol freezes 20261202"
+  },
+  "frozen_inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "identity_prediction_freeze_sha256": "f2a19a6b170554a000d82e1dafa127988e25533310193b1367a492ed53d0b2c9",
+    "primary_prediction_freeze_sha256": "bae35d50b2f87bb969c3a0851c38270ab60ac081d85c1c2194fe370f70b77e1c",
+    "identity_candidate_score_manifest_sha256": "6d08db6c7fd29d5ed2bc7ff57133cd9fdea1adc65ec797f9c3f0ee424b3452fc",
+    "primary_candidate_score_manifest_sha256": "9f48985c48a118b6ce59f1c4ceb2ff4fc66a841bc537947a0d52ae622ad825de"
+  },
+  "evaluation": {
+    "arm_order": [
+      "geometry_v3_identity",
+      "global_local_instance"
+    ],
+    "bootstrap_replicates_per_arm": 10000,
+    "bootstrap_seed_for_both_arms_and_matched_decision": 20261202,
+    "cohort": {
+      "validation": 371,
+      "tumor": 184,
+      "normal": 187,
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    },
+    "gt_open_boundary": "terminal pre-GT audit is committed and visible central before either evaluator invocation",
+    "matched_comparison_reopens_gt": false,
+    "post_hoc_rescue_or_sweep": false
+  },
+  "decision_contract": {
+    "mechanism_pass_requires": [
+      "primary overall mean Dice strictly exceeds identity",
+      "primary small mean Dice strictly exceeds identity",
+      "primary medium mean Dice does not decrease versus identity",
+      "primary large mean Dice does not decrease versus identity",
+      "primary complete misses do not increase versus identity"
+    ],
+    "operational_consumer_authorization_requires": [
+      "mechanism pass",
+      "primary overall/small/medium/large Dice at least 0.34024039/0.17895493/0.51244178/0.49370336",
+      "primary-minus-identity overall paired CI95 lower bound greater than zero",
+      "no primary subgroup mean regression",
+      "no primary complete-miss increase",
+      "identity evaluated rows exactly equal accepted Geometry-v3 baseline Dice and miss flags",
+      "all prediction-freeze, GT-boundary, consumer and BTXRD-test safety locks pass"
+    ],
+    "negative_result_rule": "freeze and analyze failure before any successor; no seed, epoch, mass, threshold, fusion, morphology, area or subgroup rescue sweep"
+  },
+  "required_order": [
+    "evaluate geometry_v3_identity with frozen evaluator and seed 20261202",
+    "freeze identity evaluation audit and per-image SHA-256",
+    "evaluate global_local_instance with identical evaluator and seed 20261202",
+    "freeze primary evaluation audit and per-image SHA-256",
+    "run S7 matched decision from frozen tables without reopening GT",
+    "freeze decision outputs and analyze terminal result"
+  ],
+  "static_validation": {
+    "s7_producer_to_decision_tests": "29 passed",
+    "evaluator_generic_comparator_s7_decision_tests_with_python39_strict_zip_shim": "13 passed",
+    "python39_strict_zip_shim_sha256": "dcf88d82e6581e7bb3a37f05bf22bb93aba83294993b6c5e12b460909e1c396a",
+    "decision_source_py_compile": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "safety": {
+    "training_labels": "binary_image_level_only",
+    "diagnostics_used_for_model_selection": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "evaluation_authorized_after_commit_and_central_visibility": true
+}

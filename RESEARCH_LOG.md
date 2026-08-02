@@ -13655,3 +13655,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Bước kế là commit/push exact source, sau đó tạo evaluation-readiness artifact
   bind source commit + pre-GT audit + exact evaluator/decision hashes trước GT.
 
+### S7 post-freeze evaluation readiness — frozen trước GT (2026-08-02)
+
+- Exact evaluation/decision source commit
+  `61a27241f2e186ebf91a2b27c7819f5ad650885e` đã push và khớp origin. Readiness
+  artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_global_local_instance_s7_v1_postfreeze_evaluation_readiness.json`
+  có SHA-256
+  `c0d29b91aa9deb158748992c81cd48d85196f9948770ce6ee64351503770e1d8`,
+  status `FROZEN_AFTER_PAIR_AUDIT_BEFORE_VALIDATION_GT`.
+- Artifact bind exact pre-GT audit `71923c21...3caad`, pair freeze
+  `a3d37e43...31a63`, hai arm freeze/score manifest, accepted baseline freeze +
+  evaluator-only per-image, evaluator SHA `ccc3a493...b084`, S7 decision SHA
+  `ae8d0c06...3177` và seed `20261202`. Thứ tự bắt buộc là identity evaluation →
+  freeze hash → primary evaluation → freeze hash → matched decision không reopen
+  GT; output directories phải mới và không post-hoc rescue/sweep.
+- Tại readiness này validation GT vẫn chưa đọc, consumer/test khóa và
+  collaborator output không truy cập. Chỉ sau khi artifact/log được commit/push
+  và fetch thấy trên central mới được mở evaluator cho exact frozen pair.
+
