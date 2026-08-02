@@ -8751,3 +8751,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Test remains locked; no efficacy claim is made before the matched Kaggle
   control/full result and independent Stage-A/Stage-B verification.
 
+### EXP-20260802-codex-rich-gallery-scale-conditional-feasibility-v1
+
+- A retrospective analysis of the frozen `32,519` candidate rows directly
+  tests the hypothesis that opposite small/large extent errors require
+  conditional rather than global correction.  It adds a candidate area-rank
+  term to the immutable G1/upstream score over a fixed beta grid.
+- Best true-group betas have the predicted signs: small `-1.0`, medium `0`,
+  large `+0.5`.  Their subgroup Dice are `0.181215/0.435229/0.501086`, improving
+  small and large without changing medium; true-group routed overall Dice is
+  `0.311904`, and the per-image three-expert oracle is `0.350692`.
+- This does **not** authorize GT-size routing.  Three deployable-looking gates
+  based only on baseline-selected area, top-five median area and median
+  best-per-source area reach only `0.278291/0.271403/0.268845`, all below the
+  `0.288729` baseline.  Size accuracy is `42.9-45.1%`, and area/true-size
+  Spearman is only `0.043-0.096`.
+- The new bottleneck is therefore the annotation-free gate, not expert supply.
+  Because over-segmented small lesions already look large in proposal-area
+  space, area-only routing is a self-reinforcing shortcut.  If cross-view
+  residual selection does not promote, retain the signed experts but learn a
+  soft gate from appearance, evidence density, cross-source consensus,
+  image-level normal rejection and any validated cross-view evidence.
+- Summary/per-image/audit SHA-256 are
+  `47ec2c711a42a5ca2efe6e2d4419bdc71bd8f4287df00297a2c2d414a70c5430`,
+  `2ed22cc34a64232a08380acd8136cebdae0e24fb758659c42ef0a8112ed98ac0`
+  and `970fbd271a771b20c048fd6736487c44ce4c9a13e55cb9027a84ce0fcf97300c`.
+  See `RICH_GALLERY_SCALE_CONDITIONAL_FEASIBILITY_DOSSIER.md`. Test remains
+  locked.
+
