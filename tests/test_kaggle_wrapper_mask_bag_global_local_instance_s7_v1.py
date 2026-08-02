@@ -21,9 +21,7 @@ def _module():
 
 def test_s7_wrapper_template_is_unbound_and_exactly_scoped() -> None:
     module = _module()
-    assert module.KERNEL == (
-        "itsthang333/btxrd-rad-dino-mask-bag-global-local-instance-s7-v1"
-    )
+    assert module.KERNEL == "itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1"
     assert module.KERNEL_VERSION == 0
     assert module.LAUNCH_BINDING_READY is False
     assert module.CHECKOUT_COMMIT == "UNBOUND"

@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 
-KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-global-local-instance-s7-v1"
+KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1"
 KERNEL_VERSION = 0
 LAUNCH_BINDING_READY = False
 CHECKOUT_COMMIT = "UNBOUND"

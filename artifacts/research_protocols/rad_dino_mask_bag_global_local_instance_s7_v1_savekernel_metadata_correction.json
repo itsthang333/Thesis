@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_IMPLEMENTATION_ONLY_TRANSPORT_CORRECTION",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "source_error_audit_sha256": "7977188aa8ff973c993ee6da420c6ba57dcdb8b4a18ba38f385c593ca1765509",
+  "old_kernel": "itsthang333/btxrd-rad-dino-mask-bag-global-local-instance-s7-v1",
+  "old_slug_length": 51,
+  "new_kernel": "itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1",
+  "new_slug_length": 38,
+  "new_title": "BTXRD RAD-DINO Mask Bag Instance S7 V1",
+  "new_title_length": 38,
+  "corrected_wrapper_template_sha256": "5a9372064ee853d8338e7a3a0e8a21254f38dc036cca5e4f95e4d7541adf41ba",
+  "corrected_binder_sha256": "7d9b0ee07beabb681ea169e26a1552a77d515c556936e55de18ebcb9fc037359",
+  "corrected_wrapper_test_sha256": "8c53c20c8841e1be9ae0f4adc1e5a7ed208ac241aabb0a08eefc41446a58643c",
+  "changes": [
+    "shorten wrapper KERNEL slug from 51 to 38 characters",
+    "update binder KERNEL and exact corrected template hash",
+    "update wrapper static assertion"
+  ],
+  "unchanged": {
+    "scientific_source_commit": "0e524807937e6fb6effde1649993825f3923c43f",
+    "protocol_sha256": "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1",
+    "split_cache_baseline_inputs": true,
+    "model_and_training_recipe": true,
+    "target_projection_and_snapshots": true,
+    "prediction_freeze_and_evaluation_gate": true
+  },
+  "static_checks": {
+    "slug_and_title_at_most_50": true,
+    "slug_length": 38,
+    "title_length": 38,
+    "py_compile": "pass",
+    "precommit_noncheckout_binder_wrapper_tests": "3 passed",
+    "git_diff_check": "pass"
+  },
+  "retry_limit": 1,
+  "real_cache_loaded": false,
+  "training_started": false,
+  "prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

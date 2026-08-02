@@ -10,7 +10,7 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "ea51733fbf2a0d0a35db55678208c23fc8d360eeecdce887320a6f655c446307"
+TEMPLATE_SHA256 = "5a9372064ee853d8338e7a3a0e8a21254f38dc036cca5e4f95e4d7541adf41ba"
 TEMPLATE_PATH = (
     "project/kaggle_wrappers/run_mask_bag_global_local_instance_s7_v1.py"
 )
@@ -20,7 +20,7 @@ PROTOCOL_PATH = (
 )
 PROTOCOL_SHA256 = "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1"
 SOURCE_COMMIT = "0e524807937e6fb6effde1649993825f3923c43f"
-KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-global-local-instance-s7-v1"
+KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1"
 
 
 def canonical_bytes(path: Path) -> bytes:

@@ -13509,3 +13509,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   boundary mới, không thử ngẫu nhiên. Claim S7 vẫn `ĐANG LÀM`; GT/consumer/test
   khóa và không polling/monitor.
 
+### S7 SaveKernel transport correction — static, chưa retry (2026-08-02)
+
+- Sau khi error audit `7977188a...5509` đã push tại commit `a598130...d9b1`,
+  correction chỉ rút gọn Kaggle transport identity: slug từ
+  `btxrd-rad-dino-mask-bag-global-local-instance-s7-v1` (`51`) thành
+  `btxrd-rad-dino-mask-bag-instance-s7-v1` (`38`), title tương ứng dài `38`.
+  Wrapper `KERNEL`, binder `KERNEL`/template hash và wrapper assertion được cập
+  nhật; không đổi producer/model/auditor/scientific source/protocol/input/recipe/
+  output/gate.
+- Corrected wrapper/binder/test canonical-LF SHA-256 lần lượt là
+  `5a9372064ee853d8338e7a3a0e8a21254f38dc036cca5e4f95e4d7541adf41ba` /
+  `7d9b0ee07beabb681ea169e26a1552a77d515c556936e55de18ebcb9fc037359` /
+  `8c53c20c8841e1be9ae0f4adc1e5a7ed208ac241aabb0a08eefc41446a58643c`.
+  `py_compile`, length guard, non-checkout binder/wrapper static `3/3` và
+  `git diff --check` pass.
+- Correction artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_global_local_instance_s7_v1_savekernel_metadata_correction.json`
+  có SHA-256
+  `18fc583e4257a325412ac7da4ce6b23f082d54af70f1a1afc42be1858fd6faa4`,
+  khóa implementation-only scope và đúng một retry. Chưa rebind/metadata/retry,
+  chưa kernel/job/data/GPU/prediction/GT/consumer/test. Phải commit/push correction
+  rồi mới test binder against exact corrected checkout và tạo retry binding mới;
+  không ghi đè binding/error evidence attempt 1.
+
