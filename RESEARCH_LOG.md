@@ -14197,3 +14197,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Metadata dùng duy nhất producer-kernel source version 1, private T4; packaged
   `py_compile`, inverse binding, checkout/correction/input/machine audit PASS.
 
+### S8 audit-only kernel version 1 transport warning (2026-08-02)
+
+- Push private kernel
+  `itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1`, version 1,
+  thành công, nhưng Kaggle trả warning ngay tại push:
+  `not valid kernel sources: itsthang333/btxrd-skelex-reconstruction-selector-s8-v1`.
+  Nguyên nhân boundary: producer version 1 terminal `ERROR` nên Kaggle không cho
+  attach output của nó như notebook/kernel source, dù 1,866 output objects vẫn
+  tải được qua API. Bounded status check duy nhất hiện `RUNNING`; không poll thêm.
+- Version audit-only 1 thiếu producer input và không thể sinh scientific/audit
+  result hợp lệ; giữ dấu vết như transport error, không sửa/rerun khi chưa terminal.
+  Correction transport được chuẩn bị bằng private dataset chứa exact immutable
+  producer output đã tải (371 evidence + 742 score payloads + 742 maps + 11
+  manifests/log), không GT/test và không rerun inference. Validation GT,
+  consumer/test tiếp tục khóa.
+
