@@ -10,7 +10,7 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "e596c57c4e425d195ec7b732cf9c329cc8b6013f1f0006ac7de7cddcb7827d9c"
+TEMPLATE_SHA256 = "5c16ec24124c8871f15567c8e8cd6ff9a272747e4c5332af8a58f74f3940654b"
 TEMPLATE_PATH = "project/kaggle_wrappers/run_skelex_reconstruction_selector_s8_audit_v1.py"
 PROTOCOL_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s8_v1.json"
 PROTOCOL_SHA256 = "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07"
@@ -18,9 +18,12 @@ CORRECTION_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s
 CORRECTION_SHA256 = "94e5881f763cc2cb3bd0a3f49cb563f2449140a7c576211252a45579597fc8a2"
 TRANSPORT_CORRECTION_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_audit_transport_correction.json"
 TRANSPORT_CORRECTION_SHA256 = "ee42bbe43d4f81ffba570a8aa46454cb55acbf9bb6338ed4d746aaf38ce32d1d"
+NULL_DEVICE_CORRECTION_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_null_device_audit_correction.json"
+NULL_DEVICE_CORRECTION_SHA256 = "be1bb0bf1c253ded4999e78fea164abbfb1c4e1ae412e94e55b8ba5fe8e03725"
 AUDITOR_CORRECTION_COMMIT = "969327c4fbbd635fff2e3a00d34d533af8a3c340"
 CORRECTION_ADDENDUM_COMMIT = "16f1b61ef99e866dcfced826b4b2ffb76fb0d3b5"
 TRANSPORT_CORRECTION_COMMIT = "709819a684e60371f464c373de10e74fe7ccb5b2"
+NULL_DEVICE_CORRECTION_COMMIT = "b51e248bf403f8e5af7d5d7ad23e0a65ee62f5d7"
 KERNEL = "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1"
 TRANSPORT_DATASET = "itsthang333/btxrd-skelex-s8-v1-frozen-output"
 TRANSPORT_ARCHIVE_SHA256 = "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737"
@@ -83,7 +86,9 @@ def bind(
         raise ValueError("S8 audit-only correction differs at checkout")
     if digest(_git_bytes(repository_root, checkout_commit, TRANSPORT_CORRECTION_PATH)) != TRANSPORT_CORRECTION_SHA256:
         raise ValueError("S8 audit-only transport correction differs at checkout")
-    for ancestor in (AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT, TRANSPORT_CORRECTION_COMMIT):
+    if digest(_git_bytes(repository_root, checkout_commit, NULL_DEVICE_CORRECTION_PATH)) != NULL_DEVICE_CORRECTION_SHA256:
+        raise ValueError("S8 audit-only null-device correction differs at checkout")
+    for ancestor in (AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT, TRANSPORT_CORRECTION_COMMIT, NULL_DEVICE_CORRECTION_COMMIT):
         subprocess.run(
             ["git", "merge-base", "--is-ancestor", ancestor, checkout_commit],
             cwd=repository_root,
@@ -99,6 +104,7 @@ def bind(
         "protocol_sha256": PROTOCOL_SHA256,
         "correction_sha256": CORRECTION_SHA256,
         "transport_correction_sha256": TRANSPORT_CORRECTION_SHA256,
+        "null_device_correction_sha256": NULL_DEVICE_CORRECTION_SHA256,
         "template_sha256": TEMPLATE_SHA256,
         "bound_wrapper_sha256": digest(bound),
         "transport_dataset": TRANSPORT_DATASET,

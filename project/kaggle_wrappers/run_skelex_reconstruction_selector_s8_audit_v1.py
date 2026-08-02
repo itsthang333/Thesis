@@ -28,14 +28,17 @@ REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "b4543aeb9430345c9b789384943bd218816a85dd"
 AUDITOR_CORRECTION_COMMIT = "969327c4fbbd635fff2e3a00d34d533af8a3c340"
 CORRECTION_ADDENDUM_COMMIT = "16f1b61ef99e866dcfced826b4b2ffb76fb0d3b5"
+NULL_DEVICE_CORRECTION_COMMIT = "b51e248bf403f8e5af7d5d7ad23e0a65ee62f5d7"
 PROTOCOL_RELATIVE = Path("artifacts/research_protocols/skelex_reconstruction_selector_s8_v1.json")
 PROTOCOL_SHA256 = "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07"
 CORRECTION_RELATIVE = Path("artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_serialized_lcb_audit_correction.json")
 CORRECTION_SHA256 = "94e5881f763cc2cb3bd0a3f49cb563f2449140a7c576211252a45579597fc8a2"
 AUDITOR_RELATIVE = Path("project/audit_skelex_reconstruction_selector_s8_output.py")
-AUDITOR_SHA256 = "c972e1460332119cefd11c1145035a497748d4797482c29c51cf62980c560232"
+AUDITOR_SHA256 = "043d28da1d5dd206eed824191562d66731968bcc4a34e5ccd72f8ce756dd608c"
 TEST_RELATIVE = Path("tests/test_audit_skelex_reconstruction_selector_s8_output.py")
-TEST_SHA256 = "fc9786e9b0e8bfe43fa3bb9d8cc7d9e9933270caf2f7a6de1eac797d29dc11a6"
+TEST_SHA256 = "7e2a0c4ba34ecc287f565125c21f56c379db7d2515b356e42654da820cdb4555"
+NULL_DEVICE_CORRECTION_RELATIVE = Path("artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_null_device_audit_correction.json")
+NULL_DEVICE_CORRECTION_SHA256 = "be1bb0bf1c253ded4999e78fea164abbfb1c4e1ae412e94e55b8ba5fe8e03725"
 PAIR_FREEZE_SHA256 = "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00"
 RUN_MANIFEST_SHA256 = "5bb136f8b6f7a6a173abacce2faf0aad1b7caf9e087adcfd158655d71ff7c510"
 DIAGNOSTICS_SHA256 = "98ceacd4a3dd1c32d42105c8cddc436d0e8256dd596c3b250f18fa2e39ecc569"
@@ -79,11 +82,11 @@ def run(command: list[str], *, cwd: Path) -> None:
 def clone_and_verify() -> None:
     if not LAUNCH_BINDING_READY or KERNEL_VERSION < 1:
         raise RuntimeError("S8 audit-only launch binding is not frozen")
-    if any(len(value) != 40 for value in (CHECKOUT_COMMIT, SOURCE_COMMIT, AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT)):
+    if any(len(value) != 40 for value in (CHECKOUT_COMMIT, SOURCE_COMMIT, AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT, NULL_DEVICE_CORRECTION_COMMIT)):
         raise RuntimeError("S8 audit-only checkout/source commit is unbound")
     run(["git", "clone", "--filter=blob:none", "--no-checkout", REPOSITORY, str(SOURCE)], cwd=WORK)
     run(["git", "checkout", "--detach", CHECKOUT_COMMIT], cwd=SOURCE)
-    for ancestor in (SOURCE_COMMIT, AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT):
+    for ancestor in (SOURCE_COMMIT, AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT, NULL_DEVICE_CORRECTION_COMMIT):
         run(["git", "merge-base", "--is-ancestor", ancestor, CHECKOUT_COMMIT], cwd=SOURCE)
     if hash_file(SOURCE / PROTOCOL_RELATIVE) != PROTOCOL_SHA256:
         raise RuntimeError("S8 audit-only protocol hash mismatch")
@@ -93,6 +96,8 @@ def clone_and_verify() -> None:
         raise RuntimeError("S8 audit-only auditor source hash mismatch")
     if canonical_hash(SOURCE / TEST_RELATIVE) != TEST_SHA256:
         raise RuntimeError("S8 audit-only regression test hash mismatch")
+    if hash_file(SOURCE / NULL_DEVICE_CORRECTION_RELATIVE) != NULL_DEVICE_CORRECTION_SHA256:
+        raise RuntimeError("S8 audit-only null-device correction hash mismatch")
     correction = json.loads((SOURCE / CORRECTION_RELATIVE).read_text(encoding="utf-8"))
     if (
         correction.get("status") != "FROZEN_AUDITOR_NUMERICAL_REPRODUCIBILITY_CORRECTION"
@@ -102,6 +107,16 @@ def clone_and_verify() -> None:
         or correction.get("validation_gt_read") is not False
     ):
         raise RuntimeError("S8 audit-only correction contract mismatch")
+    null_device_correction = json.loads((SOURCE / NULL_DEVICE_CORRECTION_RELATIVE).read_text(encoding="utf-8"))
+    if (
+        null_device_correction.get("status") != "FROZEN_AUDITOR_NULL_DEVICE_REPRODUCIBILITY_CORRECTION"
+        or null_device_correction.get("correction", {}).get("auditor_null_replay_device") != "cpu"
+        or null_device_correction.get("correction", {}).get("scientific_algorithm_changed") is not False
+        or null_device_correction.get("correction", {}).get("prediction_changed") is not False
+        or null_device_correction.get("correction", {}).get("audit_only_kaggle_t4x2_rerun_authorized") is not True
+        or null_device_correction.get("validation_gt_read") is not False
+    ):
+        raise RuntimeError("S8 audit-only null-device correction contract mismatch")
 
 
 def verify_t4x2() -> dict[str, object]:
@@ -228,6 +243,7 @@ def main() -> None:
         "checkout_commit": CHECKOUT_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
         "correction_sha256": CORRECTION_SHA256,
+        "null_device_correction_sha256": NULL_DEVICE_CORRECTION_SHA256,
         "auditor_sha256": AUDITOR_SHA256,
         "prediction_pair_freeze_sha256": PAIR_FREEZE_SHA256,
         "t4x2": t4,
