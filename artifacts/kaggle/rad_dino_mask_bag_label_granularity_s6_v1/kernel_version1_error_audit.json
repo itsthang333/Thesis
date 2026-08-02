@@ -1,0 +1,82 @@
+{
+  "audit_timestamp_utc": "2026-08-02T06:48:34.5939555Z",
+  "bound_wrapper_sha256": "e1c855958c638addf1f2ac1c99659779363274a9c0d7138ccd9a38ecaa885281",
+  "collaborator_output_accessed": false,
+  "consumer_trained": false,
+  "error_boundary": {
+    "audit_image_id": "IMG001871.jpeg",
+    "audit_stage": "independent GT-blind physical map reproduction",
+    "audit_status": "FAIL",
+    "failing_arm": "coarse_control",
+    "independent_audit_output_written": false,
+    "producer_pair_physically_frozen": true,
+    "wrapper_output_audit_written": false
+  },
+  "exact_failure": "ValueError: S6 coarse_control map reproduction mismatch: IMG001871.jpeg",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1",
+  "kernel_version": 1,
+  "launch_commit": "34ee708213fe97bce315ac07ce1a75136a0988b1",
+  "log": {
+    "bytes": 13158,
+    "local_ignored_path": "tmp/kaggle/mask_bag_label_granularity_s6_v1_error_20260802_v1/btxrd-rad-dino-mask-bag-label-granularity-s6-v1.log",
+    "sha256": "836477c0e7fc87402753918810fdd2f299c18e42e5aa8facd9ee58267bc0c036"
+  },
+  "numeric_diagnosis": {
+    "bag_logit_absolute_delta": 5.690911217826056e-7,
+    "bag_probability_absolute_delta": 1.0667559002808247e-7,
+    "independent_reproduced_probability": 0.27136225761655475,
+    "independent_reproduced_probability_float16": 0.271240234375,
+    "map_max_absolute_delta": 0.000244140625,
+    "map_mismatch_pixels": 61292,
+    "maximum_candidate_logit_delta": 0.000003814697265625,
+    "producer_probability": 0.2713623642921448,
+    "producer_probability_float16": 0.271484375,
+    "selected_candidate_original_index": 27,
+    "selected_candidate_position_matches": true,
+    "selected_mask_support_pixels": 61292,
+    "stored_map_exact_from_producer_probability": true
+  },
+  "output_transport": {
+    "first_full_download_stopped_after_bounded_wait": true,
+    "first_full_download_transport_scientific_failure": false,
+    "local_complete_file_count_after_targeted_retrieval": 650,
+    "partial_file_count": 0,
+    "targeted_core_artifacts_retrieved": true
+  },
+  "prediction_freeze": {
+    "coarse_control_sha256": "7cff6cc8d559401feceeffa3eef8ec0cd95d013ea62f86c28cb4f0c994a08c84",
+    "hierarchical_entropy_routed_sha256": "fa88dd2d392de347915575c35442b1ab3375bb51a65fdbaceb963635945b143c",
+    "pair_sha256": "203dc6435b661b7410331f3eefca20c14888bcd34890b5228b4c35a0cecd36e2",
+    "validation_maps_per_arm": 371
+  },
+  "producer": {
+    "cuda_device_names": [
+      "Tesla T4",
+      "Tesla T4"
+    ],
+    "finished_utc": "2026-08-02T06:39:15.992665+00:00",
+    "focused_tests": "48 passed in 8.86s",
+    "protocol_sha256": "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+    "run_manifest_sha256": "1896ccb30256a067438eb19709dc6ee708b1ff3b3d1f887215711f3163dc4bbe",
+    "source_commit": "543ee89654a0ed00e80ded16924a760585337924",
+    "started_utc": "2026-08-02T06:33:59.004821+00:00",
+    "validated_cache_records": {
+      "train": 2981,
+      "validation": 371
+    }
+  },
+  "protocol_interpretation": {
+    "candidate_scores_within_predeclared_atol": true,
+    "failure_is_float16_quantization_boundary_after_accepted_cpu_gpu_drift": true,
+    "prediction_or_model_rerun_required_to_diagnose": false,
+    "scientific_efficacy_result": false
+  },
+  "root_cause": "The producer serialized mask times the GPU-computed bag probability. The independent CPU reproduction differed by only 1.07e-7 in probability, well inside the frozen 5e-5 tolerance, but the two values straddled a float16 rounding midpoint. The auditor therefore demanded bit-exact maps from a scalar that its own protocol permits to differ numerically.",
+  "schema_version": 1,
+  "status": "ERROR_AUDITED_BEFORE_CORRECTION",
+  "status_check_timestamp_utc": "2026-08-02T06:40:19.4527888Z",
+  "test_evaluated": false,
+  "validation_gt_read": false,
+  "version1_retained_as_error": true
+}

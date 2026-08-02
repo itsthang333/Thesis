@@ -12777,3 +12777,68 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Không status-poll/monitor/output access ở bước này; validation GT, consumer và
   BTXRD test vẫn khóa.
 
+### S6 kernel version 1 — LỖI tại independent map audit (2026-08-02)
+
+- Đúng một bounded status check lúc `2026-08-02T06:40:19.4527888Z` thấy private
+  kernel version `1` ở `KernelWorkerStatus.ERROR`; không status-poll tiếp và
+  không tạo monitor. Direct log `13,158` byte có SHA-256
+  `836477c0e7fc87402753918810fdd2f299c18e42e5aa8facd9ee58267bc0c036`.
+- Producer thực tế đã pass exact source/protocol/input và `48` Kaggle tests,
+  chạy từ `06:33:59` đến `06:39:15Z` trên đúng `Tesla T4 x2`, validate
+  `2,981 train / 371 val`, fit đủ 16 epoch và freeze vật lý cả hai arm trước GT.
+  Pair freeze SHA-256
+  `203dc6435b661b7410331f3eefca20c14888bcd34890b5228b4c35a0cecd36e2`;
+  control/hierarchy freeze SHA-256
+  `7cff6cc8d559401feceeffa3eef8ec0cd95d013ea62f86c28cb4f0c994a08c84` /
+  `fa88dd2d392de347915575c35442b1ab3375bb51a65fdbaceb963635945b143c`.
+- Failure xảy ra sau producer/pair freeze nhưng trước independent audit PASS và
+  trước wrapper-output audit: `ValueError: S6 coarse_control map reproduction
+  mismatch: IMG001871.jpeg`. Không có efficacy/Dice result và GT gate không mở.
+- Exact local reproduction khóa root cause. Saved-vs-independent candidate-logit
+  delta tối đa chỉ `3.8146973e-6`, nhỏ hơn tolerance `5e-5`; winner position và
+  original index đều là `27`. GPU producer probability `0.2713623642921448`
+  và CPU auditor probability `0.27136225761655475` chỉ lệch `1.0668e-7`, nhưng
+  nằm hai phía float16 rounding midpoint nên thành `0.271484375` và
+  `0.271240234375`. Vì vậy đúng toàn bộ `61,292` foreground pixel lệch một ULP
+  `0.000244140625`; stored map tái tạo bit-exact khi dùng chính frozen producer
+  probability. Auditor đã tự cho phép CPU/GPU score/probability tolerance nhưng
+  lại yêu cầu bit-exact map từ scalar được phép lệch — đây là implementation
+  inconsistency, không phải prediction drift.
+- GT-blind diagnostics được producer freeze nhưng không dùng làm efficacy gate:
+  control/hierarchy AUROC `0.828412/0.821233`, changed selection fraction
+  `0.439353`, subtype accuracy/macro recall `0.467391/0.254918`. Các số này
+  không cho phép chọn/rescue arm và chưa nói gì về Dice.
+- Lần tải full output đầu tiên được dừng sau bounded wait khi đã giữ các file
+  hoàn chỉnh, không có `.part`; targeted retrieval sau đó lấy direct log và core
+  artifacts. Đây chỉ là transport boundary. Error audit tracked tại
+  `artifacts/kaggle/rad_dino_mask_bag_label_granularity_s6_v1/kernel_version1_error_audit.json`,
+  SHA-256
+  `1dacee061698b968ae6b5ca97a3e44baba22385ab6f8c23bfdc97048bc7cd933`.
+- Version 1 được giữ vĩnh viễn là **LỖI**. Claim S6 chỉ tiếp tục cho một
+  implementation-only independent-auditor correction: vẫn independently kiểm
+  tra probability trong tolerance, winner/mask support và exact serialization
+  từ frozen producer probability; không đổi model, loss, seed, epoch, scores,
+  maps, protocol hay evaluator. Chưa sửa/rerun trước commit lỗi này. Validation
+  GT chưa đọc, consumer chưa train và BTXRD test chưa mở.
+
+### Đồng bộ collaborator `dc00062` — conditional/cross-view negative evidence (2026-08-02)
+
+- Đã đọc toàn bộ Git-log delta `e715539..dc00062`; không truy cập Kaggle/output
+  collaborator. Hai analyzer terminal chỉ là retrospective feasibility trên
+  prediction/table đã freeze, không tạo selector/mask và không có active GPU
+  claim cạnh tranh với S6.
+- G1-conditional audit trên `32,519` candidate cho thấy transition2 matched
+  relative-L2 partial rank correlation chỉ `0.039274` overall và `-0.013838`
+  ở small; oracle-vs-baseline pair accuracy `49.14%`. Ring-mass residual lớn hơn
+  nhưng matched/random giống nhau và chỉ đạt `45.7-46.9%`, nên là proxy support/
+  geometry chứ không phải tumor identity. Không adopt hay sweep frozen layers.
+- Cross-view feasibility có `443` train-tumor heuristic multi-view groups, nhưng
+  trên validation raw same-group support chủ yếu phản ánh anatomy: sau matched
+  control, median partial correlation chỉ `0.014121` và oracle-vs-baseline pair
+  accuracy `18.75%`. Không append frozen cross-view cosine. High-resolution
+  cross-view training design mới chỉ là hypothesis/preparation, chưa có terminal
+  efficacy và chưa được S6 kế thừa.
+- Delta này không đổi error boundary hay implementation-only auditor correction
+  của S6; nó chỉ củng cố rằng selector successor sau S6 không nên quay lại frozen
+  layer/cosine/area proxy nếu không có representation mới được kiểm chứng.
+
