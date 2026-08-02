@@ -13585,3 +13585,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   monitor, không download/output/GT/evaluation/consumer/test. Claim S7 tiếp tục
   **ĐANG LÀM**; bước terminal chỉ được thực hiện ở một nhịp hợp lý sau.
 
+### S7 terminal output download attempt 1 — local environment error (2026-08-02)
+
+- Sau đúng một terminal status check xác nhận kernel version `1` là `COMPLETE`,
+  lần gọi `project/download_kaggle_output_inventory.py` đầu tiên dừng ngay tại
+  import với `ModuleNotFoundError: No module named 'kaggle'` vì dùng nhầm env
+  `btxrd-pseudomask`. Boundary xảy ra trước API inventory/request/download; thư
+  mục ignored mới chỉ được tạo rỗng, chưa có output khoa học/GT/evaluation.
+- Root cause đã xác minh: env nghiên cứu không có module `kaggle`, còn exact system
+  interpreter `C:/Users/USER/miniconda3/python.exe` (Python `3.13.5`) chứa Kaggle
+  client và `requests 2.32.4`, cùng interpreter với CLI đã status/push thành công.
+  Correction duy nhất là chạy lại nguyên utility/kernel/destination bằng system
+  interpreter; không thay đổi scientific source/protocol/output selection.
+
