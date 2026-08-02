@@ -8575,7 +8575,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   (`2,968` recipient/sham identifiers) resolve exactly and preserve case.
   Test remains locked and no Dice claim is made from these technical failures.
 
-### 2026-08-02 — matched-normal Stage-B deep bottleneck schema (ĐANG LÀM)
+### 2026-08-02 — matched-normal Stage-B deep bottleneck schema (HOÀN THÀNH)
 
 - Stage-A version 4 remains the only active private/offline run.  This update
   does not change or relaunch its classifier, donors, candidates, scores,
@@ -8601,4 +8601,50 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   matched-versus-random failure branch.  Test remains locked; no efficacy
   conclusion is claimed before the 371-image Stage-A freeze is independently
   audited and the exact 184 validation polygons are evaluated.
+
+- Kaggle Stage A v4 completed in `5,808.49` seconds.  Independent audit passes
+  exact `371` score payloads, `1,855` selection rows, `1,484` reference rows,
+  baseline reproduction `371/371`, no GT/no test, and maximum class-map/logit
+  residual `3.9339e-06`.  Prediction-freeze/audit SHA-256 are
+  `3e9760d3b98ac5dbe1d909db74968483eaf0fff0d2bc6c70c46668a7479ab765`
+  and `67c20c4b9d9c140b1d91bb89d4d7e4f3368346fe9815a4043a412729ef555580`.
+- The first local Stage-B invocation correctly failed before polygon loading:
+  the desktop BTXRD metadata hash `b5a73f...` differed from the canonical
+  split-bound hash `4b7a4f...`.  Re-running against the existing canonical
+  local-eval bundle with exact metadata SHA
+  `4b7a4fa46a03aad2bfa2a694124178e77bc223676796321006af75e99c435f9b`
+  fixed the provenance fault without changing predictions, evaluator or split.
+- Actual Dice/IoU are: baseline `0.28872949/0.21683918`; transplant-only
+  `0.08812762/0.05508610`; equal fusion `0.22623612/0.16611195`; primary fixed
+  3:1 matched fusion `0.28106662/0.20903628`; random-control 3:1 fusion
+  `0.26317766/0.19395802`.  Primary subgroup Dice is
+  `0.09645373/0.47226747/0.48035277`, versus baseline
+  `0.15772330/0.43522933/0.38687353`; promotion is false because overall and
+  small-lesion gates fail.
+- Paired group bootstrap matched 3:1 versus baseline is `-0.007763`, 95% CI
+  `[-0.038285,0.021947]`.  Small is materially negative `-0.062685`, CI
+  `[-0.107285,-0.025327]`, while medium/large rise `+0.043854/+0.101229`.
+  Matched versus random overall is not established: `+0.014998`, CI
+  `[-0.010515,0.040384]`.
+- Root cause is now localized.  Proposal-supply regret is only `0.000396`,
+  while eligible selector regret is `0.239173`; baseline has 49 misses and 104
+  wrong-source choices.  Small selected masks are median `14.603x` GT area
+  whereas large masks are median `0.382x`, proving signed scale-dependent
+  extent error.  The transplant changes 143 choices and expands changed masks
+  `1.427x`; this helps medium/large but further over-expands small lesions.
+- Layer evidence rejects transplantable candidate identity.  Matched oracle
+  percentile progresses `0.406 -> 0.512 -> 0.572 -> 0.489 -> 0.313`; at norm5,
+  quality correlation is only `0.0495`, area correlation is `0.4294`, matched
+  minus random oracle-percentile gain is `0.000048`, and recipient CV is
+  `0.525`.  The frozen classifier turns the intervention into transferred
+  mass/area, not stable tumor-specific evidence.  The mechanism is retired
+  without a sweep.
+- Stage-B summary/per-image/per-candidate/per-layer SHA-256 are
+  `ebbfb74527513d2411bb4ce110d24875ad7749c928264f1a18425d4c73a5dffc`,
+  `a0f291d155c0bd389d81a1e4cc27e8be6c208af1eabde20b13fc7a7fc02f286f`,
+  `ea3fd29d5fac7de46bd846bfcf65e87be0041875a0c11e8a9303c6f4fe95c73c`
+  and `001263495dda1b02047c3c73e2f8aee14761ddc01d2ef937c9e73f62ca4d9903`.
+  Full interpretation is in
+  `RICH_GALLERY_MATCHED_NORMAL_TRANSPLANT_FAILURE_DOSSIER.md`.  Test remains
+  locked.
 

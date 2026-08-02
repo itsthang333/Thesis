@@ -753,6 +753,22 @@ def main() -> None:
                     "group_id": frozen["group_id"],
                     "size_group": subgroup,
                     "gt_area_ratio": float(target.mean()),
+                    "eligible_candidate_count": len(candidate_indices),
+                    "selected_local_index": int(local),
+                    "selected_candidate_index": selected_index,
+                    "eligible_oracle_local_index": eligible_oracle_local,
+                    "eligible_oracle_candidate_index": int(
+                        candidate_indices[eligible_oracle_local]
+                    ),
+                    "selected_variant_score": float(panel[variant][local]),
+                    "selected_g1_logit": float(g1[local]),
+                    "selected_upstream_score": float(upstream[local]),
+                    "selected_matched_logit_delta": float(
+                        payload["matched_score"][local]
+                    ),
+                    "selected_random_logit_delta": float(
+                        payload["random_score"][local]
+                    ),
                     "dice": selected_dice,
                     "iou": iou(prediction, target),
                     "precision": float(intersection / max(1, prediction_area)),
