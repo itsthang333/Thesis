@@ -13674,3 +13674,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   collaborator output không truy cập. Chỉ sau khi artifact/log được commit/push
   và fetch thấy trên central mới được mở evaluator cho exact frozen pair.
 
+### Đồng bộ collaborator `d18e811` trước S7 evaluation (2026-08-02)
+
+- Đã fetch và đọc toàn bộ collaborator `RESEARCH_LOG.md` mới tại
+  `d18e811b824cc5220321a0e87b811c54db41b864`; delta từ `29a3ed6` chỉ thêm
+  terminal result cho
+  `EXP-20260802-codex-rich-gallery-cross-view-cowitness-pair-v1`. Không có claim
+  S7/collision và không truy cập Kaggle/output của collaborator.
+- Cross-view co-witness residual **không promote**: best full x0.25 Dice
+  `0.28791097`, thấp hơn rich-gallery baseline `0.28872949` và gần như bằng
+  matched control `0.28791170`; full/control residual Pearson `0.998657`, mean
+  absolute difference `0.003738`. Head chủ yếu học source shortcut; external
+  saliency selection tăng theo multiplier làm small extent phình mạnh, trong khi
+  positive-negative separation chỉ `0.041663`. Prediction-first control-contrast
+  salvage cũng không promote (`0.287737/0.287508`).
+- Vì result terminal là âm, S7 không adopt cross-view residual/gate. Evidence này
+  củng cố contingency: nếu S7 fail, soft extent gate không được dùng cross-view
+  residual ở form hiện tại và phải có representation/gating signal mới chứng minh
+  vượt matched control. Nó không thay đổi frozen S7 prediction/evaluator/gate;
+  validation GT cho S7 vẫn chưa mở ở boundary đồng bộ này.
+
