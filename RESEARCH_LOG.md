@@ -14379,3 +14379,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Không poll lần hai, không download partial output/log và không tạo monitor;
   claim S8 tiếp tục `ĐANG LÀM` chờ nhịp terminal sau.
 
+### S8 audit-only version 2 terminal ERROR — null replay sai device (2026-08-02)
+
+- Sau fetch/read/collision check, đúng một bounded status query trả version `2`
+  terminal `ERROR`; không repeat poll/monitor. Inventory downloader chỉ lấy
+  direct log, không tải 1,539 official output files, vào ignored temp
+  `tmp/kaggle/skelex_s8_audit_v2_terminal_error_20260802_192445`. Log `5,691`
+  bytes, SHA-256
+  `0a1ead7ffc0016dfd558f42663cc4c4a6ba96832a3e1a7430d2f4f6aee210b5d`.
+  Exact checkout, two-T4 guard, static test, frozen dataset/archive, pair và all
+  manifests pass; corrected auditor chạy đến `IMG000160.jpeg` rồi fail ở 255-null
+  distribution, trước readiness/GT/evaluator.
+- **Root cause định lượng:** producer chuyển model logits/masks về CPU, tính
+  reconstruction error, candidate grid/base logits và toàn bộ
+  `select_with_spatial_null` trên CPU. Auditor `_null_improvements` lại tự chọn
+  `cuda:0` khi GPU có mặt. Với permutation zero-based `11` của IMG000160, chỉ
+  `1/255` entry vượt tolerance: CUDA `0.0900349617`, frozen producer và independent
+  CPU replay cùng `0.0957167745`, delta `-0.0056818128`. Có `23` valid candidates;
+  magnitude đúng nửa một fused rank-step
+  `0.5 * 0.25/(23-1) = 0.0056818182`, xác nhận float32 reduction split/merge tie.
+  Exceedance/p-value vẫn exact `193 / 0.7578125`; family gate pass nhưng switch
+  `false`, accepted/selected đều index `20`. Lần diagnostic import đầu thiếu
+  `project` trong `sys.path`, dừng trước array analysis; rerun đúng path cho các
+  số trên. Đây là tooling diagnostic error, không ảnh hưởng output.
+- Failure audit tracked tại
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/kernel_version2_null_device_error_audit.json`,
+  SHA-256 `782baae8c660e5ad73572d8e2fb82ed979f7a5defe753223f9747653c2f82840`.
+  Version 2 là **LỖI AUDITOR DEVICE**, không phải S8 scientific failure và chưa
+  có Dice. Correction duy nhất: force null replay CPU cho đúng frozen producer,
+  thêm regression bảo đảm CUDA availability không đổi device, rồi audit-only
+  rerun trên pair cũ. Cấm đổi null seed/count/threshold, weights, candidates,
+  predictions hoặc đọc GT. Failure-analysis gate hoàn tất; validation GT,
+  consumer/test và collaborator output tiếp tục khóa. Phải commit/push mục này
+  trước sửa auditor.
+

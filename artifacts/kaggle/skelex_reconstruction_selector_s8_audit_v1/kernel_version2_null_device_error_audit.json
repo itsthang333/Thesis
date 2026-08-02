@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "kernel": "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1",
+  "kernel_version": 2,
+  "terminal_status": "ERROR",
+  "classification": "auditor_device_reproducibility_error_not_scientific_failure",
+  "checkout_commit": "492e2435e8e2203768b5c4cb80acd66441b7b07e",
+  "bound_wrapper_sha256": "6c7820946159269d86afcb14f005aa4f01fab304a3b45b656733fb4f381d3273",
+  "transport_dataset": "itsthang333/btxrd-skelex-s8-v1-frozen-output",
+  "transport_archive_sha256": "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737",
+  "direct_log": {
+    "ignored_local_path": "tmp/kaggle/skelex_s8_audit_v2_terminal_error_20260802_192445/btxrd-skelex-reconstruction-selector-s8-audit-v1.log",
+    "bytes": 5691,
+    "sha256": "0a1ead7ffc0016dfd558f42663cc4c4a6ba96832a3e1a7430d2f4f6aee210b5d"
+  },
+  "official_output_inventory_count": 1539,
+  "official_output_files_downloaded": 0,
+  "error_boundary": {
+    "elapsed_seconds": 28.373234926,
+    "image_id": "IMG000160.jpeg",
+    "exception": "ValueError: S8 independent 255-null distribution mismatch: IMG000160.jpeg",
+    "completed_before_error": [
+      "exact checkout and scientific/correction provenance checks",
+      "two-T4 fail-closed guard",
+      "auditor py_compile and focused regression test",
+      "exact frozen dataset/archive materialization",
+      "producer pair and all immutable manifest hash verification",
+      "corrected primary LCB/fused replay through IMG000160"
+    ],
+    "not_reached": [
+      "complete 371-image corrected output audit",
+      "dynamic postfreeze readiness",
+      "validation segmentation evaluation"
+    ]
+  },
+  "root_cause": {
+    "producer_device": "CPU",
+    "producer_evidence": "run_skelex_reconstruction_selector_s8.py moves model logits and masks to CPU, computes masked errors on CPU, creates candidate grids and base logits on CPU, then calls select_with_spatial_null without moving selector tensors to CUDA",
+    "auditor_device": "CUDA whenever torch.cuda.is_available()",
+    "auditor_evidence": "_null_improvements selected cuda:0 on the T4 audit kernel, changing an exact tie boundary in rank-based null replay",
+    "mechanism": "device-dependent float32 reduction split/merged a null LCB tie; the discontinuous tie-aware rank changed one null max statistic"
+  },
+  "quantitative_diagnostic": {
+    "image_id": "IMG000160.jpeg",
+    "permutation_index_zero_based": 11,
+    "null_permutations": 255,
+    "entries_outside_2e_5": 1,
+    "cuda_auditor_value": 0.09003496170043945,
+    "producer_serialized_and_cpu_replay_value": 0.09571677446365356,
+    "cuda_minus_serialized": -0.005681812763214111,
+    "valid_candidates": 23,
+    "fused_half_rank_step": 0.005681818181818182,
+    "observed_improvement": 0.04982513189315796,
+    "recomputed_exceedances": 193,
+    "serialized_exceedances": 193,
+    "recomputed_p_value": 0.7578125,
+    "serialized_p_value": 0.7578125,
+    "family_consistent": true,
+    "switched": false,
+    "accepted_index": 20,
+    "selected_index": 20
+  },
+  "scientific_interpretation": "The mismatch did not change the randomization exceedance count, p-value, switch or selected candidate. It is an independent-auditor device mismatch and provides no Dice or S8 efficacy result.",
+  "allowed_correction": "Force independent null replay onto CPU to match the frozen producer selector device, add a regression proving CUDA availability cannot redirect the replay, then rerun only the audit on the same immutable producer pair.",
+  "forbidden_rescues": [
+    "change null seed/count/threshold",
+    "change reconstruction or geometry weights",
+    "change candidates, predictions or selector output",
+    "read validation GT before complete audit PASS"
+  ],
+  "scientific_result": false,
+  "new_prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false,
+  "status": "AUDIT_ONLY_VERSION2_NULL_DEVICE_ERROR_FAILURE_GATE_COMPLETE"
+}
