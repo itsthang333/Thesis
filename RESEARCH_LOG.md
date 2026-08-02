@@ -13076,3 +13076,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Chưa đăng ký/implement/launch experiment mới; prediction S6 không đổi,
   consumer/test vẫn khóa và collaborator output không truy cập.
 
+### Đồng bộ collaborator `139ba76` và khóa collision sau S6 (2026-08-02)
+
+- Đã fetch `origin/research-wsss-improvement` tại
+  `d49572664ed523c8e626c64f1dcf9efaf0c18d17` và đọc toàn bộ log trung tâm;
+  đã fetch/read toàn bộ Git-log delta `dc00062..139ba76` của
+  `origin/codex/research-sync-20260731`. Chỉ đọc bằng chứng/design trong Git,
+  không truy cập Kaggle hay output collaborator.
+- Collaborator mới thêm
+  `EXP-20260802-codex-rich-gallery-cross-view-cowitness-pair-v1` ở trạng thái
+  **PRELAUNCH**, chưa có terminal efficacy/Dice. Arm full dùng same-heuristic-
+  group different-view tumor co-witness đối chiếu capacity-matched different-
+  group control trên cùng `384` rows/full bag; baseline bất biến là rich-gallery
+  G1+upstream equal percentile-rank Dice `0.2887294867`. Protocol SHA-256 là
+  `37826b209afd8c897b07d91f20bcbf133cf06be3d175b206dad14dc19a36488f`;
+  pair-manifest SHA được log collaborator rút gọn `0950ed50...`.
+- Bằng chứng feasibility trước claim vẫn là âm/yếu: after matched control,
+  cross-view partial correlation median chỉ `0.014121` và oracle-vs-baseline
+  pair accuracy `18.75%`; raw same-group support chủ yếu phản ánh anatomy. Vì
+  experiment mới chưa terminal nên central không adopt co-witness như cải thiện,
+  nhưng coi PRELAUNCH là claim liên quan đang được giữ và sẽ không launch một
+  cross-view/co-witness/cross-view-representation experiment cạnh tranh.
+- Failure-analysis gate của S6 không đổi: hierarchy fail do subtype
+  identifiability thấp, multi-task trade-off và lazy MIL; entropy/confidence
+  không phải reliability observable. Successor central chỉ được mở sau failure
+  analysis này và phải khác cross-view collaborator, T1 self-paced contrast,
+  S4 cluster, S6 hierarchy và các frozen relation/area proxies đã bị loại.
+- Theo yêu cầu người dùng, quy tắc phối hợp được bổ sung vào `AGENTS.md`: mọi
+  `LỖI`/reject/fail gate phải có phân tích nguyên nhân định lượng, ghi/push log
+  trước khi đăng ký hoặc launch hướng kế nhiệm. Bước đồng bộ này không phải một
+  experiment: chưa claim/implement/launch, chưa mở scientific input/prediction/
+  validation GT/consumer/test và không chạy compute nặng.
+

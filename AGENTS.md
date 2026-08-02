@@ -113,6 +113,25 @@ Khi thực nghiệm kết thúc, cập nhật chính mục/mã thực nghiệm t
 - Bước tiếp theo được đề xuất và mã thực nghiệm kế thừa nếu có.
 - Xác nhận các khóa GT/consumer/test và prediction-freeze có được giữ hay không.
 
+Trước khi đăng ký, triển khai hoặc launch một thực nghiệm/hướng khoa học kế
+nhiệm sau một kết quả `LỖI`, bị reject hoặc fail gate, phải hoàn tất **failure
+analysis gate** cho kết quả đó:
+
+- Phân biệt rõ lỗi implementation/transport/auditor với thất bại khoa học của
+  hypothesis; không dùng một loại lỗi để kết luận thay cho loại kia.
+- Định vị error boundary hoặc bottleneck bằng bằng chứng định lượng phù hợp,
+  kiểm tra các giả thuyết nguyên nhân có thể kiểm tra được và giải thích vì sao
+  metric/gate đã fail; không chỉ ghi “kết quả thấp” rồi chuyển hướng.
+- Nêu rõ phần nào bị loại, phần nào còn có thể kế thừa và các rescue/sweep nào
+  không được hỗ trợ hoặc bị cấm vì hậu nghiệm.
+- Ghi failure analysis đầy đủ vào `RESEARCH_LOG.md`, kèm artifact/hash/nguồn khi
+  có, rồi commit và push lên branch điều phối trước khi mở claim kế nhiệm.
+
+Chỉ sau khi gate này hoàn tất mới được chọn hướng mới. Hướng kế nhiệm phải giải
+quyết cơ chế thất bại đã xác định hoặc có lý do bằng chứng rõ ràng để kiểm tra
+một bottleneck khác; không được chuyển sang thử nghiệm mới theo kiểu thử ngẫu
+nhiên hay lặp lại biến thể đã bị bằng chứng âm loại bỏ.
+
 Kết quả cuối cũng phải được đưa về bản `RESEARCH_LOG.md` trên
 `research-wsss-improvement`; chỉ lưu trên branch riêng thì chưa đủ để điều phối
 và có thể khiến thành viên khác lặp lại thực nghiệm.
