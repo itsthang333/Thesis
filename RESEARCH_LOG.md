@@ -13561,3 +13561,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   binding, audit và log này trước đúng một `kaggle kernels push`. Nếu server vẫn
   trả 400 thì dừng và mở error audit mới; không thử biến thể metadata ngẫu nhiên.
 
+### S7 transport retry 1 — Kaggle accepted (2026-08-02)
+
+- Sau prelaunch commit `427d5518dae4c2fbea4bf0f9033dd8a1952f1ca4` đã push,
+  đúng một lệnh `kaggle kernels push` tại retry directory ignored trả
+  `Kernel version 1 successfully pushed` cho private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1`:
+  https://www.kaggle.com/code/itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1 .
+  Điều này xác nhận correction length `51 -> 38` đã vượt SaveKernel transport
+  boundary; chưa phải scientific result và không thay đổi hypothesis/protocol.
+- Launch audit
+  `artifacts/kaggle/rad_dino_mask_bag_global_local_instance_s7_v1/kernel_version1_retry1_launch_audit.json`
+  có SHA-256
+  `32ddf044675a38a8d5b189d8237fff6f9229f9416024d0ed4df4a6406cdda9dc`.
+  Không status check hoặc monitor được tạo trong nhịp này; trạng thái runtime chưa
+  được truy vấn. Chưa download output, chưa mở validation GT, chưa consumer/test.
+  Claim S7 tiếp tục **ĐANG LÀM** chờ một bounded terminal check ở thời điểm hợp lý.
+
