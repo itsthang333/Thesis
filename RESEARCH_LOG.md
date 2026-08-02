@@ -8779,3 +8779,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   See `RICH_GALLERY_SCALE_CONDITIONAL_FEASIBILITY_DOSSIER.md`. Test remains
   locked.
 
+### EXP-20260802-codex-rich-gallery-cross-view-cowitness-pair-v1 (COMPLETE/RETIRED)
+
+- Kaggle completed and independent Stage-A audit passed exact `371` score
+  payloads, `3,339` selections, `384` cross-view rows, exact G1 reproduction,
+  two `384`-step epochs per arm, no spatial-GT training/selection and no test.
+  Prediction-freeze/audit SHA-256 are `0a5c2293...` and `0364ba49...`.
+- The best full residual x0.25 reaches Dice/IoU
+  `0.28791097/0.21587865`, below the immutable
+  `0.28872949/0.21683918`.  It is effectively identical to the matched control
+  `0.28791170`; full/control choose the same tumor candidate in `182/184`
+  images at x0.25 and `184/184` at x1/x2.  Longer training is unsupported.
+- The head learned a source shortcut.  Control residuals for classifier448 and
+  LayerCAM320 are negative-saturated in `100%` of candidates; full is saturated
+  in `97.2%/94.6%`.  External saliency is fixed at zero, so its selection count
+  rises `24 -> 67 -> 112 -> 173 -> 184` as the multiplier grows.  This expands
+  small masks from median `14.603x` to `64.760x` GT and collapses small Dice,
+  while the same expansion slightly helps under-segmented large lesions.
+- The full pair loss implies only `0.041663` positive-negative separation at
+  epoch 2.  Full/control residual Pearson is `0.998657`; their mean absolute
+  difference is `0.003738`.  Full residual within-source quality Spearman is
+  `-0.182606`; subtracting control raises it only to `+0.064174`.
+- A prediction-first causal-control salvage froze raw
+  `full_residual-control_residual` and source-locked within-source rank policies
+  before GT.  Neither promotes: closest raw Dice is `0.287737`, closest
+  source-locked Dice `0.287508`.  Cross-view residual is retired as selector
+  and scale-gate signal in this form, without another training sweep.
+- Failure-analysis summary/per-image/audit SHA-256 are `3dee5cc1...`,
+  `791fe3b8...`, `841996fc...`; control-contrast freeze and Stage-B summary are
+  `9c43b48b...`, `b3f28c48...`.  Full interpretation is in
+  `RICH_GALLERY_CROSS_VIEW_COWITNESS_FAILURE_DOSSIER.md`. Test remains locked.
+
