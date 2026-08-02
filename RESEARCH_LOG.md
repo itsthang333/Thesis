@@ -13225,3 +13225,77 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   được quảng bá như một cải tiến đã chứng minh. Chưa claim/real-input/launch ở
   boundary đồng bộ này; consumer/test/validation GT vẫn khóa.
 
+### EXP-20260802-codex-s7-global-local-instance-v1
+
+- **Owner/status/time:** Codex main task trên `research-wsss-improvement`;
+  **ĐANG LÀM**; đăng ký lúc `2026-08-02T14:59:36+07:00`. Registration base là
+  `72977b9f18f21f2a4b2c3481940bb26deffaa380`; exact registration commit sẽ
+  được khóa bằng note kế tiếp sau khi commit/push. Không được mở real cache,
+  fit, prediction hay launch cho đến khi claim này hiện diện trên branch trung
+  tâm.
+- **Kế thừa và không trùng:** kế thừa exact accepted same-gallery Geometry-v3
+  candidate supply/base logits và negative evidence của R1/R2/S1/R3/R4/S3/S4/
+  T1/S5/S6; trực tiếp xử lý lazy-MIL/positive-instance-identifiability đã được
+  định lượng ở failure analysis S6. Không kế thừa các cơ chế đã reject như hard
+  top-1/self-paced contrast, prototype/cluster, subtype hierarchy, entropy route,
+  bag BCE/attention pool hoặc area/count heuristic. Không dùng cross-view pair,
+  co-witness hay size expert/gate nên không trùng claim collaborator
+  `EXP-20260802-codex-rich-gallery-cross-view-cowitness-pair-v1` PRELAUNCH và
+  feasibility scale-conditional tại `29a3ed6`.
+- **Hypothesis và delta khoa học:** theo Ma et al. MIL-SSL
+  (https://arxiv.org/html/2408.04813), chuyển selector từ bag-level MIL sang
+  direct all-instance classification: mọi candidate của normal bag là true
+  negative; candidate trong tumor bag nhận soft target bằng weighted Bernoulli
+  I-projection thỏa global positive-mass rồi local constraint ép ít nhất một
+  positive/case. Việc train mọi candidate thay vì chỉ latent winner phải giảm
+  lazy-MIL và selector regret mà không cần spatial GT. INS
+  (https://arxiv.org/abs/2307.02249) chỉ hỗ trợ nguyên lý true-negative bag/direct
+  instance classifier; prototype/self-paced phần còn lại không được dùng vì gần
+  T1 đã fail.
+- **Frozen design:** scalar residual MLP `1156 -> 128 -> 1`, GELU/dropout `0.1`,
+  exact zero-init trên accepted candidate logits và descriptor center trong mỗi
+  valid bag. Equal image -> family -> candidate weight; normal target `0`; tumor
+  soft target global+local; global mass schedule `0.50 -> 0.15` trong `20` epoch;
+  tổng `40` epoch, seed `42`, AdamW `lr=3e-4`, weight decay `1e-4`, batch `16`,
+  flip consistency `0.10`, residual drift `0.001`, không early stop/sweep. Inference
+  chọn argmax bằng average original/flip base+residual nhưng giữ nguyên exact
+  accepted Geometry-v3 bag probability, cô lập candidate ranking khỏi
+  classification/count/area shortcut. Immutable baseline identity và primary
+  phải thành matched physical prediction pair.
+- **Exact input/provenance:** split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  selector-cache freeze
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`;
+  cache manifest
+  `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`;
+  baseline checkpoint
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069`;
+  baseline freeze
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`;
+  evaluator-only corrected baseline per-image SHA-256
+  `a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f`;
+  cohort `2,981 train / 371 validation`, descriptor `1156`. Validation polygons
+  và evaluator-only table không phải training input và chỉ được mở sau pair
+  freeze/audit.
+- **Compute/output:** static/synthetic locally; mọi real-cache fit/inference chỉ
+  private Kaggle T4x2/P100. Producer phải freeze checkpoint/history, per-epoch
+  target SHA/mass/local diagnostics, complete baseline/primary candidate-score
+  payload, `742` physical maps, exact pair-freeze và safety manifest. Independent
+  GT-blind auditor phải tái lập source/input/split/cache/base score, zero-init
+  identity, target projection/weights, full score/map equality và accepted bag-
+  probability preservation trước khi evaluator được phép đọc validation GT.
+- **Predeclared gates:** mechanism pass chỉ khi primary-minus-accepted baseline
+  có overall và small mean Dice dương, medium/large không giảm và complete misses
+  không tăng. Operational pass chỉ khi đồng thời đạt
+  `0.34024039 / 0.17895493 / 0.51244178 / 0.49370336`, overall matched bootstrap
+  CI95 lower `>0`, không subgroup regression/miss increase. Chỉ operational pass
+  mới cho phép train consumer. Nếu fail/reject/error: freeze kết quả, hoàn tất
+  quantitative failure-analysis gate và push trước mọi successor; không
+  post-hoc rescue/mass/epoch/threshold/fusion/area sweep. BTXRD test luôn khóa.
+- **Static readiness at registration:** design/model/training/tests đã push ở
+  `3e1b0dfe71ad0e8b0aba31e72b839f0be30ef5d7`; readiness artifact SHA-256
+  `c6d25b16941e92ee6b99848a34eebdf2adf9ae8c8483d6e3fdbae64e1298f6b3`
+  và log commit `6c568febad9298b158cb62729292c1431590ee97` xác nhận focused `12/12`,
+  S6-regression `24/24`, không real input/prediction/GT/consumer/test. Runner,
+  protocol, auditor và Kaggle wrapper chưa được claim là ready ở registration.
+
