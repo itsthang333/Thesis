@@ -14507,3 +14507,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   acceptance này mới được chạy one-time dynamic postfreeze readiness freezer;
   evaluator chỉ được mở sau readiness artifact tiếp tục commit/push central.
 
+### S8 dynamic postfreeze readiness frozen trước validation GT (2026-08-02)
+
+- Sau audit acceptance commit `2bc1e15`, one-time freezer chạy trên exact local
+  producer root và compact independent audit; không import dataset loader, không
+  mở image/mask/GT. Readiness artifact
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_postfreeze_readiness.json`
+  có canonical-LF SHA
+  `9e0294a5af2d7eb62598eb000f9ee187e2a8c46c07077a52cb432319f294247d`,
+  status `FROZEN_AFTER_INDEPENDENT_GT_BLIND_AUDIT_BEFORE_VALIDATION_GT`.
+- Artifact khóa protocol `7f819781...bc07`, evaluation addendum
+  `d79d9856...aec9`, terminal pre-GT audit `5f351b44...2026`, pair
+  `b2cfd59f...fa00`, exact score/prediction/freeze manifests cho cả hai arm,
+  cohort `371/184/187`, bootstrap `10,000` seed `20261204`; safety flags đều
+  false cho GT/consumer/test/collaborator output.
+- Chưa chạy evaluator ở mục này. Phải commit/push readiness và fetch lại central
+  byte-visible trước khi mở validation segmentation GT. Sau đó evaluator chạy
+  đúng hai frozen arms, audit output inventories, rồi matched decision; không
+  sweep/rescue.
+

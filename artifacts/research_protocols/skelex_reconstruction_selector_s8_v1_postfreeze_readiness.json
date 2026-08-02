@@ -1,0 +1,33 @@
+{
+  "arms": {
+    "geometry_v3_plus_upstream_equal_rank": {
+      "candidate_score_manifest_sha256": "6d08db6c7fd29d5ed2bc7ff57133cd9fdea1adc65ec797f9c3f0ee424b3452fc",
+      "prediction_freeze_sha256": "aa8acefaafe9c453dd08e1cba8d71b4a0aae25ecf16662774aebf53d01cf2ccd",
+      "prediction_manifest_sha256": "f66f7370b8b93ddadd1b7eef134ae5735c0a8f6743c97de021eab331d06666bf"
+    },
+    "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank": {
+      "candidate_score_manifest_sha256": "0f66c5ff54ea44f778bc62fb0e71145191e0189bdcc0ac419f87d0b1ec566de3",
+      "prediction_freeze_sha256": "a96e8a0bf88201c8b3fffb30c7ec41fd0abb2c3e4b7e9430408665b01dc2a148",
+      "prediction_manifest_sha256": "285c026853bb5e91482140e03cc2d47d418f4172716aec0aad32e97e5b9d7309"
+    }
+  },
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20261204,
+  "cohort": {
+    "normal": 187,
+    "tumor": 184,
+    "validation": 371
+  },
+  "collaborator_output_accessed": false,
+  "consumer_trained": false,
+  "evaluation_addendum_sha256": "d79d98564dd239d4821f4a54bf93371e9a84375ce0c2cecd09830467ad53aec9",
+  "evaluation_authorized_after_commit_and_central_visibility": true,
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "prediction_pair_freeze_sha256": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+  "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "schema_version": 1,
+  "status": "FROZEN_AFTER_INDEPENDENT_GT_BLIND_AUDIT_BEFORE_VALIDATION_GT",
+  "terminal_pre_gt_audit_sha256": "5f351b448e175cb0e2a15b20fa12e0a69ae133401cd40b44bf2dc414b9ea2026",
+  "test_evaluated": false,
+  "validation_gt_read": false
+}
