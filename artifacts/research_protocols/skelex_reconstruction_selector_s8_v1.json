@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_PRELAUNCH",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "registered_at": "2026-08-02T16:57:59+07:00",
+  "registration_commit": "a7ccfdcb53f87dfdff861a46359089c75cdb8dc8",
+  "scientific_source": {
+    "commit": "b4543aeb9430345c9b789384943bd218816a85dd",
+    "canonical_lf_sha256": {
+      "project/audit_skelex_reconstruction_selector_s8_output.py": "613b5b4244f001765dd705b53eb0edde755bb224780022ea2d0ba4eb9055b54d",
+      "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+      "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+      "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+      "project/models/skelex_reconstruction_selector.py": "df93b09b7c1c311c1977889705efe1709ab178cb60d95366d06405598280a7e5",
+      "project/run_bas_candidate_descriptor_core.py": "a9b69da1c524ddbd70e439ee5986ace843711993e2150bde17c75aafcc75b2dc",
+      "project/run_rad_dino_mask_bag_mil_probe.py": "0a220933343212dd3f4cc349f459db54b2b492d04240a7aa28fb85c475d54ae8",
+      "project/run_skelex_reconstruction_selector_s8.py": "a76db937db3654ca769a419f2c1713e99ae0fffe3521665bada14e62cdee43ce",
+      "tests/test_skelex_reconstruction_selector.py": "010b47c60447bd4064ec805c56f43b0c9bb9abe44ceaa88d7f1860e640c8e3ea"
+    }
+  },
+  "inherits_terminal_evidence": {
+    "accepted_geometry_v3_dice": {
+      "overall": 0.24548239,
+      "small_lt_1pct": 0.11708058,
+      "medium_1_to_lt_5pct": 0.37713552,
+      "large_ge_5pct": 0.38941265
+    },
+    "candidate_gallery_oracle_dice": {
+      "overall": 0.40907553,
+      "small_lt_1pct": 0.22274949,
+      "medium_1_to_lt_5pct": 0.59414708,
+      "large_ge_5pct": 0.64182537
+    },
+    "s7_terminal_result_audit_sha256": "b6bd5bb9b526dfc924a7b173ac8ac7c7417ef2447ddf5717742cf290a79ebfef",
+    "s7_failure_analysis_sha256": "24ea83383974517288e78d66b10030a2174c28b6f99b99b16aba67e6b69ef9b5",
+    "retired_mechanisms": [
+      "current-logit I-projection with forced current argmax",
+      "unbounded learned selector residual without independent candidate identity evidence",
+      "area-only or old-bag-statistic latent-burden routing",
+      "partial-consensus pseudo-label consumer"
+    ],
+    "collaborator_log_commit": "b5c3bf2362f6ec571098a72daba1237fda2f15f6",
+    "collaborator_output_accessed": false
+  },
+  "immutable_inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "skelex_revision": "368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e",
+    "skelex_config_sha256": "b48411f4313c2ee6357586b57d185befac8c7c77cc475bc2188ec4487b1bc6f7",
+    "skelex_preprocessor_sha256": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea",
+    "skelex_weight_sha256": "81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8"
+  },
+  "frozen_algorithm": {
+    "model": "public frozen SKELEX ViTMAEForPreTraining decoder",
+    "input_size": 224,
+    "patch_size": 16,
+    "grid_size": 14,
+    "mask_ratio": 0.75,
+    "norm_pix_loss": false,
+    "masks_per_orientation": 10,
+    "mask_seed": 42,
+    "orientations": [
+      "original",
+      "horizontal_flip_aligned_to_original"
+    ],
+    "candidate_support": "immutable cache candidates area-projected to 14x14 and multiplied by square-content occupancy",
+    "candidate_evidence": "masked-patch MSE inside candidate minus radius-2 local-ring masked-patch MSE",
+    "aggregation": "mean contrast minus 1.96 standard errors over 20 maps",
+    "fusion": "0.75 tie-aware Geometry-v3 rank plus 0.25 tie-aware reconstruction-LCB rank",
+    "family_gate": "combined winner family must equal both original-only and aligned-flip-only winning families",
+    "randomization_gate": {
+      "permutations": 255,
+      "seed": 20261203,
+      "scope": "independent within-map permutations of error values over observed content-valid patches",
+      "null_preserves": [
+        "per-map error histogram",
+        "candidate masks and areas",
+        "candidate families",
+        "Geometry-v3 rank"
+      ],
+      "statistic": "maximum fused improvement over accepted winner within each bag",
+      "p_value": "(1 + null statistics greater than or equal to observed)/(255 + 1)",
+      "threshold": 0.05
+    },
+    "fallback": "if support, family or randomization gate fails, emit accepted baseline score vector byte-identically",
+    "sweeps_forbidden": true
+  },
+  "compute": {
+    "location": "private Kaggle",
+    "accelerator": "NvidiaTeslaT4 x2",
+    "real_cuda_guard_required_on_both_devices": true,
+    "decoder_parallelism": "DataParallel splits each image's 20 masked-view forwards across two T4 devices",
+    "training": false
+  },
+  "pre_gt_output_contract": {
+    "validation_rows": 371,
+    "prediction_arms": [
+      "geometry_v3_plus_upstream_equal_rank",
+      "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank"
+    ],
+    "physical_maps": 742,
+    "required_evidence": [
+      "noise bank and model provenance",
+      "original and aligned-flip patch-error maps and observed masks",
+      "candidate grids, content occupancy, family IDs and full base scores",
+      "orientation and combined LCB scores",
+      "255-null p-value and selector decision",
+      "full score vectors and prediction pair freeze",
+      "independent GT-blind arithmetic and physical-output audit"
+    ]
+  },
+  "mechanism_gate": {
+    "reconstruction_nonconstant": true,
+    "exact_original_flip_null_reproducibility": true,
+    "fallback_baseline_byte_identity": true,
+    "overall_dice_strict_improvement": true,
+    "small_dice_strict_improvement": true,
+    "medium_dice_no_regression": true,
+    "large_dice_no_regression": true,
+    "complete_misses_no_increase": true
+  },
+  "operational_gate": {
+    "minimum_dice": {
+      "overall": 0.34024039,
+      "small_lt_1pct": 0.17895493,
+      "medium_1_to_lt_5pct": 0.51244178,
+      "large_ge_5pct": 0.49370336
+    },
+    "paired_overall_ci95_lower_strictly_positive": true,
+    "no_subgroup_regression": true,
+    "no_complete_miss_increase": true,
+    "consumer_authorized_only_after_pass": true
+  },
+  "literature": [
+    {
+      "title": "SKELEX: Self-supervised skeletal X-ray representation learning",
+      "url": "https://www.nature.com/articles/s41746-026-02826-9",
+      "transferred_mechanism": "frozen domain-specific masked reconstruction error as independent spatial anomaly evidence"
+    },
+    {
+      "title": "SKELEX preprint",
+      "url": "https://arxiv.org/abs/2602.03076",
+      "transferred_mechanism": "ten random masked reconstructions without task fine-tuning"
+    },
+    {
+      "title": "COIN: Counterfactual inpainting for weakly supervised medical image segmentation",
+      "url": "https://arxiv.org/abs/2404.12832",
+      "transferred_mechanism": "counterfactual reconstruction contrast only; no GAN or inpainter is trained in S8"
+    }
+  ],
+  "training_supervision": "frozen model; no S8 training; inherited baseline used image-level normal/tumor labels only",
+  "prediction_pair_frozen_before_validation_segmentation_gt": true,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}
