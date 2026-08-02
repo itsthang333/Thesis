@@ -13189,3 +13189,39 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   một claim S7 `ĐANG LÀM` đầy đủ; runner/protocol/auditor/wrapper và mọi real
   cache action đều còn bị khóa.
 
+### Đồng bộ collaborator `29a3ed6` và collision gate trước claim S7 (2026-08-02)
+
+- Đã fetch `origin/research-wsss-improvement` tại
+  `6c568febad9298b158cb62729292c1431590ee97` và đọc Git-log delta đầy đủ
+  `139ba7628df884941d768c1fb29dddaa28156648..29a3ed6d1f6fe99e1fdb6d6ae3c20c562474b7fb`
+  của `origin/codex/research-sync-20260731`; không truy cập Kaggle hay output của
+  collaborator. Claim cross-view co-witness vẫn **PRELAUNCH**, chưa có terminal
+  efficacy/Dice. Protocol transport đã được khóa lại bằng Git-archive SHA-256
+  `20e6ff644b12f0406deedfd83026111c3a3808ce7f70b90c1675c4a0b772c9eb`;
+  scientific fields không đổi.
+- Feasibility mới `EXP-20260802-codex-rich-gallery-scale-conditional-feasibility-v1`
+  cho thấy candidate area-rank expert có dấu đúng theo GT-size: beta tốt nhất
+  small/medium/large là `-1.0/0/+0.5`, subgroup Dice
+  `0.181215/0.435229/0.501086`, true-group routed overall `0.311904` và
+  per-image three-expert oracle `0.350692`. Đây là retrospective GT-only
+  mechanism evidence, không phải deployable selector và không được adopt như
+  efficacy terminal.
+- Ba gate annotation-free dựa vào baseline-selected area, top-five median area
+  và median best-per-source area chỉ đạt `0.278291/0.271403/0.268845`, đều thấp
+  hơn immutable rich-gallery baseline `0.288729`; size accuracy chỉ
+  `42.9-45.1%`, area/true-size Spearman `0.043-0.096`. Root cause được chuyển
+  giao là area-only routing tự củng cố lỗi: small lesion bị over-segment đã trông
+  như large trong proposal-area space. Summary/per-image/audit SHA-256 phía
+  collaborator lần lượt là
+  `47ec2c711a42a5ca2efe6e2d4419bdc71bd8f4287df00297a2c2d414a70c5430`,
+  `2ed22cc34a64232a08380acd8136cebdae0e24fb758659c42ef0a8112ed98ac0`,
+  `970fbd271a771b20c048fd6736487c44ce4c9a13e55cb9027a84ce0fcf97300c`.
+- Collision decision: central không launch cross-view/co-witness, area-expert
+  hoặc size-gating competitor. S7 vẫn unique: dùng same-gallery accepted cache,
+  true-negative bags và global+local soft targets để học **candidate identity**
+  trên toàn bộ instance; không dùng cross-view pair, không dùng area expert/gate
+  và giữ nguyên exact accepted bag probability. Kết quả collaborator làm mạnh
+  thêm lý do khóa count/area shortcut của S7, nhưng không thay đổi objective hay
+  được quảng bá như một cải tiến đã chứng minh. Chưa claim/real-input/launch ở
+  boundary đồng bộ này; consumer/test/validation GT vẫn khóa.
+
