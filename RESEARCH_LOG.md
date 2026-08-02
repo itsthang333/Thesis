@@ -12617,3 +12617,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   source, tạo protocol đóng băng source/hash và wrapper/binding fail-closed trước
   launch.
 
+### S6 exact source/protocol freeze, chưa binding/launch (2026-08-02)
+
+- **Hiệu chính append-only:** note static-readiness ngay trên ghi nhầm full
+  registration hash `582652e...a71`; exact commit thực tế là
+  `582652edb988af1d5da7dd6bf86cfc8ab2ec1b84`. Short hash và thứ tự push ở note
+  cũ đúng; hiệu chính này không xóa dấu vết cũ.
+- Exact scientific source commit
+  `543ee89654a0ed00e80ded16924a760585337924` đã push central. Nó chứa toàn bộ
+  model/training/runner/independent-auditor và focused tests đã mô tả; chưa chứa
+  protocol/binding và chưa chạy input thật.
+- Frozen protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_label_granularity_s6_v1.json`
+  có SHA-256
+  `f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3`.
+  Protocol khóa exact scientific commit, canonical-LF source closure, immutable
+  split/cache/base, matched pair/loss/16 epoch/seed, entropy formula, T4x2,
+  `742` score + `742` map, independent tolerance `5e-5`, exact float16 maps,
+  diagnostic-nonblocking contract, bootstrap seed `20261201` và mọi
+  GT/consumer/test lock. Không sweep/early stop/rescue.
+- Protocol closure test mới normalize CRLF về canonical LF trước SHA để tránh
+  lặp lại boundary B1; focused S6 protocol/source/auditor suite pass `21/21`.
+  Chưa tạo wrapper/binding/package/Kaggle version; validation polygon, consumer
+  và BTXRD test vẫn khóa.
+

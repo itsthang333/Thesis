@@ -1,0 +1,175 @@
+{
+  "protocol_id": "rad_dino_mask_bag_label_granularity_s6_v1",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "frozen_utc": "2026-08-02T06:18:19Z",
+  "status": "FROZEN_PRELAUNCH",
+  "registration_commit": "582652edb988af1d5da7dd6bf86cfc8ab2ec1b84",
+  "scientific_source": {
+    "commit": "543ee89654a0ed00e80ded16924a760585337924",
+    "design": "S6_LABEL_GRANULARITY_MIL_DESIGN.md",
+    "heavy_compute": "one private Kaggle Tesla T4 x2 execution",
+    "real_data_execution_before_protocol_freeze": false
+  },
+  "scientific_question": "Does unused image-level BTXRD tumor taxonomy reduce same-gallery candidate-selector regret when a within-bag-centered residual is uncertainty-shrunk to the binary coarse selector?",
+  "inheritance": {
+    "accepted_baseline": "square-corrected Geometry-v3",
+    "accepted_baseline_dice_overall_small_medium_large": [
+      0.2454823867797678,
+      0.11708057891440651,
+      0.37713551529480416,
+      0.3894126471276201
+    ],
+    "immutable_candidate_oracle_overall_small_medium_large": [
+      0.4090755342486002,
+      0.2227494852063559,
+      0.5941470844279589,
+      0.6418253674184405
+    ],
+    "negative_constraints": [
+      "EXP-20260731-codex-r1-normal-prototype-v1",
+      "EXP-20260731-codex-r2-affinity-residual-v1",
+      "EXP-20260731-codex-s1-family-balanced-v1",
+      "EXP-20260801-codex-r3-critical-relation-v1",
+      "EXP-20260801-codex-r4-orbit-averaged-relation-v1",
+      "EXP-20260801-codex-s3-same-family-graph-v1",
+      "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+      "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+      "EXP-20260802-codex-s5-skelex-selector-v1"
+    ],
+    "collaborator_output_accessed": false,
+    "collaborator_active_scope_not_duplicated": "matched-normal transplant Stage-A/Stage-B"
+  },
+  "frozen_inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_dataset": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "selector_cache_kernel_version": 5,
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+    "selector_cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "baseline_transport_dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1",
+    "baseline_transport_dataset_version": 1,
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+    "baseline_protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555",
+    "cohort": {
+      "train": 2981,
+      "validation": 371
+    },
+    "descriptor_dim": 1156,
+    "train_subtype_counts_1_to_9": [598, 211, 164, 74, 35, 41, 92, 237, 36],
+    "validation_segmentation_gt": "not an execution input"
+  },
+  "matched_pair": {
+    "arms": [
+      "coarse_control",
+      "hierarchical_entropy_routed"
+    ],
+    "shared_architecture": "within-bag-centered 1156->128->9 residual with zero-initialized final layer",
+    "frozen_base_scorer": true,
+    "coarse_control_supervision": "binary normal/tumor image label only; nine columns remain exchangeable",
+    "hierarchical_supervision": "binary tumor plus benign/malignant plus nine tumor-subtype image labels",
+    "validation_subtype_label_used_for_routing": false,
+    "entropy_route": "1 - H(predicted nine-subtype bag posterior)/log(9)",
+    "candidate_target": null,
+    "instance_winner_target": null,
+    "segmentation_target": null,
+    "pseudo_mask_target": null,
+    "proposal_or_geometry_change": false
+  },
+  "training": {
+    "epochs": 16,
+    "batch_size": 16,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "seed": 42,
+    "bag_temperature": 0.2,
+    "dropout": 0.1,
+    "consistency_weight": 0.1,
+    "residual_drift_weight": 0.001,
+    "hierarchy_loss_weights_binary_pathology_subtype": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "subtype_class_weight": "inverse square root of exact train image counts, normalized to mean one",
+    "epoch_selection": "fixed final epoch only",
+    "early_stopping": false,
+    "hyperparameter_sweep": false,
+    "training_labels": "image-level only"
+  },
+  "pre_gt_contract": {
+    "pretraining_identity": "both arms reproduce every frozen base candidate score exactly at zero initialization",
+    "physical_outputs": {
+      "candidate_score_payloads": 742,
+      "prediction_maps": 742,
+      "prediction_freezes": 2,
+      "prediction_pair_freeze": 1
+    },
+    "independent_reproduction_atol": 0.00005,
+    "map_reproduction": "exact float16",
+    "diagnostics": [
+      "binary image AUROC/sensitivity/specificity",
+      "tumor-subtype accuracy/macro recall",
+      "candidate-count versus bag-probability absolute Spearman",
+      "original/flip top-1 agreement",
+      "entropy route distribution",
+      "changed selection fraction"
+    ],
+    "diagnostics_block_prediction_freeze": false,
+    "only_integrity_or_safety_failure_blocks_gt_evaluation": true,
+    "prediction_pair_physically_frozen_before_validation_segmentation_gt": true
+  },
+  "post_freeze_evaluation": {
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "bootstrap": "10000 complete-group paired replicates",
+    "bootstrap_seed": 20261201,
+    "mechanism_pass": "hierarchical arm mean Dice exceeds matched control for overall and small, does not decrease medium or large, and does not increase complete misses",
+    "operational_goals_overall_small_medium_large": [
+      0.34024039,
+      0.17895493,
+      0.51244178,
+      0.49370336
+    ],
+    "consumer_authorization": "all four goals plus positive overall paired-CI lower bound, no subgroup regression, no miss increase, and all safety gates"
+  },
+  "canonical_lf_source_hashes": {
+    "S6_LABEL_GRANULARITY_MIL_DESIGN.md": "7d98a92db46642977c5be6ad7fff316ba494955ce00d94441ea986e0e1f9e0b1",
+    "project/models/mask_bag_label_granularity.py": "586ed5f2de3690cbd4ddb2b906cd8d01ad35b1d5e6bdfd00cdce0c17625941b1",
+    "project/models/mask_bag_label_granularity_training.py": "2a049f392c4e8c528977840541d043a938110170030a2b5835ce2aed7f459fff",
+    "project/run_mask_bag_label_granularity_s6_pair.py": "0dae9186cbe9cfb49a2228bc8ccc7fadde9fbfbecc3d4dffe92263930e715adc",
+    "project/audit_mask_bag_label_granularity_s6_output.py": "f26d555381ad4f60b6274414bbdbdfc565a93445d90c3bafc90df064878519b5",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/run_mask_bag_normal_prototype_arm.py": "5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f",
+    "project/run_mask_bag_critical_relation_arm.py": "bd8bca7d02802ce5881193f4ba0b1286a216bc4f4d077b34de3da5d14c9ae05c",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "tests/test_mask_bag_label_granularity.py": "139175e0de89c0086c4e50097ce5b647403d3ebd73ee2ec6ba3477f7ea6df31f",
+    "tests/test_mask_bag_label_granularity_training.py": "8f3724eae129af55e8c61e9f38bf081745faaa7405159ba189525c7c0c393751",
+    "tests/test_run_mask_bag_label_granularity_s6_pair.py": "e52ad3c36d4fa7224b9b892651056baca18e10d52370f8b763320c2f4beb57aa",
+    "tests/test_audit_mask_bag_label_granularity_s6_output.py": "9f3d133cb75477404eaa96db3aa106a184e97a77767dd9fa3c8b50c895db93f7"
+  },
+  "post_freeze_only_source_hashes": {
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/compare_mask_bag_evaluated_arms.py": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119",
+    "tests/test_evaluate_mask_bag_selector_arm.py": "21fafe74740588ae02a897e387a639a7723575334ce2ff4fe6df4fcd36aa8e29",
+    "tests/test_compare_mask_bag_evaluated_arms.py": "f29650ad9139bc2c894274cfe338bb69890ecb77133286e5e90ce0825324c7b6"
+  },
+  "literature": [
+    "https://www.ecva.net/papers/eccv_2022/papers_ECCV/html/7044_ECCV_2022_paper.php",
+    "https://openaccess.thecvf.com/content_iccv_2015/html/Wang_Multiple_Granularity_Descriptors_ICCV_2015_paper.html",
+    "https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html",
+    "https://proceedings.mlr.press/v235/liu24ac.html",
+    "https://arxiv.org/abs/1811.12346",
+    "https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html"
+  ],
+  "safety": {
+    "validation_gt_read_before_prediction_freeze": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "validation_subtype_label_used_for_routing": false,
+    "collaborator_output_accessed": false
+  }
+}
