@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "status": "PRIVATE_DATASET_CREATE_REQUEST_ACCEPTED",
+  "created_at": "2026-08-02T19:05:00+07:00",
+  "dataset": "itsthang333/btxrd-skelex-s8-v1-frozen-output",
+  "url": "https://www.kaggle.com/datasets/itsthang333/btxrd-skelex-s8-v1-frozen-output",
+  "visibility": "private",
+  "upload_attempt": 2,
+  "upload_path_mode": "absolute",
+  "uploaded_files": [
+    {
+      "name": "s8_producer_output.zip",
+      "bytes": 20290662,
+      "sha256": "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737"
+    },
+    {
+      "name": "s8_producer_terminal.log",
+      "bytes": 26573,
+      "sha256": "0ed4c39bcee22a559de3c642bb72a5b77ce148c50e8260bf0d89d5dd47d82a79"
+    }
+  ],
+  "cli_result": "Your private Dataset is being created",
+  "non_blocking_warning": "Optional tags btxrd, transport and gt-blind were rejected; dataset files, visibility and provenance were unchanged.",
+  "scientific_change": false,
+  "prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

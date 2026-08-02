@@ -14286,3 +14286,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Failure boundary được ghi trước retry; correction duy nhất là gọi cùng package
   bằng absolute path, giữ nguyên metadata/archive SHA và private visibility.
 
+### S8 private frozen-output dataset upload accepted (2026-08-02)
+
+- Sau khi attempt-1 tooling error được commit/push tại `48ac1cf`, đúng một retry
+  với absolute package path đã upload thành công hai exact files và Kaggle trả
+  `Your private Dataset is being created` tại
+  https://www.kaggle.com/datasets/itsthang333/btxrd-skelex-s8-v1-frozen-output .
+  Archive `20,290,662` bytes SHA `c5164378...ca1737`; terminal log `26,573` bytes
+  SHA `0ed4c39b...d82a79`; visibility private. Ba optional tags bị từ chối nhưng
+  không đổi files, provenance hay quyền truy cập. Upload receipt tracked tại
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/transport_dataset_v1_upload_receipt.json`.
+- Đây chỉ là transport của pair đã freeze: không inference/prediction mới, không
+  validation GT/evaluator, consumer hay BTXRD test. Chưa launch audit-only v2;
+  wrapper v2 phải verify exact archive hash, giải nén an toàn, verify producer
+  manifests/pair rồi mới chạy corrected auditor trên T4x2.
+
