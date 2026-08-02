@@ -13694,3 +13694,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   vượt matched control. Nó không thay đổi frozen S7 prediction/evaluator/gate;
   validation GT cho S7 vẫn chưa mở ở boundary đồng bộ này.
 
+### S7 identity evaluation frozen trước primary (2026-08-02)
+
+- Sau pre-GT readiness đã visible central, exact evaluator SHA
+  `ccc3a493...b084` mới mở validation GT cho `geometry_v3_identity`, exact cohort
+  `371/184/187`, subgroup `94/72/18`, `10,000` complete-group bootstrap seed
+  `20261202`. Identity tái lập accepted Geometry-v3 Dice
+  `0.24548239 / 0.11708058 / 0.37713552 / 0.38941265` và complete misses
+  `53 / 33 / 18 / 2` (overall/small/medium/large).
+- Per-image/evaluation-audit SHA-256 là
+  `0ff1c0c44b2ab1613daf341c02b84316b3f17485375623d4f8dbcffcfcd065da` /
+  `320f4e9b6b47f94694356ff80cd535a4f9f87d6015b93afddb5f486c026caf21`.
+  Identity freeze artifact
+  `artifacts/kaggle/rad_dino_mask_bag_global_local_instance_s7_v1/kernel_version1_retry1_identity_evaluation_freeze.json`
+  có SHA-256
+  `2be0adec78e2a212195ba17ab0fff173aaa048a843951cc4850f56a4f0817f0a`.
+- Primary evaluator chưa chạy tại freeze này; matched decision chưa chạy,
+  consumer/test khóa. Phải commit/push identity evidence trước khi đánh giá
+  `global_local_instance` bằng cùng evaluator/seed.
+
