@@ -12726,3 +12726,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `EXP-20260802-codex-s6-label-granularity-mil-v1` tiếp tục `ĐANG LÀM`; chỉ được
   launch sau khi exact binding/audit/log commit này visible central.
 
+### S6 kernel version 1 — launched, chưa status-poll (2026-08-02)
+
+- Exact binding/final-prelaunch/log commit
+  `34ee708213fe97bce315ac07ce1a75136a0988b1` đã push và được fetch thấy trên
+  `origin/research-wsss-improvement`; collaborator vẫn ở `e715539`, không có
+  active collision mới. Ngay trước launch, package được re-verify đúng hai file,
+  không directory thừa, wrapper/metadata SHA không drift.
+- `kaggle kernels push` bằng Kaggle CLI `2.2.3` đã trả
+  `Kernel version 1 successfully pushed` cho private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1` lúc
+  `2026-08-02T06:33:33.8091737Z`. Metadata yêu cầu `NvidiaTeslaT4`; runtime
+  wrapper vẫn phải fail-closed nếu không thấy đúng T4x2 và mọi frozen
+  source/protocol/input gate.
+- Launch audit SHA-256
+  `c681549e0913bd84347d545a388b31d31a332102fc57d36851f3e29325013b6b`.
+  Không status-poll sau launch và không tạo monitor. Chưa đọc partial
+  log/output, chưa validation GT, chưa train consumer, chưa đọc BTXRD test.
+  Experiment tiếp tục **ĐANG LÀM** chờ một bounded terminal check ở nhịp sau.
+
