@@ -13,7 +13,7 @@ from hashlib import sha256
 
 KERNEL = "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1"
 PRODUCER_KERNEL = "itsthang333/btxrd-skelex-reconstruction-selector-s8-v1"
-PRODUCER_KERNEL_VERSION = 1
+PRODUCER_VERSION = 1
 KERNEL_VERSION = 0
 LAUNCH_BINDING_READY = False
 CHECKOUT_COMMIT = "UNBOUND"
@@ -147,7 +147,7 @@ def main() -> None:
         "kernel": KERNEL,
         "kernel_version": KERNEL_VERSION,
         "producer_kernel": PRODUCER_KERNEL,
-        "producer_kernel_version": PRODUCER_KERNEL_VERSION,
+        "producer_kernel_version": PRODUCER_VERSION,
         "checkout_commit": CHECKOUT_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
         "correction_sha256": CORRECTION_SHA256,
@@ -190,7 +190,7 @@ def main() -> None:
         "kernel": KERNEL,
         "kernel_version": KERNEL_VERSION,
         "producer_kernel": PRODUCER_KERNEL,
-        "producer_kernel_version": PRODUCER_KERNEL_VERSION,
+        "producer_kernel_version": PRODUCER_VERSION,
         "runtime": {"python": platform.python_version(), **t4},
         "checkout_commit": CHECKOUT_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
