@@ -8648,3 +8648,61 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `RICH_GALLERY_MATCHED_NORMAL_TRANSPLANT_FAILURE_DOSSIER.md`.  Test remains
   locked.
 
+### EXP-20260802-codex-rich-gallery-g1-conditional-information-v1
+
+- A new fail-closed analyzer consumes the exact matched-normal Stage-B summary
+  SHA `ebbfb745...` and all `32,519` candidate rows.  It creates no selector or
+  mask.  Candidate Dice and every frozen signal are ranked within image and
+  residualized against G1 rank, upstream rank, log-area rank and proposal
+  source.  Validation GT is used only retrospectively on already frozen tables.
+- The apparently useful transition2 matched relative-L2 contrast has median
+  partial rank correlation only `0.039274` overall and `-0.013838` for `<1%`;
+  it ranks the eligible oracle above the baseline choice on only `49.14%` of
+  nontrivial pairs.  Its matched-minus-random partial is `-0.010044`.  Terminal
+  matched-minus-random logit partial is `0.003547`.
+- The largest apparent residuals are ring-mass variables (`0.112-0.136`), but
+  matched and random values are identical and rank the oracle above baseline
+  only `45.7-46.9%`.  They are geometry/support proxies, not candidate tumor
+  identity.
+- **Decision:** frozen transition2 and terminal classifier representations are
+  exhausted for candidate-specific identity.  Do not run another feature-layer,
+  fusion, threshold, morphology, source or area sweep.  The next mechanism
+  must retrain a high-spatial-resolution representation while preserving the
+  immutable G1/upstream selector at zero residual.
+- Analyzer plus matched-normal focused regression passes `8/8`.
+  Conditional JSON/dossier SHA-256 are
+  `d970aed42fd2f676b50c147075c1fef64c69f889acccb60b5e5ae0f0e4c526f7`
+  and `124246792b5875122f86021a9c3471598a900f02a23bb44a8a6cf4b58dfd50a5`.
+  See `RICH_GALLERY_G1_CONDITIONAL_INFORMATION_DOSSIER.md`. Test remains
+  locked.
+
+### EXP-20260802-codex-rich-gallery-cross-view-feasibility-v1
+
+- The canonical split exposes one previously unused weak-supervision relation:
+  `443` train-tumor heuristic groups contain at least two distinct views,
+  covering `1,027/1,488` train-tumor images.  Within every group anatomy and
+  tumor type agree.  BTXRD provides no patient/case identifier, so this remains
+  a noisy consecutive-ID/stable-metadata relation and requires a matched
+  different-group control.
+- A prediction-first GT-only feasibility diagnostic uses the frozen 384-D
+  RAD-DINO candidate contrast descriptor on the exact 13 distinct-view
+  validation groups (`26` oriented queries).  Raw same-group support correlates
+  with candidate Dice at median `0.415869`, but ranks the eligible oracle above
+  the immutable baseline only `46.15%`.
+- On the 16 queries admitting same-anatomy/tumor-type/view different-group
+  controls, same-group minus control has median partial correlation only
+  `0.014121` after controlling G1/upstream/area/source, and ranks the oracle
+  above baseline only `18.75%`.  The raw association is mainly shared anatomy,
+  not lesion identity.
+- **Decision:** never append frozen cross-view cosine to the baseline.  The
+  cross-view relation remains a new but unproven source of training supervision
+  for a high-resolution representation.  A bounded full-vs-matched-control
+  design is frozen in
+  `RICH_GALLERY_CROSS_VIEW_CANDIDATE_REPRESENTATION_DESIGN.md`; no GPU launch is
+  authorized before payload/code/preflight audits.
+- Cross-view/conditional focused tests pass `6/6`.  Feasibility JSON/per-query
+  SHA-256 are
+  `2ff77b11c0acc9e1d215bd246aaa80a29467a2bc3785243d7b97fa05db9f40be`
+  and `6d3f471916d77ca1fd58fa3356fd62a268a36f7c5bd4d142d2a376022c243e14`.
+  Test remains locked.
+
