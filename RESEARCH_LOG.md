@@ -12932,3 +12932,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Không post-launch status-poll, không monitor, không output/GT access. Claim S6
   tiếp tục **ĐANG LÀM** chờ một bounded terminal check; consumer và test khóa.
 
+### S6 v2 bounded running check (2026-08-02)
+
+- Đúng một status check lúc `2026-08-02T07:02:31.4776114Z`, khoảng `153` giây
+  sau launch, thấy version 2 vẫn `KernelWorkerStatus.RUNNING`. Không repeat poll,
+  không monitor, không partial log/output access và không mở GT/test/consumer.
+  Claim tiếp tục **ĐANG LÀM** chờ nhịp terminal hợp lý sau.
+
