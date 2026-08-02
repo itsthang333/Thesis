@@ -175,7 +175,11 @@ def _null_improvements(
     base_scores: np.ndarray,
     accepted_index: int,
 ) -> np.ndarray:
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # The frozen producer intentionally moves reconstruction errors, candidate
+    # grids and base logits to CPU before select_with_spatial_null. Replaying
+    # the rank-discontinuous null statistic on CUDA can split an exact CPU tie.
+    # Keep the independent arithmetic on the producer's selector device.
+    device = torch.device("cpu")
     errors_t = torch.from_numpy(np.asarray(errors, dtype=np.float32)).to(device)
     observed_t = torch.from_numpy(np.asarray(observed, dtype=bool))
     candidate_t = torch.from_numpy(np.asarray(candidates, dtype=np.float32)).to(device)
