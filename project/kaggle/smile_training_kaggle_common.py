@@ -17,7 +17,7 @@ REFERENCE_SHA256 = "c37561eec0fcffa67d99d1650720557260531b934d3bc87aec8fd780c9a3
 DENSENET_SHA256 = "a639ec97d7c33b07ae66f0b5fb7d0192f95a3b11b7576c66c0126c2a727c4395"
 PROTOCOL_SHA256 = "b79aa0c42b694d6fe7986e74be062296e424100513a5ad188444b38a20a73af6"
 # Filled after the source manifest is frozen; deliberately outside that manifest.
-SOURCE_SHA256 = "3873bbc0dabfb07c291de3bfd275ea71e3f4dabd5600ba7aeabb129967cf1075"
+SOURCE_SHA256 = "d8b58ffaa932d8d0739f4ffee9929f39ecce1306b9d60e5e67cc0971eab70844"
 
 
 def sha256_file(path: Path) -> str:

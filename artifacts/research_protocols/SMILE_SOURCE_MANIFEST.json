@@ -1,5 +1,5 @@
 {
-  "combined_sha256": "3873bbc0dabfb07c291de3bfd275ea71e3f4dabd5600ba7aeabb129967cf1075",
+  "combined_sha256": "d8b58ffaa932d8d0739f4ffee9929f39ecce1306b9d60e5e67cc0971eab70844",
   "files": {
     "artifacts/research_protocols/smile_rich_gallery_v1.json": "b79aa0c42b694d6fe7986e74be062296e424100513a5ad188444b38a20a73af6",
     "project/__init__.py": "023ed9beb57920f6cbf3b8deb581cedd7f5fbf8e04aecf2ad579f7bc2abbf77e",
@@ -12,7 +12,7 @@
     "project/evaluate_smile_rich_gallery_stage_b.py": "b3ac05515e88f276920ad09a2c76c5e4e84915cf5a365bbdd4b0e8c5ffba18d7",
     "project/freeze_smile_rich_gallery_stage_a.py": "93a4fdc55a2d8c43ba686406505420820697d1b9ad7c9b9e9bd8b15d6114959f",
     "project/models/smile_local_evidence.py": "acbbda4e42310aa2af72c95f384b9a95fd3d7f5ca6c496ef84a19c138c1f176d",
-    "project/pseudo/__init__.py": "ca1dd3524e8ff883ec04ec3a5315996f77caeb928695f50d62a97cceaf90b706",
+    "project/pseudo/__init__.py": "bf1b50100ffc22a5ddbe3d0c4a1d865dc1a0a6cffcbc4b7b4ab9f461b25173aa",
     "project/pseudo/candidate_diagnostics.py": "c870c76a0fa50fbb934449ab2fc0991bfd6a33f81259eeae4f4460ccb896abf5",
     "project/pseudo/generate_layercam.py": "14e6c2c751eaee6257e71d3c3f6f0ae043ee11d7923f518907be6d7136d7530e",
     "project/pseudo/manifest.py": "488cb2b53576ef286b6c6a4fc45c9ef69c7128edce1c699c949181f2faecd7ed",
