@@ -14475,4 +14475,6 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Bounded check duy nhất ở nhịp kế trả `KernelWorkerStatus.RUNNING`. Không repeat
   poll, không partial output/log và không monitor; S8 tiếp tục `ĐANG LÀM` chờ
   terminal audit.
+- Bounded continuation check kế tiếp vẫn trả `KernelWorkerStatus.RUNNING`.
+  Polling dừng ngay; không partial log/output, evaluator/GT hay monitor.
 
