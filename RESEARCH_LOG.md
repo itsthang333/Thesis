@@ -13734,3 +13734,38 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   này; không kết luận terminal trước khi commit/push exact primary hashes. Không
   consumer/test và không rescue/sweep.
 
+### S7 terminal matched decision — HOÀN THÀNH, GATE FAIL (2026-08-02)
+
+- `EXP-20260802-codex-s7-global-local-instance-v1` chuyển từ **ĐANG LÀM** sang
+  **HOÀN THÀNH — GATE FAIL** sau đúng matched decision đã predeclare. Kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1` version `1` là
+  `COMPLETE`; output tree `1,540` file có SHA-256
+  `79a0f80c1e454ed79b3f792f10541d3352889a3a289add649971e7a091759038`.
+  Prediction pair đã freeze vật lý trước validation GT bằng SHA-256
+  `a3d37e43beb8e90d0d30fcf3a86c25bf071fcb340ec62a025ee429799f031a63`
+  và independent pre-GT audit `71923c21...3caad` đã pass.
+- Matched complete-group bootstrap `10,000`, seed `20261202`, cho delta
+  primary-minus-identity overall/small/medium/large lần lượt
+  `-0.01616870 / -0.00075596 / -0.04221675 / +0.00753476`; CI95 lần lượt
+  `[-0.03641940,+0.00314316] / [-0.02784805,+0.02394772] /
+  [-0.07448150,-0.00805024] / [-0.04141317,+0.05611322]`. Dice primary là
+  `0.22931369 / 0.11632462 / 0.33491876 / 0.39694740`, đều chưa đạt goal; medium
+  suy giảm có ý nghĩa thống kê. Complete misses là `53/34/17/2` so với identity
+  `53/33/18/2`: recover `5` nhưng đồng thời mất `5` overlap, nên tổng miss không
+  đổi và small xấu hơn một miss.
+- Mechanism gate fail vì overall/small không tăng và medium giảm; operational
+  gate fail vì không goal nào đạt, overall CI lower không dương và subgroup
+  non-regression fail. Matched `paired_per_image.csv`, `paired_comparison.json`,
+  `gate_decision.json`, `decision_audit.json` có SHA-256 lần lượt
+  `52ab093c...e1bd / 5f16ad5e...bd9c5 / 1065e791...39836 /
+  330f47fe...65523`. Terminal result artifact
+  `artifacts/kaggle/rad_dino_mask_bag_global_local_instance_s7_v1/kernel_version1_retry1_terminal_result_audit.json`
+  khóa toàn bộ provenance/result; SHA-256
+  `b6bd5bb9b526dfc924a7b173ac8ac7c7417ef2447ddf5717742cf290a79ebfef`.
+- Đây là **thất bại khoa học của hypothesis**, không phải implementation hay
+  transport failure: source/input/pair/map/audit/evaluator đều pass và identity
+  tái lập accepted Geometry-v3 byte/metric. Không consumer, không post-hoc
+  mass/epoch/fusion/threshold/area rescue, không BTXRD test. Theo failure-analysis
+  gate, chưa được đăng ký/implement/launch successor trước khi phân tích định
+  lượng cơ chế S7 và push kết luận phần loại bỏ/kế thừa.
+

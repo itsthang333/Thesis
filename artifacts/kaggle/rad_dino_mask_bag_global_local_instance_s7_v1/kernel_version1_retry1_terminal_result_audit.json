@@ -1,0 +1,107 @@
+{
+  "artifact_id": "rad_dino_mask_bag_global_local_instance_s7_v1_kernel_version1_retry1_terminal_result_audit",
+  "consumer_authorized": false,
+  "consumer_trained": false,
+  "decision": {
+    "decision_audit_sha256": "330f47fe515ead48f5940cf531ea6f8c4370bcb14407d94d202621e01e465523",
+    "gate_decision_sha256": "1065e791e51145bc3c92afb30c752713918830cb8a089690097dff3d2de39836",
+    "mechanism_pass": false,
+    "operational_pass": false,
+    "paired_comparison_sha256": "5f16ad5e08e8abbb44453a4c5c51bb7afade1086c6ae8627d2b30e05e97bd9c5",
+    "paired_per_image_sha256": "52ab093cf2b2b1684a60504d7c49f425d8926548f37abb9c845b762d8887e1bd",
+    "post_hoc_rescue_or_sweep_authorized": false,
+    "status": "FAIL"
+  },
+  "evaluation": {
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261202,
+    "complete_misses": {
+      "identity": {
+        "large": 2,
+        "medium": 18,
+        "overall": 53,
+        "small": 33
+      },
+      "primary": {
+        "large": 2,
+        "medium": 17,
+        "overall": 53,
+        "small": 34
+      }
+    },
+    "identity": {
+      "dice": {
+        "large": 0.3894126471276201,
+        "medium": 0.37713551529480416,
+        "overall": 0.2454823867797678,
+        "small": 0.11708057891440651
+      },
+      "evaluation_audit_sha256": "320f4e9b6b47f94694356ff80cd535a4f9f87d6015b93afddb5f486c026caf21",
+      "evaluation_freeze_artifact_sha256": "2be0adec78e2a212195ba17ab0fff173aaa048a843951cc4850f56a4f0817f0a",
+      "per_image_sha256": "0ff1c0c44b2ab1613daf341c02b84316b3f17485375623d4f8dbcffcfcd065da"
+    },
+    "paired_primary_minus_identity": {
+      "large": {
+        "ci95": [
+          -0.041413167715656105,
+          0.05611321617727272
+        ],
+        "delta": 0.007534757022418966
+      },
+      "medium": {
+        "ci95": [
+          -0.07448150392805322,
+          -0.008050236242767588
+        ],
+        "delta": -0.04221675118987181
+      },
+      "overall": {
+        "ci95": [
+          -0.036419404635358865,
+          0.0031431616676978933
+        ],
+        "delta": -0.016168699556702637
+      },
+      "small": {
+        "ci95": [
+          -0.027848049335019713,
+          0.023947724429772117
+        ],
+        "delta": -0.0007559602038942153
+      }
+    },
+    "primary": {
+      "dice": {
+        "large": 0.3969474041500391,
+        "medium": 0.3349187641049324,
+        "overall": 0.22931368722306517,
+        "small": 0.11632461871051229
+      },
+      "evaluation_audit_sha256": "9fccf9bebeecf8a08c55ee4352ad69573a25a6f9d1233fab5eba2596b1281035",
+      "evaluation_freeze_artifact_sha256": "bda4e22e54c2cec9ee637f2f8d467f3d11f7f9747196ce828d831226129bf450",
+      "per_image_sha256": "35217d6a3247b9e1543cf835535492387694e327c63e9c9a4b9bcf1f4f83f14c"
+    }
+  },
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "kernel": {
+    "id": "itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1",
+    "output_file_count": 1540,
+    "output_tree_sha256": "79a0f80c1e454ed79b3f792f10541d3352889a3a289add649971e7a091759038",
+    "version": 1,
+    "worker_status": "COMPLETE"
+  },
+  "pre_gt_provenance": {
+    "independent_audit_sha256": "71923c21b8751f42f1880a9edf99b21b6572f17092628ac9f3dbc9179003caad",
+    "prediction_pair_freeze_sha256": "a3d37e43beb8e90d0d30fcf3a86c25bf071fcb340ec62a025ee429799f031a63",
+    "protocol_sha256": "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1",
+    "scientific_source_commit": "0e524807937e6fb6effde1649993825f3923c43f"
+  },
+  "safety": {
+    "image_level_labels_only_for_training": true,
+    "prediction_pair_frozen_before_validation_gt": true,
+    "test_evaluated": false,
+    "validation_gt_reopened_for_matched_comparison": false
+  },
+  "status": "COMPLETE_GATE_FAIL",
+  "terminal_conclusion": "The direct all-instance global-plus-current-local pseudo-target hypothesis is rejected on its frozen primary arm: overall and small do not improve, medium regresses with a wholly negative paired CI95, no operational goal is met, and no consumer or post-hoc rescue is authorized."
+}
