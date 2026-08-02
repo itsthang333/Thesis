@@ -13458,3 +13458,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   prediction/GT/consumer/test. Chỉ sau commit/push artifact này mới được bind
   một lần vào exact checkout kế tiếp.
 
+### S7 kernel version 1 final binding — chưa launch (2026-08-02)
+
+- Sau unbound readiness commit `d284caca956f77f331333d9c86d1d6217aa0d55f`
+  đã push, one-time binder khóa wrapper version `1` vào chính checkout đó.
+  Bound wrapper SHA-256 `2e2d62d3b21a88ef542c910e741ef2c69b259fdb4d0ada8903f3604f67bc69e5`;
+  launch-binding SHA-256
+  `6948ba6b258c4441a510010b8bb1fceedb89b71d1731be2bf58cf61dd812ab91`;
+  inverse reconstruction khớp template và cả `19` scientific source hash khớp
+  Git checkout.
+- Private Kaggle metadata chỉ attach exact baseline dataset + accepted selector-
+  cache kernel, `machine_shape=NvidiaTeslaT4`, internet để clone exact Git;
+  metadata SHA-256
+  `e3dbf564e72fb3a3dec17c897ba8dccd0ddaa018709487da11e9c1a70684dc26`.
+  Bound constant import và `py_compile` pass; kernel vẫn chưa push.
+- Final audit tracked tại
+  `artifacts/research_protocols/rad_dino_mask_bag_global_local_instance_s7_v1_kernel_v1_final_prelaunch_audit.json`.
+  Exact SHA-256 là
+  `76d8d4b80eeb2b855f1d1e3c7808cbee7e9963138e5d0afd8f423c0edec69454`.
+  Status `FROZEN_PRELAUNCH_READY_TO_PUSH`; nó khóa version/checkout/source/
+  protocol/wrapper/binding/metadata/input/output/test/collision contract. Chưa
+  load real cache, chưa fit/prediction/validation GT/consumer/test. Phải commit/
+  push log + binding + audit này trước đúng một `kaggle kernels push`.
+

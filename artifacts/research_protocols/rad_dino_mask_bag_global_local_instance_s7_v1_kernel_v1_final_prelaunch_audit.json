@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_PRELAUNCH_READY_TO_PUSH",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-global-local-instance-s7-v1",
+  "kernel_version": 1,
+  "checkout_commit": "d284caca956f77f331333d9c86d1d6217aa0d55f",
+  "scientific_source_commit": "0e524807937e6fb6effde1649993825f3923c43f",
+  "protocol_sha256": "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1",
+  "wrapper_template_sha256": "ea51733fbf2a0d0a35db55678208c23fc8d360eeecdce887320a6f655c446307",
+  "bound_wrapper_sha256": "2e2d62d3b21a88ef542c910e741ef2c69b259fdb4d0ada8903f3604f67bc69e5",
+  "launch_binding_sha256": "6948ba6b258c4441a510010b8bb1fceedb89b71d1731be2bf58cf61dd812ab91",
+  "kernel_metadata_sha256": "e3dbf564e72fb3a3dec17c897ba8dccd0ddaa018709487da11e9c1a70684dc26",
+  "binding": {
+    "replacement_count": 3,
+    "inverse_reconstruction_matches_template": true,
+    "kernel_version": 1,
+    "launch_binding_ready": true
+  },
+  "inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3"
+  },
+  "kaggle": {
+    "private": true,
+    "internet_enabled_for_exact_git_checkout": true,
+    "accelerator": "NvidiaTeslaT4",
+    "required_visible_devices": 2,
+    "dataset_sources": [
+      "itsthang333/btxrd-mask-bag-selector-baseline-v1"
+    ],
+    "kernel_sources": [
+      "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+    ]
+  },
+  "pre_gt_outputs": {
+    "target_snapshots": 40,
+    "candidate_score_payloads": 742,
+    "prediction_maps": 742,
+    "accepted_bag_probability_preserved": true,
+    "independent_gt_blind_audit_required": true
+  },
+  "tests": {
+    "focused_s7": "25 passed",
+    "whole_repository": "618 passed, 1 known unrelated B1 CRLF/LF failure",
+    "bound_wrapper_py_compile": "pass",
+    "bound_constant_import": "pass",
+    "metadata_json_parse": "pass",
+    "git_diff_check": "pass"
+  },
+  "coordination": {
+    "collaborator_commit": "29a3ed6d1f6fe99e1fdb6d6ae3c20c562474b7fb",
+    "collision_found": false,
+    "collaborator_output_accessed": false
+  },
+  "real_cache_loaded": false,
+  "training_started": false,
+  "prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kernel_pushed": false
+}
