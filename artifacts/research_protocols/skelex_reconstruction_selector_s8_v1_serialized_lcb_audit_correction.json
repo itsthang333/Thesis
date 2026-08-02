@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_AUDITOR_NUMERICAL_REPRODUCIBILITY_CORRECTION",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "producer_kernel": "itsthang333/btxrd-skelex-reconstruction-selector-s8-v1",
+  "producer_kernel_version": 1,
+  "scientific_protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "original_scientific_source_commit": "b4543aeb9430345c9b789384943bd218816a85dd",
+  "previous_auditor_correction_commit": "bc7816ff6cee5a7c5e954668d1255d1b1ad04533",
+  "serialized_lcb_correction_commit": "969327c4fbbd635fff2e3a00d34d533af8a3c340",
+  "error_evidence": {
+    "terminal_status": "ERROR",
+    "direct_log_sha256": "0ed4c39bcee22a559de3c642bb72a5b77ce148c50e8260bf0d89d5dd47d82a79",
+    "error": "S8 fused score arithmetic mismatch: IMG000001.jpeg",
+    "first_evidence_sha256": "1beb7f8eaae0bbd42c2b8ffcc0b1073feb11baeeef107f84562cc140d4c41c49",
+    "maximum_lcb_reconstruction_difference": 1.1175871e-08,
+    "maximum_false_fused_rank_difference": 0.008474588,
+    "root_cause": "NumPy recomputation changed exact float32 tie groups before rank despite passing independent LCB arithmetic tolerance."
+  },
+  "immutable_version1_output": {
+    "prediction_pair_freeze_sha256": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+    "run_manifest_sha256": "5bb136f8b6f7a6a173abacce2faf0aad1b7caf9e087adcfd158655d71ff7c510",
+    "gt_blind_diagnostics_sha256": "98ceacd4a3dd1c32d42105c8cddc436d0e8256dd596c3b250f18fa2e39ecc569",
+    "reconstruction_evidence_manifest_sha256": "be391e11deef6a02a32c85c3bdc861cb05dd357313d89b9177c3bcdfb850cf55",
+    "arms": {
+      "geometry_v3_plus_upstream_equal_rank": {
+        "prediction_freeze_sha256": "aa8acefaafe9c453dd08e1cba8d71b4a0aae25ecf16662774aebf53d01cf2ccd",
+        "candidate_score_manifest_sha256": "6d08db6c7fd29d5ed2bc7ff57133cd9fdea1adc65ec797f9c3f0ee424b3452fc",
+        "prediction_manifest_sha256": "f66f7370b8b93ddadd1b7eef134ae5735c0a8f6743c97de021eab331d06666bf"
+      },
+      "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank": {
+        "prediction_freeze_sha256": "a96e8a0bf88201c8b3fffb30c7ec41fd0abb2c3e4b7e9430408665b01dc2a148",
+        "candidate_score_manifest_sha256": "0f66c5ff54ea44f778bc62fb0e71145191e0189bdcc0ac419f87d0b1ec566de3",
+        "prediction_manifest_sha256": "285c026853bb5e91482140e03cc2d47d418f4172716aec0aad32e97e5b9d7309"
+      }
+    }
+  },
+  "corrected_source": {
+    "auditor": "project/audit_skelex_reconstruction_selector_s8_output.py",
+    "auditor_canonical_lf_sha256": "c972e1460332119cefd11c1145035a497748d4797482c29c51cf62980c560232",
+    "regression_test": "tests/test_audit_skelex_reconstruction_selector_s8_output.py",
+    "regression_test_canonical_lf_sha256": "fc9786e9b0e8bfe43fa3bb9d8cc7d9e9933270caf2f7a6de1eac797d29dc11a6"
+  },
+  "correction": {
+    "independent_lcb_arithmetic_still_required": true,
+    "lcb_allclose_absolute_tolerance": 2e-05,
+    "tie_aware_rank_uses_exact_serialized_float32_lcb": true,
+    "null_distribution_and_physical_map_checks_unchanged": true,
+    "scientific_algorithm_changed": false,
+    "prediction_changed": false,
+    "rerun_inference_required": false,
+    "audit_only_kaggle_t4x2_authorized": true
+  },
+  "local_diagnostics": {
+    "first_image_fused_rank_reproduction_max_difference_after_correction": 0.0,
+    "first_image_null_distribution_max_difference": 0.0,
+    "cpu_replay_image160_null_difference_count": 1,
+    "cpu_replay_image160_null_max_difference": 0.0056818128,
+    "cpu_replay_image160_exceedances_producer_and_replay": 193,
+    "cpu_replay_image160_p_value_producer_and_replay": 0.7578125,
+    "note": "The audit-only correction runs on Kaggle T4x2 to match the producer's Torch device arithmetic; no GPU-independent relaxation is made."
+  },
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}
