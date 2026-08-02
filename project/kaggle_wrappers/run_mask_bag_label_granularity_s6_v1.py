@@ -20,10 +20,16 @@ LAUNCH_BINDING_READY = False
 CHECKOUT_COMMIT = "UNBOUND"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "543ee89654a0ed00e80ded16924a760585337924"
+CORRECTION_SOURCE_COMMIT = "7ca2f4dec72af5f509e52786980321d255a7eb68"
 PROTOCOL_RELATIVE = Path(
     "artifacts/research_protocols/rad_dino_mask_bag_label_granularity_s6_v1.json"
 )
 PROTOCOL_SHA256 = "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3"
+AUDITOR_CORRECTION_RELATIVE = Path(
+    "artifacts/research_protocols/"
+    "rad_dino_mask_bag_label_granularity_s6_v1_map_audit_numeric_correction.json"
+)
+AUDITOR_CORRECTION_SHA256 = "b0dca40bf4f8bd933a902facb7bfdf5ec393c429672b0beb0b0594f2d15dfc63"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 GIT_SPLIT_SHA256 = "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
 CACHE_FREEZE_SHA256 = "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c"
@@ -73,6 +79,16 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
     )
     run(["git", "checkout", "--detach", CHECKOUT_COMMIT], cwd=SOURCE)
     run(["git", "merge-base", "--is-ancestor", SOURCE_COMMIT, CHECKOUT_COMMIT], cwd=SOURCE)
+    run(
+        [
+            "git",
+            "merge-base",
+            "--is-ancestor",
+            CORRECTION_SOURCE_COMMIT,
+            CHECKOUT_COMMIT,
+        ],
+        cwd=SOURCE,
+    )
     protocol_path = SOURCE / PROTOCOL_RELATIVE
     if hash_file(protocol_path) != PROTOCOL_SHA256:
         raise RuntimeError("S6 protocol SHA-256 mismatch")
@@ -82,6 +98,27 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
         or protocol.get("scientific_source", {}).get("commit") != SOURCE_COMMIT
     ):
         raise RuntimeError("S6 protocol status/source mismatch")
+    correction_path = SOURCE / AUDITOR_CORRECTION_RELATIVE
+    if hash_file(correction_path) != AUDITOR_CORRECTION_SHA256:
+        raise RuntimeError("S6 auditor-correction SHA-256 mismatch")
+    correction = json.loads(correction_path.read_text(encoding="utf-8"))
+    overrides = correction.get("allowed_canonical_lf_source_overrides")
+    if (
+        correction.get("status")
+        != "FROZEN_IMPLEMENTATION_ONLY_AUDITOR_CORRECTION"
+        or correction.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
+        or correction.get("protocol_sha256_unchanged") != PROTOCOL_SHA256
+        or correction.get("validation_gt_read") is not False
+        or correction.get("consumer_trained") is not False
+        or correction.get("test_evaluated") is not False
+        or not isinstance(overrides, dict)
+        or set(overrides)
+        != {
+            "project/audit_mask_bag_label_granularity_s6_output.py",
+            "tests/test_audit_mask_bag_label_granularity_s6_output.py",
+        }
+    ):
+        raise RuntimeError("S6 auditor-correction contract mismatch")
     verified: dict[str, str] = {}
     for section in ("canonical_lf_source_hashes", "post_freeze_only_source_hashes"):
         hashes = protocol.get(section, {})
@@ -89,10 +126,21 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
             raise RuntimeError(f"S6 protocol {section} is missing")
         for relative, expected in hashes.items():
             path = SOURCE / relative
-            if not path.is_file() or canonical_hash(path) != expected:
-                raise RuntimeError(f"S6 source hash mismatch: {relative}")
+            if not path.is_file():
+                raise RuntimeError(f"S6 source is missing: {relative}")
+            actual = canonical_hash(path)
+            override = overrides.get(relative)
+            if override is None:
+                if actual != expected:
+                    raise RuntimeError(f"S6 source hash mismatch: {relative}")
+            elif (
+                section != "canonical_lf_source_hashes"
+                or override.get("protocol_v1_sha256") != expected
+                or override.get("corrected_sha256") != actual
+            ):
+                raise RuntimeError(f"S6 corrected source hash mismatch: {relative}")
             if section == "canonical_lf_source_hashes":
-                verified[relative] = expected
+                verified[relative] = actual
     return verified, protocol
 
 
@@ -204,7 +252,9 @@ def write_binding(source_hashes: dict[str, str]) -> Path:
         "kernel_version": KERNEL_VERSION,
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
+        "auditor_correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "auditor_numeric_correction_sha256": AUDITOR_CORRECTION_SHA256,
         "bound_wrapper_sha256": canonical_hash(Path(__file__)),
         "source_hashes": source_hashes,
         "validation_subtype_label_used_for_routing": False,

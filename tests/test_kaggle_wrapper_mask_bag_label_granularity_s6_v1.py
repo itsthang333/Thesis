@@ -30,7 +30,7 @@ def test_s6_wrapper_is_unbound_and_prediction_first() -> None:
         "CHECKOUT_COMMIT": "UNBOUND",
     }
     source = SOURCE.read_text(encoding="utf-8")
-    assert source.index("run_mask_bag_label_granularity_s6_pair.py") < source.index(
+    assert source.rindex("run_mask_bag_label_granularity_s6_pair.py") < source.rindex(
         "audit_mask_bag_label_granularity_s6_output.py"
     )
     assert "evaluate_mask_bag_selector_arm.py" not in source
@@ -47,6 +47,7 @@ def test_s6_wrapper_requires_exact_inputs_and_two_t4s() -> None:
         "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
         "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
         "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+        "b0dca40bf4f8bd933a902facb7bfdf5ec393c429672b0beb0b0594f2d15dfc63",
     ):
         assert value in source
     assert "torch.cuda.device_count() != 2" in source

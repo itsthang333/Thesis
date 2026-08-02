@@ -10,13 +10,19 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "7cd9bbc0248bc6d5371fb00f04c3102cf33b5e001c36a9b20f3f551130727966"
+TEMPLATE_SHA256 = "c04c288501b95f0408c21e9e5cb4eb6bfcb1af159b82572c3eb26d63acf17492"
 PROTOCOL_PATH = (
     "artifacts/research_protocols/"
     "rad_dino_mask_bag_label_granularity_s6_v1.json"
 )
 PROTOCOL_SHA256 = "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3"
 SOURCE_COMMIT = "543ee89654a0ed00e80ded16924a760585337924"
+CORRECTION_SOURCE_COMMIT = "7ca2f4dec72af5f509e52786980321d255a7eb68"
+CORRECTION_PATH = (
+    "artifacts/research_protocols/"
+    "rad_dino_mask_bag_label_granularity_s6_v1_map_audit_numeric_correction.json"
+)
+CORRECTION_SHA256 = "b0dca40bf4f8bd933a902facb7bfdf5ec393c429672b0beb0b0594f2d15dfc63"
 KERNEL = "itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1"
 
 
@@ -78,18 +84,65 @@ def bind(
     protocol = json.loads(protocol_payload.decode("utf-8"))
     if protocol.get("scientific_source", {}).get("commit") != SOURCE_COMMIT:
         raise ValueError("S6 protocol scientific-source commit mismatch")
+    correction_payload = _git_bytes(
+        repository_root, checkout_commit, CORRECTION_PATH
+    )
+    if digest(correction_payload) != CORRECTION_SHA256:
+        raise ValueError("S6 auditor correction differs at execution checkout")
+    correction = json.loads(correction_payload.decode("utf-8"))
+    overrides = correction.get("allowed_canonical_lf_source_overrides")
+    if (
+        correction.get("status")
+        != "FROZEN_IMPLEMENTATION_ONLY_AUDITOR_CORRECTION"
+        or correction.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
+        or correction.get("protocol_sha256_unchanged") != PROTOCOL_SHA256
+        or correction.get("validation_gt_read") is not False
+        or correction.get("consumer_trained") is not False
+        or correction.get("test_evaluated") is not False
+        or not isinstance(overrides, dict)
+        or set(overrides)
+        != {
+            "project/audit_mask_bag_label_granularity_s6_output.py",
+            "tests/test_audit_mask_bag_label_granularity_s6_output.py",
+        }
+    ):
+        raise ValueError("S6 auditor correction contract mismatch")
     all_hashes: dict[str, str] = {}
     for section in ("canonical_lf_source_hashes", "post_freeze_only_source_hashes"):
         hashes = protocol.get(section, {})
         if not isinstance(hashes, dict) or not hashes:
             raise ValueError(f"S6 protocol {section} is missing")
         for relative, expected in hashes.items():
-            if digest(_git_bytes(repository_root, checkout_commit, relative)) != expected:
-                raise ValueError(f"S6 source differs at execution checkout: {relative}")
+            actual = digest(_git_bytes(repository_root, checkout_commit, relative))
+            override = overrides.get(relative)
+            if override is None:
+                if actual != expected:
+                    raise ValueError(
+                        f"S6 source differs at execution checkout: {relative}"
+                    )
+            elif (
+                section != "canonical_lf_source_hashes"
+                or override.get("protocol_v1_sha256") != expected
+                or override.get("corrected_sha256") != actual
+            ):
+                raise ValueError(
+                    f"S6 corrected source differs at execution checkout: {relative}"
+                )
             if section == "canonical_lf_source_hashes":
-                all_hashes[relative] = expected
+                all_hashes[relative] = actual
     subprocess.run(
         ["git", "merge-base", "--is-ancestor", SOURCE_COMMIT, checkout_commit],
+        cwd=repository_root,
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "merge-base",
+            "--is-ancestor",
+            CORRECTION_SOURCE_COMMIT,
+            checkout_commit,
+        ],
         cwd=repository_root,
         check=True,
     )
@@ -103,7 +156,9 @@ def bind(
         "kernel_version": kernel_version,
         "checkout_commit": checkout_commit,
         "scientific_source_commit": SOURCE_COMMIT,
+        "auditor_correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "auditor_numeric_correction_sha256": CORRECTION_SHA256,
         "template_sha256": TEMPLATE_SHA256,
         "bound_wrapper_sha256": digest(bound),
         "source_hashes": all_hashes,

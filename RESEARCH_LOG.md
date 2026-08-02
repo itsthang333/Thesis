@@ -12866,3 +12866,32 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Đây mới là source correction tĩnh: chưa tạo correction addendum/wrapper/bind
   version 2, chưa rerun Kaggle, chưa đọc validation GT/metric, chưa consumer/test.
 
+### S6 v2 correction addendum và unbound wrapper readiness (2026-08-02)
+
+- Implementation-only correction addendum
+  `rad_dino_mask_bag_label_granularity_s6_v1_map_audit_numeric_correction.json`
+  SHA-256
+  `b0dca40bf4f8bd933a902facb7bfdf5ec393c429672b0beb0b0594f2d15dfc63`
+  khóa đúng hai canonical-LF override auditor/test từ protocol-v1 hashes sang
+  `79db19c3...cc99` / `3b3b2721...5946`, bind correction source commit
+  `7ca2f4dec72af5f509e52786980321d255a7eb68` và giữ protocol/scientific source
+  SHA/commit cũ. Không file source nào khác được phép drift.
+- Unbound wrapper mới canonical-LF SHA-256
+  `c04c288501b95f0408c21e9e5cb4eb6bfcb1af159b82572c3eb26d63acf17492`.
+  Nó verify exact correction artifact, correction commit ancestry, hai old/new
+  hash pair và mọi source hash không đổi trước khi chạy producer/auditor. Runtime
+  binding sẽ ghi correction source/SHA và actual corrected source closure.
+  Binder canonical-LF SHA-256
+  `88f61f0135075c3fa52202315f8feb4d20e84ea8ca727b1e671e639d4a205b48`
+  áp cùng fail-closed rule trên exact Git checkout; vẫn chỉ có ba launch-field
+  replacement và inverse reconstruction.
+- Focused wrapper/protocol/auditor/model/training/runner suite ban đầu có `1`
+  static-test failure: naive `source.index()` bắt tên auditor trong correction
+  manifest trước subprocess runner. Execution order không đổi; test được sửa
+  sang hai occurrence cuối (`rindex`) để kiểm tra actual subprocess order. Sau
+  correction suite pass `24/24`, cả ba source `py_compile` và diff check pass.
+  Binder integration test phải chạy sau commit vì nó cố ý dùng `git show` exact
+  checkout, không chấp nhận uncommitted worktree.
+- Chưa bind/package/push version 2 và không tái sử dụng output v1 để mở GT.
+  Prediction/validation GT/consumer/test tiếp tục khóa.
+

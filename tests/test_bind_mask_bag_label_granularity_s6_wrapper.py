@@ -44,6 +44,9 @@ def test_s6_template_hash_and_one_time_binding(tmp_path: Path) -> None:
     assert checkout.encode() in bound
     assert binding["replacement_count"] == 3
     assert binding["inverse_reconstruction_matches_template"] is True
+    assert binding["auditor_numeric_correction_sha256"] == (
+        "b0dca40bf4f8bd933a902facb7bfdf5ec393c429672b0beb0b0594f2d15dfc63"
+    )
     assert binding["bound_wrapper_sha256"] == digest(bound)
     assert json.loads(binding_path.read_text(encoding="utf-8")) == binding
     with pytest.raises(FileExistsError):

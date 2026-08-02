@@ -1,0 +1,33 @@
+{
+  "allowed_canonical_lf_source_overrides": {
+    "project/audit_mask_bag_label_granularity_s6_output.py": {
+      "corrected_sha256": "79db19c3cbfba6373111b8221b9d61077a98e2c52eb3696b70293604e74dcc99",
+      "protocol_v1_sha256": "f26d555381ad4f60b6274414bbdbdfc565a93445d90c3bafc90df064878519b5"
+    },
+    "tests/test_audit_mask_bag_label_granularity_s6_output.py": {
+      "corrected_sha256": "3b3b2721ad484e14f2b66c451c5d6bf1e8727d4916ecf6239a7e08d25aeb5946",
+      "protocol_v1_sha256": "9f3d133cb75477404eaa96db3aa106a184e97a77767dd9fa3c8b50c895db93f7"
+    }
+  },
+  "correction_source_commit": "7ca2f4dec72af5f509e52786980321d255a7eb68",
+  "created_utc": "2026-08-02T06:53:17.0598213Z",
+  "error_audit_sha256": "1dacee061698b968ae6b5ca97a3e44baba22385ab6f8c23bfdc97048bc7cd933",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "independent_audit_contract": {
+    "candidate_logit_atol": 0.00005,
+    "independent_argmax_must_match_frozen_winner": true,
+    "independent_probability_must_match_frozen_probability_within_atol": true,
+    "physical_map_must_equal_selected_binary_mask_times_frozen_producer_probability_after_float16_serialization": true,
+    "stored_map_bytes_or_hash_relaxed": false
+  },
+  "kernel_version1_retained_as_error": true,
+  "model_loss_recipe_prediction_or_evaluator_changed": false,
+  "protocol_sha256_unchanged": "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+  "reason": "The independently reproduced CPU probability was within the frozen tolerance but crossed a float16 rounding midpoint relative to the GPU producer probability. Requiring bit-exact map values from the independently recomputed scalar contradicted the accepted numeric tolerance. The correction keeps independent score, probability and winner checks, then verifies exact physical serialization from the already verified frozen producer probability.",
+  "schema_version": 1,
+  "scientific_source_commit_unchanged": "543ee89654a0ed00e80ded16924a760585337924",
+  "status": "FROZEN_IMPLEMENTATION_ONLY_AUDITOR_CORRECTION",
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false
+}
