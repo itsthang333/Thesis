@@ -4,16 +4,23 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import platform
+import shutil
 import subprocess
 import sys
 from hashlib import sha256
+import zipfile
 
 
 KERNEL = "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1"
 PRODUCER_KERNEL = "itsthang333/btxrd-skelex-reconstruction-selector-s8-v1"
 PRODUCER_VERSION = 1
+TRANSPORT_DATASET = "itsthang333/btxrd-skelex-s8-v1-frozen-output"
+TRANSPORT_ARCHIVE_NAME = "s8_producer_output.zip"
+TRANSPORT_ARCHIVE_SHA256 = "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737"
+TRANSPORT_ARCHIVE_FILE_COUNT = 1866
+TRANSPORT_ARCHIVE_UNCOMPRESSED_BYTES = 172187320
 KERNEL_VERSION = 0
 LAUNCH_BINDING_READY = False
 CHECKOUT_COMMIT = "UNBOUND"
@@ -49,6 +56,7 @@ WORK = Path("/kaggle/working")
 INPUT = Path("/kaggle/input")
 SOURCE = WORK / "s8_audit_source"
 OUTPUT = WORK / "btxrd_skelex_reconstruction_selector_s8_audit_v1"
+TRANSPORT_EXTRACT = WORK / "s8_producer_transport"
 
 
 def hash_file(path: Path) -> str:
@@ -107,9 +115,77 @@ def verify_t4x2() -> dict[str, object]:
     return {"cuda_device_count": 2, "cuda_device_names": names}
 
 
-def find_and_verify_producer_output() -> Path:
+def safe_extract_transport_archive(archive: Path, destination: Path) -> dict[str, object]:
+    if hash_file(archive) != TRANSPORT_ARCHIVE_SHA256:
+        raise RuntimeError("S8 producer transport archive hash mismatch")
+    destination_root = destination.resolve()
+    with zipfile.ZipFile(archive) as handle:
+        members = handle.infolist()
+        file_members = [member for member in members if not member.is_dir()]
+        if (
+            len(file_members) != TRANSPORT_ARCHIVE_FILE_COUNT
+            or sum(member.file_size for member in file_members)
+            != TRANSPORT_ARCHIVE_UNCOMPRESSED_BYTES
+        ):
+            raise RuntimeError("S8 producer transport archive inventory mismatch")
+        targets: list[tuple[zipfile.ZipInfo, Path]] = []
+        for member in members:
+            relative = PurePosixPath(member.filename)
+            unix_mode = (member.external_attr >> 16) & 0o170000
+            if (
+                relative.is_absolute()
+                or not relative.parts
+                or any(part in ("", ".", "..") for part in relative.parts)
+                or unix_mode == 0o120000
+            ):
+                raise RuntimeError(f"Unsafe S8 producer transport member: {member.filename}")
+            target = (destination / Path(*relative.parts)).resolve()
+            if target == destination_root or destination_root not in target.parents:
+                raise RuntimeError(f"Escaping S8 producer transport member: {member.filename}")
+            targets.append((member, target))
+        destination.mkdir(parents=True, exist_ok=False)
+        for member, target in targets:
+            if member.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with handle.open(member) as source, target.open("wb") as sink:
+                shutil.copyfileobj(source, sink, length=4 * 1024 * 1024)
+    return {
+        "dataset": TRANSPORT_DATASET,
+        "archive_name": archive.name,
+        "archive_sha256": TRANSPORT_ARCHIVE_SHA256,
+        "file_count": TRANSPORT_ARCHIVE_FILE_COUNT,
+        "uncompressed_bytes": TRANSPORT_ARCHIVE_UNCOMPRESSED_BYTES,
+        "mode": "exact_archive_safe_extract",
+    }
+
+
+def find_and_verify_producer_output(
+    input_root: Path = INPUT,
+    extract_root: Path = TRANSPORT_EXTRACT,
+) -> tuple[Path, dict[str, object]]:
+    named_archives = list(input_root.rglob(TRANSPORT_ARCHIVE_NAME))
+    if named_archives:
+        valid_archives = [
+            path for path in named_archives if path.is_file() and hash_file(path) == TRANSPORT_ARCHIVE_SHA256
+        ]
+        if len(named_archives) != 1 or len(valid_archives) != 1:
+            raise RuntimeError("Expected one exact S8 producer transport archive")
+        transport = safe_extract_transport_archive(valid_archives[0], extract_root)
+        search_root = extract_root
+    else:
+        transport = {
+            "dataset": TRANSPORT_DATASET,
+            "archive_name": TRANSPORT_ARCHIVE_NAME,
+            "archive_sha256": TRANSPORT_ARCHIVE_SHA256,
+            "file_count": TRANSPORT_ARCHIVE_FILE_COUNT,
+            "uncompressed_bytes": TRANSPORT_ARCHIVE_UNCOMPRESSED_BYTES,
+            "mode": "kaggle_server_expanded_dataset",
+        }
+        search_root = input_root
     roots: list[Path] = []
-    for pair_path in INPUT.rglob("prediction_pair_freeze.json"):
+    for pair_path in search_root.rglob("prediction_pair_freeze.json"):
         if hash_file(pair_path) == PAIR_FREEZE_SHA256:
             roots.append(pair_path.parent.resolve())
     if len(set(roots)) != 1:
@@ -128,7 +204,7 @@ def find_and_verify_producer_output() -> Path:
     for path, expected in checks.items():
         if not path.is_file() or hash_file(path) != expected:
             raise RuntimeError(f"S8 immutable producer output hash mismatch: {path}")
-    return root
+    return root, transport
 
 
 def run_static_tests() -> None:
@@ -142,12 +218,13 @@ def main() -> None:
     clone_and_verify()
     t4 = verify_t4x2()
     run_static_tests()
-    producer_root = find_and_verify_producer_output()
+    producer_root, transport = find_and_verify_producer_output()
     binding = {
         "kernel": KERNEL,
         "kernel_version": KERNEL_VERSION,
         "producer_kernel": PRODUCER_KERNEL,
         "producer_kernel_version": PRODUCER_VERSION,
+        "transport": transport,
         "checkout_commit": CHECKOUT_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
         "correction_sha256": CORRECTION_SHA256,

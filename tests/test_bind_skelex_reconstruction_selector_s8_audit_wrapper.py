@@ -30,6 +30,8 @@ def test_s8_audit_only_binding_is_invertible_and_one_time(tmp_path: Path) -> Non
     assert f'CHECKOUT_COMMIT = "{checkout}"' in source
     assert result["prediction_changed"] is False
     assert result["validation_gt_read"] is False
+    assert result["transport_dataset"] == "itsthang333/btxrd-skelex-s8-v1-frozen-output"
+    assert result["transport_archive_sha256"] == "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737"
     with pytest.raises(FileExistsError):
         bind(
             TEMPLATE,

@@ -10,7 +10,7 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "7e66f0d55c5b0978ddf0bab47959da8e1db422d364e7d596413ec9eda14e1714"
+TEMPLATE_SHA256 = "e596c57c4e425d195ec7b732cf9c329cc8b6013f1f0006ac7de7cddcb7827d9c"
 TEMPLATE_PATH = "project/kaggle_wrappers/run_skelex_reconstruction_selector_s8_audit_v1.py"
 PROTOCOL_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s8_v1.json"
 PROTOCOL_SHA256 = "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07"
@@ -19,6 +19,8 @@ CORRECTION_SHA256 = "94e5881f763cc2cb3bd0a3f49cb563f2449140a7c576211252a45579597
 AUDITOR_CORRECTION_COMMIT = "969327c4fbbd635fff2e3a00d34d533af8a3c340"
 CORRECTION_ADDENDUM_COMMIT = "16f1b61ef99e866dcfced826b4b2ffb76fb0d3b5"
 KERNEL = "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1"
+TRANSPORT_DATASET = "itsthang333/btxrd-skelex-s8-v1-frozen-output"
+TRANSPORT_ARCHIVE_SHA256 = "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737"
 
 
 def canonical_bytes(path: Path) -> bytes:
@@ -93,6 +95,8 @@ def bind(
         "correction_sha256": CORRECTION_SHA256,
         "template_sha256": TEMPLATE_SHA256,
         "bound_wrapper_sha256": digest(bound),
+        "transport_dataset": TRANSPORT_DATASET,
+        "transport_archive_sha256": TRANSPORT_ARCHIVE_SHA256,
         "inverse_reconstruction_matches_template": True,
         "prediction_changed": False,
         "validation_gt_read": False,
