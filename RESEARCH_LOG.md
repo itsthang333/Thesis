@@ -12476,3 +12476,100 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Prediction freeze/GT boundary được giữ; collaborator output không truy cập;
   BTXRD test vẫn khóa.
 
+### Đồng bộ collaborator `9c819ec` và phân tích successor sau S5 (2026-08-02)
+
+- Đã fetch lại `origin/research-wsss-improvement` tại
+  `1782b34f0ce2382f58faf8e5d0652d36c2c8ada7` và
+  `origin/codex/research-sync-20260731` tại
+  `9c819ecd0956702f3c4dea880ab3f19d1e984ff3`; worktree trước phần chuẩn bị S6
+  sạch ngoài file S6 mới. Toàn bộ log trung tâm không đổi từ lần đọc đầy đủ;
+  delta collaborator `70df5b4..9c819ec` đã được đọc đủ `27` dòng mới.
+- Claim collaborator duy nhất liên quan vẫn là matched-normal transplant Stage-A
+  version 4/Stage-B, trạng thái `ĐANG LÀM`. Delta mới chỉ mở rộng schema hậu
+  freeze cho matched/random layer statistics và selector-regret decomposition;
+  chưa có terminal Dice hay bằng chứng hiệu năng. Không truy cập Kaggle/output
+  collaborator, không kế thừa cơ chế này như cải tiến và không mở pipeline cạnh
+  tranh.
+- Audit toàn log cho thấy selector cùng-gallery đã dùng nhãn ảnh nhị phân ở
+  `image_bag_loss`, còn taxonomy `benign/malignant` và chín `tumor_type` trong
+  split chưa được dùng để học candidate ranking. Không tìm thấy experiment
+  subtype/hierarchical-label tương đương. Đây là scope khác proposal generation,
+  matched-normal transplant, SKELEX descriptor và mọi residual selector đã fail.
+- Bằng chứng khoa học dùng để thu hẹp hypothesis:
+  Cole et al., *On Label Granularity and Object Localization*, ECCV 2022,
+  https://www.ecva.net/papers/eccv_2022/papers_ECCV/html/7044_ECCV_2022_paper.php ;
+  Wang et al., *Multiple Granularity Descriptors for Fine-Grained
+  Categorization*, ICCV 2015,
+  https://openaccess.thecvf.com/content_iccv_2015/html/Wang_Multiple_Granularity_Descriptors_ICCV_2015_paper.html ;
+  Jang và Kwon, *Are Multiple Instance Learning Algorithms Learnable for
+  Instances?*, NeurIPS 2024,
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html ;
+  Liu và Ji, *Weakly-Supervised Residual Evidential Learning for Multi-Instance
+  Uncertainty Estimation*, ICML 2024,
+  https://proceedings.mlr.press/v235/liu24ac.html ;
+  Li, *A Multiclass Multiple Instance Learning Method with Exact Likelihood*,
+  https://arxiv.org/abs/1811.12346 ; và Choe et al., *Evaluating Weakly
+  Supervised Object Localization Methods Right*, CVPR 2020,
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html .
+  Các nguồn chỉ tạo rationale cho label granularity, multiclass MIL,
+  uncertainty shrinkage và prediction-first; chưa phải bằng chứng BTXRD.
+
+### EXP-20260802-codex-s6-label-granularity-mil-v1
+
+- **Owner/status:** Codex main task trên `research-wsss-improvement`;
+  **ĐANG LÀM**. Đăng ký lúc `2026-08-02T06:04:41Z`; registration base là
+  `1782b34f0ce2382f58faf8e5d0652d36c2c8ada7`; exact registration commit sẽ
+  được ghi ở note kế tiếp sau khi push. Claim phải hiện diện trên central trước
+  mọi real cache load/fit/prediction/Kaggle launch.
+- **Kế thừa/không trùng:** kế thừa exact candidate supply và base scorer đã freeze
+  của Geometry-v3 cùng negative evidence R1/R2/S1/R3/R4/S3/S4/T1/S5; không coi
+  bất kỳ cơ chế reject nào là cải tiến. Không dùng output/pipeline collaborator
+  và không trùng matched-normal Stage-A/Stage-B đang chạy. Không tạo proposal,
+  không thay encoder/mask/geometry/evaluator và không dùng SKELEX.
+- **Hypothesis:** binary MIL làm mọi pathology cạnh tranh dưới một tumor score,
+  nên candidate dương tiềm ẩn không được phân giải theo semantic subtype. Một
+  residual chín subtype, chỉ dùng taxonomy cấp ảnh, có thể giảm candidate regret;
+  center descriptor/residual trong từng bag chặn offset anatomy/background toàn
+  ảnh, còn entropy route liên tục co về coarse score khi subtype không chắc.
+- **Matched finite pair:** cả `coarse_control` và
+  `hierarchical_entropy_routed` dùng cùng kiến trúc chín output, exact zero-init,
+  frozen base checkpoint, seed/batch/order/16 epoch, normalized SmoothMax
+  `temperature=0.2`, AdamW `lr=3e-4`, weight decay `1e-4`, flip consistency
+  `0.10`, residual drift `1e-3`; không hard/soft winner và không instance target.
+  Control chỉ có binary BCE nên chín column exchangeable. Primary thêm loss
+  binary/benign-malignant/subtype với trọng số `1/3` mỗi phần và inverse-sqrt
+  train-label class weight. Inference không nhận val subtype: subtype được dự
+  đoán từ bag, residual fine được shrink bằng
+  `1-H(p_subtype)/log(9)` về coarse residual.
+- **Exact input/provenance:** split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  selector-cache freeze
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`;
+  cache manifest
+  `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`;
+  baseline checkpoint
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069`;
+  cohort `2981 train / 371 validation`, descriptor `1156`, nine train subtype
+  counts `598/211/164/74/35/41/92/237/36`. Validation polygons không phải input.
+- **Compute/output/gates:** static/synthetic locally; mọi real cache fit/inference
+  chỉ private Kaggle T4x2/P100. Runner phải freeze đủ hai checkpoint/history,
+  `742` candidate-score payload, `742` maps, label-count/diagnostic evidence và
+  pair-freeze trước GT. Independent GT-blind audit phải pass source/input/hash,
+  cohort, zero-init identity, exact selection/entropy route và safety locks;
+  count Spearman, image AUROC, subtype macro metrics, flip agreement, entropy và
+  change fraction là diagnostic, không chọn model/hyperparameter và không chặn
+  Dice nếu integrity pass. Sau đó evaluator/comparator đã freeze mới đọc val GT
+  với `10,000` complete-group bootstrap.
+- **Decision:** mechanism chỉ pass nếu primary tốt hơn matched control ở overall
+  và small mean Dice, không giảm medium/large và không tăng complete miss. Chỉ
+  operational pass đồng thời ở
+  `0.34024039 / 0.17895493 / 0.51244178 / 0.49370336`, overall CI95 lower `>0`,
+  không subgroup regression/miss increase mới authorize consumer. Nếu không,
+  terminal reject, không rescue/sweep/post-hoc fusion. BTXRD test luôn khóa.
+- **Static preparation at registration:** thiết kế đầy đủ tại
+  `S6_LABEL_GRANULARITY_MIL_DESIGN.md`; primitive tại
+  `project/models/mask_bag_label_granularity.py`; synthetic test tại
+  `tests/test_mask_bag_label_granularity.py` pass `7/7`. Đây chưa phải scientific
+  result: chưa load real cache, chưa fit, chưa prediction, chưa mở validation GT,
+  chưa train consumer và chưa đọc BTXRD test.
+
