@@ -13399,3 +13399,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer/test và chưa launch. Protocol và test phải được commit/push trước khi
   wrapper template được tạo/bind.
 
+### S7 unbound Kaggle wrapper static readiness (2026-08-02)
+
+- Fail-closed wrapper template
+  `project/kaggle_wrappers/run_mask_bag_global_local_instance_s7_v1.py` khóa
+  kernel private
+  `itsthang333/btxrd-rad-dino-mask-bag-global-local-instance-s7-v1`, exact source
+  commit `0e52480...c43f`, protocol SHA-256 `81fbb2f4...79a1`, split/cache/
+  baseline transport hashes và T4x2 guard. Template hiện cố ý
+  `KERNEL_VERSION=0`, `LAUNCH_BINDING_READY=false`, `CHECKOUT_COMMIT=UNBOUND`,
+  nên không thể launch trước one-time binding.
+- Wrapper clone exact checkout, verify toàn bộ protocol source hashes, dựng split
+  CRLF đúng frozen SHA, tìm duy nhất exact cache/baseline, chạy focused tests,
+  producer, rồi independent GT-blind auditor. Chỉ sau auditor pass nó mới tự
+  kiểm đủ `40` target snapshot, `742` score payload, `742` map và ghi
+  `wrapper_output_audit.json`; không gọi evaluator/comparator hay validation GT.
+- Wrapper/test canonical-LF SHA-256 là
+  `ea51733fbf2a0d0a35db55678208c23fc8d360eeecdce887320a6f655c446307` /
+  `a227ff01a7e3a701712e171e5bec2432f1b752493e447786da342b5e375fe89b`.
+  `py_compile`, wrapper+protocol+S7 focused `23/23` và `git diff --check` pass.
+  Chưa bind/launch, chưa real input/prediction/GT/consumer/test.
+
