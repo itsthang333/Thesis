@@ -12392,3 +12392,87 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   không repeat poll/monitor, không output/GT/test access; experiment tiếp tục
   **ĐANG LÀM** chờ một nhịp terminal hợp lý sau.
 
+### Đồng bộ collaborator `70df5b4` — matched-normal Stage A, chưa có efficacy result (2026-08-02)
+
+- Đã fetch/read exact log delta mới tại
+  `origin/codex/research-sync-20260731@70df5b4d9228a14b7650e06301f67be99b5017fd`;
+  chỉ đọc log Git, không truy cập output/Kaggle của collaborator. Workstream
+  `EXP-20260802-codex-rich-gallery-matched-normal-transplant-stage-a-v1` đã
+  triển khai inference-only matched-normal transplant/sham trên immutable
+  classifier448 và rich gallery; decomposition ở `pool0`, `transition1/2/3`,
+  `norm5` được dùng để phân biệt input evidence, backbone erasure, pooling
+  dilution và selector/fusion error. Core/no-GT/bottleneck tests pass `15/15`,
+  nhưng đây chưa phải Dice result.
+- Kaggle versions 1–3 của collaborator chỉ cung cấp error-boundary kỹ thuật:
+  thiếu `project/config.py`, dataset replacement thiếu locked classifier448
+  checkpoint, rồi case-folding sai canonical `image_id` gây
+  `KeyError: 'img002739.jpeg'` trước candidate scoring. Correction giữ nguyên
+  canonical case, chỉ dùng `casefold()` cho compare/hash; regression tests
+  `11/11` và real manifest traversal xác minh `1,484` matched/random pairs.
+  Không có efficacy evidence để adopt/promote, và không launch pipeline trùng;
+  S5 tiếp tục kết luận riêng về representation bottleneck.
+
+### S5 kernel version 4 — HOÀN THÀNH, GT-blind audit PASS nhưng efficacy gate FAIL (2026-08-02)
+
+- `EXP-20260802-codex-s5-skelex-selector-v1` kết thúc **HOÀN THÀNH — FAIL
+  GATE**. Exact private kernel
+  `itsthang333/btxrd-skelex-mask-bag-selector-s5-v1`, version `4`, terminal
+  successful sau `1140.5 s` trên `GPU T4 x2`, checkout
+  `59c3f3ce8906bf18601940114a2f1611b5ffd390`, bound-wrapper SHA-256
+  `f6183ad252e7be289cb6cc54108a307e353db01837f8c4f8e825c3ef36a20ffd`.
+  Direct log `31,294` byte có SHA-256
+  `7cd563307955311e39eecff2b436df0d65c01fd0baa983f01c993f8cfc6672bf`.
+- Official output inventory có `1,872` file. CLI thường tải được `77` file rồi
+  gặp một `kaggleusercontent` connect timeout; atomic inventory downloader giữ
+  các file hoàn chỉnh và resume `1,795` file còn lại. Local temp cuối có `1,873`
+  file tính cả direct log, `241,220,704` byte và không còn `.part`. Browser
+  Download trước đó không tạo file hoàn chỉnh trong bounded timeout; đây chỉ là
+  transport error, không phải kernel/scientific failure.
+- Trước validation GT, descriptor operational gate PASS, prediction pair đã
+  freeze vật lý SHA-256
+  `d30ed3da98bf60ba368f27cb4747bfc715f2c16a1bcf2e6d72602cfb00f41ef0`.
+  Wrapper audit SHA-256 `e86ccafe...3358`; embedded independent audit SHA-256
+  `f61ed896...d186`. Independent local re-audit xác minh `742` maps, `742`
+  score files, `371` descriptor-evidence files và `371` prediction mỗi arm;
+  canonical-LF output trùng exact `f61ed896...d186`. Tại boundary này
+  `validation_gt_read=false`, `consumer_trained=false`, `test_evaluated=false`.
+- Local evaluation có các lỗi môi trường không khoa học trước output cuối:
+  default Python thiếu NumPy; bundled Python thiếu PyTorch; env có PyTorch dùng
+  Python `3.9.23` nên dừng ở `zip(..., strict=True)` sau cohort computation;
+  lần đầu của shim thiếu target directory trong `sys.path` nên dừng ở import.
+  Corrected fail-closed strict-zip shim SHA-256
+  `dcf88d82e6581e7bb3a37f05bf22bb93aba83294993b6c5e12b460909e1c396a`
+  kiểm tra equal/unequal lengths và pass smoke test; frozen evaluator/comparator
+  không sửa, vẫn SHA-256 `ccc3a493...084` / `2b868f93...19`.
+- Sau audit pass mới mở validation GT và frozen baseline per-image, chạy hai arm
+  riêng với đúng `10,000` complete-group bootstrap, seed family `20261101`.
+  Control `geometry_v3_plus_upstream_equal_rank` đạt Dice
+  overall/small/medium/large =
+  `0.25520289 / 0.12563547 / 0.39380626 / 0.37741925`, `70` complete misses;
+  per-image SHA-256 `55846ae0...001c`.
+- Primary `geometry_v3_plus_upstream_plus_skelex_equal_rank` đạt
+  `0.26116508 / 0.11696429 / 0.40348515 / 0.44493337`, `65` complete misses;
+  per-image SHA-256 `db902670...f284`. So với accepted Geometry-v3
+  `0.24548239 / 0.11708058 / 0.37713552 / 0.38941265`, delta là
+  `+0.01568269 / -0.00011629 / +0.02634963 / +0.05552073`; CI95 tương ứng
+  `[-0.00676722,+0.03862143] / [-0.03302726,+0.03191985] /
+  [-0.00473555,+0.06076645] / [-0.02078531,+0.16558063]`.
+- Frozen comparator primary-minus-control có SHA-256 `4806e937...cd67`; delta
+  overall/small/medium/large =
+  `+0.00596219 / -0.00867119 / +0.00967889 / +0.06751412`, với CI95
+  `[-0.01476152,+0.02656770] / [-0.04094832,+0.02014036] /
+  [-0.01386327,+0.03281298] / [-0.00160671,+0.17478286]`. Mọi CI đều cắt 0.
+- Kết luận: SKELEX representation là tín hiệu dương cục bộ cho medium/large và
+  tăng mean score-quality Spearman lên `0.437970`, nhưng equal-rank aggregation
+  không giải quyết small/complete-miss bottleneck, absolute candidate-count vs
+  miss association còn tăng và cả bốn operational goal đều fail. Không promote,
+  không post-hoc rescue/sweep và không train consumer. Candidate oracle vẫn vượt
+  toàn bộ goal, nên successor phải nhắm uncertainty/routing hoặc causal evidence
+  chưa trùng, không quay lại proposal generation.
+- Terminal audit tracked tại
+  `artifacts/kaggle/skelex_mask_bag_selector_s5_v1/kernel_version4_terminal_evaluation_audit.json`,
+  SHA-256
+  `18f29270e487c82bd8313931ca91a894c1949898c4377ffb4afbcbef0c7c63ec`.
+  Prediction freeze/GT boundary được giữ; collaborator output không truy cập;
+  BTXRD test vẫn khóa.
+

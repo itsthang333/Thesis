@@ -1,0 +1,126 @@
+{
+  "audit_id": "skelex_mask_bag_selector_s5_kernel_version4_terminal_evaluation",
+  "experiment_id": "EXP-20260802-codex-s5-skelex-selector-v1",
+  "status": "COMPLETE_FAIL_GATE",
+  "kernel": "itsthang333/btxrd-skelex-mask-bag-selector-s5-v1",
+  "kernel_version": 4,
+  "runtime_seconds": 1140.5,
+  "accelerator": "GPU T4 x2",
+  "checkout_commit": "59c3f3ce8906bf18601940114a2f1611b5ffd390",
+  "scientific_source_commit": "61927cc84ef2340768ea37f9686bf8036c81db30",
+  "protocol_sha256": "036e9d1d52a4ba1ee8e2a51cd19ca4fef597c6c7ad0256e7c729c7888ea24280",
+  "bound_wrapper_sha256": "f6183ad252e7be289cb6cc54108a307e353db01837f8c4f8e825c3ef36a20ffd",
+  "retrieval": {
+    "official_output_files": 1872,
+    "downloaded_output_bytes_plus_direct_log": 241220704,
+    "downloaded_files_plus_direct_log": 1873,
+    "partial_files_remaining": 0,
+    "direct_log_bytes": 31294,
+    "direct_log_sha256": "7cd563307955311e39eecff2b436df0d65c01fd0baa983f01c993f8cfc6672bf",
+    "notes": [
+      "The ordinary Kaggle CLI downloaded 77 files before one kaggleusercontent connect timeout.",
+      "The atomic inventory downloader then retained the 77 complete files and downloaded the remaining 1795 with retries.",
+      "A browser Download attempt produced no completed local file before its bounded timeout."
+    ]
+  },
+  "gt_blind_freeze_and_audit": {
+    "prediction_pair_freeze_sha256": "d30ed3da98bf60ba368f27cb4747bfc715f2c16a1bcf2e6d72602cfb00f41ef0",
+    "descriptor_operational_gate_sha256": "481430f4fadabe2f51a74d7ecc6483f2064b801626f5b1bfde79526529ebdb88",
+    "wrapper_output_audit_sha256": "e86ccafe1473826aa864a2bec1b75a84324e5504cdb2541f6e6c77da792e3358",
+    "embedded_independent_audit_sha256": "f61ed89689fb25fc8ebc8481d47388d7b66262d183cbdf6302f5789c1831d186",
+    "local_independent_audit_raw_windows_sha256": "a6bd7fe696fe8b22d606b9dd87ce08e4ff5bf219dc58e134f25c5b2bdffd0ede",
+    "local_independent_audit_canonical_lf_sha256": "f61ed89689fb25fc8ebc8481d47388d7b66262d183cbdf6302f5789c1831d186",
+    "physical_prediction_maps_verified": 742,
+    "physical_candidate_score_files_verified": 742,
+    "physical_descriptor_evidence_files_verified": 371,
+    "validation_predictions_per_arm": 371,
+    "mean_skelex_control_rank_correlation": 0.5904319841576519,
+    "primary_changed_selection_fraction": 0.4716981132075472,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  },
+  "evaluation_environment": {
+    "frozen_evaluator_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "frozen_comparator_sha256": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed_family": 20261101,
+    "compatibility_shim_sha256": "dcf88d82e6581e7bb3a37f05bf22bb93aba83294993b6c5e12b460909e1c396a",
+    "compatibility_shim_scope": "Python 3.9 strict zip emulation with sized-iterable equality check; frozen evaluator/comparator files unchanged",
+    "pre_metric_environment_errors": [
+      "Default local Python lacked NumPy.",
+      "Bundled workspace Python had NumPy but lacked PyTorch.",
+      "The available PyTorch environment used Python 3.9 and first stopped at zip(..., strict=True) after computing the cohort but before writing outputs.",
+      "The first shim invocation lacked the target script directory on sys.path and stopped at import before dataset evaluation; the corrected shim passed equal/unequal-length synthetic tests."
+    ]
+  },
+  "arms": {
+    "geometry_v3_plus_upstream_equal_rank": {
+      "prediction_freeze_sha256": "6ea5e33985a2033060d4ad4211206505f43fa39ebb5f7da2dd0870a3292b34d5",
+      "per_image_sha256": "55846ae08e78b2d58c3a3f6b3585b44326af275d837b3da809b8ce90ba55001c",
+      "summary_sha256": "6e7d97156684f50e3cea65a066e86eab00ece39a76dff59595748eb4f1740ce1",
+      "gate_sha256": "633d8a21a8be2cc935ee01b8883bd0bce0bd7f3f5e3f4d5f9374ded2213cbdee",
+      "dice": {
+        "overall": 0.25520288785417294,
+        "small": 0.1256354731300402,
+        "medium": 0.3938062554193073,
+        "large": 0.37741925004188437
+      },
+      "complete_misses": 70
+    },
+    "geometry_v3_plus_upstream_plus_skelex_equal_rank": {
+      "prediction_freeze_sha256": "965df27f57d43f6a1f7aaf78f6e7f1a857fa053f3a7bed87643ca9bd0427f316",
+      "per_image_sha256": "db9026709740c562ae8f9ceeb39ef946fc2c8d0e6fa6d6f47fd808542c7ef284",
+      "summary_sha256": "535935b3dcfece8cbdd0d0d61df29a0923bf177dd717943be957e0e07b5aaaa1",
+      "gate_sha256": "7564cd75f3fb0d09dc24679a50d380575942a69d22287e2738d2e9f560893fc5",
+      "dice": {
+        "overall": 0.26116507824048035,
+        "small": 0.1169642874192765,
+        "medium": 0.40348514800321733,
+        "large": 0.4449333734780412
+      },
+      "complete_misses": 65,
+      "delta_vs_geometry_v3": {
+        "overall": 0.015682691460712564,
+        "small": -0.00011629149513002331,
+        "medium": 0.02634963270841325,
+        "large": 0.05552072635042109
+      },
+      "ci95_vs_geometry_v3": {
+        "overall": [-0.006767222389172871, 0.03862142713883192],
+        "small": [-0.03302725686930705, 0.03191985358619422],
+        "medium": [-0.004735545569779564, 0.06076644668816436],
+        "large": [-0.020785313642801544, 0.16558063235417156]
+      }
+    }
+  },
+  "primary_minus_control": {
+    "paired_comparison_sha256": "4806e937864634858ad1cd8265ed39550d3ad0e9e2978d08c5a642c4f6cfcd67",
+    "paired_per_image_sha256": "1709fe539ddaab0107b46e7c35ea355bfdbd98728249a23fa9a6d3057cfde306",
+    "delta": {
+      "overall": 0.00596219038630741,
+      "small": -0.008671185710763678,
+      "medium": 0.009678892583910073,
+      "large": 0.06751412343615688
+    },
+    "ci95": {
+      "overall": [-0.014761519114121132, 0.026567699880002568],
+      "small": [-0.040948320124457815, 0.020140362166598553],
+      "medium": [-0.013863273819032096, 0.03281297780146463],
+      "large": [-0.0016067132691598486, 0.17478285598762042]
+    }
+  },
+  "decision": {
+    "gate_status": "FAIL",
+    "consumer_authorized": false,
+    "reason": "All four operational goals fail; overall improvement is not CI-positive; small does not improve; complete misses remain above Geometry-v3; absolute candidate-count/miss association increases.",
+    "scientific_interpretation": "Musculoskeletal representation improves medium/large ranking and is a useful diagnostic signal, but naive equal-rank aggregation is not a deployable selector and must not be promoted or swept post hoc."
+  },
+  "safety": {
+    "predictions_frozen_before_validation_gt": true,
+    "validation_gt_read_only_after_independent_audit": true,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  }
+}
