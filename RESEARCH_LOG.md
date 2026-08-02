@@ -12665,3 +12665,64 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   safety lock giữ nguyên. Sau khi commit này visible central mới được bind đúng
   version 1 tới exact execution checkout.
 
+### Đồng bộ collaborator `e715539` — matched-normal terminal reject (2026-08-02)
+
+- Đã fetch/read toàn bộ delta log `9c819ec..e715539` từ
+  `origin/codex/research-sync-20260731`; chỉ dùng bằng chứng trong Git theo yêu
+  cầu, không truy cập Kaggle/output của collaborator. Stage-A v4 đã terminal và
+  independent audit pass `371` payload, `1,855` selection row, baseline
+  reproduction `371/371`, không GT/test; prediction-freeze/audit SHA-256 là
+  `3e9760d3b98ac5dbe1d909db74968483eaf0fff0d2bc6c70c46668a7479ab765` /
+  `67c20c4b9d9c140b1d91bb89d4d7e4f3368346fe9815a4043a412729ef555580`.
+- Actual Dice baseline/transplant-only/equal/primary 3:1/random-control 3:1 lần
+  lượt là `0.28872949 / 0.08812762 / 0.22623612 / 0.28106662 / 0.26317766`.
+  Primary 3:1 kém baseline `-0.007763`, CI95
+  `[-0.038285,+0.021947]`; small giảm `-0.062685`, CI95
+  `[-0.107285,-0.025327]`, dù medium/large tăng `+0.043854/+0.101229`.
+  Do overall và small gate fail, matched-normal bị retire; không sweep/rescue và
+  không có kỹ thuật hiệu năng dương để S6 adopt.
+- Negative insight mới thu hẹp bottleneck: proposal-supply regret chỉ
+  `0.000396`, eligible selector regret `0.239173`; baseline có `49` miss và
+  `104` wrong-source. Mask được chọn cho small có median area `14.603x` GT,
+  trong khi large chỉ `0.382x`; transplant làm đổi `143` lựa chọn và mở rộng
+  mask đổi `1.427x`. Norm5 quality correlation chỉ `0.0495`, area correlation
+  `0.4294`, matched-minus-random oracle-percentile gain `0.000048`, nên cơ chế
+  chủ yếu truyền mass/area chứ không truyền tumor identity ổn định.
+- S6 đã predeclare/freeze trước terminal result này và không dùng transplant,
+  rich gallery hay classifier448. Scope của S6 vẫn là kiểm tra taxonomy cấp ảnh
+  trên immutable same-gallery cache bằng matched control; không đổi protocol
+  theo kết quả hậu nghiệm. Bằng chứng collaborator chỉ được giữ để diễn giải
+  signed extent/selector-regret nếu S6 terminal, không được coi là cải tiến.
+
+### S6 kernel-v1 binding và final prelaunch PASS (2026-08-02)
+
+- Binder đã khóa version `1` tới exact execution checkout
+  `c59498658f320c9cc60cde6e5453b07c0165363f`, scientific source
+  `543ee89654a0ed00e80ded16924a760585337924` và protocol SHA-256
+  `f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3`.
+  Launch-binding SHA-256 là
+  `2571dea74f8febaf338bd942bc0a831d2ffaaa09977c62ebd31160fe443d4a38`;
+  exact bound-wrapper SHA-256
+  `e1c855958c638addf1f2ac1c99659779363274a9c0d7138ccd9a38ecaa885281`;
+  inverse reconstruction về unbound template SHA
+  `7cd9bbc0248bc6d5371fb00f04c3102cf33b5e001c36a9b20f3f551130727966`
+  pass với đúng ba replacement.
+- Private T4 package chỉ có đúng bound wrapper `17,903` byte và
+  `kernel-metadata.json` `630` byte; metadata SHA-256
+  `489127ab983d604d776dfa3e7d1634a867c13d7e31758d65effb421d790972e6`.
+  Input chỉ gồm dataset
+  `itsthang333/btxrd-mask-bag-selector-baseline-v1` và accepted selector-cache
+  kernel `itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1`; không có
+  collaborator output, raw GT hay BTXRD test.
+- Final focused suite pass `25/25`, bound-wrapper `py_compile` pass và package
+  không có thư mục/file thừa sau khi xóa generated `__pycache__`. Final
+  prelaunch audit SHA-256
+  `bf99e4c0016ba195af1c164cec05b334ed550154c6bb62de03c11733cc5ad337`
+  có `status=PASS`, `authorized_launch=true`, không scientific collision với
+  terminal matched-normal. Full-regression boundary cũ vẫn là Python 3.9
+  `zip(strict=True)` và B1 CRLF/LF, không liên quan S6.
+- Tại freeze này chưa launch Kaggle, chưa load real cache/fit/prediction, chưa mở
+  validation GT, chưa train consumer, chưa đọc BTXRD test. Claim
+  `EXP-20260802-codex-s6-label-granularity-mil-v1` tiếp tục `ĐANG LÀM`; chỉ được
+  launch sau khi exact binding/audit/log commit này visible central.
+

@@ -1,0 +1,55 @@
+{
+  "audit_timestamp_utc": "2026-08-02T06:31:12.9379121Z",
+  "authorized_launch": true,
+  "binding_sha256": "2571dea74f8febaf338bd942bc0a831d2ffaaa09977c62ebd31160fe443d4a38",
+  "bound_wrapper_sha256": "e1c855958c638addf1f2ac1c99659779363274a9c0d7138ccd9a38ecaa885281",
+  "claim_visible_on_central": true,
+  "collaborator_head": "e715539a2e1bb1588f1beee4b9844e619907d7ee",
+  "collaborator_output_accessed": false,
+  "consumer_trained": false,
+  "execution_checkout": "c59498658f320c9cc60cde6e5453b07c0165363f",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "focused_tests": {
+    "passed": 25,
+    "failed": 0,
+    "python": "3.9.23"
+  },
+  "full_regression_known_environment_boundary": {
+    "direct_python39": "13 failed, 574 passed; 12 failures are legacy zip(strict=True) incompatibilities",
+    "fail_closed_strict_zip_shim": "1 failed, 586 passed; remaining failure is the pre-existing B1 raw-CRLF versus canonical-Git-LF hash assertion",
+    "s6_related_failure": false
+  },
+  "input_sources": {
+    "dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1",
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+  },
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1",
+  "kernel_version": 1,
+  "metadata_sha256": "489127ab983d604d776dfa3e7d1634a867c13d7e31758d65effb421d790972e6",
+  "no_active_scientific_collision": true,
+  "package": {
+    "directory_count": 0,
+    "file_count": 2,
+    "files": {
+      "btxrd-rad-dino-mask-bag-label-granularity-s6-v1.py": {
+        "bytes": 17903,
+        "sha256": "e1c855958c638addf1f2ac1c99659779363274a9c0d7138ccd9a38ecaa885281"
+      },
+      "kernel-metadata.json": {
+        "bytes": 630,
+        "sha256": "489127ab983d604d776dfa3e7d1634a867c13d7e31758d65effb421d790972e6"
+      }
+    }
+  },
+  "protocol_sha256": "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+  "py_compile_pass": true,
+  "schema_version": 1,
+  "scientific_source_commit": "543ee89654a0ed00e80ded16924a760585337924",
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "status": "PASS",
+  "template_sha256": "7cd9bbc0248bc6d5371fb00f04c3102cf33b5e001c36a9b20f3f551130727966",
+  "test_evaluated": false,
+  "validation_gt_read": false,
+  "validation_subtype_label_used_for_routing": false,
+  "wrapper_binding_inverse_exact": true
+}
