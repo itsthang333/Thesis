@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "status": "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_PASS_LOCAL",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-instance-s7-v1",
+  "kernel_version": 1,
+  "checkout_commit": "9c1acaeabfa4754a7054f7dc690bd7b3a6497fbd",
+  "scientific_source_commit": "0e524807937e6fb6effde1649993825f3923c43f",
+  "protocol_sha256": "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1",
+  "prediction_pair_freeze_sha256": "a3d37e43beb8e90d0d30fcf3a86c25bf071fcb340ec62a025ee429799f031a63",
+  "download": {
+    "official_inventory": 1540,
+    "selected_inventory": 1540,
+    "verified_existing_on_idempotent_pass": 1540,
+    "downloaded_on_idempotent_pass": 0,
+    "remaining_partial_files": 0,
+    "root_files_excluding_local_audit": 1540,
+    "root_bytes_excluding_local_audit": 190953689,
+    "tree_manifest_schema": "sorted relative_posix_path\\0size\\0sha256\\n",
+    "tree_manifest_sha256": "79a0f80c1e454ed79b3f792f10541d3352889a3a289add649971e7a091759038",
+    "kernel_log_bytes": 13861,
+    "kernel_log_sha256": "0d396b0cad4416b0ccbf3d51b065d9e6afda059147a8b1a49127d5559e2edc58",
+    "status_queried_by_downloader": false,
+    "environment_attempt_error": "btxrd-pseudomask env lacked kaggle before inventory request",
+    "shell_timeout_boundary": "parent shell returned exit 124 after 124 seconds while child downloader completed atomically",
+    "idempotent_inventory_recheck": "pass"
+  },
+  "key_output_sha256": {
+    "wrapper_output_audit": "db6ebe83dff6b2b1c762b64004fccbafcbfc50398f1f16ab8f5662d89b50d989",
+    "kaggle_independent_gt_blind_audit": "554e6564f5527c1536b513cbf165e0f3af876021ac55cc902d08685c005fa4c3",
+    "local_independent_gt_blind_audit_canonical_lf": "554e6564f5527c1536b513cbf165e0f3af876021ac55cc902d08685c005fa4c3",
+    "run_manifest": "e288df7eba6b0e83c8b1c7fc931d7da87086233a10cffba2dd1281f622c32b07",
+    "training_history": "ff0e0eec2fa120417a90fae3eba7a759a71ca4be4c38ddd067d8bab72ba099b8",
+    "primary_checkpoint": "f5aadac577ed98d15dff5d318eeb939567c8ae0ce25cdd11b63a1457930be838",
+    "target_snapshot_manifest": "98ab74ae22698da7d7fd004730e483857269df57106d9f1ea528705b66e92088",
+    "identity_prediction_freeze": "f2a19a6b170554a000d82e1dafa127988e25533310193b1367a492ed53d0b2c9",
+    "primary_prediction_freeze": "bae35d50b2f87bb969c3a0851c38270ab60ac081d85c1c2194fe370f70b77e1c",
+    "identity_prediction_manifest": "1bdce5586bcbe243394e250f93d561ef255d9ad9a36f915303fbecf81715f813",
+    "primary_prediction_manifest": "40d66fc9ea0996faeb701d0a9afe1df7ace2b411a7a8efa5ce261a70658babe6",
+    "identity_candidate_score_manifest": "6d08db6c7fd29d5ed2bc7ff57133cd9fdea1adc65ec797f9c3f0ee424b3452fc",
+    "primary_candidate_score_manifest": "9f48985c48a118b6ce59f1c4ceb2ff4fc66a841bc537947a0d52ae622ad825de"
+  },
+  "independent_local_audit": {
+    "status": "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_PASS",
+    "target_snapshots": 40,
+    "train_records": 2981,
+    "validation_records": 371,
+    "physical_candidate_score_payloads": 742,
+    "physical_prediction_maps": 742,
+    "verified_score_map_bytes": 152789250,
+    "maximum_target_reproduction_delta": 0.0,
+    "maximum_weight_reproduction_delta": 0.0,
+    "maximum_prediction_map_reproduction_delta": {
+      "geometry_v3_identity": 0.0,
+      "global_local_instance": 0.0
+    },
+    "maximum_candidate_logit_reproduction_delta": {
+      "geometry_v3_identity": 0.00000762939453125,
+      "global_local_instance": 0.00000762939453125
+    },
+    "changed_selection_count": 182,
+    "changed_selection_fraction": 0.49056603773584906,
+    "accepted_bag_probability_preserved": true
+  },
+  "inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3"
+  },
+  "runtime": {
+    "accelerator": "T4x2",
+    "cuda_device_count": 2,
+    "cuda_device_names": [
+      "Tesla T4",
+      "Tesla T4"
+    ]
+  },
+  "training_labels": "binary_image_level_only",
+  "diagnostics_used_for_model_selection": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "evaluation_authorized_after_this_audit": true
+}

@@ -13598,3 +13598,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Correction duy nhất là chạy lại nguyên utility/kernel/destination bằng system
   interpreter; không thay đổi scientific source/protocol/output selection.
 
+### S7 terminal download + independent pre-GT audit pass (2026-08-02)
+
+- Một bounded status check sau thông báo của người dùng xác nhận version `1`
+  `COMPLETE`. Official downloader bằng system interpreter tải full inventory vào
+  temp ignored mới. Parent shell chạm timeout `124s` và trả exit `124` trong khi
+  child tiếp tục atomic download; kiểm tra process/boundary cho thấy child kết
+  thúc bình thường, không còn `.part`. Idempotent rerun xác nhận chính xác
+  `1540/1540` official files đã hiện hữu, `downloaded=0`, log `13,861` bytes;
+  không status query trong downloader.
+- Output root chứa `1,540` file / `190,953,689` bytes trước local-audit file;
+  deterministic tree-manifest SHA-256
+  `79a0f80c1e454ed79b3f792f10541d3352889a3a289add649971e7a091759038`,
+  direct kernel-log SHA-256
+  `0d396b0cad4416b0ccbf3d51b065d9e6afda059147a8b1a49127d5559e2edc58`.
+- Independent auditor được chạy lại cục bộ từ exact frozen split/cache/baseline,
+  không tin riêng audit trong kernel và chưa mở validation GT. Auditor tái lập
+  byte-exact `40/40` target snapshots (`target/weight delta=0`), `742` score
+  payload, `742` physical maps (`map delta=0`), accepted bag probability và pair
+  freeze SHA `a3d37e43...31a63`; `182/371` selection thay đổi. Canonical-LF SHA
+  của local audit bằng đúng Kaggle independent audit:
+  `554e6564f5527c1536b513cbf165e0f3af876021ac55cc902d08685c005fa4c3`.
+- Terminal pre-GT audit tracked tại
+  `artifacts/kaggle/rad_dino_mask_bag_global_local_instance_s7_v1/kernel_version1_retry1_terminal_pre_gt_audit.json`,
+  SHA-256
+  `71923c21b8751f42f1880a9edf99b21b6572f17092628ac9f3dbc9179003caad`,
+  status `PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_PASS_LOCAL`. Training chỉ
+  dùng binary image-level labels; diagnostics không dùng chọn model; đến boundary
+  này validation GT chưa đọc, consumer/test chưa chạy. Sau khi commit/push audit
+  này mới được phép gọi evaluator matched-pair đã predeclare.
+
