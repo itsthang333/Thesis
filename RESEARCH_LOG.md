@@ -14274,3 +14274,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   selector, predictions hay evaluation gates. Validation GT, consumer, test và
   collaborator output tiếp tục khóa.
 
+### S8 transport dataset upload attempt 1 — local CLI path ERROR (2026-08-02)
+
+- Lệnh `kaggle datasets create -p tmp/kaggle/skelex_s8_v1_frozen_output_dataset
+  -r zip` dừng ở local upload-preparation boundary với
+  `[Errno 2] No such file or directory` cho temp manifest path
+  `C:\\Users\\USER\\AppData\\Local\\Temp\\.kaggle/uploads\\tmp/...zip.json`.
+  Client chưa hoàn tất request tạo dataset/version; không có kernel/input,
+  prediction, GT, consumer hay test action. Đây là tooling/path error, không phải
+  scientific result và không thay đổi archive/provenance. Không tải lại output.
+- Failure boundary được ghi trước retry; correction duy nhất là gọi cùng package
+  bằng absolute path, giữ nguyên metadata/archive SHA và private visibility.
+
