@@ -13984,3 +13984,44 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa validation GT/consumer/test. Bước kế là commit/push log+audit, sau đó
   mới bind exact checkout/kernel version và chạy prelaunch audit lần cuối.
 
+### S8 auditor correction, wrapper provenance và one-time launch binder (2026-08-02)
+
+- Đã hoàn tất failure/completeness boundary trước launch. Commit
+  `bc7816ff6cee5a7c5e954668d1255d1b1ad04533` sửa implementation-only phần
+  independent audit: packed source masks/projection metadata, exact 255-null
+  distribution/statistics và physical-map reproduction; producer-vs-independent
+  null synthetic regression pass. Addendum đóng băng tại commit
+  `3e1fbc93425dca43490490b89ba129bfc277d88c`, SHA-256
+  `dabee40fc3b607df3f82105ab9122b2b80b37c2305d7c5ed17c1c8ae1c3dca0e`, xác nhận
+  `scientific_change=false`; protocol khoa học, SKELEX config, cohort, candidate
+  gallery, score/gate và safety boundary không đổi.
+- Canonical source hashes sau correction: core
+  `e37d83f89191c1c3a2af90be5325c7523a4a2c958adbb643ace9fa24e26cffcb`, runner
+  `722c7a9692b80009ddfbfe43400b5f9d083b4ba57b084c7408db9206bfd2c268`, auditor
+  `144ecf5c07eceb8b29e0a6107b49d2f31ddbbd8cea8548464f3f4d1bc58efde3`, core test
+  `6d9029428ce6315c779badf506ffaa131a6f9ea4d280124741053402463302b1`.
+- Trong lần kiểm tra provenance trước launch phát hiện một typo implementation-only
+  trong wrapper: `CACHE_MANIFEST_SHA256` thiếu ký tự `2` so với manifest freeze
+  `8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e`. Đã sửa,
+  đồng thời wrapper chạy static test core **và chính wrapper** trước khi mở input;
+  canonical wrapper LF SHA sau sửa là
+  `718bc39c2aef0f6d96892238d591474acf1d1e481dab3d70ddbd4e61ede0fab8` tại commit
+  `5df72bf097e9a6ea912072943141d43e7be952ef` (correction-source commit vẫn là
+  `bc7816f...`, không phải thay đổi khoa học).
+- One-time binder/test được thêm tại commit
+  `d1a791708b53e6d541e0b25fe3a33f7659001889`, binder LF SHA
+  `4014cf3dce07aa04eb4b9f9d6facd5826dd0426fad62365ee042137dfaa4378c`, test LF
+  SHA `693c340ed15e4fc78868f49834c3ee8e50ac570061318bac5f9e3cd926f2a20f`.
+  Binder chỉ thay đúng `KERNEL_VERSION`, `LAUNCH_BINDING_READY` và exact
+  `CHECKOUT_COMMIT`, rồi kiểm tra inverse byte-identical, source/protocol/addendum
+  ancestor/hash. Không sửa canonical wrapper thành bound.
+- QA cục bộ sau correction/binder: focused S8 tests `10 passed`, Ruff PASS,
+  `py_compile` PASS, `git diff --check` PASS. Lần thử bằng `python` mặc định
+  không có numpy/ruff nên bị dependency error; không phải scientific run; QA hợp lệ
+  dùng `C:\Users\USER\miniconda3\envs\btxrd-pseudomask\python.exe`.
+- **Safety/launch boundary:** đến mục này chưa mở selector cache/BTXRD image,
+  chưa chạy SKELEX inference, chưa tạo validation prediction, chưa đọc validation
+  GT, chưa train consumer/test, không truy cập output collaborator. Claim S8 vẫn
+  `ĐANG LÀM`; chỉ được bind/package/launch sau khi mục này hiện diện trên
+  `origin/research-wsss-improvement` và collision check lại pass.
+
