@@ -14413,3 +14413,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer/test và collaborator output tiếp tục khóa. Phải commit/push mục này
   trước sửa auditor.
 
+### S8 null-device auditor correction freeze (2026-08-02)
+
+- Sau failure gate `7b67923`, auditor correction commit
+  `a64d190e5cc9724507a745b167e66458f9f4b4bf` force `_null_improvements` chạy
+  CPU đúng frozen producer selector device; scientific source/selector,
+  prediction pair, null recipe và gates không đổi. Corrected auditor/test
+  canonical-LF SHA lần lượt
+  `043d28da1d5dd206eed824191562d66731968bcc4a34e5ccd72f8ce756dd608c /`
+  `7e2a0c4ba34ecc287f565125c21f56c379db7d2515b356e42654da820cdb4555`.
+- Regression monkeypatch `torch.cuda.is_available=True` và fail nếu bất kỳ tensor
+  nào bị chuyển sang CUDA; corrected replay vẫn trả đủ `255` finite null values.
+  Focused tests `2 passed`, Ruff/`py_compile`/`git diff --check` PASS. Frozen
+  correction addendum tại
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_null_device_audit_correction.json`,
+  SHA-256 `be1bb0bf1c253ded4999e78fea164abbfb1c4e1ae412e94e55b8ba5fe8e03725`.
+- Chưa bind/launch audit-only v3. Wrapper/binder/prelaunch phải khóa addendum và
+  corrected hashes mới, còn exact dataset/archive/pair/protocol giữ nguyên.
+  Validation GT, evaluator, consumer và test tiếp tục khóa.
+
