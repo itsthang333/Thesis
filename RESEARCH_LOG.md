@@ -14081,4 +14081,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Tại launch chưa có output/prediction, chưa đọc validation GT, chưa train
   consumer, chưa mở BTXRD test và không truy cập collaborator output. Chỉ thực
   hiện một bounded status check ở nhịp hợp lý; không polling/monitor lặp.
+- Bounded status check duy nhất ngay sau launch trả
+  `KernelWorkerStatus.RUNNING`. Không tải output/log, không kiểm tra lần hai và
+  không tạo monitor; claim S8 tiếp tục `ĐANG LÀM`, mọi GT/consumer/test lock giữ nguyên.
 
