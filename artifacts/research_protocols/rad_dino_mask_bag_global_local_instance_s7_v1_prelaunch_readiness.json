@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "PRELAUNCH_READY_UNBOUND",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "registration_commit": "d316269b141664b9881eea601491d0fe45227d80",
+  "scientific_source_commit": "0e524807937e6fb6effde1649993825f3923c43f",
+  "protocol_sha256": "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1",
+  "wrapper_template_sha256": "ea51733fbf2a0d0a35db55678208c23fc8d360eeecdce887320a6f655c446307",
+  "binder_sha256": "1070755a1e74223d7281f0460c2505064fd52406b57ff3d340a06b434b580517",
+  "coordination": {
+    "central_commit_before_audit": "682a97cc872dd32d04877d976984275a389d55c2",
+    "collaborator_commit": "29a3ed6d1f6fe99e1fdb6d6ae3c20c562474b7fb",
+    "s7_collision_found": false,
+    "collaborator_output_accessed": false
+  },
+  "tests": {
+    "focused_s7_primitive_to_binder": "25 passed",
+    "whole_repository_python39_strict_zip_shim": "618 passed, 1 known unrelated B1 CRLF/LF failure",
+    "python39_strict_zip_shim_sha256": "dcf88d82e6581e7bb3a37f05bf22bb93aba83294993b6c5e12b460909e1c396a",
+    "py_compile": "pass",
+    "json_parse": "pass",
+    "git_diff_check": "pass"
+  },
+  "known_unrelated_failure": {
+    "test": "tests/test_run_bas_candidate_descriptor_b1.py::test_b1_protocol_closes_every_declared_source",
+    "file": "project/datasets/btxrd.py",
+    "expected_git_lf_sha256": "96f5abaa7e5a0e7d2fa3a97adc261623bdb2534e76cccc8f55ec853394d24844",
+    "observed_worktree_crlf_sha256": "dcb509a3a0406d158ecde040a00f5319237817f4409d5ca517061398fe09e3d9",
+    "boundary": "pre-existing raw working-tree line-ending assertion; no S7 source imports or changes this file",
+    "scientific_result": false,
+    "correction_or_relaxation": false
+  },
+  "frozen_guards": {
+    "target_snapshots": 40,
+    "physical_candidate_score_payloads": 742,
+    "physical_prediction_maps": 742,
+    "accepted_bag_probability_preserved": true,
+    "independent_gt_blind_audit_required": true,
+    "heavy_compute": "Kaggle Tesla T4 x2 only",
+    "post_hoc_rescue_or_sweep": false,
+    "failure_analysis_before_successor": true
+  },
+  "real_cache_loaded": false,
+  "radiograph_opened": false,
+  "training_started": false,
+  "prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "kernel_launched": false
+}

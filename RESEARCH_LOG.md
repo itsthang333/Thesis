@@ -13436,3 +13436,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   real input; bước kế phải commit/push binder rồi fetch/collision check trước
   final checkout binding.
 
+### S7 final unbound prelaunch regression/collision audit (2026-08-02)
+
+- Binder đã push tại `682a97cc872dd32d04877d976984275a389d55c2`.
+  Sau đó fetch lại central cùng collaborator `29a3ed6...b7fb`; collaborator không
+  tiến thêm và không có claim S7/collision. Worktree trước audit sạch; không truy
+  cập output/Kaggle collaborator.
+- Full repository dưới exact fail-closed Python-3.9 strict-zip shim SHA-256
+  `dcf88d82...c396a` đạt `618 passed, 1 failed`. Failure duy nhất vẫn là known
+  unrelated B1 raw working-tree CRLF hash của `project/datasets/btxrd.py`:
+  expected Git-LF `96f5abaa...4844`, observed CRLF `dcb509a3...e3d9`. Boundary
+  xảy ra trong protocol-source hash test B1, file đó không được S7 import/sửa;
+  không nới test hay thay line ending và không coi là scientific evidence.
+- Machine-readable prelaunch readiness tại
+  `artifacts/research_protocols/rad_dino_mask_bag_global_local_instance_s7_v1_prelaunch_readiness.json`.
+  Exact SHA-256 là
+  `8225ac537b7e7d186a8d489264454856ddff563cd97df4c20f30bcd3ad53e7ea`.
+  Nó khóa focused `25/25`, full-suite boundary, exact source/protocol/template/
+  binder hashes, `40/742/742` output contract và toàn bộ safety=false. Status
+  `PRELAUNCH_READY_UNBOUND`: chưa bind/metadata/launch, chưa real cache/fit/
+  prediction/GT/consumer/test. Chỉ sau commit/push artifact này mới được bind
+  một lần vào exact checkout kế tiếp.
+
