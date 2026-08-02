@@ -14188,4 +14188,12 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Ruff, `py_compile`, `git diff --check` PASS.
 - Chưa bind/launch audit-only kernel ở mục này; validation GT, consumer và test
   vẫn khóa. Chỉ audit PASS mới cho phép dynamic readiness freeze trước evaluator.
+- Final audit-only package bind exact checkout
+  `34c83e41acb9139ff87c2c75bcd674becb9d440a`, kernel version `1`; bound-wrapper,
+  launch-binding raw và metadata SHA-256 lần lượt
+  `8d226f9bc1a2145e1c8c5048630b08428bee2c36968ef987271a9f8f7d51059f /`
+  `38b87f3cde11d44538d61653d2c4affed9d174c3bcd9646260a9b11f610db547 /`
+  `b404b56dd1308eeee8c6057ed2939466c99385e4ca254224f456e666cc89056f`.
+  Metadata dùng duy nhất producer-kernel source version 1, private T4; packaged
+  `py_compile`, inverse binding, checkout/correction/input/machine audit PASS.
 
