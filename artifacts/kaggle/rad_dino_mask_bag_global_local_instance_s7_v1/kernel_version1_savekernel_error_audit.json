@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "status": "ERROR_BEFORE_KERNEL_CREATION",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "attempt": 1,
+  "attempted_utc": "2026-08-02T08:28:09Z",
+  "command": "kaggle kernels push -p D:/thesis/tmp/kaggle/mask_bag_global_local_instance_s7_v1",
+  "kaggle_cli_version": "2.2.3",
+  "response": "400 Client Error: Bad Request for url: https://api.kaggle.com/v1/kernels.KernelsApiService/SaveKernel",
+  "error_boundary": {
+    "api_method": "SaveKernel",
+    "kernel_created": false,
+    "job_created": false,
+    "input_mounted": false,
+    "gpu_started": false,
+    "source_cloned": false,
+    "real_cache_loaded": false,
+    "training_started": false,
+    "prediction_created": false,
+    "scientific_result": false
+  },
+  "bounded_remote_check": {
+    "command": "kaggle kernels list --mine --search global local instance s7 --format json --page-size 20",
+    "result": "Not found",
+    "additional_polling": false
+  },
+  "rejected_payload": {
+    "kernel_id": "itsthang333/btxrd-rad-dino-mask-bag-global-local-instance-s7-v1",
+    "kernel_slug": "btxrd-rad-dino-mask-bag-global-local-instance-s7-v1",
+    "kernel_slug_length": 51,
+    "title": "BTXRD RAD-DINO Mask Bag Global Local Instance S7 V1",
+    "title_length": 51,
+    "code_file": "btxrd-rad-dino-mask-bag-global-local-instance-s7-v1.py",
+    "bound_wrapper_sha256": "2e2d62d3b21a88ef542c910e741ef2c69b259fdb4d0ada8903f3604f67bc69e5",
+    "kernel_metadata_sha256": "e3dbf564e72fb3a3dec17c897ba8dccd0ddaa018709487da11e9c1a70684dc26",
+    "launch_binding_sha256": "6948ba6b258c4441a510010b8bb1fceedb89b71d1731be2bf58cf61dd812ab91"
+  },
+  "root_cause_analysis": {
+    "classification": "transport metadata failure, not scientific or implementation execution failure",
+    "leading_root_cause": "both new kernel slug and title are 51 characters and exceed Kaggle's established 50-character metadata boundary",
+    "evidence": [
+      "SaveKernel rejected before creating a remotely listable kernel",
+      "slug length is 51 and title length is 51",
+      "the official Kaggle CLI changelog documents validation for kernel title and slug length",
+      "the installed current client checks only the five-character title minimum locally, so the server returns a generic HTTP 400 instead of a preflight message",
+      "all prior accepted project kernel metadata uses shorter identifiers"
+    ],
+    "confidence": "high but to be confirmed only by one predeclared shortened transport-only retry",
+    "alternative_causes": [
+      "malformed metadata JSON rejected: ruled down because local JSON parse passed",
+      "missing code file: ruled out by py_compile and CLI local preflight reaching SaveKernel",
+      "invalid inputs or GPU: ruled down because the same baseline/cache sources and NvidiaTeslaT4 metadata were accepted for S6"
+    ]
+  },
+  "allowed_correction": {
+    "scope": "shorten kernel slug, title and code filename to at most 50 characters; update wrapper KERNEL constant and binding/metadata hashes only",
+    "scientific_source_unchanged": true,
+    "protocol_unchanged": true,
+    "training_recipe_unchanged": true,
+    "inputs_unchanged": true,
+    "output_and_gate_unchanged": true,
+    "rerun_limit": 1
+  },
+  "sources": [
+    "https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md",
+    "https://github.com/Kaggle/kaggle-cli/blob/main/CHANGELOG.md"
+  ],
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}

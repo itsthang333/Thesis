@@ -13481,3 +13481,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   load real cache, chưa fit/prediction/validation GT/consumer/test. Phải commit/
   push log + binding + audit này trước đúng một `kaggle kernels push`.
 
+### S7 launch attempt 1 — `SaveKernel` metadata error, chưa có job (2026-08-02)
+
+- Sau prelaunch commit `5df95ef3f140c3e0e3e879ebfa6b301acbb759a7` đã push,
+  đúng một lệnh `kaggle kernels push` trả HTTP `400 Bad Request` tại API
+  `KernelsApiService/SaveKernel`. Một bounded `kernels list --mine --search`
+  ngay sau đó trả `Not found`; không kernel/version/job được tạo, nên chưa mount
+  input/GPU, chưa clone source, chưa load cache/fit/prediction và không có kết
+  quả khoa học.
+- Failure analysis phân loại đây là **transport metadata failure**. Bound wrapper,
+  binding và metadata đã parse/compile; input/GPU metadata giống S6 đã accepted.
+  Sai khác nổi bật và testable là cả slug
+  `btxrd-rad-dino-mask-bag-global-local-instance-s7-v1` lẫn title đều dài đúng
+  `51` ký tự, vượt established Kaggle metadata boundary `50`. Kaggle CLI `2.2.3`
+  hiện chỉ bắt minimum title tại local nên server trả generic 400; official CLI
+  changelog ghi rõ kernel title/slug length validation. Nguồn:
+  https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md và
+  https://github.com/Kaggle/kaggle-cli/blob/main/CHANGELOG.md .
+- Error audit tracked tại
+  `artifacts/kaggle/rad_dino_mask_bag_global_local_instance_s7_v1/kernel_version1_savekernel_error_audit.json`.
+  Exact SHA-256 là
+  `7977188aa8ff973c993ee6da420c6ba57dcdb8b4a18ba38f385c593ca1765509`.
+  Correction duy nhất được phép sau khi audit/log này push là rút gọn transport
+  slug/title/code filename xuống `<=50`, cập nhật wrapper `KERNEL` và rebind
+  provenance; scientific source/protocol/input/recipe/output/gate giữ nguyên.
+  Chỉ một retry transport được phép; nếu vẫn 400 phải dừng và audit response
+  boundary mới, không thử ngẫu nhiên. Claim S7 vẫn `ĐANG LÀM`; GT/consumer/test
+  khóa và không polling/monitor.
+
