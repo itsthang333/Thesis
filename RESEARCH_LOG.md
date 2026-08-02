@@ -13628,3 +13628,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   này validation GT chưa đọc, consumer/test chưa chạy. Sau khi commit/push audit
   này mới được phép gọi evaluator matched-pair đã predeclare.
 
+### S7 post-freeze matched-decision source — static trước GT (2026-08-02)
+
+- Static inspection sau pre-GT audit, vẫn trước validation GT, phát hiện
+  execution mismatch: S7 protocol đã khóa `10,000` bootstrap với seed
+  `20261202`, trong khi generic comparator cũ
+  `project/compare_mask_bag_evaluated_arms.py` hard-code `20261101`. Chạy generic
+  với seed S7 sẽ fail argument gate; đổi seed S7 sang seed cũ sẽ trái protocol.
+  Đây là evaluator plumbing gap, không phải model/result failure và chưa có metric
+  nào được đọc.
+- Không sửa generic comparator/protocol/prediction. Source mới
+  `project/decide_mask_bag_global_local_instance_s7.py` thực hiện matched
+  complete-group bootstrap đúng seed `20261202`, verify exact pre-GT audit + hai
+  evaluation audit/output inventories, bắt identity arm khớp accepted
+  Geometry-v3 per image, rồi áp đúng S7 mechanism/operational gate. Nó fail-closed
+  consumer authorization và luôn cấm post-hoc rescue/sweep; matched comparison
+  chỉ đọc hai frozen per-image table nên không reopen GT.
+- Canonical-LF SHA-256 của decision source/test là
+  `ae8d0c0611c1cfefaf5fa74156abee8448b2c908247364a30e279a3b35f3177c` /
+  `864d019d9774e2a51501634b63bb585b69c00d47ea486396c261bd9b794fdef2`.
+  S7 producer→decision focused suite pass `29/29`; evaluator+generic comparator+
+  S7 decision pass `13/13` dưới exact documented Python-3.9 strict-zip shim SHA
+  `dcf88d82...c396a`. Lần không shim đạt `12` và chỉ fail known generic
+  `zip(strict=True)` compatibility boundary; S7 decision mới tự chạy Python 3.9.
+- Chưa chạy evaluator thật, chưa đọc validation GT/metric, chưa consumer/test.
+  Bước kế là commit/push exact source, sau đó tạo evaluation-readiness artifact
+  bind source commit + pre-GT audit + exact evaluator/decision hashes trước GT.
+
