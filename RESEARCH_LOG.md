@@ -12745,3 +12745,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   log/output, chưa validation GT, chưa train consumer, chưa đọc BTXRD test.
   Experiment tiếp tục **ĐANG LÀM** chờ một bounded terminal check ở nhịp sau.
 
+### S6 post-freeze seed correction và evaluation readiness (2026-08-02)
+
+- Static review ngay sau launch, trước bất kỳ terminal status/output/prediction
+  hay GT access nào, phát hiện cùng boundary từng gặp ở B4: protocol S6 v1 ghi
+  bootstrap seed `20261201`, nhưng exact generic comparator đã freeze trong
+  protocol chỉ chấp nhận `20261101` và sẽ fail tại argument gate nếu giữ seed
+  cũ. Đây là execution error hậu-freeze, không phải model/scientific result.
+- Correction artifact
+  `rad_dino_mask_bag_label_granularity_s6_v1_postfreeze_seed_correction.json`
+  SHA-256
+  `a0eb5f83ace094c6fac015c0331740f614799c6c62706be6073a602578ddb7b4`
+  khóa seed `20261101` cho cả hai arm evaluation và matched comparator, trước
+  metric. Không đổi model, loss, arm, prediction, endpoint, gate, source
+  producer hay protocol SHA được ghi trong pair freeze; không rerun kernel.
+- Post-freeze readiness SHA-256
+  `db1048e505407d60daeb245a3e81b8a3c009c7e51d4fd8e72448e80174ad266a`
+  khóa thứ tự terminal check → compact output → wrapper audit GT-blind →
+  independent local reproduction → pair/audit freeze → evaluate hai arm với
+  cùng seed → matched compare không mở lại GT → S6 decision. Exact evaluator /
+  comparator canonical-LF SHA vẫn `ccc3a493...084` / `2b868f93...119`;
+  `py_compile` pass và focused synthetic suite pass `9/9` dưới fail-closed
+  Python-3.9 strict-zip shim.
+- Generic evaluator `gate_decision.json` dùng mechanism checks của các selector
+  cũ nên không được thay cho S6 gate. S6 mechanism đã khóa trước metric: primary
+  phải tăng mean overall và small, không giảm medium/large, không tăng complete
+  miss so với matched control. Consumer còn yêu cầu đủ bốn goal, primary-vs-
+  accepted-Geometry-v3 overall CI95 lower `>0`, mọi safety gate; AUROC/subtype/
+  count/regret/flip/entropy/change fraction tiếp tục diagnostic nonblocking đúng
+  protocol. Không rescue/sweep nếu fail.
+- Không status-poll/monitor/output access ở bước này; validation GT, consumer và
+  BTXRD test vẫn khóa.
+

@@ -1,0 +1,30 @@
+{
+  "correction_timestamp_utc": "2026-08-02T06:37:22.9015633Z",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "frozen_before_terminal_status_or_output_access": true,
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1",
+  "kernel_version": 1,
+  "model_arm_or_prediction_change": false,
+  "postfreeze_evaluation": {
+    "bootstrap_replicates": 10000,
+    "corrected_seed_for_both_arm_evaluations_and_matched_comparison": 20261101,
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "evaluator_canonical_lf_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "generic_comparator_enforced_seed": 20261101,
+    "matched_comparator": "project/compare_mask_bag_evaluated_arms.py",
+    "matched_comparator_canonical_lf_sha256": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119",
+    "superseded_seed": 20261201
+  },
+  "reason": "The frozen generic comparator rejects every seed except 20261101. Keeping 20261201 would make the post-freeze matched evaluation fail at its argument gate. This execution-only correction is frozen before any terminal status, output, prediction or validation metric is seen and changes no arm, prediction, endpoint or promotion rule.",
+  "schema_version": 1,
+  "scientific_protocol_sha256_unchanged": "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+  "status": "FROZEN_POSTFREEZE_EXECUTION_CORRECTION",
+  "sweep_or_result_conditioning": false,
+  "safety": {
+    "collaborator_output_accessed": false,
+    "consumer_trained": false,
+    "prediction_output_accessed": false,
+    "test_evaluated": false,
+    "validation_gt_read": false
+  }
+}

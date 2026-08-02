@@ -1,0 +1,108 @@
+{
+  "artifact_id": "rad_dino_mask_bag_label_granularity_s6_v1_postfreeze_evaluation_readiness",
+  "created_utc": "2026-08-02T06:37:22.9015633Z",
+  "decision_contract": {
+    "generic_evaluator_gate_status_is_not_the_s6_mechanism_gate": true,
+    "mechanism_pass_requires": [
+      "hierarchical_entropy_routed overall mean Dice strictly exceeds coarse_control",
+      "hierarchical_entropy_routed small mean Dice strictly exceeds coarse_control",
+      "hierarchical_entropy_routed medium mean Dice does not decrease versus coarse_control",
+      "hierarchical_entropy_routed large mean Dice does not decrease versus coarse_control",
+      "hierarchical_entropy_routed complete misses do not increase versus coarse_control"
+    ],
+    "operational_consumer_authorization_requires": [
+      "independent GT-blind pair audit PASS",
+      "primary Dice overall/small/medium/large at least 0.34024039/0.17895493/0.51244178/0.49370336",
+      "primary-minus-accepted-Geometry-v3 overall paired CI95 lower bound greater than zero",
+      "no primary subgroup mean regression versus matched control",
+      "no primary complete-miss increase versus matched control",
+      "all prediction-freeze, validation-GT, consumer and BTXRD-test safety locks pass"
+    ],
+    "nonblocking_diagnostics": [
+      "image AUROC",
+      "subtype accuracy or macro recall",
+      "candidate-count association",
+      "selected-to-oracle regret",
+      "flip agreement",
+      "entropy route distribution",
+      "changed selection fraction"
+    ],
+    "negative_result_rule": "Reject both hierarchy efficacy and consumer authorization without seed, loss-weight, epoch, route, fusion, threshold, morphology or subgroup rescue sweep."
+  },
+  "evaluation": {
+    "arm_order": [
+      "coarse_control",
+      "hierarchical_entropy_routed"
+    ],
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "bootstrap_replicates_per_arm": 10000,
+    "bootstrap_seed_for_both_arms": 20261101,
+    "each_arm_must_bind": [
+      "independently audited arm prediction freeze SHA-256",
+      "scientific source commit 543ee89654a0ed00e80ded16924a760585337924",
+      "protocol SHA-256 f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+      "arm candidate-score manifest SHA-256",
+      "selector-cache freeze SHA-256",
+      "accepted baseline freeze and per-image SHA-256"
+    ],
+    "gt_open_boundary": "Only after wrapper output and independent local GT-blind audits pass and all physical score/map/freeze hashes are frozen.",
+    "source": "project/evaluate_mask_bag_selector_arm.py",
+    "source_canonical_lf_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084"
+  },
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "frozen_inputs": {
+    "binding_sha256": "2571dea74f8febaf338bd942bc0a831d2ffaaa09977c62ebd31160fe443d4a38",
+    "execution_checkout": "c59498658f320c9cc60cde6e5453b07c0165363f",
+    "launch_audit_sha256": "c681549e0913bd84347d545a388b31d31a332102fc57d36851f3e29325013b6b",
+    "postfreeze_seed_correction_sha256": "a0eb5f83ace094c6fac015c0331740f614799c6c62706be6073a602578ddb7b4",
+    "prelaunch_audit_sha256": "bf99e4c0016ba195af1c164cec05b334ed550154c6bb62de03c11733cc5ad337",
+    "protocol_sha256": "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+    "scientific_source_commit": "543ee89654a0ed00e80ded16924a760585337924",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "independent_gt_blind_audit": {
+    "required_status": "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_PASS",
+    "source": "project/audit_mask_bag_label_granularity_s6_output.py",
+    "source_canonical_lf_sha256": "f26d555381ad4f60b6274414bbdbdfc565a93445d90c3bafc90df064878519b5",
+    "validation_predictions_per_arm": 371
+  },
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1",
+  "kernel_version": 1,
+  "matched_comparison": {
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261101,
+    "candidate": "hierarchical_entropy_routed",
+    "ground_truth_reopened": false,
+    "reference": "coarse_control",
+    "source": "project/compare_mask_bag_evaluated_arms.py",
+    "source_canonical_lf_sha256": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119"
+  },
+  "required_order": [
+    "one later bounded terminal status check",
+    "terminal compact direct-output retrieval into a new ignored temp root",
+    "wrapper-output inventory and physical audit without validation GT",
+    "independent local reproduction of both residual heads, scores, winners and maps without validation GT",
+    "freeze exact pair and independent-audit SHA-256 values",
+    "evaluate coarse_control and hierarchical_entropy_routed separately with the same corrected seed against accepted Geometry-v3",
+    "freeze both evaluation audits and per-image SHA-256 values",
+    "compare hierarchy minus control from frozen per-image tables without reopening GT",
+    "apply the S6-specific mechanism and operational decision contract"
+  ],
+  "safety": {
+    "collaborator_output_accessed": false,
+    "consumer_trained": false,
+    "heavy_compute_local": false,
+    "prediction_output_accessed": false,
+    "test_evaluated": false,
+    "validation_gt_read": false
+  },
+  "static_validation": {
+    "comparator_py_compile": "PASS",
+    "evaluator_py_compile": "PASS",
+    "focused_evaluator_comparator_tests": "9 passed in 1.31s under the documented fail-closed Python-3.9 strict-zip compatibility shim",
+    "source_hashes_match_frozen_protocol": true
+  },
+  "status": "FROZEN_AFTER_LAUNCH_BEFORE_TERMINAL_STATUS_OUTPUT_OR_GT"
+}
