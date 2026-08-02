@@ -12573,3 +12573,47 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   result: chưa load real cache, chưa fit, chưa prediction, chưa mở validation GT,
   chưa train consumer và chưa đọc BTXRD test.
 
+### S6 source/runner/independent-auditor static readiness (2026-08-02)
+
+- Exact registration commit `582652e2520f752723c11bcfce4656d9947d7a71`
+  đã push và nhìn thấy trên `origin/research-wsss-improvement` trước mọi real-data
+  action. Claim S6 tiếp tục `ĐANG LÀM`; chưa có Kaggle binding/launch.
+- Model/training closure hiện gồm
+  `project/models/mask_bag_label_granularity.py` và
+  `project/models/mask_bag_label_granularity_training.py`. Nó khóa valid-candidate
+  centering, nine-column exact zero-init, normalized subtype/pathology pooling,
+  inverse-sqrt train-label weight, entropy route và matched batch/dropout order.
+  Batch toàn normal được xử lý fail-safe: chỉ phần binary có gradient, hai phần
+  tumor-only bằng zero; không ép mọi batch phải có tumor và không tạo instance
+  label.
+- Runner `project/run_mask_bag_label_granularity_s6_pair.py` không import
+  evaluator/annotation. Nó join taxonomy từ exact split, verify subtype count,
+  tái tạo base logits, audit zero-init trên `2981+371` record trước optimizer,
+  fit đúng hai arm 16 epoch, dùng hai T4 cho disjoint validation shards, rồi ghi
+  đủ two-arm score/map/checkpoint/history/diagnostic/pair freeze. Validation
+  subtype không được dùng để route; chỉ bag prediction quyết định subtype.
+- Independent auditor
+  `project/audit_mask_bag_label_granularity_s6_output.py` không import runner,
+  training orchestration hay evaluator. Nó tự load checkpoint/cache/base, tái
+  tính residual, SmoothMax, subtype posterior/entropy route, score, winner,
+  bag probability và physical float16 map cho cả `742` output; tolerance CPU-vs-
+  GPU candidate logit được predeclare `5e-5`, map phải exact. Chỉ integrity/safety
+  fail mới chặn GT; diagnostic value không chọn arm/hyperparameter.
+- Focused static/synthetic suite pass `19/19`; sau correction all-normal thêm
+  runner suite pass tổng `19/19`. Lần full-regression trực tiếp trên Python
+  `3.9.23` có `13 failed, 574 passed`, trong đó `12` fail là known
+  `zip(..., strict=True)` Python>=3.10 incompatibility của code cũ. Chạy lại bằng
+  documented fail-closed strict-zip shim còn đúng `1 failed, 586 passed`: test
+  legacy B1 so raw worktree CRLF SHA của `project/datasets/btxrd.py`
+  (`dcb509a3...`) với canonical Git-LF SHA cũ (`96f5abaa...`). Đây là boundary
+  môi trường/serialization đã biết, không liên quan S6; không sửa protocol/code
+  B1 và không dùng nó để nới gate.
+- Một focused S6 test ban đầu cũng gặp `TypeError: zip() takes no keyword
+  arguments` trong code mới trên Python 3.9. S6 đã thay riêng các `strict=True`
+  đó bằng explicit length-equality check trước `zip`; mechanism/loss/recipe
+  không đổi. Sau correction focused suite pass như trên.
+- Chưa mở real selector cache/radiograph, chưa fit/prediction, chưa validation
+  polygon, chưa consumer/test. Bước tiếp theo là commit/push exact scientific
+  source, tạo protocol đóng băng source/hash và wrapper/binding fail-closed trước
+  launch.
+

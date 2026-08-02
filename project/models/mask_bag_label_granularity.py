@@ -273,24 +273,25 @@ def label_granularity_losses(
     subtype = zero
     if hierarchical:
         positive = labels.bool()
-        if not positive.any():
-            raise ValueError("hierarchical batches must contain a tumor image")
-        subtype_logits = subtype_bag_logits(
-            base_candidate_logits,
-            residuals,
-            valid,
-            temperature=config.bag_temperature,
-        )[positive]
-        subtype_targets = types[positive] - 1
-        subtype = F.cross_entropy(
-            subtype_logits,
-            subtype_targets,
-            weight=subtype_class_weights.to(subtype_logits.device, subtype_logits.dtype),
-        )
-        pathology_targets = types[positive].ge(8).long()
-        pathology = F.cross_entropy(
-            pathology_bag_logits(subtype_logits), pathology_targets
-        )
+        if positive.any():
+            subtype_logits = subtype_bag_logits(
+                base_candidate_logits,
+                residuals,
+                valid,
+                temperature=config.bag_temperature,
+            )[positive]
+            subtype_targets = types[positive] - 1
+            subtype = F.cross_entropy(
+                subtype_logits,
+                subtype_targets,
+                weight=subtype_class_weights.to(
+                    subtype_logits.device, subtype_logits.dtype
+                ),
+            )
+            pathology_targets = types[positive].ge(8).long()
+            pathology = F.cross_entropy(
+                pathology_bag_logits(subtype_logits), pathology_targets
+            )
         supervised = (
             config.hierarchy_binary_weight * binary
             + config.hierarchy_pathology_weight * pathology

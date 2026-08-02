@@ -167,3 +167,25 @@ def test_inconsistent_image_labels_fail_closed() -> None:
             config=config,
             hierarchical=True,
         )
+
+
+def test_hierarchical_all_normal_batch_keeps_only_weighted_binary_term() -> None:
+    descriptors, valid, base = _batch()
+    config = LabelGranularityConfig(descriptor_dim=12, hidden_dim=8, dropout=0.0)
+    residual = LabelGranularityResidual(config)(descriptors, valid)
+    losses = label_granularity_losses(
+        base_candidate_logits=base,
+        residuals=residual,
+        flipped_residuals=residual,
+        candidate_valid=valid,
+        tumor_labels=torch.zeros(3, dtype=torch.long),
+        tumor_type_labels=torch.zeros(3, dtype=torch.long),
+        subtype_class_weights=torch.ones(9),
+        config=config,
+        hierarchical=True,
+    )
+    assert losses["pathology"].item() == 0.0
+    assert losses["subtype"].item() == 0.0
+    assert losses["total"].item() == pytest.approx(
+        config.hierarchy_binary_weight * losses["binary"].item()
+    )
