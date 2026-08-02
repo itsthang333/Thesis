@@ -12641,3 +12641,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Chưa tạo wrapper/binding/package/Kaggle version; validation polygon, consumer
   và BTXRD test vẫn khóa.
 
+### S6 unbound wrapper/binder readiness, chưa launch (2026-08-02)
+
+- Unbound fail-closed wrapper
+  `project/kaggle_wrappers/run_mask_bag_label_granularity_s6_v1.py` có
+  canonical-LF SHA-256
+  `7cd9bbc0248bc6d5371fb00f04c3102cf33b5e001c36a9b20f3f551130727966`,
+  giữ `KERNEL_VERSION=0`, `LAUNCH_BINDING_READY=False`, checkout `UNBOUND`.
+  Nó clone exact checkout, verify ancestry/protocol/toàn source closure, dựng
+  split CRLF exact từ Git LF, tìm duy nhất accepted baseline/cache theo hash,
+  chạy real convolution trên cả hai T4, focused tests, runner rồi independent
+  GT-blind auditor. Nó không import/chạy evaluator/comparator và không cần raw
+  radiograph, train gallery hay model download mới.
+- One-time binder
+  `project/bind_mask_bag_label_granularity_s6_wrapper.py` canonical-LF SHA-256
+  `0fd97a4ae1d17282e672f8e164c1fd1b2de472b014a43c7bb28fc15e73464733`
+  chỉ thay đúng ba field version/ready/checkout, bắt buộc inverse reconstruction
+  về exact template, kiểm tra protocol/source hashes tại execution checkout và
+  ghi launch binding độc lập. Wrapper/binder tests có SHA-256
+  `4c809e3c...9148` / `8a70bc2f...71a6`.
+- Focused S6 source/protocol/wrapper/binder/auditor suite pass `25/25`; py_compile
+  pass. Chưa bind/package/push Kaggle, chưa real cache/fit/prediction/GT; mọi
+  safety lock giữ nguyên. Sau khi commit này visible central mới được bind đúng
+  version 1 tới exact execution checkout.
+
