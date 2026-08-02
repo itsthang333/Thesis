@@ -115,3 +115,13 @@ def run_arm(arm: str) -> None:
     ):
         raise RuntimeError("SMILE terminal output contract mismatch")
     print(json.dumps({"complete": True, "arm": arm, "summary": summary}, sort_keys=True), flush=True)
+
+
+if __name__ == "__main__":
+    filename = Path(__file__).stem.lower()
+    if "control" in filename:
+        run_arm("control")
+    elif "full" in filename:
+        run_arm("full")
+    else:
+        raise RuntimeError(f"Standalone SMILE launcher filename does not identify its arm: {filename}")
