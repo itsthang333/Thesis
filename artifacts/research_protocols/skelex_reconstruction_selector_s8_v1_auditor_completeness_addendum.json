@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_IMPLEMENTATION_AND_AUDIT_COMPLETENESS_CORRECTION",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "scientific_source_commit": "b4543aeb9430345c9b789384943bd218816a85dd",
+  "correction_source_commit": "bc7816ff6cee5a7c5e954668d1255d1b1ad04533",
+  "scientific_protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "scientific_change": false,
+  "correction_boundary": {
+    "reason": "The prelaunch auditor reproduced candidate LCB and fallback but did not yet independently reproduce the promised 255-permutation spatial null or source-mask-to-14x14 candidate projection.",
+    "changes": [
+      "cache the fixed Torch permutation orders; the filtered permutation bank and numeric selector output remain exact",
+      "freeze packed source masks and square-projection metadata in each evidence payload",
+      "freeze null distribution, observed statistic and exceedance count in each evidence payload",
+      "independently reconstruct candidate projection, noise-to-mask order, 255-null distribution, p-value, family gate, fallback, candidate scores and all 742 physical maps",
+      "add a producer-versus-independent-auditor exact-null synthetic regression test"
+    ],
+    "unchanged": [
+      "SKELEX checkpoint and input normalization",
+      "10 masks per orientation, seeds and mask ratio",
+      "inside-minus-radius-2-ring score and LCB",
+      "0.75/0.25 rank fusion",
+      "family-consistency gate",
+      "255-permutation max-statistic p-value and threshold",
+      "immutable candidates, cohort, evaluation gate and safety boundaries"
+    ]
+  },
+  "canonical_lf_source_overrides": {
+    "project/audit_skelex_reconstruction_selector_s8_output.py": {
+      "previous_sha256": "613b5b4244f001765dd705b53eb0edde755bb224780022ea2d0ba4eb9055b54d",
+      "corrected_sha256": "144ecf5c07eceb8b29e0a6107b49d2f31ddbbd8cea8548464f3f4d1bc58efde3"
+    },
+    "project/models/skelex_reconstruction_selector.py": {
+      "previous_sha256": "df93b09b7c1c311c1977889705efe1709ab178cb60d95366d06405598280a7e5",
+      "corrected_sha256": "e37d83f89191c1c3a2af90be5325c7523a4a2c958adbb643ace9fa24e26cffcb"
+    },
+    "project/run_skelex_reconstruction_selector_s8.py": {
+      "previous_sha256": "a76db937db3654ca769a419f2c1713e99ae0fffe3521665bada14e62cdee43ce",
+      "corrected_sha256": "722c7a9692b80009ddfbfe43400b5f9d083b4ba57b084c7408db9206bfd2c268"
+    },
+    "tests/test_skelex_reconstruction_selector.py": {
+      "previous_sha256": "010b47c60447bd4064ec805c56f43b0c9bb9abe44ceaa88d7f1860e640c8e3ea",
+      "corrected_sha256": "6d9029428ce6315c779badf506ffaa131a6f9ea4d280124741053402463302b1"
+    }
+  },
+  "qa": {
+    "focused_tests_passed": 21,
+    "producer_independent_null_match": true,
+    "ruff": "PASS",
+    "py_compile": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "real_cache_opened": false,
+  "btxrd_image_opened": false,
+  "skelex_inference_run": false,
+  "validation_prediction_created": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}
