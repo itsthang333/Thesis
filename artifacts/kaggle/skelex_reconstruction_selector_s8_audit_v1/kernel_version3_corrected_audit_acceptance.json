@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "status": "CORRECTED_INDEPENDENT_GT_BLIND_AUDIT_LOCALLY_ACCEPTED",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "kernel": "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1",
+  "kernel_version": 3,
+  "terminal_status": "COMPLETE",
+  "checkout_commit": "d47286d423e85581cf88f29742b2417072c68deb",
+  "official_output_inventory_count": 1546,
+  "compact_files_downloaded": 3,
+  "direct_log": {
+    "ignored_local_path": "tmp/kaggle/skelex_s8_audit_v3_complete_20260802_194008/btxrd-skelex-reconstruction-selector-s8-audit-v1.log",
+    "bytes": 7509,
+    "sha256": "56ab2d6387dcd3095113e0bfee588617ae4890291d6fed93c1d227e08fc6f1df"
+  },
+  "compact_outputs": {
+    "audit_launch_binding.json": "61f0b755f411d709eaeea8756aa0b020779b558e823636722ad9b6b33d3a33b9",
+    "corrected_audit_manifest.json": "d6e654ad02aa234672befe8791684d2fd26ab676fd0e9f88036742843d9ebd1d",
+    "independent_gt_blind_output_audit.json": "5f351b448e175cb0e2a15b20fa12e0a69ae133401cd40b44bf2dc414b9ea2026"
+  },
+  "binding": {
+    "kernel_version": 3,
+    "auditor_sha256": "043d28da1d5dd206eed824191562d66731968bcc4a34e5ccd72f8ce756dd608c",
+    "serialized_lcb_correction_sha256": "94e5881f763cc2cb3bd0a3f49cb563f2449140a7c576211252a45579597fc8a2",
+    "null_device_correction_sha256": "be1bb0bf1c253ded4999e78fea164abbfb1c4e1ae412e94e55b8ba5fe8e03725",
+    "prediction_pair_freeze_sha256": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+    "transport_archive_sha256": "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737",
+    "cuda_device_names": ["Tesla T4", "Tesla T4"]
+  },
+  "independent_audit": {
+    "status": "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_DIAGNOSTICS_REPRODUCED",
+    "validation_predictions_per_arm": 371,
+    "physical_prediction_maps_verified": 742,
+    "candidate_projections_reproduced": 371,
+    "spatial_null_distributions_reproduced": 371,
+    "nonconstant_reconstruction_banks": 371,
+    "switched_predictions": 20
+  },
+  "manifest_hash_links_verified": true,
+  "producer_pair_hash_matches_local_frozen_output": true,
+  "prediction_changed": false,
+  "validation_gt_read": false,
+  "validation_dice_evaluated": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false,
+  "scientific_conclusion": "The corrected independent auditor fully reproduces the immutable S8 pair and authorizes dynamic postfreeze readiness. This is not an efficacy result and no validation Dice has been read."
+}

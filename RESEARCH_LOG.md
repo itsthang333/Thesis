@@ -14482,3 +14482,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Bounded continuation check thứ tư vẫn `KernelWorkerStatus.RUNNING`; CPU null
   replay toàn cohort chưa terminal. Không repeat poll/partial access/monitor.
 
+### S8 audit-only v3 COMPLETE — corrected independent GT-blind audit PASS (2026-08-02)
+
+- Bounded terminal check duy nhất trả version `3` `COMPLETE`. Compact inventory
+  downloader lấy đúng ba JSON audit + direct log vào ignored temp
+  `tmp/kaggle/skelex_s8_audit_v3_complete_20260802_194008`; official inventory
+  `1,546`, compact downloaded `3`, không repeat status query. Direct log `7,509`
+  bytes SHA `56ab2d6387dcd3095113e0bfee588617ae4890291d6fed93c1d227e08fc6f1df`.
+- Runtime xác nhận checkout `d47286d...68deb`, two T4, corrected tests `2 passed`,
+  exact server-expanded private transport và audit hoàn tất ở `114.38 s`.
+  `audit_launch_binding.json / corrected_audit_manifest.json /
+  independent_gt_blind_output_audit.json` SHA lần lượt
+  `61f0b755...33b9 / d6e654ad...bd1d / 5f351b44...2026`; manifest hash-links
+  khớp bytes tải về và pair freeze `b2cfd59f...fa00` khớp producer cục bộ.
+- Corrected independent audit trả
+  `PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_DIAGNOSTICS_REPRODUCED`: đủ
+  `371` prediction/arm, `742` physical maps, `371` candidate projections,
+  `371` nonconstant reconstruction banks và `371` spatial-null distributions;
+  S8 đổi `20` predictions. Audit acceptance tracked tại
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/kernel_version3_corrected_audit_acceptance.json`,
+  SHA-256 `c6797f47c55b354e1421751e2f7b7852380acd37d3f477f9b1b16e12cb9cb31a`.
+- Đây là operational **audit PASS**, chưa phải efficacy/Dice result. Prediction
+  không đổi; validation GT chưa đọc, consumer/test khóa. Sau commit/push terminal
+  acceptance này mới được chạy one-time dynamic postfreeze readiness freezer;
+  evaluator chỉ được mở sau readiness artifact tiếp tục commit/push central.
+
