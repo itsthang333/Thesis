@@ -10,6 +10,7 @@ spatial alignment, so a selector cannot win merely from area or anatomy bias.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, Sequence
 
 import numpy as np
@@ -264,6 +265,25 @@ def _rank_descending(values: torch.Tensor, valid: torch.Tensor) -> torch.Tensor:
     return result
 
 
+@lru_cache(maxsize=8)
+def _full_permutation_orders(
+    maps: int,
+    cells: int,
+    permutations: int,
+    seed: int,
+) -> torch.Tensor:
+    generator = torch.Generator(device="cpu")
+    generator.manual_seed(int(seed))
+    rows = [
+        torch.stack(
+            [torch.randperm(cells, generator=generator) for _ in range(permutations)],
+            dim=0,
+        )
+        for _ in range(maps)
+    ]
+    return torch.stack(rows, dim=0)
+
+
 def _null_permutation_bank(
     observed_maps: torch.Tensor,
     content_mask: torch.Tensor,
@@ -276,15 +296,14 @@ def _null_permutation_bank(
     maps, height, width = observed_maps.shape
     cells = height * width
     valid = (observed_maps.bool() & (content_mask[None] > 0.0)).reshape(maps, cells)
-    generator = torch.Generator(device="cpu")
-    generator.manual_seed(int(seed))
+    orders = _full_permutation_orders(maps, cells, permutations, seed)
     bank = torch.full((maps, permutations, cells), -1, dtype=torch.long)
     for map_index in range(maps):
         indices = torch.nonzero(valid[map_index], as_tuple=False).flatten()
         if indices.numel() < 2:
             continue
         for permutation in range(permutations):
-            order = torch.randperm(cells, generator=generator)
+            order = orders[map_index, permutation]
             source = order[valid[map_index][order]]
             bank[map_index, permutation, : indices.numel()] = source
     return bank

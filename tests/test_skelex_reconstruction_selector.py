@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import numpy as np
 import torch
 
 from project.models.skelex_reconstruction_selector import (
@@ -11,6 +12,7 @@ from project.models.skelex_reconstruction_selector import (
     select_with_spatial_null,
 )
 from project.models.mae_reconstruction import patchify
+from project.audit_skelex_reconstruction_selector_s8_output import _null_improvements
 
 
 def _config(**kwargs: object) -> SkelexReconstructionConfig:
@@ -112,3 +114,47 @@ def test_normalized_pixel_loss_is_rejected() -> None:
             patch_size=2,
             norm_pix_loss=True,
         )
+
+
+def test_independent_auditor_reproduces_exact_255_spatial_null() -> None:
+    config = SkelexReconstructionConfig(
+        input_size=8,
+        patch_size=2,
+        num_masks=4,
+        null_permutations=255,
+        null_seed=20261203,
+    )
+    original = torch.arange(64, dtype=torch.float32).reshape(4, 4, 4) / 17.0
+    flipped = original.flip(-1) * 1.25
+    observed = torch.ones_like(original, dtype=torch.bool)
+    candidates = torch.zeros((3, 4, 4), dtype=torch.float32)
+    candidates[0, 0:2, 0:2] = 1.0
+    candidates[1, 1:3, 1:3] = 1.0
+    candidates[2, 2:4, 2:4] = 1.0
+    base = torch.tensor([0.9, 0.8, 0.7], dtype=torch.float32)
+    selected = select_with_spatial_null(
+        base_scores=base,
+        accepted_index=0,
+        families=("a", "b", "c"),
+        original_errors=original,
+        original_observed=observed,
+        aligned_flip_errors=flipped,
+        aligned_flip_observed=observed,
+        candidate_masks=candidates,
+        content_mask=torch.ones((4, 4)),
+        config=config,
+    )
+    independent = _null_improvements(
+        torch.cat((original, flipped), dim=0).numpy(),
+        torch.cat((observed, observed), dim=0).numpy(),
+        candidates.numpy(),
+        np.ones((4, 4), dtype=np.float32),
+        base.numpy(),
+        0,
+    )
+    assert np.allclose(
+        independent,
+        selected["null_max_improvements"].numpy(),
+        atol=1.0e-6,
+        rtol=0.0,
+    )

@@ -190,6 +190,8 @@ def main() -> None:
     expected_masks = torch.zeros_like(noise_bank, dtype=torch.bool)
     keep = int(config.patch_count * (1.0 - config.mask_ratio))
     expected_masks.scatter_(1, torch.argsort(noise_bank, dim=1, stable=True)[:, keep:], True)
+    if int(expected_masks.sum(dim=0).min()) <= 0:
+        raise RuntimeError("S8 frozen mask bank leaves a patch without reconstruction evidence")
 
     model_snapshot = verify_model_snapshot(
         args.skelex_model_dir,
@@ -323,6 +325,9 @@ def main() -> None:
                 "combined_lcb": selected["combined_lcb"].detach().cpu().numpy().astype(np.float32),
                 "combined_fused": selected["combined_fused"].detach().cpu().numpy().astype(np.float32),
                 "combined_candidate_valid": selected["combined_candidate_valid"].detach().cpu().numpy().astype(np.uint8),
+                "null_max_improvements": selected["null_max_improvements"].detach().cpu().numpy().astype(np.float32),
+                "observed_improvement": np.asarray(float(selected["observed_improvement"]), dtype=np.float64),
+                "permutation_exceedances": np.asarray(int(selected["permutation_exceedances"]), dtype=np.int32),
                 "selected_index": np.asarray(int(selected["selected_index"]), dtype=np.int32),
                 "combined_winner": np.asarray(int(selected["combined_winner"]), dtype=np.int32),
                 "original_winner": np.asarray(int(selected["original_winner"]), dtype=np.int32),
@@ -331,6 +336,11 @@ def main() -> None:
                 "switched": np.asarray(int(bool(selected["switched"])), dtype=np.uint8),
                 "permutation_p_value": np.asarray(float(selected["permutation_p_value"]), dtype=np.float64),
                 "noise_bank": noise_bank.numpy().astype(np.float32),
+                "packed_candidate_masks": np.asarray(record["packed_masks"].packed, dtype=np.uint8),
+                "mask_height": np.asarray(int(record["packed_masks"].height), dtype=np.int32),
+                "mask_width": np.asarray(int(record["packed_masks"].width), dtype=np.int32),
+                "projection_padded_side": np.asarray(int(projection.padded_side), dtype=np.int32),
+                "projection_content_box": np.asarray(projection.content_box, dtype=np.int32),
             },
         )
         evidence_rows.append({
