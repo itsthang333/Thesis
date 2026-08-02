@@ -14159,3 +14159,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   exact serialized float32 LCB (sai số arithmetic vẫn phải allclose độc lập),
   sau đó rerun auditor/prediction trên cùng one-shot protocol trước khi xem GT.
 
+### S8 audit-only correction implementation/prelaunch (2026-08-02)
+
+- Sau failure gate commit `4f9075a58f514b7ed9ec1ca300ae90481f398e4f`, auditor
+  correction được commit tại `969327c4fbbd635fff2e3a00d34d533af8a3c340`:
+  independent LCB arithmetic/allclose vẫn giữ nguyên, chỉ tie-aware rank dùng
+  exact serialized float32 LCB. Corrected auditor/test LF SHA-256
+  `c972e1460332119cefd11c1145035a497748d4797482c29c51cf62980c560232 /`
+  `fc9786e9b0e8bfe43fa3bb9d8cc7d9e9933270caf2f7a6de1eac797d29dc11a6`;
+  regression test pass và first-image fused score reproduction max difference
+  trở thành `0.0`. Correction addendum freeze tại commit
+  `16f1b61ef99e866dcfced826b4b2ffb76fb0d3b5`, SHA-256
+  `94e5881f763cc2cb3bd0a3f49cb563f2449140a7c576211252a45579597fc8a2`,
+  xác nhận scientific algorithm/prediction không đổi.
+- Full CPU replay đi qua first fused boundary nhưng tại `IMG000160` có đúng
+  `1/255` null improvement lệch `0.0056818128` do CPU-vs-T4 exact tie arithmetic;
+  exceedance và p-value vẫn exact `193 / 0.7578125`. Không nới tolerance hay bỏ
+  null check; correction audit phải chạy lại trên T4x2 giống producer.
+- Để không lãng phí rerun 371 SKELEX inference, đã tạo audit-only private-kernel
+  wrapper `itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1` tại
+  commits `0326cb3f05c2d0f0ba3103ae62f2b2d63b0fbc5b` và
+  `f99994ffd089686e220c362c1a4dbb3bacc59d1f`. Final canonical template LF SHA
+  `7e66f0d55c5b0978ddf0bab47959da8e1db422d364e7d596413ec9eda14e1714`.
+  Wrapper chỉ dùng immutable version-1 kernel output theo exact pair/run/
+  diagnostics/evidence/arm-manifest hashes, hard guard T4x2 và chạy corrected
+  auditor; không inference/prediction mới. One-time binder commit
+  `2d7c05db94532b5a0143e1d60b096c33da87426f`; focused audit/wrapper/binder tests,
+  Ruff, `py_compile`, `git diff --check` PASS.
+- Chưa bind/launch audit-only kernel ở mục này; validation GT, consumer và test
+  vẫn khóa. Chỉ audit PASS mới cho phép dynamic readiness freeze trước evaluator.
+
