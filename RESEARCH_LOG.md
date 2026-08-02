@@ -14025,3 +14025,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `ĐANG LÀM`; chỉ được bind/package/launch sau khi mục này hiện diện trên
   `origin/research-wsss-improvement` và collision check lại pass.
 
+### S8 packaged prelaunch audit và collaborator deep-bottleneck sync (2026-08-02)
+
+- Đã đọc đầy đủ `RESEARCH_LOG.md` trên `origin/codex/research-sync-20260731`
+  tại commit `454b746b1832049e26260460f3130be4e665d2ab` (không truy cập Kaggle
+  hay output của collaborator). Insight có thể chuyển giao: confirmed G1
+  `0.2887294867` vẫn là comparator; gallery supply không phải ceiling
+  (full/eligible oracle `0.528298/0.527902`, proposal-truncation regret
+  `0.000396`), selector regret `0.239173`; extent routing deployable chưa có
+  (true-group `0.311904` chỉ upper bound, nested gate tái tạo baseline), và MNR
+  residual đã pause vì positive-instance ambiguity/top-17 extent-insensitivity.
+  Collaborator đề xuất SMILE với local subtype-conditioned heads, dense normal
+  negatives, soft foreground/background, spatial consistency và tách identity/
+  normalized-extent residual cho hướng kế nhiệm nếu S8 không pass. Đây là thiết
+  kế tương lai, chưa phải kỹ thuật đã chứng minh và không làm thay đổi S8 claim;
+  không có collision SKELEX-reconstruction.
+- Bound package kiểm tra tĩnh không mở input tại
+  `project/audit_skelex_reconstruction_selector_s8_kernel_v1_prelaunch.py`
+  (LF SHA `e79c8f045ce7e635cb75ee9592f9353e60f5842d6152dbac3523a068f8d4ac22`).
+  Audit artifact
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_kernel_v1_prelaunch_audit.json`
+  có SHA-256 `1cd3d4a5b0a6be9d0b223ab82f1a716f4d33a4c2f41c22d9229658757193047d`,
+  xác nhận bound wrapper `9480330152bd7c77ffc911f657ceae1518ea972657343b00bfa7fac05fb2731f`,
+  template `718bc39c2aef0f6d96892238d591474acf1d1e481dab3d70ddbd4e61ede0fab8`,
+  protocol/addendum/source hashes đúng và `validation_gt_read=false`,
+  `consumer_trained=false`, `test_evaluated=false`, `collaborator_output_accessed=false`.
+  Đây vẫn là static/no-input audit; chưa launch Kaggle.
+

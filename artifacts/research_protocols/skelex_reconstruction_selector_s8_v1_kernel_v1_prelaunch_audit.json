@@ -1,0 +1,29 @@
+{
+  "auditor_completeness_addendum_sha256": "dabee40fc3b607df3f82105ab9122b2b80b37c2305d7c5ed17c1c8ae1c3dca0e",
+  "bound_wrapper_sha256": "9480330152bd7c77ffc911f657ceae1518ea972657343b00bfa7fac05fb2731f",
+  "btxrd_image_opened": false,
+  "checkout_commit": "1a8147bf73ee6b9d976c4cfb2ecfbbb7bdb4c314",
+  "collaborator_output_accessed": false,
+  "consumer_trained": false,
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "kernel": "itsthang333/btxrd-skelex-reconstruction-selector-s8-v1",
+  "kernel_version": 1,
+  "launch_binding_sha256": "bd8662ec72f00cdc47d472bd5a303fa9088cdf7ce5dc62bcec8035113eff54e6",
+  "metadata_sha256": "471583126dacd4199b1921126809ccc92e8b489962c0900b7429c7d8380661e1",
+  "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "real_cache_opened": false,
+  "schema_version": 1,
+  "skelex_inference_run": false,
+  "source_hashes_at_checkout": {
+    "project/audit_skelex_reconstruction_selector_s8_output.py": "144ecf5c07eceb8b29e0a6107b49d2f31ddbbd8cea8548464f3f4d1bc58efde3",
+    "project/models/skelex_reconstruction_selector.py": "e37d83f89191c1c3a2af90be5325c7523a4a2c958adbb643ace9fa24e26cffcb",
+    "project/run_skelex_reconstruction_selector_s8.py": "722c7a9692b80009ddfbfe43400b5f9d083b4ba57b084c7408db9206bfd2c268",
+    "tests/test_skelex_reconstruction_selector.py": "6d9029428ce6315c779badf506ffaa131a6f9ea4d280124741053402463302b1"
+  },
+  "status": "FROZEN_PRELAUNCH",
+  "t4x2_guard_declared": true,
+  "template_sha256": "718bc39c2aef0f6d96892238d591474acf1d1e481dab3d70ddbd4e61ede0fab8",
+  "test_evaluated": false,
+  "validation_gt_read": false,
+  "validation_prediction_created": false
+}
