@@ -14112,3 +14112,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Safety đến đây: `validation_gt_read=false`, `consumer_trained=false`,
   `test_evaluated=false`, không truy cập collaborator output; S8 vẫn `ĐANG LÀM`.
 
+### S8 dynamic postfreeze-readiness freezer (2026-08-02)
+
+- Không status-check Kaggle trong nhịp này. Đã bổ sung công cụ GT-blind
+  `project/freeze_skelex_reconstruction_selector_s8_postfreeze_readiness.py`
+  tại commit `3b4bf305e0472236d3ca086c112b5777d93689c4`, canonical LF SHA-256
+  `5a691b18d05e7582a16f23876e4183a6f21957b122a159b8ba271e7214cbf1e6`;
+  test SHA `e06cb486fb3b621892f049af410dbddf6e68c9e52b44f0deeae6ee8a1647cd23`.
+- Freezer chỉ được chạy sau independent S8 output audit PASS. Nó kiểm tra hash/
+  safety của protocol, evaluation addendum, pre-GT audit, pair freeze, hai arm
+  freezes, prediction/score manifests, exact source/split/cache/baseline và cohort,
+  rồi sinh một readiness artifact one-time với toàn bộ dynamic hashes. Nó không
+  import dataset loader, không mở ảnh/mask/GT và fail nếu output đã tồn tại.
+- Focused freezer+decision QA `7 passed`, Ruff/`py_compile`/`git diff --check`
+  PASS; tamper score manifest và GT-safety drift đều bị reject. Scientific S8
+  algorithm/evaluation gate không đổi; validation GT chỉ được mở sau readiness
+  artifact được commit/push central. Consumer và test vẫn khóa.
+
