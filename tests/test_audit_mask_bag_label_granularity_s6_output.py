@@ -11,6 +11,7 @@ from project.audit_mask_bag_label_granularity_s6_output import (
     _absolute_spearman,
     _entropy_route,
     _safe_child,
+    _serialize_prediction_map,
     _sigmoid,
     _smooth_pool,
 )
@@ -55,3 +56,19 @@ def test_spearman_and_safe_child(tmp_path: Path) -> None:
     ).resolve()
     with pytest.raises(ValueError, match="escapes"):
         _safe_child(tmp_path, "../escape.npy")
+
+
+def test_map_serialization_uses_verified_producer_probability_at_float16_boundary() -> None:
+    mask = np.asarray([[0.0, 1.0], [1.0, 0.0]], dtype=np.float32)
+    producer_probability = 0.2713623642921448
+    independent_probability = 0.27136225761655475
+    assert abs(producer_probability - independent_probability) < REPRODUCTION_ATOL
+    assert np.float16(producer_probability) != np.float16(independent_probability)
+    expected = np.asarray(
+        [[0.0, 0.271484375], [0.271484375, 0.0]], dtype=np.float16
+    )
+    assert np.array_equal(
+        _serialize_prediction_map(mask, producer_probability), expected
+    )
+    with pytest.raises(ValueError, match="not binary"):
+        _serialize_prediction_map(np.asarray([[0.5]], dtype=np.float32), 0.5)

@@ -12842,3 +12842,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   của S6; nó chỉ củng cố rằng selector successor sau S6 không nên quay lại frozen
   layer/cosine/area proxy nếu không có representation mới được kiểm chứng.
 
+### S6 v2 independent-auditor numeric correction source (2026-08-02)
+
+- Sau khi version-1 error audit đã push central ở commit
+  `c80215cfc8a74f1d15d750affd77b688152d6273`, chỉ independent auditor và test
+  của nó được sửa; producer/model/loss/recipe/protocol/prediction/evaluator giữ
+  nguyên. Auditor vẫn independently tái tính candidate logits và probability,
+  giữ tolerance `5e-5`, đồng thời mới bắt buộc independently reproduced argmax
+  trùng frozen winner.
+- Exact physical-map check giờ tách đúng hai invariant: (1) independently
+  recomputed probability phải gần frozen producer probability trong tolerance;
+  (2) mask của independently reproduced winner nhân frozen producer probability
+  phải serialize float16 bit-exact với stored map. Helper còn fail-closed nếu
+  probability ngoài `[0,1]`/không finite hoặc selected mask không binary. Điều
+  này sửa contradiction float16 midpoint nhưng không nới winner/support/map
+  bytes hay safety gate.
+- Canonical-LF auditor/test SHA-256 mới là
+  `79db19c3cbfba6373111b8221b9d61077a98e2c52eb3696b70293604e74dcc99` /
+  `3b3b2721ad484e14f2b66c451c5d6bf1e8727d4916ecf6239a7e08d25aeb5946`;
+  focused S6 audit/model/training/runner suite pass `20/20`, `py_compile` và
+  `git diff --check` pass. Synthetic regression chứa đúng hai probabilities
+  version 1 đã gặp và chứng minh chúng nằm trong tolerance nhưng khác float16.
+- Đây mới là source correction tĩnh: chưa tạo correction addendum/wrapper/bind
+  version 2, chưa rerun Kaggle, chưa đọc validation GT/metric, chưa consumer/test.
+

@@ -128,6 +128,19 @@ def _close(actual: object, expected: object, name: str, atol: float = REPRODUCTI
         raise ValueError(f"S6 {name} differs: {left} versus {right}")
 
 
+def _serialize_prediction_map(
+    selected_mask: np.ndarray,
+    producer_probability: float,
+) -> np.ndarray:
+    probability = float(producer_probability)
+    mask = np.asarray(selected_mask, dtype=np.float32)
+    if not math.isfinite(probability) or not 0.0 <= probability <= 1.0:
+        raise ValueError("S6 producer probability is invalid")
+    if not np.all(np.logical_or(mask == 0.0, mask == 1.0)):
+        raise ValueError("S6 selected mask is not binary")
+    return (mask * probability).astype(np.float16)
+
+
 def _load_residual(
     path: Path,
     *,
@@ -485,6 +498,11 @@ def audit_output(
             if delta > REPRODUCTION_ATOL:
                 raise ValueError(f"S6 {arm} score reproduction mismatch: {image_id}")
             selected = int(np.argmax(saved_logits))
+            independently_selected = int(np.argmax(expected_logits))
+            if independently_selected != selected:
+                raise ValueError(
+                    f"S6 {arm} independently reproduced winner mismatch: {image_id}"
+                )
             selected_positions[arm] = selected
             prediction = prediction_rows[arm][image_id]
             if (
@@ -515,7 +533,9 @@ def audit_output(
             if sha256_file(map_path) != prediction["map_sha256"]:
                 raise ValueError(f"S6 {arm} map hash mismatch: {image_id}")
             saved_map = np.load(map_path, allow_pickle=False)
-            expected_map = (masks[selected] * bag_probability).astype(np.float16)
+            expected_map = _serialize_prediction_map(
+                masks[selected], float(prediction["bag_probability"])
+            )
             if saved_map.dtype != np.float16 or saved_map.shape != expected_map.shape:
                 raise ValueError(f"S6 {arm} map schema mismatch: {image_id}")
             map_delta = float(
