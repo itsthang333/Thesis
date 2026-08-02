@@ -44,6 +44,12 @@ def _rank(values: np.ndarray, valid: np.ndarray) -> np.ndarray:
     return result
 
 
+def _rank_serialized_lcb(values: np.ndarray, valid: np.ndarray) -> np.ndarray:
+    """Reproduce producer tie ranks from its serialized float32 LCB payload."""
+
+    return _rank(np.asarray(values, dtype=np.float32), np.asarray(valid, dtype=bool))
+
+
 def _lcb(
     errors: np.ndarray,
     observed: np.ndarray,
@@ -334,9 +340,14 @@ def audit_output(output_root: Path, protocol_path: Path, audit_output: Path) -> 
             combined_lcb, combined_valid = _lcb(combined_errors, combined_observed, candidates, content)
             base_scores = np.asarray(evidence["base_scores"], dtype=np.float32)
             base_rank = _rank(base_scores, np.ones(len(base_scores), dtype=bool))
-            original_rank = _rank(original_lcb, original_valid)
-            flip_rank = _rank(flip_lcb, flip_valid)
-            combined_rank = _rank(combined_lcb, combined_valid)
+            # The producer applies tie-aware ranking to its float32 tensors before
+            # serializing evidence. Re-ranking a freshly recomputed NumPy LCB can
+            # split/merge ties at ~1e-8 and falsely reject an otherwise exact run.
+            # Arithmetic remains independently checked above; rank from the
+            # producer's serialized float32 LCB values to reproduce its contract.
+            original_rank = _rank_serialized_lcb(evidence["original_lcb"], original_valid)
+            flip_rank = _rank_serialized_lcb(evidence["aligned_flip_lcb"], flip_valid)
+            combined_rank = _rank_serialized_lcb(evidence["combined_lcb"], combined_valid)
             original_fused = np.float32(0.75) * base_rank + np.float32(0.25) * original_rank
             flip_fused = np.float32(0.75) * base_rank + np.float32(0.25) * flip_rank
             fused = np.float32(0.75) * base_rank + np.float32(0.25) * combined_rank
