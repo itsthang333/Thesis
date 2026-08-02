@@ -14213,3 +14213,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   manifests/log), không GT/test và không rerun inference. Validation GT,
   consumer/test tiếp tục khóa.
 
+### S8 audit-only version 1 terminal transport ERROR (2026-08-02)
+
+- Đúng một bounded status check lúc `2026-08-02T18:58+07:00` xác nhận private
+  kernel `itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1`, version
+  `1`, terminal `ERROR`. Không polling/monitor hoặc status check thứ hai. Direct
+  log được lấy bằng inventory downloader, không tải 1,531 official output files,
+  vào ignored temp
+  `tmp/kaggle/skelex_s8_audit_v1_terminal_error_20260802_185904`; log `3,382`
+  byte, SHA-256
+  `146fe7b4d57b9a10ae7d8d3b5554c64b71c99b1e767bacb124346e837c37b6c1`.
+- Log xác nhận exact checkout `34c83e4...40a`, ancestor/hash checks, two-T4
+  fail-closed guard, auditor `py_compile` và focused regression `1 passed` đều đi
+  qua. Ở giây `25.215`, trước corrected auditor, wrapper fail-closed tại
+  `find_and_verify_producer_output` với
+  `RuntimeError: Expected one immutable S8 producer output, found []`. Đây là
+  terminal confirmation của warning upload: Kaggle từ chối terminal-ERROR
+  producer như kernel source nên `/kaggle/input` không có pair freeze cần thiết.
+- Error audit tracked tại
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/kernel_version1_transport_error_audit.json`.
+  Version 1 là **LỖI TRANSPORT**, không phải failure khoa học, không tạo prediction
+  mới, không tạo audit/evaluation result và không được dùng để kết luận S8.
+  Failure-analysis gate cho boundary này hoàn tất: correction duy nhất được phép
+  là private dataset transport chứa exact immutable producer bytes đã tải; không
+  rerun inference, không đổi scientific protocol/predictions/selector/auditor/
+  evaluation gate. Validation GT chưa đọc, consumer chưa train, BTXRD test khóa
+  và collaborator output không được truy cập. Phải commit/push bằng chứng này
+  trước upload dataset hoặc audit-only version 2.
+

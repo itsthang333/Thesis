@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "audit_role": "audit_only_transport_error_boundary",
+  "kernel": "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1",
+  "kernel_version": 1,
+  "terminal_status": "ERROR",
+  "terminal_checked_at": "2026-08-02T18:58:00+07:00",
+  "checkout_commit": "34c83e41acb9139ff87c2c75bcd674becb9d440a",
+  "bound_wrapper_sha256": "8d226f9bc1a2145e1c8c5048630b08428bee2c36968ef987271a9f8f7d51059f",
+  "launch_binding_sha256": "38b87f3cde11d44538d61653d2c4affed9d174c3bcd9646260a9b11f610db547",
+  "kernel_metadata_sha256": "b404b56dd1308eeee8c6057ed2939466c99385e4ca254224f456e666cc89056f",
+  "direct_log": {
+    "ignored_local_path": "tmp/kaggle/skelex_s8_audit_v1_terminal_error_20260802_185904/btxrd-skelex-reconstruction-selector-s8-audit-v1.log",
+    "sha256": "146fe7b4d57b9a10ae7d8d3b5554c64b71c99b1e767bacb124346e837c37b6c1",
+    "bytes": 3382
+  },
+  "official_output_inventory_count": 1531,
+  "official_output_files_downloaded": 0,
+  "error_boundary": {
+    "elapsed_seconds": 25.215474718,
+    "exception": "RuntimeError: Expected one immutable S8 producer output, found []",
+    "location": "find_and_verify_producer_output before audit_launch_binding.json and corrected auditor execution",
+    "completed_before_error": [
+      "exact checkout 34c83e41acb9139ff87c2c75bcd674becb9d440a",
+      "scientific and correction ancestor checks",
+      "protocol, correction, auditor and regression-test hash checks",
+      "two-T4 fail-closed guard",
+      "auditor py_compile",
+      "one focused auditor regression test"
+    ],
+    "not_reached": [
+      "immutable producer-output hash verification",
+      "corrected independent producer-output audit",
+      "postfreeze readiness",
+      "validation segmentation evaluation"
+    ]
+  },
+  "root_cause": "Kaggle rejected the terminal-ERROR producer kernel as a kernel source during version-1 upload, so /kaggle/input contained no prediction_pair_freeze.json matching the immutable S8 producer pair. The wrapper therefore failed closed with zero producer roots.",
+  "classification": "transport_error_not_scientific_failure",
+  "correction_scope": "Use one private Kaggle dataset containing the already frozen producer output bytes; do not rerun SKELEX inference and do not change the scientific protocol, predictions, selector, auditor correction or evaluation gates.",
+  "safety": {
+    "scientific_result": false,
+    "new_prediction_created": false,
+    "validation_gt_read": false,
+    "validation_dice_evaluated": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "status": "AUDIT_ONLY_VERSION1_TRANSPORT_ERROR_CONFIRMED_FAIL_CLOSED"
+}
