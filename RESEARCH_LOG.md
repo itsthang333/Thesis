@@ -14477,4 +14477,6 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   terminal audit.
 - Bounded continuation check kế tiếp vẫn trả `KernelWorkerStatus.RUNNING`.
   Polling dừng ngay; không partial log/output, evaluator/GT hay monitor.
+- Bounded continuation check thứ ba vẫn `KernelWorkerStatus.RUNNING`; không có
+  terminal evidence mới. Không repeat poll, partial access hoặc monitor.
 
