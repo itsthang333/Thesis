@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "status": "IMPLEMENTATION_RUNTIME_ERROR_NO_SCIENTIFIC_RESULT",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "arm": "geometry_v3_plus_upstream_equal_rank",
+  "failed_at": "2026-08-02T19:55:29+07:00",
+  "execution_commit": "1834a06d67d6a4cdf1c7ccc85f9541f1ecf705b0",
+  "evaluator_canonical_lf_sha256": "757770530baf3253c729230df7be332c9762bfe638cce2ad29d6213a6419d0ca",
+  "test_lock_correction_sha256": "30284d598cc9287ace59a6276e52a6c736ac7c37b818ff717c5f4b38a95b937f",
+  "runtime": {
+    "python": "3.9.23",
+    "environment": "C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe",
+    "platform": "Windows"
+  },
+  "error": {
+    "type": "TypeError",
+    "message": "zip() takes no keyword arguments",
+    "source_line": "for value, group in zip(delta, groups, strict=True)",
+    "function": "_paired_group_bootstrap",
+    "boundary": "first overall paired bootstrap after the complete validation loop and fixed 184/94/72/18 cohort checks, before output directory creation",
+    "root_cause": "zip(strict=True) requires Python >=3.10, while the only complete local BTXRD evaluation environment is Python 3.9.23; the evaluator had no fail-closed minimum-version check or compatibility path."
+  },
+  "verified_before_error": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "arm_prediction_freeze_sha256": "aa8acefaafe9c453dd08e1cba8d71b4a0aae25ecf16662774aebf53d01cf2ccd",
+    "arm_candidate_score_manifest_sha256": "6d08db6c7fd29d5ed2bc7ff57133cd9fdea1adc65ec797f9c3f0ee424b3452fc",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "validation_projection_sha256": "dbf83b81d4f2106508cd07ba9a5713dda4eca6377d19f052fee695d4c1cee593",
+    "validation_projection_rows": 371,
+    "validation_projection_splits": [
+      "val"
+    ],
+    "tumor_rows_processed": 184,
+    "subgroup_counts_reached": {
+      "small": 94,
+      "medium": 72,
+      "large": 18
+    }
+  },
+  "outputs": {
+    "requested_directory": "tmp/kaggle/skelex_s8_postfreeze_evaluation_20260802_2005/control",
+    "directory_created": false,
+    "metric_files_written": 0,
+    "scientific_result_available": false
+  },
+  "failure_analysis": {
+    "classification": "implementation/runtime compatibility, not scientific hypothesis failure",
+    "rejected": "treating this exception or any in-memory partial values as an efficacy result",
+    "retained": "all frozen predictions, scores, manifests, evaluator equations, arm order, bootstrap seed and scientific gates",
+    "authorized_correction_after_this_audit_is_committed_central": "replace zip(strict=True) with an explicit aligned-length assertion followed by ordinary zip, preserving exact paired-bootstrap arithmetic on Python 3.9+",
+    "post_hoc_sweep_or_rescue_authorized": false
+  },
+  "validation_gt_read": true,
+  "validation_gt_boundary_honored": true,
+  "locked_test_bytes_read": false,
+  "primary_arm_evaluated": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}

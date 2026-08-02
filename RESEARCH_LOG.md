@@ -14558,3 +14558,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   và fetch xác nhận byte-visible central mới được đánh giá control → primary →
   matched decision. Consumer và BTXRD test tiếp tục khóa.
 
+### S8 control evaluation runtime ERROR — Python 3.9 compatibility (2026-08-02)
+
+- Test-lock correction đã commit/push/fetch byte-visible central tại
+  `1834a06d67d6a4cdf1c7ccc85f9541f1ecf705b0`. Control được gọi đầu tiên bằng
+  exact frozen evaluator, pair/cache/baseline/split hashes và bootstrap
+  `10,000`, seed `20261204`. Validation projection tái lập SHA
+  `dbf83b81d4f2106508cd07ba9a5713dda4eca6377d19f052fee695d4c1cee593`,
+  đúng `371` eligible rows và chỉ có split `val`; BTXRD test không bị đọc.
+- Runtime local đầy đủ dependency là Python `3.9.23`. Sau khi mọi freeze/map/
+  score/cache đã verify, toàn bộ validation loop đã xử lý đủ `184` tumors và
+  fixed subgroup `94/72/18`, evaluator lỗi ở first overall paired bootstrap:
+  `TypeError: zip() takes no keyword arguments` tại
+  `zip(delta, groups, strict=True)`. `strict=True` chỉ có từ Python 3.10.
+  Output directory chưa được tạo và không metric/audit file nào được ghi;
+  primary chưa chạy. Vì vậy đây là implementation/runtime compatibility error,
+  **không có scientific efficacy result** và không được dùng partial in-memory
+  value.
+- Validation GT đã được đọc hợp lệ sau physical prediction freeze và chỉ qua
+  validation-only projection; GT boundary được giữ. Consumer và test vẫn khóa.
+  Error audit tracked tại
+  `artifacts/evaluation/skelex_reconstruction_selector_s8_v1/control_python39_runtime_error_audit.json`,
+  canonical-LF SHA
+  `562774e4ef65c280939bca2822beb67a121718b0ddb4ad35becf34afa91f9de2`.
+  Phần giữ lại: mọi prediction/score/freeze, equations, arm order, seed và gate.
+  Correction duy nhất được hỗ trợ sau khi error audit commit/push central là
+  explicit length equality check rồi ordinary `zip`, tương đương số học trên
+  Python 3.9+; không đổi thuật toán, không sweep/rescue.
+
