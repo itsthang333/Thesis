@@ -13420,3 +13420,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `py_compile`, wrapper+protocol+S7 focused `23/23` và `git diff --check` pass.
   Chưa bind/launch, chưa real input/prediction/GT/consumer/test.
 
+### S7 one-time wrapper binder static readiness (2026-08-02)
+
+- Binder `project/bind_mask_bag_global_local_instance_s7_wrapper.py` khóa exact
+  unbound template SHA-256 `ea51733f...6307`, protocol SHA-256
+  `81fbb2f4...79a1` và scientific source `0e52480...c43f`; chỉ thay đúng ba token
+  `KERNEL_VERSION`, `LAUNCH_BINDING_READY`, `CHECKOUT_COMMIT`, rồi inverse-
+  reconstruct template byte-exact. Nó cũng kiểm template/protocol/source hashes
+  trực tiếp từ execution checkout và ancestor relation trước khi ghi output.
+- Binder/test canonical-LF SHA-256 là
+  `1070755a1e74223d7281f0460c2505064fd52406b57ff3d340a06b434b580517` /
+  `ed40157eff7d35d3d0e7c2dd3c81b8af9064539e53903a9747751feeac881932`.
+  Binder-focused `5/5`, toàn S7 primitive→binder `25/25`, `py_compile` và
+  `git diff --check` pass. Chưa tạo bound wrapper/metadata, chưa launch hay mở
+  real input; bước kế phải commit/push binder rồi fetch/collision check trước
+  final checkout binding.
+
