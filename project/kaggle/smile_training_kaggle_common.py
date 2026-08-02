@@ -17,7 +17,7 @@ REFERENCE_SHA256 = "c37561eec0fcffa67d99d1650720557260531b934d3bc87aec8fd780c9a3
 DENSENET_SHA256 = "a639ec97d7c33b07ae66f0b5fb7d0192f95a3b11b7576c66c0126c2a727c4395"
 PROTOCOL_SHA256 = "b79aa0c42b694d6fe7986e74be062296e424100513a5ad188444b38a20a73af6"
 # Filled after the source manifest is frozen; deliberately outside that manifest.
-SOURCE_SHA256 = "d8b58ffaa932d8d0739f4ffee9929f39ecce1306b9d60e5e67cc0971eab70844"
+SOURCE_SHA256 = "2648301a14b126ce7bcac5d21a4a23535d69353163a87fed4e02a9141a77ba6b"
 
 
 def sha256_file(path: Path) -> str:
@@ -49,9 +49,15 @@ def verify_source() -> tuple[Path, dict[str, object]]:
     source_root = runner.parent.parent
     manifest_path = find_unique("SMILE_SOURCE_MANIFEST.json")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("combined_sha256") != SOURCE_SHA256:
+    files = manifest.get("files", {})
+    canonical = json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
+    if (
+        manifest.get("combined_rule") != "sha256(canonical_json(files))"
+        or hashlib.sha256(canonical).hexdigest() != SOURCE_SHA256
+        or manifest.get("combined_sha256") != SOURCE_SHA256
+    ):
         raise ValueError("SMILE source manifest identity mismatch")
-    for relative, expected in manifest.get("files", {}).items():
+    for relative, expected in files.items():
         path = source_root / relative
         if not path.is_file() or sha256_file(path) != expected:
             raise ValueError(f"SMILE source mismatch: {relative}")
@@ -101,6 +107,7 @@ def run_arm(arm: str) -> None:
         "--source-sha256", SOURCE_SHA256,
         "--output-dir", str(output),
         "--device", "cuda",
+        "--precision", "fp32",
     ]
     print(json.dumps({"arm": arm, "command": command}), flush=True)
     child_env = os.environ.copy()

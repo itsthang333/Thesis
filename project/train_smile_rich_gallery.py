@@ -57,6 +57,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-sha256", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--precision",
+        choices=("fp32", "amp"),
+        default="fp32",
+        help="Numerical execution mode; fp32 is the fail-closed default.",
+    )
     parser.add_argument("--verify-image-hashes", action="store_true")
     return parser.parse_args()
 
@@ -170,6 +176,51 @@ def _write_rows(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
+def _finite_parameter_summary(model: nn.Module) -> tuple[bool, float]:
+    finite = True
+    maximum = 0.0
+    with torch.no_grad():
+        for parameter in model.parameters():
+            current = parameter.detach()
+            if not bool(torch.isfinite(current).all()):
+                finite = False
+            if current.numel():
+                maximum = max(maximum, float(current.abs().max().float().cpu()))
+    return finite, maximum
+
+
+def _write_recovery_checkpoint(
+    path: Path,
+    *,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scaler: torch.amp.GradScaler,
+    arm: str,
+    precision: str,
+    epoch: int,
+    global_step: int,
+) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(
+        {
+            "method": SMILE_METHOD,
+            "schema_version": SMILE_SCHEMA_VERSION,
+            "arm": arm,
+            "precision": precision,
+            "epoch": int(epoch),
+            "global_step": int(global_step),
+            "model_state_dict": _core(model).state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scaler_state_dict": scaler.state_dict(),
+            "spatial_ground_truth_used": False,
+            "test_images_read": 0,
+            "test_evaluated": False,
+        },
+        temporary,
+    )
+    temporary.replace(path)
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -216,7 +267,7 @@ def main() -> None:
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=SMILE_LR, weight_decay=SMILE_WEIGHT_DECAY
     )
-    amp = device.type == "cuda"
+    amp = device.type == "cuda" and args.precision == "amp"
     scaler = torch.amp.GradScaler("cuda", enabled=amp)
     global_step = 0
     history: list[dict[str, object]] = []
@@ -272,10 +323,42 @@ def main() -> None:
                 )
             scaler.scale(total).backward()
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                model.parameters(), 5.0, error_if_nonfinite=True
+            )
             scaler.step(optimizer)
             scaler.update()
             global_step += 1
+            if global_step % 64 == 0:
+                parameters_finite, parameter_abs_max = _finite_parameter_summary(model)
+                if not parameters_finite:
+                    raise FloatingPointError(
+                        f"model parameters became non-finite at global_step={global_step}"
+                    )
+                telemetry = {
+                    "epoch": epoch,
+                    "global_step": global_step,
+                    "precision": args.precision,
+                    "loss": float(total.detach().float().cpu()),
+                    "grad_norm": float(grad_norm.detach().float().cpu()),
+                    "parameter_abs_max": parameter_abs_max,
+                    "grad_scale": float(scaler.get_scale()),
+                }
+                with (args.output_dir / "step_telemetry.jsonl").open(
+                    "a", encoding="utf-8"
+                ) as handle:
+                    handle.write(json.dumps(telemetry, sort_keys=True) + "\n")
+            if global_step % 256 == 0:
+                _write_recovery_checkpoint(
+                    args.output_dir / "smile_recovery.pt",
+                    model=model,
+                    optimizer=optimizer,
+                    scaler=scaler,
+                    arm=args.arm,
+                    precision=args.precision,
+                    epoch=epoch,
+                    global_step=global_step,
+                )
             for name, value in {
                 **losses,
                 "reference_swap": swap_loss,
@@ -306,6 +389,7 @@ def main() -> None:
         "method": SMILE_METHOD,
         "schema_version": SMILE_SCHEMA_VERSION,
         "arm": args.arm,
+        "precision": args.precision,
         "model_config": _core(model).checkpoint_model_config(),
         "model_state_dict": _core(model).state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
@@ -325,6 +409,7 @@ def main() -> None:
     summary = {
         "method": SMILE_METHOD,
         "arm": args.arm,
+        "precision": args.precision,
         "terminal_epoch": SMILE_PASSES - 1,
         "global_step": global_step,
         "checkpoint_sha256": sha256_file(checkpoint_path),
@@ -345,4 +430,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
