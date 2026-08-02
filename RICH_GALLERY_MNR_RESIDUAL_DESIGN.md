@@ -1,7 +1,22 @@
 # Matched-normal local-evidence residual for the rich gallery
 
-Status: **bounded successor design; use the existing audited reference cache
-and two-pass implementation, with a streamlined launch protocol**.
+Status: **PAUSED / superseded before GPU launch** by
+`BTXRD_DEEP_BOTTLENECK_SYNTHESIS_20260802.md`.
+
+The original MNR-v1 experiment must not be launched unchanged.  The deep
+dataset/output review found two unresolved repetitions of prior failure modes:
+
+1. binary positive-bag MIL still does not identify which local instance is the
+   lesion, the exact mechanism that limited G2;
+2. the top-17-inside-minus-ring candidate readout measures local identity but
+   is largely insensitive to candidate extent, although extent errors have
+   opposite signs for small and large lesions.
+
+The reusable reference cache, stride-4 implementation and control/full
+infrastructure remain valid.  The successor must add subtype-conditioned
+intra-class local discrimination and expose separate identity and normalized
+extent-compatibility readouts.  This document is retained as an historical
+design record, not launch authorization.
 
 ## Decision question
 
@@ -105,4 +120,3 @@ Promotion is deliberately simple:
 If this bounded run fails, do not extend epochs or sweep the residual weight.
 The interpretation will distinguish map localization failure from gallery
 readout failure; the normal-reference representation family is then retired.
-

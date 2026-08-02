@@ -8851,9 +8851,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   are in `RICH_GALLERY_PARTIAL_CONSENSUS_SEED_DOSSIER.md`; summary SHA-256 is
   `ef1d943aa98f65054e0a4a48968e2b2c44e0e20b6d989418a5bcef1f1aeeba20`.
 
-### EXP-20260802-codex-rich-gallery-mnr-residual-v1 (DESIGN)
+### EXP-20260802-codex-rich-gallery-mnr-residual-v1 (PAUSED / SUPERSEDED)
 
-- The next bounded improvement reuses the already built matched-normal
+- This proposed improvement reused the already built matched-normal
   reference cache and two-pass MNR-MIL implementation.  It learns a new
   stride-4 local query-versus-normal evidence map without candidate masks,
   proposal source, spatial GT or a global classifier bypass.
@@ -8862,9 +8862,60 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   exact G1+fixed-rank selector.  A query-only capacity-matched arm is the causal
   control.  Control/full run in parallel; actual binary Dice is always
   evaluated and proxies do not block it.
-- To reduce turnaround, only split/cache/no-GT/no-test integrity, one real
-  forward/backward and exact zero-residual reproduction block launch.  No new
-  reference-cache build, long audit chain, threshold search, residual-weight
-  sweep or consumer training is planned.  See
-  `RICH_GALLERY_MNR_RESIDUAL_DESIGN.md`. Test remains locked.
+- The design was paused before GPU launch after the deep synthesis identified
+  unresolved positive-instance ambiguity and an extent-insensitive top-17
+  readout.  Reusable infrastructure is retained, but this protocol is not
+  launch authorization.  See `RICH_GALLERY_MNR_RESIDUAL_DESIGN.md` and
+  `BTXRD_DEEP_BOTTLENECK_SYNTHESIS_20260802.md`. Test remains locked.
+
+### EXP-20260802-codex-deep-bottleneck-synthesis-v1 (COMPLETE / NO TRAINING)
+
+- Reconciled the complete validation ledger.  The confirmed comparator remains
+  G1 plus fixed equal percentile-rank fusion at Dice/IoU
+  `0.2887294867/0.2168391813`, subgroup Dice
+  `0.1577232964/0.4352293348/0.3868735327`.  The fixed top-three majority is
+  disclosed only as an exploratory point estimate (`0.2934364815`): paired
+  group-bootstrap delta CI `[-0.008610,+0.017426]` crosses zero and small/large
+  means decrease.
+- Added a reproducible train/validation-only audit of the original BTXRD
+  geometry.  Small lesions have median area `0.0952%`; this is only `0.095`
+  expected positive cell on a `10x10` CAM grid, versus `15.60` on a stride-4
+  `128x128` grid.  High resolution is therefore necessary, but prior
+  high-resolution and OLV failures prove it is not sufficient without a
+  lesion-specific local objective.
+- Gallery supply is not the current ceiling: full/eligible oracle Dice is
+  `0.528298/0.527902` and proposal-truncation regret is only `0.000396`.
+  Selector regret is `0.239173`; `70.4%` is within the already selected source
+  (`0.168376`) and `29.6%` is cross-source (`0.070796`).  All 49 zero-overlap
+  baseline misses are recoverable somewhere in the gallery.
+- Extent is signed rather than globally calibratable.  Median selected/GT area
+  is `14.603x/1.098x/0.382x` for small/medium/large.  A global threshold,
+  morphology or source weight must trade small precision against large recall.
+  True-group scale experts establish a useful upper bound (`0.311904`), while
+  area-only gates (`0.268845-0.278291`) and group-separated subtype routing
+  (`0.277330`) fail as deployable routers.
+- The causal bottleneck is the conjunction of: late binary representation loss
+  for tiny lesions; positive-instance ambiguity inside tumor bags; opposite
+  extent errors; easier source/area/anatomy shortcuts; and a small, subtype-
+  confounded validation cohort.  Proposal generation, frozen-score fusion,
+  pseudo consumers, global correction and longer training of the same loss are
+  ruled out by prior outputs.
+- MNR-v1 was paused before launch.  Its matched-normal stride-4 representation
+  is reusable, but its binary bag objective and top-17 readout can repeat G2 and
+  cannot diagnose extent.  The proposed successor is SMILE plus the immutable
+  rich gallery: binary plus 10-class subtype-conditioned local heads, dense
+  normal negatives, soft intra-class foreground/background discrimination,
+  spatial consistency, and separate candidate-identity and normalized
+  extent-compatibility residuals.  A two-pass query-only control/full pair is
+  the next bounded experiment only after implementation.
+- Reproducible scripts are
+  `project/analyze_btxrd_original_dataset_bottleneck.py` and
+  `project/analyze_rich_gallery_label_conditioned_scale_gate.py`.  Dataset
+  summary SHA-256 is
+  `0a23152fd7a342be9c0e0d8a1a78d2c8413156ebc8955172d29670fdbd0c2a1d`;
+  subtype diagnostic summary SHA-256 is
+  `48383c9090cf5704d28ef24073a027d27e900667334890c5ea7882b754189ae6`.
+  Both audits opened zero test images.  Full synthesis is in
+  `BTXRD_DEEP_BOTTLENECK_SYNTHESIS_20260802.md`; no successor kernel was
+  launched during this analysis.
 
