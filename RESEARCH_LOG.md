@@ -14432,3 +14432,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   corrected hashes mới, còn exact dataset/archive/pair/protocol giữ nguyên.
   Validation GT, evaluator, consumer và test tiếp tục khóa.
 
+### S8 audit-only v3 binding và prelaunch PASS (2026-08-02)
+
+- Wrapper/binder correction commit `19e1c51` khóa corrected auditor/test
+  `043d28da...608c / 7e2a0c4b...4555`, null-device addendum
+  `be1bb0bf...3725`, cùng serialized-LCB và transport corrections cũ. Generic
+  static package auditor được cập nhật/push tại `d47286d423e85581cf88f29742b2417072c68deb`,
+  LF SHA `b8e3b5a8a600ade15fc767d283a82690e3d375dd740aafa1a3af85c13b76a939`;
+  nó kiểm tra exact corrected auditor/test bytes ngoài inverse wrapper/protocol/
+  dataset/archive/pair/safety contracts.
+- Audit-only v3 package ignored tại
+  `tmp/kaggle/skelex_reconstruction_selector_s8_audit_v3_launch_d47286d`, bind
+  exact checkout trên, kernel version `3`. Bound wrapper SHA
+  `4b7a2ac677380d2231fbcdd0d96bf151d55d577f5b6b2434ac5fa8718df6c02a`;
+  launch-binding raw/canonical-LF SHA
+  `650ba68f5a199e342b7f1c7b9249e723d0ca569db23bba96b86389ee676113a5 /`
+  `577318e6fc57c9b2e2dbf3812ecc41bc8a5b1a0863030fc551beeefa356d3aaa`;
+  metadata SHA `cf293291...8909` vẫn dataset-only, private T4,
+  `kernel_sources=[]`.
+- Focused corrected-auditor/transport/binder suite `5 passed`, Ruff và
+  `git diff --check` PASS. Prelaunch artifact
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_audit_v3_prelaunch_audit.json`
+  canonical-LF SHA
+  `5c5213a5ab3ef14a6e36caf8c9eaac997f91098be06ef68a9310781be7d9e1ec`
+  trả `S8_AUDIT_ONLY_V3_FROZEN_PRELAUNCH_PASS`.
+- Chưa launch v3 ở mục này. Phải commit/push readiness, final fetch/collision
+  check rồi mới upload. Không inference/prediction mới; validation GT/evaluator,
+  consumer và BTXRD test khóa.
+
