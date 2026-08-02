@@ -8810,3 +8810,61 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `9c43b48b...`, `b3f28c48...`.  Full interpretation is in
   `RICH_GALLERY_CROSS_VIEW_COWITNESS_FAILURE_DOSSIER.md`. Test remains locked.
 
+### EXP-20260802-codex-rich-gallery-latent-burden-gate-v4 (COMPLETE/RETIRED)
+
+- A five-fold group-separated retrospective gate tested every frozen
+  annotation-free bag statistic already produced by G1/G2, matched-normal
+  transplant and cross-view co-witness.  True lesion size and candidate Dice
+  were used only as retrospective validation targets; no result is deployable
+  and test remained locked.
+- The useful fixed extent experts are real: true-group routing reaches Dice
+  `0.31190376` and a per-image three-expert oracle reaches `0.35069213`.
+  However, proper nested selection abstains on every outer-fold image and
+  reproduces baseline Dice `0.28872949` exactly.  The tempting same-OOF value
+  `0.29892638` is explicitly not a result because it selects its abstention
+  threshold on the same out-of-fold predictions.
+- **Decision:** the old frozen observables do not contain a stable deployable
+  scale-routing signal.  Do not train another area/bag-statistics gate.  Audit
+  SHA-256 is `8af15ac952924dc1267585184d82a51247576bf2d7d76734d90d586cd936c1f3`;
+  `test_evaluated=false`.
+
+### EXP-20260802-codex-rich-gallery-partial-consensus-seeds-v1 (COMPLETE)
+
+- Six candidate-consensus rules were fixed before validation polygons and
+  evaluated on exact `371/184` validation/tumor images (`94/72/18`).  Baseline
+  reproduction is exact at Dice/IoU `0.28872949/0.21683918`; no consumer was
+  trained and test was not read.
+- The best-per-source union proves latent gallery coverage: it rescues overlap
+  in `31/49` baseline misses and gives mean recall `0.7481`.  But its micro
+  precision is only `0.0663` overall and `0.00575` for `<1%`; pixels outside
+  the union still contain `25.2%` of lesion pixels on average.  Union and
+  majority are therefore unsafe foreground/background labels for a consumer.
+- Fixed top-three rank-fusion majority reaches exploratory actual Dice
+  `0.29343648` (`+0.004707`), with subgroup Dice
+  `0.15356372/0.45848038/0.36370755`.  Its paired group-bootstrap CI
+  `[-0.008610,+0.017426]` crosses zero and it harms small/large, so it is
+  disclosed as the best exploratory point estimate, not promoted over the
+  confirmed `0.28872949` baseline.
+- **Decision:** proposal supply is sufficient, but candidate identity and
+  signed extent remain unresolved.  Reject a pseudo-label consumer and stop
+  post-hoc scoring on the old representation.  Full evidence and provenance
+  are in `RICH_GALLERY_PARTIAL_CONSENSUS_SEED_DOSSIER.md`; summary SHA-256 is
+  `ef1d943aa98f65054e0a4a48968e2b2c44e0e20b6d989418a5bcef1f1aeeba20`.
+
+### EXP-20260802-codex-rich-gallery-mnr-residual-v1 (DESIGN)
+
+- The next bounded improvement reuses the already built matched-normal
+  reference cache and two-pass MNR-MIL implementation.  It learns a new
+  stride-4 local query-versus-normal evidence map without candidate masks,
+  proposal source, spatial GT or a global classifier bypass.
+- The map scores the existing rich-gallery candidates through a fixed
+  inside-versus-ring statistic and a single zero-preserving residual over the
+  exact G1+fixed-rank selector.  A query-only capacity-matched arm is the causal
+  control.  Control/full run in parallel; actual binary Dice is always
+  evaluated and proxies do not block it.
+- To reduce turnaround, only split/cache/no-GT/no-test integrity, one real
+  forward/backward and exact zero-residual reproduction block launch.  No new
+  reference-cache build, long audit chain, threshold search, residual-weight
+  sweep or consumer training is planned.  See
+  `RICH_GALLERY_MNR_RESIDUAL_DESIGN.md`. Test remains locked.
+
