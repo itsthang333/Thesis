@@ -13578,3 +13578,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   được truy vấn. Chưa download output, chưa mở validation GT, chưa consumer/test.
   Claim S7 tiếp tục **ĐANG LÀM** chờ một bounded terminal check ở thời điểm hợp lý.
 
+### S7 bounded runtime check 1 (2026-08-02)
+
+- Đúng một lệnh status lúc `2026-08-02T15:38:10+07:00` trả
+  `KernelWorkerStatus.RUNNING` cho version `1`. Không polling thêm, không tạo
+  monitor, không download/output/GT/evaluation/consumer/test. Claim S7 tiếp tục
+  **ĐANG LÀM**; bước terminal chỉ được thực hiện ở một nhịp hợp lý sau.
+
