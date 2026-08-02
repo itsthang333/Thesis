@@ -12917,3 +12917,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   exact binding/audit/log này, fetch lại central/collaborator và xác nhận không
   collision trước một correction rerun duy nhất. Consumer/test tiếp tục khóa.
 
+### S6 kernel version 2 — correction rerun launched, chưa status-poll (2026-08-02)
+
+- Exact v2 binding/prelaunch commit
+  `ba9fdf1bf8bbe15a5451fe8a79d63cd05734ab14` đã visible central; collaborator
+  vẫn `dc00062`, không active collision. Package re-verify đúng hai file/hash
+  trước launch.
+- Kaggle CLI đã trả `Kernel version 2 successfully pushed` lúc
+  `2026-08-02T06:59:58.1825238Z` cho cùng private kernel. Đây là rerun duy nhất
+  của implementation-only independent-auditor numeric correction; scientific
+  source/model/loss/recipe/prediction protocol không đổi từ v1.
+- Launch audit SHA-256
+  `70f4af2a21f9f4cb109251ae5d6df317b5b5f16ca690f431c627e143a36d6b9e`.
+  Không post-launch status-poll, không monitor, không output/GT access. Claim S6
+  tiếp tục **ĐANG LÀM** chờ một bounded terminal check; consumer và test khóa.
+
