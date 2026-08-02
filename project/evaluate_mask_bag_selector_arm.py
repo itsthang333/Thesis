@@ -6,6 +6,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 import numpy as np
@@ -329,6 +330,38 @@ def _verify_baseline(
     return freeze, predictions
 
 
+def _write_validation_projection(
+    path: Path,
+    val_rows: list[dict[str, str]],
+) -> str:
+    """Project the hash-verified full split onto validation before GT loading.
+
+    The canonical segmentation loader verifies every row present in its manifest
+    before selecting a split. Passing the full frozen manifest would therefore
+    read train and locked-test image/annotation bytes even for ``split="val"``.
+    The full manifest has already been hash-verified by
+    ``load_split_rows_without_annotations``; this projection contains only its
+    371 eligible validation rows and prevents any locked-test byte access.
+    """
+    if len(val_rows) != 371 or any(
+        row.get("split") != "val" or row.get("eligible") != "1"
+        for row in val_rows
+    ):
+        raise ValueError("validation-only split projection cohort mismatch")
+    fieldnames = list(val_rows[0])
+    if any(list(row) != fieldnames for row in val_rows):
+        raise ValueError("validation-only split projection schema mismatch")
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=fieldnames,
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerows(val_rows)
+    return sha256_file(path)
+
+
 def main() -> None:
     args = parse_args()
     if args.bootstrap_replicates != 10000:
@@ -360,13 +393,19 @@ def main() -> None:
     baseline_prediction_by_id = {
         row["image_id"]: row for row in baseline_predictions
     }
-    dataset = build_segmentation_dataset(
-        root=args.dataset_root,
-        split="val",
-        image_size=320,
-        augment=False,
-        split_manifest=args.split_manifest,
-    )
+    with TemporaryDirectory(prefix="btxrd_val_projection_") as temporary_dir:
+        validation_projection = Path(temporary_dir) / "split_manifest_val_only.csv"
+        validation_projection_sha256 = _write_validation_projection(
+            validation_projection,
+            val_rows,
+        )
+        dataset = build_segmentation_dataset(
+            root=args.dataset_root,
+            split="val",
+            image_size=320,
+            augment=False,
+            split_manifest=validation_projection,
+        )
     per_image: list[dict[str, Any]] = []
     ranking_rows: list[dict[str, Any]] = []
     for index in range(len(dataset)):
@@ -688,6 +727,11 @@ def main() -> None:
             "prediction_manifest_sha256"
         ],
         "baseline_per_image_sha256": args.expected_baseline_per_image_sha256,
+        "validation_only_split_projection": {
+            "rows": 371,
+            "sha256": validation_projection_sha256,
+            "locked_test_bytes_read": False,
+        },
         "output_hashes": output_hashes,
         "cohort": summary["cohort"],
         "bootstrap_replicates": args.bootstrap_replicates,

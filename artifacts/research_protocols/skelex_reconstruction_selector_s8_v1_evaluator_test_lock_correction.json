@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_PRE_GT_IMPLEMENTATION_CORRECTION",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "detected_at": "2026-08-02T19:48:48+07:00",
+  "detected_on_commit": "3d07758ba4de64b2c5bb4101dbadfb337f99fc56",
+  "supersedes_evaluator_implementation_only": {
+    "evaluation_addendum_sha256": "d79d98564dd239d4821f4a54bf93371e9a84375ce0c2cecd09830467ad53aec9",
+    "postfreeze_readiness_sha256": "9e0294a5af2d7eb62598eb000f9ee187e2a8c46c07077a52cb432319f294247d",
+    "old_evaluator_canonical_lf_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "old_evaluator_test_canonical_lf_sha256": "21fafe74740588ae02a897e387a639a7723575334ce2ff4fe6df4fcd36aa8e29"
+  },
+  "error_boundary": {
+    "type": "pre_evaluation_test_lock_violation_prevented_before_execution",
+    "component": "project/datasets/btxrd.py::_load_split_manifest_records_verified",
+    "cause": "The canonical segmentation loader verifies every eligible full-manifest image and annotation before selecting split='val'.",
+    "would_have_read": {
+      "locked_test_images": 373,
+      "locked_test_annotations": 187
+    },
+    "bytes_actually_read_from_locked_test": false,
+    "validation_gt_read_before_detection": false
+  },
+  "correction": {
+    "source": "project/evaluate_mask_bag_selector_arm.py",
+    "source_canonical_lf_sha256": "757770530baf3253c729230df7be332c9762bfe638cce2ad29d6213a6419d0ca",
+    "test": "tests/test_evaluate_mask_bag_selector_arm.py",
+    "test_canonical_lf_sha256": "fda8dce9af7e22df0a2ab3cfa8e3983832e8f274aa661ba290f94e46fb63c4c4",
+    "method": "After verifying the exact full split SHA-256 and selecting its 371 eligible validation rows without annotations, write a deterministic LF validation-only projection and pass only that projection to the canonical segmentation loader.",
+    "validation_projection_rows": 371,
+    "full_split_remains_exact_provenance_input": true,
+    "locked_test_rows_present_in_projection": 0,
+    "train_rows_present_in_projection": 0,
+    "scientific_scores_predictions_thresholds_seed_and_gates_changed": false
+  },
+  "unchanged_scientific_contract": {
+    "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+    "prediction_pair_freeze_sha256": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+    "arm_order": [
+      "geometry_v3_plus_upstream_equal_rank",
+      "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank"
+    ],
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261204,
+    "post_hoc_rescue_or_sweep_authorized": false
+  },
+  "static_verification": {
+    "py_compile": "PASS",
+    "focused_pytest": "8 passed",
+    "git_diff_check": "PASS"
+  },
+  "evaluation_authorized_only_after_this_artifact_and_corrected_source_are_committed_and_visible_on_central": true,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}

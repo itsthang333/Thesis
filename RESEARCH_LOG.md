@@ -14526,3 +14526,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   đúng hai frozen arms, audit output inventories, rồi matched decision; không
   sweep/rescue.
 
+### S8 pre-GT evaluator test-lock correction (2026-08-02)
+
+- Sau khi readiness đã visible central nhưng **trước lần gọi evaluator/GT đầu
+  tiên**, static call-boundary audit phát hiện evaluator đã khóa dùng canonical
+  `BTXRDSegmentationDataset` với full split manifest. Loader này verify mọi hàng
+  eligible trước khi lọc `split="val"`; nếu chạy sẽ đọc/hash `373` test images
+  và `187` test annotations. Đây là implementation/test-lock defect, không phải
+  scientific failure. Evaluator chưa chạy, validation GT chưa đọc và không byte
+  test nào được mở; chỉ thống kê cột image-level trong exact split manifest.
+- Correction thuần implementation: sau khi full split SHA
+  `85511ee1...c8c` đã pass và `371` validation rows được chọn GT-blind, evaluator
+  dựng projection CSV LF tạm thời chỉ gồm đúng các hàng validation rồi đưa
+  projection đó vào segmentation loader. Vì train/test không hiện diện trong
+  projection, loader chỉ verify/mở 371 validation image và 184 validation
+  annotations. Projection SHA được ghi vào mỗi evaluation audit; full split vẫn
+  là provenance input bất biến.
+- Corrected evaluator/test canonical-LF SHA lần lượt
+  `757770530baf3253c729230df7be332c9762bfe638cce2ad29d6213a6419d0ca /`
+  `fda8dce9af7e22df0a2ab3cfa8e3983832e8f274aa661ba290f94e46fb63c4c4`;
+  `py_compile`, focused tests `8 passed` (gồm dynamic deterministic val-only
+  projection/rejection test) và `git diff --check` PASS. Frozen
+  correction artifact
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_evaluator_test_lock_correction.json`
+  canonical-LF SHA
+  `30284d598cc9287ace59a6276e52a6c736ac7c37b818ff717c5f4b38a95b937f`
+  khóa old/new source, error boundary, readiness/pair/protocol và cùng arm order,
+  10,000 bootstrap/seed `20261204`.
+- Prediction/score/freeze, scientific algorithm, threshold, arm order và gate
+  không đổi; không sweep/rescue. Chỉ sau khi correction + source này commit/push
+  và fetch xác nhận byte-visible central mới được đánh giá control → primary →
+  matched decision. Consumer và BTXRD test tiếp tục khóa.
+

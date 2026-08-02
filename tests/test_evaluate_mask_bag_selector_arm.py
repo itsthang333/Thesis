@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import ast
+import csv
+import hashlib
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,3 +93,56 @@ def test_consumer_and_test_stay_locked() -> None:
     assert '"test_evaluated": False' in source
     assert "train_consumer" not in source
     assert "test_loader" not in source
+
+
+def test_validation_loader_cannot_verify_locked_test_bytes() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    assert "def _write_validation_projection(" in source
+    assert 'row.get("split") != "val"' in source
+    assert 'row.get("eligible") != "1"' in source
+    assert "split_manifest=validation_projection" in source
+    assert "split_manifest=args.split_manifest" not in source
+    assert '"locked_test_bytes_read": False' in source
+
+
+def test_validation_projection_is_val_only_and_deterministic(tmp_path: Path) -> None:
+    tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
+    function = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_write_validation_projection"
+    )
+    namespace = {
+        "Path": Path,
+        "csv": csv,
+        "sha256_file": lambda path: hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+    exec(compile(ast.Module(body=[function], type_ignores=[]), str(SOURCE), "exec"), namespace)
+    write_projection = namespace["_write_validation_projection"]
+
+    rows = [
+        {
+            "image_id": f"val_{index:03d}.png",
+            "group_id": f"group_{index:03d}",
+            "split": "val",
+            "eligible": "1",
+            "tumor": "0",
+            "image_sha256": "",
+        }
+        for index in range(371)
+    ]
+    first = tmp_path / "first.csv"
+    second = tmp_path / "second.csv"
+    first_sha = write_projection(first, rows)
+    second_sha = write_projection(second, rows)
+    assert first_sha == second_sha == hashlib.sha256(first.read_bytes()).hexdigest()
+    with first.open("r", encoding="utf-8", newline="") as handle:
+        projected = list(csv.DictReader(handle))
+    assert len(projected) == 371
+    assert {row["split"] for row in projected} == {"val"}
+
+    invalid = [dict(row) for row in rows]
+    invalid[0]["split"] = "test"
+    with pytest.raises(ValueError, match="cohort mismatch"):
+        write_projection(tmp_path / "invalid.csv", invalid)
