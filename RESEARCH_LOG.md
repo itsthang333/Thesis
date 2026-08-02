@@ -14129,3 +14129,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   algorithm/evaluation gate không đổi; validation GT chỉ được mở sau readiness
   artifact được commit/push central. Consumer và test vẫn khóa.
 
+### S8 version 1 terminal ERROR và failure-analysis gate (2026-08-02)
+
+- Kernel `itsthang333/btxrd-skelex-reconstruction-selector-s8-v1`, version 1,
+  terminal `ERROR`. Direct log inventory được tải một lần vào ignored temp
+  `tmp/kaggle/skelex_s8_v1_terminal_error_20260802_1828`; log SHA-256
+  `0ed4c39bcee22a559de3c642bb72a5b77ce148c50e8260bf0d89d5dd47d82a79`,
+  `26,573` bytes. Compact inventory tải được `11` files; không tải toàn bộ 1,866
+  output objects. Error boundary nằm **sau** 371/371 validation inference,
+  tạo cả hai arm prediction manifests/score manifests, 742 physical maps,
+  reconstruction evidence, pair freeze và run manifest; hai T4 đều được guard
+  (`Tesla T4`, `Tesla T4`, DataParallel). Không mở validation segmentation GT,
+  không consumer/test, không collaborator output.
+- Cụ thể independent auditor fail ở `IMG000001.jpeg`, line 353:
+  `ValueError: S8 fused score arithmetic mismatch`. Đã tải đúng evidence đầu tiên
+  `reconstruction_evidence/0000_IMG000001.npz` (58,205 bytes, SHA-256
+  `1beb7f8eaae0bbd42c2b8ffcc0b1073feb11baeeef107f84562cc140d4c41c49`) và định
+  lượng: producer serialized `combined_lcb` và auditor NumPy reconstruction lệch
+  tối đa chỉ `1.1175871e-08`, nhưng exact equality tie ranking khác: producer có
+  các tie groups `4+2` ở giá trị khoảng `-0.012091338`, auditor gom `6`. Vì rank
+  fusion là tie-aware, fused score lệch tối đa `0.008474588` trên 10/63 candidate
+  (vượt audit tolerance `2e-5`). Đây là **implementation/auditor numerical
+  reproducibility error**, không phải scientific hypothesis failure; chưa được
+  dùng bất kỳ metric Dice nào.
+- Các artifact evidence/arms được giữ nguyên để correction audit, nhưng version 1
+  được ghi `LỖI` và không được quảng bá là kết quả. Không rescue/sweep seed,
+  weight, threshold, mask count, extent hay đọc GT. Failure-analysis gate đã hoàn
+  tất; hướng correction duy nhất là làm independent rank reconstruction dùng
+  exact serialized float32 LCB (sai số arithmetic vẫn phải allclose độc lập),
+  sau đó rerun auditor/prediction trên cùng one-shot protocol trước khi xem GT.
+
