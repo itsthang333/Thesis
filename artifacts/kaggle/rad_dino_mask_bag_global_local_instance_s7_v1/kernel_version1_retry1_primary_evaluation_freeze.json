@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "status": "PRIMARY_EVALUATION_FROZEN_BEFORE_MATCHED_DECISION",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "arm": "global_local_instance",
+  "protocol_sha256": "81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1",
+  "terminal_pre_gt_audit_sha256": "71923c21b8751f42f1880a9edf99b21b6572f17092628ac9f3dbc9179003caad",
+  "evaluation_readiness_sha256": "c0d29b91aa9deb158748992c81cd48d85196f9948770ce6ee64351503770e1d8",
+  "identity_evaluation_freeze_sha256": "2be0adec78e2a212195ba17ab0fff173aaa048a843951cc4850f56a4f0817f0a",
+  "arm_prediction_freeze_sha256": "bae35d50b2f87bb969c3a0851c38270ab60ac081d85c1c2194fe370f70b77e1c",
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20261202,
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "normal": 187,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "dice": {
+    "overall": 0.22931368722306517,
+    "small": 0.11632461871051229,
+    "medium": 0.3349187641049324,
+    "large": 0.3969474041500391
+  },
+  "delta_vs_accepted_geometry_v3": {
+    "overall": -0.016168699556702637,
+    "small": -0.0007559602038942209,
+    "medium": -0.04221675118987181,
+    "large": 0.007534757022418931
+  },
+  "complete_misses": {
+    "overall": 53,
+    "small": 34,
+    "medium": 17,
+    "large": 2
+  },
+  "miss_transitions_vs_accepted_geometry_v3": {
+    "recovered": 5,
+    "overlaps_lost": 5
+  },
+  "ranking": {
+    "overall_mean_selected_to_oracle_regret": 0.17976184702553502,
+    "identity_overall_mean_selected_to_oracle_regret": 0.16359314746883238,
+    "overall_mean_score_quality_spearman": 0.3471850189413397,
+    "identity_overall_mean_score_quality_spearman": 0.4416192086520941
+  },
+  "output_sha256": {
+    "per_image.csv": "35217d6a3247b9e1543cf835535492387694e327c63e9c9a4b9bcf1f4f83f14c",
+    "summary.json": "c72575850789888ad2cdd1d970066b704ccb68ba8f8cfe35ec18e82025c3ca45",
+    "paired_comparison.json": "ffb6ac7b2393d4fdb57baa152976dac12e788cbdf3a9d7f5eafc5da594e237fe",
+    "gate_decision.json": "767ccc43b7c4e3f03004d14afea42b9f03f58f05b921d0ba772b90514aa3c06f",
+    "evaluation_audit.json": "9fccf9bebeecf8a08c55ee4352ad69573a25a6f9d1233fab5eba2596b1281035"
+  },
+  "generic_evaluator_gate_status": "FAIL",
+  "matched_s7_decision_started": false,
+  "validation_gt_read_only_after_all_predictions_frozen_and_verified": true,
+  "consumer_trained": false,
+  "test_evaluated": false
+}

@@ -13713,3 +13713,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   consumer/test khóa. Phải commit/push identity evidence trước khi đánh giá
   `global_local_instance` bằng cùng evaluator/seed.
 
+### S7 primary evaluation frozen trước matched decision (2026-08-02)
+
+- Sau identity freeze commit visible central, cùng exact evaluator/cohort/seed
+  đánh giá `global_local_instance`. Dice overall/small/medium/large là
+  `0.22931369 / 0.11632462 / 0.33491876 / 0.39694740`; delta so với accepted
+  identity là `-0.01616870 / -0.00075596 / -0.04221675 / +0.00753476`.
+  Complete misses overall giữ `53`, nhưng small tăng `33 -> 34`, medium giảm
+  `18 -> 17`; tổng cộng recover `5` miss và mất `5` overlap.
+- Ranking xấu đi rõ: overall selected-to-oracle regret
+  `0.16359315 -> 0.17976185`, mean score-quality Spearman
+  `0.44161921 -> 0.34718502`. Per-image/evaluation-audit SHA-256 là
+  `35217d6a3247b9e1543cf835535492387694e327c63e9c9a4b9bcf1f4f83f14c` /
+  `9fccf9bebeecf8a08c55ee4352ad69573a25a6f9d1233fab5eba2596b1281035`.
+- Primary freeze artifact
+  `artifacts/kaggle/rad_dino_mask_bag_global_local_instance_s7_v1/kernel_version1_retry1_primary_evaluation_freeze.json`
+  có SHA-256
+  `bda4e22e54c2cec9ee637f2f8d467f3d11f7f9747196ce828d831226129bf450`.
+  Generic evaluator báo fail nhưng S7 matched decision chưa chạy tại boundary
+  này; không kết luận terminal trước khi commit/push exact primary hashes. Không
+  consumer/test và không rescue/sweep.
+
