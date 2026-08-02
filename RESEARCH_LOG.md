@@ -14460,3 +14460,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   check rồi mới upload. Không inference/prediction mới; validation GT/evaluator,
   consumer và BTXRD test khóa.
 
+### S8 audit-only Kaggle version 3 launch (2026-08-02)
+
+- Final fetch xác nhận central/HEAD sạch, đồng nhất tại
+  `8a558135fa84853e593435ce01b276a78cb27354`; collaborator vẫn `454b746...`,
+  không collision. Kaggle nhận `Kernel version 3 successfully pushed` cho
+  private audit-only kernel; exact checkout `d47286d...68deb`, wrapper
+  `4b7a2ac6...6c02a`, metadata `cf293291...8909`, dataset archive
+  `c5164378...ca1737`. Launch receipt tracked tại
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/kernel_version3_launch_receipt.json`.
+- V3 chỉ force independent null replay về producer CPU và audit pair cũ; không
+  inference/prediction/scientific change. Không status-poll ngay sau launch và
+  không tạo monitor. Validation GT/evaluator, consumer và test khóa.
+
