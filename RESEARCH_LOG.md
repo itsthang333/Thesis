@@ -14241,3 +14241,36 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   và collaborator output không được truy cập. Phải commit/push bằng chứng này
   trước upload dataset hoặc audit-only version 2.
 
+### S8 frozen-output transport package v1 — static/provenance ready (2026-08-02)
+
+- Sau khi failure-analysis gate của audit-only v1 đã được commit/push tại
+  `2c8bbf2`, đã chạy static transport audit trên exact producer tree, không mở
+  ảnh/mask/validation GT/test. Auditor mới
+  `project/audit_skelex_reconstruction_selector_s8_transport_dataset.py` có
+  canonical-LF SHA-256 `9e6c51daba8be15fedf9c0e9d4f9bfa6899e42bb67f678e73533dc0d61571739`,
+  và artifact
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/producer_transport_inventory_audit.json`
+  SHA-256 `945cf370b2c057f777cdd1cfd84c86ef5841f4a2fbcf7a480edaea597738780e`.
+  Audit PASS: exact `1,866` producer files, `172,187,320` bytes, inventory SHA
+  `6caa288321e1abfd81934222eb04b590c23aedfc761b5d7eb82458a59a79b971`, gồm
+  `371` reconstruction evidence, hai arm mỗi arm `371` score payload và `371`
+  prediction maps; all ten root/manifests match S8 frozen hashes; không có
+  GT/test-like path; log producer giữ SHA `0ed4c39b...d82a79`.
+- Dataset package ignored tại
+  `tmp/kaggle/skelex_s8_v1_frozen_output_dataset`: metadata SHA
+  `549c7479cefa2a1b74b1fcb6b1587146ce90163d0e88899a5ef937ca748f6144`, archive
+  `s8_producer_output.zip` `20,290,662` bytes SHA
+  `c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737`, và
+  direct producer log `26,573` bytes SHA `0ed4c39b...d82a79`. Package chỉ là
+  transport private, license metadata `other`, không phải public result hay
+  scientific change. Metadata conventions được đối chiếu với Kaggle CLI
+  tutorial: https://github.com/Kaggle/kaggle-cli/blob/main/docs/tutorials.md .
+- Package contract/addendum được ghi tại
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/transport_dataset_v1_package.json`;
+  dataset upload và audit-only wrapper version 2 vẫn **chưa launch**. Bước tiếp
+  theo duy nhất là commit/push package audit này, upload private dataset, rồi
+  bind một wrapper v2 chỉ giải nén/hash exact archive và chạy corrected
+  producer-output auditor; không rerun SKELEX inference, không đổi protocol,
+  selector, predictions hay evaluation gates. Validation GT, consumer, test và
+  collaborator output tiếp tục khóa.
+

@@ -1,0 +1,38 @@
+{
+  "consumer_trained": false,
+  "counts": {
+    "control_prediction_npy": 371,
+    "control_score_npz": 371,
+    "evidence_npz": 371,
+    "primary_prediction_npy": 371,
+    "primary_score_npz": 371
+  },
+  "direct_log": {
+    "bytes": 26573,
+    "path": "tmp\\kaggle\\skelex_s8_v1_terminal_error_20260802_1828\\btxrd-skelex-reconstruction-selector-s8-v1.log",
+    "sha256": "0ed4c39bcee22a559de3c642bb72a5b77ce148c50e8260bf0d89d5dd47d82a79"
+  },
+  "expected_direct_log_sha256": "0ed4c39bcee22a559de3c642bb72a5b77ce148c50e8260bf0d89d5dd47d82a79",
+  "file_count": 1866,
+  "forbidden_gt_test_paths": [],
+  "inventory_sha256": "6caa288321e1abfd81934222eb04b590c23aedfc761b5d7eb82458a59a79b971",
+  "notes": "This is transport provenance for already-frozen GT-blind producer output; it creates no prediction and performs no evaluator action.",
+  "required_hashes": {
+    "geometry_v3_plus_upstream_equal_rank/candidate_scores/candidate_score_manifest.csv": "6d08db6c7fd29d5ed2bc7ff57133cd9fdea1adc65ec797f9c3f0ee424b3452fc",
+    "geometry_v3_plus_upstream_equal_rank/prediction_freeze.json": "aa8acefaafe9c453dd08e1cba8d71b4a0aae25ecf16662774aebf53d01cf2ccd",
+    "geometry_v3_plus_upstream_equal_rank/predictions/prediction_manifest.csv": "f66f7370b8b93ddadd1b7eef134ae5735c0a8f6743c97de021eab331d06666bf",
+    "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank/candidate_scores/candidate_score_manifest.csv": "0f66c5ff54ea44f778bc62fb0e71145191e0189bdcc0ac419f87d0b1ec566de3",
+    "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank/prediction_freeze.json": "a96e8a0bf88201c8b3fffb30c7ec41fd0abb2c3e4b7e9430408665b01dc2a148",
+    "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank/predictions/prediction_manifest.csv": "285c026853bb5e91482140e03cc2d47d418f4172716aec0aad32e97e5b9d7309",
+    "gt_blind_diagnostics.json": "98ceacd4a3dd1c32d42105c8cddc436d0e8256dd596c3b250f18fa2e39ecc569",
+    "prediction_pair_freeze.json": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+    "reconstruction_evidence/evidence_manifest.json": "be391e11deef6a02a32c85c3bdc861cb05dd357313d89b9177c3bcdfb850cf55",
+    "run_manifest.json": "5bb136f8b6f7a6a173abacce2faf0aad1b7caf9e087adcfd158655d71ff7c510"
+  },
+  "schema_version": 1,
+  "source_root": "tmp\\kaggle\\skelex_s8_v1_terminal_error_20260802_1828\\btxrd_skelex_reconstruction_selector_s8_v1",
+  "status": "GT_BLIND_FROZEN_PRODUCER_TRANSPORT_AUDIT_PASS",
+  "test_evaluated": false,
+  "total_bytes": 172187320,
+  "validation_gt_read": false
+}

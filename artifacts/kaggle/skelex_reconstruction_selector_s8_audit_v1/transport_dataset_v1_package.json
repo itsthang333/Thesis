@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "TRANSPORT_PACKAGE_READY_NO_SCIENTIFIC_ACTION",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "audit_only_kernel": "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1",
+  "producer_kernel": "itsthang333/btxrd-skelex-reconstruction-selector-s8-v1",
+  "dataset": "itsthang333/btxrd-skelex-s8-v1-frozen-output",
+  "dataset_metadata_sha256": "549c7479cefa2a1b74b1fcb6b1587146ce90163d0e88899a5ef937ca748f6144",
+  "producer_archive": {
+    "filename": "s8_producer_output.zip",
+    "bytes": 20290662,
+    "sha256": "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737",
+    "uncompressed_file_count": 1866,
+    "uncompressed_bytes": 172187320,
+    "inventory_sha256": "6caa288321e1abfd81934222eb04b590c23aedfc761b5d7eb82458a59a79b971"
+  },
+  "producer_terminal_log": {
+    "filename": "s8_producer_terminal.log",
+    "bytes": 26573,
+    "sha256": "0ed4c39bcee22a559de3c642bb72a5b77ce148c50e8260bf0d89d5dd47d82a79"
+  },
+  "source_inventory_audit": "artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/producer_transport_inventory_audit.json",
+  "source_inventory_audit_sha256": "945cf370b2c057f777cdd1cfd84c86ef5841f4a2fbcf7a480edaea597738780e",
+  "content_contract": {
+    "evidence_npz": 371,
+    "score_npz_per_arm": 371,
+    "prediction_npy_per_arm": 371,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "scientific_change": false,
+  "transport_change": "Replace invalid terminal-ERROR kernel-source attachment with one private dataset containing exact immutable producer bytes; audit-only wrapper v2 must extract and hash this archive before corrected audit.",
+  "license_reason": "Kaggle metadata uses 'other' because this is private derived research output and is not being released under CC0 or a public redistribution license.",
+  "official_reference": "https://github.com/Kaggle/kaggle-cli/blob/main/docs/tutorials.md"
+}
