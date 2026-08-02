@@ -12517,7 +12517,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 ### EXP-20260802-codex-s6-label-granularity-mil-v1
 
 - **Owner/status:** Codex main task trên `research-wsss-improvement`;
-  **ĐANG LÀM**. Đăng ký lúc `2026-08-02T06:04:41Z`; registration base là
+  **HOÀN THÀNH — TERMINAL AUDITED, GATE FAIL**. Đăng ký lúc
+  `2026-08-02T06:04:41Z`; registration base là
   `1782b34f0ce2382f58faf8e5d0652d36c2c8ada7`; exact registration commit sẽ
   được ghi ở note kế tiếp sau khi push. Claim phải hiện diện trên central trước
   mọi real cache load/fit/prediction/Kaggle launch.
@@ -12985,4 +12986,47 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa đọc. Sau khi evidence/log này visible central, exact frozen evaluator mới
   được phép đánh giá hai arm theo seed correction `20261101`; claim vẫn
   **ĐANG LÀM** và chưa có Dice.
+
+### S6 kernel version 2 — terminal efficacy result, hierarchy bị loại (2026-08-02)
+
+- Sau khi terminal GT-blind evidence đã visible central tại commit
+  `1f2d5e57ac309752f7255bbdb021ca6172c07c7b`, frozen evaluator canonical-LF
+  SHA-256 `ccc3a493...b084` mới đọc validation GT cho từng arm theo exact cohort
+  `371/184/187`, subgroup `94/72/18`, `10,000` complete-group bootstrap và cùng
+  corrected seed `20261101`. Python-3.9 strict-zip fail-closed shim được tái dùng
+  byte-identical tại SHA-256 `dcf88d82...c396a`; evaluator/comparator không sửa.
+- `coarse_control` Dice overall/small/medium/large là
+  `0.23281193 / 0.10795317 / 0.36617726 / 0.35139083`, `58` complete miss;
+  per-image/evaluation-audit SHA-256
+  `1115ad60...3031` / `ddf2e904...9ae0`. So với accepted Geometry-v3, delta
+  `-0.01267045 / -0.00912741 / -0.01095825 / -0.03802182`; mọi CI95 cắt 0.
+- `hierarchical_entropy_routed` Dice là
+  `0.23836084 / 0.11142896 / 0.36300375 / 0.40265566`, `63` complete miss;
+  per-image/evaluation-audit SHA-256
+  `b81286c6...ec7f` / `d92ee15a...e19f`. So với Geometry-v3, delta
+  `-0.00712155 / -0.00565162 / -0.01413177 / +0.01324302`; CI95 tương ứng
+  `[-0.02153718,+0.00560105] / [-0.02426985,+0.00801769] /
+  [-0.04106158,+0.00813037] / [-0.02928596,+0.05039340]`.
+- Frozen matched comparator không mở lại GT; comparison/per-image SHA-256
+  `d37be43f49fae78553037d9f2640755fc54d4b643e5f2aecc6cd9dcd39af55a6` /
+  `8bd869ca89c1fee696a85cc9cfd92909523c563aa85413bfbb9763cbe5ab092d`.
+  Hierarchy trừ control là
+  `+0.00554890 / +0.00347579 / -0.00317351 / +0.05126484`; mọi matched CI95
+  cắt 0. Nó recover `2` miss nhưng mất `7` overlap, nên complete misses tăng
+  `58 -> 63`, tập trung ở small `35 -> 42`.
+- S6-specific mechanism gate **FAIL**: overall/small/large mean có hướng tăng,
+  nhưng medium giảm và miss tăng. Operational gate cũng **FAIL**: không arm nào
+  đạt bất kỳ bộ bốn goal đồng thời; hierarchy vẫn kém Geometry-v3 ở overall,
+  small, medium và overall CI lower không dương. Image-level subtype taxonomy có
+  thay đổi ranking nhưng không cung cấp positive-instance identity đủ ổn định;
+  không promote hierarchy, không rescue/sweep hậu nghiệm và không train consumer.
+- Terminal evaluation audit tracked tại
+  `artifacts/kaggle/rad_dino_mask_bag_label_granularity_s6_v1/kernel_version2_terminal_evaluation_audit.json`,
+  SHA-256
+  `6973101bf4b6327b8e7acdcb11d2972e97efe3e4947a45e7ecad9054ba190958`.
+  Prediction-freeze/GT boundary giữ đúng; comparator không reopen GT;
+  `consumer_trained=false`, `test_evaluated=false`, collaborator output không
+  truy cập. Experiment S6 kết thúc **HOÀN THÀNH — GATE FAIL**; goal thesis vẫn
+  chưa đạt và successor phải là hypothesis mới không trùng các residual/pooling/
+  hierarchy mechanism đã bị loại.
 
