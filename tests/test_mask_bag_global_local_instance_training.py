@@ -9,6 +9,7 @@ import torch
 from models.mask_bag_global_local_instance import GlobalLocalInstanceConfig
 from models.mask_bag_global_local_instance_training import (
     GlobalLocalInstanceTrainingConfig,
+    attach_frozen_base_logits,
     assign_global_local_targets,
     audit_zero_initialization,
     initial_global_local_state,
@@ -16,6 +17,7 @@ from models.mask_bag_global_local_instance_training import (
     score_global_local_instance,
     train_global_local_instance,
 )
+from models.rad_dino_mask_bag_mil import MaskBagMILConfig, RadDinoMaskBagMIL
 
 
 def _records() -> list[dict[str, object]]:
@@ -197,3 +199,53 @@ def test_training_epoch_contract_fails_closed() -> None:
             device=torch.device("cpu"),
             initial_state=initial,
         )
+
+
+def test_attach_frozen_base_logits_has_no_subtype_dependency() -> None:
+    records = _records()
+    scorer = RadDinoMaskBagMIL(
+        MaskBagMILConfig(token_dim=1, token_layers=1, metadata_dim=1, hidden_dim=3)
+    ).eval()
+    for record in records:
+        record.pop("base_candidate_logits")
+        record.pop("base_flipped_candidate_logits")
+    attach_frozen_base_logits(
+        records,
+        scorer,
+        batch_size=2,
+        device=torch.device("cpu"),
+    )
+    for record in records:
+        count = len(record["candidate_indices"])
+        assert np.asarray(record["base_candidate_logits"]).shape == (count,)
+        assert np.asarray(record["base_flipped_candidate_logits"]).shape == (count,)
+        assert "tumor_type" not in record
+
+
+def test_training_snapshot_callback_observes_each_pre_epoch_target() -> None:
+    records = _records()
+    config = GlobalLocalInstanceConfig(
+        descriptor_dim=4,
+        hidden_dim=3,
+        dropout=0.0,
+        mass_transition_epochs=2,
+        total_epochs=2,
+    )
+    seen: list[tuple[int, int, str]] = []
+
+    def callback(epoch, rows, logits, targets, weights, diagnostics):
+        assert len(rows) == len(logits) == len(targets) == len(weights) == 4
+        seen.append((epoch, len(logits), diagnostics["target_sha256"]))
+
+    train_global_local_instance(
+        records,
+        model_config=config,
+        training_config=GlobalLocalInstanceTrainingConfig(
+            epochs=2, batch_size=2, learning_rate=1.0e-2, weight_decay=0.0
+        ),
+        device=torch.device("cpu"),
+        initial_state=initial_global_local_state(config, seed=42),
+        target_snapshot_callback=callback,
+    )
+    assert [row[0] for row in seen] == [0, 1]
+    assert all(len(row[2]) == 64 for row in seen)

@@ -13309,3 +13309,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa launch, chưa mở real cache/validation GT, chưa prediction, consumer/test
   vẫn khóa.
 
+### S7 runner/target-snapshot/auditor static implementation (2026-08-02)
+
+- Producer tĩnh mới `project/run_mask_bag_global_local_instance_s7_pair.py`
+  khóa recipe `40` epoch, lưu đủ `40` physical pre-epoch target snapshot
+  (current logits/soft targets/equal-family weights/offsets/IDs/labels), checkpoint,
+  history, matched Geometry-v3-identity/S7 score+map pair và cùng exact accepted
+  bag probability. Validation được shard thật qua hai T4; wrapper chưa viết và
+  chưa launch.
+- Independent GT-blind auditor mới
+  `project/audit_mask_bag_global_local_instance_s7_output.py` tự cài lại
+  float64 96-step Bernoulli projection, equal image/family/candidate weights,
+  local argmax constraint và target digest; nó đọc physical snapshots để audit
+  cả `40` target assignment, rồi tái tạo final candidate logits/winner/map từ
+  exact cache + baseline + checkpoint. Auditor không import evaluator/GT và chỉ
+  pass nếu hai arm có bag probability byte-value như nhau, `742` score payload +
+  `742` map hiện hữu và mọi safety field còn false.
+- Training helper chỉ bổ sung base-logit attachment không cần subtype và callback
+  physical snapshot; objective/hyperparameter đã đăng ký không đổi. Canonical-LF
+  SHA-256 của training/runner/auditor/training-test/runner-test lần lượt là
+  `2e2803d2...bece` / `76d0bae2...31b8` / `b64ae0a2...a138` /
+  `5f1f73a3...6799` / `55ee452d...864`.
+- Static execution boundary: lệnh đầu dùng accidental system Python 3.13 và dừng
+  ở pytest collection vì environment đó không có `numpy`; `py_compile` đã pass,
+  không test/model/data được chạy. Đây là environment/implementation boundary,
+  không phải hypothesis failure và không được dùng làm evidence S7. Sau khi xác
+  minh exact established env
+  `C:/Users/USER/miniconda3/envs/btxrd-pseudomask/python.exe` là Python `3.9.23`,
+  NumPy `1.23.5`, Torch `2.1.2+cu118`, pytest `8.3.5`, cùng source pass
+  `py_compile` và focused `17/17`. Không sửa scientific code để né dependency.
+- Boundary hiện tại vẫn static only: chưa load selector cache/radiograph, chưa
+  fit/prediction/validation GT, chưa consumer/test và chưa Kaggle. Bước tiếp theo
+  là commit/push exact source, sau đó mới tạo immutable protocol trên source
+  commit đó, test wrapper/binder fail-closed và khóa prelaunch provenance.
+

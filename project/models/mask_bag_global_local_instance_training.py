@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
 import torch
@@ -17,7 +17,7 @@ from models.mask_bag_global_local_instance import (
     combined_instance_logits,
     global_local_instance_losses,
 )
-from models.rad_dino_mask_bag_mil import smooth_mil_pool
+from models.rad_dino_mask_bag_mil import RadDinoMaskBagMIL, smooth_mil_pool
 
 
 @dataclass(frozen=True)
@@ -46,6 +46,63 @@ def initial_global_local_state(
         key: value.detach().cpu().clone()
         for key, value in model.state_dict().items()
     }
+
+
+@torch.inference_mode()
+def attach_frozen_base_logits(
+    records: Sequence[dict[str, Any]],
+    frozen_base_scorer: RadDinoMaskBagMIL,
+    *,
+    batch_size: int,
+    device: torch.device,
+) -> None:
+    """Attach exact original/flip Geometry-v3 candidate logits.
+
+    This deliberately does not reuse an S6 batch helper because S7 has no
+    subtype field in its scientific input contract.
+    """
+
+    if not records or batch_size <= 0:
+        raise ValueError("S7 base-logit attachment needs records and a batch")
+    frozen_base_scorer.requires_grad_(False).eval()
+    for start in range(0, len(records), batch_size):
+        selected = list(records[start : start + batch_size])
+        counts = [len(record["candidate_indices"]) for record in selected]
+        if min(counts) <= 0:
+            raise ValueError("S7 candidate bags cannot be empty")
+        maximum = max(counts)
+        descriptor_dim = int(np.asarray(selected[0]["descriptors"]).shape[1])
+        original = np.zeros(
+            (len(selected), maximum, descriptor_dim), dtype=np.float32
+        )
+        flipped = np.zeros_like(original)
+        valid = np.zeros((len(selected), maximum), dtype=bool)
+        for row_index, (record, count) in enumerate(zip(selected, counts)):
+            first = np.asarray(record["descriptors"], dtype=np.float32)
+            second = np.asarray(record["flipped_descriptors"], dtype=np.float32)
+            if first.shape != (count, descriptor_dim) or second.shape != first.shape:
+                raise ValueError("S7 descriptor cache arrays do not align")
+            if not np.isfinite(first).all() or not np.isfinite(second).all():
+                raise ValueError("S7 descriptors must be finite")
+            original[row_index, :count] = first
+            flipped[row_index, :count] = second
+            valid[row_index, :count] = True
+        original_tensor = torch.from_numpy(original).to(device)
+        flipped_tensor = torch.from_numpy(flipped).to(device)
+        valid_tensor = torch.from_numpy(valid).to(device)
+        original_logits, _ = frozen_base_scorer.score_descriptors(
+            original_tensor, valid_tensor
+        )
+        flipped_logits, _ = frozen_base_scorer.score_descriptors(
+            flipped_tensor, valid_tensor
+        )
+        for offset, (record, count) in enumerate(zip(selected, counts)):
+            record["base_candidate_logits"] = (
+                original_logits[offset, :count].float().cpu().numpy()
+            )
+            record["base_flipped_candidate_logits"] = (
+                flipped_logits[offset, :count].float().cpu().numpy()
+            )
 
 
 def _validate_record(record: Mapping[str, Any]) -> int:
@@ -212,6 +269,18 @@ def assign_global_local_targets(
     model_config: GlobalLocalInstanceConfig,
     batch_size: int,
     device: torch.device,
+    snapshot_callback: Callable[
+        [
+            int,
+            Sequence[Mapping[str, Any]],
+            Sequence[np.ndarray],
+            Sequence[np.ndarray],
+            Sequence[np.ndarray],
+            Mapping[str, Any],
+        ],
+        None,
+    ]
+    | None = None,
 ) -> dict[str, Any]:
     logits = score_current_instance_logits(
         records, model, batch_size=batch_size, device=device
@@ -229,6 +298,15 @@ def assign_global_local_targets(
     diagnostics = dict(diagnostics)
     diagnostics["epoch_index"] = int(epoch_index)
     diagnostics["target_sha256"] = _target_sha256(records, targets, weights)
+    if snapshot_callback is not None:
+        snapshot_callback(
+            epoch_index,
+            records,
+            logits,
+            targets,
+            weights,
+            diagnostics,
+        )
     return diagnostics
 
 
@@ -239,6 +317,18 @@ def train_global_local_instance(
     training_config: GlobalLocalInstanceTrainingConfig,
     device: torch.device,
     initial_state: Mapping[str, torch.Tensor],
+    target_snapshot_callback: Callable[
+        [
+            int,
+            Sequence[Mapping[str, Any]],
+            Sequence[np.ndarray],
+            Sequence[np.ndarray],
+            Sequence[np.ndarray],
+            Mapping[str, Any],
+        ],
+        None,
+    ]
+    | None = None,
 ) -> tuple[GlobalLocalInstanceResidual, list[dict[str, Any]]]:
     if len(records) == 0:
         raise ValueError("S7 training records cannot be empty")
@@ -261,6 +351,7 @@ def train_global_local_instance(
             model_config=model_config,
             batch_size=training_config.batch_size,
             device=device,
+            snapshot_callback=target_snapshot_callback,
         )
         torch.manual_seed(training_config.seed * 1000 + epoch)
         generator = np.random.default_rng(training_config.seed + epoch)
@@ -419,6 +510,7 @@ def audit_zero_initialization(
 
 __all__ = [
     "GlobalLocalInstanceTrainingConfig",
+    "attach_frozen_base_logits",
     "assign_global_local_targets",
     "audit_zero_initialization",
     "initial_global_local_state",
