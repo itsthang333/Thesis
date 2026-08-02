@@ -16,8 +16,11 @@ PROTOCOL_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s8_
 PROTOCOL_SHA256 = "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07"
 CORRECTION_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_serialized_lcb_audit_correction.json"
 CORRECTION_SHA256 = "94e5881f763cc2cb3bd0a3f49cb563f2449140a7c576211252a45579597fc8a2"
+TRANSPORT_CORRECTION_PATH = "artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_audit_transport_correction.json"
+TRANSPORT_CORRECTION_SHA256 = "ee42bbe43d4f81ffba570a8aa46454cb55acbf9bb6338ed4d746aaf38ce32d1d"
 AUDITOR_CORRECTION_COMMIT = "969327c4fbbd635fff2e3a00d34d533af8a3c340"
 CORRECTION_ADDENDUM_COMMIT = "16f1b61ef99e866dcfced826b4b2ffb76fb0d3b5"
+TRANSPORT_CORRECTION_COMMIT = "709819a684e60371f464c373de10e74fe7ccb5b2"
 KERNEL = "itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1"
 TRANSPORT_DATASET = "itsthang333/btxrd-skelex-s8-v1-frozen-output"
 TRANSPORT_ARCHIVE_SHA256 = "c516437824ff7d7e32594bfe02e3f654d98d9976d2ddb40595641bf5f8ca1737"
@@ -78,7 +81,9 @@ def bind(
         raise ValueError("S8 audit-only protocol differs at checkout")
     if digest(_git_bytes(repository_root, checkout_commit, CORRECTION_PATH)) != CORRECTION_SHA256:
         raise ValueError("S8 audit-only correction differs at checkout")
-    for ancestor in (AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT):
+    if digest(_git_bytes(repository_root, checkout_commit, TRANSPORT_CORRECTION_PATH)) != TRANSPORT_CORRECTION_SHA256:
+        raise ValueError("S8 audit-only transport correction differs at checkout")
+    for ancestor in (AUDITOR_CORRECTION_COMMIT, CORRECTION_ADDENDUM_COMMIT, TRANSPORT_CORRECTION_COMMIT):
         subprocess.run(
             ["git", "merge-base", "--is-ancestor", ancestor, checkout_commit],
             cwd=repository_root,
@@ -93,6 +98,7 @@ def bind(
         "checkout_commit": checkout_commit,
         "protocol_sha256": PROTOCOL_SHA256,
         "correction_sha256": CORRECTION_SHA256,
+        "transport_correction_sha256": TRANSPORT_CORRECTION_SHA256,
         "template_sha256": TEMPLATE_SHA256,
         "bound_wrapper_sha256": digest(bound),
         "transport_dataset": TRANSPORT_DATASET,
