@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "status": "PRELAUNCH_STATIC_PASS_UNBOUND",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "scientific_source_commit": "b4543aeb9430345c9b789384943bd218816a85dd",
+  "protocol_commit": "67a8f765cf75f20fd0c9df157bbb735d249fddf1",
+  "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "canonical_lf_sha256": {
+    "project/audit_skelex_reconstruction_selector_s8_output.py": "613b5b4244f001765dd705b53eb0edde755bb224780022ea2d0ba4eb9055b54d",
+    "project/kaggle_wrappers/run_skelex_reconstruction_selector_s8_v1.py": "2a39e924d38e0bda89bc3cf9c468448d8466fad9a13b1fc774147dbd8847f48f",
+    "project/models/skelex_reconstruction_selector.py": "df93b09b7c1c311c1977889705efe1709ab178cb60d95366d06405598280a7e5",
+    "project/run_skelex_reconstruction_selector_s8.py": "a76db937db3654ca769a419f2c1713e99ae0fffe3521665bada14e62cdee43ce",
+    "tests/test_kaggle_wrapper_skelex_reconstruction_s8_v1.py": "c95aab493905a1b0d45b60d9d637bb6f5e6b2fddf662fbf75a6c240374d8178a",
+    "tests/test_skelex_reconstruction_selector.py": "010b47c60447bd4064ec805c56f43b0c9bb9abe44ceaa88d7f1860e640c8e3ea"
+  },
+  "checks": {
+    "py_compile": "PASS",
+    "ruff": "PASS",
+    "focused_pytest": {
+      "status": "PASS",
+      "passed": 20,
+      "failed": 0,
+      "tests": [
+        "tests/test_skelex_reconstruction_selector.py",
+        "tests/test_kaggle_wrapper_skelex_reconstruction_s8_v1.py",
+        "tests/test_skelex_mask_bag_descriptor.py",
+        "tests/test_mae_reconstruction.py"
+      ]
+    },
+    "protocol_json_parse": "PASS",
+    "git_diff_check": "PASS",
+    "wrapper_launch_binding_ready": false,
+    "wrapper_kernel_version": 0,
+    "wrapper_checkout_commit": "UNBOUND"
+  },
+  "scientific_boundary": {
+    "real_cache_opened": false,
+    "btxrd_image_opened": false,
+    "skelex_inference_run": false,
+    "validation_prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "collaborator_sync": {
+    "branch": "origin/codex/research-sync-20260731",
+    "commit": "b5c3bf2362f6ec571098a72daba1237fda2f15f6",
+    "collision_found": false,
+    "performance_technique_adopted": false,
+    "reason": "latent-burden gate retired old observables; partial-consensus CI crossed zero and regressed subgroups; MNR is design-only"
+  }
+}

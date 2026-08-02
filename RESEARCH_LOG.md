@@ -13947,3 +13947,40 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   labels; BTXRD test luôn khóa. Fail/error bắt buộc freeze + quantitative
   failure analysis trước successor, không post-hoc rescue.
 
+### S8 static implementation/protocol freeze và collaborator sync (2026-08-02)
+
+- Sau khi fetch, central ở `10cff2039aa170debc6a491950af39dee5635432` và
+  collaborator tiến tới `b5c3bf2362f6ec571098a72daba1237fda2f15f6`.
+  Delta collaborator mới không tạo collision: latent-burden gate với old frozen
+  observables đã **COMPLETE/RETIRED** và nested gate abstain toàn bộ, partial-
+  consensus point estimate `0.29343648` có CI qua `0` và làm hại small/large nên
+  không được adopt như cải tiến; MNR residual mới chỉ là `DESIGN`, chưa có
+  terminal audited result. Không truy cập Kaggle/output collaborator.
+- Scientific implementation đã freeze tại commit
+  `b4543aeb9430345c9b789384943bd218816a85dd`: dataset-agnostic decoder-error/
+  LCB/spatial-null primitive, validation producer, independent GT-blind
+  arithmetic/physical auditor, fail-closed Kaggle wrapper và synthetic tests.
+  Canonical LF SHA-256 core/runner/auditor/test lần lượt là
+  `df93b09b7c1c311c1977889705efe1709ab178cb60d95366d06405598280a7e5 /`
+  `a76db937db3654ca769a419f2c1713e99ae0fffe3521665bada14e62cdee43ce /`
+  `613b5b4244f001765dd705b53eb0edde755bb224780022ea2d0ba4eb9055b54d /`
+  `010b47c60447bd4064ec805c56f43b0c9bb9abe44ceaa88d7f1860e640c8e3ea`.
+- Exact protocol
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1.json`
+  được freeze ở commit `67a8f765cf75f20fd0c9df157bbb735d249fddf1`, SHA-256
+  `7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07`.
+  SKELEX static config thực tế xác nhận input/patch `224/16`, ImageNet mean/std,
+  `mask_ratio=0.75`, `norm_pix_loss=false`, transformers `4.50.2`, đúng protocol.
+  Điều chỉnh implementation-only trước launch: hai T4 dùng DataParallel để chia
+  `20` masked-view forwards của mỗi ảnh qua hai device, thay cho mô tả row split
+  `186/185`; algorithm, cohort, score, null, gate và output không đổi.
+- Focused synthetic/static QA pass `20/20`, Ruff, `py_compile`, JSON parse và
+  `git diff --check` đều pass. Prelaunch static audit
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_prelaunch_static_audit.json`
+  có SHA-256
+  `ae5d1771d230ab4a5319f808aa605e797adec705ad1128f64798adc0b93830ac`.
+  Wrapper vẫn cố ý `KERNEL_VERSION=0`, `LAUNCH_BINDING_READY=false`, checkout
+  `UNBOUND`; chưa mở real cache/BTXRD image, chưa SKELEX inference/prediction,
+  chưa validation GT/consumer/test. Bước kế là commit/push log+audit, sau đó
+  mới bind exact checkout/kernel version và chạy prelaunch audit lần cuối.
+
