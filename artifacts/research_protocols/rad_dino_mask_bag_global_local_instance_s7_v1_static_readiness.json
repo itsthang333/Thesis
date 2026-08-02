@@ -1,0 +1,83 @@
+{
+  "readiness_id": "rad_dino_mask_bag_global_local_instance_s7_v1_static_readiness",
+  "prepared_utc": "2026-08-02T07:54:52.4292998Z",
+  "status": "STATIC_READY_NO_CLAIM_NO_REAL_INPUT",
+  "source_commit": "3e1b0dfe71ad0e8b0aba31e72b839f0be30ef5d7",
+  "scientific_question": "Can global-local constrained all-instance self-training reduce Geometry-v3 selector regret without another lazy bag-level MIL objective?",
+  "canonical_lf_source_hashes": {
+    "S7_GLOBAL_LOCAL_INSTANCE_SELF_TRAINING_DESIGN.md": "d7dd5bf8b5e7ff421c007c17924ea4e006be6b691b601c3d6773bad85533e1d5",
+    "project/models/mask_bag_global_local_instance.py": "bf45579c3764facd0319bf4724609e696ebf4d9366510bc66e09e122af3ef498",
+    "project/models/mask_bag_global_local_instance_training.py": "fef334bbe4c082c473af4dcea68a1012820c97241caabb39dc9fd45b9a2b4ac6",
+    "tests/test_mask_bag_global_local_instance.py": "4d8bd6182b666b20fd704573e42dc285b3736f1d0441224a2a8c5ee5d2e7da77",
+    "tests/test_mask_bag_global_local_instance_training.py": "b65b9f297fd75e45462104ebae9118ff61567aac1736f8ab643d06659000de67"
+  },
+  "frozen_static_mechanism": {
+    "training_supervision": "binary image-level labels only",
+    "candidate_gallery": "accepted same-gallery Geometry-v3 cache; unopened at this readiness stage",
+    "loss_level": "all candidate instances; no bag classification or attention pooling loss",
+    "negative_targets": "all candidates in image-level-negative bags are exact zero",
+    "positive_targets": "global weighted soft mass plus local one-positive-per-positive-bag",
+    "mass_schedule": {
+      "start": 0.5,
+      "end": 0.15,
+      "transition_epochs": 20,
+      "total_epochs": 40,
+      "external_source_value_not_btxrd_tuned": true
+    },
+    "weights": "equal image then equal family then equal candidate",
+    "model": "1156->128 GELU dropout0.1 scalar residual; scalar output exactly zero initialized",
+    "inference": "accepted base plus residual candidate argmax; accepted Geometry-v3 bag probability unchanged",
+    "seed": 42,
+    "sweep_or_early_stop": false
+  },
+  "nonduplicate_boundary": {
+    "not_t1": "no OOF hard-top1 subset, no supervised contrastive consumer, no learned bag probability",
+    "not_v6_or_s6": "no bag-level BCE/SmoothMax supervision and no subtype/entropy routing",
+    "not_collaborator_139ba76": "no cross-view co-witness, heuristic group relation, or rich gallery",
+    "not_proposal_generation": true
+  },
+  "tests": {
+    "py_compile": "PASS",
+    "focused_new": "12 passed",
+    "new_plus_s6_regression": "24 passed",
+    "whole_repository_python39_strict_zip_shim": "605 passed, 1 known unrelated B1 CRLF/LF failure"
+  },
+  "static_error_analysis": [
+    {
+      "boundary": "synthetic global projection fixture",
+      "failure": "equal-family weights were cast to float32 before a 1e-10 mass-sum guard",
+      "root_cause": "precision-contract mismatch; mathematically normalized weights accumulated several float32 ULPs",
+      "correction": "keep audit/projection weights in float64 and cast only at the Torch training boundary",
+      "scientific_change": false
+    },
+    {
+      "boundary": "synthetic accepted-probability test",
+      "failure": "smooth_mil_pool keyword-only temperature was passed positionally",
+      "root_cause": "test-harness call signature error after the training/scoring body had completed",
+      "correction": "use temperature=0.2 in the fixture",
+      "scientific_change": false
+    }
+  ],
+  "known_unrelated_full_suite_boundary": {
+    "test": "tests/test_run_bas_candidate_descriptor_b1.py::test_b1_protocol_closes_every_declared_source",
+    "cause": "legacy B1 protocol compares canonical Git-LF hash with Windows CRLF working-tree bytes for project/datasets/btxrd.py",
+    "expected": "96f5abaa7e5a0e7d2fa3a97adc261623bdb2534e76cccc8f55ec853394d24844",
+    "observed": "dcb509a3a0406d158ecde040a00f5319237817f4409d5ca517061398fe09e3d9",
+    "s7_related": false
+  },
+  "primary_sources": [
+    "https://arxiv.org/html/2408.04813",
+    "https://arxiv.org/abs/2307.02249"
+  ],
+  "safety": {
+    "real_selector_cache_opened": false,
+    "real_radiograph_opened": false,
+    "model_fit_on_scientific_input": false,
+    "prediction_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "experiment_claim_registered": false,
+    "kaggle_launched": false
+  }
+}

@@ -13155,3 +13155,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   cho thấy objective trùng hoặc constraint không xác định được fail-closed thì
   retire trước claim thay vì chi compute.
 
+### S7 primitive/training static readiness — chưa claim, chưa real input (2026-08-02)
+
+- Data-independent implementation đã được push tại commit
+  `3e1b0dfe71ad0e8b0aba31e72b839f0be30ef5d7`. Design/model/training/two test
+  file canonical-LF SHA-256 lần lượt là
+  `d7dd5bf8...e1d5` / `bf45579c...f498` / `fef334bb...4ac6` /
+  `4d8bd618...da77` / `b65b9f29...de67`. Primitive khóa exact zero-init
+  Geometry-v3 identity, weighted Bernoulli I-projection bằng float64 bisection,
+  local one-positive-per-tumor-bag, all-normal target zero, equal image/family/
+  candidate mass, original/flip instance loss và accepted bag-probability
+  preservation.
+- Focused new suite pass `12/12`; new+S6 regression pass `24/24`; `py_compile`
+  và `git diff --check` pass. Full repository dưới exact audited Python-3.9
+  strict-zip shim đạt `605 passed, 1 failed`; failure duy nhất là known unrelated
+  B1 CRLF/LF working-tree hash cho `project/datasets/btxrd.py` (expected Git-LF
+  `96f5abaa...`, observed CRLF `dcb509a3...`) đã được log từ S6, không liên quan
+  S7 và không được sửa/nới.
+- Failure-analysis gate được áp dụng cho hai static test error trước khi sửa:
+  (1) equal-family weights bị cast float32 trước projection guard `1e-10`, làm
+  tổng lệch vài ULP; correction giữ weight audit/projection float64 và chỉ cast
+  tại Torch boundary; (2) fixture gọi keyword-only `smooth_mil_pool` temperature
+  theo positional; correction chỉ dùng `temperature=0.2`. Cả hai xảy ra trên
+  synthetic input, không đổi objective/hyperparameter/scientific output.
+- Static readiness artifact
+  `artifacts/research_protocols/rad_dino_mask_bag_global_local_instance_s7_v1_static_readiness.json`
+  có SHA-256
+  `c6d25b16941e92ee6b99848a34eebdf2adf9ae8c8483d6e3fdbae64e1298f6b3`.
+  Nó ghi rõ `STATIC_READY_NO_CLAIM_NO_REAL_INPUT`: chưa mở selector cache/radiograph,
+  chưa fit/prediction/validation GT/consumer/test và chưa launch Kaggle.
+- Bước tiếp theo bắt buộc là commit/push readiness này, fetch lại central và
+  collaborator, đọc collision claim mới. Chỉ nếu scope còn unique mới được mở
+  một claim S7 `ĐANG LÀM` đầy đủ; runner/protocol/auditor/wrapper và mọi real
+  cache action đều còn bị khóa.
+
