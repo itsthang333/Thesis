@@ -14051,4 +14051,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   protocol/addendum/source hashes đúng và `validation_gt_read=false`,
   `consumer_trained=false`, `test_evaluated=false`, `collaborator_output_accessed=false`.
   Đây vẫn là static/no-input audit; chưa launch Kaggle.
+- Final launch package được re-bind một lần vào exact pushed checkout
+  `819e6aff7031a987a14156fbad0ff6b313a5eb2e`; bound-wrapper SHA-256
+  `dc0cc8280822b47eb0b023e1b0dc6a2edbb55eb9542e877265abfeb64a50f74c`, launch-
+  binding SHA-256 `fb76a75b30caafe45991f61e299c38c152b42173dc7aae12d912922304d5fd02`.
+  Prelaunch audit artifact được supersede bằng final SHA-256
+  `76db82166cffdb83e17e393bcea72bd6805782c6e75fd9f6b73c1b4ba4361ca6`;
+  prior `1cd3d4a5...3047d` chỉ audit package checkout `1a8147b...`, không phải
+  package sẽ launch. Final package vẫn chỉ khác canonical wrapper đúng ba launch
+  fields, private T4x2, input/GT/consumer/test safety đều giữ nguyên.
 
