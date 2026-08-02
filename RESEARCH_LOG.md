@@ -14472,4 +14472,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - V3 chỉ force independent null replay về producer CPU và audit pair cũ; không
   inference/prediction/scientific change. Không status-poll ngay sau launch và
   không tạo monitor. Validation GT/evaluator, consumer và test khóa.
+- Bounded check duy nhất ở nhịp kế trả `KernelWorkerStatus.RUNNING`. Không repeat
+  poll, không partial output/log và không monitor; S8 tiếp tục `ĐANG LÀM` chờ
+  terminal audit.
 
