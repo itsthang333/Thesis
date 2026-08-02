@@ -13348,3 +13348,54 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   tăng lên `20/20` pass. Test này vẫn synthetic/data-independent và sẽ được đưa
   vào exact scientific-source commit kế tiếp trước protocol freeze.
 
+### Contingency extent-conditional sau S7 — insight, chưa claim (2026-08-02)
+
+- Người dùng chỉ ra đúng structural mismatch: small `<1%` chủ yếu over-segment,
+  medium `1-<5%` tương đối đúng extent nhưng sai vị trí/candidate, còn large
+  `>=5%` under-segment; vì vậy một phép area/extent correction toàn cục không có
+  dấu hợp lý cho cả ba nhóm. Git-log collaborator tại `29a3ed6` hỗ trợ định lượng:
+  true-GT-group beta small/medium/large `-1.0/0/+0.5` cho Dice
+  `0.181215/0.435229/0.501086`, overall `0.311904`; per-image three-expert oracle
+  `0.350692`.
+- Tuy nhiên nhãn nhóm extent được suy từ segmentation GT nên tuyệt đối không được
+  dùng làm train/inference router. Ba deployable-looking area gate đã chỉ đạt
+  `0.278291/0.271403/0.268845`, dưới rich-gallery baseline `0.288729`; small bị
+  over-segment trông như large làm area-only gate tự củng cố lỗi. Vì vậy không
+  được mở hard GT-size routing hay post-hoc subgroup rules.
+- Contingency hợp lệ nếu S7 terminal fail hoặc chỉ sửa identity mà còn extent
+  residual là một **shared identity selector + ba signed extent experts + soft
+  annotation-free gate**. Expert small co support, medium giữ extent và ưu tiên
+  vị trí/semantics, large mở support; gate chỉ được dùng appearance, evidence
+  density, cross-source consensus và uncertainty đã có trước GT, không dùng
+  selected-mask area đơn độc. Nó phải có matched shared-selector control,
+  predeclare/freeze trước GT và chứng minh gate tốt hơn control.
+- Đây chưa phải successor claim: extent expert oracle hiện vẫn không giải quyết
+  medium goal (`0.435229 < 0.51244178`), nên ưu tiên hiện tại vẫn là S7 direct
+  instance identity. Nếu S7 fail, bắt buộc phân tích riêng learning signal,
+  target projection, rank transfer và subgroup/miss pattern trước khi quyết định
+  có đủ bằng chứng mở conditional mixture-of-experts hay không. Không implement/
+  launch contingency, không dùng nó rescue S7 và không thay đổi protocol S7.
+
+### S7 immutable protocol freeze (2026-08-02)
+
+- Exact scientific source commit
+  `0e524807937e6fb6effde1649993825f3923c43f` đã push trước protocol; nó chứa
+  producer, independent auditor và dedicated tests nhưng chưa có real-data
+  action. Immutable protocol
+  `artifacts/research_protocols/rad_dino_mask_bag_global_local_instance_s7_v1.json`
+  có SHA-256
+  `81fbb2f40af3a49e4653a15d298858c973e88524dea06fc42c9095cec55579a1`,
+  status `FROZEN_PRELAUNCH`, registration commit `d316269...27d80` và khóa exact
+  input/source/training/output/evaluation/safety contract.
+- Protocol khóa `40` epoch và `40` physical target snapshots, mass `0.50 -> 0.15`
+  trong `20` epoch, `96` float64 projection iterations, local constraint, equal
+  image/family/candidate weight, exact accepted bag probability và matched
+  Geometry-v3 identity/S7 maps. Post-freeze seed là `20261202`; không rescue,
+  sweep, area/subgroup routing hay consumer trước operational pass; fail bắt
+  buộc failure analysis trước successor.
+- Protocol/source hash test cùng primitive/training/runner/auditor synthetic
+  suite pass `21/21`; JSON parse và `git diff --check` pass. Đây vẫn là static
+  readiness: chưa load real cache/radiograph, chưa fit/prediction/GT, chưa
+  consumer/test và chưa launch. Protocol và test phải được commit/push trước khi
+  wrapper template được tạo/bind.
+

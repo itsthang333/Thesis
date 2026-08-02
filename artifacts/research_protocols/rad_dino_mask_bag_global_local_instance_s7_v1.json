@@ -1,0 +1,204 @@
+{
+  "protocol_id": "rad_dino_mask_bag_global_local_instance_s7_v1",
+  "experiment_id": "EXP-20260802-codex-s7-global-local-instance-v1",
+  "frozen_utc": "2026-08-02T08:14:15Z",
+  "status": "FROZEN_PRELAUNCH",
+  "registration_commit": "d316269b141664b9881eea601491d0fe45227d80",
+  "scientific_source": {
+    "commit": "0e524807937e6fb6effde1649993825f3923c43f",
+    "design": "S7_GLOBAL_LOCAL_INSTANCE_SELF_TRAINING_DESIGN.md",
+    "heavy_compute": "one private Kaggle Tesla T4 x2 execution",
+    "real_data_execution_before_protocol_freeze": false
+  },
+  "scientific_question": "Can direct all-instance self-training with true-negative bags plus global-positive-mass and local-one-positive constraints reduce accepted Geometry-v3 same-gallery selector regret without a bag-level MIL objective?",
+  "failure_mechanism_addressed": {
+    "source_experiment": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+    "failure_dossier_sha256": "7f30100cb2bcfb35782359a76052a9085903b5c616d12bdd7932618fd329db7e",
+    "mechanism": "lazy bag-level MIL and weak positive-instance identifiability; S6 subtype accuracy 0.4674 and entropy/confidence did not predict signed Dice",
+    "retired_rescues": [
+      "S6 subtype weight epoch threshold fusion or entropy routing",
+      "hard top-1 or self-paced pseudo winner",
+      "prototype or cluster confirmation",
+      "area count or subgroup routing"
+    ]
+  },
+  "inheritance": {
+    "accepted_baseline": "square-corrected Geometry-v3",
+    "accepted_baseline_dice_overall_small_medium_large": [
+      0.2454823867797678,
+      0.11708057891440651,
+      0.37713551529480416,
+      0.3894126471276201
+    ],
+    "immutable_candidate_oracle_overall_small_medium_large": [
+      0.4090755342486002,
+      0.2227494852063559,
+      0.5941470844279589,
+      0.6418253674184405
+    ],
+    "negative_constraints": [
+      "EXP-20260731-codex-r1-normal-prototype-v1",
+      "EXP-20260731-codex-r2-affinity-residual-v1",
+      "EXP-20260731-codex-s1-family-balanced-v1",
+      "EXP-20260801-codex-r3-critical-relation-v1",
+      "EXP-20260801-codex-r4-orbit-averaged-relation-v1",
+      "EXP-20260801-codex-s3-same-family-graph-v1",
+      "EXP-20260801-codex-s4-oof-proposal-cluster-v1",
+      "EXP-20260801-codex-t1-count-controlled-self-paced-v1",
+      "EXP-20260802-codex-s5-skelex-selector-v1",
+      "EXP-20260802-codex-s6-label-granularity-mil-v1"
+    ],
+    "collaborator_log_commit": "29a3ed6d1f6fe99e1fdb6d6ae3c20c562474b7fb",
+    "collaborator_output_accessed": false,
+    "collaborator_active_scope_not_duplicated": "cross-view co-witness residual on rich gallery",
+    "collaborator_negative_transfer": "do not use annotation-free area gating; all three area gates were below the 0.288729 rich-gallery baseline"
+  },
+  "frozen_inputs": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "git_lf_split_sha256": "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8",
+    "selector_cache_dataset": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "selector_cache_kernel_version": 5,
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "selector_cache_manifest_sha256": "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e",
+    "selector_cache_wrapper_audit_sha256": "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd",
+    "baseline_transport_dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1",
+    "baseline_transport_dataset_version": 1,
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_prediction_manifest_sha256": "a810e1fcc4c4422d207eb020a70313caf5d3402bf30c277331247a30555678ee",
+    "baseline_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+    "baseline_protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555",
+    "cohort": {
+      "train": 2981,
+      "train_tumor": 1488,
+      "validation": 371
+    },
+    "descriptor_dim": 1156,
+    "validation_segmentation_gt": "not an execution input",
+    "evaluator_only_baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f"
+  },
+  "matched_pair": {
+    "arms": [
+      "geometry_v3_identity",
+      "global_local_instance"
+    ],
+    "sole_changed_variable": "global-local all-instance scalar selector residual",
+    "shared_candidate_gallery": true,
+    "shared_accepted_bag_probability": true,
+    "identity_control": "exact averaged original/flip accepted Geometry-v3 candidate logits",
+    "primary": "accepted candidate logits plus zero-initialized within-bag-centered 1156->128->1 residual",
+    "candidate_target": "soft global-mass projection plus local one-positive constraint for tumor bags; exact zero for normal bags",
+    "segmentation_target": null,
+    "pseudo_mask_target": null,
+    "proposal_or_geometry_change": false,
+    "cross_view_input": false,
+    "area_or_count_router": false
+  },
+  "training": {
+    "epochs": 40,
+    "batch_size": 16,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "seed": 42,
+    "hidden_dim": 128,
+    "dropout": 0.1,
+    "bag_temperature": 0.2,
+    "start_positive_mass": 0.5,
+    "target_positive_mass": 0.15,
+    "mass_transition_epochs": 20,
+    "projection_iterations": 96,
+    "consistency_weight": 0.1,
+    "residual_drift_weight": 0.001,
+    "candidate_weight": "equal image then equal family then equal candidate",
+    "epoch_selection": "fixed final epoch only",
+    "early_stopping": false,
+    "hyperparameter_sweep": false,
+    "training_labels": "binary image-level only",
+    "bag_classification_loss": false
+  },
+  "pre_gt_contract": {
+    "pretraining_identity": "zero initialization reproduces every accepted train and validation candidate score and winner exactly",
+    "target_snapshots": 40,
+    "target_snapshot_fields": [
+      "image IDs",
+      "image labels",
+      "candidate offsets",
+      "current candidate logits",
+      "soft targets",
+      "equal-family candidate weights"
+    ],
+    "physical_outputs": {
+      "candidate_score_payloads": 742,
+      "prediction_maps": 742,
+      "prediction_freezes": 2,
+      "prediction_pair_freeze": 1
+    },
+    "independent_reproduction_atol": 0.00005,
+    "target_and_weight_reproduction": "exact",
+    "map_reproduction": "exact float16",
+    "accepted_bag_probability_preserved": true,
+    "diagnostics": [
+      "candidate-count versus frozen bag-probability absolute Spearman",
+      "original/flip top-1 agreement",
+      "changed selection fraction",
+      "mean and maximum residual magnitude",
+      "per-epoch projected and post-local positive mass"
+    ],
+    "diagnostics_block_prediction_freeze": false,
+    "only_integrity_or_safety_failure_blocks_gt_evaluation": true,
+    "prediction_pair_physically_frozen_before_validation_segmentation_gt": true
+  },
+  "post_freeze_evaluation": {
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "bootstrap": "10000 complete-group paired replicates",
+    "bootstrap_seed": 20261202,
+    "mechanism_pass": "primary mean Dice exceeds accepted identity for overall and small, does not decrease medium or large, and does not increase complete misses",
+    "operational_goals_overall_small_medium_large": [
+      0.34024039,
+      0.17895493,
+      0.51244178,
+      0.49370336
+    ],
+    "consumer_authorization": "all four goals plus positive overall paired-CI lower bound, no subgroup regression, no miss increase, and all safety gates",
+    "post_hoc_rescue_or_sweep": false,
+    "failure_analysis_required_before_successor": true
+  },
+  "canonical_lf_source_hashes": {
+    "S7_GLOBAL_LOCAL_INSTANCE_SELF_TRAINING_DESIGN.md": "d7dd5bf8b5e7ff421c007c17924ea4e006be6b691b601c3d6773bad85533e1d5",
+    "project/models/mask_bag_global_local_instance.py": "bf45579c3764facd0319bf4724609e696ebf4d9366510bc66e09e122af3ef498",
+    "project/models/mask_bag_global_local_instance_training.py": "2e2803d221635c962496b2aecb1a3dedf44bbc3065bf478956cef343f976bece",
+    "project/run_mask_bag_global_local_instance_s7_pair.py": "76d0bae256392f7f5fc307c6139740b1ada68859d0725ff16eac3e40913131b8",
+    "project/audit_mask_bag_global_local_instance_s7_output.py": "b64ae0a2ec647ccf32ff7aebeb81cfa76767da06584dd90b9d795c41bcc8a138",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/run_mask_bag_normal_prototype_arm.py": "5c11ae92eacc63d15d3838836267ed00a10485ea48bbedffd3dcf9092989692f",
+    "project/run_mask_bag_critical_relation_arm.py": "bd8bca7d02802ce5881193f4ba0b1286a216bc4f4d077b34de3da5d14c9ae05c",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "tests/test_mask_bag_global_local_instance.py": "4d8bd6182b666b20fd704573e42dc285b3736f1d0441224a2a8c5ee5d2e7da77",
+    "tests/test_mask_bag_global_local_instance_training.py": "5f1f73a3e4903d82e93548c518af09fe95e046dba04167e2fd2fd32318146799",
+    "tests/test_run_mask_bag_global_local_instance_s7_pair.py": "55ee452d521ef218ee07f0dc7a114de0fcafa5d33fde7b894dbeb632b53f3864",
+    "tests/test_audit_mask_bag_global_local_instance_s7_output.py": "66f8684864d2da101880485508f8f09c38182893c8264ef105594fc48e26e3f5",
+    "tests/test_rad_dino_mask_bag_mil.py": "f31650c477bf22758a6e4a70c2a87f0118168979d5a0750898d766526a13454b",
+    "tests/test_mask_bag_selector_cache.py": "8e57b638cca17a0e282464ce8be0b9c83c795d678ef99d7fab69e2da514bb3f5",
+    "tests/test_mask_bag_selector_cache_io.py": "00907cd4570205df8fa49cbc7df87dbb1322a97377e83bfddef17d461182b351"
+  },
+  "post_freeze_only_source_hashes": {
+    "project/evaluate_mask_bag_selector_arm.py": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "project/compare_mask_bag_evaluated_arms.py": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119",
+    "tests/test_evaluate_mask_bag_selector_arm.py": "21fafe74740588ae02a897e387a639a7723575334ce2ff4fe6df4fcd36aa8e29",
+    "tests/test_compare_mask_bag_evaluated_arms.py": "f29650ad9139bc2c894274cfe338bb69890ecb77133286e5e90ce0825324c7b6"
+  },
+  "literature": [
+    "https://arxiv.org/html/2408.04813",
+    "https://arxiv.org/abs/2307.02249"
+  ],
+  "safety": {
+    "validation_gt_read_before_prediction_freeze": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "validation_subtype_used": false,
+    "collaborator_output_accessed": false
+  }
+}
