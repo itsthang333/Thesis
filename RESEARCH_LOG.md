@@ -13342,4 +13342,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   fit/prediction/validation GT, chưa consumer/test và chưa Kaggle. Bước tiếp theo
   là commit/push exact source, sau đó mới tạo immutable protocol trên source
   commit đó, test wrapper/binder fail-closed và khóa prelaunch provenance.
+- Sau source commit `1896c3576127cd7a3b04fb02ee666960370e5204`, một dedicated
+  auditor test bổ sung kiểm tra independent projection khớp producer byte-exact,
+  safety/path traversal fail-closed và float16 map serialization; focused suite
+  tăng lên `20/20` pass. Test này vẫn synthetic/data-independent và sẽ được đưa
+  vào exact scientific-source commit kế tiếp trước protocol freeze.
 
