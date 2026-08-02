@@ -12938,4 +12938,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   sau launch, thấy version 2 vẫn `KernelWorkerStatus.RUNNING`. Không repeat poll,
   không monitor, không partial log/output access và không mở GT/test/consumer.
   Claim tiếp tục **ĐANG LÀM** chờ nhịp terminal hợp lý sau.
+- Nhịp kế tiếp chỉ kiểm tra đúng một lần lúc `2026-08-02T07:04:56.2189867Z` và
+  version 2 vẫn `KernelWorkerStatus.RUNNING`. Không kiểm tra lần hai, không tạo
+  monitor, không đọc partial log/output và không mở validation GT, consumer hay
+  BTXRD test. Claim tiếp tục **ĐANG LÀM**.
 
