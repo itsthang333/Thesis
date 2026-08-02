@@ -14301,3 +14301,27 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   wrapper v2 phải verify exact archive hash, giải nén an toàn, verify producer
   manifests/pair rồi mới chạy corrected auditor trên T4x2.
 
+### S8 audit-only v2 dataset-transport implementation freeze (2026-08-02)
+
+- Transport correction implementation đã commit/push tại
+  `88f20fb756495569550a29e888adc1e9c137b964`. Canonical-LF SHA-256 của wrapper
+  template/binder/transport-test/binder-test lần lượt là
+  `e596c57c4e425d195ec7b732cf9c329cc8b6013f1f0006ac7de7cddcb7827d9c /`
+  `1fedc1ef7d810e03a1c93ddb145b0d6c9ddc350c9c39e42f2e22239ce88e3780 /`
+  `4218e7da053270f77eaa7d3da8f804c63d7d43f62b92d6575d750cb0e17a0a42 /`
+  `cc7594183d7fdd8e26858ed01ec13f317e8141a0ed79d4d62a31f8d7c5c6d889`.
+  Focused corrected-auditor + transport + binder suite `4 passed`; Ruff,
+  `py_compile` và `git diff --check` PASS.
+- Wrapper chỉ thêm exact dataset/archive locator, SHA/count/uncompressed-byte
+  guard và extraction chống traversal/symlink; nếu Kaggle server đã expand thì
+  vẫn bắt exact pair + all immutable manifests. Scientific protocol
+  `7f819781...bc07`, serialized-LCB correction `94e5881f...fc8a2`, corrected
+  auditor `c972e146...0232`, pair `b2cfd59f...fa00`, predictions/selector/gates
+  không đổi và không rerun SKELEX inference. Frozen correction addendum tại
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_audit_transport_correction.json`,
+  SHA-256 `ee42bbe43d4f81ffba570a8aa46454cb55acbf9bb6338ed4d746aaf38ce32d1d`.
+- Chưa bind/package/launch version 2 ở bước này. Sau commit/push addendum/log,
+  binder phải khóa exact checkout và kernel version 2, metadata phải chuyển
+  source duy nhất sang private dataset; prelaunch audit phải fail nếu còn
+  producer kernel source. Validation GT/consumer/test/collaborator output khóa.
+
