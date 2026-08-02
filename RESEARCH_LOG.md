@@ -13886,8 +13886,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - **Owner/status/time:** Codex central workstream; **ĐANG LÀM**; đăng ký
   `2026-08-02T16:57:59+07:00` trên base
-  `8c02ca00dd6e94dbee3d9ddbac6b3dddd5704104`. Exact registration commit được
-  ghi sau push. Không real cache/image/SKELEX inference/prediction/Kaggle trước
+  `8c02ca00dd6e94dbee3d9ddbac6b3dddd5704104`; registration commit
+  `a7ccfdcb53f87dfdff861a46359089c75cdb8dc8`. Không real cache/image/SKELEX
+  inference/prediction/Kaggle trước
   khi claim visible trên `origin/research-wsss-improvement`.
 - **Kế thừa và khác biệt:** kế thừa terminal S7 audit/failure dossier
   `b6bd5bb9...ebfef / 24ea8338...ef9b5`, accepted Geometry-v3 same-gallery
