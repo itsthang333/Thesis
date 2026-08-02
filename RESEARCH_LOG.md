@@ -13533,3 +13533,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   rồi mới test binder against exact corrected checkout và tạo retry binding mới;
   không ghi đè binding/error evidence attempt 1.
 
+### S7 transport retry 1 final binding — sẵn sàng push (2026-08-02)
+
+- Correction commit `9c1acaeabfa4754a7054f7dc690bd7b3a6497fbd` đã push và
+  byte-visible trên `origin/research-wsss-improvement`. Focused S7
+  primitive→binder đạt lại `25/25` trên exact corrected checkout; collaborator vẫn
+  ở `29a3ed6...b7fb`, không có claim collision và không truy cập output/Kaggle của
+  collaborator.
+- Retry dùng thư mục ignored mới, không ghi đè attempt 1. One-time binder khóa
+  kernel version `1` vào corrected checkout; bound wrapper SHA-256
+  `9c8dcdcd66fe42b2b3f6eeb03f3c82072878e32d1a4a6aefb6d5b5cb6ef2bfc7`,
+  launch-binding SHA-256
+  `1b40697d2fbe0b6b8bdc476436069dbd5f90166add90ade71dac89c8f3286857`
+  và metadata SHA-256
+  `519090051f1d26e88ac9b1fade03f8bc44c6ee86473b9e1ed2950fde42c58c63`.
+  Slug/title/code filename đều dùng identity ngắn mới (`38/38` cho slug/title);
+  private, T4x2, exact dataset/cache inputs và scientific source/protocol giữ
+  nguyên.
+- Retry prelaunch audit
+  `artifacts/research_protocols/rad_dino_mask_bag_global_local_instance_s7_v1_kernel_v1_retry1_final_prelaunch_audit.json`
+  có SHA-256
+  `68df3d0249d8fe644430394ef0ff8516de5294762d1e1dd583fd0524928ee1ea`.
+  Bound `py_compile`, constant import, metadata parse/length guard và
+  `git diff --check` đều pass; status `FROZEN_PRELAUNCH_READY_TO_RETRY`.
+- Đây là đúng retry transport duy nhất đã cho phép sau attempt 1: chưa push retry,
+  chưa kernel/job/input/GPU/cache/fit/prediction/GT/consumer/test. Phải commit/push
+  binding, audit và log này trước đúng một `kaggle kernels push`. Nếu server vẫn
+  trả 400 thì dừng và mở error audit mới; không thử biến thể metadata ngẫu nhiên.
+
