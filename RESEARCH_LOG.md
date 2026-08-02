@@ -14359,3 +14359,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   final fetch/collision check mới upload đúng package; version 2 chỉ audit exact
   predictions cũ, không inference mới. Validation GT/consumer/test khóa.
 
+### S8 audit-only Kaggle version 2 launch (2026-08-02)
+
+- Final fetch xác nhận central/HEAD sạch và đồng nhất tại
+  `32549c8bbac88b043f24562129f7fb40d96b28a9`; collaborator vẫn
+  `454b746b1832049e26260460f3130be4e665d2ab`, không có claim cạnh tranh. Kaggle
+  nhận `Kernel version 2 successfully pushed` cho private kernel
+  `itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1` tại
+  https://www.kaggle.com/code/itsthang333/btxrd-skelex-reconstruction-selector-s8-audit-v1 .
+- Exact checkout/wrapper/metadata/dataset archive giữ lần lượt
+  `492e2435...b07e / 6c782094...3273 / cf293291...8909 / c5164378...ca1737`;
+  `kernel_sources=[]`, dataset source duy nhất là frozen-output private dataset,
+  T4 hard guard. Launch receipt tracked tại
+  `artifacts/kaggle/skelex_reconstruction_selector_s8_audit_v1/kernel_version2_launch_receipt.json`.
+- Không status-poll sau launch và không tạo monitor. Version 2 không sinh
+  prediction/inference; corrected audit PASS mới cho phép dynamic readiness
+  freeze. Validation GT, consumer và BTXRD test tiếp tục khóa.
+
