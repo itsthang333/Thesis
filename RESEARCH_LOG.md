@@ -13030,3 +13030,49 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa đạt và successor phải là hypothesis mới không trùng các residual/pooling/
   hierarchy mechanism đã bị loại.
 
+### S6 post-hoc failure analysis — bắt buộc trước successor (2026-08-02)
+
+- Phân tích này chỉ giải thích failure từ prediction/evaluation đã freeze; không
+  chọn lại model, không sửa S6 và không mở rescue. Trên `184` tumor, hierarchy
+  đổi `93` lựa chọn: `34` cải thiện, `32` xấu đi, còn `27` đổi candidate nhưng
+  Dice không đổi. Nó recover `2` miss nhưng mất `7` overlap; toàn bộ overlap mất
+  nằm ở small, làm small misses `35 -> 42`. Large có tín hiệu hướng dương
+  `+0.051265` (`8` tốt/`1` xấu), nhưng n=`18` và CI vẫn cắt 0; medium giảm.
+- Cơ chế chính được định vị ở **subtype identifiability**, không phải entropy
+  calibration đơn thuần. Subtype chỉ đúng `86/184=46.74%`, macro recall
+  `0.25492`; subtype `5/6/9` recall bằng `0`, subtype `8` chỉ `0.1667`. Khi
+  subtype đúng, mean hierarchy-minus-control là `+0.021249`; khi sai là
+  `-0.008229`. Tuy vậy entropy strength và subtype confidence gần như không dự
+  báo signed Dice (`Spearman 0.06946/0.07869`), nên threshold-route hậu nghiệm
+  vừa không được hỗ trợ vừa bị cấm.
+- Training history cho thấy multi-task trade-off rõ: epoch-16 binary loss của
+  hierarchy/control là `0.10578/0.04027`, consistency `0.30188/0.05960`, drift
+  `4.09231/2.51199`. Hierarchy fit pathology/subtype loss xuống
+  `0.08222/0.42876` nhưng localization ranking chỉ tăng Spearman
+  `0.40947 -> 0.41747`, regret `0.17626 -> 0.17071`. Auxiliary taxonomy đã học
+  nhưng không đồng nhất với extent-sensitive instance quality.
+- Kết luận failure: cùng candidate-bag objective đang phải vừa nhận subtype vừa
+  chọn extent nên rơi vào lazy MIL; entropy không phải reliability observable.
+  Không chạy lại weight/epoch/threshold/fusion/subtype router. Successor chỉ hợp
+  lệ nếu thêm reliable instance-level identity từ image labels hoặc global
+  context được freeze riêng, và phải khác T1 self-paced residual/S4 cluster.
+- Deep-search nguồn sơ cấp và giới hạn chuyển giao:
+  INS trực tiếp huấn luyện instance classifier bằng true-negative bags,
+  weakly-supervised contrastive và prototype-refined pseudo labels
+  (https://arxiv.org/abs/2307.02249); Pixel-to-Prototype Contrast hỗ trợ
+  cross-view prototype consistency nhưng cảnh báo pseudo label yếu có thể làm
+  degeneration
+  (https://openaccess.thecvf.com/content/CVPR2022/html/Du_Weakly_Supervised_Semantic_Segmentation_by_Pixel-to-Prototype_Contrast_CVPR_2022_paper.html).
+  DTFD-MIL pseudo-bag nhắm WSI cực nhiều instance, không sửa identity cho bag
+  BTXRD nhỏ
+  (https://openaccess.thecvf.com/content/CVPR2022/html/Zhang_DTFD-MIL_Double-Tier_Feature_Distillation_Multiple_Instance_Learning_for_Histopathology_Whole_CVPR_2022_paper.html).
+  MHIM-MIL masking hard instance bị hoãn vì small lesion có thể chỉ có một
+  proposal hữu ích
+  (https://openaccess.thecvf.com/content/ICCV2023/papers/Tang_Multiple_Instance_Learning_Framework_with_Masked_Hard_Instance_Mining_for_ICCV_2023_paper.html).
+- Dossier machine-readable tracked tại
+  `artifacts/kaggle/rad_dino_mask_bag_label_granularity_s6_v1/kernel_version2_posthoc_failure_analysis.json`,
+  SHA-256
+  `7f30100cb2bcfb35782359a76052a9085903b5c616d12bdd7932618fd329db7e`.
+  Chưa đăng ký/implement/launch experiment mới; prediction S6 không đổi,
+  consumer/test vẫn khóa và collaborator output không truy cập.
+

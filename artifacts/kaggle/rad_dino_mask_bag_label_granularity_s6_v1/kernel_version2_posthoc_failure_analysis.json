@@ -1,0 +1,163 @@
+{
+  "analysis_id": "rad_dino_mask_bag_label_granularity_s6_v1_kernel_version2_posthoc_failure_analysis",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "analysis_role": "retrospective_failure_diagnosis_only_not_model_selection_or_s6_rescue",
+  "inputs": {
+    "terminal_evaluation_audit_sha256": "6973101bf4b6327b8e7acdcb11d2972e97efe3e4947a45e7ecad9054ba190958",
+    "prediction_pair_freeze_sha256": "203dc6435b661b7410331f3eefca20c14888bcd34890b5228b4c35a0cecd36e2",
+    "gt_blind_diagnostics_sha256": "370cf2ffd12d263a044dc0a2c007728b698af52a4da7b479e1bec54e398e666e",
+    "training_histories_sha256": "acea9f91561fa77d1f40d594eed959fb1ad96cb48b13ba99035f54fc4e7f3335",
+    "coarse_control_per_image_sha256": "1115ad601ba95061f14a19d8b04f68eca0ed8892f9eafa79e7c1565902633031",
+    "hierarchical_entropy_routed_per_image_sha256": "b81286c6d566a4045856365be4d72d8f58d69c6e1556fac9fdc1b0811fbbec7f",
+    "hierarchy_minus_control_paired_per_image_sha256": "8bd869ca89c1fee696a85cc9cfd92909523c563aa85413bfbb9763cbe5ab092d"
+  },
+  "cohort": {
+    "validation": 371,
+    "tumor": 184,
+    "normal": 187,
+    "small": 94,
+    "medium": 72,
+    "large": 18
+  },
+  "selection_transition": {
+    "changed_all_validation": 163,
+    "changed_tumor": 93,
+    "changed_normal": 70,
+    "tumor_improved": 34,
+    "tumor_worsened": 32,
+    "tumor_unchanged": 118,
+    "misses_recovered": 2,
+    "overlaps_lost": 7,
+    "control_complete_misses": 58,
+    "hierarchy_complete_misses": 63,
+    "signed_dice_delta_sum": 1.0209983337259643
+  },
+  "size_effect": {
+    "small": {
+      "mean_delta": 0.003475789701567075,
+      "improved": 13,
+      "worsened": 14,
+      "misses_recovered": 0,
+      "overlaps_lost": 7,
+      "control_misses": 35,
+      "hierarchy_misses": 42
+    },
+    "medium": {
+      "mean_delta": -0.003173514029373466,
+      "improved": 13,
+      "worsened": 17,
+      "misses_recovered": 1,
+      "overlaps_lost": 0,
+      "control_misses": 20,
+      "hierarchy_misses": 19
+    },
+    "large": {
+      "mean_delta": 0.05126483954964159,
+      "improved": 8,
+      "worsened": 1,
+      "misses_recovered": 1,
+      "overlaps_lost": 0,
+      "control_misses": 3,
+      "hierarchy_misses": 2
+    }
+  },
+  "subtype_identifiability": {
+    "correct_predictions": 86,
+    "incorrect_predictions": 98,
+    "validation_accuracy": 0.4673913043478261,
+    "validation_macro_recall": 0.25491841491841494,
+    "mean_delta_when_subtype_correct": 0.02124874997589792,
+    "mean_delta_when_subtype_incorrect": -0.008228511879604663,
+    "correct_group_improved_worsened": [23, 15],
+    "incorrect_group_improved_worsened": [11, 17],
+    "per_subtype_recall": {
+      "1": 0.76,
+      "2": 0.46153846153846156,
+      "3": 0.3,
+      "4": 0.3333333333333333,
+      "5": 0.0,
+      "6": 0.0,
+      "7": 0.2727272727272727,
+      "8": 0.16666666666666666,
+      "9": 0.0
+    }
+  },
+  "route_identifiability": {
+    "route_strength_vs_delta_spearman_all_tumor": 0.0694627550883689,
+    "route_strength_vs_delta_spearman_changed_tumor": 0.1050788082628319,
+    "route_strength_vs_absolute_delta_spearman_changed_tumor": 0.050907933272821095,
+    "predicted_subtype_probability_vs_delta_spearman": 0.07869100462508422,
+    "candidate_count_vs_delta_spearman": 0.026156298555393823,
+    "interpretation": "Entropy or subtype confidence does not identify when the hierarchical candidate correction will improve segmentation, so confidence-threshold routing is not supported."
+  },
+  "optimization_tradeoff": {
+    "coarse_control_epoch16": {
+      "binary_loss": 0.04027159404965805,
+      "consistency_loss": 0.05960222126487742,
+      "residual_drift": 2.511991959842131
+    },
+    "hierarchical_epoch16": {
+      "binary_loss": 0.10577841704701357,
+      "pathology_loss": 0.08222050290245982,
+      "subtype_loss": 0.42875828060077475,
+      "consistency_loss": 0.3018789737619818,
+      "residual_drift": 4.092310709111831
+    },
+    "interpretation": "The hierarchy fits the auxiliary labels but pays a large binary, consistency, and drift cost; auxiliary classification improvement is not aligned with candidate extent quality."
+  },
+  "ranking_effect": {
+    "control_mean_score_quality_spearman": 0.4094682374107493,
+    "hierarchy_mean_score_quality_spearman": 0.4174716673668328,
+    "control_selected_to_oracle_regret": 0.1762636019058288,
+    "hierarchy_selected_to_oracle_regret": 0.17071469791818772,
+    "control_top10_regret": 0.07218214881430315,
+    "hierarchy_top10_regret": 0.06977496408843677,
+    "interpretation": "The small average rank-quality gain is real but too weak and badly distributed: large benefits while small loses overlap support."
+  },
+  "causal_failure_conclusion": [
+    "The entropy route is not an observable reliability gate for localization quality.",
+    "The candidate bag cannot jointly learn subtype recognition and extent-sensitive localization reliably from the same lazy bag objective.",
+    "Subtype correctness is a conditional moderator, but using validation correctness or tuning a confidence threshold would be post-hoc leakage and is forbidden.",
+    "The next hypothesis must add reliable instance-level identity supervision from image labels or a separately frozen global context; it must not rerun hierarchy weights, entropy thresholds, epochs, fusion, or subgroup routing."
+  ],
+  "literature_assessment": [
+    {
+      "method": "INS instance-level weakly supervised contrastive and prototype learning",
+      "url": "https://arxiv.org/abs/2307.02249",
+      "transferable_point": "Directly train an instance classifier using true negatives from negative bags and prototype-refined pseudo labels, instead of assuming bag attention is an accurate localization score.",
+      "boundary": "T1 already rejected cross-fitted self-paced contrastive residuals, so any successor must be explicitly prototype-driven and decouple instance ranking from the bag-probability residual rather than relabel T1."
+    },
+    {
+      "method": "Pixel-to-Prototype Contrast",
+      "url": "https://openaccess.thecvf.com/content/CVPR2022/html/Du_Weakly_Supervised_Semantic_Segmentation_by_Pixel-to-Prototype_Contrast_CVPR_2022_paper.html",
+      "transferable_point": "Cross-view prototype consistency and class compactness can narrow the image-to-instance supervision gap.",
+      "boundary": "The paper also reports degeneration from inaccurate weak pseudo labels; semi-hard filtering and exact view consistency are mandatory if transferred."
+    },
+    {
+      "method": "DTFD-MIL",
+      "url": "https://openaccess.thecvf.com/content/CVPR2022/html/Zhang_DTFD-MIL_Double-Tier_Feature_Distillation_Multiple_Instance_Learning_for_Histopathology_Whole_CVPR_2022_paper.html",
+      "transferable_point": "Pseudo-bags address few bags with extremely many instances.",
+      "boundary": "BTXRD already has 2,981 train bags and modest candidate bags; repartitioning candidates does not add tumor identity and is not the next priority."
+    },
+    {
+      "method": "MHIM-MIL",
+      "url": "https://openaccess.thecvf.com/content/ICCV2023/papers/Tang_Multiple_Instance_Learning_Framework_with_Masked_Hard_Instance_Mining_for_ICCV_2023_paper.html",
+      "transferable_point": "Masking high-attention instances can expose hard evidence under bag supervision.",
+      "boundary": "BTXRD small lesions may have a single useful proposal, so masking the strongest proposal can destroy the only positive instance; this is deferred without proven redundancy."
+    }
+  ],
+  "forbidden_posthoc_actions": [
+    "No S6 entropy threshold sweep",
+    "No subtype-specific validation router",
+    "No hierarchy loss-weight or epoch sweep",
+    "No use of validation subtype correctness to modify frozen predictions",
+    "No consumer training"
+  ],
+  "safety": {
+    "predictions_modified": false,
+    "new_scientific_experiment_started": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  }
+}
