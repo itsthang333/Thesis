@@ -14061,3 +14061,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   package sẽ launch. Final package vẫn chỉ khác canonical wrapper đúng ba launch
   fields, private T4x2, input/GT/consumer/test safety đều giữ nguyên.
 
+### S8 Kaggle launch version 1 (2026-08-02T18:18:52+07:00)
+
+- Sau final fetch/collision check central `b50781dc581cdad51de36159dc8d515892b58bdd`
+  và collaborator `454b746b1832049e26260460f3130be4e665d2ab`, không có claim trùng,
+  đã push private kernel
+  `itsthang333/btxrd-skelex-reconstruction-selector-s8-v1`, **version 1**, URL
+  `https://www.kaggle.com/code/itsthang333/btxrd-skelex-reconstruction-selector-s8-v1`,
+  accelerator `NvidiaTeslaT4` với wrapper hard guard đúng hai T4.
+- Exact execution checkout `819e6aff7031a987a14156fbad0ff6b313a5eb2e`; uploaded wrapper SHA-256
+  `dc0cc8280822b47eb0b023e1b0dc6a2edbb55eb9542e877265abfeb64a50f74c`;
+  launch-binding raw/canonical-LF SHA-256
+  `8c37f3b42f21b209e2a197ca5c663c66e09e3e4f6d56bad34869d2c977be7d09 /`
+  `fb76a75b30caafe45991f61e299c38c152b42173dc7aae12d912922304d5fd02`;
+  metadata SHA-256
+  `471583126dacd4199b1921126809ccc92e8b489962c0900b7429c7d8380661e1`.
+  Kaggle bỏ qua ba keyword không hợp lệ nhưng kernel push thành công; input,
+  code, machine shape và scientific protocol không đổi.
+- Tại launch chưa có output/prediction, chưa đọc validation GT, chưa train
+  consumer, chưa mở BTXRD test và không truy cập collaborator output. Chỉ thực
+  hiện một bounded status check ở nhịp hợp lý; không polling/monitor lặp.
+
