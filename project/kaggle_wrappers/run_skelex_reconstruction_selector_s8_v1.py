@@ -21,16 +21,19 @@ LAUNCH_BINDING_READY = False
 CHECKOUT_COMMIT = "UNBOUND"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "b4543aeb9430345c9b789384943bd218816a85dd"
+CORRECTION_SOURCE_COMMIT = "bc7816ff6cee5a7c5e954668d1255d1b1ad04533"
 PROTOCOL_RELATIVE = Path("artifacts/research_protocols/skelex_reconstruction_selector_s8_v1.json")
 PROTOCOL_SHA256 = "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07"
+ADDENDUM_RELATIVE = Path("artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_auditor_completeness_addendum.json")
+ADDENDUM_SHA256 = "dabee40fc3b607df3f82105ab9122b2b80b37c2305d7c5ed17c1c8ae1c3dca0e"
 AUDITOR_RELATIVE = Path("project/audit_skelex_reconstruction_selector_s8_output.py")
-AUDITOR_SHA256 = "613b5b4244f001765dd705b53eb0edde755bb224780022ea2d0ba4eb9055b54d"
+AUDITOR_SHA256 = "144ecf5c07eceb8b29e0a6107b49d2f31ddbbd8cea8548464f3f4d1bc58efde3"
 RUNNER_RELATIVE = Path("project/run_skelex_reconstruction_selector_s8.py")
-RUNNER_SHA256 = "a76db937db3654ca769a419f2c1713e99ae0fffe3521665bada14e62cdee43ce"
+RUNNER_SHA256 = "722c7a9692b80009ddfbfe43400b5f9d083b4ba57b084c7408db9206bfd2c268"
 CORE_RELATIVE = Path("project/models/skelex_reconstruction_selector.py")
-CORE_SHA256 = "df93b09b7c1c311c1977889705efe1709ab178cb60d95366d06405598280a7e5"
+CORE_SHA256 = "e37d83f89191c1c3a2af90be5325c7523a4a2c958adbb643ace9fa24e26cffcb"
 TEST_RELATIVE = Path("tests/test_skelex_reconstruction_selector.py")
-TEST_SHA256 = "010b47c60447bd4064ec805c56f43b0c9bb9abe44ceaa88d7f1860e640c8e3ea"
+TEST_SHA256 = "6d9029428ce6315c779badf506ffaa131a6f9ea4d280124741053402463302b1"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 GIT_SPLIT_SHA256 = "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
 TRAIN_CANDIDATE_MANIFEST_SHA256 = "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1"
@@ -38,7 +41,7 @@ TRAIN_PSEUDO_MANIFEST_SHA256 = "5aec58ce402da70189c2776453f614e21e5b46fde36b408f
 VAL_CANDIDATE_MANIFEST_SHA256 = "3e9396f532c793258919a1d99aa3dcef00523436c853207b8d7123e5dc133090"
 VAL_PSEUDO_MANIFEST_SHA256 = "286d1fce0bcbd0f96a15b6b386ad27a0edac3500a63c5b87e16f9075d6c6320e"
 CACHE_FREEZE_SHA256 = "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c"
-CACHE_MANIFEST_SHA256 = "8a236bdd735c18c62014e206e122ba5cee21c84fd090289dfe9a8168307cc1e"
+CACHE_MANIFEST_SHA256 = "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e"
 CACHE_WRAPPER_AUDIT_SHA256 = "cc2528131003d8b579fd0b0fd0529df8fdd7b0e4e4c92d0a747a6bee5629eafd"
 BASELINE = {
     "freeze": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
@@ -86,17 +89,25 @@ def run(command: list[str], *, cwd: Path) -> None:
 def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
     if not LAUNCH_BINDING_READY or KERNEL_VERSION < 1:
         raise RuntimeError("S8 launch binding is not frozen")
-    if len(CHECKOUT_COMMIT) != 40 or len(SOURCE_COMMIT) != 40:
+    if (
+        len(CHECKOUT_COMMIT) != 40
+        or len(SOURCE_COMMIT) != 40
+        or len(CORRECTION_SOURCE_COMMIT) != 40
+    ):
         raise RuntimeError("S8 checkout/source commit is unbound")
-    for value in (PROTOCOL_SHA256, AUDITOR_SHA256, RUNNER_SHA256, CORE_SHA256, TEST_SHA256):
+    for value in (PROTOCOL_SHA256, ADDENDUM_SHA256, AUDITOR_SHA256, RUNNER_SHA256, CORE_SHA256, TEST_SHA256):
         if len(value) != 64:
             raise RuntimeError("S8 provenance hash is unbound")
     run(["git", "clone", "--filter=blob:none", "--no-checkout", REPOSITORY, str(SOURCE)], cwd=WORK)
     run(["git", "checkout", "--detach", CHECKOUT_COMMIT], cwd=SOURCE)
     run(["git", "merge-base", "--is-ancestor", SOURCE_COMMIT, CHECKOUT_COMMIT], cwd=SOURCE)
+    run(["git", "merge-base", "--is-ancestor", CORRECTION_SOURCE_COMMIT, CHECKOUT_COMMIT], cwd=SOURCE)
     protocol_path = SOURCE / PROTOCOL_RELATIVE
     if hash_file(protocol_path) != PROTOCOL_SHA256:
         raise RuntimeError("S8 protocol hash mismatch")
+    addendum_path = SOURCE / ADDENDUM_RELATIVE
+    if hash_file(addendum_path) != ADDENDUM_SHA256:
+        raise RuntimeError("S8 auditor-completeness addendum hash mismatch")
     source_hashes = {
         str(AUDITOR_RELATIVE): AUDITOR_SHA256,
         str(RUNNER_RELATIVE): RUNNER_SHA256,
@@ -107,6 +118,7 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
         if canonical_hash(SOURCE / relative) != expected:
             raise RuntimeError(f"S8 source hash mismatch: {relative}")
     protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+    addendum = json.loads(addendum_path.read_text(encoding="utf-8"))
     if (
         protocol.get("status") != "FROZEN_PRELAUNCH"
         or protocol.get("experiment_id") != "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1"
@@ -114,6 +126,27 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
         or protocol.get("collaborator_output_accessed") is not False
     ):
         raise RuntimeError("S8 protocol safety/provenance mismatch")
+    overrides = addendum.get("canonical_lf_source_overrides", {})
+    if (
+        addendum.get("status") != "FROZEN_IMPLEMENTATION_AND_AUDIT_COMPLETENESS_CORRECTION"
+        or addendum.get("experiment_id") != "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1"
+        or addendum.get("scientific_source_commit") != SOURCE_COMMIT
+        or addendum.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
+        or addendum.get("scientific_protocol_sha256") != PROTOCOL_SHA256
+        or addendum.get("scientific_change") is not False
+        or not isinstance(overrides, dict)
+        or set(overrides) != set(source_hashes)
+    ):
+        raise RuntimeError("S8 auditor-completeness addendum provenance mismatch")
+    original_hashes = protocol.get("scientific_source", {}).get("canonical_lf_sha256", {})
+    for relative, corrected in source_hashes.items():
+        entry = overrides.get(relative)
+        if (
+            not isinstance(entry, dict)
+            or entry.get("previous_sha256") != original_hashes.get(relative)
+            or entry.get("corrected_sha256") != corrected
+        ):
+            raise RuntimeError(f"S8 source override mismatch: {relative}")
     return source_hashes, protocol
 
 
@@ -160,7 +193,17 @@ def download_skelex() -> tuple[Path, dict[str, object]]:
 
 def run_static_tests() -> None:
     run([sys.executable, "-m", "py_compile", str(RUNNER_RELATIVE), str(CORE_RELATIVE), str(AUDITOR_RELATIVE)], cwd=SOURCE)
-    run([sys.executable, "-m", "pytest", "-q", str(TEST_RELATIVE)], cwd=SOURCE)
+    run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            str(TEST_RELATIVE),
+            "tests/test_kaggle_wrapper_skelex_reconstruction_s8_v1.py",
+        ],
+        cwd=SOURCE,
+    )
 
 
 def prepare_split() -> Path:
@@ -229,7 +272,9 @@ def write_binding(source_hashes: dict[str, str]) -> Path:
         "kernel_version": KERNEL_VERSION,
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
+        "correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "auditor_completeness_addendum_sha256": ADDENDUM_SHA256,
         "bound_wrapper_sha256": canonical_hash(Path(__file__)),
         "independent_auditor_sha256": AUDITOR_SHA256,
         "source_hashes": source_hashes,
@@ -281,7 +326,9 @@ def audit_wrapper_output(*, source_hashes: dict[str, str], t4: dict[str, object]
         "bound_wrapper_sha256": canonical_hash(Path(__file__)),
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
+        "correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "auditor_completeness_addendum_sha256": ADDENDUM_SHA256,
         "independent_auditor_sha256": AUDITOR_SHA256,
         "source_hashes": source_hashes,
         "t4x2": t4,

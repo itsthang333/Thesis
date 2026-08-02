@@ -12,7 +12,10 @@ def test_s8_wrapper_is_hash_bound_and_fail_closed_before_launch_binding() -> Non
     assert "LAUNCH_BINDING_READY = False" in source
     assert 'CHECKOUT_COMMIT = "UNBOUND"' in source
     assert 'SOURCE_COMMIT = "b4543aeb9430345c9b789384943bd218816a85dd"' in source
+    assert 'CORRECTION_SOURCE_COMMIT = "bc7816ff6cee5a7c5e954668d1255d1b1ad04533"' in source
     assert 'PROTOCOL_SHA256 = "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07"' in source
+    assert 'ADDENDUM_SHA256 = "dabee40fc3b607df3f82105ab9122b2b80b37c2305d7c5ed17c1c8ae1c3dca0e"' in source
+    assert 'CACHE_MANIFEST_SHA256 = "8a236bdd735c18c62014e206e122ba5cee21c84fd0902892dfe9a8168307cc1e"' in source
     assert 'EXPECTED_TRANSFORMERS_VERSION = "4.50.2"' in source
     assert '"model.safetensors": "81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8"' in source
     assert '"--maximum-candidates", "81"' in source
