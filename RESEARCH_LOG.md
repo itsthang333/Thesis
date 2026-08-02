@@ -13769,3 +13769,78 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   gate, chưa được đăng ký/implement/launch successor trước khi phân tích định
   lượng cơ chế S7 và push kết luận phần loại bỏ/kế thừa.
 
+### S7 quantitative failure-analysis gate — hoàn tất (2026-08-02)
+
+- Read-only analyzer
+  `project/analyze_mask_bag_global_local_instance_s7_failure.py` (SHA-256
+  `50e4e813c29250d69c46c448bd26abd6683a93a25ced22dfee7ad8f92cdd4bbe`)
+  join exact frozen pair/evaluation/cache/history; nó không sửa prediction, không
+  sweep/rescue/chọn arm và chỉ đọc validation-GT-derived table đã freeze. Dossier
+  `artifacts/kaggle/rad_dino_mask_bag_global_local_instance_s7_v1/kernel_version1_retry1_failure_analysis.json`
+  có SHA-256
+  `24ea83383974517288e78d66b10030a2174c28b6f99b99b16aba67e6b69ef9b5`;
+  bind terminal audit `b6bd5bb9...ebfef`, two score manifests, cache manifest
+  `8a236bdd...cc1e`, history `ff0e0eec...99b8` và frozen per-image/paired tables.
+- **Không phải lỗi implementation:** exact identity tái lập Geometry-v3, `742`
+  score/map mỗi arm và pair freeze đã pass; evaluator/decision hashes và cohort
+  đều khớp. Đây là hypothesis failure sau khi fit hoàn tất `40` epoch trên T4x2.
+  Model đổi winner `182/371` (`49.06%`): `99/184` tumor (`53.80%`) và `83/187`
+  normal (`44.39%`). Các ca bị đổi có accepted base top-margin trung bình chỉ
+  `0.22288` so với `0.88633` ở ca giữ nguyên, nên head đúng là tác động vào bag
+  mơ hồ, nhưng tác động không có calibration: residual advantage của winner mới
+  trung bình `1.57268`, vượt base penalty `0.57749` và tạo primary new-vs-old
+  margin `0.99519`.
+- **Failure mechanism 1 — target tự tham chiếu, không có nhãn identity mới.** Với
+  tumor bag, I-projection tạo `q_i=sigmoid(z_i+b)`, là hàm đơn điệu của chính
+  current logit `z_i`; local rule lại đặt current argmax thành `1`. Vì vậy target
+  bảo toàn thứ hạng đang có rồi self-reinforce winner, thay vì cho biết candidate
+  nào trùng tổn thương. Mọi candidate normal có target `0` có thể cho tín hiệu
+  normal-vs-tumor, nhưng không định danh vị trí bên trong positive bag. Dữ liệu
+  động học phù hợp cơ chế này: `55.04%` positive train bag từng đổi local top,
+  `47.58%` khác winner từ epoch 1 đến 40; sau khi mass ổn định ở epoch 21 vẫn chỉ
+  `22.24%` bag từng đổi, nghĩa là phần lớn winner đã khóa vào fixed point tự sinh.
+  Instance loss giảm `0.11364 -> 0.09288` nhưng validation score-quality
+  Spearman giảm trung bình `-0.09443`, chứng minh tối ưu pseudo-target không đồng
+  nghĩa tối ưu lesion identity.
+- **Failure mechanism 2 — residual quá mạnh nhưng không mang ordering evidence.**
+  Raw drift tăng `74.71x`, từ `0.15745` lên `11.76377`; dù coefficient chỉ
+  `0.001`, drift term cuối đã là `0.01176` trên total loss `0.10936`. Mean absolute
+  residual ở ca đổi là `2.95721` so với `2.42514` ở ca giữ. Tuy nhiên Spearman
+  giữa Dice delta và mean/max residual chỉ `0.0031/-0.0279`; trong ca tumor bị
+  đổi, residual advantage càng lớn còn có quan hệ âm với outcome (`rho=-0.1735`).
+  Đây không phải thiếu residual capacity mà là thiếu tín hiệu xếp hạng ngoại
+  sinh và thiếu restraint; tăng capacity/epoch hay giảm mass hậu nghiệm không
+  giải quyết đúng nguyên nhân.
+- **Failure localization theo subgroup:** `99` tumor winner đổi gồm small/medium/
+  large `46/40/13`. Trong medium, `20` xấu hơn, `12` tốt hơn, `8` hòa; delta sum
+  `-3.03961`, lớn hơn magnitude toàn overall `-2.97504`, nên medium chịu toàn bộ
+  tổn thất ròng. Small `19/15/12` xấu/tốt/hòa, large `4/8/1`; tín hiệu large
+  dương không được promote vì `n=18` và CI qua `0`. Regret tăng trung bình
+  `+0.01617`, riêng ca đổi `+0.03005`. Toàn bộ `182` transition vẫn cùng source
+  `layercam`, nhưng chỉ `9.09%` tumor transition ở cùng family, cho thấy head chủ
+  yếu nhảy giữa prompt/family trong cùng proposal source mà không biết family
+  nào spatially đúng.
+- **Không thể quy lỗi chỉ cho extent:** medium selected-to-GT area median giảm
+  `1.30301 -> 1.22079` nhưng Dice giảm `-0.04222`; small vẫn over-segment cực mạnh
+  (`36.3459x -> 30.2509x`) trong khi mean selected area gần như không đổi; large
+  median coverage còn `0.42892 -> 0.40526`. Trong changed tumor, area delta và
+  Dice delta gần như độc lập (`rho=-0.0119`). Vì vậy nhận định signed extent theo
+  nhóm vẫn đúng về cấu trúc, nhưng một extent transform/gate đơn độc không sửa
+  được medium identity và không được dùng rescue S7.
+- **Loại bỏ:** current-logit I-projection + forced-current-argmax target, exact
+  mass/epoch schedule S7, và unbounded scalar residual với drift `0.001` đều bị
+  retire; không mass/epoch/regularization/fusion/area sweep hậu nghiệm. Không
+  quảng bá true-negative all-instance head hay large delta như cải tiến đã chứng
+  minh. **Giữ lại:** accepted Geometry-v3 gallery/base, exact cache/provenance,
+  pair-freeze/auditor/evaluator/decision infrastructure và failure evidence về
+  ambiguous low-margin bags. True-negative evidence chỉ có thể xuất hiện trong
+  successor như auxiliary có matched control, không được giả định là hữu ích.
+- **Điều kiện cho successor:** phải đưa vào candidate-identity evidence độc lập
+  với current selector logit (không pseudo-label chính argmax), có restraint/
+  abstention để giữ accepted winner khi evidence không đủ, và tách identity khỏi
+  signed extent. Nếu dùng expert theo nhóm, router phải hoàn toàn GT-free và
+  chứng minh tốt hơn shared identity control; selected area đơn độc và cross-view
+  co-witness form đã fail đều bị cấm. Failure-analysis gate S7 nay hoàn tất;
+  consumer và BTXRD test vẫn khóa. Chỉ sau commit/push note+dossier này mới được
+  nghiên cứu, đăng ký và launch successor không trùng.
+
