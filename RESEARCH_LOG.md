@@ -13108,3 +13108,50 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   experiment: chưa claim/implement/launch, chưa mở scientific input/prediction/
   validation GT/consumer/test và không chạy compute nặng.
 
+### Chọn successor sau failure-analysis gate S6 — direct instance self-training (2026-08-02)
+
+- Chuỗi negative evidence loại một bản sao INS/T1 đơn giản: v6 dùng normal-bag
+  negatives + detached latent winner nhưng Dice chỉ `0.21789918`; T1 dùng OOF
+  top-1 self-paced contrastive residual, pass count/AUROC/view gate nhưng Dice
+  `0.24282104`, thấp hơn Geometry-v3; S4 cluster và S6 subtype hierarchy cũng
+  fail. Vì vậy không dùng lại hard top-1 target, prototype/winner confirmation,
+  bag BCE/attention pooling hoặc entropy router dưới tên mới.
+- Primary source mới được đọc đầy đủ ở cấp mechanism là Ma et al., *Rethinking
+  Multiple Instance Learning: Developing an Instance-Level Classifier via
+  Weakly-Supervised Self-Training*, arXiv:2408.04813,
+  https://arxiv.org/html/2408.04813 . Paper chuyển MIL thành semi-supervised
+  **instance classification**: mọi instance trong negative bag là true negative;
+  mọi instance trong positive bag là unlabeled; pseudo label mềm được entropy-
+  projected theo một global positive-mass constraint, sau đó local constraint
+  bắt buộc mỗi positive bag có ít nhất một positive instance. Classifier được
+  cập nhật trên toàn bộ instance, không chỉ một easy winner. Trên CAMELYON16,
+  paper báo adaptive mass `0.5 -> mu`, global+local constraints và soft labels
+  cần thiết; external grid `mu={0.10,0.15,0.20,0.25}` có best reported ở `0.15`.
+  Đây chỉ là rationale/giá trị cố định từ nguồn ngoài, không chuyển metric.
+- INS (Qu et al., arXiv:2307.02249,
+  https://arxiv.org/abs/2307.02249 ) xác nhận true-negative bags và direct
+  instance classifier/prototype refinement có thể giảm lazy MIL. Tuy nhiên
+  IWSCL/prototype pseudo-label implementation đầy đủ không được chọn vì phần
+  top-instance/self-paced contrast đã gần T1 và sẽ không tạo giá trị thông tin
+  đủ mới. MIL-SSL global+local soft assignment mới là delta chưa chạy trong log.
+- Successor tĩnh dự kiến là một **zero-initialized residual trên exact accepted
+  Geometry-v3 candidate logits**, nhưng loss hoàn toàn ở cấp instance. Epoch-wise
+  soft targets dùng toàn bộ train-tumor candidates với global weighted mass
+  schedule `0.5 -> 0.15` trong `20` epoch và local one-positive-per-bag; toàn bộ
+  train-normal candidates có target `0`. Trọng số equal image -> family ->
+  candidate ngăn count/family shortcut. Tổng fit dự kiến `40` epoch, seed `42`,
+  không early stop/sweep. Original/flip consistency và small drift anchor được
+  giữ như integrity regularization, không phải target generator.
+- Để cô lập selector khỏi image classification/count shortcut, inference dự
+  kiến chỉ đổi argmax candidate bằng base+instance residual; exact accepted bag
+  probability và physical mask gallery được giữ nguyên. Baseline identity và
+  primary maps sẽ freeze thành matched pair trước GT. Đây khác T1 (hard OOF
+  subset + supervised contrastive + learned bag probability), v6/S6 (bag-level
+  loss) và collaborator `139ba76` (cross-view co-witness/rich gallery).
+- Mục này mới là source-backed static design selection, **chưa phải claim**.
+  Chưa mở real cache/data, chưa fit/prediction/GT/consumer/test. Phải implement
+  và synthetic-test data-independent, audit collision lại, rồi mới đăng ký
+  `ĐANG LÀM`/push trước mọi real cache load hoặc Kaggle launch. Nếu static audit
+  cho thấy objective trùng hoặc constraint không xác định được fail-closed thì
+  retire trước claim thay vì chi compute.
+
