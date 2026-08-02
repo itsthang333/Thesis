@@ -1,0 +1,53 @@
+{
+  "audit_timestamp_utc": "2026-08-02T06:58:35.4132660Z",
+  "auditor_correction_source_commit": "7ca2f4dec72af5f509e52786980321d255a7eb68",
+  "auditor_numeric_correction_sha256": "b0dca40bf4f8bd933a902facb7bfdf5ec393c429672b0beb0b0594f2d15dfc63",
+  "authorized_launch": true,
+  "binding_sha256": "f82e511bc6fe4eb60a34e2a4e0e65d1d3d9d4745dea4b37094108be6dd2152ef",
+  "bound_wrapper_sha256": "d84c49f517024f2866e2ab5bf347183489fbc83a6cd554ce713a8d956b0b1127",
+  "claim_visible_on_central": true,
+  "collaborator_head": "dc00062624026870a2856e5b569bc5877d311997",
+  "collaborator_output_accessed": false,
+  "consumer_trained": false,
+  "execution_checkout": "e10db06537eedb4314faa36f173e96d0643b54ab",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "focused_tests": {
+    "failed": 0,
+    "passed": 26,
+    "seconds": 5.09
+  },
+  "input_sources": {
+    "dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1",
+    "kernel": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+  },
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1",
+  "kernel_version": 2,
+  "metadata_sha256": "489127ab983d604d776dfa3e7d1634a867c13d7e31758d65effb421d790972e6",
+  "no_active_scientific_collision": true,
+  "package": {
+    "directory_count": 0,
+    "file_count": 2,
+    "files": {
+      "btxrd-rad-dino-mask-bag-label-granularity-s6-v1.py": {
+        "bytes": 20146,
+        "sha256": "d84c49f517024f2866e2ab5bf347183489fbc83a6cd554ce713a8d956b0b1127"
+      },
+      "kernel-metadata.json": {
+        "bytes": 630,
+        "sha256": "489127ab983d604d776dfa3e7d1634a867c13d7e31758d65effb421d790972e6"
+      }
+    }
+  },
+  "protocol_sha256": "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+  "py_compile_pass": true,
+  "schema_version": 1,
+  "scientific_source_commit": "543ee89654a0ed00e80ded16924a760585337924",
+  "scientific_source_or_prediction_recipe_changed_from_v1": false,
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "status": "PASS",
+  "template_sha256": "c04c288501b95f0408c21e9e5cb4eb6bfcb1af159b82572c3eb26d63acf17492",
+  "test_evaluated": false,
+  "validation_gt_read": false,
+  "version1_error_audit_sha256": "1dacee061698b968ae6b5ca97a3e44baba22385ab6f8c23bfdc97048bc7cd933",
+  "wrapper_binding_inverse_exact": true
+}

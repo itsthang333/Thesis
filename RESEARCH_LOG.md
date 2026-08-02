@@ -12895,3 +12895,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 - Chưa bind/package/push version 2 và không tái sử dụng output v1 để mở GT.
   Prediction/validation GT/consumer/test tiếp tục khóa.
 
+### S6 kernel-v2 binding và final prelaunch PASS (2026-08-02)
+
+- Sau khi wrapper/correction commit `e10db06537eedb4314faa36f173e96d0643b54ab`
+  visible central, exact-checkout binder integration cùng toàn focused suite pass
+  `26/26`. Binder khóa version `2` tới commit này, scientific source/protocol
+  cũ và correction source `7ca2f4d...`; binding SHA-256
+  `f82e511bc6fe4eb60a34e2a4e0e65d1d3d9d4745dea4b37094108be6dd2152ef`.
+- Bound wrapper SHA-256
+  `d84c49f517024f2866e2ab5bf347183489fbc83a6cd554ce713a8d956b0b1127`
+  inverse-reconstruct exact unbound template SHA
+  `c04c288501b95f0408c21e9e5cb4eb6bfcb1af159b82572c3eb26d63acf17492`
+  với đúng ba launch replacement. Actual source closure chỉ đổi hai auditor/test
+  hash đúng correction addendum; mọi scientific source hash khác exact protocol.
+- Fresh v2 package chỉ có bound wrapper `20,146` byte và unchanged metadata
+  `630` byte SHA-256 `489127ab...72e6`, không directory thừa; bound-wrapper
+  `py_compile` pass. Final prelaunch audit SHA-256
+  `d25b506f269a6bdfad17d922e59ed5bd0a6128063bfb3507e4693d9a323b7861`
+  có `status=PASS`, `authorized_launch=true`.
+- Chưa launch version 2 và chưa mở lại output v1/validation GT. Phải commit/push
+  exact binding/audit/log này, fetch lại central/collaborator và xác nhận không
+  collision trước một correction rerun duy nhất. Consumer/test tiếp tục khóa.
+
