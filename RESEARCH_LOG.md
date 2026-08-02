@@ -13299,3 +13299,13 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   S6-regression `24/24`, không real input/prediction/GT/consumer/test. Runner,
   protocol, auditor và Kaggle wrapper chưa được claim là ready ở registration.
 
+### S7 registration visibility lock (2026-08-02)
+
+- Exact registration commit
+  `d316269b141664b9881eea601491d0fe45227d80` đã push và fetch lại byte-visible
+  trên `origin/research-wsss-improvement` trước mọi real-cache action. Claim
+  `EXP-20260802-codex-s7-global-local-instance-v1` hiện **ĐANG LÀM**; bước kế là
+  hoàn thiện runner/protocol/independent auditor/wrapper và static preflight,
+  chưa launch, chưa mở real cache/validation GT, chưa prediction, consumer/test
+  vẫn khóa.
+
