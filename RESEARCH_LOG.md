@@ -14325,3 +14325,37 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   source duy nhất sang private dataset; prelaunch audit phải fail nếu còn
   producer kernel source. Validation GT/consumer/test/collaborator output khóa.
 
+### S8 audit-only v2 exact binding và prelaunch PASS (2026-08-02)
+
+- Private dataset `itsthang333/btxrd-skelex-s8-v1-frozen-output` trả trạng thái
+  `ready` trong một bounded dataset-status query. Binder lần đầu được gọi bằng
+  một full hash gõ sai cho short commit `492e243` nên `git show` fail trước khi
+  tạo wrapper/binding; temp package vẫn rỗng. Rerun với exact
+  `492e2435e8e2203768b5c4cb80acd66441b7b07e` thành công. Đây là static local
+  provenance error đã sửa, không input/prediction/GT hay kernel action.
+- Version-2 package ignored tại
+  `tmp/kaggle/skelex_reconstruction_selector_s8_audit_v2_launch_492e243` bind
+  exact checkout trên, version `2`. Bound wrapper SHA
+  `6c7820946159269d86afcb14f005aa4f01fab304a3b45b656733fb4f381d3273`;
+  launch-binding raw/canonical-LF SHA
+  `9afd529a97ccdb46023981533e1ca31a78e6ec783b7771af702a513c07f1bb26 /`
+  `add919baa95c9f57d0f17ea932c2c0ccd08110f60ead8b3401f8efcf834d4842`;
+  metadata SHA
+  `cf293291fb6d6361ae54bf6d007e6d4b1120e6fd5be2037ccdb7af6170348909`.
+  Metadata có duy nhất dataset source frozen-output, `kernel_sources=[]`, private,
+  T4; invalid terminal producer kernel source đã bị loại hoàn toàn.
+- Static package auditor
+  `project/audit_skelex_reconstruction_selector_s8_audit_v2_prelaunch.py` có
+  LF SHA `88ffc378d28dfe37570c54010fb74e661a743cc513a7b0b86639fcd14fe91a78`.
+  Lần Ruff đầu báo E402 do module docstring đặt sau future import; đã sửa thứ tự
+  import, sau đó Ruff/`py_compile` PASS. Prelaunch artifact
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_audit_v2_prelaunch_audit.json`
+  canonical-LF SHA
+  `1673a4f009fcf2d0759a543cd2302fdbda91e6cb7debd9395bdeae47bf08ab10`
+  trả `S8_AUDIT_ONLY_V2_FROZEN_PRELAUNCH_PASS`: inverse template, checkout,
+  protocol/auditor/transport corrections, archive/pair, dataset-only metadata,
+  T4x2 declaration và mọi safety lock đều khớp.
+- Chưa push Kaggle version 2 ở mục này. Chỉ sau commit/push audit+log này và
+  final fetch/collision check mới upload đúng package; version 2 chỉ audit exact
+  predictions cũ, không inference mới. Validation GT/consumer/test khóa.
+
