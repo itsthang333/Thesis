@@ -61,13 +61,13 @@
     "sha256": "0950ed5063e932e3988b97fff590945ecaf37d27fbce84a50ba216e2045ead8a"
   },
   "source_files": {
-    "RICH_GALLERY_CROSS_VIEW_CANDIDATE_REPRESENTATION_DESIGN.md": "1057af13010d9605fa597a3135edda3d63a1b6e37c5bf0d5b3f4d41495c155ec",
-    "project/audit_rich_gallery_cross_view_cowitness_output.py": "fa72f884cd4a99b1d07e9ba16a050340128d3a12435fb7a8b8639af6357d9182",
-    "project/audit_split_manifest_semantic_bridge.py": "3d7900e906455dc0c2bc2b7a13f0c90fc5108ab93add6d0f90efa58cd956a8bb",
-    "project/build_rich_gallery_cross_view_pairs.py": "17324e1428cc6e2cd73372369eb8c40bcc42379ffaea05d469cf242f2573622b",
-    "project/evaluate_rich_gallery_cross_view_cowitness_pair.py": "6d8e9a5ba6eac0a494b7f4c97c540845d94f34c8e6687d41ece32d90aa6063cf",
-    "project/models/rich_gallery_cross_view_cowitness.py": "f32c1b35bb0986dcad687cfc0ce9b3f24f2fde7007a74e67a6698627b6fd6414",
-    "project/run_rich_gallery_cross_view_cowitness_pair.py": "9b5fbeb1588dbdb041b2efe0c175974b30da6455217b5685f8853ecc5745e1e7"
+    "RICH_GALLERY_CROSS_VIEW_CANDIDATE_REPRESENTATION_DESIGN.md": "bc6d32274a10333c0836d3e5d2659d4bee3c74b80f2de5f70880f545ea422011",
+    "project/audit_rich_gallery_cross_view_cowitness_output.py": "512b258d096e2a5bd628ae006ed2dd0f2d6465e2606b6012e0a993e1ed4aa383",
+    "project/audit_split_manifest_semantic_bridge.py": "17abf369fa05bef011e372d3c3ea63828bdb30195cdd863a65ef413b441c3c05",
+    "project/build_rich_gallery_cross_view_pairs.py": "28231b309e623c2b3afca7c5a642f7e5f16f0646b7aa09fd059331989abb251b",
+    "project/evaluate_rich_gallery_cross_view_cowitness_pair.py": "ab34b4eb30352ba1e66815f2b5afd90e23b08d2b3ebd2e50b3e841af383110b8",
+    "project/models/rich_gallery_cross_view_cowitness.py": "ebf3da04ff3e4bab1b7ce1e151ae533c94713a58c1f9fb9f9ae02af60a75857b",
+    "project/run_rich_gallery_cross_view_cowitness_pair.py": "3676209d6c15b185cf328ac34d5c289ab5a481dc292cb222d8e6a919f492ef47"
   },
   "split": {
     "later_canonical_sha256": "7b16771a634e423d2d4ce7d5a835e6ea5ff6d1a422f124aab8019ed53512529c",
