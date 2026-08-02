@@ -8,7 +8,10 @@ Pure computation helper — no I/O. Called from generate_pseudo_masks.py and inf
 import numpy as np
 import torch
 
-from models.layercam import LayerCAM
+try:  # Support repository-root and legacy `PYTHONPATH=project` entrypoints.
+    from ..models.layercam import LayerCAM
+except ImportError:  # pragma: no cover - legacy scripts
+    from models.layercam import LayerCAM
 
 
 def generate_fused_cam(

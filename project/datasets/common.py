@@ -8,7 +8,10 @@ import torch
 from PIL import Image, ImageFile, ImageOps
 from torchvision import transforms
 
-from config import IMAGENET_MEAN, IMAGENET_STD
+try:  # Support both `project.datasets` and legacy `PYTHONPATH=project` entrypoints.
+    from ..config import IMAGENET_MEAN, IMAGENET_STD
+except ImportError:  # pragma: no cover - exercised by legacy script entrypoints
+    from config import IMAGENET_MEAN, IMAGENET_STD
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 

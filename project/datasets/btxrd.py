@@ -13,7 +13,7 @@ import torch
 from PIL import Image, ImageDraw
 from torch.utils.data import Dataset
 
-from datasets.common import (
+from .common import (
     IMAGE_EXTENSIONS,
     apply_clahe,
     make_classification_transform,

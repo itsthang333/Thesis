@@ -6,7 +6,10 @@ import numpy as np
 import torch
 from PIL import Image
 
-from config import IMAGENET_MEAN, IMAGENET_STD
+try:  # Support repository-root and legacy `PYTHONPATH=project` entrypoints.
+    from ..config import IMAGENET_MEAN, IMAGENET_STD
+except ImportError:  # pragma: no cover - legacy scripts
+    from config import IMAGENET_MEAN, IMAGENET_STD
 
 
 def _to_uint8(array: np.ndarray) -> np.ndarray:

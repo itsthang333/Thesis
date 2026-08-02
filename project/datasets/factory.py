@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Sequence
 
-from datasets.btxrd import BTXRDClassificationDataset, BTXRDSegmentationDataset
+from .btxrd import BTXRDClassificationDataset, BTXRDSegmentationDataset
 
 
 def build_classification_dataset(

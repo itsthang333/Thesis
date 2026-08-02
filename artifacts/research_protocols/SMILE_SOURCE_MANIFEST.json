@@ -1,0 +1,24 @@
+{
+  "combined_sha256": "3873bbc0dabfb07c291de3bfd275ea71e3f4dabd5600ba7aeabb129967cf1075",
+  "files": {
+    "artifacts/research_protocols/smile_rich_gallery_v1.json": "b79aa0c42b694d6fe7986e74be062296e424100513a5ad188444b38a20a73af6",
+    "project/__init__.py": "023ed9beb57920f6cbf3b8deb581cedd7f5fbf8e04aecf2ad579f7bc2abbf77e",
+    "project/config.py": "dd7392e2fbdd05b10b63d24151a42b0050f2d739c6c66cb4b8eed519e503d4c3",
+    "project/datasets/__init__.py": "e3124d19dd67de3f7e1f2b10189424b3632bc374c5ff925122f66a4de812e5ff",
+    "project/datasets/btxrd.py": "144663378b53743076270440adbe6b6cc0616623565430d758c3c1c2ac3d1a2c",
+    "project/datasets/common.py": "192924a0b297add2907e5244588155cb34f930177fdbfdad26a3f4610e5124ef",
+    "project/datasets/factory.py": "e32450ce4b26c21beb4751e7b6251379b8ccb4cbcbb7806aed2e825a619e2ab1",
+    "project/datasets/smile_reference.py": "115996d249c1938e6eb498c44e5631bd4c081bb51db12a663c0f85b892685f3b",
+    "project/evaluate_smile_rich_gallery_stage_b.py": "b3ac05515e88f276920ad09a2c76c5e4e84915cf5a365bbdd4b0e8c5ffba18d7",
+    "project/freeze_smile_rich_gallery_stage_a.py": "93a4fdc55a2d8c43ba686406505420820697d1b9ad7c9b9e9bd8b15d6114959f",
+    "project/models/smile_local_evidence.py": "acbbda4e42310aa2af72c95f384b9a95fd3d7f5ca6c496ef84a19c138c1f176d",
+    "project/pseudo/__init__.py": "ca1dd3524e8ff883ec04ec3a5315996f77caeb928695f50d62a97cceaf90b706",
+    "project/pseudo/candidate_diagnostics.py": "c870c76a0fa50fbb934449ab2fc0991bfd6a33f81259eeae4f4460ccb896abf5",
+    "project/pseudo/generate_layercam.py": "14e6c2c751eaee6257e71d3c3f6f0ae043ee11d7923f518907be6d7136d7530e",
+    "project/pseudo/manifest.py": "488cb2b53576ef286b6c6a4fc45c9ef69c7128edce1c699c949181f2faecd7ed",
+    "project/pseudo/visualization.py": "b00448340e6e84d697e10a44c5cf2ed1011454f09de07cd2ef2caa61e9c0eb78",
+    "project/smile_training.py": "ca64acfa08c325a7262bda2e9d8fee348efd2ece819553b199d6daafa421db5c",
+    "project/train_smile_rich_gallery.py": "bf607c1bfd9aaf022e0eaaa2f73485ed15fdede79f73013c6f673b1c555399db"
+  },
+  "schema_version": 1
+}
