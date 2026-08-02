@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_BEFORE_VALIDATION_GT",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "scientific_protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "decision_source_commit": "035482f663cfca8969ecc545f10712b6829d191d",
+  "source": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "evaluator_canonical_lf_sha256": "ccc3a4931907f0cafcf62adb0fef09db82108c6551db959c5926b8148d47b084",
+    "matched_decision": "project/decide_skelex_reconstruction_selector_s8.py",
+    "matched_decision_canonical_lf_sha256": "538ecad2b79d3b059587db3e687bd789fc7e00a31c8e106015b8198199153d97",
+    "matched_decision_test": "tests/test_decide_skelex_reconstruction_selector_s8.py",
+    "matched_decision_test_canonical_lf_sha256": "4e496603ef82a3780f16a68ea616c0751eaa76087d1b9976b04048a9a2610c13"
+  },
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20261204,
+  "arm_order": [
+    "geometry_v3_plus_upstream_equal_rank",
+    "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank"
+  ],
+  "mechanism_gate": {
+    "overall_mean_strictly_improves": true,
+    "small_mean_strictly_improves": true,
+    "medium_mean_no_regression": true,
+    "large_mean_no_regression": true,
+    "complete_misses_no_increase": true
+  },
+  "operational_gate": {
+    "minimum_dice": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    },
+    "paired_overall_ci95_lower_strictly_positive": true,
+    "control_exactly_accepted_geometry_v3_baseline": true,
+    "no_subgroup_regression": true,
+    "no_complete_miss_increase": true,
+    "consumer_authorized_only_after_pass": true
+  },
+  "dynamic_hash_boundary": {
+    "reason": "Prediction and score hashes do not exist until the running Kaggle producer terminates.",
+    "required_readiness_status": "FROZEN_AFTER_INDEPENDENT_GT_BLIND_AUDIT_BEFORE_VALIDATION_GT",
+    "required_frozen_fields": [
+      "terminal pre-GT independent-audit SHA-256",
+      "prediction-pair-freeze SHA-256",
+      "both arm prediction-freeze SHA-256 values",
+      "both candidate-score-manifest SHA-256 values",
+      "all safety locks"
+    ],
+    "readiness_must_be_committed_and_visible_central_before_evaluation": true
+  },
+  "required_order": [
+    "download compact terminal output inventory into a new ignored directory",
+    "run and freeze independent GT-blind S8 output audit",
+    "freeze dynamic output hashes in a postfreeze readiness artifact and push central",
+    "evaluate control with the frozen evaluator and seed 20261204",
+    "freeze control evaluation audit and per-image SHA-256",
+    "evaluate primary with the identical evaluator and seed 20261204",
+    "freeze primary evaluation audit and per-image SHA-256",
+    "run the matched S8 decision without reopening GT",
+    "freeze decision and perform failure or pass analysis"
+  ],
+  "post_hoc_rescue_or_sweep_authorized": false,
+  "scientific_algorithm_changed": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}

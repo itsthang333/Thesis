@@ -14085,3 +14085,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `KernelWorkerStatus.RUNNING`. Không tải output/log, không kiểm tra lần hai và
   không tạo monitor; claim S8 tiếp tục `ĐANG LÀM`, mọi GT/consumer/test lock giữ nguyên.
 
+### S8 postfreeze evaluator/decision freeze trước validation GT (2026-08-02)
+
+- Không status-check Kaggle trong nhịp này để tránh polling. Static terminal-
+  readiness audit phát hiện evaluator generic có gate không khớp S8 và bootstrap
+  seed evaluation chưa được freeze riêng. Đây là lỗ hổng evaluation-protocol,
+  không phải kết quả khoa học và chưa mở bất kỳ input/GT nào.
+- Đã thêm matched decision source
+  `project/decide_skelex_reconstruction_selector_s8.py` và synthetic test tại
+  commit `035482f663cfca8969ecc545f10712b6829d191d`. Canonical LF SHA-256 source/test
+  lần lượt `538ecad2b79d3b059587db3e687bd789fc7e00a31c8e106015b8198199153d97 /`
+  `4e496603ef82a3780f16a68ea616c0751eaa76087d1b9976b04048a9a2610c13`;
+  `4 passed`, Ruff và `py_compile` PASS. Decision kiểm tra exact pre-GT audit,
+  dynamic readiness hashes, cả hai evaluator audits/output inventories, control
+  byte-for-metric reproduction của accepted Geometry-v3, rồi mới tính paired
+  complete-group bootstrap và đúng mechanism/operational gates đã đăng ký.
+- Evaluation addendum
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_postfreeze_evaluation_addendum.json`
+  được freeze **trước GT**, SHA-256
+  `d79d98564dd239d4821f4a54bf93371e9a84375ce0c2cecd09830467ad53aec9`.
+  Exact evaluation bootstrap là `10,000` replicates, seed `20261204`, cùng seed
+  cho control/primary/matched decision. Các prediction/score hash chỉ tồn tại khi
+  producer terminal nên phải được bind vào readiness artifact sau independent
+  GT-blind audit và commit/push central trước evaluator. Không cho phép post-hoc
+  rescue/sweep; scientific S8 algorithm không đổi.
+- Safety đến đây: `validation_gt_read=false`, `consumer_trained=false`,
+  `test_evaluated=false`, không truy cập collaborator output; S8 vẫn `ĐANG LÀM`.
+
