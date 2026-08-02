@@ -12947,3 +12947,42 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   monitor, không đọc partial log/output và không mở validation GT, consumer hay
   BTXRD test. Claim tiếp tục **ĐANG LÀM**.
 
+### S6 kernel version 2 — terminal COMPLETE, independent GT-blind audit PASS (2026-08-02)
+
+- Theo tín hiệu terminal của người dùng, đúng một status check lúc
+  `2026-08-02T07:07:54.8045824Z` xác nhận version `2` của private kernel
+  `itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1` là `COMPLETE`.
+  Không có repeat poll/monitor. Inventory downloader của project tải đủ
+  `1,501/1,501` output file (`154,476,655` byte), không `.part`/temp; direct log
+  `13,546` byte có SHA-256
+  `34e3089512005e3d2abdc3d2e2f00edfa7462e6fe5e76754bb38fc17533a7873`.
+- Runtime log và wrapper audit xác nhận exact checkout
+  `e10db06537eedb4314faa36f173e96d0643b54ab`, scientific source
+  `543ee89654a0ed00e80ded16924a760585337924`, protocol
+  `f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3`,
+  bound wrapper `d84c49f5...b1127`, split/cache/baseline đúng frozen contract,
+  `49` tests pass, đúng `Tesla T4 x2`, `2,981/371` train/validation record và đủ
+  `16` epoch. Training chỉ dùng image-level labels.
+- Producer giữ nguyên exact pair freeze từ v1
+  `203dc6435b661b7410331f3eefca20c14888bcd34890b5228b4c35a0cecd36e2`;
+  control/hierarchy freeze là `7cff6cc8...c84` / `fa88dd2d...43c`. Wrapper audit
+  SHA-256 `195ad72f...35fa3`; embedded independent audit SHA-256
+  `3eea80fd...4e00` đều pass trước GT.
+- Independent local rerun trên chính output vừa tải và exact accepted cache,
+  baseline, split tái lập đủ `742` candidate-score payload + `742` physical map;
+  map delta của cả hai arm bằng `0`, max logit delta lần lượt
+  `7.6293945e-6/9.5367432e-6`. Local audit SHA-256
+  `b7ad03afdec41e5bc33d118107b921283590b9e07fbdf74abd5598b3b1304ca2`
+  có status `PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_PASS`.
+- Diagnostics vẫn nonblocking và chưa dùng chọn model: hierarchy đổi `163/371`
+  lựa chọn; absolute count/probability Spearman control/hierarchy
+  `0.50718233/0.49796698`. Audit terminal tracked tại
+  `artifacts/kaggle/rad_dino_mask_bag_label_granularity_s6_v1/kernel_version2_terminal_gt_blind_audit.json`,
+  SHA-256
+  `e2280b1d30cab29f904456a38460e7efd6b6ad414e0286e0802ea8fdc2218176`.
+  Tới boundary này `validation_gt_read=false`, subtype validation không dùng
+  routing, consumer chưa train, collaborator output không truy cập và BTXRD test
+  chưa đọc. Sau khi evidence/log này visible central, exact frozen evaluator mới
+  được phép đánh giá hai arm theo seed correction `20261101`; claim vẫn
+  **ĐANG LÀM** và chưa có Dice.
+

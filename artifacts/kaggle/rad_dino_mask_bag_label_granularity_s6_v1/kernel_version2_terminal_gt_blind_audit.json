@@ -1,0 +1,80 @@
+{
+  "audit_id": "rad_dino_mask_bag_label_granularity_s6_v1_kernel_version2_terminal_gt_blind_audit",
+  "audit_timestamp_utc": "2026-08-02T07:13:20.5108950Z",
+  "experiment_id": "EXP-20260802-codex-s6-label-granularity-mil-v1",
+  "kernel": "itsthang333/btxrd-rad-dino-mask-bag-label-granularity-s6-v1",
+  "kernel_status": "COMPLETE",
+  "kernel_version": 2,
+  "terminal_status_checked_utc": "2026-08-02T07:07:54.8045824Z",
+  "download": {
+    "downloader": "project/download_kaggle_output_inventory.py",
+    "official_inventory_files": 1501,
+    "downloaded_output_files": 1501,
+    "downloaded_output_bytes": 154476655,
+    "partial_or_temporary_files": 0,
+    "direct_log_bytes": 13546,
+    "direct_log_sha256": "34e3089512005e3d2abdc3d2e2f00edfa7462e6fe5e76754bb38fc17533a7873"
+  },
+  "provenance": {
+    "execution_checkout": "e10db06537eedb4314faa36f173e96d0643b54ab",
+    "scientific_source_commit": "543ee89654a0ed00e80ded16924a760585337924",
+    "protocol_sha256": "f4e17d24dfab36f01526550c7dc306fc7549494acc4545153454c61ae926bfc3",
+    "version2_launch_binding_sha256": "f82e511bc6fe4eb60a34e2a4e0e65d1d3d9d4745dea4b37094108be6dd2152ef",
+    "bound_wrapper_sha256": "d84c49f517024f2866e2ab5bf347183489fbc83a6cd554ce713a8d956b0b1127",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3"
+  },
+  "runtime": {
+    "cuda_device_count": 2,
+    "cuda_device_names": [
+      "Tesla T4",
+      "Tesla T4"
+    ],
+    "training_records": 2981,
+    "validation_records": 371,
+    "epochs": 16,
+    "kaggle_tests_passed": 49
+  },
+  "physical_output": {
+    "run_manifest_sha256": "360bb8f2a52ae701c9d141faa857e43837a6aef85852c0d9db4fedfc1466e8e4",
+    "wrapper_output_audit_sha256": "195ad72f77b5c3ee77c12e9e30213e8f0d8bb9406aeb978465c19eac8f035fa3",
+    "embedded_independent_gt_blind_audit_sha256": "3eea80fd9ce81a711c7206c78fe2869e3b0330301cc580d852b6e5dd68f04e00",
+    "local_independent_gt_blind_audit_sha256": "b7ad03afdec41e5bc33d118107b921283590b9e07fbdf74abd5598b3b1304ca2",
+    "prediction_pair_freeze_sha256": "203dc6435b661b7410331f3eefca20c14888bcd34890b5228b4c35a0cecd36e2",
+    "coarse_control_prediction_freeze_sha256": "7cff6cc8d559401feceeffa3eef8ec0cd95d013ea62f86c28cb4f0c994a08c84",
+    "hierarchical_entropy_routed_prediction_freeze_sha256": "fa88dd2d392de347915575c35442b1ab3375bb51a65fdbaceb963635945b143c",
+    "physical_candidate_score_payloads": 742,
+    "physical_prediction_maps": 742,
+    "verified_score_and_map_bytes": 152789332,
+    "maximum_prediction_map_reproduction_delta": {
+      "coarse_control": 0.0,
+      "hierarchical_entropy_routed": 0.0
+    },
+    "maximum_local_candidate_logit_reproduction_delta": {
+      "coarse_control": 7.62939453125e-06,
+      "hierarchical_entropy_routed": 9.5367431640625e-06
+    }
+  },
+  "gt_blind_diagnostics": {
+    "changed_selection_count": 163,
+    "changed_selection_fraction": 0.4393530997304582,
+    "absolute_candidate_count_probability_spearman": {
+      "coarse_control": 0.5071823262506606,
+      "hierarchical_entropy_routed": 0.49796698495447006
+    },
+    "diagnostics_used_for_model_selection": false
+  },
+  "safety": {
+    "training_labels": "image_level_only",
+    "pair_physically_frozen_before_validation_gt": true,
+    "validation_gt_read": false,
+    "validation_subtype_label_used_for_routing": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "status": "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_PASS",
+  "validation_gt_evaluation_authorized": true
+}
