@@ -8951,3 +8951,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `03dd6928bc98eb64a3ab4dd554f93d46b700e2f340a3b4aff18d5fd40a1e8ae0`
   and `caf8a5b91f17854cbad6970943e10a577eb38642775b12862ad54cc978233af5`.
 
+### EXP-20260803-codex-smile-rich-gallery-v1 (COMPLETE / RETIRED)
+
+- Matched control/full two-pass SMILE training and both GT-blind Stage-A
+  freezes completed. Stage B reproduced the immutable G1 plus equal-rank
+  baseline exactly at Dice/IoU `0.2887294867/0.2168391813` before comparing
+  the predeclared full `identity_extent` arm. No BTXRD test image was opened.
+- SMILE full reaches Dice/IoU `0.2494317699/0.1832827923`, subgroup Dice
+  `0.0717677990/0.4171403496/0.5063981877` and `35` complete misses. It improves
+  over its query-only control by only `+0.00671774` mean Dice and is
+  significantly below baseline overall; paired complete-group CI95 for the
+  primary-minus-baseline delta is `[-0.0716304,-0.0007639]`.
+- The mechanism has real presence signal: misses fall `49 -> 35`, recall rises
+  `0.4893 -> 0.6286`, and large-lesion Dice rises `0.386874 -> 0.506398`.
+  However, precision falls `0.3366 -> 0.2448` and small-lesion Dice collapses.
+- Candidate-level decomposition over `32,519` eligible proposals identifies
+  the root cause. Fixed-top-17 identity has median within-image Spearman
+  `0.6503` with log candidate area (`99.5%` positive); soft extent has `0.7663`
+  (`100%` positive). Selected/GT area becomes `81.13x/2.06x/0.89x` for
+  small/medium/large. External-source selections rise `24 -> 38` and selector
+  regret rises `0.239569 -> 0.278867`.
+- Decision: retire SMILE and stop successor research for the thesis. The final
+  method is G1 plus fixed equal percentile-rank fusion. Reproducible analysis
+  is `project/analyze_smile_rich_gallery_failure.py`; concise evidence and the
+  scientific narrative are in
+  `artifacts/research_handoffs/smile_failure_analysis_20260803.json` and
+  `SMILE_FAILURE_DOSSIER.md`. Test remains locked.
+

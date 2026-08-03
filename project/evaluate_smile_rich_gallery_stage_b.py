@@ -19,6 +19,7 @@ ARMS = ("control", "full")
 VARIANTS = ("baseline", "identity_only", "identity_extent")
 PRIMARY = ("full", "identity_extent")
 CONTROL = ("control", "identity_extent")
+BASELINE = ("control", "baseline")
 BASELINE_DICE = 0.2887294867
 BASELINE_SUBGROUP = {
     "small": 0.1577232964,
@@ -352,4 +353,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
