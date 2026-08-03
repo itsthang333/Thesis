@@ -14692,3 +14692,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   full five-file inventory nằm trong freeze. Không rescue/sweep; chỉ sau
   commit/push/fetch freeze mới chạy exact matched decision. Test khóa.
 
+### S8 matched-decision readiness materialization ERROR (2026-08-03)
+
+- Sau primary-freeze commit `3f23e6a`, pre-decision source tests pass `4/4` và
+  mọi protocol/addendum/pre-GT/control/primary audit SHA đều khớp. Attempt đầu
+  chưa gọi decision: `git checkout-index` materialize readiness qua working-tree
+  EOL filter, cho physical SHA `46aecb7855a4f18311c5174a396dee1379e43d0ae5793500ab93c6d44dc211d6`
+  thay vì canonical Git-LF SHA
+  `9e0294a5af2d7eb62598eb000f9ee187e2a8c46c07077a52cb432319f294247d`;
+  fail-closed xảy ra trước Python decision invocation.
+- Đây là tooling/serialization error, không phải S8 scientific failure.
+  Decision output directory không tồn tại, GT không được mở lại, không metric
+  mới, không consumer/test access. Wrong-EOL temp được giữ ignored làm evidence.
+  Correction duy nhất: dùng raw `git archive`/blob không qua checkout filter,
+  rehash exact LF bytes rồi mới gọi frozen decision; không thay decision source,
+  input evaluation, seed hay gate.
+- Shared `KAGGLE_PREFLIGHT_CHECKLIST.md` KPF-001 được siết để cấm dùng
+  checkout/checkout-index cho canonical artifacts và bắt buộc raw archive/blob
+  + physical rehash; updated canonical-LF SHA
+  `afc23616aa946b9fb713aabe21ce3373af2ba821e1b5444ec0a46ed44a14986e`.
+  Phải commit/push/fetch checklist + error note này trước attempt kế tiếp.
+
