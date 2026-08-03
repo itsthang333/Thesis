@@ -16112,3 +16112,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   load real candidate/cache/image, chưa fit/prediction/Kaggle/GT/consumer/test.
   Trước bất kỳ real action phải hoàn tất synthetic primitive/auditor,
   protocol/hash closure, fresh collision check và đăng ký/push claim mới.
+
+### CAM-conditioned Geometry-v4 primitive synthetic readiness (2026-08-03)
+
+- Đã triển khai primitive dataset/annotation-agnostic tách biệt tại
+  `project/models/cam_conditioned_geometry.py`, SHA-256
+  `836791c10d00209aa1d7dae89bae1bfda0e121d1787cd92c156b2d94df56e947`.
+  Source import shared `proposal_context_grid_weights` nên candidate validity,
+  fractional proposal, radius-two context và content-padding contract không có
+  implementation thứ hai bị drift. Accepted
+  `project/models/rad_dino_mask_bag_mil.py` không bị sửa.
+- Primitive nội suy frozen prompt map về token grid rồi pool đúng ba nhóm
+  threshold-free `m*p`, `m*(1-p)`, `r*p`; default extension 1,152-D, tổng
+  descriptor tương lai 2,308-D. Candidate invalid được zero, không drop/
+  reorder; prompt map non-finite hoặc ngoài `[0,1]` fail closed.
+- Synthetic test `tests/test_cam_conditioned_geometry.py`, SHA-256
+  `e6dc5889feb037247455e6595461d2a0d80d7bb6c4878b89f7c628705f647ae8`,
+  bao phủ exact width, tách core/low-interior/exterior, fractional denominator,
+  padding exclusion, joint-flip invariance, invalid-candidate order và input guard.
+  Combined với accepted Geometry-v3 unit suite: `21 passed` trong 4.28 giây;
+  `py_compile`, Ruff và `git diff --check` PASS.
+- Static readiness artifact
+  `artifacts/research_protocols/cam_conditioned_geometry_v4_static_readiness.json`
+  SHA-256
+  `16895a5f36821cb728ff81cc79dd40d8272e0f71333c6f188c486712e486bc22`.
+  Đây vẫn **không phải claim/experiment**: không load real candidate/cache/
+  radiograph, không train/prediction/Kaggle/GT/consumer/test và không resume S10.
+  Runner/auditor/protocol chưa được phép làm real action trước fresh
+  collision check và registration `ĐANG LÀM` visible central.
