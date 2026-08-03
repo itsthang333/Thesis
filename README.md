@@ -16,6 +16,10 @@ not presented as test performance.
 | Lesion area `1-<5%` | 72 | 0.435229 | 0.323558 | 13 |
 | Lesion area `>=5%` | 18 | 0.386874 | 0.303117 | 1 |
 
+The retained fully-supervised ResNet18-U-Net comparison reached validation
+Dice 0.492765 at its validation-locked threshold 0.20. It is an upper-bound
+comparison, never an input to WSSS.
+
 The final test result is intentionally pending. It will be measured exactly
 once after the source commit, asset hashes, method, and validation result have
 been frozen in `final_test_protocol.json`.
@@ -39,6 +43,21 @@ BTXRD train images + binary tumor/normal image labels
 The three proposal sources are retained because every two-source ablation
 reduced validation Dice. See [docs/RESULTS.md](docs/RESULTS.md).
 
+## Matched final comparison
+
+The repository contains two isolated executable tracks:
+
+- `project/run_fully_supervised_comparison.py`: train/validation only,
+  polygon-supervised ResNet18-U-Net at 448 px;
+- the WSSS stages above: binary image labels only before evaluation.
+
+For final test, both tracks freeze predictions before spatial test GT.
+`evaluate_final_rich_gallery.py` then reads each tumor annotation once and
+writes WSSS and fully-supervised per-image results plus `comparison.csv`.
+On Kaggle the tracks may run as two private jobs. On one A100 they should run
+as independent sequential jobs to avoid resource contention; this scheduling
+choice does not change either scientific protocol.
+
 ## Scientific test policy
 
 - Validation chose the method and all hyperparameters.
@@ -52,6 +71,8 @@ reduced validation Dice. See [docs/RESULTS.md](docs/RESULTS.md).
 - Test output cannot be used to modify the method or rerun a tuned variant.
 
 See [docs/TEST_PROTOCOL.md](docs/TEST_PROTOCOL.md) for the A100 procedure.
+The stage-by-stage T4x2/A100 support matrix is in
+[docs/EXECUTION_MATRIX.md](docs/EXECUTION_MATRIX.md).
 
 ## Repository layout
 
@@ -68,11 +89,19 @@ commit `aca685f` on branch `codex/research-sync-20260731`.
 ```bash
 python -m venv .venv
 python -m pip install --upgrade pip
-python -m pip install -r project/requirements.txt
+# Install the platform-specific PyTorch/CUDA wheel first, then choose one:
+python -m pip install -r project/requirements-candidate.txt
+python -m pip install -r project/requirements-g1.txt
+python -m pip install -r project/requirements-fully.txt
 ```
 
+Candidate/BiomedCLIP and G1 use separate environments because the frozen
+validation run used `transformers` 4.35.2 and 4.50.2 respectively. Installing
+both stage files into one environment is incorrect.
+
 BTXRD, SAM ViT-B, BiomedCLIP/RAD-DINO snapshots, and trained checkpoints are
-not committed. Their hashes are frozen before the test run.
+not committed. Their authoritative hashes and parameters are recorded in
+`artifacts/final_pipeline/final_run_config.json` and frozen again before test.
 
 ## Verification
 

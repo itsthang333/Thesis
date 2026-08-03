@@ -1,6 +1,18 @@
 {
   "complete_misses": 49,
   "evaluation_split": "validation",
+  "fully_supervised_comparison": {
+    "checkpoint_sha256": "731810c1f831b01a61b0052466ef62e63f7da84f74e7117da21d0962127b4b97",
+    "dice": 0.4927646891616537,
+    "iou": 0.400358849597545,
+    "role": "historical audited validation upper bound; retrain on final manifest before final test",
+    "subgroup_dice": {
+      "1_to_lt_5_percent": 0.6296743373426645,
+      "ge_5_percent": 0.7136130090431557,
+      "lt_1_percent": 0.34560762127169387
+    },
+    "threshold": 0.2
+  },
   "method": "G1 + fixed equal percentile-rank fusion",
   "overall": {
     "dice": 0.28872948670665205,

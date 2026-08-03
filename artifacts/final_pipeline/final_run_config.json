@@ -1,0 +1,87 @@
+{
+  "asset_sha256": {
+    "biomedclip_weight": "52cc993c5c5ff962bd0c60931874bc001e7e9b41666a385530f4a036294576be",
+    "classifier_320_checkpoint": "ca630ddf816c1b6a55fab9b99fe824877bba9a83905ce71fd20cf9c2b1640621",
+    "classifier_448_checkpoint": "b40dc5ec0f601ea7392fd0e8ed0be5f1e7cd66ad07d654392db516a0766d451e",
+    "g1_checkpoint": "634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c",
+    "rad_dino_config": "89daf9751d9576d586dedf9543c1083211611fa3a36908db7a799b3ce7c68ede",
+    "rad_dino_preprocessor": "c537fc995c30e2353f07253899618d60e9eae3d5f82473778602c007c6523b56",
+    "rad_dino_weight": "dbfb9f54459c38773505de64a6ab7807bdcb392610fe1e697166342e43fb91ae",
+    "sam_vit_b_checkpoint": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912"
+  },
+  "candidate_gallery": {
+    "addition_image_size": 448,
+    "addition_namespace": "classifier448",
+    "anchor_image_size": 320,
+    "exact_mask_deduplication": true,
+    "maximum_candidates": 243,
+    "sources": [
+      "layercam320",
+      "classifier448",
+      "external_biomedclip_saliency"
+    ]
+  },
+  "critical_environment": {
+    "biomedclip_stage": {
+      "open_clip": "2.32.0",
+      "transformers": "4.35.2"
+    },
+    "g1_stage": {
+      "transformers": "4.50.2"
+    },
+    "validation_reference": {
+      "cuda": "12.8",
+      "gpu": "Tesla T4 x2",
+      "python": "3.12.13",
+      "torch": "2.10.0+cu128"
+    }
+  },
+  "fusion": {
+    "g1_percentile_rank_weight": 0.5,
+    "tie_break": [
+      "raw_g1_logit",
+      "lower_immutable_candidate_index"
+    ],
+    "upstream_percentile_rank_weight": 0.5
+  },
+  "fully_supervised_comparison": {
+    "architecture": "ResNet18UNet",
+    "batch_size": 8,
+    "checkpoint_selection": "maximize validation tumor Dice at fixed 0.50; validation only",
+    "early_stop_patience": 10,
+    "final_threshold": 0.2,
+    "historical_validation_checkpoint_sha256": "731810c1f831b01a61b0052466ef62e63f7da84f74e7117da21d0962127b4b97",
+    "image_size": 448,
+    "learning_rate": 0.0001,
+    "maximum_epochs": 30,
+    "pos_weight": 10.0,
+    "pretrained_encoder_weight_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+    "role": "comparison-only; outputs can never enter WSSS",
+    "requires_retrain_on_final_manifest": true,
+    "seed": 42,
+    "weight_decay": 0.0001
+  },
+  "g1_training": {
+    "batch_size": 16,
+    "consistency_loss_weight": 0.1,
+    "epochs": 16,
+    "final_epoch_only": true,
+    "instance_loss_weight": 0.25,
+    "instance_warmup_epochs": 2,
+    "learning_rate": 0.0003,
+    "maximum_candidates": 243,
+    "projection_dim": 128,
+    "projection_seed": 42,
+    "rich_gallery_union": true,
+    "weight_decay": 0.0001
+  },
+  "method": "Rich Gallery G1 plus fixed equal percentile-rank fusion",
+  "protocol_sha256": {
+    "anchor_candidate_supply": "268584b5c904fc35f434bc685f36d9e6bf9710630a7c74f4946b06e85f3e8ca8",
+    "final_gallery_and_g1": "66b56661ca91052c6bb1958c92d433cfcf9303f07624423068109e0b90eda454"
+  },
+  "schema_version": 2,
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "supervision": "binary image labels only before the spatial evaluator",
+  "test_policy": "one locked run; no scientific changes after test GT access"
+}

@@ -67,6 +67,27 @@ by `freeze_final_test_protocol.py` from a clean committed tree.
 
 An A100 changes only execution resources. It does not change image sizes,
 candidate cap, checkpoints, scores, fusion weights, tie-breaking, or the
-evaluation definition. The code uses one CUDA device and can use additional
-devices only for batching; it does not introduce an A100-specific scientific
-variant.
+evaluation definition. Frozen RAD-DINO encoding uses all visible GPUs through
+DataParallel when T4x2 is available and a single device on a 48 GB A100. The
+selector itself remains on the primary device. This placement is a runtime
+choice, not an A100-specific scientific variant.
+
+The untouched final test uses the already frozen validation-selected G1
+checkpoint. Retraining on different GPU architectures is supported for method
+reproduction, but bitwise-identical training weights are not promised across
+T4 and A100 kernels.
+
+## Fully-supervised comparison
+
+The comparison track is a ResNet18-U-Net trained at 448 px from train-split
+polygon masks. It uses AdamW (learning rate and weight decay 1e-4), batch 8,
+positive-class weight 10, seed 42, at most 30 epochs, and validation-only early
+stopping with patience 10. Its final binary threshold 0.20 was locked on
+validation. Its checkpoint is explicitly marked `comparison_only=true` and
+`wsss_eligible=false`; neither its weights nor predictions can enter candidate
+generation or G1 selection.
+
+Before final evaluation, `freeze_fully_supervised_predictions.py` creates one
+immutable mask per test image without opening polygons. The joint evaluator
+loads the already-frozen WSSS choice and fully mask, opens each tumor polygon
+once, and calculates the two metric families from that same annotation pass.

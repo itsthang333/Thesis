@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Hash-bound, annotation-free I/O shared by the final pipeline."""
+
 import csv
 import hashlib
 import json
@@ -108,10 +110,7 @@ def verify_model_snapshot(
         actual = sha256_file(path)
         if actual != expected:
             raise ValueError(f"Frozen model file hash mismatch for {name}")
-        result[name] = {
-            "bytes": path.stat().st_size,
-            "sha256": actual,
-        }
+        result[name] = {"bytes": path.stat().st_size, "sha256": actual}
     return result
 
 

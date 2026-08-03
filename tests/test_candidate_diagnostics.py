@@ -153,10 +153,14 @@ class CandidateDiagnosticsTests(unittest.TestCase):
         source = (PROJECT / "evaluate_final_rich_gallery.py").read_text(
             encoding="utf-8"
         )
-        gt_loader = source.index("from datasets.factory import build_segmentation_dataset")
-        self.assertLess(source.index("verify_frozen_test_config("), gt_loader)
-        self.assertLess(source.index("freeze_path = args.selection_root"), gt_loader)
-        self.assertLess(source.index("candidate_choices_frozen_before_spatial_gt"), gt_loader)
+        annotation_boundary = source.index("# Annotation boundary")
+        annotation_decode = source.index("_decode_labelme_polygon_mask(", annotation_boundary)
+        self.assertLess(source.index("verify_frozen_test_config("), annotation_boundary)
+        self.assertLess(source.index("freeze_path = args.selection_root"), annotation_boundary)
+        self.assertLess(
+            source.index("candidate_choices_frozen_before_spatial_gt"), annotation_boundary
+        )
+        self.assertLess(annotation_boundary, annotation_decode)
         self.assertIn('parser.add_argument("--split", choices=("val", "test")', source)
 
 

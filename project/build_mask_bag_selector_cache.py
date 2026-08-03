@@ -14,9 +14,9 @@ from types import SimpleNamespace
 
 import numpy as np
 import torch
-from torch import nn
 
-from mae_reconstruction_io import (
+from gpu_runtime import place_frozen_encoder, require_cuda_runtime
+from frozen_io import (
     load_split_rows_without_annotations,
     sha256_file,
     verify_model_snapshot,
@@ -408,12 +408,9 @@ def main() -> None:
 
     if transformers.__version__ != EXPECTED_TRANSFORMERS_VERSION:
         raise RuntimeError("unexpected transformers version")
-    if not torch.cuda.is_available() or torch.cuda.device_count() != 2:
-        raise RuntimeError("selector cache builder requires exactly two CUDA devices")
-    device_names = [torch.cuda.get_device_name(index) for index in range(2)]
-    if not all("T4" in name for name in device_names):
-        raise RuntimeError(f"selector cache builder requires T4 x2, got {device_names}")
-    device = torch.device("cuda:0")
+    runtime = require_cuda_runtime()
+    device = runtime.primary_device
+    device_names = list(runtime.device_names)
     projection = make_seeded_random_projection(
         input_dim=768,
         output_dim=args.projection_dim,
@@ -423,11 +420,10 @@ def main() -> None:
         raise ValueError("RAD-DINO projection differs from frozen baseline")
     backbone = AutoModel.from_pretrained(args.model_dir, local_files_only=True)
     backbone.requires_grad_(False).eval()
-    encoder: nn.Module = ProjectedMultiLayerEncoder(
+    encoder = place_frozen_encoder(ProjectedMultiLayerEncoder(
         backbone,
         torch.from_numpy(projection),
-    ).to(device)
-    encoder = nn.DataParallel(encoder, device_ids=[0, 1], output_device=0).eval()
+    ), runtime)
     config = MaskBagMILConfig(
         token_dim=args.projection_dim,
         token_layers=len(SELECTED_HIDDEN_LAYERS),
@@ -563,7 +559,7 @@ def main() -> None:
             "cuda": torch.version.cuda,
             "cuda_device_count": torch.cuda.device_count(),
             "cuda_device_names": device_names,
-            "encoder_data_parallel": True,
+            "encoder_data_parallel": runtime.encoder_data_parallel,
         },
         "started_utc": started.isoformat(),
         "finished_utc": datetime.now(timezone.utc).isoformat(),

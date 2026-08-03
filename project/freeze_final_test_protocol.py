@@ -44,6 +44,7 @@ def main() -> None:
     parser.add_argument("--classifier-checkpoint", type=Path, action="append", required=True)
     parser.add_argument("--sam-checkpoint", type=Path, required=True)
     parser.add_argument("--g1-checkpoint", type=Path, required=True)
+    parser.add_argument("--supervised-unet-checkpoint", type=Path, required=True)
     parser.add_argument("--validation-result", type=Path, required=True)
     parser.add_argument("--artifact", type=parse_named, action="append", default=[])
     parser.add_argument("--test-run-id", required=True)
@@ -70,6 +71,7 @@ def main() -> None:
         "classifier_checkpoints": [artifact(path) for path in args.classifier_checkpoint],
         "sam_checkpoint": artifact(args.sam_checkpoint),
         "g1_checkpoint": artifact(args.g1_checkpoint),
+        "supervised_unet_checkpoint": artifact(args.supervised_unet_checkpoint),
         "validation_result": artifact(args.validation_result),
         "artifacts": named,
         "profile": {
@@ -79,6 +81,13 @@ def main() -> None:
             "tie_break": "raw G1 logit, then lower immutable candidate index",
             "image_label_protocol": "known binary image label; no spatial annotation",
             "test_policy": "one final execution after validation configuration freeze"
+        },
+        "comparison": {
+            "fully_supervised_architecture": "ResNet18UNet",
+            "fully_supervised_image_size": 448,
+            "fully_supervised_threshold": 0.20,
+            "fully_supervised_role": "comparison-only upper bound; never WSSS input",
+            "joint_test_evaluation": "both frozen predictions scored in one annotation-opening pass"
         },
     }
     document["freeze_sha256"] = hashlib.sha256(canonical_bytes(document)).hexdigest()

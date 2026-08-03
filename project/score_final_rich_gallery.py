@@ -11,10 +11,10 @@ import platform
 
 import numpy as np
 import torch
-from torch import nn
 
 from evaluation.frozen_test_guard import verify_frozen_test_config
-from mae_reconstruction_io import load_split_rows_without_annotations, sha256_file, verify_model_snapshot
+from gpu_runtime import place_frozen_encoder, require_cuda_runtime
+from frozen_io import load_split_rows_without_annotations, sha256_file, verify_model_snapshot
 from models.nominal_patch_memory import make_seeded_random_projection, projection_sha256
 from models.rad_dino_mask_bag_mil import MaskBagMILConfig, RadDinoMaskBagMIL, smooth_mil_pool
 from run_rad_dino_mask_bag_mil_probe import (
@@ -137,15 +137,14 @@ def main() -> None:
             "rad_dino_weight": args.model_dir / "model.safetensors",
         },
     )
-    if not torch.cuda.is_available():
-        raise RuntimeError("final candidate scoring requires CUDA")
+    runtime = require_cuda_runtime()
     seed_everything(args.seed)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     import transformers
     from transformers import AutoModel
     if transformers.__version__ != EXPECTED_TRANSFORMERS_VERSION:
         raise RuntimeError("unexpected transformers version")
-    device = torch.device("cuda:0")
+    device = runtime.primary_device
     projection = make_seeded_random_projection(
         input_dim=768,
         output_dim=args.projection_dim,
@@ -153,9 +152,10 @@ def main() -> None:
     )
     backbone = AutoModel.from_pretrained(args.model_dir, local_files_only=True)
     backbone.requires_grad_(False).eval()
-    encoder: nn.Module = ProjectedMultiLayerEncoder(backbone, torch.from_numpy(projection)).to(device).eval()
-    if torch.cuda.device_count() > 1:
-        encoder = nn.DataParallel(encoder).eval()
+    encoder = place_frozen_encoder(
+        ProjectedMultiLayerEncoder(backbone, torch.from_numpy(projection)),
+        runtime,
+    )
     config = MaskBagMILConfig(token_dim=args.projection_dim, token_layers=len(SELECTED_HIDDEN_LAYERS))
     cache = build_descriptor_cache(rows, candidates, args.candidate_root, encoder, config, args, device, split=args.split)
     del encoder, backbone
@@ -237,7 +237,8 @@ def main() -> None:
             "python": platform.python_version(),
             "torch": torch.__version__,
             "cuda": torch.version.cuda,
-            "devices": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+            "devices": list(runtime.device_names),
+            "encoder_data_parallel": runtime.encoder_data_parallel,
         },
         "candidate_input_audit": candidate_audit,
     }

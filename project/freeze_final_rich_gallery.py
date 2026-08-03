@@ -11,7 +11,7 @@ import numpy as np
 
 from final_selector import select_candidate
 from evaluation.frozen_test_guard import verify_frozen_test_config
-from mae_reconstruction_io import load_split_rows_without_annotations, sha256_file
+from frozen_io import load_split_rows_without_annotations, sha256_file
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
 
 

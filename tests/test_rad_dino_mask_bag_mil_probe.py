@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "project"
 
 
-def test_runner_has_image_only_surface_and_t4x2_encoder_parallelism() -> None:
+def test_runner_has_image_only_surface_and_resource_adaptive_encoder() -> None:
     source = (PROJECT / "run_rad_dino_mask_bag_mil_probe.py").read_text(
         encoding="utf-8"
     )
@@ -22,9 +22,10 @@ def test_runner_has_image_only_surface_and_t4x2_encoder_parallelism() -> None:
     assert "datasets.factory" not in imported
     assert "build_segmentation_dataset" not in source
     assert "Annotations" not in source
-    assert 'torch.cuda.device_count() != 2' in source
-    assert 'all("T4" in name for name in device_names)' in source
-    assert "nn.DataParallel(encoder, device_ids=[0, 1]" in source
+    assert "require_cuda_runtime()" in source
+    assert "place_frozen_encoder(" in source
+    assert '"encoder_data_parallel": runtime.encoder_data_parallel' in source
+    assert 'all("T4" in name for name in device_names)' not in source
     assert 'default=81' in source
     assert 'args.maximum_candidates != 81' in source
     assert '"--rich-gallery-union"' in source
@@ -39,6 +40,14 @@ def test_runner_has_image_only_surface_and_t4x2_encoder_parallelism() -> None:
     assert '"validation_gt_read": False' in source
     assert '"consumer_trained": False' in source
     assert '"test_evaluated": False' in source
+
+
+def test_final_preprocessing_is_not_imported_from_a_retired_pipeline() -> None:
+    source = (PROJECT / "run_rad_dino_mask_bag_mil_probe.py").read_text(
+        encoding="utf-8"
+    )
+    assert "models.rad_dino_preprocessing" in source
+    assert "run_rad_dino_multilayer_soft_region_probe" not in source
 
 
 def test_runner_calls_keyword_only_random_projection_contract() -> None:
@@ -73,9 +82,11 @@ def test_evaluator_verifies_every_prediction_input_before_gt_loader() -> None:
     assert scorer.index("verify_frozen_test_config(") < scorer.index("_audit_candidate_input(")
     assert "candidate_manifest_sha256" in scorer
     assert "pseudo_manifest_sha256" in scorer
-    gt_loader = evaluator.index("from datasets.factory import build_segmentation_dataset")
-    assert evaluator.index("verify_frozen_test_config(") < gt_loader
-    assert evaluator.index("candidate_choices_frozen_before_spatial_gt") < gt_loader
+    annotation_boundary = evaluator.index("# Annotation boundary")
+    annotation_decode = evaluator.index("_decode_labelme_polygon_mask(", annotation_boundary)
+    assert evaluator.index("verify_frozen_test_config(") < annotation_boundary
+    assert evaluator.index("candidate_choices_frozen_before_spatial_gt") < annotation_boundary
+    assert annotation_boundary < annotation_decode
 
 
 def test_mask_bag_gate_is_prediction_first_and_all_checks_required() -> None:

@@ -16,7 +16,7 @@ from typing import Any
 
 import numpy as np
 
-from mae_reconstruction_io import load_split_rows_without_annotations, sha256_file
+from frozen_io import load_split_rows_without_annotations, sha256_file
 from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.candidate_diagnostics import (
     save_candidate_diagnostics,

@@ -84,10 +84,12 @@ def test_train_masks_are_discarded_and_validation_masks_are_bitpacked() -> None:
     assert '"validation_masks_bitpacked": True' in source
 
 
-def test_runtime_is_hard_bound_to_t4x2_and_frozen_geometry() -> None:
+def test_runtime_is_resource_adaptive_and_geometry_remains_frozen() -> None:
     source = SOURCE.read_text(encoding="utf-8")
-    assert "torch.cuda.device_count() != 2" in source
-    assert 'all("T4" in name for name in device_names)' in source
+    assert "require_cuda_runtime()" in source
+    assert "place_frozen_encoder(" in source
+    assert '"encoder_data_parallel": runtime.encoder_data_parallel' in source
+    assert 'all("T4" in name for name in device_names)' not in source
     assert "args.input_size != 448" in source
     assert "args.projection_dim != 128" in source
     assert "expected_maximum_candidates = 243 if args.rich_gallery_union else 81" in source

@@ -9,6 +9,16 @@
 | `1-<5%` | 72 | 0.435229 | 0.323558 | 0.488862 | 0.545975 | 1.0981x |
 | `>=5%` | 18 | 0.386874 | 0.303117 | 0.713342 | 0.359586 | 0.3824x |
 
+## Fully-supervised validation comparison
+
+| Method | Overall Dice | Overall IoU | `<1%` Dice | `1-<5%` Dice | `>=5%` Dice |
+|---|---:|---:|---:|---:|---:|
+| WSSS Rich Gallery G1 + fixed rank fusion | 0.288729 | 0.216839 | 0.157723 | 0.435229 | 0.386874 |
+| Fully supervised ResNet18-U-Net, threshold 0.20 | 0.492765 | 0.400359 | 0.345608 | 0.629674 | 0.713613 |
+
+Both rows are validation results. The fully-supervised row is a comparison
+upper bound and must not be presented as WSSS performance.
+
 These are development results on 184 tumor validation images. There are 49
 complete misses. The final test result is not yet available and must not be
 filled from exploratory outputs.
