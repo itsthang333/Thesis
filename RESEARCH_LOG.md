@@ -14906,8 +14906,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 - **Owner/time/status:** Codex central workstream; đăng ký
   `2026-08-03T11:04:42+07:00`; **ĐANG LÀM**. Registration base
-  `649d1b07a2f9f9ac1ee40944609fb4d4dcd00e18`; exact registration commit là
-  commit chứa mục này và phải được bổ sung sau khi push. Không real-data action
+  `649d1b07a2f9f9ac1ee40944609fb4d4dcd00e18`; exact registration commit
+  `87a6798e65957a931ba1f8f50bbcf630f73da270`. Không real-data action
   trước khi claim byte-visible trên `origin/research-wsss-improvement`.
 - **Hypothesis:** một class direction thấp-capacity học từ dense known-normal
   token và exact soft marginal likelihood qua candidate masks của tumor bags sẽ
