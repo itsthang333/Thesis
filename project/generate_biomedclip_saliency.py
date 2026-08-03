@@ -16,6 +16,8 @@ import numpy as np
 import torch
 from PIL import Image
 
+from evaluation.frozen_test_guard import verify_frozen_test_config
+
 if __package__:
     from .models.biomedclip_saliency import (
         BIOMEDCLIP_MODEL_ID,
@@ -60,7 +62,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--dataset-root", type=Path, required=True)
     parser.add_argument("--split-manifest", type=Path, required=True)
-    parser.add_argument("--split", choices=("train", "val"), required=True)
+    parser.add_argument("--split", choices=("train", "val", "test"), required=True)
+    parser.add_argument("--frozen-config", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-split-sha256", required=True)
     parser.add_argument("--expected-model-weight-sha256", required=True)
@@ -150,8 +153,11 @@ def main() -> None:
         or any(character not in "0123456789abcdef" for character in args.source_commit)
     ):
         raise ValueError("--source-commit must be a lowercase 40-character Git SHA")
-    if args.split == "test":
-        raise ValueError("Test saliency generation is locked")
+    verify_frozen_test_config(
+        args.frozen_config,
+        split=args.split,
+        split_manifest=args.split_manifest,
+    )
     if args.output_dir.exists() and any(args.output_dir.iterdir()) and not args.overwrite:
         raise FileExistsError("Output directory is non-empty; pass --overwrite explicitly")
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -192,6 +198,12 @@ def main() -> None:
     model, preprocess = open_clip.create_model_from_pretrained(BIOMEDCLIP_MODEL_ID)
     tokenizer = open_clip.get_tokenizer(BIOMEDCLIP_MODEL_ID)
     weight_path = find_weight_file(args.expected_model_weight_sha256)
+    verify_frozen_test_config(
+        args.frozen_config,
+        split=args.split,
+        split_manifest=args.split_manifest,
+        requested_artifacts={"biomedclip_weight": weight_path},
+    )
     saliency_model = FrozenBiomedClipSaliency(
         model,
         preprocess,
@@ -318,6 +330,7 @@ def main() -> None:
         "manifest_sha256": sha256_file(manifest_path),
         "annotation_contract": annotation_contract,
         "validation_gt_read": False,
+        "test_images_read": len(rows) if args.split == "test" else 0,
         "test_evaluated": False,
         "environment": {
             "python": platform.python_version(),

@@ -1,7 +1,0 @@
-{
-  "complete_misses_included": true,
-  "prediction_artifacts_verified_before_gt_load": true,
-  "status": "PASS",
-  "summary_sha256": "0a7639dbe4c57b1436b868d7a668c4731944326ae695e0a1df93bc5faa90ffcc",
-  "test_accessed": false
-}

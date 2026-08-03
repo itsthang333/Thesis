@@ -1,0 +1,18 @@
+{
+  "candidate_manifest_sha256": "30e734e223839ee2ed7b445c71b3731a39f0549ee88e2ba77f7bf722d8d9943d",
+  "final_reproduction": {
+    "choice_freeze_sha256": "46a6626586cbec2d9b9593ccb34cdd376a0dcba8f87b8c9bb7ded4b505384f68",
+    "evaluation_per_image_sha256": "aaea9cc3a05371ec94ec87b8b1805f77680e920031e74228a6cbc6dbcc2b42f1",
+    "evaluation_summary_sha256": "12fe09b82d23347968caf12eee9ecd01c4fc9af0a0f709e49ffe1474119fa1be",
+    "selection_manifest_sha256": "d01f79d1b2353bc66ecdbb35f1d0a44ac96d6b669081336cbe11ab955f922026"
+  },
+  "g1_checkpoint_sha256": "634e1200330e87692fab4a2e35ba70806790937d7b19ed8b0a3c4968471bfe8c",
+  "g1_diagnostic_freeze_sha256": "c4e80a0c9bd8a1d4e5ef6204d23123d2d4f7b4deabb4c4b38aa4578b8b899e1c",
+  "g1_prediction_manifest_sha256": "6309d10d7aff9b3e380d4d088fee246afc372ca1a7aafbefb79d4e6ea329a0c0",
+  "pseudo_manifest_sha256": "450c0f9cf7f7114da98df9002a54f3620ae952026bcf4113bbd47797f66e1a7c",
+  "research_archive_commit": "aca685f",
+  "source_manifest_sha256": "b10524556e0536e1bbfd8370aa556ebcb219742c3e6c723e4a73e9637fa19bd0",
+  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "test_evaluated": false,
+  "test_status": "pending_one_locked_a100_run"
+}

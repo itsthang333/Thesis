@@ -35,9 +35,14 @@ def load_split_rows_without_annotations(
     *,
     expected_sha256: str,
     split: str,
+    allow_test: bool = False,
 ) -> list[dict[str, str]]:
-    if split not in {"train", "val"}:
-        raise ValueError("MAE reconstruction stages may only read train or val")
+    allowed = {"train", "val"} | ({"test"} if allow_test else set())
+    if split not in allowed:
+        raise ValueError(
+            "annotation-free split reader may only read train/val; test requires "
+            "an explicit final-protocol call with allow_test=True"
+        )
     if sha256_file(split_manifest) != validate_sha256(
         expected_sha256, name="expected split manifest SHA-256"
     ):

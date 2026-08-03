@@ -17,6 +17,7 @@ from typing import Any
 import numpy as np
 
 from mae_reconstruction_io import load_split_rows_without_annotations, sha256_file
+from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.candidate_diagnostics import (
     save_candidate_diagnostics,
     validate_candidate_diagnostics_manifest,
@@ -170,7 +171,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--split-manifest", type=Path, required=True)
     parser.add_argument("--expected-split-sha256", required=True)
-    parser.add_argument("--split", choices=("train", "val"), required=True)
+    parser.add_argument("--split", choices=("train", "val", "test"), required=True)
+    parser.add_argument("--frozen-config", type=Path)
     parser.add_argument("--anchor-root", type=Path, required=True)
     parser.add_argument("--anchor-candidate-manifest-sha256", required=True)
     parser.add_argument("--anchor-pseudo-manifest-sha256", required=True)
@@ -181,12 +183,16 @@ def main() -> None:
     parser.add_argument("--protocol-sha256", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
-    if args.split == "test":
-        raise ValueError("BTXRD test candidate merging is forbidden")
+    verify_frozen_test_config(
+        args.frozen_config,
+        split=args.split,
+        split_manifest=args.split_manifest,
+    )
     rows = load_split_rows_without_annotations(
         args.split_manifest,
         expected_sha256=args.expected_split_sha256,
         split=args.split,
+        allow_test=args.split == "test",
     )
     expected = [str(row["image_id"]) for row in rows]
     anchor_rows, anchor_summary = validate_candidate_diagnostics_manifest(
@@ -305,6 +311,7 @@ def main() -> None:
         "output_manifest_sha256": summary["manifest_sha256"],
         "validation_gt_read": False,
         "consumer_trained": False,
+        "test_images_read": len(rows) if args.split == "test" else 0,
         "test_evaluated": False,
     }
     path = args.output_dir / "gallery_merge_contract.json"

@@ -1,0 +1,36 @@
+{
+  "complete_misses": 49,
+  "evaluation_split": "validation",
+  "method": "G1 + fixed equal percentile-rank fusion",
+  "overall": {
+    "dice": 0.28872948670665205,
+    "iou": 0.2168391812852014,
+    "n": 184,
+    "precision": 0.336581038918025,
+    "recall": 0.4893048716334673
+  },
+  "subgroups": {
+    "1_to_lt_5_percent": {
+      "complete_misses": 13,
+      "dice": 0.4352293348209193,
+      "iou": 0.3235582763866723,
+      "n": 72
+    },
+    "ge_5_percent": {
+      "complete_misses": 1,
+      "dice": 0.38687353265476676,
+      "iou": 0.30311718136139176,
+      "n": 18
+    },
+    "lt_1_percent": {
+      "complete_misses": 35,
+      "dice": 0.15772329637374455,
+      "iou": 0.11857557651203836,
+      "n": 94
+    }
+  },
+  "test_evaluated": false,
+  "test_status": "pending_one_locked_a100_run",
+  "validation_images": 371,
+  "validation_tumor_images": 184
+}

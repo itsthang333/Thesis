@@ -416,7 +416,7 @@ def parse_args() -> argparse.Namespace:
                         help="Save per-image debug outputs (SAM masks, prompt overlays, scores)")
     parser.add_argument("--evaluate-prompt-quality", action="store_true",
         help="Removed leakage-prone legacy mode. Use --save-candidate-diagnostics, "
-             "freeze the generated manifests, then run evaluate_saved_candidate_diagnostics.py.")
+             "freeze the generated manifests, then use the final prediction-first evaluator.")
     parser.add_argument(
         "--save-candidate-diagnostics",
         action="store_true",
@@ -1125,8 +1125,8 @@ def main() -> None:
     if args.evaluate_prompt_quality:
         raise ValueError(
             "--evaluate-prompt-quality was removed because it loaded validation GT before "
-            "predictions were frozen. Generate with --save-candidate-diagnostics, then run "
-            "evaluate_saved_candidate_diagnostics.py against the locked manifests."
+            "predictions were frozen. Generate with --save-candidate-diagnostics, freeze "
+            "the final choices, and evaluate only against the locked manifests."
         )
     verify_frozen_test_config(
         args.frozen_config,

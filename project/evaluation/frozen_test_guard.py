@@ -48,8 +48,8 @@ def verify_frozen_test_config(
         raise ValueError("Frozen config checksum mismatch")
     if document.get("status") != "final":
         raise ValueError("Test access requires a frozen config with status='final'")
-    if int(document.get("schema_version", -1)) != 3:
-        raise ValueError("Test access requires frozen-config schema v3")
+    if int(document.get("schema_version", -1)) not in {3, 4}:
+        raise ValueError("Test access requires frozen-config schema v3 or v4")
 
     source = document.get("source") or {}
     expected_commit = str(source.get("git_commit", ""))
@@ -73,11 +73,13 @@ def verify_frozen_test_config(
         artifact = document.get(key)
         if not artifact:
             continue
-        artifact_path = Path(str(artifact["path"]))
-        if not artifact_path.is_file():
-            raise FileNotFoundError(f"Frozen artifact is missing: {artifact_path}")
-        if _sha256_file(artifact_path) != artifact.get("sha256"):
-            raise ValueError(f"Frozen artifact hash mismatch: {key}")
+        artifacts = artifact if isinstance(artifact, list) else [artifact]
+        for item in artifacts:
+            artifact_path = Path(str(item["path"]))
+            if not artifact_path.is_file():
+                raise FileNotFoundError(f"Frozen artifact is missing: {artifact_path}")
+            if _sha256_file(artifact_path) != item.get("sha256"):
+                raise ValueError(f"Frozen artifact hash mismatch: {key}")
 
     if split_manifest is not None:
         requested = Path(split_manifest).resolve()
@@ -88,11 +90,18 @@ def verify_frozen_test_config(
             raise ValueError("Requested split manifest hash differs from frozen config")
     for key, requested_path_raw in (requested_artifacts or {}).items():
         requested_path = Path(requested_path_raw).resolve()
-        frozen_artifact = document.get(key) or {}
-        if requested_path != Path(str(frozen_artifact.get("path", ""))).resolve():
-            raise ValueError(f"Requested artifact path differs from frozen config: {key}")
-        if _sha256_file(requested_path) != frozen_artifact.get("sha256"):
-            raise ValueError(f"Requested artifact hash differs from frozen config: {key}")
+        frozen_artifact = document.get(key)
+        if key == "classifier_checkpoint" and document.get("classifier_checkpoints"):
+            frozen_artifact = document["classifier_checkpoints"]
+        if frozen_artifact is None:
+            frozen_artifact = (document.get("artifacts") or {}).get(key)
+        candidates = frozen_artifact if isinstance(frozen_artifact, list) else [frozen_artifact or {}]
+        if not any(
+            requested_path == Path(str(item.get("path", ""))).resolve()
+            and _sha256_file(requested_path) == item.get("sha256")
+            for item in candidates
+        ):
+            raise ValueError(f"Requested artifact differs from frozen config: {key}")
     if requested_checkpoint is not None:
         requested_path = Path(requested_checkpoint).resolve()
         allowed = [document.get(key) or {} for key in checkpoint_any_of]

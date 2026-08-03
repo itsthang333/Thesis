@@ -1,7 +1,0 @@
-{
-  "git_commit": "f4a17a41d9e66d2e23f1c7b079d882a5e89e7ca4",
-  "checkpoint": "/kaggle/working/btxrd_s2c_cpm_classifier_v1/training/best_classifier.pt",
-  "checkpoint_sha256": "7da19e9c0537501c4c919200ed65b2bf6992383af70aa91c18b312a5d6204043",
-  "split_manifest": "/kaggle/working/frozen_split_manifest.csv",
-  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
-}

@@ -1,7 +1,0 @@
-{
-  "git_commit": "unknown",
-  "checkpoint": "/kaggle/working/btxrd_clean_binary_classifier_448/training/best_classifier.pt",
-  "checkpoint_sha256": "bb70912c179bda8cc32498b6bf8c405f11d46a37143cb4577a9986a838cec45c",
-  "split_manifest": "/kaggle/input/datasets/itsthang333/btxrd-small-lesion-research-v7/split_manifest.csv",
-  "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
-}

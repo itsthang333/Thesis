@@ -69,3 +69,29 @@ def test_anchor_rejects_partial_external_lock() -> None:
             output_dir=Path("/out"),
             external_root=Path("/saliency/val"),
         )
+
+
+def test_test_generation_requires_and_propagates_frozen_config() -> None:
+    with pytest.raises(ValueError, match="requires --frozen-config"):
+        build_generation_command(
+            mode="addition",
+            source_root=Path("/source"),
+            data_root=Path("/data"),
+            split_manifest=Path("/split.csv"),
+            split="test",
+            classifier=Path("/classifier.pt"),
+            sam=Path("/sam.pth"),
+            output_dir=Path("/out"),
+        )
+    values = build_generation_command(
+        mode="addition",
+        source_root=Path("/source"),
+        data_root=Path("/data"),
+        split_manifest=Path("/split.csv"),
+        split="test",
+        classifier=Path("/classifier.pt"),
+        sam=Path("/sam.pth"),
+        output_dir=Path("/out"),
+        frozen_config=Path("/lock.json"),
+    )
+    assert values[values.index("--frozen-config") + 1] == str(Path("/lock.json"))

@@ -1,0 +1,292 @@
+{
+    "schema_version":  1,
+    "scope":  "retained thesis-final executable source",
+    "source_files":  [
+                         {
+                             "path":  "project/__init__.py",
+                             "bytes":  65,
+                             "sha256":  "023ed9beb57920f6cbf3b8deb581cedd7f5fbf8e04aecf2ad579f7bc2abbf77e"
+                         },
+                         {
+                             "path":  "project/build_mask_bag_selector_cache.py",
+                             "bytes":  23836,
+                             "sha256":  "b0ea0b429edd80bcc07b61300fdec4bbe42b0fb71b2f52837312d28a675612df"
+                         },
+                         {
+                             "path":  "project/capture_final_run_environment.py",
+                             "bytes":  2327,
+                             "sha256":  "6c36cb68e52b33eda7af70c907572bd9414f22ff92bba40853a3ef2100b786af"
+                         },
+                         {
+                             "path":  "project/config.py",
+                             "bytes":  3840,
+                             "sha256":  "dd7392e2fbdd05b10b63d24151a42b0050f2d739c6c66cb4b8eed519e503d4c3"
+                         },
+                         {
+                             "path":  "project/datasets/__init__.py",
+                             "bytes":  271,
+                             "sha256":  "e3124d19dd67de3f7e1f2b10189424b3632bc374c5ff925122f66a4de812e5ff"
+                         },
+                         {
+                             "path":  "project/datasets/btxrd.py",
+                             "bytes":  24385,
+                             "sha256":  "144663378b53743076270440adbe6b6cc0616623565430d758c3c1c2ac3d1a2c"
+                         },
+                         {
+                             "path":  "project/datasets/common.py",
+                             "bytes":  6058,
+                             "sha256":  "192924a0b297add2907e5244588155cb34f930177fdbfdad26a3f4610e5124ef"
+                         },
+                         {
+                             "path":  "project/datasets/factory.py",
+                             "bytes":  1417,
+                             "sha256":  "e32450ce4b26c21beb4751e7b6251379b8ccb4cbcbb7806aed2e825a619e2ab1"
+                         },
+                         {
+                             "path":  "project/evaluate_final_rich_gallery.py",
+                             "bytes":  9632,
+                             "sha256":  "bd3b348d0881c7405e95d1d46209ee178746d19793d84648ebbe3923b0f6a4a1"
+                         },
+                         {
+                             "path":  "project/evaluation/__init__.py",
+                             "bytes":  151,
+                             "sha256":  "03406eec94c1833d0edf58c51eca20d7e923551bb0f44dfedc17faac714703b9"
+                         },
+                         {
+                             "path":  "project/evaluation/frozen_test_guard.py",
+                             "bytes":  4939,
+                             "sha256":  "ad234ece06bad93b7b637b3d5c29804abf59217e78f4a25dcad14bbdac5a0554"
+                         },
+                         {
+                             "path":  "project/final_selector.py",
+                             "bytes":  2455,
+                             "sha256":  "a79c7fd2ad13c4992da03bbf97f7f2944704cee968ce188791023a0a3fec96fc"
+                         },
+                         {
+                             "path":  "project/freeze_final_rich_gallery.py",
+                             "bytes":  8135,
+                             "sha256":  "2c8f9c182b48d259e3a3368bfdd5402a0ec1e03544a8c6e2aa5cf1ee50541fc6"
+                         },
+                         {
+                             "path":  "project/freeze_final_test_protocol.py",
+                             "bytes":  3968,
+                             "sha256":  "1f78237835dcaed15cbc40732f3d76193eb857b257c3503ad463f8a8f7498202"
+                         },
+                         {
+                             "path":  "project/generate_biomedclip_saliency.py",
+                             "bytes":  14246,
+                             "sha256":  "c3f4bd4995f5f24a7dd2162e1e64d19e065cd9b248d76a13f115452464efc5c8"
+                         },
+                         {
+                             "path":  "project/generate_nominal_patch_memory_saliency.py",
+                             "bytes":  24126,
+                             "sha256":  "42d28962ec74f64ea52e822e1e911ca1e16ae114ab68cc7244bdc06dfec4e873"
+                         },
+                         {
+                             "path":  "project/generate_pseudo_masks.py",
+                             "bytes":  143798,
+                             "sha256":  "92c5b671c2174803c754b412f27ee0670a027fcd8891eea50796ec0cde0f0b6e"
+                         },
+                         {
+                             "path":  "project/mae_reconstruction_io.py",
+                             "bytes":  4593,
+                             "sha256":  "c989551cd20abfca1a7bd1ef864c089ff0ea8308cc652a9cdba10291334a6fdd"
+                         },
+                         {
+                             "path":  "project/merge_frozen_candidate_galleries.py",
+                             "bytes":  13879,
+                             "sha256":  "9f5fd79ea5f02220083bb656a9d9cdda0766e43178d9173aa13f6efa4fadc5a0"
+                         },
+                         {
+                             "path":  "project/models/__init__.py",
+                             "bytes":  284,
+                             "sha256":  "ed1728f666e6de3d026da0af0a6f7984e899c9503dd84d785495346826c556e5"
+                         },
+                         {
+                             "path":  "project/models/biomedclip_saliency.py",
+                             "bytes":  11534,
+                             "sha256":  "069292d7976f7d4c6328a4c1a93f128b7cbeea2e7488cf737d7e6da5af9b7a2d"
+                         },
+                         {
+                             "path":  "project/models/classifier.py",
+                             "bytes":  3963,
+                             "sha256":  "3855c391dee01690bd6769b23cd28e41ef7a55e7829f91d4c32d2383e2efef81"
+                         },
+                         {
+                             "path":  "project/models/layercam.py",
+                             "bytes":  9754,
+                             "sha256":  "6945ef36957de3b96bf4f3445b67939c2faec5a663129a17ce4154d4c7212108"
+                         },
+                         {
+                             "path":  "project/models/mae_reconstruction.py",
+                             "bytes":  9063,
+                             "sha256":  "80da8e6cae5a8701f4ed5296a21170654141e6d0606e4913c11b923749687c06"
+                         },
+                         {
+                             "path":  "project/models/mask_bag_affinity_features.py",
+                             "bytes":  5690,
+                             "sha256":  "97a2e2175c591b27f7e07fc17dd34f329a68460bcbc6a8837cd436e26344eee8"
+                         },
+                         {
+                             "path":  "project/models/mask_bag_selector_cache.py",
+                             "bytes":  7709,
+                             "sha256":  "a49e273a7dd83d914265edef002bb8b5469a7fe9c3a1e4db708f40eeb9d927d0"
+                         },
+                         {
+                             "path":  "project/models/mask_bag_selector_cache_io.py",
+                             "bytes":  16697,
+                             "sha256":  "a366d1b21c25a66e94a638c2eff8c516697bbd579081d15d1e4cb4eee71c239c"
+                         },
+                         {
+                             "path":  "project/models/nominal_patch_memory.py",
+                             "bytes":  14207,
+                             "sha256":  "f59138491334da5479170b0600f8028c37bac99514a0524b8edb2277e3f1dc8b"
+                         },
+                         {
+                             "path":  "project/models/puzzle_cam.py",
+                             "bytes":  3303,
+                             "sha256":  "28f0098b59be0df92bd0d5e9da82931208e6f31ef941e909539ef737fe57d011"
+                         },
+                         {
+                             "path":  "project/models/rad_dino_mask_bag_mil.py",
+                             "bytes":  18857,
+                             "sha256":  "d75c79c74b56a877082e0d863786287c20675f583b7c07870018f5c3f0b3bb29"
+                         },
+                         {
+                             "path":  "project/models/rad_dino_multilayer_soft_region_decoder.py",
+                             "bytes":  26319,
+                             "sha256":  "07fb589cdcf6e6c1f8755a85872576fc3242575d7dfebf6306d5adcc7596183f"
+                         },
+                         {
+                             "path":  "project/models/s2c_cpm.py",
+                             "bytes":  9191,
+                             "sha256":  "a60abae3295bfd4705acf9e31ec79b2b152c31255dffd6ab61c6550f6888c3bf"
+                         },
+                         {
+                             "path":  "project/models/sam_segment_contrastive.py",
+                             "bytes":  9957,
+                             "sha256":  "35d5e1f1ac989604a3cba4bee3f1a03c063b4cd34fa562d650f6d730f1aed89b"
+                         },
+                         {
+                             "path":  "project/models/teacher_student.py",
+                             "bytes":  4138,
+                             "sha256":  "770aa43f2664acf9dad0a3602bb7779d648e0f3bf8a6849ae53903c9ebbced51"
+                         },
+                         {
+                             "path":  "project/models/torch_morphology.py",
+                             "bytes":  2794,
+                             "sha256":  "90e0896480f1455d52c1035f611b7d2382fd44ebf8a1504687b840945aa04ec0"
+                         },
+                         {
+                             "path":  "project/models/unet.py",
+                             "bytes":  6005,
+                             "sha256":  "7ee67f45773411e509a4e9aa687052ea73f6a2b7b158862095838253bd08975a"
+                         },
+                         {
+                             "path":  "project/package_biomedclip_saliency_supply.py",
+                             "bytes":  3034,
+                             "sha256":  "97a3467ea311e8ad8e53729c809d947c24109b805491246641bd005901890059"
+                         },
+                         {
+                             "path":  "project/progress.py",
+                             "bytes":  835,
+                             "sha256":  "fd51330b606cd69d9a2f0c73a78f6b582977d8cae984fb75617e18af6ad746f2"
+                         },
+                         {
+                             "path":  "project/pseudo/__init__.py",
+                             "bytes":  1338,
+                             "sha256":  "bf1b50100ffc22a5ddbe3d0c4a1d865dc1a0a6cffcbc4b7b4ab9f461b25173aa"
+                         },
+                         {
+                             "path":  "project/pseudo/affinity_selector_input.py",
+                             "bytes":  10009,
+                             "sha256":  "19f667c7eeef86c40409966d03798e5bebe3db588f0ae13bf2aa811cb6d440c6"
+                         },
+                         {
+                             "path":  "project/pseudo/candidate_diagnostics.py",
+                             "bytes":  12168,
+                             "sha256":  "c870c76a0fa50fbb934449ab2fc0991bfd6a33f81259eeae4f4460ccb896abf5"
+                         },
+                         {
+                             "path":  "project/pseudo/extract_prompts.py",
+                             "bytes":  6672,
+                             "sha256":  "deb44ab04a1f3ec3bb626135213be28ae7db412f8d7df2d5b9d506d352ef6e0c"
+                         },
+                         {
+                             "path":  "project/pseudo/generate_layercam.py",
+                             "bytes":  1991,
+                             "sha256":  "14e6c2c751eaee6257e71d3c3f6f0ae043ee11d7923f518907be6d7136d7530e"
+                         },
+                         {
+                             "path":  "project/pseudo/manifest.py",
+                             "bytes":  9113,
+                             "sha256":  "488cb2b53576ef286b6c6a4fc45c9ef69c7128edce1c699c949181f2faecd7ed"
+                         },
+                         {
+                             "path":  "project/pseudo/mask_selection.py",
+                             "bytes":  41516,
+                             "sha256":  "c5c9421df463a64295a900592cd2c85a8cd7e874dbfe1aae9bd2d3b21d17ebdb"
+                         },
+                         {
+                             "path":  "project/pseudo/morphology.py",
+                             "bytes":  6655,
+                             "sha256":  "1171766263d2ffb88d60341e73353bf48f87fdc641ee61dc88d1b1cf6bfa1911"
+                         },
+                         {
+                             "path":  "project/pseudo/sam_refine.py",
+                             "bytes":  15838,
+                             "sha256":  "abee4ec044e2e5556f014c6d7eb4597b357031c98e8257d1d7dce17c9d846c78"
+                         },
+                         {
+                             "path":  "project/pseudo/tumor_morphology.py",
+                             "bytes":  23387,
+                             "sha256":  "8fb6cc0d83c5952564bb2a1a38ddd8aaf2fa8a42d4d5f8972cf2ca2f49ad56d1"
+                         },
+                         {
+                             "path":  "project/pseudo/visualization.py",
+                             "bytes":  3388,
+                             "sha256":  "b00448340e6e84d697e10a44c5cf2ed1011454f09de07cd2ef2caa61e9c0eb78"
+                         },
+                         {
+                             "path":  "project/requirements.txt",
+                             "bytes":  790,
+                             "sha256":  "f84e8787d9a6ed92a61d870fbc9a120e864b21e9bca5c95638f56b4a19b7f16a"
+                         },
+                         {
+                             "path":  "project/run_classifier448_supply.py",
+                             "bytes":  7511,
+                             "sha256":  "222f45e52e1473d783871db0ea365771bc271ae6653820c0be9759631e0c6c55"
+                         },
+                         {
+                             "path":  "project/run_rad_dino_mask_bag_mil_probe.py",
+                             "bytes":  32302,
+                             "sha256":  "a338cc66926762eab7963482555701c54cbad9671b9094b9e8d649a471840d11"
+                         },
+                         {
+                             "path":  "project/run_rad_dino_multilayer_soft_region_probe.py",
+                             "bytes":  34841,
+                             "sha256":  "12c96a47eb3d6d6b9ea441489a44e2a3961f0b52574c95b8632d37f987c1f20e"
+                         },
+                         {
+                             "path":  "project/run_rich_gallery_candidate_supply.py",
+                             "bytes":  16774,
+                             "sha256":  "055d2b004b25fea04f25d3aa6c53f0f21067a9b36d5338f0bad6c5e150cabf4c"
+                         },
+                         {
+                             "path":  "project/score_final_rich_gallery.py",
+                             "bytes":  11769,
+                             "sha256":  "6cfe89b25aa31d8a968d152e7ad4837108ef74dba7f9789dc77f7046b6a6a8f2"
+                         },
+                         {
+                             "path":  "project/tools/build_btxrd_split_manifest.py",
+                             "bytes":  30696,
+                             "sha256":  "03f0e40037e051dda1b0938e0aa2324adec6636a7e3fe6aba21dec2eb6b47856"
+                         },
+                         {
+                             "path":  "project/train_classifier.py",
+                             "bytes":  52473,
+                             "sha256":  "2d01265b423094eb7bce37e89e25b721592d55e9e3ac0565f7bb3572d335b9fc"
+                         }
+                     ],
+    "source_file_count":  57
+}

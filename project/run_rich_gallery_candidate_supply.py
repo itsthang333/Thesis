@@ -15,6 +15,7 @@ from pathlib import Path
 EXPECTED_COUNTS = {
     "train": {"images": 2981, "tumor": 1488, "normal": 1493},
     "val": {"images": 371, "tumor": 184, "normal": 187},
+    "test": {"images": 373, "tumor": 187, "normal": 186},
 }
 
 
@@ -55,6 +56,7 @@ def common_generation_args(
     sam: Path,
     output_dir: Path,
     classifier_split_manifest: Path | None = None,
+    frozen_config: Path | None = None,
 ) -> list[str]:
     command = [
         sys.executable,
@@ -149,6 +151,10 @@ def common_generation_args(
         command.extend(
             ["--classifier-split-manifest", str(classifier_split_manifest)]
         )
+    if split == "test":
+        if frozen_config is None:
+            raise ValueError("test candidate generation requires --frozen-config")
+        command.extend(["--frozen-config", str(frozen_config)])
     return command
 
 
@@ -168,6 +174,7 @@ def build_generation_command(
     external_metadata_sha256: str | None = None,
     external_source_commit: str | None = None,
     external_weight_sha256: str | None = None,
+    frozen_config: Path | None = None,
 ) -> list[str]:
     command = common_generation_args(
         source_root=source_root,
@@ -178,6 +185,7 @@ def build_generation_command(
         classifier=classifier,
         sam=sam,
         output_dir=output_dir,
+        frozen_config=frozen_config,
     )
     if mode == "anchor":
         if not all(
@@ -281,6 +289,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--protocol-sha256", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--splits",
+        default="train,val",
+        help="Comma-separated subset of train,val,test. Test requires --frozen-config.",
+    )
+    parser.add_argument("--frozen-config", type=Path)
     return parser.parse_args()
 
 
@@ -305,7 +319,12 @@ def main() -> None:
     if args.output_dir.exists() and any(args.output_dir.iterdir()):
         raise FileExistsError("Candidate supply output must be empty")
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    counts = {split: split_counts(args.split_manifest, split) for split in ("train", "val")}
+    splits = tuple(item.strip() for item in args.splits.split(",") if item.strip())
+    if not splits or len(splits) != len(set(splits)) or any(item not in EXPECTED_COUNTS for item in splits):
+        raise ValueError("--splits must be a unique subset of train,val,test")
+    if "test" in splits and args.frozen_config is None:
+        raise ValueError("test candidate generation requires --frozen-config")
+    counts = {split: split_counts(args.split_manifest, split) for split in splits}
 
     supply = None
     if args.mode == "anchor":
@@ -321,12 +340,16 @@ def main() -> None:
         ):
             raise ValueError("External saliency supply manifest hash mismatch")
         supply = json.loads(supply_manifest.read_text(encoding="utf-8"))
+        expected_test_reads = counts["test"]["images"] if "test" in splits else 0
         if (
             supply.get("spatial_ground_truth_read") is not False
-            or supply.get("test_images_read") != 0
+            or int(supply.get("test_images_read", -1)) != expected_test_reads
             or supply.get("test_evaluated") is not False
         ):
-            raise ValueError("External saliency supply violates no-GT/no-test")
+            raise ValueError(
+                "External saliency supply violates the no-spatial-GT or "
+                "declared test-image-read contract"
+            )
     elif args.external_saliency_supply_root is not None:
         raise ValueError("Addition mode cannot receive external saliency")
 
@@ -346,7 +369,7 @@ def main() -> None:
     )
     log = args.output_dir / "kernel.log"
     results: dict[str, dict[str, object]] = {}
-    for split in ("train", "val"):
+    for split in splits:
         external = (
             args.external_saliency_supply_root / split
             if args.external_saliency_supply_root is not None
@@ -370,6 +393,7 @@ def main() -> None:
             external_weight_sha256=(
                 supply.get("biomedclip_weight_sha256") if supply else None
             ),
+            frozen_config=args.frozen_config,
         )
         run(command, cwd=args.source_root, env=env, log=log)
         stage = args.output_dir / split
@@ -421,7 +445,7 @@ def main() -> None:
         ),
         "splits": results,
         "spatial_ground_truth_read": False,
-        "test_images_read": 0,
+        "test_images_read": EXPECTED_COUNTS["test"]["images"] if "test" in splits else 0,
         "test_evaluated": False,
     }
     path = args.output_dir / "candidate_supply_manifest.json"

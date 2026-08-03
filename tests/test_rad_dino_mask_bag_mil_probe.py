@@ -63,32 +63,30 @@ def test_runner_calls_keyword_only_random_projection_contract() -> None:
 
 
 def test_evaluator_verifies_every_prediction_input_before_gt_loader() -> None:
-    source = (PROJECT / "evaluate_rad_dino_mask_bag_mil_probe.py").read_text(
+    scorer = (PROJECT / "score_final_rich_gallery.py").read_text(
         encoding="utf-8"
     )
-    gt_loader = source.index("from datasets.factory import build_segmentation_dataset")
-    assert source.index("_load_and_verify_predictions(args, val_rows)") < gt_loader
-    assert source.index("validate_candidate_diagnostics_manifest(") < gt_loader
-    assert source.index("sha256_file(args.baseline_per_image)") < gt_loader
-    assert 'parser.add_argument("--dataset-root"' in source
-    assert "choices=[\"test\"" not in source
-    assert '"bootstrap_replicates": args.bootstrap_replicates' in source
-    assert '"complete_misses_included": True' in source
+    evaluator = (PROJECT / "evaluate_final_rich_gallery.py").read_text(
+        encoding="utf-8"
+    )
+    assert "build_segmentation_dataset" not in scorer
+    assert scorer.index("verify_frozen_test_config(") < scorer.index("_audit_candidate_input(")
+    assert "candidate_manifest_sha256" in scorer
+    assert "pseudo_manifest_sha256" in scorer
+    gt_loader = evaluator.index("from datasets.factory import build_segmentation_dataset")
+    assert evaluator.index("verify_frozen_test_config(") < gt_loader
+    assert evaluator.index("candidate_choices_frozen_before_spatial_gt") < gt_loader
 
 
 def test_mask_bag_gate_is_prediction_first_and_all_checks_required() -> None:
-    source = (PROJECT / "evaluate_rad_dino_mask_bag_mil_probe.py").read_text(
+    source = (PROJECT / "evaluate_final_rich_gallery.py").read_text(
         encoding="utf-8"
     )
-    assert '"overall": 0.250' in source
-    assert '"small": 0.130' in source
-    assert '"medium": 0.370' in source
-    assert '"large": 0.380' in source
-    assert '"all_checks_required": True' in source
-    assert "overall_ci95_low_above_zero" in source
-    assert "no_subgroup_mean_decrease" in source
-    assert "no_complete_miss_increase" in source
-    assert "authorize only a separately predeclared pseudo-mask consumer" in source
+    assert 'choices=("val", "test")' in source
+    assert 'args.split == "test" and args.expected_overall_dice is not None' in source
+    assert '"candidate_choices_frozen_before_spatial_gt": True' in source
+    assert '"candidate_choices_frozen_before_test_gt": args.split == "test"' in source
+    assert '"test_evaluated": args.split == "test"' in source
 
 
 def test_candidate_generator_defaults_remain_backward_compatible() -> None:
