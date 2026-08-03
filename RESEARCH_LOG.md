@@ -15192,4 +15192,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   không đổi `abcdfd7...`; đúng một `kaggle kernels status` trả
   `KernelWorkerStatus.RUNNING`. Không check thêm, không partial download/log và
   không monitor; S9 tiếp tục **ĐANG LÀM**, chưa có prediction/Dice/GT/consumer/test.
+- **S9 producer-to-evaluator static compatibility audit:** không status check mới
+  và không mở dữ liệu. Producer ghi đúng selected cached `320x320` mask nhân
+  frozen bag probability qua `save_float_map`, kèm map/score SHA, exact winner và
+  recipe `within_image_equal_percentile_rank_no_tta`; evaluator fail-closed trên
+  `(320,320)` float16 finite range, source/protocol/freeze/manifest hashes trước
+  khi import segmentation dataset. Full split được hash GT-blind rồi materialize
+  thành projection chỉ `371` validation rows trước loader, nên train/test bytes
+  không bị loader quét. Combined evaluator+producer+readiness+decision+addendum
+  suite `26/26` PASS trên Python 3.9. Đây là static integration evidence, không
+  phải terminal scientific result và không thay đổi frozen source/protocol.
 
