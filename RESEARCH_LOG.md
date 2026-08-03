@@ -15368,3 +15368,19 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Sau khi artifact/log này visible trên central, được phép push đúng package trên
   thành Kaggle version 2; không status-check ngay sau push.
 
+### S9 Kaggle correction rerun version 2 launch (2026-08-03T12:43:53+07:00)
+
+- Final fetch xác nhận HEAD/central không divergence, worktree sạch, claim S9 vẫn
+  hiện diện và không có collision trên nhánh cộng tác. Đã push đúng frozen package
+  lên private kernel `itsthang333/btxrd-skelex-candidate-marginal-s9-v1`, Kaggle
+  **version 2**, URL
+  `https://www.kaggle.com/code/itsthang333/btxrd-skelex-candidate-marginal-s9-v1`.
+  Exact execution checkout vẫn là
+  `172c00e8719285010f52ebbbe715ad352ebb7428`; wrapper/binding/metadata SHA-256
+  giữ nguyên `198f0362...be3e / 884a3f9b...fdee / ef6c3cf0...80a4` như final
+  prelaunch audit. Kaggle chỉ cảnh báo ba keyword không hợp lệ; kernel version 2
+  được tạo thành công, không ảnh hưởng input, compute hay scientific protocol.
+- Không thực hiện immediate status check, không tải output/log và không tạo
+  monitor. Tại launch chưa có prediction/Dice, validation GT/consumer/test tiếp
+  tục khóa; claim S9 vẫn `ĐANG LÀM` chờ một bounded status check ở nhịp sau.
+
