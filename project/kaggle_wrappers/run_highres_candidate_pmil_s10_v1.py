@@ -170,6 +170,7 @@ def run_static_tests() -> None:
             "tests/test_highres_candidate_pmil.py",
             "tests/test_run_highres_candidate_pmil_s10.py",
             "tests/test_audit_highres_candidate_pmil_s10_output.py",
+            "tests/test_highres_candidate_pmil_s10_rank_exactness.py",
         ],
         cwd=SOURCE,
     )

@@ -10,7 +10,7 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "ae4b9eb751e48bcae3e1ce7d9a24669e923d8969a369b49aaf83f22f9bf403f9"
+TEMPLATE_SHA256 = "8b575a2cd0104a445e59bd577eaa40da841d86c07114d79321a75dbcab10adb7"
 TEMPLATE_PATH = "project/kaggle_wrappers/run_highres_candidate_pmil_s10_v1.py"
 PROTOCOL_PATH = "artifacts/research_protocols/highres_candidate_pmil_s10_v1.json"
 PROTOCOL_SHA256 = "f5aec30235676d8d878573b7acfeef09adaa1d1b0ea7fdc86b4f07b708cb8739"

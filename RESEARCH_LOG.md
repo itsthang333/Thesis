@@ -15938,3 +15938,18 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   template. Wrapper/binder test SHA lần lượt `84e413...89ce / acb335...5614`;
   focused wrapper tests `7/7`, Ruff/py_compile/diff-check PASS. Chưa bind/package/
   push Kaggle; full checklist và final collision/provenance audit vẫn bắt buộc.
+
+### S10 KPF-019 rank exactness closure trước package (2026-08-03)
+
+- Khi đọc đầy đủ `KAGGLE_PREFLIGHT_CHECKLIST.md`, mục KPF-019 yêu cầu exact rank
+  vector **và argmax** trên mọi candidate count `1..81`, không chỉ các điểm biên.
+  Đã thêm regression riêng SHA-256
+  `b338fb119e7ee69f773e9c02c608ed7ce69f322a875c55ebe2c676c5b878066f`:
+  float32 producer và independent auditor byte-exact trên cả 81 count, với
+  repeated/fused ties; argmax exact toàn bộ. Test chạy PASS trước input.
+- Wrapper static-test inventory được bổ sung regression này; wrapper/binder SHA
+  mới lần lượt `8b575a2cd0104a445e59bd577eaa40da841d86c07114d79321a75dbcab10adb7 /`
+  `b357921859df92942c6fa19fa14866ccdb5abc53cc77ba0e288c75128942df58`,
+  supersede hash `ae4b9e...03f9 / f88a8f...d380` ở mục trước. Đây là
+  implementation/preflight coverage only; scientific protocol/model/arms/
+  objective không đổi, chưa mở input/prediction/GT/consumer/test.
