@@ -1,0 +1,190 @@
+{
+  "protocol_id": "highres_candidate_pmil_s10_v1",
+  "frozen_local_time": "2026-08-03T19:02:12+07:00",
+  "status": "FROZEN_PRELAUNCH",
+  "experiment_id": "EXP-20260803-codex-s10-highres-proposal-pmil-v1",
+  "owner": "Codex central workstream",
+  "hypothesis": "a trainable high-resolution proposal-conditioned dual-stream MIL model can retain S9 image-label identity signal while separating identity, evidence capture, and local purity; a Pareto guard can prevent unsupported switches and improve all size groups without a GT-size router",
+  "scientific_source": {
+    "commit": "3c29686ea80ff6d36e1c8441d1a5dd4826802b71",
+    "design": "HIGHRES_CANDIDATE_PMIL_S10_DESIGN.md",
+    "single_scientific_delta": "640px trainable ResNet50-FPN proposal MIL with dense image-label evidence and Pareto-guarded identity/capture/purity selection",
+    "direct_predecessor": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+    "predecessor_failure_analysis_sha256": "19f25e0ecf6833b31003b8a3bc5b52f49fe356f808d6654d52b44462f9f341a9"
+  },
+  "inherited_terminal_evidence": {
+    "s9_primary_dice": [0.2739092095, 0.1303083920, 0.4334612388, 0.3856164723],
+    "s9_control_dice": [0.2552028879, 0.1256354731, 0.3938062554, 0.3774192500],
+    "trusted_g1_comparator_dice": [0.2887294867, 0.1577232964, 0.4352293348, 0.3868735327],
+    "same_gallery_oracle_dice": [0.4090755342, 0.2227494852, 0.5941470844, 0.6418253674],
+    "s9_complete_misses_primary_control": [72, 70],
+    "s9_normal_tumor_likelihood_area_spearman": [-0.56876, -0.44397],
+    "s9_promoted_as_improvement": false,
+    "collaborator_output_accessed": false
+  },
+  "image_label_only_boundary": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "cohort": {"train": 2981, "validation": 371},
+    "train_labels": {"normal": 1493, "tumor": 1488},
+    "training_targets": ["binary image-level normal/tumor label"],
+    "class_agnostic_candidate_masks_allowed_as_proposal geometry": true,
+    "segmentation_annotation_paths_resolved": false,
+    "segmentation_annotation_bytes_opened_or_hashed": false,
+    "validation_size_group_used_for_training_or_selection": false,
+    "test_images_read": 0
+  },
+  "immutable_inputs": {
+    "raw_dataset": "itsthang333/btxrd-raw",
+    "resnet50_weight_file": "resnet50-11ad3fa6.pth",
+    "resnet50_weight_bytes": 102540417,
+    "resnet50_weight_sha256": "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca",
+    "train_gallery_dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1@1",
+    "train_candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "train_pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "validation_transport_dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1@1",
+    "validation_candidates_zip_sha256": "426fbe9cb01ce5063e7897b1b1c424ab4ce9f0310086434aec5163759422687a",
+    "validation_candidate_manifest_sha256": "3e9396f532c793258919a1d99aa3dcef00523436c853207b8d7123e5dc133090",
+    "validation_pseudo_manifest_sha256": "286d1fce0bcbd0f96a15b6b386ad27a0edac3500a63c5b87e16f9075d6c6320e",
+    "selector_cache_dataset": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+    "baseline_protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+  },
+  "representation": {
+    "input_size": 640,
+    "normalization": "ImageNet mean/std",
+    "backbone": "torchvision ResNet-50 ImageNet-1K V2, trainable C2-C5",
+    "fpn": "128 channels, C2-C5 top-down and fused at stride 4",
+    "dense_evidence_grid": [160, 160],
+    "candidate_projection": "continuous square mapping directly to 160x160 then area identity projection",
+    "ring_radius_cells": 3,
+    "proposal_descriptor": ["inside", "exterior ring", "inside minus ring", "global"],
+    "candidate_set_transformer": {"hidden": 256, "heads": 4, "layers": 2, "dropout": 0.1},
+    "proposal_heads": ["classification identity", "detection attention"],
+    "dense_head": "3x3-GELU-1x1 tumor evidence logit",
+    "raw_area_coordinate_source_family_subtype_current_score_inputs": false,
+    "grad_cam_or_posthoc_cam": false,
+    "cam_like_component": "learned in-model dense FPN evidence map; never thresholded into the final pseudo-mask"
+  },
+  "objective": {
+    "bag": "WSDDN classification sigmoid times within-bag detection softmax, binary cross entropy",
+    "normal_candidate": "mean softplus identity logit per image, then equal mean across normal images",
+    "normal_pixel": "mean softplus dense logit over normal images",
+    "tumor_union": "soft-Dice consistency between sigmoid dense evidence and detection-attention weighted candidate union",
+    "flip_consistency": "Smooth-L1 identity and physically aligned dense logits",
+    "area_nuisance": "squared projection of identity and detection logits onto centered log candidate area",
+    "top_instance_dropout": "tumor bags only after warm-up; all normal candidates remain negatives",
+    "current_winner_or_instance_pseudo_label": false,
+    "validation_segmentation_target": false
+  },
+  "training": {
+    "optimizer": "AdamW",
+    "epochs": 32,
+    "batch_size_total": 4,
+    "backbone_learning_rate": 0.00003,
+    "fpn_and_heads_learning_rate": 0.0003,
+    "schedule": "cosine to zero over exactly 32 epochs",
+    "weight_decay": 0.0001,
+    "warmup_epochs": 4,
+    "top_instance_dropout_fraction": 0.2,
+    "loss_weights": {
+      "bag": 1.0,
+      "normal_candidate": 0.25,
+      "normal_pixel": 0.25,
+      "tumor_union": 0.25,
+      "flip_consistency": 0.10,
+      "identity_area_projection": 0.05,
+      "detection_area_projection": 0.05
+    },
+    "views": ["original", "horizontal flip aligned to original"],
+    "seed": 42,
+    "checkpoint_selection": "fixed final epoch only; no validation selection",
+    "early_stopping": false,
+    "hyperparameter_sweep": false
+  },
+  "finite_arms": {
+    "control": "geometry_v3_plus_upstream_control",
+    "capacity": "control_plus_s10_identity_capacity",
+    "primary": "s10_pareto_identity_capture_purity",
+    "control_recipe": "equal tie-aware within-image ranks of Geometry-v3 and upstream selection score",
+    "capacity_recipe": "equal tie-aware within-image ranks of Geometry-v3, upstream, and S10 identity",
+    "primary_recipe": "relative to control, switch only to a candidate weakly no worse in identity/capture/purity ranks and strictly better in at least one; maximize minimum component rank, then identity rank, then smallest immutable index",
+    "no_dominator": "retain exact control winner",
+    "bag_probability": "exact accepted Geometry-v3 bag probability for all arms",
+    "dense_evidence_as_final_mask": false,
+    "weight_threshold_extent_subgroup_alternatives": false
+  },
+  "execution": {
+    "compute": "private Kaggle T4x2 only",
+    "model_data_parallel": true,
+    "mixed_precision": "float16 AMP",
+    "independent_auditor_reexecutes_validation_inference": true,
+    "independent_auditor_reexecutes_training": false,
+    "independent_auditor_verifies": [
+      "3352 input-manifest rows",
+      "checkpoint/history/provenance",
+      "371 original+flip identity and dense outputs",
+      "371 capture/purity vectors and Pareto decisions",
+      "1113 candidate-score payloads",
+      "1113 physical prediction maps",
+      "three arm freezes and triple freeze"
+    ],
+    "prediction_triple_frozen_before_validation_gt": true
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261206,
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "mechanism_gate": {
+      "primary_overall_and_small_strictly_improve_vs_control_and_capacity": true,
+      "primary_medium_and_large_no_regression_vs_control_and_capacity": true,
+      "primary_complete_misses_no_increase_vs_control_and_capacity": true
+    },
+    "operational_gate": {
+      "overall_minimum": 0.34024039,
+      "small_minimum": 0.17895493,
+      "medium_minimum": 0.51244178,
+      "large_minimum": 0.49370336,
+      "paired_overall_ci95_lower_strictly_positive_vs_both_controls": true
+    },
+    "post_hoc_rescue_or_sweep": false,
+    "failure_analysis_required_before_successor": true
+  },
+  "canonical_lf_source_hashes": {
+    "HIGHRES_CANDIDATE_PMIL_S10_DESIGN.md": "fc1fca970e6e14ee1fa00f78173694c11acee64c10cf4d0b05a071bb8c2ee112",
+    "project/models/highres_candidate_pmil.py": "ecc90caa9076a4445cecf2330b6f18231117043daa3295e816ca9bc60237b918",
+    "project/run_highres_candidate_pmil_s10.py": "8d83081f77345e688d12e99bdbcf1ec53a1923da2ba4345773a6436bbb9c007d",
+    "project/audit_highres_candidate_pmil_s10_output.py": "489546d45a50bbfd0e2c90b6f29415da87ca5e4624245f576eb21da2666c7f0c",
+    "tests/test_highres_candidate_pmil.py": "61ae5911f88bc829865732b59953dd212c92cd7d141d5a87eb4f3f804fdd245f",
+    "tests/test_run_highres_candidate_pmil_s10.py": "cb73a4f4c6d6fcf1f7bbd756c09d2e81386c7d4dcdb7dc638406877c5e44cb45",
+    "tests/test_audit_highres_candidate_pmil_s10_output.py": "f17e48454ecfe0d296224264e77d0acd36995ddd78a217d99f5d29eff27d44d8",
+    "project/run_bas_candidate_descriptor_core.py": "a9b69da1c524ddbd70e439ee5986ace843711993e2150bde17c75aafcc75b2dc",
+    "project/audit_bas_candidate_descriptor_core.py": "82112c773a07ff4b18f54698769beeb4eedc78c7404d87a0b9253543dfb83a4d",
+    "project/run_rad_dino_mask_bag_mil_probe.py": "0a220933343212dd3f4cc349f459db54b2b492d04240a7aa28fb85c475d54ae8",
+    "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a"
+  },
+  "post_freeze_source_hashes": {
+    "project/evaluate_mask_bag_selector_arm.py": "857c4688a92833f0c73680de8a337529b0f217b6eba373db546409fe9b2b3623"
+  },
+  "prohibited": [
+    "validation segmentation GT before physical triple freeze, independent audit, and central readiness commit",
+    "collaborator Kaggle or output access",
+    "proposal regeneration or accepted candidate modification",
+    "resolution, backbone, loss weight, epoch, optimizer, dropout, fusion, threshold, area, subgroup, or morphology sweep",
+    "validation-label checkpoint selection",
+    "post-hoc rescue after metrics",
+    "consumer training before operational gate pass",
+    "BTXRD test access"
+  ],
+  "safety": {
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  }
+}

@@ -15895,3 +15895,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   combined S10 focused suite `28/28`, Ruff, Python 3.9 `py_compile` và
   diff-check PASS. Chưa có real-data execution/prediction/Dice/GT/consumer/test;
   đây chỉ là static auditor readiness, protocol/wrapper/preflight vẫn chưa xong.
+
+### S10 scientific protocol freeze (2026-08-03)
+
+- Protocol one-shot đã freeze trước mọi real input tại
+  `artifacts/research_protocols/highres_candidate_pmil_s10_v1.json`, SHA-256
+  `f5aec30235676d8d878573b7acfeef09adaa1d1b0ea7fdc86b4f07b708cb8739`,
+  scientific-source commit
+  `3c29686ea80ff6d36e1c8441d1a5dd4826802b71`. Protocol khóa exact input,
+  model/objective/optimizer/schedule, ba arm, T4x2 execution, independent
+  validation re-inference, physical triple freeze và evaluation order.
+- Mechanism gate: primary phải tăng **cả overall và small** so với cả control và
+  capacity, không giảm medium/large so với cả hai, không tăng complete miss.
+  Operational gate thêm exact goal
+  `0.34024039/0.17895493/0.51244178/0.49370336` và paired overall CI95 lower
+  `>0` so với cả hai comparator. Bootstrap được khóa `10,000`, seed
+  `20261206`; không rescue/sweep hậu nghiệm.
+- Protocol ghi rõ S10 **không có Grad-CAM/post-hoc CAM**. Dense FPN evidence là
+  CAM-like component học trong model chỉ để đo capture/purity; final map luôn là
+  immutable candidate đã chọn nhân accepted bag probability. JSON parse và
+  diff-check PASS; validation GT/consumer/test vẫn khóa, chưa launch Kaggle.
