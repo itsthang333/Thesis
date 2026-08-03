@@ -15013,4 +15013,48 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Đến đây `real_data_opened=false`, `kaggle_launched=false`,
   `validation_prediction_created=false`, `validation_gt_read=false`,
   `consumer_trained=false`, `test_evaluated=false`.
+- **S9 producer + independent auditor static milestone (2026-08-03):** runner
+  `project/run_skelex_candidate_marginal_s9.py` physical LF SHA-256
+  `2310b6ff47b30d2872a89d6da4f331580a5041b3a69be3a82a13442dd95dafb4`
+  đã implement exact 512px/layer-8+16 recipe, in-RAM float16 feature cache,
+  one-shot final-epoch head training, accepted baseline identity, finite
+  control/primary rank pair và physical pair freeze. Cache token khoảng 14 GB
+  không được xuất; thay vào đó manifest khóa exact token/support/content/index
+  hashes cho đủ `2,981+371` ảnh, giữ output compact nhưng audit được.
+- Independent GT-blind auditor
+  `project/audit_skelex_candidate_marginal_s9_output.py` physical LF SHA-256
+  `1ee3a18399ba1780912dbffecc5d51ce27861fce45bb89e9fb7d5883e73288fe`
+  không gọi producer projection/likelihood/rank helpers: tự tái tạo square grid,
+  area support/ring, head arithmetic và ranks; chạy lại frozen encoder để kiểm
+  `3,352` tensor-hash rows, rồi kiểm checkpoint/history, mọi validation
+  likelihood, `742` score payload và `742` physical map. Auditor ghi rõ
+  `training_reexecuted=false`: nó kiểm exact training input manifest, final
+  checkpoint provenance/state và inference, không giả vờ independent retraining
+  là cần thiết.
+- Trong static review phát hiện singleton percentile-rank ban đầu trả `0` trong
+  khi accepted implementation trả `1`; lỗi chỉ ở primitive chưa chạy dữ liệu.
+  Đã sửa và thêm tie/singleton byte-identity regression. Canonical model/test
+  SHA mới supersede hash amendment trước:
+  `3cd7359e6f1545195b51b1e262e80233d77586049f4b08fba02233a6637c69db /`
+  `624c274720380d6314f253206383de72d7c9a99ee4d69c66f5c1edfff8d8c505`.
+  Runner/auditor test SHA lần lượt
+  `0844c23d54beccf0dcbfd29e14de4ee1490d67bf4178bd3764c9ab7773dcf7ed /`
+  `2cab6273f90279f162a846575654614870cc0e0bcb8c2fe24201bdd33252ce8f`.
+- Source kỹ thuật chính thức đã kiểm trực tiếp: Hugging Face Transformers
+  `v4.50.2` ViTMAE source
+  https://github.com/huggingface/transformers/blob/v4.50.2/src/transformers/models/vit_mae/modeling_vit_mae.py
+  khai báo `interpolate_pos_encoding` ở patch embeddings và
+  `ViTMAEModel.forward`; vì vậy 512px positional interpolation không dựa vào
+  API suy đoán.
+- Python 3.9 focused producer/auditor/model suite `22/22` PASS; `py_compile`,
+  Ruff và `git diff --check` PASS. Full repo mặc định đạt `659 pass / 23 fail`:
+  12 lỗi thêm là known `zip(strict=True)` interpreter boundary. Chạy lại bằng
+  exact fail-closed shim SHA `dcf88d82...c396a` đạt `671 pass / 11 fail`; cả 11
+  là known unrelated frozen-protocol hash drift của evaluator được correction
+  sau protocol và raw working-tree CRLF `project/datasets/btxrd.py`, không file
+  nào do S9 import/sửa. Không nới hoặc sửa test cũ để tạo màu xanh giả.
+- Đến static milestone này vẫn chưa mở real image/cache/candidate, chưa Kaggle/
+  train/inference/prediction, chưa validation GT/consumer/test. Bước tiếp theo
+  là commit/push exact scientific source, sau đó protocol mới được bind source
+  commit và hashes; chưa được launch từ worktree chưa đóng băng.
 

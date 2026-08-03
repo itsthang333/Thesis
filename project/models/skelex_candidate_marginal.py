@@ -259,6 +259,8 @@ def average_percentile_rank(values: np.ndarray) -> np.ndarray:
     values = np.asarray(values, dtype=np.float64).reshape(-1)
     if not len(values) or not np.isfinite(values).all():
         raise ValueError("rank values must be finite and non-empty")
+    if len(values) == 1:
+        return np.ones(1, dtype=np.float64)
     order = np.argsort(values, kind="stable")
     ranks = np.empty(len(values), dtype=np.float64)
     cursor = 0

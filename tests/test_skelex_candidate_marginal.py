@@ -110,6 +110,16 @@ def test_finite_readout_reproduces_control_and_adds_one_equal_rank() -> None:
     np.testing.assert_allclose(output["primary"], [0.5, 1.0 / 3.0, 2.0 / 3.0])
 
 
+def test_single_candidate_readout_matches_accepted_rank_contract() -> None:
+    output = finite_readout(
+        np.asarray([4.0]),
+        np.asarray([-3.0]),
+        np.asarray([0.2]),
+    )
+    np.testing.assert_array_equal(output["control"], [1.0])
+    np.testing.assert_array_equal(output["primary"], [1.0])
+
+
 def test_fractional_supports_preserve_candidate_and_construct_local_ring() -> None:
     candidates = torch.zeros((1, 512, 512))
     candidates[:, 240:272, 240:272] = 1.0
