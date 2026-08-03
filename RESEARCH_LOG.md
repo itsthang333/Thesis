@@ -15384,3 +15384,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   monitor. Tại launch chưa có prediction/Dice, validation GT/consumer/test tiếp
   tục khóa; claim S9 vẫn `ĐANG LÀM` chờ một bounded status check ở nhịp sau.
 
+### S9 frozen-result failure analyzer chuẩn bị trong thời gian kernel chạy (2026-08-03)
+
+- Không status-check hoặc mở input trong bước này. Đã thêm analyzer read-only
+  `project/analyze_skelex_candidate_marginal_s9_failure.py`, canonical-LF
+  SHA-256 `32ebbe23bc326cbd4a780091726d9c7270a8f41f0d25cf3c3768e87239dab85d`.
+  Công cụ chỉ chạy nếu matched decision đã freeze trạng thái `FAIL`, wrapper
+  audit bind exact independent-audit hash và prediction pair đã freeze trước GT.
+  Nó chỉ đọc producer evidence/manifests cùng các bảng evaluation/decision đã
+  freeze; không import dataset, không mở raw radiograph/annotation/test và không
+  tạo selector/rescue.
+- Diagnostic được khóa trước kết quả gồm: switch incidence tumor-vs-normal,
+  win/loss/tie và extent drift theo small/medium/large, likelihood dispersion,
+  tương quan likelihood với candidate area/base/upstream, control-primary rank
+  correlation và likelihood margin của mọi switch. Nhờ vậy nếu S9 fail có thể
+  phân biệt tumor-specific evidence, area/extent shortcut và fusion failure trước
+  khi đăng ký successor, thay vì thử sweep hậu nghiệm.
+- Synthetic safety/tamper test SHA-256
+  `eee52c0f19b2fca35f1146994aa7fd17a6158effea798005e384999fc6fe0a5f`;
+  `3/3` PASS, Ruff/`py_compile`/diff check PASS. Đây chỉ là static preparation;
+  analyzer chưa được chạy trên output thật, chưa có metric và không thay đổi
+  scientific protocol hay evaluation gate S9.
+
