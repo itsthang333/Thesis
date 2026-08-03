@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_PRE_GT_IMPLEMENTATION_CORRECTION_BEFORE_CONTROL_RERUN",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "frozen_at": "2026-08-03T15:59:02.2755454+07:00",
+  "failure_audit": {
+    "commit": "4c4b7f1cc2fa139dab80515160b1acc576a79c1a",
+    "path": "artifacts/evaluation/skelex_candidate_marginal_s9_v1/control_attempt1_schema_error_audit.json",
+    "sha256": "fe9faf8bafe917d34c2b933bfc279d5fe2cb817bd7ea7200293d6873892cf204"
+  },
+  "supersedes_evaluator_implementation_only": {
+    "previous_evaluator_sha256": "5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0",
+    "reason": "The previous evaluator hard-coded the legacy candidate_logit_tta manifest field and raised KeyError before validation GT on the frozen S9 candidate_logit_recipe schema."
+  },
+  "correction": {
+    "source": "project/evaluate_mask_bag_selector_arm.py",
+    "source_sha256": "857c4688a92833f0c73680de8a337529b0f217b6eba373db546409fe9b2b3623",
+    "test": "tests/test_evaluate_mask_bag_selector_arm.py",
+    "test_sha256": "8b7046c302bb59f9b3f046aec21425e0168c8ef1df00445b279d30d39aa3c7ae",
+    "method": "Require the caller to bind an exact candidate-logit provenance field/value. Accept only one of two frozen pairs, reject missing, duplicated, mixed, or arbitrary provenance, and serialize the selected pair into evaluation_audit.json.",
+    "allowed_exact_pairs": [
+      {
+        "field": "candidate_logit_tta",
+        "value": "mean_original_aligned_horizontal_flip"
+      },
+      {
+        "field": "candidate_logit_recipe",
+        "value": "within_image_equal_percentile_rank_no_tta"
+      }
+    ],
+    "s9_bound_pair": {
+      "field": "candidate_logit_recipe",
+      "value": "within_image_equal_percentile_rank_no_tta"
+    },
+    "prediction_or_score_changed": false,
+    "metric_or_gate_changed": false,
+    "bootstrap_changed": false,
+    "scientific_algorithm_changed": false
+  },
+  "verification": {
+    "python": "3.9.23",
+    "py_compile": "PASS",
+    "focused_pytest": "10 passed",
+    "ruff_with_preexisting_e402_f541_ignored": "PASS",
+    "git_diff_check": "PASS",
+    "regressions": {
+      "legacy_exact_pair_accepted": true,
+      "s9_exact_pair_accepted": true,
+      "mixed_fields_rejected": true,
+      "wrong_value_rejected": true,
+      "missing_field_rejected": true
+    }
+  },
+  "unchanged_frozen_contract": {
+    "protocol_sha256": "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d",
+    "evaluation_addendum_sha256": "8986aa5d03bf287c747c9a58f4f8f2a1948abf7811b74a01baa2f7060834a390",
+    "postfreeze_readiness_sha256": "4d7b1a3b5c69f2de0b02cc2c31f21bd269ce213b3bb127d38c88ab71289e95ce",
+    "prediction_pair_freeze_sha256": "b45c53d4a9f6c189741431dbe362c19998379b8ca0ef3465aa6824092e5f8280",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261205,
+    "post_hoc_rescue_or_sweep_authorized": false
+  },
+  "evaluation_authorized_only_after_corrected_source_and_this_artifact_are_committed_and_visible_central": true,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}

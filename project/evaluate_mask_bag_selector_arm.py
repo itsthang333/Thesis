@@ -47,6 +47,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-arm-source-commit", required=True)
     parser.add_argument("--expected-arm-protocol-sha256", required=True)
     parser.add_argument("--expected-score-manifest-sha256", required=True)
+    parser.add_argument(
+        "--expected-candidate-logit-provenance-field",
+        choices=("candidate_logit_tta", "candidate_logit_recipe"),
+        required=True,
+    )
+    parser.add_argument(
+        "--expected-candidate-logit-provenance-value",
+        required=True,
+    )
     parser.add_argument("--baseline-root", type=Path, required=True)
     parser.add_argument("--expected-baseline-freeze-sha256", required=True)
     parser.add_argument("--baseline-per-image", type=Path, required=True)
@@ -97,6 +106,26 @@ def _spearman(values_a: list[float], values_b: list[float]) -> float | None:
     if np.ptp(ranks_a) == 0.0 or np.ptp(ranks_b) == 0.0:
         return None
     return float(np.corrcoef(ranks_a, ranks_b)[0, 1])
+
+
+def _candidate_logit_provenance_matches(
+    prediction: dict[str, str],
+    *,
+    expected_field: str,
+    expected_value: str,
+) -> bool:
+    allowed = {
+        ("candidate_logit_tta", "mean_original_aligned_horizontal_flip"),
+        ("candidate_logit_recipe", "within_image_equal_percentile_rank_no_tta"),
+    }
+    if (expected_field, expected_value) not in allowed:
+        return False
+    present = {
+        field
+        for field in ("candidate_logit_tta", "candidate_logit_recipe")
+        if field in prediction
+    }
+    return present == {expected_field} and prediction[expected_field] == expected_value
 
 
 def _paired_group_bootstrap(
@@ -299,8 +328,11 @@ def _verify_arm(
                 - float(score_row["selected_candidate_logit"])
             )
             > 5.0e-6
-            or prediction["candidate_logit_tta"]
-            != "mean_original_aligned_horizontal_flip"
+            or not _candidate_logit_provenance_matches(
+                prediction,
+                expected_field=args.expected_candidate_logit_provenance_field,
+                expected_value=args.expected_candidate_logit_provenance_value,
+            )
             or not 0.0 <= float(prediction["bag_probability"]) <= 1.0
         ):
             raise ValueError(f"arm winner/cache provenance mismatch: {image_id}")
@@ -724,6 +756,10 @@ def main() -> None:
         "arm_prediction_freeze_sha256": args.expected_arm_freeze_sha256,
         "arm_prediction_manifest_sha256": arm_freeze["prediction_manifest_sha256"],
         "candidate_score_manifest_sha256": args.expected_score_manifest_sha256,
+        "candidate_logit_provenance": {
+            "field": args.expected_candidate_logit_provenance_field,
+            "value": args.expected_candidate_logit_provenance_value,
+        },
         "baseline_prediction_freeze_sha256": args.expected_baseline_freeze_sha256,
         "baseline_prediction_manifest_sha256": baseline_freeze[
             "prediction_manifest_sha256"

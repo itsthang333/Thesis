@@ -15509,3 +15509,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   seed, bootstrap, gate hay protocol khoa học; không sweep/rescue. Safety giữ
   nguyên `validation_gt_read=false`, `consumer_trained=false`,
   `test_evaluated=false` và chưa có Dice.
+
+### S9 evaluator schema correction freeze trước GT (2026-08-03)
+
+- Sau failure gate commit `4c4b7f1cc2fa139dab80515160b1acc576a79c1a`,
+  correction implementation-only làm evaluator yêu cầu caller bind exact
+  provenance field/value. Guard chỉ chấp nhận một trong hai cặp đã biết:
+  `candidate_logit_tta=mean_original_aligned_horizontal_flip` hoặc
+  `candidate_logit_recipe=within_image_equal_percentile_rank_no_tta`; missing,
+  mixed/both fields, wrong value và arbitrary pair đều bị reject. S9 retry khóa
+  cặp thứ hai và evaluator ghi nó vào `evaluation_audit.json`.
+- Corrected evaluator/test SHA-256 lần lượt
+  `857c4688a92833f0c73680de8a337529b0f217b6eba373db546409fe9b2b3623 /`
+  `8b7046c302bb59f9b3f046aec21425e0168c8ef1df00445b279d30d39aa3c7ae`.
+  Python 3.9 `py_compile` PASS, focused `10/10` PASS, Ruff PASS khi chỉ ignore hai
+  lỗi pre-existing `E402/F541`, `git diff --check` PASS. Không thay prediction,
+  score, metric, bootstrap, seed, gate hoặc thuật toán khoa học.
+- Correction addendum được freeze tại
+  `artifacts/research_protocols/skelex_candidate_marginal_s9_v1_evaluator_schema_correction.json`;
+  SHA-256
+  `882f892d779a2267c1d1dd301fc2fc4f67a56eb873a449b6e299d9b7e91fd6d2`;
+  nó giữ nguyên protocol `0a303c9c...2ee3d`, evaluation addendum
+  `8986aa5d...34a390`, readiness `4d7b1a3b...9e95ce`, pair freeze
+  `b45c53d4...5f8280`, 10,000 replicates và seed `20261205`. Chỉ được retry
+  evaluator sau khi source/test/addendum/log đã commit/push central. Tới đây
+  `validation_gt_read=false`, chưa có Dice, consumer/test vẫn khóa.

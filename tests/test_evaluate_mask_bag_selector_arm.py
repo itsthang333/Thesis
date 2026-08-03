@@ -38,10 +38,54 @@ def test_all_candidate_scores_and_cache_indices_are_bound_before_gt() -> None:
         assert source.index(required) < gt_loader
     assert "selected_original_index = int(candidate_indices[local_selected])" in source
     assert "oracle_original_index = int(candidate_indices[local_oracle])" in source
-    assert (
-        'prediction["candidate_logit_tta"]\n'
-        '            != "mean_original_aligned_horizontal_flip"'
-        in source
+    assert "_candidate_logit_provenance_matches(" in source
+    assert "args.expected_candidate_logit_provenance_field" in source
+    assert "args.expected_candidate_logit_provenance_value" in source
+
+
+def test_candidate_logit_provenance_is_exact_and_fail_closed() -> None:
+    tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
+    function = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_candidate_logit_provenance_matches"
+    )
+    namespace: dict[str, object] = {}
+    exec(
+        compile(ast.Module(body=[function], type_ignores=[]), str(SOURCE), "exec"),
+        namespace,
+    )
+    matches = namespace["_candidate_logit_provenance_matches"]
+    assert callable(matches)
+    legacy = {"candidate_logit_tta": "mean_original_aligned_horizontal_flip"}
+    s9 = {
+        "candidate_logit_recipe": "within_image_equal_percentile_rank_no_tta"
+    }
+    assert matches(
+        legacy,
+        expected_field="candidate_logit_tta",
+        expected_value="mean_original_aligned_horizontal_flip",
+    )
+    assert matches(
+        s9,
+        expected_field="candidate_logit_recipe",
+        expected_value="within_image_equal_percentile_rank_no_tta",
+    )
+    assert not matches(
+        {**legacy, **s9},
+        expected_field="candidate_logit_recipe",
+        expected_value="within_image_equal_percentile_rank_no_tta",
+    )
+    assert not matches(
+        s9,
+        expected_field="candidate_logit_recipe",
+        expected_value="unexpected_recipe",
+    )
+    assert not matches(
+        {},
+        expected_field="candidate_logit_recipe",
+        expected_value="within_image_equal_percentile_rank_no_tta",
     )
 
 
