@@ -15534,3 +15534,34 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `b45c53d4...5f8280`, 10,000 replicates và seed `20261205`. Chỉ được retry
   evaluator sau khi source/test/addendum/log đã commit/push central. Tới đây
   `validation_gt_read=false`, chưa có Dice, consumer/test vẫn khóa.
+
+### S9 control evaluation đã freeze trước primary (2026-08-03)
+
+- Sau correction commit `9decc07`, control
+  `geometry_v3_plus_upstream_equal_rank` được đánh giá đúng frozen evaluator,
+  10,000 complete-group bootstrap/seed `20261205`. Tất cả prediction/cache/
+  baseline hashes và exact S9 recipe pass trước khi validation GT được mở. Exact
+  output hashes: evaluation audit
+  `cf5e97c31ba511e9aef5c2fe0590d76e1430d27904664c0edee8ec11161a7d40`,
+  per-image `55846ae08e78b2d58c3a3f6b3585b44326af275d837b3da809b8ce90ba55001c`,
+  summary `db70656e7c94ccee1c340e75e5ae94584d9b25fc1a19416285215997af7ebd7e`,
+  paired comparison
+  `49827abca2020262b93b47716dd10b3f1cd930baa92ae17a21b38e3df9d5cea4`
+  và generic gate
+  `633d8a21a8be2cc935ee01b8883bd0bce0bd7f3f5e3f4d5f9374ded2213cbdee`.
+- Dice control overall/small/medium/large là
+  `0.25520289 / 0.12563547 / 0.39380626 / 0.37741925`. So với accepted
+  Geometry-v3 baseline, delta tương ứng
+  `+0.00972050 / +0.00855489 / +0.01667074 / -0.01199340`; CI95 lần lượt
+  `[-0.01048764,+0.03172645] / [-0.02016049,+0.04042881] /`
+  `[-0.01346359,+0.05139416] / [-0.05198026,+0.02473566]`. Complete misses tăng
+  `53 -> 70`, count-vs-miss |Spearman| tăng `0.31350741 -> 0.37151248`; vì vậy
+  generic arm gate `FAIL`, dù image AUROC `0.81608928` và oracle gallery vẫn vượt
+  cả bốn goal. Control này không được quảng bá là cải tiến.
+- Control artifact tracked tại
+  `artifacts/evaluation/skelex_candidate_marginal_s9_v1/control_evaluation_result_audit.json`,
+  SHA-256
+  `0773de5ccde0bb4eba1b739776ffbf3060799f217ca8398f54e7f7393e846357`.
+  Validation GT chỉ được đọc sau freeze; consumer/test vẫn khóa. Theo arm order
+  đã predeclare, bước kế là freeze mục này trên central rồi đánh giá primary với
+  chính evaluator/seed, không dùng control result để sửa primary.

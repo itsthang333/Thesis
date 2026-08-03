@@ -1,0 +1,77 @@
+{
+  "audit_id": "skelex_candidate_marginal_s9_v1_control_evaluation_result_audit",
+  "audit_timestamp_utc": "2026-08-03T09:01:59.9801860Z",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "arm": "geometry_v3_plus_upstream_equal_rank",
+  "status": "FROZEN_CONTROL_EVALUATION_COMPLETE",
+  "provenance": {
+    "arm_prediction_freeze_sha256": "db947e460d3e2dfc98f595f7b0fc527a2dc4710eeedf0727e0a68f73cf134661",
+    "arm_prediction_manifest_sha256": "c25b36ce836ef9983ab3e5210f7cf8dad9346829831151ad4f60fb854f40bede",
+    "candidate_score_manifest_sha256": "351ffb22e6a26e892f4f880400b365de9874bdb38fc7a960975e1b75db35b64d",
+    "candidate_logit_provenance": {
+      "field": "candidate_logit_recipe",
+      "value": "within_image_equal_percentile_rank_no_tta"
+    },
+    "corrected_evaluator_sha256": "857c4688a92833f0c73680de8a337529b0f217b6eba373db546409fe9b2b3623",
+    "evaluator_correction_sha256": "882f892d779a2267c1d1dd301fc2fc4f67a56eb873a449b6e299d9b7e91fd6d2",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261205
+  },
+  "output_hashes": {
+    "evaluation_audit.json": "cf5e97c31ba511e9aef5c2fe0590d76e1430d27904664c0edee8ec11161a7d40",
+    "gate_decision.json": "633d8a21a8be2cc935ee01b8883bd0bce0bd7f3f5e3f4d5f9374ded2213cbdee",
+    "paired_comparison.json": "49827abca2020262b93b47716dd10b3f1cd930baa92ae17a21b38e3df9d5cea4",
+    "per_image.csv": "55846ae08e78b2d58c3a3f6b3585b44326af275d837b3da809b8ce90ba55001c",
+    "summary.json": "db70656e7c94ccee1c340e75e5ae94584d9b25fc1a19416285215997af7ebd7e"
+  },
+  "metrics": {
+    "overall": {
+      "dice": 0.25520288785417294,
+      "baseline_dice": 0.2454823867797678,
+      "delta": 0.009720501074405153,
+      "ci95": [-0.010487644266942082, 0.031726452136539185],
+      "complete_misses": 70,
+      "baseline_complete_misses": 53
+    },
+    "small": {
+      "dice": 0.1256354731300402,
+      "baseline_dice": 0.11708057891440651,
+      "delta": 0.008554894215633659,
+      "ci95": [-0.020160493364547897, 0.04042881351467376]
+    },
+    "medium": {
+      "dice": 0.3938062554193073,
+      "baseline_dice": 0.37713551529480416,
+      "delta": 0.01667074012450318,
+      "ci95": [-0.0134635858784175, 0.05139416143468697]
+    },
+    "large": {
+      "dice": 0.37741925004188437,
+      "baseline_dice": 0.3894126471276201,
+      "delta": -0.0119933970857358,
+      "ci95": [-0.05198025887441904, 0.024735655743055182]
+    },
+    "image_level_auroc": 0.8160892815624272,
+    "candidate_oracle": {
+      "overall": 0.4090755342486002,
+      "small": 0.2227494852063559,
+      "medium": 0.5941470844279589,
+      "large": 0.6418253674184405
+    }
+  },
+  "gate": {
+    "generic_arm_gate_status": "FAIL",
+    "overall_ci95_lower_positive": false,
+    "no_subgroup_regression": false,
+    "no_complete_miss_increase": false,
+    "consumer_authorized": false
+  },
+  "safety": {
+    "prediction_pair_frozen_before_validation_gt": true,
+    "validation_gt_read_only_after_all_prediction_hashes_verified": true,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}
