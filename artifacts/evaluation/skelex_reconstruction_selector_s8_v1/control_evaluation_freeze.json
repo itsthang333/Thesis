@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "status": "CONTROL_EVALUATION_FROZEN_BEFORE_PRIMARY",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "arm": "geometry_v3_plus_upstream_equal_rank",
+  "evaluation_commit": "7960b051d2c69c7dbb669441608681b217fb9cde",
+  "evaluator_canonical_lf_sha256": "5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0",
+  "python39_correction_sha256": "7aa2b3569a6563622848efcaf7f14a6736dab23a5c91be95e6a2e0ccb4f141e0",
+  "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "prediction_pair_freeze_sha256": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+  "arm_prediction_freeze_sha256": "aa8acefaafe9c453dd08e1cba8d71b4a0aae25ecf16662774aebf53d01cf2ccd",
+  "arm_candidate_score_manifest_sha256": "6d08db6c7fd29d5ed2bc7ff57133cd9fdea1adc65ec797f9c3f0ee424b3452fc",
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20261204,
+  "output_root": "tmp/kaggle/skelex_s8_postfreeze_evaluation_20260803_1035/control",
+  "output_inventory": {
+    "evaluation_audit.json": {
+      "bytes": 1757,
+      "sha256": "fca50d462bc152460f60ca464a7625c2575521602c520f7e5b71124c50bedf34"
+    },
+    "gate_decision.json": {
+      "bytes": 2184,
+      "sha256": "9f0a7fa6a7552d39e0d05d670eedc7d8adb97d28adb9cb6d4be69134b9ebdf18"
+    },
+    "paired_comparison.json": {
+      "bytes": 1004,
+      "sha256": "77339fc111f78a67a4b659f882315b211fc5c0be926823e0280f192900cd3922"
+    },
+    "per_image.csv": {
+      "bytes": 61520,
+      "sha256": "0ff1c0c44b2ab1613daf341c02b84316b3f17485375623d4f8dbcffcfcd065da"
+    },
+    "summary.json": {
+      "bytes": 5439,
+      "sha256": "1602d9cb4f5b93bc8161bbe8b741b518d16d2e0a77b55ddd9116400ccaca7d44"
+    }
+  },
+  "control_identity": {
+    "per_image_rows": 184,
+    "all_row_dice_equal_baseline": true,
+    "dice": {
+      "overall": 0.2454823867797678,
+      "small": 0.11708057891440651,
+      "medium": 0.37713551529480416,
+      "large": 0.3894126471276201
+    },
+    "complete_misses": 53,
+    "gate_status_expected_for_identity_arm": "FAIL",
+    "accepted_geometry_v3_exactly_reproduced": true
+  },
+  "validation_projection": {
+    "rows": 371,
+    "sha256": "dbf83b81d4f2106508cd07ba9a5713dda4eca6377d19f052fee695d4c1cee593",
+    "locked_test_bytes_read": false
+  },
+  "primary_evaluation_authorized_after_this_freeze_is_committed_and_visible_central": true,
+  "validation_gt_read": true,
+  "consumer_authorized": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}

@@ -14647,3 +14647,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   trước; test bytes chưa đọc, primary chưa đánh giá, consumer/test khóa. Chỉ sau
   commit/push/fetch correction này mới rerun control vào output root mới.
 
+### S8 control evaluation frozen trước primary (2026-08-03)
+
+- Corrected evaluator tại commit `7960b05` chạy control đầu tiên với exact
+  pair/cache/baseline/split, bootstrap `10,000` seed `20261204`; runtime hoàn
+  tất sau `51.1 s`. Validation-only projection SHA `dbf83b81...e593` có đúng
+  `371` val rows và không đọc test bytes.
+- Control tái lập accepted Geometry-v3 chính xác ở mọi aggregate:
+  overall/small/medium/large
+  `0.2454823868/0.1170805789/0.3771355153/0.3894126471`, oracle
+  `0.4090755342/0.2227494852/0.5941470844/0.6418253674`, `53` complete misses.
+  Cả `184/184` per-image Dice bằng baseline row tương ứng. Gate `FAIL` là kỳ
+  vọng cho identity arm vì không giảm regret; đây không phải S8 efficacy result.
+- Control output đã freeze trước primary tại
+  `artifacts/evaluation/skelex_reconstruction_selector_s8_v1/control_evaluation_freeze.json`,
+  canonical-LF SHA
+  `b7bc7bf68f385467291569d12c2dc27b4bbbd88c241d8065753454f71fdf854d`.
+  `per_image.csv/evaluation_audit.json` SHA lần lượt
+  `0ff1c0c44b2ab1613daf341c02b84316b3f17485375623d4f8dbcffcfcd065da /`
+  `fca50d462bc152460f60ca464a7625c2575521602c520f7e5b71124c50bedf34`;
+  full five-file inventory nằm trong freeze. Consumer chưa được authorize,
+  primary chưa chạy và BTXRD test khóa. Chỉ sau commit/push/fetch freeze này mới
+  đánh giá primary bằng cùng evaluator/seed.
+
