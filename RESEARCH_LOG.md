@@ -15099,4 +15099,16 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `LAUNCH_BINDING_READY=false`, `CHECKOUT_COMMIT=UNBOUND`; chưa bind/push Kaggle,
   chưa mở real input/model bytes, chưa train/inference/prediction, chưa validation
   GT/consumer/test và không truy cập collaborator output.
+- **Tracked-checkout binding/preflight milestone:** sau khi template được push tại
+  `c1bc798cb3c14db12ab7552d80cb99bc597df393`, exact one-time binder integration
+  đạt `8/8` PASS trên chính tracked checkout. Static package auditor
+  `project/audit_skelex_candidate_marginal_s9_kernel_v1_prelaunch.py` canonical
+  LF SHA-256
+  `8557d5ff2ebe101bb01090c74b5faa31fe64b66e92c4789bb0aa475ac7eefd9e`
+  khóa metadata/transport/T4x2/source closure/binding/safety và ghi evidence theo
+  KPF catalog; test SHA-256
+  `65fddbe2fc545d4bf85461962f1b59ae4b83e19c46c433da7d7b22375bc18f32`.
+  Combined focused suite hiện `35/35` PASS cùng Ruff/`py_compile`/diff check.
+  Đây vẫn là static/no-input audit; chỉ exact package bind ở execution checkout
+  kế tiếp và final audit artifact mới có thể đặt `authorized_launch=true`.
 
