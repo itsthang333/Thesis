@@ -15915,3 +15915,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   CAM-like component học trong model chỉ để đo capture/purity; final map luôn là
   immutable candidate đã chọn nhân accepted bag probability. JSON parse và
   diff-check PASS; validation GT/consumer/test vẫn khóa, chưa launch Kaggle.
+
+### S10 Kaggle wrapper/binder static readiness (2026-08-03)
+
+- Fail-closed wrapper template
+  `project/kaggle_wrappers/run_highres_candidate_pmil_s10_v1.py` canonical-LF
+  SHA-256 `ae4b9eb751e48bcae3e1ce7d9a24669e923d8969a369b49aaf83f22f9bf403f9`.
+  Wrapper clone exact checkout, verify scientific-source/protocol/all canonical
+  source hashes, hard-guard T4x2, chạy focused tests trước input, tải public
+  torchvision ResNet50 V2 từ `https://download.pytorch.org/models/resnet50-11ad3fa6.pth`
+  và require exact `102,540,417` bytes/SHA-256 `11ad3fa...79ca`, rồi mới discover
+  exact split/candidate/baseline/cache transports.
+- Runner và independent auditor chạy nối tiếp trong cùng private kernel. Wrapper
+  chỉ xuất kết quả khi auditor pass và kiểm lại `371` evidence payload,
+  `1,113` candidate-score payload, `1,113` physical maps, arm/triple freezes,
+  source/input hashes và safety locks. Không có GT/test argument; public weight
+  không được redistribute trong repo/output.
+- One-time binder
+  `project/bind_highres_candidate_pmil_s10_wrapper.py` SHA-256
+  `f88a8fb93beff7fe24ee94f2ebb53ca18e8af062cb29189fcf4e11953e39d380`
+  chỉ thay ba field kernel version/ready/checkout và inverse-reconstruct exact
+  template. Wrapper/binder test SHA lần lượt `84e413...89ce / acb335...5614`;
+  focused wrapper tests `7/7`, Ruff/py_compile/diff-check PASS. Chưa bind/package/
+  push Kaggle; full checklist và final collision/provenance audit vẫn bắt buộc.
