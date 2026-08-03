@@ -14733,3 +14733,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   từ thao tác Git; updated checklist canonical-LF SHA
   `09fb8b741703573f0e789e8919231346be85e38bad9535fb131ebc85b650dd6a`.
 
+### S8 canonical-LF materializer frozen trước matched decision (2026-08-03)
+
+- Sau hai pre-decision materialization errors đã push, reusable fail-closed tool
+  `project/materialize_canonical_lf.py` và tests có canonical-LF SHA lần lượt
+  `fc7224ef7bc4a11b843420bb2005239b26c1f0e857f2d02ecaa81bc05a6308ae /`
+  `59936c82956de6905697cbd903e3296a4708f096273130fa6fde699383851073`.
+  Tool require exact input/output SHA, refuse existing output/missing parent/
+  invalid UTF-8 và verify physical bytes sau exclusive write.
+- Focused suite `6 passed`, `py_compile` và `git diff --check` PASS. Exact
+  readiness smoke chuyển verified raw `1,723` byte SHA `46aecb...` qua `33`
+  CRLF pairs/`0` lone CR thành canonical `1,690` byte SHA
+  `9e0294a5af2d7eb62598eb000f9ee187e2a8c46c07077a52cb432319f294247d`.
+  Không mở dataset/GT, không gọi decision trong smoke.
+- Frozen correction artifact
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_readiness_lf_materialization_correction.json`
+  canonical-LF SHA
+  `c8b5009d12cfaf64c1907a41e6ad06b92137ea069e908622a3af122b7bcaf582`
+  khóa tool/tests, raw/canonical readiness và unchanged decision/control/primary
+  contracts. Chỉ sau commit/push/fetch artifact + source mới materialize vào
+  temp mới và gọi matched decision. Consumer/test khóa, không rescue/sweep.
+

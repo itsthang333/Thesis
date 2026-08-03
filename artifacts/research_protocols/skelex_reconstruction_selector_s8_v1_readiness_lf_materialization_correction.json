@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_CANONICAL_LF_MATERIALIZER_BEFORE_MATCHED_DECISION",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "frozen_at": "2026-08-03T10:42:10+07:00",
+  "failure_note_commits": [
+    "ef65e987335778a2eb1a0d333bbdd3c465bd0ec9",
+    "eeed5f768c806c609b28b67f13dd6ab154a1f6d8"
+  ],
+  "materializer": {
+    "source": "project/materialize_canonical_lf.py",
+    "source_canonical_lf_sha256": "fc7224ef7bc4a11b843420bb2005239b26c1f0e857f2d02ecaa81bc05a6308ae",
+    "test": "tests/test_materialize_canonical_lf.py",
+    "test_canonical_lf_sha256": "59936c82956de6905697cbd903e3296a4708f096273130fa6fde699383851073",
+    "input_must_not_be_modified": true,
+    "output_must_not_exist": true,
+    "invalid_utf8_rejected": true,
+    "input_and_output_sha256_required": true
+  },
+  "readiness_conversion_contract": {
+    "tracked_raw_sha256": "46aecb7855a4f18311c5174a396dee1379e43d0ae5793500ab93c6d44dc211d6",
+    "tracked_raw_bytes": 1723,
+    "expected_canonical_lf_sha256": "9e0294a5af2d7eb62598eb000f9ee187e2a8c46c07077a52cb432319f294247d",
+    "expected_canonical_lf_bytes": 1690,
+    "expected_crlf_pairs_removed": 33,
+    "expected_lone_cr_removed": 0
+  },
+  "verification": {
+    "py_compile": "PASS",
+    "focused_pytest": "6 passed",
+    "physical_readiness_smoke": "CANONICAL_LF_MATERIALIZATION_PASS",
+    "physical_input_sha256": "46aecb7855a4f18311c5174a396dee1379e43d0ae5793500ab93c6d44dc211d6",
+    "physical_output_sha256": "9e0294a5af2d7eb62598eb000f9ee187e2a8c46c07077a52cb432319f294247d",
+    "git_diff_check": "PASS"
+  },
+  "unchanged_decision_contract": {
+    "decision_source_canonical_lf_sha256": "538ecad2b79d3b059587db3e687bd789fc7e00a31c8e106015b8198199153d97",
+    "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+    "evaluation_addendum_sha256": "d79d98564dd239d4821f4a54bf93371e9a84375ce0c2cecd09830467ad53aec9",
+    "control_evaluation_freeze_sha256": "b7bc7bf68f385467291569d12c2dc27b4bbbd88c241d8065753454f71fdf854d",
+    "primary_evaluation_freeze_sha256": "dde0cb936c4d4659bfdebb6531dadd78e49b6484a944fd9e7d3f8c834b56607b",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261204,
+    "post_hoc_rescue_or_sweep_authorized": false
+  },
+  "decision_authorized_only_after_this_artifact_source_and_tests_are_committed_and_visible_central": true,
+  "decision_invoked": false,
+  "ground_truth_reopened": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}
