@@ -15203,3 +15203,61 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   suite `26/26` PASS trên Python 3.9. Đây là static integration evidence, không
   phải terminal scientific result và không thay đổi frozen source/protocol.
 
+### S9 Kaggle version 1 terminal implementation error và failure analysis gate (2026-08-03)
+
+- Một bounded status check sau user báo run xong xác nhận private kernel
+  `itsthang333/btxrd-skelex-candidate-marginal-s9-v1`, version `1` ở trạng thái
+  `KernelWorkerStatus.ERROR`. Central HEAD/origin lúc check sạch ở
+  `e249e459e5533809b197bab7f621ecb159354de9`; collaborator vẫn `abcdfd7...`.
+  Không poll thêm và không truy cập collaborator Kaggle/output.
+- Official inventory đủ `5/5` file đã tải atomic vào ignored
+  `tmp/kaggle/skelex_candidate_marginal_s9_v1_error_20260803_122310`, không `.part`.
+  Direct log `29,989` bytes SHA-256
+  `eaf0e4e936cf1d60991ac2c15a41c5c9aca09ccfecf08ff5cb4765b8ad28ca8e`.
+  Error audit tracked tại
+  `artifacts/kaggle/skelex_candidate_marginal_s9_v1/kernel_version1_error_audit.json`
+  SHA-256
+  `8259a2ad025f7cc388d970669f250516a132156d017576d677297a2daa77b916`.
+  Exact partial-output hashes: feature gate `1d76b3a1...9918`, feature manifest
+  `804cf349...bef8`, history `60ffbe94...2b73`, checkpoint `5b555a13...aea`,
+  baseline identity `acb992ab...4d92`.
+- **Boundary định lượng:** Kaggle static `29/29` pass; frozen SKELEX extraction
+  hoàn tất train `2,981` + val `371`, feature gate
+  `PASS_BEFORE_HEAD_TRAINING`, mọi tensor finite và candidate set giữ nguyên.
+  Đúng `32/32` epoch hoàn tất; total loss `0.45325733 -> 0.36502962`, normal
+  dense `0.20712770 -> 0.09921925`, tumor marginal
+  `0.70021403 -> 0.63173318`, tất cả finite. Safe `weights_only` checkpoint audit
+  xác nhận đúng `524,801` parameters, source/protocol/history/feature hashes,
+  fixed final-epoch selection và mọi GT/consumer/test lock. Accepted baseline
+  identity đạt `371/371` selected index + map hash exact, maximum scalar delta
+  `2.86102295e-6`.
+- **Exact error:** sau các stage trên, trước prediction freeze, `compose_pair`
+  line `521` ném
+  `RuntimeError: S9 control does not reproduce the accepted two-rank recipe`.
+  Không arm output/pair freeze, independent output auditor hoặc Dice nào tồn tại;
+  validation GT chưa đọc. Đây là **implementation-exactness error**, không phải
+  transport/runtime failure và không phải scientific rejection của S9.
+- **Root cause:** accepted `equal_rank_aggregate` tính tie-aware rank và Borda mean
+  theo float32 PyTorch; duplicate S9 `finite_readout` tính rank/mean bằng NumPy
+  float64 rồi mới cast kết quả sang float32. Hai công thức toán học giống nhau
+  nhưng intermediate rounding khác, làm `np.array_equal` fail. Synthetic audit
+  candidate count `1..81`, `200` case/count (`16,200` case) cho `13,978` exact
+  vector mismatch, max delta `5.96046448e-8`; fused ties gây `111` argmax khác.
+  Test cũ chỉ phủ formula/singleton/tie fixture, không đối chiếu byte/winner trên
+  toàn candidate-count range với canonical accepted implementation.
+- **Kết luận/failure gate:** hypothesis chưa được test; loss giảm không phải Dice
+  hay selector evidence. Không được quảng bá checkpoint như terminal result,
+  không được kết luận tốt/xấu theo subgroup và không rescue/sweep hậu nghiệm.
+  Correction được hỗ trợ duy nhất là implementation-only: dùng chính canonical
+  `equal_rank_aggregate` float32 cho cả control hai-rank và primary ba-rank, thêm
+  exhaustive exact-vector + fused-tie winner regression, cập nhật KPF catalog và
+  full preflight trước version 2. Scientific architecture/objective/epochs/
+  weights/arms/gates giữ nguyên. Không reuse partial output cho prediction vì
+  in-RAM feature/likelihood không được export và chưa có prediction evidence
+  freeze; rerun phải bắt đầu sạch.
+- Local inventory lần đầu gọi nhầm scientific Python 3.9 nên dừng trước API import
+  do thiếu Kaggle SDK; xác nhận destination rỗng rồi chạy system Kaggle
+  interpreter thành công. Đây là KPF-004 local transport boundary, không ảnh
+  hưởng kernel/artifact. Tại mục này chưa correction/rerun; phải push failure
+  analysis central trước.
+

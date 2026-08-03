@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "status": "ERROR_AUDITED_BEFORE_CORRECTION",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "kernel": "itsthang333/btxrd-skelex-candidate-marginal-s9-v1",
+  "kernel_version": 1,
+  "terminal_status": "KernelWorkerStatus.ERROR",
+  "execution_checkout": "20357a5facc43f3dfa553c2d7a4ff4ed4eb4966b",
+  "scientific_source_commit": "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8",
+  "protocol_sha256": "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d",
+  "download": {
+    "directory": "tmp/kaggle/skelex_candidate_marginal_s9_v1_error_20260803_122310",
+    "official_inventory_files": 5,
+    "all_official_files_downloaded": true,
+    "partial_files_remaining": 0,
+    "direct_log": {
+      "bytes": 29989,
+      "sha256": "eaf0e4e936cf1d60991ac2c15a41c5c9aca09ccfecf08ff5cb4765b8ad28ca8e"
+    },
+    "files": {
+      "baseline_identity.csv": {
+        "bytes": 39581,
+        "sha256": "acb992abb1d5e97662eee2b74201c26206541d88539174778d0cbad248f14d92"
+      },
+      "feature_cache_manifest.csv": {
+        "bytes": 1470950,
+        "sha256": "804cf349023eb6c495e313db513ca0f6d83fa3556f7588bff19d29e6f84dbef8"
+      },
+      "feature_cache_operational_gate.json": {
+        "bytes": 1523,
+        "sha256": "1d76b3a14ce0ebceb26b97bb25dd2409b7525b26ab0016f66931d4b42ca49918"
+      },
+      "skelex_candidate_marginal_head.pt": {
+        "bytes": 2102493,
+        "sha256": "5b555a1325ba580586f762f4936e02dd0e800cf60f90365c68666f6628316aea"
+      },
+      "training_history.json": {
+        "bytes": 9861,
+        "sha256": "60ffbe9475d803b040a3b2a87187f133b8198752f36f5b503ac28a3a37db2b73"
+      }
+    },
+    "local_transport_boundary": "First inventory attempt used the scientific Python 3.9 environment and stopped before API import because Kaggle SDK was absent; the empty destination was verified and the exact command succeeded with the system Kaggle interpreter. This is KPF-004 and did not affect kernel artifacts."
+  },
+  "completed_before_error": {
+    "kaggle_static_tests": "29/29 PASS",
+    "train_feature_images": 2981,
+    "validation_feature_images": 371,
+    "feature_hash_rows": 3352,
+    "feature_gate_status": "PASS_BEFORE_HEAD_TRAINING",
+    "feature_tensors_all_finite": true,
+    "exact_candidate_sets_preserved": true,
+    "training_epochs": 32,
+    "first_total_loss": 0.45325733411835967,
+    "last_total_loss": 0.36502961827900055,
+    "first_normal_dense_loss": 0.20712769645336723,
+    "last_normal_dense_loss": 0.09921924628027916,
+    "first_tumor_candidate_marginal_loss": 0.7002140345672766,
+    "last_tumor_candidate_marginal_loss": 0.631733180534455,
+    "training_history_all_finite": true,
+    "checkpoint_parameters": 524801,
+    "checkpoint_state_all_finite": true,
+    "checkpoint_selection": "final_epoch_only_no_validation_selection",
+    "checkpoint_feature_manifest_hash_matches": true,
+    "checkpoint_training_history_hash_matches": true,
+    "baseline_identity_rows": 371,
+    "baseline_identity_pass_rows": 371,
+    "baseline_selected_index_exact_rows": 371,
+    "baseline_map_hash_exact_rows": 371,
+    "baseline_maximum_scalar_delta": 0.00000286102294921875
+  },
+  "error_boundary": {
+    "classification": "IMPLEMENTATION_EXACTNESS_ERROR_BEFORE_PREDICTION_FREEZE",
+    "producer_function": "compose_pair",
+    "source_line": 521,
+    "exception": "RuntimeError: S9 control does not reproduce the accepted two-rank recipe",
+    "stage": "after complete feature extraction, final-epoch training, checkpoint freeze and accepted baseline identity; during first control/primary score composition",
+    "prediction_pair_created": false,
+    "arm_prediction_freezes_created": false,
+    "validation_predictions_created": false,
+    "independent_output_auditor_started": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  },
+  "root_cause": {
+    "accepted_reference": "models.bas_candidate_localizer.equal_rank_aggregate computes tie-aware ranks and their mean in float32 PyTorch arithmetic",
+    "s9_duplicate_path": "models.skelex_candidate_marginal.finite_readout computes tie-aware ranks and their mean in NumPy float64, then casts the final vector to float32",
+    "failed_assertion": "np.array_equal on the final float32 control vectors",
+    "mechanism": "Intermediate dtype and rounding order differ even though both paths express the same mathematical percentile-rank formula.",
+    "synthetic_audit": {
+      "candidate_counts": "1..81",
+      "random_cases_per_count": 200,
+      "cases": 16200,
+      "exact_vector_mismatch_cases": 13978,
+      "maximum_absolute_float32_delta": 5.960464477539063e-8,
+      "argmax_difference_cases_under_fused_ties": 111
+    },
+    "why_tests_missed_it": "Existing S9 tests covered formula values, singleton/tie behavior and a bounded fixture but did not compare the duplicate NumPy implementation byte-for-byte with the accepted PyTorch aggregate across candidate counts and fused ties."
+  },
+  "scientific_interpretation": {
+    "hypothesis_tested": false,
+    "dice_available": false,
+    "training_loss_is_not_selector_or_dice_evidence": true,
+    "allowed_to_inherit": [
+      "the frozen S9 scientific architecture, objective and final-epoch training protocol",
+      "the error-free feature/cache/checkpoint provenance as implementation-boundary evidence",
+      "the need to use one canonical rank implementation for control and primary composition"
+    ],
+    "not_allowed_to_claim": [
+      "S9 improves candidate selection",
+      "S9 fails scientifically",
+      "the saved checkpoint is a terminal audited result",
+      "any Dice or subgroup conclusion"
+    ]
+  },
+  "correction_boundary": {
+    "scientific_protocol_change_allowed": false,
+    "implementation_only_plan": "Route both control and three-way primary through the already accepted equal_rank_aggregate float32 implementation; remove duplicate arithmetic from pair composition, add exhaustive candidate-count/tie byte-identity and winner regression, then repeat full preflight before version 2.",
+    "reuse_partial_outputs_for_prediction": false,
+    "reason_partial_outputs_not_reused": "The in-RAM feature tensors and likelihood vectors were intentionally not exported, and the failed run never froze prediction evidence; version 2 must rerun the exact producer from clean input.",
+    "post_hoc_scientific_rescue_or_sweep_authorized": false,
+    "rerun_authorized_before_failure_log_push_and_checklist_guard": false
+  }
+}
