@@ -15288,4 +15288,22 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chưa wrapper/rerun. Exact correction source phải được commit trước, sau đó một
   correction addendum mới bind full commit + old/new hashes và wrapper/test mới
   được overlay addendum; chỉ khi full closure xanh mới được preflight version 2.
+- **Rank-exactness correction addendum:** corrected sources đã push tại exact
+  commit `cb608cd8ca501e840d4ae7c73cc7592187683a27`. Addendum
+  `artifacts/research_protocols/skelex_candidate_marginal_s9_v1_rank_exactness_correction.json`
+  canonical LF SHA-256
+  `0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9`
+  bind scientific protocol/source, failure audit/commit, KPF-019 commit, exact
+  old->new source hashes và xác nhận mọi scientific contract giữ nguyên.
+  Correction/addendum test SHA-256
+  `d55a58bb6bb26bc05d0ceec4da83aef4f8b8098cfa17497f1b2254b47546bf24`;
+  protocol closure test SHA-256 mới
+  `d72c7e85c01a3c51e49022d2a0e3cb8a7207def88a9e3ae329b97f39f6a48c80`
+  chỉ overlay bốn correction hashes, không sửa immutable protocol JSON. Combined
+  correction+producer+auditor+protocol+wrapper suite `35/35` PASS.
+- Một test command đầu tiên gõ nhầm file không tồn tại
+  `tests/test_skelex_candidate_marginal_s9.py`, nên pytest dừng trước collection;
+  command đúng `tests/test_skelex_candidate_marginal.py` pass `35/35`. Đây là
+  local command typo không ảnh hưởng source/science; chưa wrapper v2, preflight,
+  rerun, prediction hoặc GT.
 

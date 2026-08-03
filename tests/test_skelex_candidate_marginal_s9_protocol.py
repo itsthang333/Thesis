@@ -12,6 +12,12 @@ PROTOCOL = (
     / "research_protocols"
     / "skelex_candidate_marginal_s9_v1.json"
 )
+CORRECTION = (
+    ROOT
+    / "artifacts"
+    / "research_protocols"
+    / "skelex_candidate_marginal_s9_v1_rank_exactness_correction.json"
+)
 
 
 def _canonical_lf_sha256(path: Path) -> str:
@@ -56,9 +62,13 @@ def test_s9_protocol_freezes_high_capacity_one_shot_and_safety() -> None:
 
 def test_s9_protocol_closes_every_declared_source() -> None:
     payload = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+    correction = json.loads(CORRECTION.read_text(encoding="utf-8"))
+    overlay = correction["corrected_source_hashes"]
     for section in ("canonical_lf_source_hashes", "post_freeze_source_hashes"):
         for relative, expected in payload[section].items():
-            assert _canonical_lf_sha256(ROOT / relative) == expected, relative
+            assert _canonical_lf_sha256(ROOT / relative) == overlay.get(
+                relative, expected
+            ), relative
 
 
 def test_s9_protocol_has_no_validation_gt_selector_or_sweep() -> None:
