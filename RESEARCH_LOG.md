@@ -14902,3 +14902,71 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   chạy Kaggle. Trước real-data action phải fetch/read/collision-check lần nữa,
   đăng ký một experiment `ĐANG LÀM` đầy đủ trên central và push trước launch.
 
+### EXP-20260803-codex-s9-skelex-candidate-marginal-v1
+
+- **Owner/time/status:** Codex central workstream; đăng ký
+  `2026-08-03T11:04:42+07:00`; **ĐANG LÀM**. Registration base
+  `649d1b07a2f9f9ac1ee40944609fb4d4dcd00e18`; exact registration commit là
+  commit chứa mục này và phải được bổ sung sau khi push. Không real-data action
+  trước khi claim byte-visible trên `origin/research-wsss-improvement`.
+- **Hypothesis:** một class direction thấp-capacity học từ dense known-normal
+  token và exact soft marginal likelihood qua candidate masks của tumor bags sẽ
+  cung cấp candidate-identity evidence độc lập current selector, trong khi
+  inside-positive/local-ring-negative likelihood tự phạt cả under-extent lẫn
+  over-extent. Điều này có thể giảm selector regret đồng thời ở small/medium/
+  large mà không dùng GT-size router hoặc hậu nghiệm validation tuning.
+- **Kế thừa/phần loại:** kế thừa exact same-gallery candidate supply, accepted
+  Geometry-v3/upstream control, SKELEX public provenance và failure dossiers S5,
+  S7, S8 chỉ như evidence. Không quảng bá S5/S8 như cải thiện. Loại current-argmax
+  pseudo-target S7, reconstruction p-value S8, classifier deletion/insertion,
+  BAS, normal prototype/local affinity/graph/clustering/count/subtype mechanisms
+  đã reject. Không proposal generation hoặc consumer training.
+- **Khác collaborator/không collision:** fetch/read toàn bộ collaborator
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c` không có claim `ĐANG LÀM`.
+  SMILE implementation-only dùng trainable DenseNet-FPN 512px, subtype,
+  matched-normal references, rich gallery và không dùng proposal masks lúc học;
+  S9 dùng frozen SKELEX layer-16 320px, binary labels, proposal-marginal spatial
+  likelihood trên central same-gallery. Không copy code/protocol, không truy cập
+  collaborator Kaggle/output và không launch SMILE.
+- **Static source/design freeze at registration:** exact preparation commit
+  `649d1b07a2f9f9ac1ee40944609fb4d4dcd00e18`; design/model/test SHA-256
+  `7ce63aa505a1356a9e033659b2d1fffe11efb7cc592586aee95c749eebf1d6a4 /`
+  `5f6dd213240cc9b4962df36c4e196612ac7634f57b3af871d83e2dfa2024d47d /`
+  `ab0a1d87b89015f1eee154cbb4570d777997aa76ee5f4bef5908581668808ae5`;
+  Python 3.9 `py_compile`, Ruff, focused `6/6` pass. Đây mới là primitive;
+  runner, immutable protocol, independent auditor và Kaggle wrapper chưa được
+  claim ready.
+- **Exact intended input/provenance:** split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`;
+  train/val `2981/371`; train gallery manifests
+  `ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1 /`
+  `5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21`;
+  validation candidate/pseudo manifests
+  `3e9396f532c793258919a1d99aa3dcef00523436c853207b8d7123e5dc133090 /`
+  `286d1fce0bcbd0f96a15b6b386ad27a0edac3500a63c5b87e16f9075d6c6320e`;
+  selector-cache freeze `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`;
+  accepted checkpoint/freeze
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069 /`
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`;
+  SKELEX revision `368cae7...` và weights `81cd6e9c...69ef8`. Training targets
+  chỉ là binary image labels; annotation paths/bytes bị cấm.
+- **Frozen intended delta:** input square `320x320`, positional interpolation,
+  hidden layer `16`, frozen encoder, one affine `1024->1` token direction;
+  fractional `20x20` candidate projection, radius-2 ring, equal inside/ring
+  likelihood, normalized candidate log-mean-exp. Primary là equal three-rank
+  Geometry-v3/upstream/likelihood; control là exact existing two-rank mean. Không
+  layer/resolution/radius/objective/fusion/threshold/area/subgroup sweep.
+- **Compute/output/gates:** static/synthetic local; feature extraction/training/
+  validation inference chỉ private Kaggle T4x2/P100 sau immutable protocol và
+  full preflight. Producer phải freeze checkpoint/history/token/cache/candidate
+  likelihood, `742` score/map payloads và pair manifest. Independent GT-blind
+  auditor phải reproduce mọi byte/score/winner trước GT. Sau physical freeze mới
+  dùng exact evaluator/comparator, `10,000` group bootstrap và seed phải freeze
+  trong protocol. Mechanism pass đòi overall+small tăng, medium/large không giảm,
+  misses không tăng; operational pass thêm bốn goal và overall CI lower `>0`.
+- **Safety:** tại registration chưa mở real image/cache/candidate, chưa train/
+  inference/prediction/Kaggle, chưa validation GT/consumer/test. Mọi prediction
+  phải freeze trước GT; không train consumer trước operational pass; BTXRD test
+  và collaborator output luôn khóa. Fail/error bắt buộc failure analysis và push
+  trước successor; không hậu nghiệm rescue/sweep.
+
