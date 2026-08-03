@@ -10,11 +10,17 @@ import subprocess
 from typing import Any
 
 
-TEMPLATE_SHA256 = "bdb75a0f322d55c5e64e675e4977d401e56ee869b0c49f94a2bc653cadff0079"
+TEMPLATE_SHA256 = "cdfffccb67ac3a7de88b6e1406dac0e89760e49a7904b20d563c5003b3ee919a"
 TEMPLATE_PATH = "project/kaggle_wrappers/run_skelex_candidate_marginal_s9_v1.py"
 PROTOCOL_PATH = "artifacts/research_protocols/skelex_candidate_marginal_s9_v1.json"
 PROTOCOL_SHA256 = "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d"
 SOURCE_COMMIT = "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8"
+CORRECTION_PATH = (
+    "artifacts/research_protocols/"
+    "skelex_candidate_marginal_s9_v1_rank_exactness_correction.json"
+)
+CORRECTION_SHA256 = "0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9"
+CORRECTION_SOURCE_COMMIT = "cb608cd8ca501e840d4ae7c73cc7592187683a27"
 EXPERIMENT_ID = "EXP-20260803-codex-s9-skelex-candidate-marginal-v1"
 KERNEL = "itsthang333/btxrd-skelex-candidate-marginal-s9-v1"
 
@@ -84,6 +90,10 @@ def bind(
     if digest(protocol_payload) != PROTOCOL_SHA256:
         raise ValueError("S9 protocol differs at execution checkout")
     protocol = json.loads(protocol_payload.decode("utf-8"))
+    correction_payload = _git_bytes(repository_root, checkout_commit, CORRECTION_PATH)
+    if digest(correction_payload) != CORRECTION_SHA256:
+        raise ValueError("S9 correction addendum differs at execution checkout")
+    correction = json.loads(correction_payload.decode("utf-8"))
     if (
         protocol.get("status") != "FROZEN_PRELAUNCH"
         or protocol.get("experiment_id") != EXPERIMENT_ID
@@ -93,7 +103,16 @@ def bind(
         or protocol.get("execution", {}).get("compute") != "private Kaggle T4x2 only"
     ):
         raise ValueError("S9 frozen protocol contract mismatch")
+    if (
+        correction.get("status")
+        != "IMPLEMENTATION_ONLY_CORRECTION_BEFORE_PREDICTION_FREEZE"
+        or correction.get("scientific_protocol_sha256") != PROTOCOL_SHA256
+        or correction.get("scientific_source_commit") != SOURCE_COMMIT
+        or correction.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
+    ):
+        raise ValueError("S9 correction addendum contract mismatch")
     _require_ancestor(repository_root, SOURCE_COMMIT, checkout_commit)
+    _require_ancestor(repository_root, CORRECTION_SOURCE_COMMIT, checkout_commit)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(bound)
     binding = {
@@ -104,7 +123,9 @@ def bind(
         "kernel_version": kernel_version,
         "checkout_commit": checkout_commit,
         "scientific_source_commit": SOURCE_COMMIT,
+        "correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "rank_exactness_correction_sha256": CORRECTION_SHA256,
         "template_sha256": TEMPLATE_SHA256,
         "bound_wrapper_sha256": digest(bound),
         "replacement_count": len(replacements),

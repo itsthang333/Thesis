@@ -15,9 +15,22 @@ def test_s9_wrapper_is_hash_bound_and_fail_closed_before_launch_binding() -> Non
     assert 'CHECKOUT_COMMIT = "UNBOUND"' in source
     assert 'SOURCE_COMMIT = "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8"' in source
     assert (
+        'CORRECTION_SOURCE_COMMIT = "cb608cd8ca501e840d4ae7c73cc7592187683a27"'
+        in source
+    )
+    assert (
         'PROTOCOL_SHA256 = "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d"'
         in source
     )
+    assert (
+        'CORRECTION_SHA256 = "0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9"'
+        in source
+    )
+    assert (
+        'AUDITOR_SHA256 = "9e665bdbf2dee5f487642f3844c656d4ff9814a2f9e89a51ba627f73cd55b30c"'
+        in source
+    )
+    assert "tests/test_skelex_candidate_marginal_s9_rank_exactness_correction.py" in source
     assert 'EXPECTED_TRANSFORMERS_VERSION = "4.50.2"' in source
     assert (
         '"model.safetensors": '
@@ -65,4 +78,3 @@ def test_s9_wrapper_cleans_transient_source_runtime_and_public_weights() -> None
     assert "path.resolve().parent == WORK.resolve()" in main
     assert "shutil.rmtree(path)" in main
     assert "skelex_root" in main
-

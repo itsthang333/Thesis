@@ -15307,3 +15307,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   local command typo không ảnh hưởng source/science; chưa wrapper v2, preflight,
   rerun, prediction hoặc GT.
 
+### S9 version-2 wrapper correction closure trước binding (2026-08-03)
+
+- Canonical wrapper version 2 đã được sửa fail-closed để checkout cả scientific
+  source commit `7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8` và implementation-only
+  correction commit `cb608cd8ca501e840d4ae7c73cc7592187683a27`, xác minh addendum SHA-256
+  `0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9`, rồi
+  overlay đúng bốn corrected source hashes lên protocol bất biến. Output audit
+  khóa thêm exact correction commit/addendum bên cạnh full effective source
+  closure. Canonical wrapper LF SHA-256 là
+  `cdfffccb67ac3a7de88b6e1406dac0e89760e49a7904b20d563c5003b3ee919a`.
+- Binder và packaged-prelaunch auditor đã được nâng lên kernel version `2`, kiểm
+  tra ancestor/hash/contract của correction, inverse byte-identical binding và
+  KPF-019 trước real input. Canonical LF SHA-256 binder/auditor lần lượt là
+  `ae8e276991766e14308a897755bc25f04ca76b15fc0c8f9be044a0ba3baf8110 /`
+  `3159f4bf46e01eaf35c366c6c0266d925ac7b48cea987e248c1d6e3f9fadc1f2`;
+  test SHA-256 wrapper/binder/prelaunch lần lượt là
+  `c9b1df9aafbf9b41a13ae0c88e59d7bf4740685b003186f2248aad0cf6b1f814 /`
+  `52b73c1641d657e70f7416d3d376cac01a402a79241b4ec1ed89e8006bea64a7 /`
+  `8b69f38b6b7cedcb9214520ec3566b2d95237e661a887f3527714944d0d7af49`.
+- Static correction suite chạy đúng sáu module mà wrapper sẽ chạy trên Kaggle:
+  `35/35` PASS; Ruff, `py_compile` và `git diff --check` PASS. Đây vẫn chỉ là
+  preparation không mở cache/image, không tạo prediction, không đọc validation
+  GT, không train consumer và không mở test. Scientific hypothesis S9 chưa được
+  kiểm nghiệm; version 1 giữ trạng thái lỗi implementation và không có metric.
+  Claim `EXP-20260803-codex-s9-skelex-candidate-marginal-v1` tiếp tục `ĐANG LÀM`;
+  bước tiếp theo chỉ là commit/push closure này rồi bind/audit exact checkout
+  version 2 trước rerun cùng protocol khoa học bất biến.
+

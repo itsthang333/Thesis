@@ -19,9 +19,15 @@ TEMPLATE_RELATIVE = Path(
 PROTOCOL_RELATIVE = Path(
     "artifacts/research_protocols/skelex_candidate_marginal_s9_v1.json"
 )
-TEMPLATE_SHA256 = "bdb75a0f322d55c5e64e675e4977d401e56ee869b0c49f94a2bc653cadff0079"
+CORRECTION_RELATIVE = Path(
+    "artifacts/research_protocols/"
+    "skelex_candidate_marginal_s9_v1_rank_exactness_correction.json"
+)
+TEMPLATE_SHA256 = "cdfffccb67ac3a7de88b6e1406dac0e89760e49a7904b20d563c5003b3ee919a"
 PROTOCOL_SHA256 = "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d"
 SOURCE_COMMIT = "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8"
+CORRECTION_SHA256 = "0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9"
+CORRECTION_SOURCE_COMMIT = "cb608cd8ca501e840d4ae7c73cc7592187683a27"
 DATASET_SOURCES = [
     "itsthang333/btxrd-raw",
     "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
@@ -37,6 +43,7 @@ EXPECTED_SOURCE_HASHES = {
     "tests/test_run_skelex_candidate_marginal_s9.py": "0844c23d54beccf0dcbfd29e14de4ee1490d67bf4178bd3764c9ab7773dcf7ed",
     "tests/test_audit_skelex_candidate_marginal_s9_output.py": "2cab6273f90279f162a846575654614870cc0e0bcb8c2fe24201bdd33252ce8f",
 }
+EXPECTED_KERNEL_VERSION = 2
 
 
 def digest(payload: bytes) -> str:
@@ -68,9 +75,11 @@ def audit(package: Path, repository_root: Path) -> dict[str, Any]:
         binding.get("status") != "FROZEN_PRELAUNCH"
         or binding.get("experiment_id") != EXPERIMENT_ID
         or binding.get("kernel") != KERNEL
-        or binding.get("kernel_version") != 1
+        or binding.get("kernel_version") != EXPECTED_KERNEL_VERSION
         or binding.get("scientific_source_commit") != SOURCE_COMMIT
+        or binding.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
         or binding.get("protocol_sha256") != PROTOCOL_SHA256
+        or binding.get("rank_exactness_correction_sha256") != CORRECTION_SHA256
         or binding.get("template_sha256") != TEMPLATE_SHA256
         or binding.get("inverse_reconstruction_matches_template") is not True
         or binding.get("validation_gt_read") is not False
@@ -102,18 +111,36 @@ def audit(package: Path, repository_root: Path) -> dict[str, Any]:
     if digest(protocol_payload) != PROTOCOL_SHA256:
         raise ValueError("S9 protocol differs at checkout")
     protocol = json.loads(protocol_payload.decode("utf-8"))
-    if protocol.get("canonical_lf_source_hashes", {}) | EXPECTED_SOURCE_HASHES != protocol.get(
-        "canonical_lf_source_hashes", {}
+    correction_payload = git_bytes(repository_root, checkout, CORRECTION_RELATIVE)
+    if digest(correction_payload) != CORRECTION_SHA256:
+        raise ValueError("S9 correction addendum differs at checkout")
+    correction = json.loads(correction_payload.decode("utf-8"))
+    if (
+        correction.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
+        or correction.get("scientific_protocol_sha256") != PROTOCOL_SHA256
     ):
+        raise ValueError("S9 correction addendum contract mismatch")
+    protocol_hashes = protocol.get("canonical_lf_source_hashes", {})
+    if protocol_hashes | EXPECTED_SOURCE_HASHES != protocol_hashes:
         raise ValueError("S9 protocol source closure is incomplete")
+    corrected = correction.get("corrected_source_hashes", {})
+    effective_hashes = {
+        relative: corrected.get(relative, expected)
+        for relative, expected in protocol_hashes.items()
+    }
     source_hashes = {
         relative: digest(git_bytes(repository_root, checkout, Path(relative)))
-        for relative in protocol["canonical_lf_source_hashes"]
+        for relative in effective_hashes
     }
-    if source_hashes != protocol["canonical_lf_source_hashes"]:
+    if source_hashes != effective_hashes:
         raise ValueError("S9 source closure differs at checkout")
     subprocess.run(
         ["git", "merge-base", "--is-ancestor", SOURCE_COMMIT, checkout],
+        cwd=repository_root,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "merge-base", "--is-ancestor", CORRECTION_SOURCE_COMMIT, checkout],
         cwd=repository_root,
         check=True,
     )
@@ -139,21 +166,23 @@ def audit(package: Path, repository_root: Path) -> dict[str, Any]:
         "audited_utc": datetime.now(timezone.utc).isoformat(),
         "branch": "research-wsss-improvement",
         "kernel": KERNEL,
-        "kernel_version": 1,
+        "kernel_version": EXPECTED_KERNEL_VERSION,
         "checkout_commit": checkout,
         "scientific_source_commit": SOURCE_COMMIT,
+        "correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "template_sha256": TEMPLATE_SHA256,
         "bound_wrapper_sha256": digest(canonical_bytes(wrapper)),
         "launch_binding_sha256": digest(canonical_bytes(binding_path)),
         "metadata_sha256": digest(canonical_bytes(metadata_path)),
         "protocol_sha256": PROTOCOL_SHA256,
+        "rank_exactness_correction_sha256": CORRECTION_SHA256,
         "source_hashes_at_checkout": source_hashes,
         "target_runtime": {
             "python": "Kaggle image runtime; printed before scientific input",
             "transformers": "4.50.2 exact pip pin and import assertion",
             "compute": "NvidiaTeslaT4 x2",
         },
-        "focused_tests": "wrapper executes 29-test static S9 suite before model/data",
+        "focused_tests": "wrapper executes 35-test static S9 correction suite before model/data",
         "input_contract": {
             "dataset_sources": DATASET_SOURCES,
             "kernel_sources": KERNEL_SOURCES,
@@ -179,6 +208,7 @@ def audit(package: Path, repository_root: Path) -> dict[str, Any]:
             "KPF-016": "two-device real CUDA convolution guard",
             "KPF-017": "no immediate/repeated status check declared",
             "KPF-018": "output and runtime roots use exist_ok=False",
+            "KPF-019": "one canonical float32 rank aggregate plus exact vector/winner regressions",
         },
         "real_cache_opened": False,
         "btxrd_image_opened": False,
@@ -207,4 +237,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

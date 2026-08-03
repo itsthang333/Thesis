@@ -28,7 +28,7 @@ def _package(tmp_path: Path) -> tuple[Path, str]:
         binding,
         repository_root=ROOT,
         checkout_commit=checkout,
-        kernel_version=1,
+        kernel_version=2,
     )
     metadata = {
         "id": "itsthang333/btxrd-skelex-candidate-marginal-s9-v1",
@@ -63,7 +63,7 @@ def test_s9_prelaunch_audit_accepts_exact_bound_package(tmp_path: Path) -> None:
     result = audit(package, ROOT)
     assert result["authorized_launch"] is True
     assert result["checkout_commit"] == checkout
-    assert result["kernel_version"] == 1
+    assert result["kernel_version"] == 2
     assert result["validation_prediction_created"] is False
     assert result["validation_gt_read"] is False
     assert result["consumer_trained"] is False
@@ -78,4 +78,3 @@ def test_s9_prelaunch_audit_rejects_metadata_transport_drift(tmp_path: Path) -> 
     metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
     with pytest.raises(ValueError, match="metadata"):
         audit(package, ROOT)
-

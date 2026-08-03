@@ -21,12 +21,18 @@ LAUNCH_BINDING_READY = False
 CHECKOUT_COMMIT = "UNBOUND"
 REPOSITORY = "https://github.com/itsthang333/Thesis.git"
 SOURCE_COMMIT = "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8"
+CORRECTION_SOURCE_COMMIT = "cb608cd8ca501e840d4ae7c73cc7592187683a27"
 PROTOCOL_RELATIVE = Path(
     "artifacts/research_protocols/skelex_candidate_marginal_s9_v1.json"
 )
 PROTOCOL_SHA256 = "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d"
+CORRECTION_RELATIVE = Path(
+    "artifacts/research_protocols/"
+    "skelex_candidate_marginal_s9_v1_rank_exactness_correction.json"
+)
+CORRECTION_SHA256 = "0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9"
 AUDITOR_RELATIVE = Path("project/audit_skelex_candidate_marginal_s9_output.py")
-AUDITOR_SHA256 = "1ee3a18399ba1780912dbffecc5d51ce27861fce45bb89e9fb7d5883e73288fe"
+AUDITOR_SHA256 = "9e665bdbf2dee5f487642f3844c656d4ff9814a2f9e89a51ba627f73cd55b30c"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 GIT_SPLIT_SHA256 = "43662d5d7969ae2a5bc61c6a0de3e0c392debef19c98d809f7d9bdfd0abb2fa8"
 TRAIN_CANDIDATE_MANIFEST_SHA256 = "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1"
@@ -87,10 +93,18 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
     run(["git", "clone", "--filter=blob:none", "--no-checkout", REPOSITORY, str(SOURCE)], cwd=WORK)
     run(["git", "checkout", "--detach", CHECKOUT_COMMIT], cwd=SOURCE)
     run(["git", "merge-base", "--is-ancestor", SOURCE_COMMIT, CHECKOUT_COMMIT], cwd=SOURCE)
+    run(
+        ["git", "merge-base", "--is-ancestor", CORRECTION_SOURCE_COMMIT, CHECKOUT_COMMIT],
+        cwd=SOURCE,
+    )
     protocol_path = SOURCE / PROTOCOL_RELATIVE
     if hash_file(protocol_path) != PROTOCOL_SHA256:
         raise RuntimeError("S9 protocol hash mismatch")
     protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+    correction_path = SOURCE / CORRECTION_RELATIVE
+    if hash_file(correction_path) != CORRECTION_SHA256:
+        raise RuntimeError("S9 correction addendum hash mismatch")
+    correction = json.loads(correction_path.read_text(encoding="utf-8"))
     if (
         protocol.get("status") != "FROZEN_PRELAUNCH"
         or protocol.get("experiment_id")
@@ -110,13 +124,31 @@ def clone_and_verify() -> tuple[dict[str, str], dict[str, object]]:
     hashes = protocol.get("canonical_lf_source_hashes", {})
     if not isinstance(hashes, dict) or not hashes:
         raise RuntimeError("S9 protocol source inventory is missing")
-    for relative, expected in hashes.items():
+    corrected = correction.get("corrected_source_hashes", {})
+    if (
+        correction.get("status")
+        != "IMPLEMENTATION_ONLY_CORRECTION_BEFORE_PREDICTION_FREEZE"
+        or correction.get("experiment_id")
+        != "EXP-20260803-codex-s9-skelex-candidate-marginal-v1"
+        or correction.get("scientific_protocol_sha256") != PROTOCOL_SHA256
+        or correction.get("scientific_source_commit") != SOURCE_COMMIT
+        or correction.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
+        or not isinstance(corrected, dict)
+        or not corrected
+        or not set(corrected).issubset(hashes)
+        or correction.get("validation_gt_read") is not False
+        or correction.get("consumer_trained") is not False
+        or correction.get("test_evaluated") is not False
+    ):
+        raise RuntimeError("S9 correction addendum contract mismatch")
+    effective_hashes = {relative: corrected.get(relative, expected) for relative, expected in hashes.items()}
+    for relative, expected in effective_hashes.items():
         path = SOURCE / relative
         if not path.is_file() or canonical_hash(path) != expected:
             raise RuntimeError(f"S9 source hash mismatch: {relative}")
     if canonical_hash(SOURCE / AUDITOR_RELATIVE) != AUDITOR_SHA256:
         raise RuntimeError("S9 independent auditor hash mismatch")
-    return dict(hashes), protocol
+    return effective_hashes, protocol
 
 
 def verify_t4x2() -> dict[str, object]:
@@ -218,6 +250,7 @@ def run_static_tests() -> None:
             "tests/test_run_skelex_candidate_marginal_s9.py",
             "tests/test_audit_skelex_candidate_marginal_s9_output.py",
             "tests/test_skelex_candidate_marginal_s9_protocol.py",
+            "tests/test_skelex_candidate_marginal_s9_rank_exactness_correction.py",
             "tests/test_kaggle_wrapper_skelex_candidate_marginal_s9_v1.py",
         ],
         cwd=SOURCE,
@@ -333,7 +366,9 @@ def write_binding(source_hashes: dict[str, str]) -> Path:
         "kernel_version": KERNEL_VERSION,
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
+        "correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "rank_exactness_correction_sha256": CORRECTION_SHA256,
         "bound_wrapper_sha256": canonical_hash(Path(__file__)),
         "independent_auditor_sha256": AUDITOR_SHA256,
         "source_hashes": source_hashes,
@@ -390,6 +425,8 @@ def audit_wrapper_output(
         or independent.get("physical_candidate_scores_verified") != 742
         or independent.get("pair_freeze_sha256") != hash_file(pair_path)
         or binding.get("source_hashes") != source_hashes
+        or binding.get("correction_source_commit") != CORRECTION_SOURCE_COMMIT
+        or binding.get("rank_exactness_correction_sha256") != CORRECTION_SHA256
         or run_manifest.get("cohort") != {"train": 2981, "validation": 371}
     ):
         raise RuntimeError("S9 frozen output contract mismatch")
@@ -429,7 +466,9 @@ def audit_wrapper_output(
         "bound_wrapper_sha256": canonical_hash(Path(__file__)),
         "checkout_commit": CHECKOUT_COMMIT,
         "scientific_source_commit": SOURCE_COMMIT,
+        "correction_source_commit": CORRECTION_SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
+        "rank_exactness_correction_sha256": CORRECTION_SHA256,
         "independent_auditor_sha256": AUDITOR_SHA256,
         "source_hashes": source_hashes,
         "t4x2": t4,
