@@ -15967,3 +15967,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   supersede hash ở note KPF-019. Focused wrapper/binder tests, Ruff và
   `py_compile` PASS; scientific protocol không đổi, package cũ chưa launch bị
   coi là stale và sẽ không dùng. Chưa mở real input/GT/consumer/test.
+
+### S10 final package và full Kaggle prelaunch audit (2026-08-03)
+
+- Sau fresh fetch/collision check, central/local cùng
+  `91c94088eb40ed8f1f9afbd5d49498d344b5dd0b`, collaborator vẫn
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c`, worktree tracked sạch và claim
+  S10 duy nhất/visible. Đã đọc đầy đủ `KAGGLE_PREFLIGHT_CHECKLIST.md` và audit
+  từng KPF-001..019 bằng command/hash/test, không đánh dấu theo trí nhớ.
+- Final version-1 package ở ignored temp
+  `tmp/kaggle/highres_candidate_pmil_s10_v1_launch_91c9408`; bound wrapper,
+  launch binding, metadata SHA-256 lần lượt
+  `4690fbe3c46e1380954c74aa9e0c38f5b277974cf271535dd50b99846a2a2dfe /`
+  `fb744b69b99a4b6f4a4a992ee5339f1f701a94259d4625db90a578af965e4eba /`
+  `d1f392d85e7e94521519484288b004ed9b76a3b0c14ddc2d2a681f55dfb0ff53`.
+  Binder chỉ thay 3 field và inverse exact; metadata private/T4 hợp lệ, package
+  py_compile, JSON parse, protocol closure, diff-check và full focused `36/36`
+  PASS.
+- Tracked prelaunch audit
+  `artifacts/research_protocols/highres_candidate_pmil_s10_v1_kernel_v1_prelaunch_audit.json`
+  SHA-256 `d693c38ccd77ea74c16b497feea4cda6e77c63aada61b40584fc5b5e8ae92626`,
+  `authorized_launch=true` đúng một private T4x2 producer version 1. Audit khóa
+  exact checkout/scientific source/protocol/input/output/device/runtime/numeric
+  boundaries và xác nhận không GT/consumer/test/collaborator output.
+- Producer launch không authorize validation GT. Sau terminal independent audit
+  PASS còn phải freeze dynamic hashes và matched three-arm decision/readiness
+  source lên central trước evaluator; protocol đã khóa evaluator hash,
+  arm order, `10,000` bootstrap và seed `20261206`. Không immediate status poll,
+  không monitor và không partial-output access sau push.
