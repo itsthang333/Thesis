@@ -15565,3 +15565,31 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Validation GT chỉ được đọc sau freeze; consumer/test vẫn khóa. Theo arm order
   đã predeclare, bước kế là freeze mục này trên central rồi đánh giá primary với
   chính evaluator/seed, không dùng control result để sửa primary.
+
+### S9 primary evaluation đã freeze trước matched decision (2026-08-03)
+
+- Primary `geometry_v3_plus_upstream_plus_s9_likelihood_equal_rank` được đánh
+  giá với cùng corrected evaluator, baseline, 10,000 replicates và seed
+  `20261205`; không có thay đổi nào sau control. Exact hashes: evaluation audit
+  `cb728f54e2818fcab787fcb96c6d43e7e175561e5a8f3c438c9fb2451a02eebb`,
+  per-image `2a280c5979c4c2b5e5f83451a24ed64da7734876081ad1bd28e53c6560f178c4`,
+  summary `db939158f9f4fec12cb1b35318ef106256b96d5d1991db798b426cc73182f03c`,
+  paired comparison
+  `7148d27f015d244817a31e293aaa1400200c3809e1e4205abe80fec97e2746db`,
+  generic gate
+  `8936fea833f9b7c6680cbd2e9cd6074905e01ee2f885897a250e08c06fc1fdac`.
+- Dice primary overall/small/medium/large là
+  `0.27390921 / 0.13030839 / 0.43346124 / 0.38561647`. So với Geometry-v3,
+  delta `+0.02842682 / +0.01322781 / +0.05632572 / -0.00379617`; CI95
+  `[+0.00304957,+0.05470355] / [-0.01510089,+0.04458621] /`
+  `[+0.01042720,+0.10536193] / [-0.08063054,+0.05693392]`. Overall và medium
+  improvement có CI95 dương, nhưng cả bốn absolute goal đều chưa đạt, large giảm
+  nhẹ và complete misses tăng `53 -> 72`. Generic arm gate vì thế `FAIL` và
+  consumer không được phép train.
+- Primary artifact tracked tại
+  `artifacts/evaluation/skelex_candidate_marginal_s9_v1/primary_evaluation_result_audit.json`,
+  SHA-256
+  `5feb97a8a314aa7da683a2f675055118304f2b7bb391439bd7eaee4caaf3a603`.
+  Bước kế đúng protocol là freeze mục này trên central rồi chạy matched S9
+  decision từ hai per-image table đã đóng băng, không mở lại GT. Consumer/test
+  tiếp tục khóa.
