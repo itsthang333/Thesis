@@ -15721,3 +15721,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   không matched normal/subtype/collaborator output. Bước kế chỉ được đăng ký
   `ĐANG LÀM` sau fresh full log/collision check và protocol/hash freeze; launch
   vẫn cần full `KAGGLE_PREFLIGHT_CHECKLIST.md`, central push và T4x2/P100.
+
+### S10 full model static readiness (2026-08-03)
+
+- Sau static-preparation commit `361b567`, primitive được khép kín thành mô hình
+  end-to-end nhưng vẫn không mở dữ liệu thật. `ResNet50FeaturePyramid` load exact
+  explicit state dict (không tự download ngầm), trích C2/C3/C4/C5, top-down FPN
+  và fuse tại output stride 4. `HighResProposalMIL` project fractional candidate
+  + content, dựng exterior ring, pool inside/ring/contrast/global, chạy set
+  transformer và dense evidence head trong cùng autograd graph.
+- Canonical-LF model/test SHA-256 mới lần lượt
+  `4705f9b514ee89d98fc1ad9190d44c1c035b8eafff8f6500746c8b7c357974ef /`
+  `7d4e405738ff9e468b0da4a4778aa632d473c62a9c0dbbf6e6474fecf3ad0201`,
+  supersede hai primitive-only hash `8e67e9...6f15 / 312fdf...ed1` ở mục trước
+  cho mọi future protocol. Python 3.9 `py_compile`, Ruff, `git diff --check` và
+  focused suite `14/14` PASS; end-to-end synthetic ResNet-FPN forward/backward
+  xác nhận gradient tới backbone stem, dense head và proposal classifier.
+- Đây chỉ là implementation/static evidence: pretrained ResNet weight chưa được
+  đóng băng/package, real train/validation candidate chưa load, chưa fit,
+  prediction/GT/consumer/test/Kaggle. Claim S10 vẫn chưa mở; runner/auditor/
+  protocol/wrapper còn phải hoàn tất và đăng ký/push central trước real action.

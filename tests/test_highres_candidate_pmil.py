@@ -6,6 +6,7 @@ import torch
 
 from models.highres_candidate_pmil import (
     CandidateSetTransformer,
+    HighResProposalMIL,
     aligned_view_consistency,
     area_orthogonality_penalty,
     attention_union_consistency,
@@ -14,6 +15,7 @@ from models.highres_candidate_pmil import (
     image_label_proposal_loss,
     masked_candidate_zone_descriptors,
     pareto_guarded_selection,
+    project_candidate_supports,
     top_instance_dropout_mask,
 )
 
@@ -41,6 +43,50 @@ def test_zone_pooling_exact_and_invalid_zeroed() -> None:
     assert result.shape == (2, 3, 8)
     assert torch.allclose(result[0, 0, :2], feature[0, :, :2, :2].mean(dim=(1, 2)))
     assert torch.count_nonzero(result[1, 2]) == 0
+
+
+def test_support_projection_preserves_validity_and_masks_invalid_candidate() -> None:
+    masks, _rings, valid = _supports()
+    content = torch.ones(2, 4, 4)
+    projected, rings, area = project_candidate_supports(
+        masks, content, valid, output_size=(8, 8), ring_radius=1
+    )
+    assert projected.shape == rings.shape == (2, 3, 8, 8)
+    assert torch.all(area[valid] > 0)
+    assert torch.count_nonzero(projected[1, 2]) == 0
+    assert torch.count_nonzero(rings[1, 2]) == 0
+
+
+def test_highres_model_end_to_end_shape_and_backward() -> None:
+    torch.manual_seed(8)
+    model = HighResProposalMIL(
+        fpn_channels=32,
+        set_hidden_dim=32,
+        set_heads=4,
+        set_layers=1,
+        set_dropout=0.0,
+        ring_radius=1,
+    )
+    model.train()
+    images = torch.randn(2, 3, 64, 64)
+    masks, _rings, valid = _supports()
+    content = torch.ones(2, 4, 4)
+    output = model(images, masks, content, valid)
+    assert output.classification_logits.shape == (2, 3)
+    assert output.detection_logits.shape == (2, 3)
+    assert output.dense_logits.shape == (2, 16, 16)
+    assert output.candidate_weights.shape == (2, 3, 16, 16)
+    loss = image_label_proposal_loss(
+        output.classification_logits,
+        output.detection_logits,
+        output.dense_logits,
+        torch.tensor([0, 1]),
+        valid,
+    )["total"]
+    loss.backward()
+    assert model.fpn.stem[0].weight.grad is not None
+    assert model.dense_head[-1].weight.grad is not None
+    assert model.proposal_head.classification.weight.grad is not None
 
 
 def test_candidate_transformer_is_permutation_equivariant_without_dropout() -> None:

@@ -14,6 +14,11 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+try:
+    from torchvision.models import resnet50
+except (ImportError, RuntimeError):  # pragma: no cover - environment guard
+    resnet50 = None
+
 from models.bas_candidate_localizer import within_bag_percentile_ranks
 
 
@@ -133,6 +138,217 @@ class CandidateSetTransformer(nn.Module):
         classification = classification.masked_fill(~candidate_valid, -torch.inf)
         detection = detection.masked_fill(~candidate_valid, -torch.inf)
         return classification, detection
+
+
+@dataclass(frozen=True)
+class HighResProposalMILOutput:
+    classification_logits: torch.Tensor
+    detection_logits: torch.Tensor
+    dense_logits: torch.Tensor
+    candidate_weights: torch.Tensor
+    ring_weights: torch.Tensor
+    candidate_area: torch.Tensor
+    candidate_valid: torch.Tensor
+
+
+class ResNet50FeaturePyramid(nn.Module):
+    """Trainable ResNet-50 C2-C5 pyramid fused at output stride four."""
+
+    def __init__(
+        self,
+        *,
+        channels: int = 128,
+        backbone_state_dict: dict[str, torch.Tensor] | None = None,
+    ) -> None:
+        super().__init__()
+        if channels <= 0:
+            raise ValueError("FPN channels must be positive")
+        if resnet50 is None:
+            raise RuntimeError("torchvision ResNet-50 is unavailable")
+        backbone = resnet50(weights=None)
+        if backbone_state_dict is not None:
+            backbone.load_state_dict(backbone_state_dict, strict=True)
+        self.stem = nn.Sequential(
+            backbone.conv1,
+            backbone.bn1,
+            backbone.relu,
+            backbone.maxpool,
+        )
+        self.layer1 = backbone.layer1
+        self.layer2 = backbone.layer2
+        self.layer3 = backbone.layer3
+        self.layer4 = backbone.layer4
+        self.lateral = nn.ModuleList(
+            nn.Conv2d(source, channels, kernel_size=1)
+            for source in (256, 512, 1024, 2048)
+        )
+        self.smooth = nn.ModuleList(
+            nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            for _ in range(4)
+        )
+        self.fuse = nn.Sequential(
+            nn.Conv2d(4 * channels, channels, kernel_size=3, padding=1, bias=False),
+            nn.GroupNorm(min(32, channels), channels),
+            nn.GELU(),
+        )
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
+        if images.ndim != 4 or images.shape[1] != 3:
+            raise ValueError("images must be Bx3xHxW")
+        if images.shape[-2] % 32 or images.shape[-1] % 32:
+            raise ValueError("image dimensions must be divisible by 32")
+        _finite("images", images)
+        stem = self.stem(images)
+        c2 = self.layer1(stem)
+        c3 = self.layer2(c2)
+        c4 = self.layer3(c3)
+        c5 = self.layer4(c4)
+        sources = (c2, c3, c4, c5)
+        pyramid: list[torch.Tensor] = [torch.empty(0)] * 4
+        top: torch.Tensor | None = None
+        for index in range(3, -1, -1):
+            lateral = self.lateral[index](sources[index])
+            if top is not None:
+                lateral = lateral + F.interpolate(
+                    top, size=lateral.shape[-2:], mode="nearest"
+                )
+            top = lateral
+            pyramid[index] = self.smooth[index](lateral)
+        target = pyramid[0].shape[-2:]
+        fused = torch.cat(
+            [
+                value
+                if value.shape[-2:] == target
+                else F.interpolate(value, size=target, mode="bilinear", align_corners=False)
+                for value in pyramid
+            ],
+            dim=1,
+        )
+        output = self.fuse(fused)
+        if output.shape[-2:] != (images.shape[-2] // 4, images.shape[-1] // 4):
+            raise RuntimeError("FPN output stride changed")
+        return output
+
+
+def project_candidate_supports(
+    square_candidate_masks: torch.Tensor,
+    square_content_masks: torch.Tensor,
+    candidate_valid: torch.Tensor,
+    *,
+    output_size: tuple[int, int],
+    ring_radius: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Area-project candidates and construct a bounded exterior ring."""
+
+    if square_candidate_masks.ndim != 4 or square_content_masks.ndim != 3:
+        raise ValueError("candidate/content supports must be BNHW/BHW")
+    if square_candidate_masks.shape[0] != square_content_masks.shape[0]:
+        raise ValueError("candidate/content batch differs")
+    if square_candidate_masks.shape[-2:] != square_content_masks.shape[-2:]:
+        raise ValueError("candidate/content spatial shapes differ")
+    if candidate_valid.shape != square_candidate_masks.shape[:2]:
+        raise ValueError("candidate_valid must be BN")
+    if output_size[0] <= 0 or output_size[1] <= 0 or ring_radius <= 0:
+        raise ValueError("support projection controls are invalid")
+    for name, value in (
+        ("square candidate masks", square_candidate_masks),
+        ("square content masks", square_content_masks),
+    ):
+        _finite(name, value)
+        if bool((value < 0).any()):
+            raise ValueError(f"{name} must be non-negative")
+    batch, candidates = square_candidate_masks.shape[:2]
+    masks = F.interpolate(
+        square_candidate_masks.float().reshape(batch * candidates, 1, *square_candidate_masks.shape[-2:]),
+        size=output_size,
+        mode="area",
+    ).reshape(batch, candidates, *output_size).clamp(0.0, 1.0)
+    content = F.interpolate(
+        square_content_masks.float()[:, None], size=output_size, mode="area"
+    )[:, 0].clamp(0.0, 1.0)
+    masks = masks * content[:, None]
+    kernel = 2 * ring_radius + 1
+    dilated = F.max_pool2d(
+        masks.reshape(batch * candidates, 1, *output_size),
+        kernel_size=kernel,
+        stride=1,
+        padding=ring_radius,
+    ).reshape(batch, candidates, *output_size)
+    rings = (dilated - masks).clamp_min(0.0) * content[:, None]
+    area = masks.sum(dim=(-2, -1))
+    ring_area = rings.sum(dim=(-2, -1))
+    if bool(((area <= 0) & candidate_valid).any()):
+        raise ValueError("valid candidate vanished during FPN projection")
+    if bool(((ring_area <= 0) & candidate_valid).any()):
+        raise ValueError("valid candidate has no projected exterior ring")
+    masks = masks * candidate_valid[..., None, None].to(masks.dtype)
+    rings = rings * candidate_valid[..., None, None].to(rings.dtype)
+    return masks, rings, area
+
+
+class HighResProposalMIL(nn.Module):
+    """End-to-end high-resolution proposal-conditioned binary MIL model."""
+
+    def __init__(
+        self,
+        *,
+        fpn_channels: int = 128,
+        set_hidden_dim: int = 256,
+        set_heads: int = 4,
+        set_layers: int = 2,
+        set_dropout: float = 0.1,
+        ring_radius: int = 3,
+        backbone_state_dict: dict[str, torch.Tensor] | None = None,
+    ) -> None:
+        super().__init__()
+        if ring_radius <= 0:
+            raise ValueError("ring radius must be positive")
+        self.ring_radius = ring_radius
+        self.fpn = ResNet50FeaturePyramid(
+            channels=fpn_channels, backbone_state_dict=backbone_state_dict
+        )
+        self.dense_head = nn.Sequential(
+            nn.Conv2d(fpn_channels, fpn_channels // 2, kernel_size=3, padding=1),
+            nn.GELU(),
+            nn.Conv2d(fpn_channels // 2, 1, kernel_size=1),
+        )
+        self.proposal_head = CandidateSetTransformer(
+            4 * fpn_channels,
+            hidden_dim=set_hidden_dim,
+            heads=set_heads,
+            layers=set_layers,
+            dropout=set_dropout,
+        )
+
+    def forward(
+        self,
+        images: torch.Tensor,
+        square_candidate_masks: torch.Tensor,
+        square_content_masks: torch.Tensor,
+        candidate_valid: torch.Tensor,
+    ) -> HighResProposalMILOutput:
+        features = self.fpn(images)
+        candidate_weights, ring_weights, candidate_area = project_candidate_supports(
+            square_candidate_masks,
+            square_content_masks,
+            candidate_valid,
+            output_size=features.shape[-2:],
+            ring_radius=self.ring_radius,
+        )
+        descriptors = masked_candidate_zone_descriptors(
+            features, candidate_weights, ring_weights, candidate_valid
+        )
+        classification, detection = self.proposal_head(descriptors, candidate_valid)
+        dense_logits = self.dense_head(features)[:, 0]
+        return HighResProposalMILOutput(
+            classification_logits=classification,
+            detection_logits=detection,
+            dense_logits=dense_logits,
+            candidate_weights=candidate_weights,
+            ring_weights=ring_weights,
+            candidate_area=candidate_area,
+            candidate_valid=candidate_valid,
+        )
 
 
 def dual_stream_bag_probability(
@@ -445,7 +661,10 @@ def pareto_guarded_selection(
 
 __all__ = [
     "CandidateSetTransformer",
+    "HighResProposalMIL",
+    "HighResProposalMILOutput",
     "ParetoSelection",
+    "ResNet50FeaturePyramid",
     "aligned_view_consistency",
     "area_orthogonality_penalty",
     "attention_union_consistency",
@@ -454,5 +673,6 @@ __all__ = [
     "image_label_proposal_loss",
     "masked_candidate_zone_descriptors",
     "pareto_guarded_selection",
+    "project_candidate_supports",
     "top_instance_dropout_mask",
 ]
