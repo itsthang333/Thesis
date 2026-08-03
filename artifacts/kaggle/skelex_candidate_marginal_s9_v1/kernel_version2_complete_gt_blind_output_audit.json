@@ -1,0 +1,94 @@
+{
+  "audit_id": "skelex_candidate_marginal_s9_v1_kernel_version2_complete_gt_blind_output_audit",
+  "audit_timestamp_utc": "2026-08-03T08:51:30.2647212Z",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "kernel": "itsthang333/btxrd-skelex-candidate-marginal-s9-v1",
+  "kernel_status": "COMPLETE",
+  "kernel_version": 2,
+  "download": {
+    "direct_log_bytes": 41794,
+    "direct_log_sha256": "f6422a11f52f985c2f70a45ecaeed42afc5167e4193273119b7d409133c9268b",
+    "downloader": "project/download_kaggle_output_inventory.py",
+    "official_output_bytes": 166143159,
+    "official_output_files": 1873,
+    "partial_or_temporary_files": 0
+  },
+  "provenance": {
+    "bound_wrapper_sha256": "198f03620e18f6239e815849bcceaeab3e6c13c710bc895a77b05a319197be3e",
+    "correction_source_commit": "cb608cd8ca501e840d4ae7c73cc7592187683a27",
+    "execution_checkout": "172c00e8719285010f52ebbbe715ad352ebb7428",
+    "independent_auditor_sha256": "9e665bdbf2dee5f487642f3844c656d4ff9814a2f9e89a51ba627f73cd55b30c",
+    "protocol_sha256": "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d",
+    "rank_exactness_correction_sha256": "0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9",
+    "scientific_source_commit": "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8",
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "runtime": {
+    "cuda_device_count": 2,
+    "cuda_device_names": [
+      "Tesla T4",
+      "Tesla T4"
+    ],
+    "epochs": 32,
+    "training_labels": "image_level_normal_tumor_only",
+    "training_records": 2981,
+    "validation_records": 371
+  },
+  "frozen_output": {
+    "checkpoint_sha256": "5b555a1325ba580586f762f4936e02dd0e800cf60f90365c68666f6628316aea",
+    "feature_cache_manifest_sha256": "804cf349023eb6c495e313db513ca0f6d83fa3556f7588bff19d29e6f84dbef8",
+    "feature_cache_operational_gate_sha256": "1d76b3a14ce0ebceb26b97bb25dd2409b7525b26ab0016f66931d4b42ca49918",
+    "independent_gt_blind_output_audit_sha256": "cdc6db3f9cc275dde412ded54e4314220670896a4fe87c6cd7d0049da08c74a1",
+    "launch_binding_sha256": "ccc4a88baafe0a1e109dcdc11a177e2db38ae9586866e19d56e272b4cfecedd9",
+    "likelihood_evidence_manifest_sha256": "86ab31c97430bf09c34f0557a5f6320cc5f059454d0ebec4643fef9c563994fe",
+    "likelihood_evidence_payloads": 371,
+    "likelihood_evidence_payload_bytes": 9244960,
+    "physical_candidate_score_payloads": 742,
+    "physical_prediction_maps": 742,
+    "prediction_pair_freeze_sha256": "b45c53d4a9f6c189741431dbe362c19998379b8ca0ef3465aa6824092e5f8280",
+    "run_manifest_sha256": "baf9aefb04689d05382a4494e61992a0eeff2af2c7b71f94a493e1afbb2ac819",
+    "training_history_sha256": "60ffbe9475d803b040a3b2a87187f133b8198752f36f5b503ac28a3a37db2b73",
+    "wrapper_output_audit_sha256": "b745f07371693611064d48341fa467482f2100d54151cab7bcb76d69ea63bf46",
+    "arms": {
+      "geometry_v3_plus_upstream_equal_rank": {
+        "candidate_score_manifest_sha256": "351ffb22e6a26e892f4f880400b365de9874bdb38fc7a960975e1b75db35b64d",
+        "candidate_score_payload_bytes": 346537,
+        "candidate_score_payloads": 371,
+        "prediction_freeze_sha256": "db947e460d3e2dfc98f595f7b0fc527a2dc4710eeedf0727e0a68f73cf134661",
+        "prediction_manifest_sha256": "c25b36ce836ef9983ab3e5210f7cf8dad9346829831151ad4f60fb854f40bede",
+        "prediction_map_bytes": 76028288,
+        "prediction_maps": 371
+      },
+      "geometry_v3_plus_upstream_plus_s9_likelihood_equal_rank": {
+        "candidate_score_manifest_sha256": "76bf358e117c00699d7a3af85209d0ff38872edc28fdaf6cd12ca2615ed4f065",
+        "candidate_score_payload_bytes": 352309,
+        "candidate_score_payloads": 371,
+        "prediction_freeze_sha256": "319bc65e0b8b7bf6e322c3c7612e7873d40e13f41ac78a13ca0df3adc243dc6f",
+        "prediction_manifest_sha256": "fd8e76f7a3da4181acfed15826f54b90becb87c37137be9721411e49015b4e08",
+        "prediction_map_bytes": 76028288,
+        "prediction_maps": 371
+      }
+    }
+  },
+  "gt_blind_diagnostics": {
+    "mean_primary_control_rank_correlation": 0.8770272248574082,
+    "primary_changed_selection_count": 212,
+    "primary_changed_selection_fraction": 0.5714285714285714
+  },
+  "local_physical_verification": {
+    "arm_image_id_sets_equal": true,
+    "manifest_hash_links_verified": true,
+    "pair_and_run_hash_links_verified": true,
+    "payload_hash_mismatches": 0,
+    "status": "LOCAL_PHYSICAL_HASH_REPRODUCTION_PASS"
+  },
+  "safety": {
+    "collaborator_output_accessed": false,
+    "consumer_trained": false,
+    "pair_physically_frozen_before_validation_gt": true,
+    "test_evaluated": false,
+    "validation_gt_read": false
+  },
+  "status": "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_REPRODUCTION_PASS",
+  "validation_gt_evaluation_authorized_after_readiness_commit": true
+}

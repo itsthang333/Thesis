@@ -15417,3 +15417,65 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `2dd732678412204c288f12448b2e5b1560ddefb6bd93262e1e4d57919618577a`;
   focused `4/4`, Ruff/`py_compile`/diff check PASS.
 
+### S9 version 2 COMPLETE: terminal GT-blind audit và postfreeze readiness (2026-08-03)
+
+- Một bounded status check sau thông báo của người dùng xác nhận private kernel
+  `itsthang333/btxrd-skelex-candidate-marginal-s9-v1`, version `2`, terminal
+  `COMPLETE`. Toàn bộ `1,873` official output files (`166,143,159` byte) và direct
+  log `41,794` byte được tải đúng một lần bằng
+  `project/download_kaggle_output_inventory.py` vào ignored temp mới
+  `tmp/kaggle/skelex_candidate_marginal_s9_v2_complete_20260803_1324`; không có
+  `.part`/temporary file. Direct-log SHA-256 là
+  `f6422a11f52f985c2f70a45ecaeed42afc5167e4193273119b7d409133c9268b` và log
+  kết thúc sạch sau independent auditor, không có traceback terminal.
+- Provenance terminal khớp package đã freeze: execution checkout
+  `172c00e8719285010f52ebbbe715ad352ebb7428`, scientific source
+  `7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8`, implementation-only correction
+  `cb608cd8ca501e840d4ae7c73cc7592187683a27`, protocol SHA-256
+  `0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d`,
+  correction addendum SHA-256
+  `0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9`,
+  bound wrapper SHA-256
+  `198f03620e18f6239e815849bcceaeab3e6c13c710bc895a77b05a319197be3e`,
+  output launch-binding SHA-256
+  `ccc4a88baafe0a1e109dcdc11a177e2db38ae9586866e19d56e272b4cfecedd9`
+  và independent auditor SHA-256
+  `9e665bdbf2dee5f487642f3844c656d4ff9814a2f9e89a51ba627f73cd55b30c`.
+  Runtime là đúng `Tesla T4` x2, 32 epoch, 2,981 train record/371 validation
+  record; training label chỉ là `image_level_normal_tumor_only` và checkpoint
+  được dùng là final epoch, không chọn theo validation segmentation GT.
+- Producer audit và kiểm tra vật lý độc lập tại máy đều PASS. Exact hashes:
+  checkpoint `5b555a1325ba580586f762f4936e02dd0e800cf60f90365c68666f6628316aea`,
+  run manifest `baf9aefb04689d05382a4494e61992a0eeff2af2c7b71f94a493e1afbb2ac819`,
+  pair freeze `b45c53d4a9f6c189741431dbe362c19998379b8ca0ef3465aa6824092e5f8280`,
+  wrapper output audit
+  `b745f07371693611064d48341fa467482f2100d54151cab7bcb76d69ea63bf46`
+  và embedded independent GT-blind audit
+  `cdc6db3f9cc275dde412ded54e4314220670896a4fe87c6cd7d0049da08c74a1`.
+  Local audit băm lại từng payload theo manifest: `742/742` prediction maps,
+  `742/742` candidate-score payloads và `371/371` likelihood-evidence payloads
+  khớp, không mismatch; hai arm có cùng 371 image IDs. Artifact audit tracked
+  `artifacts/kaggle/skelex_candidate_marginal_s9_v1/kernel_version2_complete_gt_blind_output_audit.json`
+  có SHA-256
+  `3afdb9396de9f13e22997d4cb55b133a6299061f2672c1df0fde8cf9fa1ad168`.
+- Independent reproduction định lượng: maximum base-logit delta
+  `7.62939453125e-06`, head-logit delta `0.0`, likelihood delta
+  `7.152557373046875e-07`; mean primary/control within-image rank correlation
+  `0.8770272248574082`. Primary đổi candidate trên `212/371 = 0.5714285714`
+  ảnh, nên intervention có tác động thực và không suy biến thành control; đây vẫn
+  chỉ là diagnostic GT-blind, chưa phải bằng chứng Dice tốt hơn.
+- Dynamic postfreeze readiness được sinh đúng một lần sau physical audit PASS:
+  `artifacts/kaggle/skelex_candidate_marginal_s9_v1/kernel_version2_postfreeze_readiness.json`,
+  SHA-256
+  `4d7b1a3b5c69f2de0b02cc2c31f21bd269ce213b3bb127d38c88ab71289e95ce`.
+  Nó khóa exact prediction/score manifests của control và primary, evaluation
+  addendum SHA-256
+  `8986aa5d03bf287c747c9a58f4f8f2a1948abf7811b74a01baa2f7060834a390`,
+  `10,000` complete-group bootstrap replicates và seed `20261205`. Chỉ sau khi
+  log+hai audit artifact này được commit/push và nhìn thấy trên central mới được
+  mở validation GT để chạy hai evaluator đã predeclare, rồi matched decision.
+- Safety tới boundary này: pair đã physically freeze trước GT;
+  `validation_gt_read=false`, `consumer_trained=false`, `test_evaluated=false`,
+  `collaborator_output_accessed=false`. Claim
+  `EXP-20260803-codex-s9-skelex-candidate-marginal-v1` tiếp tục `ĐANG LÀM` chờ
+  evaluation/decision; chưa có Dice và không có post-hoc sweep/rescue.
