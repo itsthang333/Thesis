@@ -1,0 +1,55 @@
+{
+  "consumer_authorized": false,
+  "consumer_trained": false,
+  "control_dice": {
+    "large": 0.3894126471276201,
+    "medium": 0.37713551529480416,
+    "overall": 0.2454823867797678,
+    "small": 0.11708057891440651
+  },
+  "decision_output_hashes": {
+    "decision_audit.json": "949245c3968fa7c796b4121d2763d7c4fd75d3fd592cfa546a950ebf19b01e21",
+    "gate_decision.json": "d66369024f0c85bbe95bf7bad69dc532a2b2076b63e265b510c3f3b29f8608c7",
+    "paired_comparison.json": "9af7650d6b3e5970976d0c00562e0ab617ef47469551a87b644ceed8ae443c0d",
+    "paired_per_image.csv": "e6c6307f69239152002367eba89dc0dec6849789f0cd4aa6607deb3f0fd071a4"
+  },
+  "delta_primary_minus_control": {
+    "large": -0.004168989300508994,
+    "medium": 0.012492655912939,
+    "overall": 0.004527167343854861,
+    "small": 0.00009116354198774666
+  },
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "failure_analysis": {
+    "artifact_sha256": "52709cadebac63d2a9571df706c3e5c3db037ceefe253c1bbb7ab2bb2a54b7e2",
+    "source_sha256": "1d1f0c6ff8a09853885541d9d6da03f76584222f976571b888c2d2be79eaa855",
+    "test_sha256": "e9f7353fb2b299cc68405dada1ead81f784628d87c01f510ef034e6516319561"
+  },
+  "failure_type": "scientific_gate_failure_after_valid_frozen_evaluation",
+  "goal_checks": {
+    "large": false,
+    "medium": false,
+    "overall": false,
+    "small": false
+  },
+  "ground_truth_reopened_for_matched_comparison": false,
+  "mechanism_pass": false,
+  "operational_pass": false,
+  "overall_paired_ci95": [
+    -0.002972346963692313,
+    0.015383870401258722
+  ],
+  "post_hoc_rescue_or_sweep_authorized": false,
+  "prediction_pair_freeze_sha256": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+  "primary_dice": {
+    "large": 0.3852436578271111,
+    "medium": 0.3896281712077432,
+    "overall": 0.25000955412362263,
+    "small": 0.11717174245639425
+  },
+  "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "source_commit": "b4543aeb9430345c9b789384943bd218816a85dd",
+  "status": "COMPLETE_GATE_FAIL",
+  "test_evaluated": false,
+  "validation_gt_read_only_after_prediction_freeze_and_independent_gt_blind_audit": true
+}

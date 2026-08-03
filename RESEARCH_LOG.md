@@ -13884,7 +13884,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
 
 ### EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1
 
-- **Owner/status/time:** Codex central workstream; **ĐANG LÀM**; đăng ký
+- **Owner/status/time:** Codex central workstream; **HOÀN THÀNH — GATE FAIL**; đăng ký
   `2026-08-02T16:57:59+07:00` trên base
   `8c02ca00dd6e94dbee3d9ddbac6b3dddd5704104`; registration commit
   `a7ccfdcb53f87dfdff861a46359089c75cdb8dc8`. Không real cache/image/SKELEX
@@ -14753,4 +14753,85 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   khóa tool/tests, raw/canonical readiness và unchanged decision/control/primary
   contracts. Chỉ sau commit/push/fetch artifact + source mới materialize vào
   temp mới và gọi matched decision. Consumer/test khóa, không rescue/sweep.
+
+### S8 matched decision terminal FAIL và quantitative failure-analysis gate (2026-08-03)
+
+- Sau materializer commit `c8c3dc0`, readiness raw CRLF `46aecb...` được chuyển
+  fail-closed vào temp mới thành exact canonical-LF
+  `9e0294a5af2d7eb62598eb000f9ee187e2a8c46c07077a52cb432319f294247d`.
+  Frozen matched decision được gọi đúng một lần trên control/primary evaluation
+  đã freeze; nó không mở lại GT. Physical SHA-256 của
+  `decision_audit.json / gate_decision.json / paired_comparison.json /
+  paired_per_image.csv` lần lượt là
+  `949245c3968fa7c796b4121d2763d7c4fd75d3fd592cfa546a950ebf19b01e21 /`
+  `d66369024f0c85bbe95bf7bad69dc532a2b2076b63e265b510c3f3b29f8608c7 /`
+  `9af7650d6b3e5970976d0c00562e0ab617ef47469551a87b644ceed8ae443c0d /`
+  `e6c6307f69239152002367eba89dc0dec6849789f0cd4aa6607deb3f0fd071a4`.
+- Exact matched Dice primary overall/small/medium/large là
+  `0.2500095541 / 0.1171717425 / 0.3896281712 / 0.3852436578`; delta so control
+  là `+0.0045271673 / +0.0000911635 / +0.0124926559 / -0.0041689893`.
+  Overall CI95 `[-0.00297235,+0.01538387]` cắt zero; large regression làm
+  predeclared mechanism gate fail; cả bốn operational goal đều fail. Miss
+  overall giữ `53 -> 53`, nhưng small `33 -> 34`, medium `18 -> 17`, large
+  `2 -> 2`. Vì vậy exact decision là `FAIL`, `mechanism_pass=false`,
+  `operational_pass=false`, `consumer_authorized=false` và
+  `post_hoc_rescue_or_sweep_authorized=false`.
+- Terminal freeze
+  `artifacts/evaluation/skelex_reconstruction_selector_s8_v1/terminal_decision.json`
+  có SHA-256
+  `57321ea1c2482d39cd89cfb27720e9cac1d038e4dbedd64c3c82c35e60a8502d`.
+  Đây là **thất bại khoa học sau evaluation hợp lệ**, không phải lỗi transport,
+  implementation hoặc evaluator. Experiment
+  `EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1` đóng terminal
+  **HOÀN THÀNH — GATE FAIL**.
+- Read-only analyzer
+  `project/analyze_skelex_reconstruction_selector_s8_failure.py` và test có
+  SHA-256
+  `1d1f0c6ff8a09853885541d9d6da03f76584222f976571b888c2d2be79eaa855 /`
+  `e9f7353fb2b299cc68405dada1ead81f784628d87c01f510ef034e6516319561`;
+  exact Python 3.9 focused suite `5/5` pass. Dossier
+  `artifacts/evaluation/skelex_reconstruction_selector_s8_v1/failure_analysis.json`
+  SHA-256
+  `52709cadebac63d2a9571df706c3e5c3db037ceefe253c1bbb7ab2bb2a54b7e2`.
+  Analyzer chỉ join physical frozen maps/evidence/evaluation tables, không mở
+  raw GT, không sửa prediction, không sweep/rescue và không truy cập test.
+- Hai tooling boundary trong lúc tạo dossier đều xảy ra trước physical output:
+  attempt đầu giả định sai `evidence_manifest.json` có aggregate
+  `switch_count`; correction tự cộng exact `switched` flag của đủ `371` row và
+  vẫn require tổng `20`. Attempt kế hoàn tất analysis nhưng Python `3.9.23`
+  reject `Path.write_text(..., newline=...)`; correction dùng exclusive
+  `Path.open("x", newline="\\n")` và regression kiểm tra LF/refuse overwrite.
+  Không partial dossier nào tồn tại ở hai attempt. KPF-003 trong
+  `KAGGLE_PREFLIGHT_CHECKLIST.md` đã bổ sung failure mode này; checklist SHA-256
+  mới `b7e4fdcad4e3a0b3988d3d7d562cb41f36ec63c3b390bde41bd45add7cf066bd`.
+- **Failure localization định lượng:** gate chỉ switch `20/371 = 5.3908%`, nhưng
+  rate ở tumor `10/184 = 5.4348%` gần như normal `10/187 = 5.3476%` (tỷ số
+  `1.0163`), nên reconstruction significance không đặc hiệu cho u. Trong 10
+  tumor switch chỉ có `4 win / 3 loss / 3 tie`; positive/negative/net Dice sum
+  là `+1.110399 / -0.277401 / +0.832999`. Riêng `IMG001760.jpeg` đóng góp
+  `+0.838323`, bằng `100.64%` net; bỏ ảnh này net còn `-0.005325`, chứng minh
+  mean gain mong manh và không phải cải thiện phân bố rộng.
+- **Identity/extent bottleneck:** `10/10` tumor switch đổi family; `9/10` co diện
+  tích, `8/10` còn dưới nửa mask cũ, median new/old area chỉ `0.2966`, median
+  Dice giữa hai mask `0.2705` và `5/10` gần disjoint (`<0.1`). Trên toàn 20
+  switch, `19/20` đổi family, median area ratio `0.1529`, `14/20` gần disjoint.
+  Large có một win `+0.200407` nhưng một loss `-0.275448`, net `-0.075042`;
+  cả hai đều co support, nên global area rule không giải quyết được.
+- Spatial-null p-value không dự báo candidate đúng: median p-value của win là
+  `0.019531`, của loss còn thấp hơn `0.015625`; Spearman delta với p-value chỉ
+  `0.1667`, với observed reconstruction improvement chỉ `0.0184`. Gate phục hồi
+  `2` miss nhưng cũng làm mất `2`, net zero. Bằng chứng này bác bỏ suy luận
+  “reconstruction khác spatial noise + flip-consistent ⇒ tumor candidate tốt
+  hơn”: randomization chỉ chứng minh anomaly có cấu trúc, không chứng minh đúng
+  identity hoặc đúng extent.
+- **Phần loại/giữ:** loại promotion S8 và cấm mọi hậu nghiệm sweep p-value,
+  weight, area, family, subgroup, fusion trên validation result này. Không dùng
+  orientation-consistency như identity guard và không dùng global area
+  correction. Có thể giữ frozen SKELEX reconstruction evidence như
+  **diagnostic representation**, không phải kỹ thuật cải thiện đã chứng minh.
+  Successor chỉ được mở sau commit/push failure gate này và phải trực tiếp xử lý
+  cross-family identity ambiguity cùng extent collapse bằng annotation-free
+  evidence được predeclare độc lập, matched control và prediction freeze mới.
+  Consumer chưa train; validation GT chỉ dùng từ frozen evaluator tables; BTXRD
+  test và collaborator output/Kaggle luôn khóa.
 

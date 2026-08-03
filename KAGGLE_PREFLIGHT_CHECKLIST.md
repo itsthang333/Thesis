@@ -126,7 +126,7 @@ $sha = [Security.Cryptography.SHA256]::Create()
 |---|---|---|
 | KPF-001 | Split/source hash lệch do canonical-LF và tracked/local/Kaggle CRLF; ngay cả raw Git blob có thể là CRLF | Khóa raw + canonical-LF SHA; lấy raw blob và rehash; chạy fail-closed CRLF/LF normalizer đúng một lần; assert input/output; không suy line ending từ tên thao tác Git. |
 | KPF-002 | Kaggle base image đổi dependency (`transformers 5.x` thay vì `4.50.2`) | Pin exact version, import-assert version, chạy trước model download/real input. |
-| KPF-003 | Python 3.9 lỗi `zip(..., strict=True)` | In runtime version; native test trên runtime đích; explicit length check + ordinary `zip` nếu cần 3.9. |
+| KPF-003 | Python 3.9 lỗi API mới: `zip(..., strict=True)` hoặc `Path.write_text(..., newline=...)` | In runtime version; native test trên runtime đích; explicit length check + ordinary `zip`; dùng `Path.open(..., newline="\\n")` để ghi LF xác định. |
 | KPF-004 | Chạy nhầm interpreter: thiếu NumPy/PyTorch/sklearn hoặc thiếu `kaggle` | In `sys.executable`; probe imports; tách rõ interpreter scientific và interpreter Kaggle CLI. |
 | KPF-005 | Package bind từ checkout/source khác hoặc launch field chưa khóa | Exact ancestry + full SHA closure + three-field inverse reconstruction + clean checkout. |
 | KPF-006 | Kaggle `SaveKernel` HTTP 400 do slug/title quá dài | Static length guard cho slug/title/filename và exact metadata test trước API call. |
