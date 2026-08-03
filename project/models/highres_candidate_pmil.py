@@ -503,11 +503,14 @@ def image_label_proposal_loss(
     bag = F.binary_cross_entropy(output["bag_probability"], labels)
     normal = labels == 0
     zero = classification_logits[candidate_valid].sum() * 0.0
-    candidate_negative = (
-        F.softplus(classification_logits[normal][candidate_valid[normal]]).mean()
-        if bool(normal.any())
-        else zero
-    )
+    candidate_negative = zero
+    if bool(normal.any()):
+        per_image = []
+        for row_logits, row_valid in zip(
+            classification_logits[normal], candidate_valid[normal]
+        ):
+            per_image.append(F.softplus(row_logits[row_valid]).mean())
+        candidate_negative = torch.stack(per_image).mean()
     pixel_negative = (
         F.softplus(dense_logits[normal]).mean() if bool(normal.any()) else zero
     )

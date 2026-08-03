@@ -15817,3 +15817,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `7d4e405738ff9e468b0da4a4778aa632d473c62a9c0dbbf6e6474fecf3ad0201`;
   focused `14/14`, py_compile/Ruff/diff-check PASS. Runner/protocol/auditor/
   wrapper chưa có; registration tự nó không authorize launch.
+
+### S10 registration visibility và normal-negative weighting correction (2026-08-03)
+
+- Exact registration commit là
+  `f0c4b23d071ff825254a7ed07ee0c39e49ae1598`, đã byte-visible trên
+  `origin/research-wsss-improvement`; fresh fetch xác nhận local/central cùng
+  commit và collaborator vẫn ở
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c`, không có claim trùng scope.
+- Static review phát hiện phép lấy mean trên toàn bộ normal candidates sẽ vô ý
+  cho ảnh có nhiều proposal trọng số lớn hơn ảnh có ít proposal. Đã sửa
+  implementation-only: mỗi normal image lấy mean trên các candidate hợp lệ của
+  chính nó trước, sau đó mới mean đều giữa các ảnh. Như vậy tổng normal-candidate
+  negative mass trên mỗi ảnh là bằng nhau; hypothesis, candidate gallery,
+  architecture, loss family, arm, gate và safety boundary không đổi.
+- Canonical-LF model/test SHA-256 sau correction lần lượt
+  `c71366919a0dcf4e04010b4008df67d18fb2610a6a2f36c02bc22dc683aee32c /`
+  `61ae5911f88bc829865732b59953dd212c92cd7d141d5a87eb4f3f804fdd245f`,
+  supersede static hash tại claim. Regression mới chứng minh hai normal images
+  có số candidate khác nhau vẫn có trọng số bằng nhau; focused suite `15/15`
+  PASS. Đây vẫn chỉ là synthetic/static QA: chưa mở real input, chưa fit/sinh
+  prediction, chưa đọc validation GT, chưa train consumer và chưa mở BTXRD test.

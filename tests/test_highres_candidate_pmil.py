@@ -134,6 +134,18 @@ def test_image_label_loss_uses_all_normal_candidates_and_pixels() -> None:
     assert torch.count_nonzero(dense.grad[0]) == 9
 
 
+def test_normal_candidate_loss_weights_each_image_equally() -> None:
+    classification = torch.tensor([[0.0, 0.0, 8.0], [2.0, 2.0, 2.0]])
+    detection = torch.zeros_like(classification)
+    dense = torch.zeros(2, 1, 1)
+    valid = torch.tensor([[True, True, False], [True, True, True]])
+    output = image_label_proposal_loss(
+        classification, detection, dense, torch.tensor([0, 0]), valid
+    )
+    expected = 0.5 * (torch.nn.functional.softplus(torch.tensor(0.0)) + torch.nn.functional.softplus(torch.tensor(2.0)))
+    assert torch.allclose(output["normal_candidate"], expected)
+
+
 def test_area_penalty_detects_monotone_shortcut_and_handles_degenerate_bag() -> None:
     logits = torch.tensor([[0.0, 1.0, 2.0], [4.0, 4.0, 0.0]], requires_grad=True)
     area = torch.tensor([[1.0, np.e, np.e**2], [1.0, 2.0, 1.0]])
