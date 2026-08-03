@@ -8919,3 +8919,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `BTXRD_DEEP_BOTTLENECK_SYNTHESIS_20260802.md`; no successor kernel was
   launched during this analysis.
 
+### EXP-20260803-codex-rich-gallery-source-subset-ablation-v1 (COMPLETE / DIAGNOSTIC)
+
+- Evaluated every non-empty subset of the frozen `layercam320`,
+  `classifier448` and `external_saliency` proposal sources under the exact G1
+  equal percentile-rank selector.  All `7` subset choices for all `371`
+  validation images were frozen before the `184` tumor polygons were opened;
+  no test image was read.  The full three-source baseline reproduces exactly at
+  Dice/IoU `0.2887294867/0.2168391813`, subgroup Dice
+  `0.1577232964/0.4352293348/0.3868735327` and `49` complete misses.
+- No globally pruned source subset preserves overall Dice and every subgroup.
+  The most efficient near-baseline pair, `layercam320+classifier448`, removes
+  `44.974%` of eligible candidates but falls to Dice `0.283344376`, subgroup
+  `0.153924798/0.429156181/0.375954955`, oracle `0.484636578` and `54` misses.
+  Its paired overall delta CI `[-0.015168,+0.008118]` crosses zero, but it still
+  fails the deterministic no-drop requirement in all four means.
+- The pairs are complementary rather than redundant.  LayerCAM+external raises
+  medium/large to `0.453404/0.394669` but drops small to `0.126587`;
+  classifier+external raises large to `0.432457` but drops small/medium to
+  `0.141952/0.428350`.  External-only is invalid for all 371 images because it
+  has no candidates for normal bags.  Therefore retain all three sources for
+  the accuracy baseline; use global two-source pruning only if a measured
+  `0.005385` absolute Dice loss is acceptable.  Accuracy-preserving reduction
+  now requires label-safe conditional source activation or distillation, not
+  another global source deletion.
+- Reproducible analyzer is
+  `project/analyze_rich_gallery_source_subset_ablation.py`; concise result is
+  `artifacts/research_handoffs/rich_gallery_source_subset_ablation_20260803.json`.
+  Choice/per-image/full-report SHA-256 values are
+  `884e41aeefc06a2b55b2041bd32264616a22caacf0b6924342cd733afe92dc09`,
+  `03dd6928bc98eb64a3ab4dd554f93d46b700e2f340a3b4aff18d5fd40a1e8ae0`
+  and `caf8a5b91f17854cbad6970943e10a577eb38642775b12862ad54cc978233af5`.
+

@@ -1,0 +1,77 @@
+{
+  "stage": "rich_gallery_source_subset_ablation_v1",
+  "status": "complete_post_freeze_validation_diagnostic_not_promotion",
+  "test_evaluated": false,
+  "baseline": {
+    "sources": ["layercam320", "classifier448", "external_saliency"],
+    "dice": 0.28872948670665205,
+    "iou": 0.2168391812852014,
+    "subgroup_dice": {
+      "small": 0.15772329637374455,
+      "medium": 0.4352293348209193,
+      "large": 0.38687353265476676
+    },
+    "complete_misses": 49,
+    "eligible_oracle_dice": 0.527902026
+  },
+  "global_source_subsets": {
+    "layercam320+classifier448": {
+      "dice": 0.283344376,
+      "subgroup_dice": {"small": 0.153924798, "medium": 0.429156181, "large": 0.375954955},
+      "complete_misses": 54,
+      "eligible_oracle_dice": 0.484636578,
+      "candidate_reduction_fraction": 0.44974,
+      "overall_delta_ci95": [-0.015168, 0.008118]
+    },
+    "layercam320+external_saliency": {
+      "dice": 0.280697091,
+      "subgroup_dice": {"small": 0.126586530, "medium": 0.453403993, "large": 0.394669083},
+      "complete_misses": 43,
+      "eligible_oracle_dice": 0.483726173,
+      "candidate_reduction_fraction": 0.27633
+    },
+    "classifier448+external_saliency": {
+      "dice": 0.282440158,
+      "subgroup_dice": {"small": 0.141952473, "medium": 0.428350498, "large": 0.432456704},
+      "complete_misses": 43,
+      "eligible_oracle_dice": 0.495669981,
+      "candidate_reduction_fraction": 0.27393
+    },
+    "layercam320": {
+      "dice": 0.275498639,
+      "subgroup_dice": {"small": 0.125491089, "medium": 0.436475553, "large": 0.414963744},
+      "complete_misses": 57,
+      "eligible_oracle_dice": 0.409076289,
+      "candidate_reduction_fraction": 0.72607
+    },
+    "classifier448": {
+      "dice": 0.258021296,
+      "subgroup_dice": {"small": 0.131862317, "medium": 0.410580407, "large": 0.306615075},
+      "complete_misses": 54,
+      "eligible_oracle_dice": 0.429787033,
+      "candidate_reduction_fraction": 0.72367
+    },
+    "external_saliency": {
+      "dice": 0.234635977,
+      "subgroup_dice": {"small": 0.062224180, "medium": 0.406381124, "large": 0.448028101},
+      "complete_misses": 32,
+      "eligible_oracle_dice": 0.387303088,
+      "candidate_reduction_fraction": 0.55026,
+      "valid_for_all_validation_images": false
+    }
+  },
+  "decision": {
+    "any_global_subset_preserves_overall_and_all_subgroups": false,
+    "best_efficiency_subset": "layercam320+classifier448",
+    "best_efficiency_subset_is_accuracy_preserving": false,
+    "recommendation": "retain all three sources for the confirmed accuracy baseline; consider the two-source LayerCAM+classifier variant only when a 0.005385 absolute Dice loss and small/medium/large degradation are acceptable; investigate label-safe conditional source activation or distillation rather than global source deletion"
+  },
+  "provenance": {
+    "choice_freeze_sha256": "884e41aeefc06a2b55b2041bd32264616a22caacf0b6924342cd733afe92dc09",
+    "per_image_sha256": "03dd6928bc98eb64a3ab4dd554f93d46b700e2f340a3b4aff18d5fd40a1e8ae0",
+    "full_report_sha256": "caf8a5b91f17854cbad6970943e10a577eb38642775b12862ad54cc978233af5",
+    "g1_freeze_sha256": "78970d417de20dc884958dfb3fd9cb2bad9f2cda53240ae2207607ba827cd167",
+    "candidate_manifest_sha256": "30e734e223839ee2ed7b445c71b3731a39f0549ee88e2ba77f7bf722d8d9943d",
+    "split_sha256": "7b16771a634e423d2d4ce7d5a835e6ea5ff6d1a422f124aab8019ed53512529c"
+  }
+}
