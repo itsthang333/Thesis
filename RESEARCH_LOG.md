@@ -15995,3 +15995,24 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   source lên central trước evaluator; protocol đã khóa evaluator hash,
   arm order, `10,000` bootstrap và seed `20261206`. Không immediate status poll,
   không monitor và không partial-output access sau push.
+
+### S10 Kaggle launch version 1 (2026-08-03T19:17:18+07:00)
+
+- Sau final fetch xác nhận local/origin
+  `d90c90ee64c4f5ebdddda445f9eb5164a125927f`, collaborator
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c`, tracked worktree sạch và không
+  collision, đã push private kernel
+  `itsthang333/btxrd-highres-candidate-pmil-s10-v1`, **version 1**, URL
+  `https://www.kaggle.com/code/itsthang333/btxrd-highres-candidate-pmil-s10-v1`,
+  metadata T4. Execution checkout trong bound package là
+  `91c94088eb40ed8f1f9afbd5d49498d344b5dd0b`; scientific source/protocol và
+  wrapper/binding/metadata hashes giữ đúng final prelaunch audit
+  `d693c38c...2626`.
+- Kaggle bỏ qua ba keyword không hợp lệ `medical-imaging`, `weakly-supervised`,
+  `semantic-segmentation` nhưng SaveKernel thành công; đây không đổi code,
+  input, accelerator hay scientific protocol. Không thực hiện immediate status
+  check, không tải log/output, không tạo monitor.
+- Tại launch chưa có prediction/output/Dice; validation GT, consumer và BTXRD
+  test tiếp tục khóa, không truy cập collaborator output. Claim S10 vẫn
+  **ĐANG LÀM**; chỉ một bounded status check ở nhịp hợp lý hoặc khi người dùng
+  báo terminal.
