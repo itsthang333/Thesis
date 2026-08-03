@@ -15057,4 +15057,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   train/inference/prediction, chưa validation GT/consumer/test. Bước tiếp theo
   là commit/push exact scientific source, sau đó protocol mới được bind source
   commit và hashes; chưa được launch từ worktree chưa đóng băng.
+- **Immutable S9 protocol freeze:** scientific producer/auditor source đã push
+  tại exact commit `7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8`. Protocol
+  `artifacts/research_protocols/skelex_candidate_marginal_s9_v1.json` physical
+  LF SHA-256
+  `0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d`
+  khóa toàn bộ representation/objective/training/inputs/finite arms, T4x2,
+  `10,000` bootstrap seed `20261205`, mechanism/operational gates và source
+  inventory. Protocol test SHA-256
+  `2094599fbba831fd96bcf2185f89dc94646ddb868d0f0f1ccd11618eb38decc2`;
+  focused protocol+producer+auditor suite `25/25` PASS, JSON parse/Ruff/
+  `py_compile`/diff check PASS.
+- Protocol xác nhận independent auditor re-run encoder/projection nhưng không
+  re-train head; điều này được khai báo thay vì overclaim. Checkpoint phải là
+  final epoch duy nhất, bind exact feature manifest/history và không có
+  validation model selection. Chưa wrapper/binding/preflight/launch, chưa real
+  input/prediction/GT/consumer/test; claim tiếp tục `ĐANG LÀM`.
 

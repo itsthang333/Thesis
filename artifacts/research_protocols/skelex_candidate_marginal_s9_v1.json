@@ -1,0 +1,196 @@
+{
+  "protocol_id": "skelex_candidate_marginal_s9_v1",
+  "frozen_local_time": "2026-08-03T11:30:54+07:00",
+  "status": "FROZEN_PRELAUNCH",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "owner": "Codex central workstream",
+  "hypothesis": "a high-resolution frozen musculoskeletal representation trained through image-label-only candidate-marginal inside/ring likelihood will add candidate identity and extent evidence not present in the accepted same-gallery Geometry-v3/upstream selector",
+  "scientific_source": {
+    "commit": "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8",
+    "design": "SKELEX_CANDIDATE_MARGINAL_S9_DESIGN.md",
+    "single_scientific_delta": "512px SKELEX layer-8+16 nonlinear token likelihood trained by dense normal negatives and soft tumor candidate marginalization",
+    "supersedes_before_real_input": "the registered 320px layer-16 affine draft at commit 649d1b07a2f9f9ac1ee40944609fb4d4dcd00e18"
+  },
+  "inherited_terminal_evidence": {
+    "same_gallery_control_dice": [0.2454823868, 0.1170805789, 0.3771355153, 0.3894126471],
+    "same_gallery_oracle_dice": [0.4090755342, 0.2227494852, 0.5941470844, 0.6418253674],
+    "collaborator_g1_upstream_dice": [0.2887294867, 0.15772330, 0.43522933, 0.38687353],
+    "collaborator_commit_read": "abcdfd7be65777f0b3fe96c0d4a12b732a076e6c",
+    "collaborator_output_accessed": false,
+    "smile_terminal_result_available": false,
+    "s8_failure_analysis_sha256": "52709cadebac63d2a9571df706c3e5c3db037ceefe253c1bbb7ab2bb2a54b7e2"
+  },
+  "external_model": {
+    "repository": "skhoha/SKELEX",
+    "revision": "368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e",
+    "architecture": "ViTMAEForPreTraining ViT-Large encoder",
+    "license": "CC-BY-NC-ND-4.0",
+    "redistribute_checkpoint": false,
+    "files": {
+      "config.json": "b48411f4313c2ee6357586b57d185befac8c7c77cc475bc2188ec4487b1bc6f7",
+      "preprocessor_config.json": "a250969c94afba52d785a0e08dd36e13aeda97c4dd2b7fd0d24b457288536cea",
+      "model.safetensors": "81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8"
+    },
+    "model_safetensors_bytes": 1318230232,
+    "transformers_version": "4.50.2",
+    "source_urls": [
+      "https://www.nature.com/articles/s41746-026-02826-9",
+      "https://arxiv.org/abs/2602.03076",
+      "https://huggingface.co/skhoha/SKELEX/tree/368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e",
+      "https://github.com/huggingface/transformers/blob/v4.50.2/src/transformers/models/vit_mae/modeling_vit_mae.py"
+    ]
+  },
+  "image_label_only_boundary": {
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+    "cohort": {"train": 2981, "validation": 371},
+    "train_labels": {"normal": 1493, "tumor": 1488},
+    "training_targets": ["binary image-level normal/tumor label"],
+    "class_agnostic_candidate_masks_allowed_in_latent_likelihood": true,
+    "annotation_paths_resolved": false,
+    "annotation_bytes_opened_or_hashed": false,
+    "validation_size_group_used_for_training_or_selection": false,
+    "test_images_read": 0
+  },
+  "immutable_inputs": {
+    "raw_dataset": "itsthang333/btxrd-raw",
+    "train_gallery_dataset": "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1@1",
+    "train_candidate_manifest_sha256": "ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1",
+    "train_pseudo_manifest_sha256": "5aec58ce402da70189c2776453f614e21e5b46fde36b408fc7198c7eeee5dc21",
+    "validation_transport_dataset": "itsthang333/btxrd-mask-bag-selector-baseline-v1@1",
+    "validation_candidates_zip_sha256": "426fbe9cb01ce5063e7897b1b1c424ab4ce9f0310086434aec5163759422687a",
+    "validation_candidate_manifest_sha256": "3e9396f532c793258919a1d99aa3dcef00523436c853207b8d7123e5dc133090",
+    "validation_pseudo_manifest_sha256": "286d1fce0bcbd0f96a15b6b386ad27a0edac3500a63c5b87e16f9075d6c6320e",
+    "selector_cache_dataset": "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1",
+    "selector_cache_freeze_sha256": "2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c",
+    "baseline_checkpoint_sha256": "58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069",
+    "baseline_prediction_freeze_sha256": "ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3",
+    "baseline_source_commit": "fda732941664e67d4b87a8c3cba071b6979b2214",
+    "baseline_protocol_sha256": "4aadd1bbd57689147c7db8130bb5c76fab7b79c7e8d92a8bf4f51474fe45b555"
+  },
+  "representation": {
+    "input_size": 512,
+    "normalization": "checkpoint ImageNet mean/std",
+    "positional_interpolation": true,
+    "patch_size": 16,
+    "token_grid": [32, 32],
+    "mask_ratio": 0.0,
+    "noise": "strictly increasing patch indices preserve spatial order",
+    "selected_hidden_layers": [8, 16],
+    "per_layer_l2_normalization": true,
+    "concatenated_token_dim": 2048,
+    "encoder_frozen": true,
+    "trainable_head": "shared Linear(2048,256)-GELU-Linear(256,1)",
+    "trainable_parameters": 524801,
+    "output_layer_zero_initialized": true,
+    "candidate_projection": "continuous square mapping at 512 then area pooling to 32x32",
+    "local_ring_radius_tokens": 2,
+    "empty_inside_or_ring": "fail closed; never drop an accepted candidate"
+  },
+  "objective": {
+    "normal": "mean softplus(token_logit) over valid content tokens",
+    "tumor_candidate": "0.5 mean-mask log-sigmoid(token_logit) plus 0.5 mean-ring log-sigmoid(-token_logit)",
+    "tumor_bag": "negative normalized log-mean-exp over every accepted candidate",
+    "image_weighting": "equal image loss",
+    "candidate_family_source_area_coordinates_subtype_inputs": false,
+    "current_selector_winner_or_pseudo_instance_target": false
+  },
+  "training": {
+    "optimizer": "AdamW",
+    "epochs": 32,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "seed": 42,
+    "checkpoint_selection": "fixed final epoch only; no validation selection",
+    "early_stopping": false,
+    "augmentation": false,
+    "hyperparameter_sweep": false
+  },
+  "finite_arms": {
+    "control": "geometry_v3_plus_upstream_equal_rank",
+    "primary": "geometry_v3_plus_upstream_plus_s9_likelihood_equal_rank",
+    "weights": "equal within-image tie-aware percentile ranks",
+    "bag_probability": "exact accepted Geometry-v3 value for both arms",
+    "weight_or_threshold_alternatives": false
+  },
+  "execution": {
+    "compute": "private Kaggle T4x2 only",
+    "encoder_batch_size": 2,
+    "producer_feature_cache": "in RAM float16; no multi-GB cache export",
+    "feature_freeze": "per-image NPY-byte SHA-256 for tokens, candidate weights, rings, content and indices",
+    "independent_auditor_reexecutes_encoder": true,
+    "independent_auditor_reexecutes_training": false,
+    "independent_auditor_reproduces": [
+      "3352 feature hash rows",
+      "checkpoint/history/provenance",
+      "371 candidate likelihood vectors",
+      "742 candidate score payloads",
+      "742 physical prediction maps",
+      "control identity and both winners"
+    ],
+    "prediction_pair_frozen_before_validation_gt": true
+  },
+  "post_freeze_evaluation": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "comparator": "S9-specific matched decision source must be frozen before GT",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261205,
+    "baseline_per_image_sha256": "a26143d02bacd01ec27c9d7fbaf3e20691d9974b2ee60f27eb40a88f3403605f",
+    "mechanism_gate": {
+      "overall_strictly_improves": true,
+      "small_strictly_improves": true,
+      "medium_no_regression": true,
+      "large_no_regression": true,
+      "complete_misses_do_not_increase": true
+    },
+    "operational_gate": {
+      "overall_minimum": 0.34024039,
+      "small_minimum": 0.17895493,
+      "medium_minimum": 0.51244178,
+      "large_minimum": 0.49370336,
+      "paired_overall_ci95_lower_strictly_positive": true
+    },
+    "post_hoc_rescue_or_sweep": false,
+    "failure_analysis_required_before_successor": true
+  },
+  "canonical_lf_source_hashes": {
+    "SKELEX_CANDIDATE_MARGINAL_S9_DESIGN.md": "326b391c01c63c0b9b50785feb57d5c411cc09302c2d897162a0dddac33bc1c6",
+    "project/models/skelex_candidate_marginal.py": "3cd7359e6f1545195b51b1e262e80233d77586049f4b08fba02233a6637c69db",
+    "project/run_skelex_candidate_marginal_s9.py": "2310b6ff47b30d2872a89d6da4f331580a5041b3a69be3a82a13442dd95dafb4",
+    "project/audit_skelex_candidate_marginal_s9_output.py": "1ee3a18399ba1780912dbffecc5d51ce27861fce45bb89e9fb7d5883e73288fe",
+    "tests/test_skelex_candidate_marginal.py": "624c274720380d6314f253206383de72d7c9a99ee4d69c66f5c1edfff8d8c505",
+    "tests/test_run_skelex_candidate_marginal_s9.py": "0844c23d54beccf0dcbfd29e14de4ee1490d67bf4178bd3764c9ab7773dcf7ed",
+    "tests/test_audit_skelex_candidate_marginal_s9_output.py": "2cab6273f90279f162a846575654614870cc0e0bcb8c2fe24201bdd33252ce8f",
+    "project/run_bas_candidate_descriptor_core.py": "a9b69da1c524ddbd70e439ee5986ace843711993e2150bde17c75aafcc75b2dc",
+    "project/audit_bas_candidate_descriptor_core.py": "82112c773a07ff4b18f54698769beeb4eedc78c7404d87a0b9253543dfb83a4d",
+    "project/run_rad_dino_mask_bag_mil_probe.py": "0a220933343212dd3f4cc349f459db54b2b492d04240a7aa28fb85c475d54ae8",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+    "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/models/mask_bag_same_family_graph.py": "0c65a2bfa2ad9a190f860bf51bfdc28c8af2b03b7a4e8ec9f2327e3cfed67287",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/pseudo/candidate_diagnostics.py": "b50e789ab99a76306e45cc771c60f58fb63cbc7538630d81ed912a337777324b"
+  },
+  "post_freeze_source_hashes": {
+    "project/evaluate_mask_bag_selector_arm.py": "5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0",
+    "project/compare_mask_bag_evaluated_arms.py": "2b868f93890f76a93f528f79f219a9d3caac4389af098e671e8021203481f119"
+  },
+  "prohibited": [
+    "validation segmentation GT before physical pair freeze, independent audit and central readiness commit",
+    "collaborator Kaggle or output access",
+    "proposal regeneration or accepted candidate modification",
+    "resolution, layer, head width, epoch, optimizer, radius, objective, fusion, threshold, area, subgroup or morphology sweep",
+    "validation-label checkpoint selection",
+    "consumer training before operational gate pass",
+    "BTXRD test access"
+  ],
+  "safety": {
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  }
+}
