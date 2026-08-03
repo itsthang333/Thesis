@@ -14670,3 +14670,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   primary chưa chạy và BTXRD test khóa. Chỉ sau commit/push/fetch freeze này mới
   đánh giá primary bằng cùng evaluator/seed.
 
+### S8 primary evaluation frozen trước matched decision (2026-08-03)
+
+- Sau control-freeze commit `4374dd6`, primary frozen arm chạy cùng evaluator,
+  cohort, projection, bootstrap `10,000` và seed `20261204`; hoàn tất trong
+  `35.8 s`. Dice overall/small/medium/large là
+  `0.2500095541/0.1171717425/0.3896281712/0.3852436578`, delta so Geometry-v3
+  `+0.0045271673/+0.0000911635/+0.0124926559/-0.0041689893`.
+- Primary đạt predeclared `MECHANISM_PASS`: regret giảm ở small+medium, overall
+  không giảm và absolute count-vs-miss association hạ `0.313507 -> 0.291310`.
+  Tuy nhiên paired overall CI95 `[-0.00297235,+0.01538387]` cắt zero, large giảm,
+  small miss tăng `33 -> 34` trong khi medium giảm `18 -> 17`; operational goal
+  fail cả bốn subgroup. Consumer không được authorize.
+- Output đã freeze trước matched decision tại
+  `artifacts/evaluation/skelex_reconstruction_selector_s8_v1/primary_evaluation_freeze.json`,
+  canonical-LF SHA
+  `dde0cb936c4d4659bfdebb6531dadd78e49b6484a944fd9e7d3f8c834b56607b`.
+  `per_image.csv/evaluation_audit.json` SHA lần lượt
+  `f4e5e68cdf094ad903be857ec99c590261a29d193ddea0ab56923faf2ac9e08d /`
+  `fe61a07341b3e14dec1acae660fb08807e1b7cd03656b5787b7b2e5ef2bc9fa9`;
+  full five-file inventory nằm trong freeze. Không rescue/sweep; chỉ sau
+  commit/push/fetch freeze mới chạy exact matched decision. Test khóa.
+

@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "status": "PRIMARY_EVALUATION_FROZEN_BEFORE_MATCHED_DECISION",
+  "experiment_id": "EXP-20260802-codex-s8-skelex-reconstruction-randomization-v1",
+  "arm": "geometry_v3_plus_upstream_plus_skelex_reconstruction_rerank",
+  "execution_commit": "4374dd6be52fdab8dc4b55d7b32e3170bee979d9",
+  "evaluator_source_commit": "7960b051d2c69c7dbb669441608681b217fb9cde",
+  "evaluator_canonical_lf_sha256": "5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0",
+  "python39_correction_sha256": "7aa2b3569a6563622848efcaf7f14a6736dab23a5c91be95e6a2e0ccb4f141e0",
+  "protocol_sha256": "7f81978151600dcae6827f5060e04064fb8f22ce42ae1f10dd92a5eceda6bc07",
+  "prediction_pair_freeze_sha256": "b2cfd59fb01046f445d098790efa5a0fdc649bbc80f565439ba51c5cd453fa00",
+  "arm_prediction_freeze_sha256": "a96e8a0bf88201c8b3fffb30c7ec41fd0abb2c3e4b7e9430408665b01dc2a148",
+  "arm_candidate_score_manifest_sha256": "0f66c5ff54ea44f778bc62fb0e71145191e0189bdcc0ac419f87d0b1ec566de3",
+  "control_evaluation_freeze_sha256": "b7bc7bf68f385467291569d12c2dc27b4bbbd88c241d8065753454f71fdf854d",
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20261204,
+  "output_root": "tmp/kaggle/skelex_s8_postfreeze_evaluation_20260803_1035/primary",
+  "output_inventory": {
+    "evaluation_audit.json": {
+      "bytes": 1757,
+      "sha256": "fe61a07341b3e14dec1acae660fb08807e1b7cd03656b5787b7b2e5ef2bc9fa9"
+    },
+    "gate_decision.json": {
+      "bytes": 2326,
+      "sha256": "f45c5463fc93e1f80305a8a85ff94ae972d04a9aa4aeaf1da0efaed4e918dbcd"
+    },
+    "paired_comparison.json": {
+      "bytes": 1194,
+      "sha256": "a0a29044b0a72753e66faaeb5b7a096bae6c0f4579160400155ac1a5ec6102ea"
+    },
+    "per_image.csv": {
+      "bytes": 61485,
+      "sha256": "f4e5e68cdf094ad903be857ec99c590261a29d193ddea0ab56923faf2ac9e08d"
+    },
+    "summary.json": {
+      "bytes": 5435,
+      "sha256": "20864893220388a9f2bf5e75ba87b7923497e2c7119f949e423545a14d118ee0"
+    }
+  },
+  "primary_result": {
+    "per_image_rows": 184,
+    "dice": {
+      "overall": 0.25000955412362263,
+      "small": 0.11717174245639425,
+      "medium": 0.3896281712077432,
+      "large": 0.3852436578271111
+    },
+    "delta_vs_geometry_v3": {
+      "overall": 0.004527167343854861,
+      "small": 0.00009116354198775156,
+      "medium": 0.012492655912938994,
+      "large": -0.004168989300508963
+    },
+    "overall_paired_group_bootstrap_ci95": [
+      -0.002972346963692313,
+      0.015383870401258722
+    ],
+    "complete_misses": {
+      "overall": 53,
+      "small": 34,
+      "medium": 17,
+      "large": 2
+    },
+    "gate_status": "MECHANISM_PASS",
+    "consumer_authorized": false
+  },
+  "validation_projection": {
+    "rows": 371,
+    "sha256": "dbf83b81d4f2106508cd07ba9a5713dda4eca6377d19f052fee695d4c1cee593",
+    "locked_test_bytes_read": false
+  },
+  "matched_decision_authorized_after_this_freeze_is_committed_and_visible_central": true,
+  "post_hoc_rescue_or_sweep_authorized": false,
+  "validation_gt_read": true,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}
