@@ -16016,3 +16016,67 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   test tiếp tục khóa, không truy cập collaborator output. Claim S10 vẫn
   **ĐANG LÀM**; chỉ một bounded status check ở nhịp hợp lý hoặc khi người dùng
   báo terminal.
+
+### S10 Kaggle version 1 LỖI tại AMP probability-BCE boundary (2026-08-03)
+
+- Một bounded status check duy nhất cho
+  `itsthang333/btxrd-highres-candidate-pmil-s10-v1` version 1 trả về
+  `KernelWorkerStatus.ERROR`. Compact terminal download dùng
+  `project/download_kaggle_output_inventory.py` vào ignored root mới
+  `tmp/kaggle/highres_candidate_pmil_s10_v1_error_20260803_2100/`; direct log
+  14,017 bytes có SHA-256
+  `0ed7c3164e41102a75ca9c0a26a74e54846a5ca822a695230254ed705ed461b1`.
+- Checkout `91c94088eb40ed8f1f9afbd5d49498d344b5dd0b`, scientific source
+  `3c29686ea80ff6d36e1c8441d1a5dd4826802b71`, protocol
+  `f5aec302...b8739` và runtime Python `3.12.13`, Torch `2.10.0+cu128`,
+  torchvision `0.25.0+cu128` được ghi trực tiếp trong log. Clone/checkout,
+  source ancestry, `py_compile` và focused suite `29 passed` đều PASS.
+- Input audit đã hoàn tất trước optimizer: frozen input manifest 3,352 rows
+  có SHA-256
+  `c451ac818f7cf2a5562d033f8c890a8a5cf485d3fd54e7499f2f85b765cf1dc2`,
+  đúng `2,981` train + `371` validation, `0` test, train normal/tumor
+  `1,493/1,488`, validation `187/184`, candidate count `22..81`. Artifact này
+  chỉ có split/image/group/image-label/count/candidate hashes; không có GT.
+- **Error boundary/root cause:** lỗi xảy ra ở batch train đầu tiên, sau
+  original/flip forward nhưng trước loss return, backward, optimizer step và
+  epoch 1 completion. `image_label_proposal_loss` gọi probability-space
+  `F.binary_cross_entropy` bên trong CUDA autocast; PyTorch 2.10 cố ý reject
+  BCE kiểu này vì backward gradient có thể không biểu diễn an toàn trong
+  float16. `_view_terms` còn một call cùng rủi ro chưa kịp chạy. CPU/static
+  tests trước launch không thực thi trọn scientific objective dưới target CUDA
+  AMP, nên không bắt được boundary này.
+- Đây là **implementation/runtime failure**, không phải scientific failure:
+  chưa có epoch, checkpoint, validation inference, score, winner, map,
+  prediction-freeze hay Dice. Không được kết luận S10 học kém hoặc
+  hypothesis sai. Model/gallery/image-label objective/optimizer/schedule/ba arm và
+  protocol khoa học còn được kế thừa nguyên vẹn; correction duy nhất được
+  phép là chạy cả hai probability-BCE trong explicit autocast-disabled float32
+  region, không đổi công thức loss.
+- Failure-analysis artifact
+  `artifacts/kaggle/highres_candidate_pmil_s10_v1/kernel_version1_error_audit.json`
+  SHA-256
+  `663a29427bc45ded9d955d3a0e2a946f4d9ce8ddb0d4bfed80023f94686000ab`.
+  Lỗi tái diễn được bổ sung thành `KPF-020` trong
+  `KAGGLE_PREFLIGHT_CHECKLIST.md`: prelaunch phải có target-runtime CUDA AMP
+  forward + full objective + backward + optimizer-step smoke bao phủ mọi loss
+  path. Version 1 được giữ vĩnh viễn là `LỖI`; claim S10 vẫn `ĐANG LÀM`
+  chờ correction v2 implementation-only sau khi failure analysis này commit/push.
+  Validation GT chưa đọc, consumer chưa train, BTXRD test và collaborator output
+  không truy cập.
+
+### S10 TẠM DỪNG theo chỉ đạo người dùng (2026-08-03)
+
+- Người dùng yêu cầu tạm ngưng S10 vì high-resolution trainable
+  ResNet50-FPN proposal-MIL đã đi quá xa pipeline CAM/Geometry-v3 ban đầu.
+  Trạng thái `EXP-20260803-codex-s10-highres-proposal-pmil-v1` được
+  supersede từ `ĐANG LÀM` thành **TẠM DỪNG**; version 1 vẫn giữ
+  `LỖI` implementation như failure audit phía trên.
+- Không thực hiện AMP-BCE correction, không package/push Kaggle version 2,
+  không train/inference/prediction/evaluation và không mở claim kế nhiệm trong
+  scope S10. Hai source readiness evaluator/decision cục bộ chưa tracked được
+  giữ nguyên, không xóa hay coi là kết quả khoa học.
+- Mọi prediction-freeze/validation-GT/consumer/test lock vẫn nguyên: S10 chưa
+  sinh validation prediction, chưa đọc validation GT, chưa train consumer và
+  không truy cập BTXRD test/collaborator output. Nếu nghiên cứu tiếp, phải
+  quay lại định nghĩa ranh giới gần pipeline gốc với người dùng và đăng ký
+  một claim không trùng mới theo `AGENTS.md`.

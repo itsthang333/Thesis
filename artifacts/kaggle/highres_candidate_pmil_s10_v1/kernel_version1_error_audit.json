@@ -1,0 +1,67 @@
+{
+  "experiment_id": "EXP-20260803-codex-s10-highres-proposal-pmil-v1",
+  "kernel": "itsthang333/btxrd-highres-candidate-pmil-s10-v1",
+  "kernel_version": 1,
+  "terminal_status": "ERROR",
+  "audited_local_time": "2026-08-03T19:25:22+07:00",
+  "execution_checkout": "91c94088eb40ed8f1f9afbd5d49498d344b5dd0b",
+  "scientific_source_commit": "3c29686ea80ff6d36e1c8441d1a5dd4826802b71",
+  "protocol_sha256": "f5aec30235676d8d878573b7acfeef09adaa1d1b0ea7fdc86b4f07b708cb8739",
+  "direct_log": {
+    "ignored_local_path": "tmp/kaggle/highres_candidate_pmil_s10_v1_error_20260803_2100/btxrd-highres-candidate-pmil-s10-v1.log",
+    "bytes": 14017,
+    "sha256": "0ed7c3164e41102a75ca9c0a26a74e54846a5ca822a695230254ed705ed461b1"
+  },
+  "runtime": {
+    "python": "3.12.13",
+    "numpy": "2.0.2",
+    "pillow": "11.3.0",
+    "scikit_learn": "1.6.1",
+    "torch": "2.10.0+cu128",
+    "torchvision": "0.25.0+cu128"
+  },
+  "pre_error_checks": {
+    "clone_and_detached_checkout": "PASS",
+    "scientific_source_ancestry": "PASS",
+    "py_compile": "PASS",
+    "focused_tests": "29 passed, 2 warnings",
+    "input_manifest_rows": 3352,
+    "train_rows": 2981,
+    "validation_rows": 371,
+    "test_rows": 0,
+    "train_normal_tumor": [1493, 1488],
+    "validation_normal_tumor": [187, 184],
+    "candidate_count_min_max": [22, 81],
+    "input_manifest_sha256": "c451ac818f7cf2a5562d033f8c890a8a5cf485d3fd54e7499f2f85b765cf1dc2"
+  },
+  "error": {
+    "kind": "implementation_runtime_error",
+    "boundary": "first training batch, after original/flip forward and before loss return, backward, optimizer step, epoch 1 completion, checkpoint, validation inference, independent audit or prediction freeze",
+    "exception": "RuntimeError: torch.nn.functional.binary_cross_entropy and torch.nn.BCELoss are unsafe to autocast",
+    "first_failing_call": "project/models/highres_candidate_pmil.py:505 image_label_proposal_loss -> F.binary_cross_entropy(output['bag_probability'], labels)",
+    "second_same_risk_call": "project/run_highres_candidate_pmil_s10.py:422 _view_terms -> F.binary_cross_entropy(bag, labels.float())",
+    "root_cause": "The scientific objective consumes WSDDN bag probabilities, but both probability-space BCE calls execute inside torch.cuda.amp.autocast. PyTorch 2.10 deliberately rejects BCE under CUDA autocast because its backward gradient may not be representable in float16. Static CPU/synthetic tests did not exercise the complete objective under target-runtime CUDA autocast.",
+    "scientific_hypothesis_tested": false,
+    "scientific_result_available": false
+  },
+  "failure_analysis_gate": {
+    "implementation_vs_science": "implementation failure only; no S10 efficacy conclusion is permitted",
+    "rejected_interpretations": [
+      "S10 model failed to learn",
+      "candidate gallery lacks support",
+      "S10 selector is worse than Geometry-v3",
+      "the 32-epoch protocol completed"
+    ],
+    "preservable_scope": "model, candidate gallery, image-label objective, optimizer, schedule, three frozen arms and scientific protocol remain unchanged",
+    "required_minimal_correction": "make every probability-space BCE execute in an explicit float32 autocast-disabled region while preserving the exact probability-space objective; add target-runtime CUDA AMP forward-objective-backward regression covering both call sites",
+    "forbidden_rescue": "no change to loss weights, epochs, architecture, candidate gallery, fusion, thresholds, subgroup routing or validation-derived choice"
+  },
+  "safety": {
+    "validation_predictions_created": 0,
+    "prediction_freeze_created": false,
+    "validation_gt_read": false,
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "collaborator_output_accessed": false
+  }
+}

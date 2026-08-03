@@ -147,6 +147,7 @@ $sha = [Security.Cryptography.SHA256]::Create()
 | KPF-017 | Status/output bị kiểm tra quá sớm hoặc lặp | Không immediate poll; một bounded check mỗi nhịp; terminal mới tải direct log/inventory. |
 | KPF-018 | Output cũ trộn với rerun | Unique ignored output root; `exist_ok=False`; audit requested path và file inventory. |
 | KPF-019 | Duplicate rank/fusion implementation dùng NumPy float64 rồi cast trong khi accepted control dùng PyTorch float32; cùng công thức nhưng intermediate rounding khác, exact identity hoặc tie winner có thể lệch | Chỉ dùng một canonical aggregate cho control/primary/auditor; test exact serialized vector + argmax cho candidate count `1..maximum`, singleton, repeated ties và fused-score ties trên runtime/dtype đích; không dùng `allclose` để chứng minh control identity. |
+| KPF-020 | Probability-space `binary_cross_entropy`/`BCELoss` được gọi bên trong CUDA autocast; PyTorch chặn trước backward dù model forward và CPU tests đều pass | Mọi probability-space BCE phải chạy trong explicit autocast-disabled float32 region hoặc dùng một biểu thức logits chứng minh tương đương; target-runtime CUDA smoke phải chạy trọn forward + scientific objective + backward + optimizer step dưới AMP và bao phủ tất cả loss path trước real cohort. |
 
 ## Mẫu evidence tối thiểu trong prelaunch audit
 
