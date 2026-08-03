@@ -148,6 +148,28 @@ def verify_t4x2() -> dict[str, object]:
     }
 
 
+def verify_runtime() -> dict[str, str]:
+    import PIL
+    import numpy
+    import sklearn
+    import torch
+    import torchvision
+
+    if sys.version_info < (3, 9):
+        raise RuntimeError("S10 requires Python >=3.9")
+    versions = {
+        "executable": sys.executable,
+        "python": platform.python_version(),
+        "numpy": numpy.__version__,
+        "pillow": PIL.__version__,
+        "scikit_learn": sklearn.__version__,
+        "torch": torch.__version__,
+        "torchvision": torchvision.__version__,
+    }
+    print(json.dumps({"s10_runtime": versions}, sort_keys=True), flush=True)
+    return versions
+
+
 def run_static_tests() -> None:
     run(
         [
@@ -337,6 +359,7 @@ def audit_wrapper_output(
     val_candidates: dict[str, object],
     baseline: dict[str, object],
     cache: dict[str, object],
+    runtime: dict[str, str],
 ) -> None:
     triple_path = OUTPUT / "prediction_triple_freeze.json"
     independent_path = OUTPUT / "independent_gt_blind_output_audit.json"
@@ -406,6 +429,7 @@ def audit_wrapper_output(
         "validation_candidates": val_candidates,
         "baseline": baseline,
         "selector_cache": cache,
+        "runtime": runtime,
         "launch_binding_sha256": hash_file(binding_path),
         "prediction_triple_freeze_sha256": hash_file(triple_path),
         "independent_gt_blind_output_audit_sha256": hash_file(independent_path),
@@ -418,7 +442,6 @@ def audit_wrapper_output(
         "validation_gt_read": False,
         "consumer_trained": False,
         "test_evaluated": False,
-        "python": platform.python_version(),
         "finished_utc": datetime.now(timezone.utc).isoformat(),
     }
     with (OUTPUT / "wrapper_output_audit.json").open(
@@ -436,6 +459,7 @@ def main() -> None:
     try:
         source_hashes = clone_and_verify()
         t4 = verify_t4x2()
+        runtime = verify_runtime()
         run_static_tests()
         resnet_path, resnet_audit = download_resnet()
         split = prepare_split()
@@ -517,6 +541,7 @@ def main() -> None:
             val_candidates=val_audit,
             baseline=baseline_audit,
             cache=cache_audit,
+            runtime=runtime,
         )
     finally:
         for path in (SOURCE, RUNTIME):

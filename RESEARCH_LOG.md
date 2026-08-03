@@ -15953,3 +15953,17 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   supersede hash `ae4b9e...03f9 / f88a8f...d380` ở mục trước. Đây là
   implementation/preflight coverage only; scientific protocol/model/arms/
   objective không đổi, chưa mở input/prediction/GT/consumer/test.
+
+### S10 runtime provenance closure trước package (2026-08-03)
+
+- Checklist runtime yêu cầu in exact interpreter/dependency trước real input.
+  Wrapper giờ fail nếu Python `<3.9`, rồi import và ghi `sys.executable`, Python,
+  NumPy, Pillow, scikit-learn, PyTorch và torchvision versions **trước** focused
+  tests/model download/input discovery. Exact resolved versions tiếp tục được
+  đóng vào wrapper output audit; không suy runtime từ local `py_compile`.
+- Wrapper/binder canonical-LF SHA mới
+  `7e811fb886a16a2971fb86766c9c73d9df87a5c494878b25b52a520287f0fe97 /`
+  `b3454a64db6a4a2196ad22a7e1b6ed134168fbcba1f3c57ed5af4289e2fdfc0b`,
+  supersede hash ở note KPF-019. Focused wrapper/binder tests, Ruff và
+  `py_compile` PASS; scientific protocol không đổi, package cũ chưa launch bị
+  coi là stale và sẽ không dùng. Chưa mở real input/GT/consumer/test.
