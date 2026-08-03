@@ -15171,4 +15171,20 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Python 3.9 Ruff/`py_compile` và focused `7/7` PASS, gồm tamper/safety/GT-import
   guards và complete operational synthetic fixture. Đây mới là static source;
   evaluation addendum sẽ chỉ freeze các source hash này sau commit, trước GT.
+- **S9 evaluation addendum frozen trước GT:** static decision sources đã push tại
+  exact full commit `39fcfbc699c049f3bf21f9e070bd218f82b80af7`. Addendum
+  `artifacts/research_protocols/skelex_candidate_marginal_s9_v1_postfreeze_evaluation_addendum.json`
+  canonical LF SHA-256
+  `8986aa5d03bf287c747c9a58f4f8f2a1948abf7811b74a01baa2f7060834a390`
+  khóa evaluator/readiness/decision/test hashes, arm order, seed `20261205`, mọi
+  gate và required order: terminal independent audit -> dynamic readiness commit
+  visible central -> control evaluation -> primary evaluation -> matched decision.
+  Không có dynamic output hash nào được đoán trước; post-hoc rescue/sweep false.
+- Addendum test SHA-256
+  `e4a6190b2d75b71f5f2327822d8ba975880f8e81f83093de713e5329e2beda31`;
+  combined addendum/readiness/decision `9/9` PASS cùng Ruff/diff check. Lần test
+  đầu đã fail vì chuỗi full commit được nhập bằng cách mở rộng nhầm short SHA
+  `39fcfbc`; test ancestry bắt lỗi trước commit/GT, đã sửa bằng output trực tiếp
+  của `git rev-parse HEAD`. Đây là static provenance error, không phải lỗi kernel
+  hay hypothesis; không real input/prediction/GT/consumer/test nào bị mở.
 

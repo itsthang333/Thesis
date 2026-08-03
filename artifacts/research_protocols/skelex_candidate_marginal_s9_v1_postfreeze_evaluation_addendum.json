@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_BEFORE_VALIDATION_GT",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "scientific_protocol_sha256": "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d",
+  "decision_source_commit": "39fcfbc699c049f3bf21f9e070bd218f82b80af7",
+  "source": {
+    "evaluator": "project/evaluate_mask_bag_selector_arm.py",
+    "evaluator_canonical_lf_sha256": "5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0",
+    "dynamic_readiness": "project/freeze_skelex_candidate_marginal_s9_postfreeze_readiness.py",
+    "dynamic_readiness_canonical_lf_sha256": "fc239ab2cb6155bb8f9584f203bb2ce963320bf7d799c277fb327776ff963f7b",
+    "dynamic_readiness_test": "tests/test_freeze_skelex_candidate_marginal_s9_postfreeze_readiness.py",
+    "dynamic_readiness_test_canonical_lf_sha256": "476f551c0702fea27b0d4c86d5e60e0b2b5ceb15697f544751da601e9e6d4e36",
+    "matched_decision": "project/decide_skelex_candidate_marginal_s9.py",
+    "matched_decision_canonical_lf_sha256": "3c31d221985b33d2fa28caf15ba53a9e53f6b33650ab338bfae1e91cf091c9ac",
+    "matched_decision_test": "tests/test_decide_skelex_candidate_marginal_s9.py",
+    "matched_decision_test_canonical_lf_sha256": "8a9ac045e60e35955c1a9b5983ca29ca054382360a65842dc1e733b6b49b5119"
+  },
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20261205,
+  "arm_order": [
+    "geometry_v3_plus_upstream_equal_rank",
+    "geometry_v3_plus_upstream_plus_s9_likelihood_equal_rank"
+  ],
+  "mechanism_gate": {
+    "overall_mean_strictly_improves": true,
+    "small_mean_strictly_improves": true,
+    "medium_mean_no_regression": true,
+    "large_mean_no_regression": true,
+    "complete_misses_no_increase": true
+  },
+  "operational_gate": {
+    "minimum_dice": {
+      "overall": 0.34024039,
+      "small": 0.17895493,
+      "medium": 0.51244178,
+      "large": 0.49370336
+    },
+    "paired_overall_ci95_lower_strictly_positive": true,
+    "control_exactly_accepted_geometry_v3_baseline": true,
+    "no_subgroup_regression": true,
+    "no_complete_miss_increase": true,
+    "consumer_authorized_only_after_pass": true
+  },
+  "dynamic_hash_boundary": {
+    "reason": "Prediction and score hashes do not exist until the running Kaggle producer terminates.",
+    "required_readiness_status": "FROZEN_AFTER_INDEPENDENT_GT_BLIND_AUDIT_BEFORE_VALIDATION_GT",
+    "required_frozen_fields": [
+      "terminal pre-GT independent-audit SHA-256",
+      "prediction-pair-freeze SHA-256",
+      "both arm prediction-freeze SHA-256 values",
+      "both candidate-score-manifest SHA-256 values",
+      "all safety locks"
+    ],
+    "readiness_must_be_committed_and_visible_central_before_evaluation": true
+  },
+  "required_order": [
+    "download compact terminal output inventory into a new ignored directory",
+    "verify wrapper and independent GT-blind S9 output audits",
+    "freeze dynamic output hashes in a postfreeze readiness artifact and push central",
+    "evaluate control with the frozen evaluator and seed 20261205",
+    "freeze control evaluation audit and per-image SHA-256",
+    "evaluate primary with the identical evaluator and seed 20261205",
+    "freeze primary evaluation audit and per-image SHA-256",
+    "run the matched S9 decision without reopening GT",
+    "freeze decision and perform failure or pass analysis"
+  ],
+  "post_hoc_rescue_or_sweep_authorized": false,
+  "scientific_algorithm_changed": false,
+  "validation_gt_read": false,
+  "consumer_trained": false,
+  "test_evaluated": false,
+  "collaborator_output_accessed": false
+}
