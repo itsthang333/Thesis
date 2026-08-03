@@ -15133,4 +15133,14 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Exact bound package `py_compile`, JSON parse, inverse binder, focused `35/35`
   và diff check pass. Chưa push Kaggle/chưa mở input/model/prediction; launch chỉ
   được phép từ ba byte package đã audit này.
+- **Kaggle launch:** lúc `2026-08-03T11:45:47+07:00`, exact audited package đã
+  push thành công kernel private
+  `itsthang333/btxrd-skelex-candidate-marginal-s9-v1`, version `1`, T4x2:
+  https://www.kaggle.com/code/itsthang333/btxrd-skelex-candidate-marginal-s9-v1 .
+  Kaggle chỉ cảnh báo ba keyword dài không phải valid tag và tự bỏ tag; API xác
+  nhận `Kernel version 1 successfully pushed`, nên đây không phải runtime/
+  scientific error và không làm đổi code/input/protocol. Đúng KPF-017, không
+  status check ngay sau push, không polling và không tạo monitor. Claim tiếp tục
+  **ĐANG LÀM**; chưa có output/prediction freeze/Dice, validation GT/consumer/test
+  và collaborator output vẫn khóa.
 
