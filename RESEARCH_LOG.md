@@ -14835,3 +14835,70 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Consumer chưa train; validation GT chỉ dùng từ frozen evaluator tables; BTXRD
   test và collaborator output/Kaggle luôn khóa.
 
+### Deep-search sau S8 và S9 candidate-marginal static design (2026-08-03)
+
+- Sau failure gate S8 commit `e0aa27b`, central/remote sạch và đồng nhất; branch
+  collaborator vẫn `abcdfd7`. Toàn bộ collaborator log được đọc lại (`622,268`
+  ký tự) và code/protocol SMILE được audit read-only từ Git, không truy cập
+  Kaggle/output. SMILE hiện là implementation/preprotocol chưa có terminal result
+  hay performance evidence; central không adopt nó như cải tiến và không chạy
+  cùng cơ chế. SMILE dùng DenseNet-FPN 512 px, subtype, matched-normal references,
+  rich gallery và không đưa proposal mask vào representation training.
+- Deep-search trước hết loại phương án dễ trùng: classifier deletion/insertion
+  đã terminal reject ở Gate-C (`0.22671749 < 0.23433922`, CI cắt zero), nên không
+  được đổi encoder rồi chạy lại cùng selector. L2G local crops có thể tăng chi
+  tiết nhưng tumor label trên crop không chứa tổn thương tạo label noise đặc biệt
+  nguy hiểm cho small lesion; đây cũng gần workstream dense-local SMILE nên không
+  chọn. Hide-and-Seek Attribution 2026 cho thấy manifold-projected generative edit
+  có thể sửa OOD perturbation trong medical WSSS, nhưng cần một healthy editor và
+  isolated-reveal classifier mới; SKELEX hiện chưa có audited healthy-edit
+  contract nên không dùng làm rescue S8. Nguồn:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Jiang_L2G_A_Simple_Local-to-Global_Knowledge_Transfer_Framework_for_Weakly_Supervised_CVPR_2022_paper.html
+  và https://proceedings.mlr.press/v315/atad26a.html .
+- Bottleneck S8 yêu cầu đồng thời tumor-specific identity và signed extent:
+  spatial-null significance không đặc hiệu tumor, cross-family jump chiếm
+  `10/10` tumor switch, median new/old area chỉ `0.2966`. Hướng mới vì vậy không
+  đổi p-value/fusion của S8 mà thay learning signal bằng một **candidate-
+  marginalized spatial likelihood**: known-normal images cung cấp dense negative
+  token; tumor images marginalize mềm qua mọi candidate; mỗi latent candidate
+  phải có positive evidence bên trong và negative evidence ở local ring. Không
+  current-logit target, detached argmax, hard pseudo-positive hay GT-size router.
+- Static design `SKELEX_CANDIDATE_MARGINAL_S9_DESIGN.md` SHA-256
+  `7ce63aa505a1356a9e033659b2d1fffe11efb7cc592586aee95c749eebf1d6a4`
+  predeclare frozen SKELEX layer-16 token ở native square `320x320 -> 20x20`,
+  đúng một trainable affine tumor direction, radius-2 fractional local ring,
+  balanced inside/ring log likelihood và normalized candidate log-mean-exp.
+  Candidate order/multiplicity không reweight image. Finite readout duy nhất là
+  control hai rank hiện có và primary ba rank bằng nhau; cấm resolution/layer/
+  radius/objective/fusion/threshold/area/subgroup/morphology sweep.
+- Primitive `project/models/skelex_candidate_marginal.py` và test
+  `tests/test_skelex_candidate_marginal.py` có SHA-256
+  `5f6dd213240cc9b4962df36c4e196612ac7634f57b3af871d83e2dfa2024d47d /`
+  `ab0a1d87b89015f1eee154cbb4570d777997aa76ee5f4bef5908581668808ae5`.
+  Python 3.9 `py_compile`, Ruff và focused `6/6` pass; tests kiểm exact fractional
+  likelihood, normalized/permutation-invariant log-mean-exp, dense-normal/soft-
+  tumor loss, nonzero finite gradient, zero-ring fail-closed, zero-init one-
+  direction head và exact control/primary rank equations.
+- Scientific sources: WSDDN supports proposal-level latent learning from image
+  labels but also motivates explicit proposal normalization:
+  https://openaccess.thecvf.com/content_cvpr_2016/papers/Bilen_Weakly_Supervised_Deep_CVPR_2016_paper.pdf .
+  ToCo reports intermediate ViT tokens retain semantic diversity while final
+  tokens over-smooth:
+  https://openaccess.thecvf.com/content/CVPR2023/html/Ru_Token_Contrast_for_Weakly-Supervised_Semantic_Segmentation_CVPR_2023_paper.html .
+  Feature-direction alignment identifies token/class-vector direction mismatch
+  as a localization bottleneck:
+  https://openaccess.thecvf.com/content/CVPR2022/html/Kim_Bridging_the_Gap_Between_Classification_and_Localization_for_Weakly_Supervised_CVPR_2022_paper.html .
+  Jang/Kwon show bag prediction does not imply instance learnability, motivating
+  explicit dense normal negatives + candidate spatial likelihood:
+  https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html .
+  Choe et al. show localization model selection with spatial validation labels
+  can create illusory WSOL gains, supporting physical pre-GT freeze:
+  https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html .
+  SKELEX provenance remains
+  https://www.nature.com/articles/s41746-026-02826-9 và
+  https://arxiv.org/abs/2602.03076 .
+- Đây chỉ là static preparation: chưa có claim S9, chưa mở real radiograph/cache/
+  candidate, chưa train/inference/prediction/validation GT/consumer/test và chưa
+  chạy Kaggle. Trước real-data action phải fetch/read/collision-check lần nữa,
+  đăng ký một experiment `ĐANG LÀM` đầy đủ trên central và push trước launch.
+
