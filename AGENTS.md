@@ -165,6 +165,10 @@ inference trên cohort thật, prediction, evaluation hoặc đọc metric, ph�
 - Không polling Kaggle liên tục và không tạo monitor nếu người dùng chưa yêu cầu.
 - Mọi kỹ thuật, paper, URL, protocol, experiment, error và kết luận phải được ghi
   đầy đủ vào `RESEARCH_LOG.md`.
+- Trước mỗi `kaggle kernels push`, phải đọc toàn bộ và hoàn tất
+  `KAGGLE_PREFLIGHT_CHECKLIST.md`; prelaunch audit phải ghi bằng chứng cho các
+  mục liên quan, không chỉ đánh dấu theo trí nhớ. Sau mỗi lỗi có khả năng tái
+  diễn, phải bổ sung catalog/guard của checklist trước correction hoặc rerun.
 
 ## 8. Checklist khi chuyển task/chat
 

@@ -14586,3 +14586,41 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   explicit length equality check rồi ordinary `zip`, tương đương số học trên
   Python 3.9+; không đổi thuật toán, không sweep/rescue.
 
+### Shared Kaggle preflight checklist được thiết lập (2026-08-02)
+
+- Theo yêu cầu người dùng và chuỗi lỗi lặp lại, file sống
+  `KAGGLE_PREFLIGHT_CHECKLIST.md` được thêm ở repository root, canonical-LF SHA
+  `88d82a8b9f66b718f29dac1e0967fea8441cf2ad6387d8b6724511e5ea0ad58c`,
+  và được liên kết bắt buộc từ `AGENTS.md` trước mỗi `kaggle kernels push`.
+  Checklist gom các
+  boundary đã gặp: LF/CRLF, source/binding, runtime/dependency/Python 3.9,
+  Kaggle metadata/transport, CPU-CUDA drift, numerical tolerance, full-manifest
+  test read, output inventory/download và bounded status checks.
+- Từ nay mỗi lỗi tái diễn phải được thêm thành KPF catalog item + fail-closed
+  guard/test trước correction/rerun; prelaunch audit phải ghi evidence cụ thể
+  cho các item liên quan. Đây là thay đổi quy trình, không phải experiment hay
+  scientific result; không mở thêm data/GT, không train consumer và test khóa.
+
+### Đồng bộ log nhánh cộng tác tại `abcdfd7` (2026-08-03)
+
+- Đã fetch và đọc delta `RESEARCH_LOG.md` của
+  `origin/codex/research-sync-20260731` tới
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c`; không truy cập Kaggle/output của
+  cộng tác viên. Không có claim terminal mới trùng S8 same-gallery đang đánh
+  giá. Các commit SMILE mới chỉ là implementation/runtime stabilization; log
+  chưa đăng ký/launch và chưa có terminal audited performance, nên không được
+  kế thừa như cải thiện đã chứng minh.
+- Bằng chứng terminal hữu ích từ workstream rich-gallery: comparator xác nhận
+  vẫn là G1 + fixed equal percentile-rank fusion Dice
+  `0.28872949`, subgroup `0.15772330/0.43522933/0.38687353`. Exploratory
+  top-three majority đạt point estimate `0.29343648` nhưng paired CI95
+  `[-0.008610,+0.017426]` cắt zero và giảm small/large, nên không được promote.
+  Cross-view co-witness (`0.28791097`), proper nested latent-burden gate
+  (`0.28872949`) và consensus seeds đều không vượt gate; không chạy lại các
+  hướng source/area/global routing đó.
+- Insight chuyển giao chỉ dùng cho hướng kế nhiệm sau S8: gallery supply không
+  phải ceiling (`oracle ~0.528`), selector regret chủ yếu nằm within-source;
+  extent có dấu trái chiều với selected/GT median `14.603x/1.098x/0.382x` cho
+  small/medium/large. Vì SMILE chưa có terminal result, S8 vẫn tiếp tục đúng
+  frozen pair hiện tại; không đổi prediction, không mở sweep và test khóa.
+
