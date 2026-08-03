@@ -15479,3 +15479,33 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `collaborator_output_accessed=false`. Claim
   `EXP-20260803-codex-s9-skelex-candidate-marginal-v1` tiếp tục `ĐANG LÀM` chờ
   evaluation/decision; chưa có Dice và không có post-hoc sweep/rescue.
+
+### S9 control evaluator attempt 1 schema ERROR trước validation GT (2026-08-03)
+
+- Sau khi readiness commit `805029ce0ad823ddc7ff9da5bc7cebf2ee68880f`
+  đã hiện diện trên central, evaluator frozen được gọi tuần tự cho control với
+  đúng 10,000 bootstrap replicates/seed `20261205`. Nó dừng fail-closed ở
+  `_verify_arm`, line 302, `KeyError: 'candidate_logit_tta'`; output directory
+  chưa được tạo và code chưa tới `_verify_baseline`, chưa mở evaluator-only
+  baseline per-image, chưa construct segmentation dataset hay đọc validation GT.
+- Root cause là **implementation/schema compatibility**, không phải scientific
+  failure của S9. Generic evaluator SHA-256
+  `5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0`
+  hard-code contract legacy S8
+  `candidate_logit_tta=mean_original_aligned_horizontal_flip`; prediction
+  manifest S9 đã freeze hợp lệ dùng field/value mới
+  `candidate_logit_recipe=within_image_equal_percentile_rank_no_tta`. Trước điểm
+  lỗi, exact arm freeze, prediction manifest, score manifest, selector-cache
+  record/candidate indices và selected logit đều đã qua các guard; do đó không có
+  bằng chứng làm mất hiệu lực prediction pair S9.
+- Error audit tracked tại
+  `artifacts/evaluation/skelex_candidate_marginal_s9_v1/control_attempt1_schema_error_audit.json`,
+  SHA-256
+  `fe9faf8bafe917d34c2b933bfc279d5fe2cb817bd7ea7200293d6873892cf204`.
+  Correction duy nhất được phép là guard provenance backward-compatible nhưng
+  fail-closed: chấp nhận đúng field/value legacy hoặc đúng field/value S9, kèm
+  regression tests; phải freeze evaluator hash và correction addendum mới rồi
+  commit/push central **trước** retry. Không đổi prediction, candidate score,
+  seed, bootstrap, gate hay protocol khoa học; không sweep/rescue. Safety giữ
+  nguyên `validation_gt_read=false`, `consumer_trained=false`,
+  `test_evaluated=false` và chưa có Dice.

@@ -1,0 +1,51 @@
+{
+  "audit_id": "skelex_candidate_marginal_s9_v1_control_attempt1_schema_error_audit",
+  "audit_timestamp_utc": "2026-08-03T08:56:27.6926316Z",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "attempt": 1,
+  "stage": "postfreeze_control_evaluator_pre_gt_verification",
+  "status": "IMPLEMENTATION_ERROR_BEFORE_VALIDATION_GT",
+  "error": {
+    "exception": "KeyError",
+    "missing_field": "candidate_logit_tta",
+    "source": "project/evaluate_mask_bag_selector_arm.py",
+    "source_line": 302,
+    "source_sha256": "5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0"
+  },
+  "boundary": {
+    "arm_freeze_verified": true,
+    "arm_prediction_manifest_verified": true,
+    "candidate_score_manifest_verified": true,
+    "selector_cache_records_reached": true,
+    "baseline_per_image_opened": false,
+    "baseline_prediction_verified": false,
+    "evaluation_output_directory_created": false,
+    "segmentation_dataset_constructed": false,
+    "validation_gt_read": false
+  },
+  "root_cause": {
+    "classification": "evaluator_schema_compatibility_error",
+    "legacy_contract": "candidate_logit_tta=mean_original_aligned_horizontal_flip",
+    "s9_contract": "candidate_logit_recipe=within_image_equal_percentile_rank_no_tta",
+    "explanation": "The frozen generic evaluator hard-coded the legacy S8 prediction-manifest field even though the hash-frozen S9 producer intentionally serializes an exact no-TTA rank recipe under candidate_logit_recipe. The selected logit, score payload, candidate indices, and all hashes had already matched before this schema-only access failed."
+  },
+  "scientific_interpretation": {
+    "hypothesis_tested": false,
+    "dice_observed": false,
+    "s9_predictions_invalidated": false,
+    "allowed_correction": "Add a fail-closed backward-compatible provenance guard that accepts only the exact legacy TTA field/value or the exact S9 recipe field/value, freeze a correction addendum and new evaluator hash before retrying.",
+    "forbidden_changes": [
+      "prediction regeneration",
+      "candidate or score changes",
+      "bootstrap seed changes",
+      "gate changes",
+      "post-hoc sweep",
+      "validation GT access before corrected evaluator provenance is committed centrally"
+    ]
+  },
+  "safety": {
+    "consumer_trained": false,
+    "test_evaluated": false,
+    "validation_gt_read": false
+  }
+}
