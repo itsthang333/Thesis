@@ -15593,3 +15593,57 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Bước kế đúng protocol là freeze mục này trên central rồi chạy matched S9
   decision từ hai per-image table đã đóng băng, không mở lại GT. Consumer/test
   tiếp tục khóa.
+
+### S9 matched terminal decision và failure-analysis gate (2026-08-03)
+
+- Matched decision đọc lại duy nhất hai evaluation table đã freeze, không mở lại
+  GT. Exact hashes: decision audit
+  `c851a107394932ecee61ddf575584a9a83009e448825f74af10f358fcb0b1195`,
+  paired per-image
+  `46866b4c4d9c27152814bb9b7a078a0e9e42e238bc7a2bcf26f8037c4cabcf3e`,
+  paired comparison
+  `a2aacf20db03d080b79df66b5e54857946f60fe587c32527650302c67635c163`,
+  gate `209b1d2e58819629241453eb8df603577e6d05a4e9592d9569f681b4b0441d30`.
+  Primary so với control tăng Dice overall/small/medium/large
+  `+0.01870632 / +0.00467292 / +0.03965498 / +0.00819722`; CI95 tương ứng
+  `[+0.00209507,+0.03648146] / [-0.00199820,+0.01248233] /`
+  `[+0.00375234,+0.07795324] / [-0.07526042,+0.06952384]`. Như vậy S9
+  likelihood có signal thật ở overall và medium, không phải null intervention.
+- Tuy nhiên complete misses tăng `70 -> 72` (2 recovered nhưng 4 overlap lost),
+  control không tái tạo exact accepted Geometry-v3, và primary absolute Dice
+  `0.27390921 / 0.13030839 / 0.43346124 / 0.38561647` chưa đạt bất kỳ goal nào.
+  Matched status do đó là **FAIL**, `mechanism_pass=false`,
+  `operational_pass=false`, `consumer_authorized=false`.
+- Analyzer read-only đã predeclare chạy trên producer/evaluation/decision frozen,
+  không mở raw GT/image/test và không tạo rescue. Full tracked output
+  `artifacts/evaluation/skelex_candidate_marginal_s9_v1/failure_analysis.json`,
+  SHA-256
+  `19f25e0ecf6833b31003b8a3bc5b52f49fe356f808d6654d52b44462f9f341a9`;
+  analyzer source SHA-256
+  `477387bc442d02a5ad342227573d96bdfad71eb47d6c5b8af25defab4b5581a1`.
+  Intervention đổi 212/371 ảnh: tumor `100/184`, normal `112/187`. Trong 100
+  tumor switch có 47 win, 19 loss, 34 tie; tổng Dice gain từ wins `+5.24449`
+  lớn hơn loss magnitude `-1.80253`, giải thích improvement trung bình.
+- Error mechanism định lượng: likelihood anti-correlate mạnh với area
+  (median Spearman normal/tumor `-0.56876/-0.44397`) và dispersion trên normal
+  gần gấp đôi tumor (`0.52351/0.26096`). Median primary/control area ratio ở
+  win/loss gần 1 (`0.98610/0.97063`) nhưng ở tie chỉ `0.67257`; median likelihood
+  margin ở tie lại lớn nhất (`0.16590`, so với win/loss `0.06914/0.05591`). Vì
+  vậy confidence-margin threshold hậu nghiệm không được hỗ trợ: high margin có
+  thể chỉ phản ánh shortcut co nhỏ candidate mà không cải thiện overlap.
+- **Failure conclusion:** image-level BCE đã học class signal hữu ích nhưng chưa
+  học foreground-localization/reliability boundary; equal-rank fusion áp dụng
+  correction quá rộng, trộn medium localization gain với area/extent shortcut
+  và làm tăng miss. Giữ lại S9 marginal signal như bằng chứng dương; loại bỏ
+  unconditional equal-rank deployment và mọi post-hoc threshold rescue. Hướng
+  kế nhiệm phải giữ exact Geometry-v3 làm no-change arm và học correction
+  conservative bằng training-only reliability/abstention cùng area/extent
+  nuisance control; tuyệt đối không chọn threshold/route theo validation GT.
+- Terminal audit tracked tại
+  `artifacts/evaluation/skelex_candidate_marginal_s9_v1/terminal_result_audit.json`,
+  SHA-256
+  `96edce9965bcc2e302aa7f5613b1f07b1663647dca29fc05c17f3082eefc1aa1`.
+  Claim `EXP-20260803-codex-s9-skelex-candidate-marginal-v1` chuyển từ
+  `ĐANG LÀM` sang **HOÀN THÀNH (scientific FAIL)**. Prediction-freeze/GT boundary
+  được giữ, không consumer, không BTXRD test, không collaborator output. Phải
+  commit/push failure gate này trước khi đăng ký successor.

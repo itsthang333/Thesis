@@ -1,0 +1,137 @@
+{
+  "audit_id": "skelex_candidate_marginal_s9_v1_terminal_result_audit",
+  "audit_timestamp_utc": "2026-08-03T09:08:56.9151393Z",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "status": "COMPLETE_SCIENTIFIC_FAIL",
+  "decision": {
+    "source_sha256": "3c31d221985b33d2fa28caf15ba53a9e53f6b33650ab338bfae1e91cf091c9ac",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20261205,
+    "output_hashes": {
+      "decision_audit.json": "c851a107394932ecee61ddf575584a9a83009e448825f74af10f358fcb0b1195",
+      "gate_decision.json": "209b1d2e58819629241453eb8df603577e6d05a4e9592d9569f681b4b0441d30",
+      "paired_comparison.json": "a2aacf20db03d080b79df66b5e54857946f60fe587c32527650302c67635c163",
+      "paired_per_image.csv": "46866b4c4d9c27152814bb9b7a078a0e9e42e238bc7a2bcf26f8037c4cabcf3e"
+    },
+    "gate_status": "FAIL",
+    "mechanism_pass": false,
+    "operational_pass": false,
+    "consumer_authorized": false
+  },
+  "primary_vs_control": {
+    "overall": {
+      "primary_dice": 0.27390920950375536,
+      "control_dice": 0.25520288785417294,
+      "delta": 0.018706321649582424,
+      "ci95": [0.002095073940066206, 0.03648145624872899]
+    },
+    "small": {
+      "primary_dice": 0.13030839203415265,
+      "control_dice": 0.1256354731300402,
+      "delta": 0.004672918904112471,
+      "ci95": [-0.001998196161734033, 0.012482334447494255]
+    },
+    "medium": {
+      "primary_dice": 0.43346123882839444,
+      "control_dice": 0.3938062554193073,
+      "delta": 0.0396549834090871,
+      "ci95": [0.0037523375903344234, 0.07795323647301833]
+    },
+    "large": {
+      "primary_dice": 0.38561647232423557,
+      "control_dice": 0.37741925004188437,
+      "delta": 0.008197222282351214,
+      "ci95": [-0.07526041678295371, 0.06952384460514123]
+    },
+    "complete_misses": {
+      "control": 70,
+      "primary": 72,
+      "recovered": 2,
+      "lost": 4
+    }
+  },
+  "primary_vs_accepted_geometry_v3": {
+    "overall": {
+      "baseline_dice": 0.2454823867797678,
+      "primary_dice": 0.27390920950375536,
+      "delta": 0.02842682272398758,
+      "ci95": [0.0030495727353873157, 0.05470355338622901]
+    },
+    "small": {
+      "baseline_dice": 0.11708057891440651,
+      "primary_dice": 0.13030839203415265,
+      "delta": 0.01322781311974613,
+      "ci95": [-0.015100890280150275, 0.04458621066934366]
+    },
+    "medium": {
+      "baseline_dice": 0.37713551529480416,
+      "primary_dice": 0.43346123882839444,
+      "delta": 0.056325723533590284,
+      "ci95": [0.010427199108591348, 0.1053619270223997]
+    },
+    "large": {
+      "baseline_dice": 0.3894126471276201,
+      "primary_dice": 0.38561647232423557,
+      "delta": -0.0037961748033845883,
+      "ci95": [-0.08063053621642756, 0.05693392174822767]
+    },
+    "complete_misses": {
+      "baseline": 53,
+      "primary": 72
+    }
+  },
+  "failure_analysis": {
+    "source_sha256": "477387bc442d02a5ad342227573d96bdfad71eb47d6c5b8af25defab4b5581a1",
+    "artifact_sha256": "19f25e0ecf6833b31003b8a3bc5b52f49fe356f808d6654d52b44462f9f341a9",
+    "switch_incidence": {
+      "all": "212/371",
+      "tumor": "100/184",
+      "normal": "112/187"
+    },
+    "changed_tumor_outcomes": {
+      "wins": 47,
+      "losses": 19,
+      "ties": 34,
+      "win_delta_sum": 5.24449173223142,
+      "loss_delta_sum": -1.8025285487082532
+    },
+    "median_primary_to_control_area_ratio": {
+      "wins": 0.9860995278556672,
+      "losses": 0.9706290377320655,
+      "ties": 0.6725746806945407,
+      "small_changed": 0.8246530800847182,
+      "medium_changed": 0.9640591806324675,
+      "large_changed": 1.054146979118836
+    },
+    "median_likelihood_margin": {
+      "wins": 0.06913793087005615,
+      "losses": 0.05591481924057007,
+      "ties": 0.1658983826637268
+    },
+    "likelihood_mechanics": {
+      "normal_median_likelihood_vs_area_spearman": -0.5687561535936987,
+      "tumor_median_likelihood_vs_area_spearman": -0.44397162875782215,
+      "normal_median_likelihood_std": 0.523508608341217,
+      "tumor_median_likelihood_std": 0.2609639912843704
+    }
+  },
+  "failure_interpretation": {
+    "retain": [
+      "The S9 candidate-marginal likelihood contains real localization signal: primary beats its matched control overall with positive CI95 and improves medium with positive CI95.",
+      "The unchanged same-gallery oracle remains above every goal, so proposal generation is not the active ceiling."
+    ],
+    "reject": [
+      "Unconditional equal-rank composition as a deployable selector: it increases complete misses and does not preserve the accepted Geometry-v3 control.",
+      "A post-hoc likelihood-margin threshold rescue: win and loss margins overlap, while ties have the largest median margin, so confidence magnitude is not a reliable validation-independent switch gate."
+    ],
+    "bottleneck": "Image-level BCE teaches class discrimination but not a foreground-localization boundary. The learned likelihood is strongly anti-correlated with candidate area, has twice the dispersion on normal images, and causes broad switches, especially shrinkage among high-margin ties. The useful medium localization signal is therefore mixed with an extent/area shortcut and lacks a training-only abstention mechanism anchored to the accepted baseline.",
+    "successor_constraint": "Preserve the accepted Geometry-v3 prediction as the exact no-change arm and learn any candidate-marginal correction as a conservative, training-only reliability-gated residual with explicit area/extent nuisance control; do not select switch thresholds or extent routes from validation GT."
+  },
+  "safety": {
+    "prediction_pair_frozen_before_validation_gt": true,
+    "ground_truth_reopened_for_matched_decision": false,
+    "post_hoc_rescue_or_sweep_performed": false,
+    "consumer_trained": false,
+    "test_evaluated": false
+  }
+}
