@@ -600,11 +600,13 @@ def audit_output(
             if not np.array_equal(upstream, stored_upstream):
                 raise ValueError(f"S9 upstream evidence differs: {image_id}")
             likelihood = validation_reproduced[image_id]["likelihood"]
-            base_rank = _rank(stored_base)
-            upstream_rank = _rank(upstream)
-            likelihood_rank = _rank(likelihood)
-            control = 0.5 * (base_rank + upstream_rank)
-            primary = (base_rank + upstream_rank + likelihood_rank) / 3.0
+            rank_inputs = tuple(
+                torch.from_numpy(values.astype(np.float32, copy=False))[None]
+                for values in (stored_base, upstream, likelihood)
+            )
+            rank_valid = torch.ones_like(rank_inputs[0], dtype=torch.bool)
+            control = base.equal_rank_aggregate(rank_inputs[:2], rank_valid)[0].numpy()
+            primary = base.equal_rank_aggregate(rank_inputs, rank_valid)[0].numpy()
             if (
                 not np.array_equal(evidence["control_rank"], control.astype(np.float32))
                 or not np.array_equal(evidence["primary_rank"], primary.astype(np.float32))

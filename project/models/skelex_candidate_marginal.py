@@ -12,6 +12,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from models.bas_candidate_localizer import equal_rank_aggregate
+
 
 SKELEX_INPUT_SIZE = 512
 SKELEX_PATCH_SIZE = 16
@@ -255,35 +257,27 @@ def candidate_marginal_image_label_loss(
     }
 
 
-def average_percentile_rank(values: np.ndarray) -> np.ndarray:
-    values = np.asarray(values, dtype=np.float64).reshape(-1)
-    if not len(values) or not np.isfinite(values).all():
-        raise ValueError("rank values must be finite and non-empty")
-    if len(values) == 1:
-        return np.ones(1, dtype=np.float64)
-    order = np.argsort(values, kind="stable")
-    ranks = np.empty(len(values), dtype=np.float64)
-    cursor = 0
-    while cursor < len(values):
-        stop = cursor + 1
-        while stop < len(values) and values[order[stop]] == values[order[cursor]]:
-            stop += 1
-        ranks[order[cursor:stop]] = 0.5 * (cursor + stop - 1)
-        cursor = stop
-    return ranks / max(1, len(values) - 1)
-
-
 def finite_readout(
     geometry_scores: np.ndarray,
     upstream_scores: np.ndarray,
     likelihood_scores: np.ndarray,
 ) -> dict[str, np.ndarray]:
-    geometry_rank = average_percentile_rank(geometry_scores)
-    upstream_rank = average_percentile_rank(upstream_scores)
-    likelihood_rank = average_percentile_rank(likelihood_scores)
-    if not (geometry_rank.shape == upstream_rank.shape == likelihood_rank.shape):
+    """Compose both arms with the accepted float32 rank implementation."""
+
+    arrays = tuple(
+        np.asarray(values, dtype=np.float32).reshape(-1)
+        for values in (geometry_scores, upstream_scores, likelihood_scores)
+    )
+    if not arrays[0].size or not all(np.isfinite(values).all() for values in arrays):
+        raise ValueError("candidate scores must be finite and non-empty")
+    if not (arrays[0].shape == arrays[1].shape == arrays[2].shape):
         raise ValueError("candidate score shapes differ")
+    tensors = tuple(torch.from_numpy(values)[None] for values in arrays)
+    valid = torch.ones_like(tensors[0], dtype=torch.bool)
+    with torch.inference_mode():
+        control = equal_rank_aggregate(tensors[:2], valid)[0]
+        primary = equal_rank_aggregate(tensors, valid)[0]
     return {
-        "control": 0.5 * (geometry_rank + upstream_rank),
-        "primary": (geometry_rank + upstream_rank + likelihood_rank) / 3.0,
+        "control": control.numpy().copy(),
+        "primary": primary.numpy().copy(),
     }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -55,3 +56,11 @@ def test_reference_rank_handles_ties_and_singleton() -> None:
         auditor._rank(np.asarray([2.0, 1.0, 2.0, 3.0])),
         [0.5, 0.0, 0.5, 1.0],
     )
+
+
+def test_s9_auditor_composes_arms_only_with_canonical_aggregate() -> None:
+    source = Path(auditor.__file__).read_text(encoding="utf-8")
+    composition = source[source.index("rank_inputs = tuple(") :]
+    assert "base.equal_rank_aggregate(rank_inputs[:2], rank_valid)" in composition
+    assert "base.equal_rank_aggregate(rank_inputs, rank_valid)" in composition
+    assert "0.5 * (base_rank + upstream_rank)" not in composition

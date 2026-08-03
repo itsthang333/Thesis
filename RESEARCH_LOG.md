@@ -15266,4 +15266,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   exact-vector + argmax regression cho candidate count `1..maximum`, singleton,
   repeated/fused ties trên runtime đích. Guard này được commit/push riêng trước
   mọi source correction hoặc Kaggle version 2.
+- **S9 implementation-only rank correction source:** sau checklist commit
+  `3ddf04ab522636337db31d587a213d69503fe50f`, `finite_readout` không còn duplicate
+  NumPy-float64 rank/mean mà ủy quyền control hai-way và primary ba-way cho exact
+  accepted `models.bas_candidate_localizer.equal_rank_aggregate` float32. GT-blind
+  auditor dùng cùng canonical aggregate khi tái tạo physical arm scores; phần
+  projection/head/likelihood independent vẫn giữ nguyên. Không đổi input,
+  architecture, objective, optimizer, epochs, arm weights, threshold hay gate.
+- Corrected model/auditor canonical LF SHA-256
+  `846fadc289dba2ac9e90e8dff83f1556cb8ef30651c1742a4d959f4819d3fbda /`
+  `9e665bdbf2dee5f487642f3844c656d4ff9814a2f9e89a51ba627f73cd55b30c`;
+  regression test SHA-256
+  `09433388caabf2243530a40fbec7f5d3a089483f5ec0fdb4126ee1b464fc8072 /`
+  `c4376b639c48dd55f887c91c7d572083bc4801d95e6fd123027f0260a2d32cd5`.
+  Exhaustive candidate count `1..81` với random/repeated ties kiểm exact control+
+  primary vector và argmax; explicit six-candidate fused-tie regression khóa
+  canonical winner `5` thay vì duplicate-float64 winner `2`. Corrected focused
+  suite `29/29` PASS cùng Ruff/`py_compile`/diff check.
+- Immutable original protocol closure test hiện fail đúng một expected staging
+  boundary vì source hash mới chưa được addendum khóa; không sửa protocol cũ và
+  chưa wrapper/rerun. Exact correction source phải được commit trước, sau đó một
+  correction addendum mới bind full commit + old/new hashes và wrapper/test mới
+  được overlay addendum; chỉ khi full closure xanh mới được preflight version 2.
 

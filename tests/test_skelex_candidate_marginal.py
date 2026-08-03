@@ -8,6 +8,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from project.models.bas_candidate_localizer import equal_rank_aggregate
+
 from project.models.skelex_candidate_marginal import (
     NonlinearTokenEvidenceHead,
     SKELEX_HEAD_HIDDEN_DIM,
@@ -118,6 +120,51 @@ def test_single_candidate_readout_matches_accepted_rank_contract() -> None:
     )
     np.testing.assert_array_equal(output["control"], [1.0])
     np.testing.assert_array_equal(output["primary"], [1.0])
+
+
+def test_finite_readout_is_byte_identical_for_all_candidate_counts() -> None:
+    for count in range(1, 82):
+        for case in range(10):
+            generator = np.random.default_rng(10_000 * count + case)
+            arrays = [
+                generator.normal(size=count).astype(np.float32)
+                for _ in range(3)
+            ]
+            if count > 2:
+                arrays[0][1] = arrays[0][0]
+            if count > 4 and case % 2 == 0:
+                arrays[1][3:5] = arrays[1][2]
+            observed = finite_readout(*arrays)
+            tensors = tuple(torch.from_numpy(values)[None] for values in arrays)
+            valid = torch.ones((1, count), dtype=torch.bool)
+            control = equal_rank_aggregate(tensors[:2], valid)[0].numpy()
+            primary = equal_rank_aggregate(tensors, valid)[0].numpy()
+            np.testing.assert_array_equal(observed["control"], control)
+            np.testing.assert_array_equal(observed["primary"], primary)
+            assert int(np.argmax(observed["control"])) == int(np.argmax(control))
+            assert int(np.argmax(observed["primary"])) == int(np.argmax(primary))
+
+
+def test_finite_readout_preserves_canonical_winner_at_float32_fused_tie() -> None:
+    geometry = np.asarray(
+        [1.6420046, -0.10410781, -0.03629668, 1.324037, -0.42114514, 0.5349967],
+        dtype=np.float32,
+    )
+    upstream = np.asarray(
+        [-0.6356979, 0.42562026, 1.623146, 0.3142767, -0.13453506, 0.43792695],
+        dtype=np.float32,
+    )
+    likelihood = np.arange(6, dtype=np.float32)
+    observed = finite_readout(geometry, upstream, likelihood)["control"]
+    assert observed.tolist() == [
+        0.5,
+        0.4000000059604645,
+        0.699999988079071,
+        0.6000000238418579,
+        0.10000000149011612,
+        0.7000000476837158,
+    ]
+    assert int(np.argmax(observed)) == 5
 
 
 def test_fractional_supports_preserve_candidate_and_construct_local_ring() -> None:
