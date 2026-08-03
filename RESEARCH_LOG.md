@@ -15647,3 +15647,77 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `ĐANG LÀM` sang **HOÀN THÀNH (scientific FAIL)**. Prediction-freeze/GT boundary
   được giữ, không consumer, không BTXRD test, không collaborator output. Phải
   commit/push failure gate này trước khi đăng ký successor.
+
+### Deep-search sau S9 và static S10 high-resolution proposal-MIL (2026-08-03)
+
+- Sau terminal/failure-gate S9 commit `e845c2172f95b5f1ab49ebe85dad9bc3da167bdf`,
+  đã fetch lại central/collaborator; `HEAD == origin/research-wsss-improvement`
+  và collaborator không đổi `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c`.
+  Không có claim active mới trùng proposal-conditioned high-resolution MIL.
+  Đây là static preparation, chưa phải claim `ĐANG LÀM` và chưa mở real
+  radiograph/candidate/cache, chưa fit/inference/prediction/GT/consumer/test.
+- S9 không được promote: primary `0.27390921/0.13030839/0.43346124/0.38561647`
+  vẫn dưới comparator `0.28872949/0.15772330/0.43522933/0.38687353`, miss tăng
+  `70 -> 72`. Failure dossier SHA-256
+  `19f25e0ecf6833b31003b8a3bc5b52f49fe356f808d6654d52b44462f9f341a9`
+  cho thấy scalar likelihood học bag signal nhưng không tạo identity/reliability
+  ổn định, likelihood-area Spearman tumor `-0.44397` và margin lớn nhất lại nằm
+  ở tie. Vì vậy S10 không dùng lại S9 likelihood/equal-rank hay post-hoc margin.
+- Chuỗi bằng chứng chung tiếp tục khóa bài toán: oracle gallery đủ cao; selector
+  regret chủ yếu là within-source identity/ranking; selected/GT extent có dấu
+  `14.603x/1.098x/0.382x` ở small/medium/large nên global signed area rule và
+  GT-size router không hợp lệ. Hướng S10 tách ba quantity annotation-free:
+  proposal identity, dense-evidence capture và local purity; chỉ cho phép đổi
+  Geometry-v3 winner nếu candidate component-wise Pareto-dominate control.
+- Static design `HIGHRES_CANDIDATE_PMIL_S10_DESIGN.md` canonical-LF SHA-256
+  `fc1fca970e6e14ee1fa00f78173694c11acee64c10cf4d0b05a071bb8c2ee112`.
+  Intended model dùng trainable ResNet-50 FPN `640px`, stride-4 feature map,
+  proposal inside/ring/global descriptor, hai-layer candidate-set transformer,
+  WSDDN dual classification/detection streams, dense normal negatives,
+  top-instance dropout, aligned-flip consistency, attention-union spatial
+  consistency và squared log-area nuisance projection. Training chỉ binary
+  image label + class-agnostic mask; raw area không vào predictive head.
+- Primary finite readout không dùng global area coefficient: evidence capture
+  thưởng coverage, purity phạt surrounding dilution, identity giữ semantics.
+  Candidate mới phải không kém control trên cả ba tie-aware within-bag ranks và
+  tốt hơn ít nhất một; nếu không có dominator thì physical control winner được
+  giữ exact. Capacity arm identity-only và primary Pareto arm phải cùng freeze
+  với exact control trước GT để tách representation gain khỏi extent guard.
+- Dataset-agnostic primitive
+  `project/models/highres_candidate_pmil.py` canonical-LF SHA-256
+  `8e67e959dc4f5b72d4884bb643c51e8efbb3ea391e51e2bb47aa3896b5286f15`;
+  test SHA-256
+  `312fdfdb38e8133d980b515ea93afe1c458d68ecf77f3140bfc1fea175500ed1`.
+  Python 3.9 `py_compile`, Ruff, `git diff --check` và focused synthetic suite
+  `12/12` PASS. Tests chứng minh exact zone pooling, set permutation
+  equivariance, bag order invariance/gradient, dense normal negatives, nuisance
+  penalty có gradient cả ở perfect linear shortcut, deterministic top-instance
+  dropout giữ ít nhất một candidate, aligned-view consistency, soft union,
+  capture/purity trade-off và exact Pareto fallback/tie break.
+- Static QA failure boundaries được giữ trung thực: attempt đầu `6/10` pass,
+  phát hiện `zip(strict=True)` không chạy Python 3.9 và helper rank bị gọi sai
+  signature; sửa implementation-only trước mọi data action. Một combined QA
+  process sau đó thoát Windows code `-1073741205` trước output; chạy riêng
+  `py_compile/pytest/Ruff` đều pass, nên đây là local process boundary, không
+  phải scientific result và không tạo artifact/prediction.
+- Nguồn sơ cấp và giới hạn transfer đã đọc/ghi trong design:
+  GLAM high-resolution global/local medical WSSS
+  (https://proceedings.mlr.press/v143/liu21b.html); WSDDN proposal-unit dual
+  streams
+  (https://openaccess.thecvf.com/content_cvpr_2016/papers/Bilen_Weakly_Supervised_Deep_CVPR_2016_paper.pdf);
+  proposal-based MIL surrounding contrast/completeness/rank consistency
+  (https://arxiv.org/abs/2305.17861); MIL-Dropout
+  (https://proceedings.mlr.press/v267/zhu25q.html); instance-level MIL
+  learnability
+  (https://proceedings.neurips.cc/paper_files/paper/2024/hash/1468ecc3d7e9dc2fbf336eed9bb292e0-Abstract-Conference.html);
+  single-stage WSSS local consistency/semantic fidelity/completeness
+  (https://openaccess.thecvf.com/content_CVPR_2020/html/Araslanov_Single-Stage_Semantic_Segmentation_From_Image_Labels_CVPR_2020_paper.html);
+  và size-stratified WSSS
+  (https://openaccess.thecvf.com/content/WACV2024/html/Mun_Small_Objects_Matters_in_Weakly-Supervised_Semantic_Segmentation_WACV_2024_paper.html).
+  Không source nào là BTXRD efficacy evidence; mọi kỹ thuật S10 vẫn unproven.
+- Không collision/copy SMILE: collaborator preparation dùng DenseNet-FPN,
+  subtype, matched-normal, rich gallery và không candidate-mask training; S10
+  dùng ResNet-FPN proposal-conditioned binary MIL trên central same-gallery,
+  không matched normal/subtype/collaborator output. Bước kế chỉ được đăng ký
+  `ĐANG LÀM` sau fresh full log/collision check và protocol/hash freeze; launch
+  vẫn cần full `KAGGLE_PREFLIGHT_CHECKLIST.md`, central push và T4x2/P100.
