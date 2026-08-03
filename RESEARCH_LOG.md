@@ -14713,3 +14713,23 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `afc23616aa946b9fb713aabe21ce3373af2ba821e1b5444ec0a46ed44a14986e`.
   Phải commit/push/fetch checklist + error note này trước attempt kế tiếp.
 
+### S8 matched-decision raw-archive materialization ERROR correction (2026-08-03)
+
+- Sau error-note commit `ef65e98`, attempt raw `git archive` vẫn fail trước
+  decision: archived physical readiness SHA tiếp tục là CRLF
+  `46aecb7855a4f18311c5174a396dee1379e43d0ae5793500ab93c6d44dc211d6`,
+  không phải canonical-LF `9e0294a5...`. Decision output vẫn không tồn tại,
+  Python decision chưa được gọi, GT không mở lại, không metric/consumer/test.
+- Bằng chứng raw archive hiệu chính root cause trước: không chỉ checkout filter;
+  tracked readiness blob tự nó là CRLF, trong khi readiness evidence khóa hash
+  của deterministic LF-normalized bytes. Vì vậy giả định “raw Git archive sẽ là
+  LF” bị loại. Đây vẫn là tooling/serialization error, không phải scientific
+  failure và không thay bất kỳ frozen evaluation nào.
+- Correction duy nhất được hỗ trợ: thêm reusable fail-closed canonical-LF
+  materializer nhận exact raw input SHA `46aecb...`, normalize CRLF/lone-CR đúng
+  một lần, refuse existing output/invalid UTF-8, và require output SHA
+  `9e0294...`; synthetic/runtime tests phải pass rồi commit/push trước retry.
+  KPF-001 được hiệu chính để khóa cả raw + canonical hash thay vì suy line ending
+  từ thao tác Git; updated checklist canonical-LF SHA
+  `09fb8b741703573f0e789e8919231346be85e38bad9535fb131ebc85b650dd6a`.
+

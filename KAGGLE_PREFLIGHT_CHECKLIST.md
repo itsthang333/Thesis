@@ -32,9 +32,10 @@ Khi gặp một lỗi có khả năng tái diễn:
   split, model, input, freeze và output consumer cần thiết.
 - [ ] Hash source được tính trên canonical Git-LF bytes; nếu input lịch sử là
   CRLF thì wrapper phải dựng CRLF một lần từ Git-LF và kiểm tra **cả hai** hash.
-- [ ] Không dùng `git checkout`/`git checkout-index` để materialize artifact
-  canonical: chúng có thể áp working-tree EOL filter. Dùng raw Git archive/blob,
-  giải nén vào temp ignored mới và rehash physical bytes trước consumer.
+- [ ] Không giả định `git checkout`, `checkout-index` hoặc raw `git archive` sẽ
+  tạo LF: tracked blob tự nó có thể là CRLF. Trước hết hash raw blob; nếu contract
+  khóa canonical-LF thì dùng một normalizer fail-closed từ verified raw bytes,
+  rồi assert cả input SHA và output canonical-LF SHA trước consumer.
 - [ ] Binder chỉ thay đúng các launch fields đã khai báo, rồi inverse-reconstruct
   byte-for-byte về template; packaged source ngoài binding phải giống checkout.
 - [ ] `py_compile`, focused tests, metadata JSON parse, protocol closure,
@@ -123,7 +124,7 @@ $sha = [Security.Cryptography.SHA256]::Create()
 
 | ID | Triệu chứng/nguồn lỗi | Guard phải có trước push |
 |---|---|---|
-| KPF-001 | Split/source hash lệch do Git-LF và local/Kaggle CRLF; `checkout-index` vẫn có thể áp EOL filter | Khóa Git-LF SHA; materialize bằng raw Git archive/blob, không dùng checkout; rehash physical bytes; nếu cần CRLF thì dựng deterministically một lần và assert cả hai. |
+| KPF-001 | Split/source hash lệch do canonical-LF và tracked/local/Kaggle CRLF; ngay cả raw Git blob có thể là CRLF | Khóa raw + canonical-LF SHA; lấy raw blob và rehash; chạy fail-closed CRLF/LF normalizer đúng một lần; assert input/output; không suy line ending từ tên thao tác Git. |
 | KPF-002 | Kaggle base image đổi dependency (`transformers 5.x` thay vì `4.50.2`) | Pin exact version, import-assert version, chạy trước model download/real input. |
 | KPF-003 | Python 3.9 lỗi `zip(..., strict=True)` | In runtime version; native test trên runtime đích; explicit length check + ordinary `zip` nếu cần 3.9. |
 | KPF-004 | Chạy nhầm interpreter: thiếu NumPy/PyTorch/sklearn hoặc thiếu `kaggle` | In `sys.executable`; probe imports; tách rõ interpreter scientific và interpreter Kaggle CLI. |
