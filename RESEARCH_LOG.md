@@ -14624,3 +14624,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   small/medium/large. Vì SMILE chưa có terminal result, S8 vẫn tiếp tục đúng
   frozen pair hiện tại; không đổi prediction, không mở sweep và test khóa.
 
+### S8 Python 3.9 evaluator correction frozen (2026-08-03)
+
+- Sau error audit commit `3a12a8d` và shared preflight commit `83dfd0e`, exact
+  correction KPF-003 thay `zip(..., strict=True)` bằng explicit equality guard
+  cho độ dài arm/baseline/groups rồi ordinary `zip`. Với vector aligned, phép
+  trừ delta, group resampling, RNG, percentile và mọi gate giữ nguyên; mismatch
+  nay fail-closed bằng `ValueError`. Không metric/threshold/seed/arm/prediction
+  nào thay đổi và không có post-hoc rescue.
+- Corrected evaluator/test canonical-LF SHA lần lượt
+  `5762523d07cc45981bf4dbb6d2f231dd00272b4b2c782f56bfa66df5591773d0 /`
+  `de390e08ff6617f115d7747097273b4878ffacec72cde0d03dd7fac49dc62a91`.
+  Trên exact target runtime Python `3.9.23`, `py_compile`, focused tests
+  `9 passed`, aligned bootstrap regression và unequal-length rejection đều
+  PASS; `git diff --check` PASS.
+- Frozen addendum
+  `artifacts/research_protocols/skelex_reconstruction_selector_s8_v1_python39_evaluator_correction.json`
+  canonical-LF SHA
+  `7aa2b3569a6563622848efcaf7f14a6736dab23a5c91be95e6a2e0ccb4f141e0`
+  khóa failure audit/readiness/pair/protocol, target runtime và cùng arm order,
+  10,000 bootstrap/seed `20261204`. Validation GT đã đọc đúng boundary ở attempt
+  trước; test bytes chưa đọc, primary chưa đánh giá, consumer/test khóa. Chỉ sau
+  commit/push/fetch correction này mới rerun control vào output root mới.
+

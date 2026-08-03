@@ -107,11 +107,13 @@ def _paired_group_bootstrap(
     replicates: int,
     seed: int,
 ) -> dict[str, object]:
+    if len(arm) != len(baseline) or len(arm) != len(groups):
+        raise ValueError("paired bootstrap vectors must have equal length")
     delta = np.asarray(arm, dtype=np.float64) - np.asarray(
         baseline, dtype=np.float64
     )
     by_group: dict[str, list[float]] = {}
-    for value, group in zip(delta, groups, strict=True):
+    for value, group in zip(delta, groups):
         by_group.setdefault(group, []).append(float(value))
     unique = sorted(by_group)
     generator = np.random.default_rng(seed)

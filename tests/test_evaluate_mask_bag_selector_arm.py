@@ -87,6 +87,18 @@ def test_operational_goals_and_complete_cohort_are_fixed() -> None:
     assert "all(check[\"pass\"] for check in oracle_checks.values())" in source
 
 
+def test_paired_bootstrap_is_fail_closed_and_python39_compatible() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    start = source.index("def _paired_group_bootstrap(")
+    stop = source.index("\ndef _verify_prediction_manifest(", start)
+    bootstrap = source[start:stop]
+    assert 'raise ValueError("paired bootstrap vectors must have equal length")' in bootstrap
+    assert "len(arm) != len(baseline)" in bootstrap
+    assert "len(arm) != len(groups)" in bootstrap
+    assert "zip(delta, groups)" in bootstrap
+    assert "strict=True" not in bootstrap
+
+
 def test_consumer_and_test_stay_locked() -> None:
     source = SOURCE.read_text(encoding="utf-8")
     assert '"consumer_trained": False' in source
