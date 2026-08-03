@@ -16080,3 +16080,35 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   không truy cập BTXRD test/collaborator output. Nếu nghiên cứu tiếp, phải
   quay lại định nghĩa ranh giới gần pipeline gốc với người dùng và đăng ký
   một claim không trùng mới theo `AGENTS.md`.
+
+### Quay lại pipeline CAM gốc: CAM-conditioned Geometry-v4 static design (2026-08-03)
+
+- Sau khi S10 tạm dừng, đã dò toàn bộ lịch sử các pipeline có CAM.
+  Point estimate cao nhất là exploratory top-three majority `0.29343648`,
+  nhưng CI95 `[-0.008610,+0.017426]` cắt 0 và small/large giảm. Comparator
+  CAM quan sát tốt nhất vẫn rich-gallery G1+upstream `0.28872949`, nhưng là
+  exploratory validation best; trong central same-gallery, S9 `0.27390921` có
+  SKELEX và fail gate, còn pipeline gần gốc nhất là Geometry-v3+upstream
+  `0.25520289`.
+- Khoảng trống chưa bị experiment cũ phủ là **CAM-conditioned feature
+  pooling**. Geometry-v3 hiện chỉ có scalar CAM mass capture/mean-inside;
+  RAD-DINO inside/ring means vẫn không thấy CAM phân bố ở đâu trong mask.
+  Thiết kế tĩnh `CAM_CONDITIONED_GEOMETRY_V4_DESIGN.md`, SHA-256
+  `b5f98963bb33955baac522f876b50fd94d3cfc19a006cc7a5168cb0bde5f2340`, giữ
+  exact LayerCAM->SAM gallery, square Geometry-v3, frozen RAD-DINO và MIL recipe,
+  chỉ append ba threshold-free mean mỗi layer: CAM-core `m*p`, low-CAM
+  interior `m*(1-p)` và CAM-positive exterior ring `r*p`.
+- Hướng này trực tiếp nhắm extent có dấu trái chiều
+  `14.603x/1.098x/0.382x` mà không dùng GT-size router: low-CAM interior đo
+  dilution của candidate quá rộng, cò CAM-positive exterior ring đo evidence
+  ngay ngoài candidate quá hẹp. Nó không lặp S2C/BAS/AdvCAM/S9/S10,
+  không đổi proposal và không thêm backbone/consumer.
+- Nguồn primary được ghi đầy đủ trong design: Kweon & Yoon S2C
+  CVPR 2024; Chen et al. C-CAM CVPR 2022; Rong et al. boundary-enhanced
+  co-training CVPR 2023; Chen et al. SAM-enhanced pseudo labels 2023. Chỉ
+  chuyển giao nguyên lý CAM/SAM reliability, anatomy contrast và boundary-local
+  evidence; các model/consumer/metric ngoài BTXRD không được copy.
+- Đây là **STATIC DESIGN ONLY**, chưa phải claim `ĐANG LÀM`: chưa
+  load real candidate/cache/image, chưa fit/prediction/Kaggle/GT/consumer/test.
+  Trước bất kỳ real action phải hoàn tất synthetic primitive/auditor,
+  protocol/hash closure, fresh collision check và đăng ký/push claim mới.
