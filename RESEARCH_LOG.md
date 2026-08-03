@@ -15260,4 +15260,10 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   interpreter thành công. Đây là KPF-004 local transport boundary, không ảnh
   hưởng kernel/artifact. Tại mục này chưa correction/rerun; phải push failure
   analysis central trước.
+- **Recurring-error guard trước correction:** bổ sung checklist exact-identity và
+  catalog `KPF-019`: duplicate rank/fusion implementation khác dtype/rounding bị
+  cấm; control/primary/auditor phải dùng một canonical aggregate và exhaustive
+  exact-vector + argmax regression cho candidate count `1..maximum`, singleton,
+  repeated/fused ties trên runtime đích. Guard này được commit/push riêng trước
+  mọi source correction hoặc Kaggle version 2.
 

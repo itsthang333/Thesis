@@ -94,6 +94,10 @@ $sha = [Security.Cryptography.SHA256]::Create()
   ngoài tolerance. Không đặt absolute `1e-6` tùy ý cho reduction float32.
 - [ ] Auditor so serialized evidence theo serialization-aware bound; không đòi
   tái lập float64 trước-serialization từ payload float16/float32.
+- [ ] Mọi control/identity path phải gọi cùng một canonical implementation với
+  producer được chấp nhận. Nếu có hai implementation “cùng công thức”, phải test
+  exact vector **và** argmax trên toàn candidate-count range, ties và dtype/runtime
+  đích; không suy byte identity từ equivalence toán học hoặc tolerance nhỏ.
 
 ### 6. Data boundary và safety
 
@@ -142,6 +146,7 @@ $sha = [Security.Cryptography.SHA256]::Create()
 | KPF-016 | GPU metadata đúng nhưng job chỉ dùng một GPU hoặc không có real CUDA | Two-device real-convolution guard và logged device names trước scientific input. |
 | KPF-017 | Status/output bị kiểm tra quá sớm hoặc lặp | Không immediate poll; một bounded check mỗi nhịp; terminal mới tải direct log/inventory. |
 | KPF-018 | Output cũ trộn với rerun | Unique ignored output root; `exist_ok=False`; audit requested path và file inventory. |
+| KPF-019 | Duplicate rank/fusion implementation dùng NumPy float64 rồi cast trong khi accepted control dùng PyTorch float32; cùng công thức nhưng intermediate rounding khác, exact identity hoặc tie winner có thể lệch | Chỉ dùng một canonical aggregate cho control/primary/auditor; test exact serialized vector + argmax cho candidate count `1..maximum`, singleton, repeated ties và fused-score ties trên runtime/dtype đích; không dùng `allclose` để chứng minh control identity. |
 
 ## Mẫu evidence tối thiểu trong prelaunch audit
 
