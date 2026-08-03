@@ -15143,4 +15143,8 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   status check ngay sau push, không polling và không tạo monitor. Claim tiếp tục
   **ĐANG LÀM**; chưa có output/prediction freeze/Dice, validation GT/consumer/test
   và collaborator output vẫn khóa.
+- **Bounded status check `2026-08-03T11:46:54+07:00`:** đúng một lệnh
+  `kaggle kernels status` trả `KernelWorkerStatus.RUNNING`. Không check thêm,
+  không tải partial output/log và không tạo monitor; S9 tiếp tục **ĐANG LÀM**,
+  chưa có scientific result hay thay đổi các khóa GT/consumer/test.
 
