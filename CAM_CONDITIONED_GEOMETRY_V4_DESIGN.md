@@ -145,4 +145,3 @@ lower bound above zero. A failure receives no post-hoc rescue or sweep.
   https://arxiv.org/abs/2305.05803
   supports the class-aware CAM plus class-agnostic SAM-mask decomposition; its
   dataset-specific aggregation is not copied.
-

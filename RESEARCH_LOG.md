@@ -16094,7 +16094,7 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   pooling**. Geometry-v3 hiện chỉ có scalar CAM mass capture/mean-inside;
   RAD-DINO inside/ring means vẫn không thấy CAM phân bố ở đâu trong mask.
   Thiết kế tĩnh `CAM_CONDITIONED_GEOMETRY_V4_DESIGN.md`, SHA-256
-  `b5f98963bb33955baac522f876b50fd94d3cfc19a006cc7a5168cb0bde5f2340`, giữ
+  `b5bf8e1ab58924413abe248804f1a868c6c264585ee49b910b1feb5df6255f06`, giữ
   exact LayerCAM->SAM gallery, square Geometry-v3, frozen RAD-DINO và MIL recipe,
   chỉ append ba threshold-free mean mỗi layer: CAM-core `m*p`, low-CAM
   interior `m*(1-p)` và CAM-positive exterior ring `r*p`.
