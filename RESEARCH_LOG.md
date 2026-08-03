@@ -15741,3 +15741,79 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   đóng băng/package, real train/validation candidate chưa load, chưa fit,
   prediction/GT/consumer/test/Kaggle. Claim S10 vẫn chưa mở; runner/auditor/
   protocol/wrapper còn phải hoàn tất và đăng ký/push central trước real action.
+
+### EXP-20260803-codex-s10-highres-proposal-pmil-v1
+
+- **Owner/time/status:** Codex central workstream; đăng ký
+  `2026-08-03T18:42:26+07:00`; **ĐANG LÀM**. Registration base
+  `59b2756e239eacfbe9b58906c95d6a478bd8a08c`; exact registration commit sẽ
+  được ghi ở note kế tiếp. Không real-data action được phép trước khi claim này
+  byte-visible trên `origin/research-wsss-improvement`.
+- **Hypothesis:** phần dương của S9 chứng minh image-label signal có thể cải thiện
+  overall/medium, nhưng 32x32 scalar field, instance ambiguity, area shortcut và
+  unconditional equal-rank làm miss tăng. Một trainable high-resolution
+  proposal-conditioned dual-stream MIL, tách identity/capture/purity và chỉ đổi
+  accepted winner dưới Pareto dominance, có thể giữ signal đó trong khi tránh
+  harmful switches ở small/large/normal.
+- **Kế thừa/loại:** kế thừa exact central same-gallery candidate supply,
+  Geometry-v3/upstream physical control, S9 terminal/failure dossier
+  `19f25e0e...341a9` chỉ như quantitative evidence. Không promote/reuse S9
+  candidate likelihood, likelihood margin, unconditional fusion, S7
+  pseudo-target, S6 subtype/entropy, S8 reconstruction p-value, R3/R4 critical
+  relation, BAS/deletion-insertion, normal-prototype/affinity/graph/count hoặc
+  any GT-size/area router. Proposal generation và consumer không đổi.
+- **Không collision:** central/collaborator đã fetch/read; collaborator head
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c` không có active claim cùng scope.
+  SMILE chỉ implementation/preprotocol chưa terminal, dùng DenseNet-FPN,
+  subtype, matched normals, rich gallery và không proposal-mask training. S10
+  dùng ResNet-FPN binary proposal MIL trên central same-gallery, không copy
+  code/protocol/Kaggle/output collaborator.
+- **Exact intended representation:** public torchvision ResNet-50 ImageNet-1K
+  weight file `resnet50-11ad3fa6.pth`, `102,540,417` bytes, SHA-256
+  `11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca`;
+  full square `640x640`; trainable C2-C5 + 128-channel FPN; stride-4 `160x160`;
+  fractional candidate/radius-3 exterior ring; inside/ring/difference/global
+  pooling; candidate-set Transformer hidden `256`, heads `4`, layers `2`,
+  dropout `0.1`; dense evidence head. Raw area/coordinate/source/family/current
+  score không vào predictive head.
+- **Image-label-only objective intent:** WSDDN classification/detection streams,
+  binary bag BCE, dense normal-candidate/pixel negatives, fixed top-instance
+  dropout after warm-up, aligned original/flip consistency, tumor-only
+  attention-union spatial consistency and squared nuisance projection of logits
+  on log candidate area. Không hard/detached winner, instance pseudo-label,
+  polygon, segmentation target, validation subtype/group hay validation metric.
+  Exact loss weights/optimizer/schedule phải đóng băng trong protocol và push
+  trước real input; scope change đáng kể phải update claim trước execution.
+- **Exact inherited input boundary:** split SHA-256
+  `85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c`,
+  cohort `2981 train / 371 validation`, `1493/1488` train normal/tumor;
+  train gallery `itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1@1`
+  manifest `ad3b52d626a46ba92325113a4742aba710167db86f759c77500a76ab280458d1`;
+  validation transport `itsthang333/btxrd-mask-bag-selector-baseline-v1@1`,
+  candidate zip `426fbe9cb01ce5063e7897b1b1c424ab4ce9f0310086434aec5163759422687a`;
+  selector cache freeze
+  `2f6290cd464ac8a1d204b6196f7f7a1dbe5bbcc21b8abd56ed5a61f8b41e4f2c`;
+  accepted checkpoint/prediction freeze
+  `58b82642dfa6723e2ec8293687be0096ccfbd26163222aa0b32db01b2d0e1069 /`
+  `ec346276d41da7f81d7b4181ee773f5dc962dab70942303d11085804029e3ec3`.
+- **Finite outputs/gates:** freeze exact Geometry-v3+upstream control,
+  identity-capacity arm and primary Pareto arm. Identity/capture/purity dùng
+  tie-aware within-image ranks; primary chỉ đổi khi candidate không kém control
+  ở cả ba và strict hơn ít nhất một, nếu không giữ exact control. Independent
+  GT-blind auditor phải reproduce all scores/winners/maps and three physical
+  freezes before evaluator opens GT. Mechanism pass yêu cầu primary tăng
+  overall+small so cả control/capacity, không giảm medium/large, không tăng miss.
+  Operational pass còn yêu cầu Dice tối thiểu
+  `0.34024039/0.17895493/0.51244178/0.49370336`, overall paired CI95 lower `>0`,
+  no subgroup regression/miss increase. Fail không rescue/sweep hậu nghiệm.
+- **Compute/safety:** static/synthetic local; mọi real fit/inference chỉ private
+  Kaggle T4x2/P100 sau full preflight. Validation predictions freeze vật lý trước
+  GT; không train downstream consumer trước operational pass; BTXRD test khóa;
+  collaborator output không truy cập.
+- **Static source at claim:** design SHA-256
+  `fc1fca970e6e14ee1fa00f78173694c11acee64c10cf4d0b05a071bb8c2ee112`,
+  model/test SHA-256
+  `4705f9b514ee89d98fc1ad9190d44c1c035b8eafff8f6500746c8b7c357974ef /`
+  `7d4e405738ff9e468b0da4a4778aa632d473c62a9c0dbbf6e6474fecf3ad0201`;
+  focused `14/14`, py_compile/Ruff/diff-check PASS. Runner/protocol/auditor/
+  wrapper chưa có; registration tự nó không authorize launch.
