@@ -15342,3 +15342,29 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   PASS, Ruff/`py_compile`/diff check PASS. Auditor canonical LF SHA-256 sau sửa là
   `375409380fb71110d6d6a720530d0dd7940ae343efc5a4e818947dfef28cb265`.
 
+### S9 version-2 exact package và final prelaunch authorization (2026-08-03)
+
+- Sau fetch/collision check, central HEAD/origin đều ở
+  `172c00e8719285010f52ebbbe715ad352ebb7428`, worktree sạch và không có claim
+  S9 cạnh tranh trên nhánh cộng tác. One-time binder đã đóng gói kernel version
+  `2` vào ignored unique root
+  `tmp/kaggle/skelex_candidate_marginal_s9_v2_launch_172c00e`; package chỉ có ba
+  file dự kiến và được bind vào đúng full checkout trên.
+- Exact raw/canonical-LF SHA-256 của bound wrapper, launch binding và metadata là
+  `198f03620e18f6239e815849bcceaeab3e6c13c710bc895a77b05a319197be3e /`
+  `884a3f9b1bcd022d1aa8da3fa0eae093fddc47505c4a7030caf58c9c26cbfdee /`
+  `ef6c3cf050bd596ba3a361ffd503fe8a19248b2e25aa3073764e30a81b7b80a4`;
+  mỗi file raw và canonical-LF trùng nhau. Wrapper `py_compile`, metadata/binding
+  JSON parse, three-field inverse reconstruction, exact effective source closure,
+  checkout ancestry và version-2 integration tests đều PASS.
+- Final prelaunch artifact
+  `artifacts/research_protocols/skelex_candidate_marginal_s9_v1_kernel_v2_final_prelaunch_audit.json`
+  SHA-256
+  `8e08291ce2dabd7575186cf7ffad6e438754dfdef559b45ecb81116aa592f788`
+  ghi `authorized_launch=true`, KPF-001..006/011/013/015..019 liên quan đều có
+  evidence, T4x2 guard, exact input/source/output contract và mọi safety lock.
+  Đến thời điểm audit: chưa mở real cache/radiograph, chưa inference/prediction,
+  chưa đọc validation GT, chưa consumer/test và không truy cập output collaborator.
+  Sau khi artifact/log này visible trên central, được phép push đúng package trên
+  thành Kaggle version 2; không status-check ngay sau push.
+

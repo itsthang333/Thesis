@@ -1,0 +1,91 @@
+{
+  "audited_utc": "2026-08-03T05:42:41.110304+00:00",
+  "authorized_launch": true,
+  "bound_wrapper_sha256": "198f03620e18f6239e815849bcceaeab3e6c13c710bc895a77b05a319197be3e",
+  "branch": "research-wsss-improvement",
+  "btxrd_image_opened": false,
+  "checkout_commit": "172c00e8719285010f52ebbbe715ad352ebb7428",
+  "collaborator_output_accessed": false,
+  "consumer_trained": false,
+  "correction_source_commit": "cb608cd8ca501e840d4ae7c73cc7592187683a27",
+  "experiment_id": "EXP-20260803-codex-s9-skelex-candidate-marginal-v1",
+  "focused_tests": "wrapper executes 35-test static S9 correction suite before model/data",
+  "input_contract": {
+    "cohort": {
+      "train": 2981,
+      "validation": 371
+    },
+    "dataset_sources": [
+      "itsthang333/btxrd-raw",
+      "itsthang333/btxrd-mask-bag-geometry-v3-train-gallery-v1",
+      "itsthang333/btxrd-mask-bag-selector-baseline-v1"
+    ],
+    "kernel_sources": [
+      "itsthang333/btxrd-rad-dino-mask-bag-selector-cache-v1"
+    ],
+    "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
+  },
+  "kernel": "itsthang333/btxrd-skelex-candidate-marginal-s9-v1",
+  "kernel_version": 2,
+  "kpf_evidence": {
+    "KPF-001": "Git-LF split plus exact one-time CRLF reconstruction hashes",
+    "KPF-002": "transformers==4.50.2 pin/assert before model/data",
+    "KPF-003": "Python 3.9 focused static suite",
+    "KPF-004": "sys.executable/version and dependency assertion in wrapper",
+    "KPF-005": "three-field inverse binder plus checkout ancestry",
+    "KPF-006": "slug/title static length guard",
+    "KPF-011": "recursive exact-hash unique input locators",
+    "KPF-013": "NPY-byte feature hashes and serialization-aware auditor",
+    "KPF-015": "seed/epochs/order locked by protocol and wrapper",
+    "KPF-016": "two-device real CUDA convolution guard",
+    "KPF-017": "no immediate/repeated status check declared",
+    "KPF-018": "output and runtime roots use exist_ok=False",
+    "KPF-019": "one canonical float32 rank aggregate plus exact vector/winner regressions"
+  },
+  "launch_binding_sha256": "884a3f9b1bcd022d1aa8da3fa0eae093fddc47505c4a7030caf58c9c26cbfdee",
+  "metadata_sha256": "ef6c3cf050bd596ba3a361ffd503fe8a19248b2e25aa3073764e30a81b7b80a4",
+  "output_contract": {
+    "candidate_scores": 742,
+    "likelihood_evidence": 371,
+    "pair_freeze_before_validation_gt": true,
+    "prediction_maps": 742
+  },
+  "owner": "Codex central workstream",
+  "protocol_sha256": "0a303c9c86c3c43c750c85a50087e792bf0942a0b43fc9a1cf9e143c4832ee3d",
+  "rank_exactness_correction_sha256": "0ddf17d73c9ddcf24799827a075f41a32e671e15894ae3d6d0780a278edb11a9",
+  "real_cache_opened": false,
+  "schema_version": 1,
+  "scientific_source_commit": "7dcd6c6f055c69f3f048a005ed2fea6177dc7ed8",
+  "skelex_inference_run": false,
+  "source_hashes_at_checkout": {
+    "SKELEX_CANDIDATE_MARGINAL_S9_DESIGN.md": "326b391c01c63c0b9b50785feb57d5c411cc09302c2d897162a0dddac33bc1c6",
+    "project/audit_bas_candidate_descriptor_core.py": "82112c773a07ff4b18f54698769beeb4eedc78c7404d87a0b9253543dfb83a4d",
+    "project/audit_skelex_candidate_marginal_s9_output.py": "9e665bdbf2dee5f487642f3844c656d4ff9814a2f9e89a51ba627f73cd55b30c",
+    "project/mae_reconstruction_io.py": "1b14cae95354db53fc2117254701920870510d4b8bb1005f1400340ad4c8859c",
+    "project/models/bas_candidate_localizer.py": "8683339833ffb682152a45e1964d2031a67da18c7134efcd8d48e4abb844ad6c",
+    "project/models/mae_reconstruction.py": "7baa1a664d0523d454ab19bc1420959ef5115e31da2a242345c29f1dab7417f9",
+    "project/models/mask_bag_same_family_graph.py": "0c65a2bfa2ad9a190f860bf51bfdc28c8af2b03b7a4e8ec9f2327e3cfed67287",
+    "project/models/mask_bag_score_evidence.py": "02371b4dda5e4b76947457c8265a449f361faa05ff4425d64777bf4675df046a",
+    "project/models/mask_bag_selector_cache.py": "f13984043953c61befe658f87ae2859f4bdb7c9e9f3155ec0e5f25c1034ac1a5",
+    "project/models/mask_bag_selector_cache_io.py": "24f6f505c2fca39b989b9e6ff35548ad143e3ec03e732911f1c65b840ee42d93",
+    "project/models/rad_dino_mask_bag_mil.py": "0c028a652ddf7710a9af3b3533a00ca796d2a76adea85ab5bec592f43ee7ee67",
+    "project/models/skelex_candidate_marginal.py": "846fadc289dba2ac9e90e8dff83f1556cb8ef30651c1742a4d959f4819d3fbda",
+    "project/pseudo/candidate_diagnostics.py": "b50e789ab99a76306e45cc771c60f58fb63cbc7538630d81ed912a337777324b",
+    "project/run_bas_candidate_descriptor_core.py": "a9b69da1c524ddbd70e439ee5986ace843711993e2150bde17c75aafcc75b2dc",
+    "project/run_rad_dino_mask_bag_mil_probe.py": "0a220933343212dd3f4cc349f459db54b2b492d04240a7aa28fb85c475d54ae8",
+    "project/run_skelex_candidate_marginal_s9.py": "2310b6ff47b30d2872a89d6da4f331580a5041b3a69be3a82a13442dd95dafb4",
+    "tests/test_audit_skelex_candidate_marginal_s9_output.py": "c4376b639c48dd55f887c91c7d572083bc4801d95e6fd123027f0260a2d32cd5",
+    "tests/test_run_skelex_candidate_marginal_s9.py": "0844c23d54beccf0dcbfd29e14de4ee1490d67bf4178bd3764c9ab7773dcf7ed",
+    "tests/test_skelex_candidate_marginal.py": "09433388caabf2243530a40fbec7f5d3a089483f5ec0fdb4126ee1b464fc8072"
+  },
+  "status": "FROZEN_PRELAUNCH",
+  "target_runtime": {
+    "compute": "NvidiaTeslaT4 x2",
+    "python": "Kaggle image runtime; printed before scientific input",
+    "transformers": "4.50.2 exact pip pin and import assertion"
+  },
+  "template_sha256": "cdfffccb67ac3a7de88b6e1406dac0e89760e49a7904b20d563c5003b3ee919a",
+  "test_evaluated": false,
+  "validation_gt_read": false,
+  "validation_prediction_created": false
+}
