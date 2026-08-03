@@ -140,7 +140,12 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     )
     _json(
         decision / "gate_decision.json",
-        {"status": "FAIL", "consumer_authorized": False, "test_evaluated": False},
+        {
+            "status": "FAIL",
+            "operational_pass": False,
+            "consumer_authorized": False,
+            "test_evaluated": False,
+        },
     )
     _json(
         decision / "decision_audit.json",
@@ -171,7 +176,12 @@ def test_failure_analyzer_rejects_nonfailed_decision(tmp_path: Path) -> None:
     producer, control_eval, primary_eval, decision = _fixture(tmp_path)
     _json(
         decision / "gate_decision.json",
-        {"status": "PASS", "consumer_authorized": True, "test_evaluated": False},
+        {
+            "status": "OPERATIONAL_PASS",
+            "operational_pass": True,
+            "consumer_authorized": True,
+            "test_evaluated": False,
+        },
     )
     with pytest.raises(RuntimeError, match="failure/safety"):
         analyze(
@@ -181,6 +191,27 @@ def test_failure_analyzer_rejects_nonfailed_decision(tmp_path: Path) -> None:
             decision_root=decision,
             output=tmp_path / "analysis.json",
         )
+
+
+def test_failure_analyzer_accepts_mechanism_only_pass(tmp_path: Path) -> None:
+    producer, control_eval, primary_eval, decision = _fixture(tmp_path)
+    _json(
+        decision / "gate_decision.json",
+        {
+            "status": "MECHANISM_PASS",
+            "operational_pass": False,
+            "consumer_authorized": False,
+            "test_evaluated": False,
+        },
+    )
+    result = analyze(
+        producer_root=producer,
+        control_evaluation_root=control_eval,
+        primary_evaluation_root=primary_eval,
+        decision_root=decision,
+        output=tmp_path / "analysis.json",
+    )
+    assert result["switch_incidence"]["all"]["changed"] == 186
 
 
 def test_failure_analyzer_rejects_tampered_evidence(tmp_path: Path) -> None:

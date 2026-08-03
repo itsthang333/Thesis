@@ -142,7 +142,8 @@ def analyze(
         != sha256_file(independent_path)
         or independent.get("status")
         != "PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_REPRODUCTION_PASS"
-        or decision.get("status") != "FAIL"
+        or decision.get("status") not in {"FAIL", "MECHANISM_PASS"}
+        or decision.get("operational_pass") is not False
         or decision.get("consumer_authorized") is not False
         or decision.get("test_evaluated") is not False
         or decision_audit.get("ground_truth_reopened_for_matched_comparison") is not False
@@ -296,7 +297,9 @@ def analyze(
     result = {
         "analysis_id": "skelex_candidate_marginal_s9_failure_analysis_v1",
         "experiment_id": EXPERIMENT_ID,
-        "analysis_scope": "read-only diagnosis of frozen rejected outputs; no rescue or selection",
+        "analysis_scope": (
+            "read-only diagnosis of frozen non-operational outputs; no rescue or selection"
+        ),
         "analysis_source_sha256": sha256_file(Path(__file__)),
         "inputs": {
             name: {"path": str(path), "sha256": sha256_file(path)}

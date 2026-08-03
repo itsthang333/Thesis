@@ -15405,4 +15405,15 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `3/3` PASS, Ruff/`py_compile`/diff check PASS. Đây chỉ là static preparation;
   analyzer chưa được chạy trên output thật, chưa có metric và không thay đổi
   scientific protocol hay evaluation gate S9.
+- Static contract review sau commit `a509eec` phát hiện analyzer chỉ cho phép
+  decision literal `FAIL`, nhưng frozen decision hợp lệ còn có thể trả
+  `MECHANISM_PASS` khi cải thiện tương đối song chưa đạt bốn operational goals.
+  Đây là lỗi phạm vi của diagnostic, không phải scientific/runtime error; chưa
+  có output thật hay GT nào được đọc. Analyzer đã sửa để chấp nhận đúng hai
+  trạng thái non-operational `{FAIL, MECHANISM_PASS}` với
+  `operational_pass=false` và vẫn fail-closed trước `OPERATIONAL_PASS`.
+  Source/test SHA-256 mới là
+  `477387bc442d02a5ad342227573d96bdfad71eb47d6c5b8af25defab4b5581a1 /`
+  `2dd732678412204c288f12448b2e5b1560ddefb6bd93262e1e4d57919618577a`;
+  focused `4/4`, Ruff/`py_compile`/diff check PASS.
 
