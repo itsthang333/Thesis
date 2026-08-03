@@ -14969,4 +14969,48 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   phải freeze trước GT; không train consumer trước operational pass; BTXRD test
   và collaborator output luôn khóa. Fail/error bắt buộc failure analysis và push
   trước successor; không hậu nghiệm rescue/sweep.
+- **Pre-input scope amendment — high-resolution bounded nonlinear head
+  (2026-08-03):** theo yêu cầu ưu tiên efficacy hơn runtime, đã dừng chuẩn bị
+  runner để xem lại capacity/resolution trước khi mở bất kỳ scientific input
+  nào. Đối chiếu terminal evidence cho thấy runtime dài bên collaborator chủ yếu
+  đến từ DenseNet121/FPN `448–512 px`, rich-gallery và nhiều stage; bản thân
+  runtime không phải bằng chứng efficacy. Bằng chứng được phép kế thừa vẫn chỉ
+  là G1+upstream terminal `0.28872949`, cao hơn same-gallery control
+  `0.24548239`; SMILE tại collaborator commit
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c` mới là implementation/runtime
+  stabilization, chưa có terminal audited metric và không được quảng bá hay
+  copy như cải thiện.
+- **Lý do kỹ thuật sửa scope:** draft `320 px`, grid `20x20`, layer-16 affine
+  chỉ có `1,025` trainable parameters là đối chứng quá bảo thủ trước bottleneck
+  small-lesion (median equivalent diameter chỉ khoảng `11.1 px` ở 320 theo
+  audit dataset) và chuỗi residual S5–S8 capacity thấp đã không giảm selector
+  regret đủ rộng. Không launch một arm thấp-capacity chỉ vì nó chạy nhanh. Draft
+  này được supersede **trước real data/prediction**, không phải hậu nghiệm theo
+  S9 metric.
+- **Amended frozen S9 architecture:** square input `512x512`, positional
+  interpolation, `32x32` patch grid; frozen SKELEX intermediate layers `(8,16)`
+  được concatenate sau per-layer L2 normalization; shared GELU head
+  `2048 -> 256 -> 1`, đúng `524,801` trainable parameters, output layer
+  zero-initialized. Candidate support area-project xuống `32x32`, local ring
+  radius `2`; objective inside-positive/ring-negative và normalized candidate
+  log-mean-exp không đổi. Optimizer one-shot AdamW đúng `32` epoch, batch `8`,
+  LR `1e-3`, weight decay `1e-4`, seed `42`, final epoch only, no early stop;
+  encoder batch `2` trên T4x2. Không layer/resolution/width/optimizer/fusion/
+  extent/subgroup sweep.
+- **Không collision:** S9 vẫn khác SMILE về backbone frozen SKELEX thay vì
+  trainable DenseNet-FPN, binary label thay vì subtype, central same-gallery
+  thay vì rich gallery/matched normals, và proposal masks nằm trực tiếp trong
+  latent training likelihood. Không truy cập collaborator Kaggle/output.
+  Compute tăng có chủ ý để giữ small-lesion evidence; independent auditor sẽ
+  chạy lại encoder/projection nhưng output chỉ giữ per-image hash manifest thay
+  vì xuất cache token nhiều GB.
+- **Static amended source:** design/model/test physical LF SHA-256 lần lượt
+  `326b391c01c63c0b9b50785feb57d5c411cc09302c2d897162a0dddac33bc1c6 /`
+  `2a18ca1ff5a6099c73e8f9b9bad5ce772538d0cbf2a544bae1dd3a888412c5a5 /`
+  `5517f5a545da28a5ce114c2bbf7274a0f64862f24aaa98cf7277da1e63d8d3c9`;
+  Python 3.9 `py_compile`, Ruff và focused `10/10` PASS. Claim vẫn `ĐANG LÀM`;
+  phải commit/push/fetch scope amendment này trước runner real-data action.
+  Đến đây `real_data_opened=false`, `kaggle_launched=false`,
+  `validation_prediction_created=false`, `validation_gt_read=false`,
+  `consumer_trained=false`, `test_evaluated=false`.
 

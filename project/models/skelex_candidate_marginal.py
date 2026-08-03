@@ -13,27 +13,144 @@ import torch.nn.functional as F
 from torch import nn
 
 
+SKELEX_INPUT_SIZE = 512
+SKELEX_PATCH_SIZE = 16
+SKELEX_GRID_SIZE = SKELEX_INPUT_SIZE // SKELEX_PATCH_SIZE
+SKELEX_PATCHES = SKELEX_GRID_SIZE * SKELEX_GRID_SIZE
+SKELEX_HIDDEN_SIZE = 1024
+SKELEX_HIDDEN_LAYERS = (8, 16)
+SKELEX_TOKEN_DIM = len(SKELEX_HIDDEN_LAYERS) * SKELEX_HIDDEN_SIZE
+SKELEX_HEAD_HIDDEN_DIM = 256
+SKELEX_RING_RADIUS = 2
+
+
 def _require_finite(name: str, value: torch.Tensor) -> None:
     if not torch.isfinite(value).all():
         raise ValueError(f"{name} contains non-finite values")
 
 
-class CosineTokenEvidenceHead(nn.Module):
-    """One affine tumor direction over frozen, L2-normalized patch tokens."""
+class NonlinearTokenEvidenceHead(nn.Module):
+    """Bounded-capacity nonlinear tumor head over normalized layer tokens."""
 
-    def __init__(self, feature_dim: int) -> None:
+    def __init__(
+        self,
+        feature_dim: int = SKELEX_TOKEN_DIM,
+        hidden_dim: int = SKELEX_HEAD_HIDDEN_DIM,
+        layer_dim: int = SKELEX_HIDDEN_SIZE,
+    ) -> None:
         super().__init__()
-        if feature_dim <= 0:
-            raise ValueError("feature_dim must be positive")
-        self.weight = nn.Parameter(torch.zeros(feature_dim))
-        self.bias = nn.Parameter(torch.zeros(()))
+        if feature_dim <= 0 or hidden_dim <= 0 or layer_dim <= 0:
+            raise ValueError("head dimensions must be positive")
+        if feature_dim % layer_dim:
+            raise ValueError("feature_dim must contain whole SKELEX layers")
+        self.feature_dim = feature_dim
+        self.layer_dim = layer_dim
+        self.projection = nn.Linear(feature_dim, hidden_dim)
+        self.output = nn.Linear(hidden_dim, 1)
+        nn.init.zeros_(self.output.weight)
+        nn.init.zeros_(self.output.bias)
 
     def forward(self, tokens: torch.Tensor) -> torch.Tensor:
-        if tokens.ndim != 3 or tokens.shape[-1] != self.weight.numel():
+        if tokens.ndim != 3 or tokens.shape[-1] != self.feature_dim:
             raise ValueError("tokens must be BPD with the configured feature dimension")
         _require_finite("tokens", tokens)
-        normalized = F.normalize(tokens.float(), dim=-1, eps=1.0e-6)
-        return torch.einsum("bpd,d->bp", normalized, self.weight.float()) + self.bias.float()
+        grouped = tokens.float().reshape(*tokens.shape[:-1], -1, self.layer_dim)
+        normalized = F.normalize(grouped, dim=-1, eps=1.0e-6).flatten(start_dim=-2)
+        hidden = F.gelu(self.projection(normalized))
+        return self.output(hidden)[..., 0]
+
+
+class SkelexMultiLayerTokenEncoder(nn.Module):
+    """Expose fixed, unmasked SKELEX intermediate patch-token grids."""
+
+    def __init__(self, encoder: nn.Module) -> None:
+        super().__init__()
+        self.encoder = encoder
+
+    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
+        if pixel_values.ndim != 4 or pixel_values.shape[-2:] != (
+            SKELEX_INPUT_SIZE,
+            SKELEX_INPUT_SIZE,
+        ):
+            raise ValueError("S9 pixels must be Bx3x512x512")
+        batch = pixel_values.shape[0]
+        noise = torch.arange(
+            SKELEX_PATCHES,
+            device=pixel_values.device,
+            dtype=pixel_values.dtype,
+        )[None].expand(batch, -1)
+        output = self.encoder(
+            pixel_values=pixel_values,
+            noise=noise,
+            output_hidden_states=True,
+            return_dict=True,
+            interpolate_pos_encoding=True,
+        )
+        hidden_states = output.hidden_states
+        if hidden_states is None or len(hidden_states) != 25:
+            raise RuntimeError("SKELEX must expose embedding plus 24 hidden states")
+        expected = (batch, SKELEX_PATCHES + 1, SKELEX_HIDDEN_SIZE)
+        selected: list[torch.Tensor] = []
+        for layer_index in SKELEX_HIDDEN_LAYERS:
+            hidden = hidden_states[layer_index]
+            if hidden.shape != expected:
+                raise RuntimeError(
+                    f"Unexpected SKELEX layer-{layer_index} shape {tuple(hidden.shape)}"
+                )
+            selected.append(hidden[:, 1:].float())
+        return torch.cat(selected, dim=-1)
+
+
+def fractional_candidate_ring_supports(
+    square_candidate_masks: torch.Tensor,
+    square_content_mask: torch.Tensor,
+    *,
+    grid_size: int = SKELEX_GRID_SIZE,
+    ring_radius: int = SKELEX_RING_RADIUS,
+    support_epsilon: float = 1.0e-8,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Area-project square supports and construct a local fractional ring."""
+
+    if square_candidate_masks.ndim != 3 or square_content_mask.ndim != 2:
+        raise ValueError("candidate/content supports must be CHW/HW")
+    if square_candidate_masks.shape[-2:] != square_content_mask.shape:
+        raise ValueError("candidate/content square shapes differ")
+    if grid_size <= 0 or ring_radius <= 0 or support_epsilon <= 0:
+        raise ValueError("support projection controls are invalid")
+    _require_finite("square_candidate_masks", square_candidate_masks)
+    _require_finite("square_content_mask", square_content_mask)
+    if bool((square_candidate_masks < 0).any()) or bool((square_content_mask < 0).any()):
+        raise ValueError("square supports must be non-negative")
+    count = square_candidate_masks.shape[0]
+    candidates = F.interpolate(
+        square_candidate_masks[:, None].float(),
+        size=(grid_size, grid_size),
+        mode="area",
+    )[:, 0].clamp_(0.0, 1.0)
+    content = F.interpolate(
+        square_content_mask[None, None].float(),
+        size=(grid_size, grid_size),
+        mode="area",
+    )[0, 0].clamp_(0.0, 1.0)
+    candidates = candidates * content[None]
+    kernel = 2 * ring_radius + 1
+    dilated = F.max_pool2d(
+        candidates[:, None],
+        kernel_size=kernel,
+        stride=1,
+        padding=ring_radius,
+    )[:, 0]
+    rings = (dilated - candidates).clamp_min(0.0) * content[None]
+    inside_mass = candidates.sum(dim=(-2, -1))
+    ring_mass = rings.sum(dim=(-2, -1))
+    if count == 0 or bool((inside_mass <= support_epsilon).any()):
+        raise ValueError("S9 candidate has zero projected inside mass")
+    if bool((ring_mass <= support_epsilon).any()):
+        raise ValueError("S9 candidate has zero projected ring mass")
+    content_valid = content.reshape(-1) > support_epsilon
+    if not bool(content_valid.any()):
+        raise ValueError("S9 image has no projected content token")
+    return candidates.reshape(count, -1), rings.reshape(count, -1), content_valid
 
 
 def candidate_spatial_log_likelihood(

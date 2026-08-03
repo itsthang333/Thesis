@@ -6,12 +6,20 @@ import numpy as np
 import pytest
 import torch
 import torch.nn.functional as F
+from torch import nn
 
 from project.models.skelex_candidate_marginal import (
-    CosineTokenEvidenceHead,
+    NonlinearTokenEvidenceHead,
+    SKELEX_HEAD_HIDDEN_DIM,
+    SKELEX_HIDDEN_LAYERS,
+    SKELEX_HIDDEN_SIZE,
+    SKELEX_PATCHES,
+    SKELEX_TOKEN_DIM,
+    SkelexMultiLayerTokenEncoder,
     candidate_marginal_image_label_loss,
     candidate_spatial_log_likelihood,
     finite_readout,
+    fractional_candidate_ring_supports,
     normalized_candidate_logmeanexp,
 )
 
@@ -79,11 +87,17 @@ def test_likelihood_fails_closed_for_empty_valid_ring() -> None:
         )
 
 
-def test_token_head_is_one_direction_and_zero_initialized() -> None:
-    head = CosineTokenEvidenceHead(3)
-    tokens = torch.tensor([[[3.0, 0.0, 0.0], [0.0, 4.0, 0.0]]])
+def test_token_head_is_nonlinear_bounded_and_zero_initialized() -> None:
+    torch.manual_seed(42)
+    head = NonlinearTokenEvidenceHead(feature_dim=6, hidden_dim=2, layer_dim=3)
+    tokens = torch.tensor(
+        [[[3.0, 0.0, 0.0, 0.0, 4.0, 0.0], [0.0, 4.0, 0.0, 0.0, 0.0, 5.0]]]
+    )
     assert torch.equal(head(tokens), torch.zeros((1, 2)))
-    assert sum(parameter.numel() for parameter in head.parameters()) == 4
+    assert sum(parameter.numel() for parameter in head.parameters()) == 17
+    head(tokens).sum().backward()
+    assert head.output.weight.grad is not None
+    assert float(head.output.weight.grad.abs().sum()) > 0
 
 
 def test_finite_readout_reproduces_control_and_adds_one_equal_rank() -> None:
@@ -95,3 +109,68 @@ def test_finite_readout_reproduces_control_and_adds_one_equal_rank() -> None:
     np.testing.assert_allclose(output["control"], [0.25, 0.5, 0.75])
     np.testing.assert_allclose(output["primary"], [0.5, 1.0 / 3.0, 2.0 / 3.0])
 
+
+def test_fractional_supports_preserve_candidate_and_construct_local_ring() -> None:
+    candidates = torch.zeros((1, 512, 512))
+    candidates[:, 240:272, 240:272] = 1.0
+    content = torch.ones((512, 512))
+    inside, ring, valid = fractional_candidate_ring_supports(candidates, content)
+    assert inside.shape == ring.shape == (1, SKELEX_PATCHES)
+    assert valid.shape == (SKELEX_PATCHES,) and valid.all()
+    assert float(inside.sum()) == pytest.approx(4.0)
+    assert float(ring.sum()) > float(inside.sum())
+    assert not bool(((inside > 0) & (ring > 0)).any())
+
+
+def test_fractional_supports_fail_closed_for_full_content_candidate() -> None:
+    with pytest.raises(ValueError, match="zero projected ring mass"):
+        fractional_candidate_ring_supports(
+            torch.ones((1, 320, 320)),
+            torch.ones((320, 320)),
+            grid_size=20,
+        )
+
+
+class _FakeOutput:
+    def __init__(self, hidden_states: tuple[torch.Tensor, ...]) -> None:
+        self.hidden_states = hidden_states
+
+
+class _FakeEncoder(nn.Module):
+    def forward(self, **kwargs: object) -> _FakeOutput:
+        pixels = kwargs["pixel_values"]
+        assert isinstance(pixels, torch.Tensor)
+        assert kwargs["interpolate_pos_encoding"] is True
+        noise = kwargs["noise"]
+        assert isinstance(noise, torch.Tensor)
+        assert torch.equal(noise[0].cpu(), torch.arange(SKELEX_PATCHES))
+        hidden = tuple(
+            torch.full(
+                (len(pixels), SKELEX_PATCHES + 1, SKELEX_HIDDEN_SIZE),
+                float(layer),
+            )
+            for layer in range(25)
+        )
+        return _FakeOutput(hidden)
+
+
+def test_layer_encoder_concatenates_only_frozen_intermediate_layers() -> None:
+    output = SkelexMultiLayerTokenEncoder(_FakeEncoder())(
+        torch.zeros((2, 3, 512, 512))
+    )
+    assert output.shape == (2, SKELEX_PATCHES, SKELEX_TOKEN_DIM)
+    chunks = output.reshape(2, SKELEX_PATCHES, len(SKELEX_HIDDEN_LAYERS), SKELEX_HIDDEN_SIZE)
+    for offset, layer in enumerate(SKELEX_HIDDEN_LAYERS):
+        assert torch.equal(chunks[:, :, offset], torch.full_like(chunks[:, :, offset], float(layer)))
+
+
+def test_default_head_capacity_is_frozen() -> None:
+    head = NonlinearTokenEvidenceHead()
+    expected = (
+        SKELEX_TOKEN_DIM * SKELEX_HEAD_HIDDEN_DIM
+        + SKELEX_HEAD_HIDDEN_DIM
+        + SKELEX_HEAD_HIDDEN_DIM
+        + 1
+    )
+    assert sum(parameter.numel() for parameter in head.parameters()) == expected
+    assert expected == 524_801

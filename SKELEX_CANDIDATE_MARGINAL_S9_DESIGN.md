@@ -38,17 +38,24 @@ S9 changes the learning signal rather than the randomization threshold:
   `skhoha/SKELEX@368cae7b05cf649e6dbcddae9a7f00ea4b14bb8e`.
 - Exact public weights remain external and unmodified; expected SHA-256:
   `81cd6e9cf8da0c56d149a2e1a3668fdc6def2742b055f2696f97507332d69ef8`.
-- Input is the existing square-padded radiograph at native `320x320`, with
-  checkpoint normalization and positional interpolation, yielding a `20x20`
+- Input is the existing square-padded radiograph at `512x512`, with checkpoint
+  normalization and positional interpolation, yielding a `32x32`
   patch grid. No crop, tile, anatomy box, or tumor prompt is used.
-- Use encoder hidden layer `16` only. The final layer is intentionally excluded
-  because ViT final-token over-smoothing is a known WSSS failure mode; choosing
-  one intermediate layer also prevents a layer sweep.
-- Each token is L2-normalized. The only trainable spatial classifier is one
-  affine scalar direction (`1024 -> 1`); the SKELEX encoder is frozen.
+- Use the fixed pair of encoder hidden layers `8` and `16`. The final layer is
+  intentionally excluded because ViT final-token over-smoothing is a known
+  WSSS failure mode. Each layer token is L2-normalized, concatenated, and passed
+  through one shared `2048 -> 256 -> 1` GELU head. The head has exactly
+  `524,801` trainable parameters and a zero-initialized output layer; the
+  SKELEX encoder is frozen. There is no layer or width sweep.
 - Candidate masks are area-projected from the immutable square-corrected grid to
-  `20x20`. A radius-2 token dilation minus the candidate defines the local ring.
+  `32x32`. A radius-2 token dilation minus the candidate defines the local ring.
   Empty inside or ring mass fails closed.
+
+The higher resolution and bounded nonlinear head supersede the original static
+`320x320`, layer-16 affine draft before any real-data action. The change responds
+to the measured small-lesion pixel scale and the repeated failure of low-capacity
+global residuals; additional runtime is accepted because efficacy, not short
+runtime, is the objective.
 
 ## Frozen intended objective
 
@@ -78,6 +85,11 @@ cannot reweight images. Candidate order must be exactly permutation invariant.
 No candidate family, source, area, coordinates, accepted score, or subtype is
 fed to the trainable head.
 
+The one-shot optimizer is AdamW for exactly `32` epochs, batch size `8`, learning
+rate `1e-3`, weight decay `1e-4`, seed `42`, no early stopping and final-epoch
+checkpoint only. Encoder extraction batch size is `2` across two T4s. These are
+not tunable from validation results.
+
 At inference, the new evidence is `q_c`. The finite primary readout is the
 unweighted mean of within-image percentile ranks for Geometry-v3, immutable
 upstream score, and `q_c`; the control is the existing two-rank mean. There is
@@ -86,9 +98,9 @@ subgroup, or morphology sweep.
 
 ## Difference from prior and collaborator work
 
-- S5 pooled frozen SKELEX candidate/context descriptors into the existing MIL
-  residual; S9 instead learns one spatial class direction through an exact
-  latent mask likelihood.
+- S5 pooled 224px projected frozen SKELEX candidate/context descriptors into the
+  existing MIL residual; S9 learns a shared nonlinear 512px token head through
+  an exact latent mask likelihood.
 - S7 trained against targets derived monotonically from current logits and
   forced the current argmax; S9 never constructs an instance target.
 - S8 used class-agnostic reconstruction anomaly; S9 is explicitly
@@ -140,4 +152,3 @@ subgroup, or morphology sweep.
 - Choe et al. show why localization hyperparameters chosen with localization GT
   can create illusory WSOL gains; S9 freezes the finite arm before GT:
   https://openaccess.thecvf.com/content_CVPR_2020/html/Choe_Evaluating_Weakly_Supervised_Object_Localization_Methods_Right_CVPR_2020_paper.html .
-
