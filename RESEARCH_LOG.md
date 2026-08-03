@@ -15187,4 +15187,9 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `39fcfbc`; test ancestry bắt lỗi trước commit/GT, đã sửa bằng output trực tiếp
   của `git rev-parse HEAD`. Đây là static provenance error, không phải lỗi kernel
   hay hypothesis; không real input/prediction/GT/consumer/test nào bị mở.
+- **Bounded status check `2026-08-03T11:57:57+07:00`:** sau fresh fetch, central
+  HEAD/origin sạch ở `858c92a5379b074fca2ef691b99e505cf81b6a59`, collaborator
+  không đổi `abcdfd7...`; đúng một `kaggle kernels status` trả
+  `KernelWorkerStatus.RUNNING`. Không check thêm, không partial download/log và
+  không monitor; S9 tiếp tục **ĐANG LÀM**, chưa có prediction/Dice/GT/consumer/test.
 
