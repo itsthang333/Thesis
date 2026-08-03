@@ -15334,4 +15334,11 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Claim `EXP-20260803-codex-s9-skelex-candidate-marginal-v1` tiếp tục `ĐANG LÀM`;
   bước tiếp theo chỉ là commit/push closure này rồi bind/audit exact checkout
   version 2 trước rerun cùng protocol khoa học bất biến.
+- Integration test đầu tiên sau commit `cc48932` fail trước real input vì
+  prelaunch auditor còn marker literal `KERNEL_VERSION = 1` trong khi binder đã
+  sinh đúng version `2`. Đây là static-auditor migration error, không phải lỗi
+  wrapper/science/Kaggle; không có cache/image/prediction/GT nào được mở. Marker
+  đã đổi thành `EXPECTED_KERNEL_VERSION`; binder+prelaunch integration `6/6`
+  PASS, Ruff/`py_compile`/diff check PASS. Auditor canonical LF SHA-256 sau sửa là
+  `375409380fb71110d6d6a720530d0dd7940ae343efc5a4e818947dfef28cb265`.
 

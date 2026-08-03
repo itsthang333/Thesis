@@ -146,7 +146,7 @@ def audit(package: Path, repository_root: Path) -> dict[str, Any]:
     )
     wrapper_text = canonical_bytes(wrapper).decode("utf-8")
     required = (
-        "KERNEL_VERSION = 1",
+        f"KERNEL_VERSION = {EXPECTED_KERNEL_VERSION}",
         "LAUNCH_BINDING_READY = True",
         f'CHECKOUT_COMMIT = "{checkout}"',
         "verify_t4x2()",
