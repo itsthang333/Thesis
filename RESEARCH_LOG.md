@@ -15073,4 +15073,30 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   final epoch duy nhất, bind exact feature manifest/history và không có
   validation model selection. Chưa wrapper/binding/preflight/launch, chưa real
   input/prediction/GT/consumer/test; claim tiếp tục `ĐANG LÀM`.
+- **S9 fail-closed Kaggle wrapper/binder static milestone (2026-08-03):** đã
+  thêm unbound wrapper
+  `project/kaggle_wrappers/run_skelex_candidate_marginal_s9_v1.py` canonical
+  LF SHA-256
+  `bdb75a0f322d55c5e64e675e4977d401e56ee869b0c49f94a2bc653cadff0079`
+  và one-time inverse-reconstructing binder
+  `project/bind_skelex_candidate_marginal_s9_wrapper.py` SHA-256
+  `7844cad8c7a650858087ad8d4d7ec13ae41ec50e065e568402ba303a5240815e`.
+  Wrapper khóa exact source/protocol/input/model hashes, T4x2 real-convolution
+  guard, chạy static suite trước model download/data discovery, rồi tách
+  producer và independent auditor thành hai process để giải phóng feature RAM;
+  transient checkout/runtime/public 1.318-GB SKELEX weights bị xóa trong
+  guarded `finally`, không đưa checkpoint công khai vào output.
+- Static wrapper/binder regressions SHA-256 lần lượt
+  `bf1bd0f7d22e5e76eb1030dd56196e2b8a17f844f38b7d86b16e9394790eee88 /`
+  `ff3ed1312a1a85a927c66d40fa7e47e677e604d99cfa9ecbb1e1951c7860b3a5`;
+  Python 3.9 `py_compile`, Ruff và focused wrapper+protocol+producer+auditor
+  `29/29` PASS. Một lần gọi nhầm Python 3.13 mặc định dừng ở collection do
+  thiếu NumPy; chạy lại bằng exact project environment Python 3.9 pass hoàn
+  toàn, nên đây là local-environment boundary, không phải S9 implementation hay
+  scientific failure. Binder integration test chỉ được chạy sau khi template
+  đã tracked ở exact checkout để `git show <checkout>:<template>` có ý nghĩa.
+- Đến milestone này wrapper vẫn `KERNEL_VERSION=0`,
+  `LAUNCH_BINDING_READY=false`, `CHECKOUT_COMMIT=UNBOUND`; chưa bind/push Kaggle,
+  chưa mở real input/model bytes, chưa train/inference/prediction, chưa validation
+  GT/consumer/test và không truy cập collaborator output.
 
