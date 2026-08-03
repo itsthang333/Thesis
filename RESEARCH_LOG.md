@@ -15838,3 +15838,38 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   có số candidate khác nhau vẫn có trọng số bằng nhau; focused suite `15/15`
   PASS. Đây vẫn chỉ là synthetic/static QA: chưa mở real input, chưa fit/sinh
   prediction, chưa đọc validation GT, chưa train consumer và chưa mở BTXRD test.
+
+### S10 end-to-end runner static readiness (2026-08-03)
+
+- Đã triển khai runner GT-blind
+  `project/run_highres_candidate_pmil_s10.py`, canonical-LF SHA-256
+  `8d83081f77345e688d12e99bdbcf1ec53a1923da2ba4345773a6436bbb9c007d`.
+  Runner có hard guard đúng T4x2, exact cohort/hash/input provenance, xây input
+  `640x640` và support `160x160`, train ResNet50-FPN + proposal-set MIL bằng
+  image label, final-epoch-only, rồi sinh ba arm control/capacity/Pareto và đóng
+  băng vật lý cả ba trước validation GT.
+- Recipe đã được code-level freeze: `32` epoch, batch tổng `4`, AdamW,
+  backbone/head LR `3e-5/3e-4`, cosine-to-zero, weight decay `1e-4`, warm-up
+  `4` epoch, tumor-only top-instance dropout `0.2`, seed `42`. Loss weights:
+  bag `1.0`, normal-candidate/pixel `0.25/0.25`, tumor attention-union `0.25`,
+  aligned flip consistency `0.10`, identity/detection log-area projection
+  `0.05/0.05`. Normal bags không bị top-instance dropout; mọi normal candidate
+  hợp lệ vẫn là negative và mỗi normal image có tổng trọng số bằng nhau.
+- Original/flip cùng chạy trong train graph; dense flip được align về tọa độ
+  gốc. Inference lấy mean identity và dense evidence hai view. Control tái tạo
+  exact tie-aware Geometry-v3+upstream; capacity thêm identity; primary chỉ đổi
+  control theo Pareto identity/capture/purity và lưu explicit one-hot decision
+  score để physical winner không mơ hồ. Mọi arm dùng nguyên accepted baseline
+  bag probability; dense map không bị threshold thành pseudo-mask.
+- Model output đổi từ dataclass sang tensor-only NamedTuple để PyTorch
+  `DataParallel` gather an toàn; phép toán khoa học không đổi. Model SHA mới
+  `ecc90caa9076a4445cecf2330b6f18231117043daa3295e816ca9bc60237b918`,
+  supersede `c713669...e32c`. Runner cũng tái tạo chính xác empty-candidate
+  central-box fallback của gallery sau one-time payload hash audit, tránh lỗi
+  lặp do đọc raw empty `sam_masks`.
+- Synthetic runner test SHA-256
+  `cb73a4f4c6d6fcf1f7bbd756c09d2e81386c7d4dcdb7dc638406877c5e44cb45`;
+  combined focused suite `23/23`, Ruff, Python 3.9 `py_compile` và diff-check
+  PASS. Đây vẫn là static readiness: chưa load real input vào model, chưa train,
+  chưa prediction/Dice/validation GT/consumer/test. Independent auditor,
+  protocol và wrapper/preflight vẫn bắt buộc trước launch.

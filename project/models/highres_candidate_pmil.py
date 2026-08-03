@@ -8,6 +8,7 @@ labels only.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 import torch
@@ -140,8 +141,9 @@ class CandidateSetTransformer(nn.Module):
         return classification, detection
 
 
-@dataclass(frozen=True)
-class HighResProposalMILOutput:
+class HighResProposalMILOutput(NamedTuple):
+    """Tensor-only output compatible with deterministic ``DataParallel`` gather."""
+
     classification_logits: torch.Tensor
     detection_logits: torch.Tensor
     dense_logits: torch.Tensor
