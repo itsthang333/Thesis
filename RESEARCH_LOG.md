@@ -15147,4 +15147,28 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   `kaggle kernels status` trả `KernelWorkerStatus.RUNNING`. Không check thêm,
   không tải partial output/log và không tạo monitor; S9 tiếp tục **ĐANG LÀM**,
   chưa có scientific result hay thay đổi các khóa GT/consumer/test.
+- **S9 postfreeze evaluator/decision static source (trong khi kernel chạy):**
+  không poll lại kernel và không mở real input/GT. Dynamic readiness freezer
+  `project/freeze_skelex_candidate_marginal_s9_postfreeze_readiness.py`
+  canonical LF SHA-256
+  `fc239ab2cb6155bb8f9584f203bb2ce963320bf7d799c277fb327776ff963f7b`
+  chỉ cho phép evaluation sau independent status
+  `PREDICTION_PAIR_PHYSICALLY_VERIFIED_GT_BLIND_REPRODUCTION_PASS`, đúng `3,352`
+  feature hashes, `371` likelihood payloads, `742` maps, `742` score payloads và
+  exact dynamic pair/arm/manifest hashes.
+- S9-specific matched decision
+  `project/decide_skelex_candidate_marginal_s9.py` canonical LF SHA-256
+  `3c31d221985b33d2fa28caf15ba53a9e53f6b33650ab338bfae1e91cf091c9ac`
+  không import dataset/PIL/annotation và chỉ đọc hai hash-frozen per-image tables;
+  khóa complete-group bootstrap `10,000`, seed family `20261205`, control exact
+  baseline identity, mechanism gate overall+small tăng/medium+large không giảm/
+  miss không tăng, bốn operational goals và overall CI lower `>0`. Consumer chỉ
+  được authorize khi toàn bộ operational+safety gate pass; post-hoc rescue/sweep
+  luôn false.
+- Readiness/decision test SHA-256
+  `476f551c0702fea27b0d4c86d5e60e0b2b5ceb15697f544751da601e9e6d4e36 /`
+  `8a9ac045e60e35955c1a9b5983ca29ca054382360a65842dc1e733b6b49b5119`;
+  Python 3.9 Ruff/`py_compile` và focused `7/7` PASS, gồm tamper/safety/GT-import
+  guards và complete operational synthetic fixture. Đây mới là static source;
+  evaluation addendum sẽ chỉ freeze các source hash này sau commit, trước GT.
 
