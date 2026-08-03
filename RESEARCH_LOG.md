@@ -15111,4 +15111,26 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   Combined focused suite hiện `35/35` PASS cùng Ruff/`py_compile`/diff check.
   Đây vẫn là static/no-input audit; chỉ exact package bind ở execution checkout
   kế tiếp và final audit artifact mới có thể đặt `authorized_launch=true`.
+- **Final S9 kernel-v1 prelaunch freeze (2026-08-03):** sau fresh fetch hai
+  branch, full checklist/read và collision check, central HEAD/origin sạch cùng
+  trỏ `20357a5facc43f3dfa553c2d7a4ff4ed4eb4966b`; collaborator vẫn
+  `abcdfd7be65777f0b3fe96c0d4a12b732a076e6c`, không có claim cạnh tranh.
+  One-time binder khóa kernel version `1` vào exact execution checkout trên,
+  bound wrapper SHA-256
+  `ca74752fbec4d4713b561c90355bca270ae1476ecc24072e61419e73c82893d8`,
+  launch-binding SHA-256
+  `62aa04d3258b4dbddb78d7499ac116a2851d60bff7ebb534407b4c4dfdc79477`
+  và metadata SHA-256
+  `ef6c3cf050bd596ba3a361ffd503fe8a19248b2e25aa3073764e30a81b7b80a4`.
+- Final audit
+  `artifacts/research_protocols/skelex_candidate_marginal_s9_v1_kernel_v1_final_prelaunch_audit.json`
+  SHA-256
+  `739d2741feb73ac33c111ca695e603c81804f8e25217e22e6192e88006d3d3c4`
+  đạt `authorized_launch=true`: exact dataset sources raw/train-gallery/
+  validation-baseline, selector-cache kernel source, private+internet+T4x2,
+  source/protocol closure, output contract `742` maps + `742` scores + `371`
+  likelihood payloads và mọi GT/consumer/test/collaborator-output lock đều pass.
+  Exact bound package `py_compile`, JSON parse, inverse binder, focused `35/35`
+  và diff check pass. Chưa push Kaggle/chưa mở input/model/prediction; launch chỉ
+  được phép từ ba byte package đã audit này.
 
