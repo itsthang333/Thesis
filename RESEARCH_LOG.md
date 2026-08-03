@@ -15873,3 +15873,25 @@ Decision rule: continue to binary classifier and CAM/SAM ablations only after th
   PASS. Đây vẫn là static readiness: chưa load real input vào model, chưa train,
   chưa prediction/Dice/validation GT/consumer/test. Independent auditor,
   protocol và wrapper/preflight vẫn bắt buộc trước launch.
+
+### S10 independent auditor static readiness (2026-08-03)
+
+- Đã thêm auditor GT-blind độc lập
+  `project/audit_highres_candidate_pmil_s10_output.py`, canonical-LF SHA-256
+  `489546d45a50bbfd0e2c90b6f29415da87ca5e4624245f576eb21da2666c7f0c`.
+  Auditor không chạy lại training/không đọc GT; nó load final checkpoint, tái
+  chạy toàn bộ `371` validation images original+flip trên T4x2, dựng input
+  square/support bằng implementation tham chiếu riêng, so identity/dense/
+  capture/purity với evidence trong tolerance đóng băng, rồi độc lập tái tạo
+  baseline/upstream ranks, capacity fusion và Pareto decision.
+- Sau đó auditor kiểm tra cả `1,113` candidate-score payload và `1,113`
+  physical prediction maps của ba arm, exact immutable candidate index,
+  accepted bag probability, triple freeze/protocol/source/input/history/
+  checkpoint hashes và mọi safety flag. Tie-aware percentile rank dùng phép
+  float32 độc lập byte-exact với producer; synthetic randomized regression đã
+  khóa lỗi tie/numerical từng gặp ở S8/S9.
+- Test auditor canonical-LF SHA-256
+  `f17e48454ecfe0d296224264e77d0acd36995ddd78a217d99f5d29eff27d44d8`;
+  combined S10 focused suite `28/28`, Ruff, Python 3.9 `py_compile` và
+  diff-check PASS. Chưa có real-data execution/prediction/Dice/GT/consumer/test;
+  đây chỉ là static auditor readiness, protocol/wrapper/preflight vẫn chưa xong.
