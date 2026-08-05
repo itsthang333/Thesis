@@ -67,6 +67,33 @@ class FinalSelectorTests(unittest.TestCase):
                 document = verify_frozen_test_config(path, split="test")
         self.assertEqual(document["source"]["git_commit"], commit)
 
+    def test_frozen_artifact_can_relocate_by_unique_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            relocated = root / "mounted" / "sam.pth"
+            relocated.parent.mkdir()
+            relocated.write_bytes(b"immutable-sam")
+            payload = {
+                "schema_version": 4,
+                "status": "final",
+                "source": {},
+                "sam_checkpoint": {
+                    "path": "/old/kaggle/input/models/sam.pth",
+                    "sha256": hashlib.sha256(relocated.read_bytes()).hexdigest(),
+                },
+            }
+            payload["freeze_sha256"] = hashlib.sha256(
+                json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            ).hexdigest()
+            lock = root / "lock.json"
+            lock.write_text(json.dumps(payload), encoding="utf-8")
+            with mock.patch.dict(
+                os.environ,
+                {"BTXRD_FROZEN_ARTIFACT_ROOTS": str(root / "mounted")},
+            ):
+                document = verify_frozen_test_config(lock, split="test")
+            self.assertEqual(document["sam_checkpoint"]["sha256"], payload["sam_checkpoint"]["sha256"])
+
 
 if __name__ == "__main__":
     unittest.main()

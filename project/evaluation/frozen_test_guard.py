@@ -25,6 +25,35 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _resolve_frozen_artifact(item: dict[str, object]) -> Path:
+    """Resolve a frozen artifact by path, or uniquely by hash in declared roots."""
+    recorded = Path(str(item["path"]))
+    expected = str(item.get("sha256", ""))
+    if recorded.is_file():
+        return recorded
+    roots = [
+        Path(value).resolve()
+        for value in os.environ.get("BTXRD_FROZEN_ARTIFACT_ROOTS", "").split(os.pathsep)
+        if value.strip()
+    ]
+    matches: list[Path] = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        matches.extend(
+            candidate.resolve()
+            for candidate in root.rglob(recorded.name)
+            if candidate.is_file() and _sha256_file(candidate) == expected
+        )
+    unique = sorted(set(matches))
+    if len(unique) != 1:
+        raise FileNotFoundError(
+            f"Frozen artifact is missing or not uniquely relocatable: {recorded}; "
+            f"hash_matches={unique}"
+        )
+    return unique[0]
+
+
 def verify_frozen_test_config(
     frozen_config: str | Path | None,
     *,
@@ -86,9 +115,7 @@ def verify_frozen_test_config(
             continue
         artifacts = artifact if isinstance(artifact, list) else [artifact]
         for item in artifacts:
-            artifact_path = Path(str(item["path"]))
-            if not artifact_path.is_file():
-                raise FileNotFoundError(f"Frozen artifact is missing: {artifact_path}")
+            artifact_path = _resolve_frozen_artifact(item)
             if _sha256_file(artifact_path) != item.get("sha256"):
                 raise ValueError(f"Frozen artifact hash mismatch: {key}")
 
