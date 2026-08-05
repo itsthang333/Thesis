@@ -304,8 +304,8 @@
                          },
                          {
                              "path":  "project/score_final_rich_gallery.py",
-                             "bytes":  11692,
-                             "sha256":  "7dd38f923ec80f625c635cd6973f5cf9dd50e597238d692e3a810bb7da4dd7c0"
+                             "bytes":  11746,
+                             "sha256":  "c88983dfee6fdb6be48aa3aea1761d4314b60d4fbc39c9c5bee2db1c70423734"
                          },
                          {
                              "path":  "project/tools/build_btxrd_split_manifest.py",

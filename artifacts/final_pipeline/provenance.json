@@ -19,7 +19,7 @@
   "pseudo_manifest_sha256": "450c0f9cf7f7114da98df9002a54f3620ae952026bcf4113bbd47797f66e1a7c",
   "research_archive_commit": "aca685f",
   "result_summary_sha256": "253f37f7e19854dc47c322de4b31b1313b11184dc6df835d747e434d682d4cee",
-  "source_manifest_sha256": "cc04ace78471cdc90e1b43e7d6f5db0b8fdb0c9110bc6ec98cb2e17125da5522",
+  "source_manifest_sha256": "1eb7994c7ee165279e79749e6c9091c1e569efe7d8314566574c27b72c12cd95",
   "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
   "test_evaluated": false,
   "test_status": "pending_one_locked_a100_run"

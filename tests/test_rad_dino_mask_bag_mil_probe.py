@@ -82,6 +82,8 @@ def test_evaluator_verifies_every_prediction_input_before_gt_loader() -> None:
     assert scorer.index("verify_frozen_test_config(") < scorer.index("_audit_candidate_input(")
     assert "candidate_manifest_sha256" in scorer
     assert "pseudo_manifest_sha256" in scorer
+    assert 'record["candidate_count"]' not in scorer
+    assert 'candidate_row["candidate_count"]' in scorer
     annotation_boundary = evaluator.index("# Annotation boundary")
     annotation_decode = evaluator.index("_decode_labelme_polygon_mask(", annotation_boundary)
     assert evaluator.index("verify_frozen_test_config(") < annotation_boundary

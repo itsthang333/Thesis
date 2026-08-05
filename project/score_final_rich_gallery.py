@@ -184,7 +184,11 @@ def main() -> None:
         logits_np = logits[0].cpu().numpy().astype(np.float32)
         image_id = str(record["image_id"])
         candidate_row = candidates[Path(image_id).stem]
-        extras = _candidate_metadata(args.candidate_root, candidate_row, int(record["candidate_count"]))
+        extras = _candidate_metadata(
+            args.candidate_root,
+            candidate_row,
+            int(candidate_row["candidate_count"]),
+        )
         relative = Path(f"{index:04d}_{Path(image_id).stem}.npz")
         path = evidence_root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
