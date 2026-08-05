@@ -65,6 +65,17 @@ from pseudo.morphology import morphological_refinement
 from pseudo.visualization import save_mask, save_overlay, tensor_to_pil
 
 
+def external_saliency_test_authorized(
+    split: str,
+    frozen_test_document: dict[str, object] | None,
+) -> bool:
+    """Allow final-test proposal generation only under the WSSS-only lock."""
+    return split != "test" or (
+        frozen_test_document is not None
+        and frozen_test_document.get("scope") == "wsss_prediction_only"
+    )
+
+
 def parse_device_spec(value: str) -> str:
     """Accept generic or explicitly indexed CUDA devices."""
     normalized = value.strip().lower()
@@ -1128,7 +1139,7 @@ def main() -> None:
             "predictions were frozen. Generate with --save-candidate-diagnostics, freeze "
             "the final choices, and evaluate only against the locked manifests."
         )
-    verify_frozen_test_config(
+    frozen_test_document = verify_frozen_test_config(
         args.frozen_config,
         split=args.split,
         split_manifest=args.split_manifest,
@@ -1287,7 +1298,7 @@ def main() -> None:
         else None
     )
     if external_saliency_contract is not None:
-        if args.split == "test":
+        if not external_saliency_test_authorized(args.split, frozen_test_document):
             raise ValueError("External-saliency test generation remains locked")
         if target_columns != ["tumor"] or args.cam_target_class != "ground_truth":
             raise ValueError(
