@@ -20,8 +20,22 @@ Both rows are validation results. The fully-supervised row is a comparison
 upper bound and must not be presented as WSSS performance.
 
 These are development results on 184 tumor validation images. There are 49
-complete misses. The final test result is not yet available and must not be
-filled from exploratory outputs.
+complete misses.
+
+## Locked final test result
+
+The independently frozen WSSS and fully-supervised predictions were evaluated
+together in one annotation-opening pass. The test cohort contains 373 images,
+including 187 tumor images used for the tumor-only metrics below.
+
+| Method | Overall Dice | Overall IoU | `<1%` Dice, n=111 | `1-<5%` Dice, n=51 | `>=5%` Dice, n=25 |
+|---|---:|---:|---:|---:|---:|
+| **WSSS Rich Gallery G1 + fixed rank fusion** | **0.260881** | **0.190837** | 0.153196 | 0.432402 | 0.389095 |
+| Fully supervised ResNet18-U-Net, threshold 0.20 | 0.524423 | 0.421245 | 0.428977 | 0.616287 | 0.760801 |
+
+The WSSS-to-fully-supervised Dice gap is `-0.263542`. WSSS retains 49.7%
+of the fully-supervised test Dice. Its validation-to-test Dice change is
+`-0.027849` (0.288729 to 0.260881).
 
 ## Why all three candidate sources remain
 
@@ -49,6 +63,7 @@ correction was therefore not included.
 
 ## Reporting status
 
-The 0.288729 result is the final validation-selected configuration. A separate
-test row may be added only after the locked one-time evaluation described in
-`TEST_PROTOCOL.md`. Validation and test numbers must remain visibly separate.
+The 0.288729 result is the validation-selected configuration; 0.260881 is its
+locked final test Dice. They must remain visibly separate. WSSS choices and
+fully-supervised masks were frozen before spatial test annotations were opened.
+The final evaluator opened exactly 187 tumor polygons in one joint pass.

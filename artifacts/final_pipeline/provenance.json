@@ -16,11 +16,23 @@
     "role": "validation comparison only"
   },
   "final_run_config_sha256": "61ac67e256dd7af66c4c956c6012d262e65a746348ebeaf2b388c85a61f85365",
+  "final_test": {
+    "evaluation_commit": "10e0d881ab885623a70028961ac0fe08752e6679",
+    "evaluation_summary_sha256": "52dbb5c842568b0f8b4ab272d6e9f58a4df37ed1ef930fa0b0b6bd0ddc7066c5",
+    "fully_prediction_freeze_sha256": "ab8b63a879539dda6fb028c1583e20a7a486b880e9c18bd3814a2cff5e9b9ad2",
+    "joint_annotation_pass": true,
+    "per_image_sha256": "c2ff534b6d4194284886af9bff7cb11fafff8231f5fc97568c18035cfe6087f4",
+    "run_manifest_sha256": "f9017416f1119f2da0a44f5d0336ddf17958721b666921da3e662f00dd22cf9b",
+    "spatial_annotations_opened": 187,
+    "wsss_prediction_commit": "c9f9d217c13ecd681beb36e5cefa0235ed264223",
+    "wsss_prediction_freeze_sha256": "5455c2997f732404da5f7f37061510a92e8d43a4fdbea7a736782f5d6d08f81e",
+    "wsss_protocol_sha256": "ce288cf0784c4a0df674ed8309fd72fd8f68c95e80f69fe4639b5f12db34ddf2"
+  },
   "pseudo_manifest_sha256": "450c0f9cf7f7114da98df9002a54f3620ae952026bcf4113bbd47797f66e1a7c",
   "research_archive_commit": "aca685f",
   "result_summary_sha256": "253f37f7e19854dc47c322de4b31b1313b11184dc6df835d747e434d682d4cee",
   "source_manifest_sha256": "1eb7994c7ee165279e79749e6c9091c1e569efe7d8314566574c27b72c12cd95",
   "split_manifest_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
-  "test_evaluated": false,
-  "test_status": "pending_one_locked_a100_run"
+  "test_evaluated": true,
+  "test_status": "complete_one_locked_joint_evaluation"
 }

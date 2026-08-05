@@ -14,6 +14,57 @@
     "threshold": 0.2
   },
   "method": "G1 + fixed equal percentile-rank fusion",
+  "final_test": {
+    "evaluation_summary_sha256": "52dbb5c842568b0f8b4ab272d6e9f58a4df37ed1ef930fa0b0b6bd0ddc7066c5",
+    "fully_supervised": {
+      "checkpoint_sha256": "becd752d0df2b0adfe0ea0c099117435f5b82da8fe2726eebecfb7af6322f33f",
+      "overall": {
+        "complete_misses": 37,
+        "dice": 0.5244229099860912,
+        "iou": 0.42124529689968426,
+        "n": 187
+      },
+      "subgroup_dice": {
+        "1_to_lt_5_percent": 0.6162870940137524,
+        "ge_5_percent": 0.7608012199319493,
+        "lt_1_percent": 0.42897668355314356
+      }
+    },
+    "per_image_sha256": "c2ff534b6d4194284886af9bff7cb11fafff8231f5fc97568c18035cfe6087f4",
+    "run_manifest_sha256": "f9017416f1119f2da0a44f5d0336ddf17958721b666921da3e662f00dd22cf9b",
+    "spatial_annotations_opened_once": 187,
+    "test_images": 373,
+    "wsss": {
+      "overall": {
+        "complete_misses": 48,
+        "dice": 0.2608805003491107,
+        "iou": 0.19083651470051596,
+        "n": 187,
+        "precision": 0.33106676679569436,
+        "recall": 0.4819366427878789
+      },
+      "subgroups": {
+        "1_to_lt_5_percent": {
+          "complete_misses": 10,
+          "dice": 0.43240217737707287,
+          "iou": 0.3207966113916995,
+          "n": 51
+        },
+        "ge_5_percent": {
+          "complete_misses": 0,
+          "dice": 0.38909475001449323,
+          "iou": 0.2792018629315984,
+          "n": 25
+        },
+        "lt_1_percent": {
+          "complete_misses": 38,
+          "dice": 0.1531961600782942,
+          "iou": 0.11122301346603473,
+          "n": 111
+        }
+      }
+    }
+  },
   "overall": {
     "dice": 0.28872948670665205,
     "iou": 0.2168391812852014,
@@ -41,8 +92,8 @@
       "n": 94
     }
   },
-  "test_evaluated": false,
-  "test_status": "pending_one_locked_a100_run",
+  "test_evaluated": true,
+  "test_status": "complete_one_locked_joint_evaluation",
   "validation_images": 371,
   "validation_tumor_images": 184
 }
