@@ -53,6 +53,11 @@ python project/freeze_final_test_protocol.py \
   --output /results/final_test_protocol.json
 ```
 
+When the committed source is exported to a private Kaggle dataset without its
+`.git` directory, pass `--source-commit <40-char-sha>` while creating the lock
+and export the same value as `BTXRD_SOURCE_COMMIT` for every test-aware stage.
+The source bundle manifest remains responsible for byte-level source checks.
+
 Do not edit the repository, lock, or bound artifacts after this command.
 
 ## Step 2 - annotation-free test prediction

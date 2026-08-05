@@ -48,14 +48,28 @@ def main() -> None:
     parser.add_argument("--validation-result", type=Path, required=True)
     parser.add_argument("--artifact", type=parse_named, action="append", default=[])
     parser.add_argument("--test-run-id", required=True)
+    parser.add_argument(
+        "--source-commit",
+        help=(
+            "Explicit immutable source commit for an exported source snapshot that "
+            "does not contain .git metadata (for example a private Kaggle dataset)."
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(args.output)
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-    dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip())
-    if dirty:
-        raise ValueError("final test protocol can only be frozen from a clean committed tree")
+    if args.source_commit is None:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        dirty = bool(
+            subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()
+        )
+        if dirty:
+            raise ValueError("final test protocol can only be frozen from a clean committed tree")
+    else:
+        commit = args.source_commit.strip().lower()
+        if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
+            raise ValueError("--source-commit must be a lowercase 40-character Git SHA")
     named: dict[str, object] = {}
     for name, path in args.artifact:
         if name in named:

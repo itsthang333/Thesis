@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import sys
+import os
+import json
+import hashlib
+import subprocess
+import tempfile
 from pathlib import Path
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -40,6 +46,26 @@ class FinalSelectorTests(unittest.TestCase):
         self.assertIsNone(verify_frozen_test_config(None, split="val"))
         with self.assertRaisesRegex(ValueError, "frozen-config is required"):
             verify_frozen_test_config(None, split="test")
+
+    def test_exported_snapshot_commit_environment_is_accepted(self) -> None:
+        commit = "a" * 40
+        payload = {
+            "schema_version": 4,
+            "status": "final",
+            "source": {"git_commit": commit, "git_dirty": False},
+        }
+        payload["freeze_sha256"] = hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "lock.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with mock.patch(
+                "evaluation.frozen_test_guard.subprocess.check_output",
+                side_effect=subprocess.CalledProcessError(128, "git"),
+            ), mock.patch.dict(os.environ, {"BTXRD_SOURCE_COMMIT": commit}):
+                document = verify_frozen_test_config(path, split="test")
+        self.assertEqual(document["source"]["git_commit"], commit)
 
 
 if __name__ == "__main__":

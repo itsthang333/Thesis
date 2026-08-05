@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -54,9 +55,19 @@ def verify_frozen_test_config(
     source = document.get("source") or {}
     expected_commit = str(source.get("git_commit", ""))
     if expected_commit:
-        current_commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True
-        ).strip()
+        try:
+            current_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                text=True,
+                stderr=subprocess.DEVNULL,
+            ).strip()
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            current_commit = os.environ.get("BTXRD_SOURCE_COMMIT", "").strip().lower()
+            if not current_commit:
+                raise ValueError(
+                    "Exported source snapshots must set BTXRD_SOURCE_COMMIT before test access"
+                )
         if current_commit != expected_commit:
             raise ValueError(
                 f"Frozen commit {expected_commit} does not match current commit {current_commit}"
