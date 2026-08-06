@@ -246,6 +246,7 @@ def main() -> None:
                 if tumor
                 else (0.0, -1)
             )
+            metric_cache: dict[tuple[int, bool], dict[str, float | int | bool]] = {}
             for arm in arms:
                 choice = by_image[image_id][arm]
                 selected_index = int(choice["selected_candidate_index"])
@@ -266,12 +267,16 @@ def main() -> None:
                     selected_320 = masks[selected_index]
                 else:
                     selected_320 = np.zeros((320, 320), dtype=bool)
-                primary_prediction = _resize(selected_320, primary_shape)
-                metrics = segmentation_metrics(
-                    primary_prediction,
-                    primary_target,
-                    compute_boundary=arm == BASELINE_ARM,
-                )
+                compute_boundary = arm == BASELINE_ARM
+                metric_key = (selected_index if tumor else -1, compute_boundary)
+                if metric_key not in metric_cache:
+                    primary_prediction = _resize(selected_320, primary_shape)
+                    metric_cache[metric_key] = segmentation_metrics(
+                        primary_prediction,
+                        primary_target,
+                        compute_boundary=compute_boundary,
+                    )
+                metrics = metric_cache[metric_key]
                 oracle_dice, oracle_index = (
                     _oracle_from_dice(candidate_dice_320, eligible)
                     if tumor
