@@ -134,6 +134,17 @@ def parse_args() -> argparse.Namespace:
                         help="Stop training if val_f1 does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
     parser.add_argument(
+        "--checkpoint-selection-metric",
+        choices=("task_f1", "binary_f1"),
+        default="task_f1",
+        help=(
+            "Validation-only checkpoint endpoint. task_f1 preserves the historical "
+            "behaviour (macro F1 for tumor_type, binary F1 for tumor). binary_f1 "
+            "collapses the ten-class confusion matrix into normal versus any tumor, "
+            "which is the matched endpoint for the G4 binary-vs-ten-class ablation."
+        ),
+    )
+    parser.add_argument(
         "--sam-segment-map-root",
         type=Path,
         default=None,
@@ -323,6 +334,24 @@ def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
             sum(score * support for score, support in zip(f1s, supports)) / max(1, sum(supports))
         ),
     }
+
+
+def binary_metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
+    """Collapse class 0=normal and classes 1..N=tumor into a binary task.
+
+    The predicted class is the multiclass argmax used to construct ``matrix``.
+    This makes the checkpoint endpoint invariant to the number of tumor
+    subclasses while preserving the actual decision rule of the classifier.
+    """
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or matrix.shape[0] < 2:
+        raise ValueError("expected a square multiclass confusion matrix with >=2 classes")
+    counts = {
+        "tn": int(matrix[0, 0].item()),
+        "fp": int(matrix[0, 1:].sum().item()),
+        "fn": int(matrix[1:, 0].sum().item()),
+        "tp": int(matrix[1:, 1:].sum().item()),
+    }
+    return metrics_from_confusion(counts)
 
 
 def run_epoch(
@@ -558,6 +587,7 @@ def save_checkpoint(
     split_manifest: Path | None = None,
     image_size: int | None = None,
     seed: int | None = None,
+    checkpoint_selection_metric: str = "task_f1",
     sam_segment_contrastive: dict[str, object] | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -576,6 +606,7 @@ def save_checkpoint(
             "pipeline_profile": pipeline_profile,
             "image_size": image_size,
             "seed": seed,
+            "checkpoint_selection_metric": checkpoint_selection_metric,
             "split_manifest": str(split_manifest.resolve()) if split_manifest else None,
             "split_manifest_sha256": (
                 hashlib.sha256(split_manifest.resolve().read_bytes()).hexdigest()
@@ -646,15 +677,19 @@ def classifier_epoch_budget_audit(
     *,
     stopped_early: bool = False,
     early_stop_patience: int = 0,
+    metric_key: str = "val_f1",
+    metric_name: str = "audited-split validation F1",
 ) -> dict[str, object]:
     """Diagnose whether the audited validation curve supports the epoch budget."""
     if not records:
         raise ValueError("Cannot audit an empty classifier training history")
-    best = max(records, key=lambda row: float(row["val_f1"]))
+    if metric_key not in records[0]:
+        raise ValueError(f"Classifier history is missing metric {metric_key!r}")
+    best = max(records, key=lambda row: float(row[metric_key]))
     tail = records[-min(3, len(records)):]
     if len(tail) >= 2:
         x = np.asarray([float(row["epoch"]) for row in tail], dtype=np.float64)
-        y = np.asarray([float(row["val_f1"]) for row in tail], dtype=np.float64)
+        y = np.asarray([float(row[metric_key]) for row in tail], dtype=np.float64)
         tail_slope = float(np.polyfit(x, y, 1)[0])
     else:
         tail_slope = None
@@ -683,12 +718,14 @@ def classifier_epoch_budget_audit(
         assessment = "inconclusive"
         assessment_basis = "neither a valid early stop nor a non-positive trailing trend was observed"
     return {
-        "metric": "audited-split validation F1",
+        "metric": metric_name,
         "requested_epochs": int(requested_epochs),
         "completed_epochs": last_epoch,
         "best_epoch": best_epoch,
-        "best_val_f1": float(best["val_f1"]),
-        "final_val_f1": float(records[-1]["val_f1"]),
+        "best_metric_value": float(best[metric_key]),
+        "final_metric_value": float(records[-1][metric_key]),
+        "best_val_f1": float(best[metric_key]),
+        "final_val_f1": float(records[-1][metric_key]),
         "epochs_since_best": epochs_since_best,
         "stopped_early": bool(stopped_early),
         "early_stop_patience": int(early_stop_patience),
@@ -715,6 +752,7 @@ def main() -> None:
     print(f"  Image size: {args.image_size}")
     print(f"  Batch size: {args.batch_size}")
     print(f"  Learning rate: {args.lr}")
+    print(f"  Checkpoint selection metric: {args.checkpoint_selection_metric}")
     print(f"  Puzzle alpha: {args.puzzle_alpha_max}")
     print(f"  Attention alpha: {args.attention_alpha_max}")
     seed_everything(args.seed)
@@ -892,6 +930,7 @@ def main() -> None:
                 "attention_alpha_max": args.attention_alpha_max,
                 "preprocessing_mode": args.preprocessing_mode,
                 "normalization": normalization,
+                "checkpoint_selection_metric": args.checkpoint_selection_metric,
                 "sam_segment_contrastive": sam_segment_config,
             },
             indent=2,
@@ -973,9 +1012,21 @@ def main() -> None:
                 train=False,
             )
 
+        if is_multiclass:
+            binary_val_metrics = binary_metrics_from_multiclass_confusion(val_confusion)
+        else:
+            binary_val_metrics = val_metrics
+        selection_value = (
+            float(binary_val_metrics["f1"])
+            if args.checkpoint_selection_metric == "binary_f1"
+            else float(val_metrics["f1"])
+        )
+
         epoch_budget_records.append({
             "epoch": epoch,
             "val_f1": float(val_metrics["f1"]),
+            "val_binary_f1": float(binary_val_metrics["f1"]),
+            "selection_value": selection_value,
             "val_weighted_f1": float(val_metrics.get("weighted_f1", val_metrics["f1"])),
             "val_loss": float(val_loss),
         })
@@ -1051,6 +1102,12 @@ def main() -> None:
             print("   " + " ".join(f"{name[:6]:>7}" for name in TUMOR_TYPE_CLASS_NAMES))
             for i, name in enumerate(TUMOR_TYPE_CLASS_NAMES):
                 print(f"  {name[:10]:<10}" + " ".join(f"{int(val_confusion[i, j]):>7}" for j in range(num_classes)))
+            print(
+                "  collapsed binary (normal vs any tumor): "
+                f"precision={binary_val_metrics['precision']:.4f} "
+                f"recall={binary_val_metrics['recall']:.4f} "
+                f"f1={binary_val_metrics['f1']:.4f}"
+            )
         else:
             positive_label = target_columns[0]
             print(
@@ -1059,8 +1116,8 @@ def main() -> None:
                 f"| precision={val_metrics['precision']:.4f} recall={val_metrics['recall']:.4f}"
             )
 
-        if val_metrics["f1"] > best_val_f1:
-            best_val_f1 = val_metrics["f1"]
+        if selection_value > best_val_f1:
+            best_val_f1 = selection_value
             epochs_without_improvement = 0
             save_checkpoint(
                 args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_f1,
@@ -1071,9 +1128,13 @@ def main() -> None:
                 split_manifest=args.split_manifest,
                 image_size=args.image_size,
                 seed=args.seed,
+                checkpoint_selection_metric=args.checkpoint_selection_metric,
                 sam_segment_contrastive=sam_segment_config,
             )
-            print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
+            print(
+                "  --> Saved new best checkpoint "
+                f"({args.checkpoint_selection_metric}={best_val_f1:.4f})"
+            )
         else:
             epochs_without_improvement += 1
 
@@ -1086,6 +1147,7 @@ def main() -> None:
             split_manifest=args.split_manifest,
             image_size=args.image_size,
             seed=args.seed,
+            checkpoint_selection_metric=args.checkpoint_selection_metric,
             sam_segment_contrastive=sam_segment_config,
         )
 
@@ -1097,7 +1159,8 @@ def main() -> None:
             stopped_early = True
             print(
                 f"Early stopping: val_f1 did not improve for {epochs_without_improvement} epochs "
-                f"(patience={args.early_stop_patience}). Best val_f1={best_val_f1:.4f}."
+                f"(patience={args.early_stop_patience}). "
+                f"Best {args.checkpoint_selection_metric}={best_val_f1:.4f}."
             )
             break
 
@@ -1106,6 +1169,8 @@ def main() -> None:
         args.epochs,
         stopped_early=stopped_early,
         early_stop_patience=args.early_stop_patience,
+        metric_key="selection_value",
+        metric_name=f"audited-split validation {args.checkpoint_selection_metric}",
     )
     budget_audit.update({
         "split": args.val_split,
