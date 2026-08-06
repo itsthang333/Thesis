@@ -16,13 +16,16 @@ not presented as test performance.
 | Lesion area `1-<5%` | 72 | 0.435229 | 0.323558 | 13 |
 | Lesion area `>=5%` | 18 | 0.386874 | 0.303117 | 1 |
 
-The retained fully-supervised ResNet18-U-Net comparison reached validation
-Dice 0.492765 at its validation-locked threshold 0.20. It is an upper-bound
-comparison, never an input to WSSS.
+The historical fully-supervised ResNet18-U-Net comparison reached validation
+Dice 0.492765. The model retrained on the final manifest and subsequently used
+for the locked test comparison reached validation Dice 0.490149 at the same
+threshold 0.20 (0.489581 after native-grid inversion). The latter is the matched
+final-checkpoint comparison. Fully supervised output is never an input to WSSS.
 
-The final test result is intentionally pending. It will be measured exactly
-once after the source commit, asset hashes, method, and validation result have
-been frozen in `final_test_protocol.json`.
+The final test was evaluated exactly once after source, assets and method were
+frozen. WSSS reached Dice 0.260881 and the independently frozen fully-supervised
+comparison reached 0.524423 on the 187 tumor test images. No G4 ablation uses
+test images or test polygons.
 
 ## End-to-end method
 
