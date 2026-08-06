@@ -95,3 +95,35 @@ def test_test_generation_requires_and_propagates_frozen_config() -> None:
         frozen_config=Path("/lock.json"),
     )
     assert values[values.index("--frozen-config") + 1] == str(Path("/lock.json"))
+
+
+def test_single_prompt_ablation_is_explicit_and_validation_only() -> None:
+    values = build_generation_command(
+        mode="addition",
+        source_root=Path("/source"),
+        data_root=Path("/data"),
+        split_manifest=Path("/split.csv"),
+        split="val",
+        classifier=Path("/classifier.pt"),
+        sam=Path("/sam.pth"),
+        output_dir=Path("/out"),
+        prompt_mode="point",
+        prompt_ensemble=False,
+    )
+    assert "--disable-sam-prompt-ensemble" in values
+    assert "--allow-validation-prompt-ablation" in values
+    assert values[values.index("--sam-prompt-mode") + 1] == "point"
+
+    with pytest.raises(ValueError, match="validation-only"):
+        build_generation_command(
+            mode="addition",
+            source_root=Path("/source"),
+            data_root=Path("/data"),
+            split_manifest=Path("/split.csv"),
+            split="train",
+            classifier=Path("/classifier.pt"),
+            sam=Path("/sam.pth"),
+            output_dir=Path("/out"),
+            prompt_mode="point",
+            prompt_ensemble=False,
+        )

@@ -55,6 +55,9 @@ def common_generation_args(
     classifier: Path,
     sam: Path,
     output_dir: Path,
+    attribution_method: str = "layercam",
+    prompt_mode: str = "box_point",
+    prompt_ensemble: bool = True,
     classifier_split_manifest: Path | None = None,
     frozen_config: Path | None = None,
 ) -> list[str]:
@@ -79,6 +82,8 @@ def common_generation_args(
         "cuda",
         "--target-columns",
         "tumor",
+        "--attribution-method",
+        attribution_method,
         "--sam-image-size",
         "512",
         "--batch-size",
@@ -109,8 +114,7 @@ def common_generation_args(
         "--morphology-fusion-mode",
         "components",
         "--sam-prompt-mode",
-        "box_point",
-        "--sam-prompt-ensemble",
+        prompt_mode,
         "--max-components",
         "3",
         "--all-cam-components",
@@ -147,6 +151,15 @@ def common_generation_args(
         "all",
         "--force-normal-candidate-gallery",
     ]
+    if prompt_ensemble:
+        command.append("--sam-prompt-ensemble")
+    else:
+        if split != "val":
+            raise ValueError("single-mode prompt ablation is validation-only")
+        command.extend([
+            "--disable-sam-prompt-ensemble",
+            "--allow-validation-prompt-ablation",
+        ])
     if classifier_split_manifest is not None:
         command.extend(
             ["--classifier-split-manifest", str(classifier_split_manifest)]
@@ -175,6 +188,9 @@ def build_generation_command(
     external_source_commit: str | None = None,
     external_weight_sha256: str | None = None,
     frozen_config: Path | None = None,
+    attribution_method: str = "layercam",
+    prompt_mode: str = "box_point",
+    prompt_ensemble: bool = True,
 ) -> list[str]:
     command = common_generation_args(
         source_root=source_root,
@@ -186,6 +202,9 @@ def build_generation_command(
         sam=sam,
         output_dir=output_dir,
         frozen_config=frozen_config,
+        attribution_method=attribution_method,
+        prompt_mode=prompt_mode,
+        prompt_ensemble=prompt_ensemble,
     )
     if mode == "anchor":
         if not all(
@@ -295,6 +314,21 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated subset of train,val,test. Test requires --frozen-config.",
     )
     parser.add_argument("--frozen-config", type=Path)
+    parser.add_argument(
+        "--attribution-method",
+        choices=("layercam", "cam", "gradcam", "gradcam_plus_plus"),
+        default="layercam",
+    )
+    parser.add_argument(
+        "--prompt-mode",
+        choices=("point", "box", "box_point"),
+        default="box_point",
+    )
+    parser.add_argument(
+        "--prompt-ensemble",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     return parser.parse_args()
 
 
@@ -394,6 +428,9 @@ def main() -> None:
                 supply.get("biomedclip_weight_sha256") if supply else None
             ),
             frozen_config=args.frozen_config,
+            attribution_method=args.attribution_method,
+            prompt_mode=args.prompt_mode,
+            prompt_ensemble=args.prompt_ensemble,
         )
         run(command, cwd=args.source_root, env=env, log=log)
         stage = args.output_dir / split
@@ -438,6 +475,9 @@ def main() -> None:
         "split_sha256": args.expected_split_sha256,
         "classifier_checkpoint_sha256": args.expected_classifier_sha256,
         "sam_checkpoint_sha256": args.expected_sam_sha256,
+        "attribution_method": args.attribution_method,
+        "prompt_mode": args.prompt_mode,
+        "prompt_ensemble": args.prompt_ensemble,
         "external_saliency_supply_manifest_sha256": (
             args.expected_external_supply_manifest_sha256
             if args.mode == "anchor"

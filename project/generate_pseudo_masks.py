@@ -45,6 +45,7 @@ from models.s2c_cpm import (
     S2CCPMDirectCAM,
 )
 from models.layercam import LayerCAM
+from models.cam_attribution import FinalLayerCAMFamily
 from models.unet import architecture_name_from_metadata, build_segmentation_model
 from evaluation.frozen_test_guard import verify_frozen_test_config
 from pseudo.generate_layercam import generate_fused_cam
@@ -312,6 +313,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sam-grid-box-nms-thresh", type=float, default=0.7)
     parser.add_argument("--disable-sam-prompt-ensemble", action="store_true",
                         help="A/B override for the default profile; rejected by btxrd_best.")
+    parser.add_argument(
+        "--allow-validation-prompt-ablation",
+        action="store_true",
+        help=(
+            "Permit a single point/box/box+point prompt mode on validation only. "
+            "This is a G4 ablation escape hatch and is rejected on train/test."
+        ),
+    )
     parser.add_argument("--max-components", type=int, default=12)
     parser.add_argument("--all-cam-components", action="store_true",
                         help="A/B option for BTXRD: keep up to --max-components CAM components instead of largest-only.")
@@ -341,6 +350,15 @@ def parse_args() -> argparse.Namespace:
         help=(
             "layercam uses gradient-weighted DenseNet blocks; s2c_cpm uses "
             "the checkpoint's directly trained stride-8 multiscale CAM."
+        ),
+    )
+    parser.add_argument(
+        "--attribution-method",
+        choices=["layercam", "cam", "gradcam", "gradcam_plus_plus"],
+        default="layercam",
+        help=(
+            "G4 E2 attribution ablation. layercam preserves the three-stage "
+            "baseline; the other methods share DenseNet's final norm5 target."
         ),
     )
     parser.add_argument(
@@ -520,6 +538,13 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
             and option in explicit
         ):
             return
+        if (
+            option == "--sam-prompt-mode"
+            and args.allow_validation_prompt_ablation
+            and args.split == "val"
+            and option in explicit
+        ):
+            return
         if option in explicit and getattr(args, attribute) != expected:
             raise ValueError(
                 f"--pipeline-profile {args.pipeline_profile} fixes {option}={expected!r}; "
@@ -529,6 +554,8 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
 
     if args.allow_validation_component_topk_ablation and args.split != "val":
         raise ValueError("component_topk ablation is allowed only on the validation split")
+    if args.allow_validation_prompt_ablation and args.split != "val":
+        raise ValueError("prompt ablation is allowed only on the validation split")
 
     require_or_set("--target-columns", "target_columns", ",".join(profile.target_columns))
     require_or_set("--image-size", "image_size", profile.classifier_image_size)
@@ -584,6 +611,13 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--cam-contrast-normal": "cam_contrast_normal",
     }
     for option, attribute in locked_true.items():
+        if (
+            option == "--sam-prompt-ensemble"
+            and args.allow_validation_prompt_ablation
+            and args.split == "val"
+        ):
+            setattr(args, attribute, not args.disable_sam_prompt_ensemble)
+            continue
         if option in explicit and not getattr(args, attribute):
             raise ValueError(f"--pipeline-profile {args.pipeline_profile} requires {option}")
         setattr(args, attribute, True)
@@ -595,6 +629,12 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--disable-cam-contrast-normal",
     }
     for option in forbidden_disable_flags:
+        if (
+            option == "--disable-sam-prompt-ensemble"
+            and args.allow_validation_prompt_ablation
+            and args.split == "val"
+        ):
+            continue
         if option in explicit:
             raise ValueError(f"--pipeline-profile {args.pipeline_profile} rejects {option}")
 
@@ -1469,6 +1509,7 @@ def main() -> None:
             "classifier_device": str(device),
             "layercam_weights": list(layercam_weights),
             "layercam_gradient_mode": args.layercam_gradient_mode,
+            "attribution_method": args.attribution_method,
             "sam_checkpoint": str(args.sam_checkpoint.resolve()) if args.sam_checkpoint else None,
             "sam_checkpoint_sha256": sha256_file(args.sam_checkpoint.resolve()) if args.sam_checkpoint else None,
             "split_manifest": str(args.split_manifest.resolve()) if args.split_manifest else None,
@@ -1595,6 +1636,8 @@ def main() -> None:
             tumor_type_by_name[str(sample["image_id"])] = TUMOR_TYPE_CLASS_NAMES[int(sample["tumor_type"])]
 
     if args.cam_backend == "s2c_cpm":
+        if args.attribution_method != "layercam":
+            raise ValueError("s2c_cpm does not accept an attribution-method override")
         if not isinstance(classifier, DenseNet121S2CCPMClassifier):
             raise ValueError(
                 "--cam-backend s2c_cpm requires an s2c_cpm_fpn_v1 checkpoint"
@@ -1609,12 +1652,19 @@ def main() -> None:
             raise ValueError(
                 "An s2c_cpm_fpn_v1 checkpoint must use --cam-backend s2c_cpm"
             )
-        layercam = LayerCAM(
-            classifier,
-            device=device,
-            layer_weights=layercam_weights,
-            gradient_mode=args.layercam_gradient_mode,
-        )
+        if args.attribution_method == "layercam":
+            layercam = LayerCAM(
+                classifier,
+                device=device,
+                layer_weights=layercam_weights,
+                gradient_mode=args.layercam_gradient_mode,
+            )
+        else:
+            layercam = FinalLayerCAMFamily(
+                classifier,
+                method=args.attribution_method,
+                device=device,
+            )
     auxiliary_classifier = None
     auxiliary_layercam = None
     if args.auxiliary_binary_checkpoint is not None:
@@ -2370,7 +2420,7 @@ def main() -> None:
                         ):
                             candidate_proposal_sources.append("external_saliency")
                         elif component_id_int < cam_component_count:
-                            candidate_proposal_sources.append("layercam")
+                            candidate_proposal_sources.append(args.attribution_method)
                         elif component_id_int < external_component_end:
                             candidate_proposal_sources.append("external_saliency")
                         else:

@@ -257,12 +257,25 @@ scientific configuration; efficacy failures are reported, not silently swept.
 
 - Metric definitions corrected; empty and zero-overlap are distinct; symmetric
   HD95/ASSD, macro/micro overlap, extent and paired group bootstrap are tested.
-- G4 Stage A for E4, cap replay, selector-level E6 and E8 is implemented and
-  locally reproduced R7 choices 371/371.
-- Stage B for the same arms is implemented; it evaluates native overlap,
-  320-grid oracle/regret, native subgroups and paired uncertainty.
+  HD95 and ASSD were independently matched to MONAI 1.5.1 on synthetic cases.
+- E0 completed on 371 validation images. Native/320/448 Dice differs by at most
+  0.000505 for WSSS; subgroup membership remains exactly 94/72/18. The matched
+  final-retrain fully checkpoint obtains Dice 0.490149 at 448.
+- E4, cap replay, selector-level E6 and E8 completed for 27 predeclared arms
+  (10,017 frozen choices). R7 reproduced the official common-320 result exactly.
+  Random/SAM/upstream/G1-only controls obtain native Dice 0.101890/0.098902/
+  0.225306/0.205545 versus 0.288224 for R7.
+- E1 matched binary and ten-class runners are implemented with three seeds,
+  identical DenseNet-121/320/optimizer budgets, and a shared binary-F1
+  checkpoint endpoint. They report discrimination and calibration without
+  spatial GT before downstream segmentation.
+- E2 CAM/Grad-CAM/Grad-CAM++/LayerCAM attribution and point/box/point+box
+  single-prompt factorial is implemented. Every arm freezes all 371 binary
+  masks before the evaluator opens 184 validation polygons; actual mask Dice
+  is the endpoint and paired group bootstrap is reported against the matched
+  LayerCAM+point/box reference.
 - E7 core formulas are implemented, but execution is blocked intentionally until
   source-specific prompt maps are available.
-- E0, E1–E3, exact E5 and learned G1 feature/loss runners remain to be completed
-  and executed. This status section must be updated as each immutable result is
-  collected.
+- E3, exact E5, downstream E1 localization, and learned G1 feature/loss runners
+  remain to be completed. E1/E2 execution results are still pending and this
+  status section must be updated as each immutable result is collected.

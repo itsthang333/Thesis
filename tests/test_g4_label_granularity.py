@@ -52,6 +52,8 @@ def test_binary_probability_metrics_have_known_perfect_value() -> None:
     assert metrics["auroc"] == 1.0
     assert metrics["average_precision_auprc"] == 1.0
     assert metrics["f1"] == 1.0
+    assert metrics["matthews_correlation_coefficient"] == 1.0
+    assert metrics["negative_log_likelihood"] > 0.0
 
 
 def test_e1_runner_is_validation_only_and_matched() -> None:

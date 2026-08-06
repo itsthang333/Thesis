@@ -58,6 +58,8 @@ def _binary_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict[str, ob
     recall = _safe_div(tp, tp + fn)
     specificity = _safe_div(tn, tn + fp)
     f1 = _safe_div(2 * precision * recall, precision + recall)
+    mcc_denominator = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    mcc = _safe_div(tp * tn - fp * fn, mcc_denominator)
 
     positives = int(np.sum(y_true == 1))
     negatives = int(np.sum(y_true == 0))
@@ -108,15 +110,27 @@ def _binary_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict[str, ob
         "sensitivity_recall": recall,
         "specificity": specificity,
         "f1": f1,
+        "matthews_correlation_coefficient": mcc,
         "auroc": auroc,
         "average_precision_auprc": average_precision,
         "brier_score": float(np.mean((probability - y_true) ** 2)),
+        "negative_log_likelihood": float(
+            -np.mean(
+                y_true * np.log(np.clip(probability, 1e-7, 1.0))
+                + (1 - y_true) * np.log(np.clip(1.0 - probability, 1e-7, 1.0))
+            )
+        ),
         "ece_15_equal_width": float(ece),
         "calibration_bins": bins,
     }
 
 
-def _multiclass_metrics(y_true: np.ndarray, predicted: np.ndarray, classes: int) -> dict[str, object]:
+def _multiclass_metrics(
+    y_true: np.ndarray,
+    predicted: np.ndarray,
+    probabilities: np.ndarray,
+    classes: int,
+) -> dict[str, object]:
     confusion = np.zeros((classes, classes), dtype=np.int64)
     for target, pred in zip(y_true, predicted):
         confusion[int(target), int(pred)] += 1
@@ -127,6 +141,10 @@ def _multiclass_metrics(y_true: np.ndarray, predicted: np.ndarray, classes: int)
         fn = int(confusion[class_index, :].sum() - tp)
         precision = _safe_div(tp, tp + fp)
         recall = _safe_div(tp, tp + fn)
+        one_vs_rest = _binary_metrics(
+            (y_true == class_index).astype(np.int64),
+            probabilities[:, class_index],
+        )
         rows.append({
             "class_index": class_index,
             "class_name": TUMOR_TYPE_CLASS_NAMES[class_index],
@@ -134,12 +152,23 @@ def _multiclass_metrics(y_true: np.ndarray, predicted: np.ndarray, classes: int)
             "precision": precision,
             "recall": recall,
             "f1": _safe_div(2 * precision * recall, precision + recall),
+            "one_vs_rest_auroc": one_vs_rest["auroc"],
+            "one_vs_rest_average_precision": one_vs_rest["average_precision_auprc"],
         })
+    one_hot = np.eye(classes, dtype=np.float64)[y_true]
+    supports = np.asarray([row["support"] for row in rows], dtype=np.float64)
     return {
         "accuracy": float(np.trace(confusion) / max(1, confusion.sum())),
         "macro_precision": float(np.mean([row["precision"] for row in rows])),
         "macro_recall": float(np.mean([row["recall"] for row in rows])),
         "macro_f1": float(np.mean([row["f1"] for row in rows])),
+        "balanced_accuracy": float(np.mean([row["recall"] for row in rows])),
+        "macro_one_vs_rest_auroc": float(np.mean([row["one_vs_rest_auroc"] for row in rows])),
+        "weighted_one_vs_rest_auroc": float(np.average([row["one_vs_rest_auroc"] for row in rows], weights=supports)),
+        "macro_one_vs_rest_average_precision": float(np.mean([row["one_vs_rest_average_precision"] for row in rows])),
+        "weighted_one_vs_rest_average_precision": float(np.average([row["one_vs_rest_average_precision"] for row in rows], weights=supports)),
+        "multiclass_brier_score": float(np.mean(np.sum((probabilities - one_hot) ** 2, axis=1))),
+        "negative_log_likelihood": float(-np.mean(np.log(np.clip(probabilities[np.arange(len(y_true)), y_true], 1e-7, 1.0)))),
         "confusion": confusion.tolist(),
         "per_class": rows,
     }
@@ -197,6 +226,9 @@ def main() -> None:
                     "predicted_class": int(predicted_class[index]),
                     "tumor_probability": float(tumor_probability[index]),
                 })
+                if target_columns == ["tumor_type"]:
+                    for class_index in range(classes):
+                        rows[-1][f"class_probability_{class_index}"] = float(probabilities[index, class_index])
     y_binary = np.asarray([row["tumor"] for row in rows], dtype=np.int64)
     probability = np.asarray([row["tumor_probability"] for row in rows], dtype=np.float64)
     summary: dict[str, object] = {
@@ -217,6 +249,10 @@ def main() -> None:
         summary["ten_class_endpoint"] = _multiclass_metrics(
             np.asarray([row["target_class"] for row in rows]),
             np.asarray([row["predicted_class"] for row in rows]),
+            np.asarray(
+                [[row[f"class_probability_{index}"] for index in range(classes)] for row in rows],
+                dtype=np.float64,
+            ),
             classes,
         )
         collapsed = (np.asarray([row["predicted_class"] for row in rows]) != 0).astype(np.int64)

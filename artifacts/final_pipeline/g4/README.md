@@ -15,6 +15,10 @@ dataset identifiers and are much larger than the thesis source repository.
 - The lesion-area subgroup membership remains 94/72/18 under the native and
   historical 320 definitions.
 - All-candidate common-320 oracle Dice: 0.528298332.
+- Corrected MONAI-compatible summary SHA-256:
+  `f7cc3b8e5ba1ac60df6dbbc03b8222c38a8f2485247666224feac6d75fbfb082`.
+- Corrected evaluator-audit file SHA-256:
+  `ba08538672a0101851d8bfa4d212f509900ea82e763a11c3c7df19779e96ca92`.
 
 ## E4/E5/E6/E8 offline replay
 

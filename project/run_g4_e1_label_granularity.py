@@ -93,7 +93,15 @@ def main() -> None:
             "binary_endpoint": evaluation["binary_endpoint"],
             "evaluation_summary_sha256": sha256_file(evaluation_root / "summary.json"),
         })
-    metrics = ("f1", "auroc", "average_precision_auprc", "brier_score", "ece_15_equal_width")
+    metrics = (
+        "f1",
+        "matthews_correlation_coefficient",
+        "auroc",
+        "average_precision_auprc",
+        "brier_score",
+        "negative_log_likelihood",
+        "ece_15_equal_width",
+    )
     aggregate = {}
     for name in metrics:
         values = [float(row["binary_endpoint"][name]) for row in records]
