@@ -41,6 +41,17 @@ class G4SegmentationMetricTests(unittest.TestCase):
         self.assertGreater(float(metrics["assd_px"]), 0.0)
         self.assertLessEqual(float(metrics["assd_px"]), 1.0)
 
+    def test_unequal_surfaces_match_monai_symmetric_convention(self) -> None:
+        target = np.zeros((12, 12), dtype=np.uint8)
+        target[1:5, 1:9] = 1
+        prediction = np.zeros_like(target)
+        prediction[2:10, 2:4] = 1
+        metrics = segmentation_metrics(prediction, target)
+        # Independently recorded from MONAI 1.5.1
+        # compute_average_surface_distance(..., symmetric=True).
+        self.assertAlmostEqual(float(metrics["assd_px"]), 2.26246953, places=6)
+        self.assertAlmostEqual(float(metrics["hd95_px"]), 5.00495100, places=6)
+
     def test_summary_reports_macro_micro_and_extent(self) -> None:
         first = np.zeros((4, 4), dtype=np.uint8)
         first[:2, :2] = 1

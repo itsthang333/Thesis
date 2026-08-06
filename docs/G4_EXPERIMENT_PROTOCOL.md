@@ -76,7 +76,13 @@ For directed surface distances `d(partial P, partial G)`:
 
 `HD95 = max(Q95[d(partial P, partial G)], Q95[d(partial G, partial P)])`
 
-`ASSD = 0.5 * (mean[d(partial P, partial G)] + mean[d(partial G, partial P)])`
+`ASSD = mean(concat(d(partial P, partial G), d(partial G, partial P)))`
+
+This exact convention is cross-checked against MONAI 1.5.1. It weights every
+sampled surface pixel equally; it is therefore not numerically identical to the
+alternative convention that gives the two directed means equal weight. The
+thesis records the convention and library version because the literature and
+software ecosystem contain both definitions.
 
 Both-empty masks receive zero. Cases where exactly one mask is empty have
 undefined surface distance and are excluded from conditional boundary means,

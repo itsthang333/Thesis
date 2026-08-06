@@ -28,10 +28,9 @@ def _safe_ratio(numerator: float, denominator: float, empty_value: float = 0.0) 
 def _surface_distances(pred: np.ndarray, target: np.ndarray) -> tuple[float, float]:
     """Return symmetric HD95 and ASSD on one pixel grid.
 
-    HD95 is the maximum of the two directed 95th percentiles. ASSD is the
-    unweighted mean of the two directed mean surface distances.  Keeping the
-    directions separate avoids weighting the result by whichever contour has
-    more sampled pixels.
+    HD95 is the maximum of the two directed 95th percentiles. ASSD is the mean
+    of the concatenated directed surface-distance samples. This matches the
+    symmetric conventions implemented by MONAI 1.5.1 on a unit-spacing grid.
     """
     if not pred.any() and not target.any():
         return 0.0, 0.0
@@ -52,7 +51,7 @@ def _surface_distances(pred: np.ndarray, target: np.ndarray) -> tuple[float, flo
         float(np.percentile(pred_to_target, 95)),
         float(np.percentile(target_to_pred, 95)),
     )
-    assd = 0.5 * (float(np.mean(pred_to_target)) + float(np.mean(target_to_pred)))
+    assd = float(np.mean(np.concatenate([pred_to_target, target_to_pred])))
     return hd95, assd
 
 
@@ -249,7 +248,8 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "mean_tumor_assd_px_conditional_defined": _finite_mean(tumor, "assd_px"),
         "boundary_metric_definition": (
             "conditional mean over tumor images with both GT and prediction non-empty; "
-            "HD95=max of directed 95th percentiles and ASSD=mean of directed means; "
+            "HD95=max of directed 95th percentiles and ASSD=mean of concatenated "
+            "directed surface samples (MONAI symmetric convention); "
             "distances are pixels on the declared evaluation grid (not mm); "
             "empty-prediction cases are excluded; non-empty zero-overlap cases remain "
             "defined and are counted separately"
