@@ -18,6 +18,7 @@ import csv
 import hashlib
 import json
 import sys
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -219,6 +220,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sam-checkpoint", type=Path, required=True,
                         help="Path to an attached local SAM checkpoint. Runtime downloads are disabled "
                         "so that the run is reproducible and works with Kaggle Internet off.")
+    parser.add_argument(
+        "--sam-model-type",
+        choices=("vit_b", "vit_l", "vit_h"),
+        default="vit_b",
+        help="Official SAM-v1 registry architecture matched to --sam-checkpoint.",
+    )
     parser.add_argument(
         "--sam-device",
         type=parse_device_spec,
@@ -1172,6 +1179,7 @@ def classifier_candidate_causal_scores(
 
 
 def main() -> None:
+    run_started = time.perf_counter()
     args = apply_pipeline_profile(parse_args())
     if args.evaluate_prompt_quality:
         raise ValueError(
@@ -1228,6 +1236,13 @@ def main() -> None:
     sam_device = device if args.sam_device == "auto" else torch.device(args.sam_device)
     validate_runtime_device(device, "--classifier-device")
     validate_runtime_device(sam_device, "--sam-device")
+    measured_cuda_devices = {
+        candidate
+        for candidate in (device, sam_device)
+        if candidate.type == "cuda"
+    }
+    for measured_device in measured_cuda_devices:
+        torch.cuda.reset_peak_memory_stats(measured_device)
     canonical_profile = {
         BTXRD_BEST_PIPELINE.name: BTXRD_BEST_PIPELINE,
         BTXRD_HYBRID_PIPELINE.name: BTXRD_HYBRID_PIPELINE,
@@ -1504,7 +1519,8 @@ def main() -> None:
             "sam_image_size": args.sam_image_size,
             "sam_preserve_aspect": args.sam_preserve_aspect,
             "image_list": str(args.image_list.resolve()) if args.image_list else None,
-            "sam_backend": "sam_v1_vit_b",
+            "sam_backend": f"sam_v1_{args.sam_model_type}",
+            "sam_model_type": args.sam_model_type,
             "sam_device": str(sam_device),
             "classifier_device": str(device),
             "layercam_weights": list(layercam_weights),
@@ -1687,6 +1703,7 @@ def main() -> None:
     sam_predictor = SAMPredictor(
         checkpoint_path=args.sam_checkpoint,
         device=str(sam_device),
+        model_type=args.sam_model_type,
     )
 
     mask_dir = args.output_dir / "masks"
@@ -2781,6 +2798,38 @@ def main() -> None:
             f"{args.candidate_diagnostics_cohort} cases; "
             f"manifest_sha256={diagnostic_summary['manifest_sha256']}"
         )
+
+    elapsed_seconds = float(time.perf_counter() - run_started)
+    output_bytes = int(
+        sum(path.stat().st_size for path in args.output_dir.rglob("*") if path.is_file())
+    )
+    cuda_metrics = {}
+    for measured_device in sorted(measured_cuda_devices, key=str):
+        cuda_metrics[str(measured_device)] = {
+            "peak_memory_allocated_bytes": int(
+                torch.cuda.max_memory_allocated(measured_device)
+            ),
+            "peak_memory_reserved_bytes": int(
+                torch.cuda.max_memory_reserved(measured_device)
+            ),
+        }
+    resource_metrics = {
+        "schema_version": 1,
+        "sam_model_type": args.sam_model_type,
+        "images_processed": int(processed),
+        "elapsed_seconds": elapsed_seconds,
+        "seconds_per_processed_image": (
+            elapsed_seconds / processed if processed else None
+        ),
+        "output_bytes_before_resource_manifest": output_bytes,
+        "cuda": cuda_metrics,
+        "spatial_ground_truth_read": False,
+        "test_evaluated": False,
+    }
+    (args.output_dir / "resource_metrics.json").write_text(
+        json.dumps(resource_metrics, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 if __name__ == "__main__":
     main()

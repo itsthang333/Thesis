@@ -166,12 +166,30 @@ CAM-only thresholded-mask control. Hold SAM, gallery budget, deduplication and
 selector fixed. Report classifier localization maps frozen before GT, actual
 Dice, oracle, source/candidate count and runtime.
 
+Executable status: the 4x3 attribution/prompt factorial is implemented by
+`run_g4_e2_cam_prompt.py`. `evaluate_g4_pseudo_mask_variant.py` independently
+verifies the 371 frozen masks and, when given the frozen candidate-summary
+hash, additionally reports all-candidate oracle/Recall@Dice and the CAM-only
+control. The CAM-only rule is predeclared as `prompt_map >= per-image p90`; a
+constant map yields an empty mask. No morphology, SAM output, or GT-dependent
+threshold is used in that control.
+
 ### E3 — SAM backbone ablation
 
 Run ViT-B, ViT-L and ViT-H with identical images, prompt coordinates, multimask
 setting, gallery construction and selector. Report selected and oracle Dice by
 subgroup, seconds/image, peak VRAM and disk. ViT-B is defended by the Pareto
 trade-off only if L/H do not yield a material improvement.
+
+Executable status: `run_g4_e3_sam_backbone.py` changes only the explicit
+official SAM-v1 model type/checkpoint. For every arm it regenerates both the
+LayerCAM-320+BiomedCLIP anchor and classifier-448 addition supply, then applies
+the same exact deduplication, cap 243, frozen G1 checkpoint and 0.5/0.5 rank
+fusion. The spatial evaluator reports selected Dice, all-candidate oracle,
+selector regret, Recall@Dice 0.10/0.30/0.50 and subgroup values. Candidate
+generation also writes measured seconds/image, CUDA peak allocated/reserved
+bytes and output bytes. Official B/L/H checkpoints are SHA-256 locked, and the
+ablation-only evaluator rejects test.
 
 ### E4 — localization-source ablation
 
@@ -253,7 +271,7 @@ No arm is rescued with validation-GT thresholds, per-image area, oracle choices,
 or test selection. Unexpected technical errors may be fixed without changing the
 scientific configuration; efficacy failures are reported, not silently swept.
 
-## 6. Implementation status (2026-08-06)
+## 6. Implementation status (2026-08-07)
 
 - Metric definitions corrected; empty and zero-overlap are distinct; symmetric
   HD95/ASSD, macro/micro overlap, extent and paired group bootstrap are tested.
@@ -278,8 +296,11 @@ scientific configuration; efficacy failures are reported, not silently swept.
   masks before the evaluator opens 184 validation polygons; actual mask Dice
   is the endpoint and paired group bootstrap is reported against the matched
   LayerCAM+point/box reference.
+- E3 end-to-end B/L/H support, candidate oracle reporting and measured resource
+  telemetry are implemented and locally tested. The three matched Kaggle arms
+  remain to be executed; no result is claimed here before output audit.
 - E7 core formulas are implemented, but execution is blocked intentionally until
   source-specific prompt maps are available.
-- E3, exact E5, downstream E1 localization, and learned G1 feature/loss runners
-  remain to be completed. E1/E2 execution results are still pending and this
-  status section must be updated as each immutable result is collected.
+- Exact E5, downstream E1 localization, and learned G1 feature/loss runners
+  remain to be completed. E2 is currently executing and this status section
+  must be updated as each immutable result is collected.

@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-"""SAM v1 ViT-B wrapper for point-prompted pseudo-mask generation."""
+"""SAM v1 wrapper for point-prompted pseudo-mask generation.
+
+The official Segment Anything registry exposes three matched SAM-v1 model
+types (ViT-B/L/H).  Keeping the model type explicit is important for the G4
+backbone ablation: checkpoint identity alone must never silently choose an
+architecture.
+"""
 
 from pathlib import Path
 from typing import Any
@@ -12,12 +18,15 @@ Component = Any
 
 
 class SAMPredictor:
-    """Thin fail-closed wrapper around the official SAM v1 ViT-B model."""
+    """Thin fail-closed wrapper around an official SAM v1 model."""
+
+    MODEL_TYPES = ("vit_b", "vit_l", "vit_h")
 
     def __init__(
         self,
         checkpoint_path: str | Path,
         device: str = "cuda",
+        model_type: str = "vit_b",
     ) -> None:
         try:
             from segment_anything import (
@@ -31,17 +40,23 @@ class SAMPredictor:
                 "Run: pip install git+https://github.com/facebookresearch/segment-anything.git"
             ) from exc
 
+        if model_type not in self.MODEL_TYPES:
+            raise ValueError(
+                f"Unsupported SAM model type {model_type!r}; choose from "
+                f"{self.MODEL_TYPES}"
+            )
         checkpoint_path = Path(checkpoint_path)
         if not checkpoint_path.is_file():
             raise FileNotFoundError(
-                f"SAM ViT-B checkpoint not found at {checkpoint_path}. "
-                "Provide the official sam_vit_b_01ec64.pth file explicitly."
+                f"SAM {model_type} checkpoint not found at {checkpoint_path}. "
+                "Provide the matching official SAM-v1 checkpoint explicitly."
             )
 
-        sam = sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
+        sam = sam_model_registry[model_type](checkpoint=str(checkpoint_path))
         sam.to(device=device)
         self._predictor = SamPredictor(sam)
         self._automatic_mask_generator_cls = SamAutomaticMaskGenerator
+        self.model_type = model_type
         self.last_prompt_stats: dict[str, int] = {}
 
     def predict_grid_gallery(

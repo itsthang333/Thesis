@@ -56,6 +56,21 @@ def test_addition_command_reproduces_448_geometry_without_external_saliency() ->
     assert "external-saliency" not in joined
 
 
+def test_sam_model_type_is_explicit_and_propagated() -> None:
+    values = build_generation_command(
+        mode="addition",
+        source_root=Path("/source"),
+        data_root=Path("/data"),
+        split_manifest=Path("/split.csv"),
+        split="val",
+        classifier=Path("/classifier.pt"),
+        sam=Path("/sam_l.pth"),
+        sam_model_type="vit_l",
+        output_dir=Path("/out"),
+    )
+    assert values[values.index("--sam-model-type") + 1] == "vit_l"
+
+
 def test_anchor_rejects_partial_external_lock() -> None:
     with pytest.raises(ValueError, match="complete external-saliency"):
         build_generation_command(

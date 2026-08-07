@@ -54,6 +54,7 @@ def common_generation_args(
     split: str,
     classifier: Path,
     sam: Path,
+    sam_model_type: str = "vit_b",
     output_dir: Path,
     attribution_method: str = "layercam",
     prompt_mode: str = "box_point",
@@ -76,6 +77,8 @@ def common_generation_args(
         str(classifier),
         "--sam-checkpoint",
         str(sam),
+        "--sam-model-type",
+        sam_model_type,
         "--classifier-device",
         "cuda",
         "--sam-device",
@@ -180,6 +183,7 @@ def build_generation_command(
     split: str,
     classifier: Path,
     sam: Path,
+    sam_model_type: str = "vit_b",
     output_dir: Path,
     classifier_split_manifest: Path | None = None,
     external_root: Path | None = None,
@@ -200,6 +204,7 @@ def build_generation_command(
         split=split,
         classifier=classifier,
         sam=sam,
+        sam_model_type=sam_model_type,
         output_dir=output_dir,
         frozen_config=frozen_config,
         attribution_method=attribution_method,
@@ -302,6 +307,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--classifier-checkpoint", type=Path, required=True)
     parser.add_argument("--expected-classifier-sha256", required=True)
     parser.add_argument("--sam-checkpoint", type=Path, required=True)
+    parser.add_argument(
+        "--sam-model-type",
+        choices=("vit_b", "vit_l", "vit_h"),
+        default="vit_b",
+    )
     parser.add_argument("--expected-sam-sha256", required=True)
     parser.add_argument("--external-saliency-supply-root", type=Path)
     parser.add_argument("--expected-external-supply-manifest-sha256")
@@ -419,6 +429,7 @@ def main() -> None:
             split=split,
             classifier=args.classifier_checkpoint,
             sam=args.sam_checkpoint,
+            sam_model_type=args.sam_model_type,
             output_dir=args.output_dir / split,
             external_root=external,
             external_manifest_sha256=external_lock.get("manifest_sha256"),
@@ -451,6 +462,7 @@ def main() -> None:
             or int(pseudo_summary.get("manifest_rows", -1))
             != EXPECTED_COUNTS[split]["images"]
             or metadata.get("split") != split
+            or metadata.get("sam_model_type") != args.sam_model_type
             or metadata.get("force_normal_candidate_gallery") is not True
             or metadata.get("candidate_diagnostics_cohort") != "all"
         ):
@@ -465,6 +477,7 @@ def main() -> None:
             "pseudo_manifest_sha256": pseudo_summary["manifest_sha256"],
             "pseudo_summary_sha256": sha256_file(stage / "pseudo_mask_summary.json"),
             "run_metadata_sha256": sha256_file(stage / "run_metadata.json"),
+            "resource_metrics_sha256": sha256_file(stage / "resource_metrics.json"),
         }
     manifest = {
         "schema_version": 1,
@@ -475,6 +488,7 @@ def main() -> None:
         "split_sha256": args.expected_split_sha256,
         "classifier_checkpoint_sha256": args.expected_classifier_sha256,
         "sam_checkpoint_sha256": args.expected_sam_sha256,
+        "sam_model_type": args.sam_model_type,
         "attribution_method": args.attribution_method,
         "prompt_mode": args.prompt_mode,
         "prompt_ensemble": args.prompt_ensemble,

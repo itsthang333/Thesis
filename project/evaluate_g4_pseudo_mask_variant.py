@@ -23,6 +23,7 @@ from evaluation.segmentation_metrics import (
     summarize_segmentation_rows,
 )
 from frozen_io import load_split_rows_without_annotations, sha256_file
+from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
 from pseudo.manifest import validate_pseudo_mask_manifest
 
 
@@ -41,6 +42,13 @@ def parse_args() -> argparse.Namespace:
         help="Directory containing masks/, pseudo_mask_manifest.csv and provenance files.",
     )
     parser.add_argument("--expected-pseudo-summary-sha256", required=True)
+    parser.add_argument(
+        "--expected-candidate-summary-sha256",
+        help=(
+            "Optional lock enabling candidate-oracle and predeclared CAM-only "
+            "analysis from the already frozen prediction-first payloads."
+        ),
+    )
     parser.add_argument("--variant-name", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--bootstrap-iterations", type=int, default=2000)
@@ -97,11 +105,27 @@ def main() -> None:
         image_size=None,
     )
     source_size = int(integrity["source_image_size"])
+    candidate_rows = None
+    candidate_summary = None
+    if args.expected_candidate_summary_sha256 is not None:
+        candidate_summary_path = (
+            args.prediction_root / "candidate_diagnostics_summary.json"
+        )
+        if sha256_file(candidate_summary_path) != args.expected_candidate_summary_sha256:
+            raise ValueError("Candidate diagnostics summary SHA-256 mismatch")
+        pseudo_summary = json.loads(pseudo_summary_path.read_text(encoding="utf-8"))
+        candidate_rows, candidate_summary = validate_candidate_diagnostics_manifest(
+            args.prediction_root,
+            expected_image_names=[row["image_id"] for row in split_rows],
+            split="val",
+            expected_pseudo_manifest_sha256=str(pseudo_summary["manifest_sha256"]),
+        )
 
     # Every prediction byte is now verified. Spatial annotations may only be
     # opened below this point.
     btxrd_root = resolve_btxrd_root(args.dataset_root)
     per_image: list[dict[str, object]] = []
+    cam_only_per_image: list[dict[str, object]] = []
     opened_annotations = 0
     for split_row in split_rows:
         image_id = str(split_row["image_id"])
@@ -126,8 +150,7 @@ def main() -> None:
         target = _resize(target_native, prediction.shape)
         native_area_ratio = float(target_native.mean())
         metrics = segmentation_metrics(prediction, target, compute_boundary=True)
-        per_image.append(
-            {
+        row = {
                 "image_id": image_id,
                 "group_id": split_row["group_id"],
                 "variant": args.variant_name,
@@ -138,7 +161,53 @@ def main() -> None:
                 "native_size_group": _size_group(native_area_ratio) if tumor else "normal",
                 **metrics,
             }
-        )
+        if candidate_rows is not None and candidate_summary is not None:
+            candidate_row = candidate_rows[Path(image_id).stem]
+            candidate_path = args.prediction_root / candidate_row["diagnostic_path"]
+            with np.load(candidate_path, allow_pickle=False) as payload:
+                candidate_masks = payload["sam_masks"].astype(bool)
+                prompt_map = payload["prompt_map"].astype(np.float32)
+            if candidate_masks.shape[1:] != target.shape or prompt_map.shape != target.shape:
+                raise ValueError(f"Candidate geometry differs for {image_id}")
+            if tumor and len(candidate_masks):
+                intersections = np.logical_and(
+                    candidate_masks, target[None]
+                ).sum(axis=(1, 2))
+                denominators = candidate_masks.sum(axis=(1, 2)) + int(target.sum())
+                candidate_dice = np.divide(
+                    2.0 * intersections,
+                    denominators,
+                    out=np.zeros(len(candidate_masks), dtype=np.float64),
+                    where=denominators > 0,
+                )
+                oracle_index = int(np.argmax(candidate_dice))
+                oracle_dice = float(candidate_dice[oracle_index])
+            else:
+                oracle_index = -1
+                oracle_dice = 0.0
+            cam_percentile = float(candidate_summary["cam_percentile"])
+            if float(np.ptp(prompt_map)) <= 1e-8:
+                cam_only = np.zeros_like(prompt_map, dtype=bool)
+            else:
+                threshold = float(np.percentile(prompt_map, cam_percentile))
+                cam_only = prompt_map >= threshold
+            row.update({
+                "candidate_count": int(len(candidate_masks)),
+                "candidate_oracle_index": oracle_index,
+                "candidate_oracle_dice": oracle_dice,
+            })
+            cam_only_per_image.append({
+                "image_id": image_id,
+                "group_id": split_row["group_id"],
+                "variant": f"{args.variant_name}__cam_only_p{cam_percentile:g}",
+                "evaluation_grid": f"{source_size}x{source_size}",
+                "native_height": native_height,
+                "native_width": native_width,
+                "native_gt_area_ratio": native_area_ratio,
+                "native_size_group": _size_group(native_area_ratio) if tumor else "normal",
+                **segmentation_metrics(cam_only, target, compute_boundary=True),
+            })
+        per_image.append(row)
 
     if opened_annotations != 184:
         raise ValueError(f"opened {opened_annotations} annotations instead of 184")
@@ -169,12 +238,72 @@ def main() -> None:
         iterations=args.bootstrap_iterations,
         seed=20260806,
     )
+    cam_only_summary = None
+    if cam_only_per_image:
+        cam_only_summary = summarize_segmentation_rows(cam_only_per_image)
+        cam_tumor = [row for row in cam_only_per_image if bool(row["gt_positive"])]
+        cam_only_summary["native_subgroups"] = {
+            group: summarize_segmentation_rows(
+                [row for row in cam_tumor if row["native_size_group"] == group]
+            )
+            for group in SIZE_GROUPS
+        }
+        cam_only_summary["group_bootstrap_ci95"] = bootstrap_group_confidence_intervals(
+            cam_only_per_image,
+            iterations=args.bootstrap_iterations,
+            seed=20260806,
+        )
+        tumor_rows_with_oracle = [
+            row for row in per_image if bool(row["gt_positive"])
+        ]
+        summary.update({
+            "candidate_oracle_mean_dice": float(np.mean([
+                float(row["candidate_oracle_dice"]) for row in tumor_rows_with_oracle
+            ])),
+            "selector_regret_mean_dice": float(np.mean([
+                float(row["candidate_oracle_dice"]) - float(row["dice"])
+                for row in tumor_rows_with_oracle
+            ])),
+            "candidate_recall_at_dice_0_10": float(np.mean([
+                float(row["candidate_oracle_dice"]) >= 0.10
+                for row in tumor_rows_with_oracle
+            ])),
+            "candidate_recall_at_dice_0_30": float(np.mean([
+                float(row["candidate_oracle_dice"]) >= 0.30
+                for row in tumor_rows_with_oracle
+            ])),
+            "candidate_recall_at_dice_0_50": float(np.mean([
+                float(row["candidate_oracle_dice"]) >= 0.50
+                for row in tumor_rows_with_oracle
+            ])),
+            "candidate_oracle_native_subgroups": {
+                group: {
+                    "n": int(sum(
+                        row["native_size_group"] == group
+                        for row in tumor_rows_with_oracle
+                    )),
+                    "mean_dice": float(np.mean([
+                        float(row["candidate_oracle_dice"])
+                        for row in tumor_rows_with_oracle
+                        if row["native_size_group"] == group
+                    ])),
+                }
+                for group in SIZE_GROUPS
+            },
+        })
 
     per_image_path = args.output_dir / "per_image.csv"
     with per_image_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(per_image[0]))
         writer.writeheader()
         writer.writerows(json_safe(per_image))
+    cam_only_path = None
+    if cam_only_per_image:
+        cam_only_path = args.output_dir / "cam_only_per_image.csv"
+        with cam_only_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(cam_only_per_image[0]))
+            writer.writeheader()
+            writer.writerows(json_safe(cam_only_per_image))
     report = {
         "schema_version": 1,
         "study": "G4 frozen pseudo-mask variant actual segmentation evaluation",
@@ -185,6 +314,8 @@ def main() -> None:
         "tumor_images": 184,
         "native_subgroup_counts": subgroup_counts,
         "summary": summary,
+        "cam_only_summary": cam_only_summary,
+        "candidate_analysis_enabled": candidate_rows is not None,
         "prediction_bytes_verified_before_annotations": True,
         "validation_annotations_opened": opened_annotations,
         "test_images_read": 0,
@@ -206,6 +337,9 @@ def main() -> None:
         "test_images_read": 0,
         "test_evaluated": False,
         "per_image_sha256": sha256_file(per_image_path),
+        "cam_only_per_image_sha256": (
+            sha256_file(cam_only_path) if cam_only_path is not None else None
+        ),
         "summary_sha256": sha256_file(report_path),
     }
     (args.output_dir / "audit.json").write_text(
