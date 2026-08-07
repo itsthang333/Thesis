@@ -72,6 +72,41 @@ The ten-class task itself is difficult and seed-sensitive: top-1 accuracy is
 collapsed result from being misreported as uniformly strong nine-disease
 classification.
 
+## G4 E3: matched SAM ViT-B versus ViT-L (validation, interim)
+
+Both completed arms keep the image evidence, prompts, multimask setting,
+gallery merge/cap, G1 selector and fixed rank fusion identical; only the frozen
+SAM-v1 backbone/checkpoint changes. Both independent output audits pass. ViT-H
+is still running, so this is an interim B/L comparison and not the final E3
+backbone conclusion.
+
+| SAM backbone | Dice | IoU | Oracle Dice | `<1%` | `1-<5%` | `>=5%` |
+|---|---:|---:|---:|---:|---:|---:|
+| ViT-B | 0.288729 | 0.216839 | 0.528298 | 0.157723 | 0.435229 | **0.386874** |
+| ViT-L | **0.291185** | **0.219708** | **0.546000** | **0.165224** | **0.446083** | 0.329389 |
+
+The paired heuristic-group bootstrap gives B-to-L Dice delta `+0.002456`
+(95% CI `[-0.020021, 0.024824]`, `P(delta>0)=0.5866`), so the point estimate
+does not establish a real overall improvement. Subgroup deltas are `+0.007501`
+for small (CI `[-0.029231, 0.043982]`), `+0.010854` for medium (CI
+`[-0.013151, 0.036579]`) and `-0.057485` for large (CI
+`[-0.137646, 0.004692]`). ViT-L changes the selected source for 49/184 tumor
+images and increases the gallery oracle, but the selector does not reliably
+convert that extra proposal supply into Dice.
+
+| Measured resource | ViT-L / ViT-B ratio |
+|---|---:|
+| Candidate-generation wall time | 2.061x |
+| Total arm wall time | 1.841x |
+| Peak allocated VRAM | 1.570x |
+| Peak reserved VRAM | 1.496x |
+| Merged gallery bytes | 1.005x |
+
+Therefore ViT-B remains the defensible resource/accuracy choice pending ViT-H:
+ViT-L costs materially more, its overall CI includes zero, and it likely harms
+the scarce large-lesion subgroup. This is an accuracy-cost conclusion, not a
+claim that ViT-B is universally superior.
+
 These are development results on 184 tumor validation images. There are 49
 complete misses.
 
