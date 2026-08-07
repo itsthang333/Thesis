@@ -14,6 +14,12 @@ are established metrics. The exact upstream score and equal percentile-rank
 fusion are project-specific choices, even though their ingredients have
 published precedent.
 
+The executable formula audit is
+[`artifacts/final_pipeline/g4/metric_formula_audit.json`](../artifacts/final_pipeline/g4/metric_formula_audit.json):
+16/16 independent fixtures pass, including tied-score AP/AUROC and MONAI 1.5.1
+HD95/ASSD reference values. This verifies the implementation; it does not turn
+project-specific pipeline weights into literature-standard formulae.
+
 ## 1. Problem fingerprint
 
 - **Primary task:** binary semantic segmentation of tumor pixels, conditional

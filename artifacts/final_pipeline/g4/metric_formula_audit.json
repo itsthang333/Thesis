@@ -1,0 +1,151 @@
+{
+  "boundary_units": "pixels on the declared grid, not millimetres",
+  "checks": [
+    {
+      "absolute_error": 0.0,
+      "actual": 0.8,
+      "atol": 1e-09,
+      "expected": 0.8,
+      "name": "dice_confusion_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.6666666666666666,
+      "atol": 1e-09,
+      "expected": 0.6666666666666666,
+      "name": "iou_confusion_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.8,
+      "atol": 1e-09,
+      "expected": 0.8,
+      "name": "dice_iou_identity",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.6666666666666666,
+      "atol": 1e-09,
+      "expected": 0.6666666666666666,
+      "name": "precision_confusion_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 1.0,
+      "atol": 1e-09,
+      "expected": 1.0,
+      "name": "recall_confusion_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.5,
+      "atol": 1e-09,
+      "expected": 0.5,
+      "name": "relative_volume_difference_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.5,
+      "atol": 1e-09,
+      "expected": 0.5,
+      "name": "macro_dice_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.3333333333333333,
+      "atol": 1e-09,
+      "expected": 0.3333333333333333,
+      "name": "micro_dice_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.5833333333333333,
+      "atol": 1e-09,
+      "expected": 0.5833333333333333,
+      "name": "average_precision_tied_threshold_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.875,
+      "atol": 1e-09,
+      "expected": 0.875,
+      "name": "auroc_mann_whitney_tie_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.135,
+      "atol": 1e-09,
+      "expected": 0.135,
+      "name": "brier_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.40945934673894957,
+      "atol": 1e-09,
+      "expected": 0.40945934673894957,
+      "name": "binary_nll_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.3333333333333333,
+      "atol": 1e-09,
+      "expected": 0.3333333333333333,
+      "name": "mcc_confusion_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 1.43843755573414e-07,
+      "actual": 2.2624693861562446,
+      "atol": 1e-06,
+      "expected": 2.26246953,
+      "name": "assd_monai_1_5_1_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 2.432036083632738e-08,
+      "actual": 5.004950975679639,
+      "atol": 1e-06,
+      "expected": 5.004951,
+      "name": "hd95_monai_1_5_1_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 2.220446049250313e-16,
+      "actual": 1.4641569137923465,
+      "atol": 1e-12,
+      "expected": 1.4641569137923467,
+      "name": "collapsed_ten_class_tumor_log_odds",
+      "pass": true
+    }
+  ],
+  "checks_passed": 16,
+  "checks_total": 16,
+  "external_references": {
+    "metrics_reloaded": "https://www.nature.com/articles/s41592-023-02151-z",
+    "monai_surface_fixture_version": "1.5.1",
+    "taha_hanbury": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4533825/"
+  },
+  "implementation_sha256": {
+    "classifier_metrics": "a5b27e70f7013721362caa97872e7bf97b76c59dccbf27815594aca593ddb841",
+    "collapsed_log_odds": "836fccf1e1f40ff041be6465cc6677ce8277d9cc079dd22d6918353e615b331b",
+    "segmentation_metrics": "0590a44cdb43cfeb9f3ab8c399f83909906a8cb419804a5246d121e840b33d61"
+  },
+  "pass": true,
+  "schema_version": 1,
+  "spatial_annotations_read": 0,
+  "stage": "thesis_metric_formula_executable_audit_v1",
+  "test_evaluated": false,
+  "test_images_read": 0
+}
