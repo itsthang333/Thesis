@@ -6,6 +6,7 @@ from pathlib import Path
 
 from project.evaluate_g4_classifier_labels import _binary_metrics
 from project.audit_g4_e1_completed import _paired_bootstrap
+from project.models.layercam import collapsed_tumor_log_odds
 from project.train_classifier import (
     binary_metrics_from_multiclass_confusion,
     classifier_epoch_budget_audit,
@@ -55,6 +56,14 @@ def test_binary_probability_metrics_have_known_perfect_value() -> None:
     assert metrics["f1"] == 1.0
     assert metrics["matthews_correlation_coefficient"] == 1.0
     assert metrics["negative_log_likelihood"] > 0.0
+
+
+def test_multiclass_attribution_target_is_exact_collapsed_binary_log_odds() -> None:
+    logits = torch.tensor([[0.3, -0.2, 1.1, 0.7]], dtype=torch.float64)
+    probabilities = torch.softmax(logits, dim=1)
+    expected = torch.log(probabilities[:, 1:].sum(dim=1) / probabilities[:, 0])
+    actual = collapsed_tumor_log_odds(logits)
+    assert torch.allclose(actual, expected, atol=1e-12, rtol=1e-12)
 
 
 def test_e1_runner_is_validation_only_and_matched() -> None:

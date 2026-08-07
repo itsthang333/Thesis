@@ -152,6 +152,17 @@ Use the same DenseNet-121, transforms, epochs, optimizer, split and seeds for:
 - C10→B2: collapse the ten-class probabilities/logits into normal versus tumor
   for deployment and attribution.
 
+The downstream C10→B2 attribution target is fixed to the exact softmax binary
+log-odds identity
+
+`log(P(any tumor)/P(normal)) = logsumexp(z_1,...,z_9) - z_0`.
+
+It therefore does not require the true tumor subtype at inference and is
+semantically matched to the one-logit binary classifier. This is probability
+algebra, not a tuned project score. The comparison still uses the known binary
+image label to emit empty final masks for normal cases, exactly as the final
+supplied-label WSSS protocol does.
+
 Run three fixed seeds. Report per-seed and mean±SD image AUROC, AUPRC,
 sensitivity, specificity, balanced accuracy, F1, Brier score and calibration;
 then run the same downstream attribution→SAM→frozen G1/rank selector and report
@@ -305,7 +316,9 @@ scientific configuration; efficacy failures are reported, not silently swept.
   Both arms completed and passed an independent output audit. Ten-class-to-
   binary improves mean NLL in every seed; paired intervals for AUROC/F1 still
   include zero. No claim about WSSS superiority is allowed until downstream
-  frozen-mask Dice is available.
+  frozen-mask Dice is available. The downstream runner now freezes the exact
+  collapsed log-odds LayerCAM target and holds SAM-B, the external and
+  classifier-448 supplies, G1 and fusion fixed across all six runs.
 - E2 CAM/Grad-CAM/Grad-CAM++/LayerCAM attribution and point/box/point+box
   single-prompt factorial completed for all 12 arms. Every arm froze all 371
   binary masks before the evaluator opened 184 validation polygons. The best

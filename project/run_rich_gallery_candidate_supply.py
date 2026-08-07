@@ -59,9 +59,17 @@ def common_generation_args(
     attribution_method: str = "layercam",
     prompt_mode: str = "box_point",
     prompt_ensemble: bool = True,
+    target_columns: str = "tumor",
+    cam_aggregation: str = "class",
     classifier_split_manifest: Path | None = None,
     frozen_config: Path | None = None,
 ) -> list[str]:
+    if target_columns == "tumor" and cam_aggregation != "class":
+        raise ValueError("binary tumor supply requires class CAM aggregation")
+    if target_columns == "tumor_type" and cam_aggregation != "tumor_log_odds":
+        raise ValueError(
+            "ten-class G4 supply requires exact collapsed tumor_log_odds"
+        )
     command = [
         sys.executable,
         str(source_root / "project" / "generate_pseudo_masks.py"),
@@ -84,7 +92,7 @@ def common_generation_args(
         "--sam-device",
         "cuda",
         "--target-columns",
-        "tumor",
+        target_columns,
         "--attribution-method",
         attribution_method,
         "--sam-image-size",
@@ -149,11 +157,14 @@ def common_generation_args(
         "empty",
         "--cam-target-class",
         "ground_truth",
+        "--cam-aggregation",
+        cam_aggregation,
         "--save-candidate-diagnostics",
         "--candidate-diagnostics-cohort",
         "all",
-        "--force-normal-candidate-gallery",
     ]
+    if target_columns == "tumor":
+        command.append("--force-normal-candidate-gallery")
     if prompt_ensemble:
         command.append("--sam-prompt-ensemble")
     else:
@@ -195,6 +206,8 @@ def build_generation_command(
     attribution_method: str = "layercam",
     prompt_mode: str = "box_point",
     prompt_ensemble: bool = True,
+    target_columns: str = "tumor",
+    cam_aggregation: str = "class",
 ) -> list[str]:
     command = common_generation_args(
         source_root=source_root,
@@ -210,6 +223,8 @@ def build_generation_command(
         attribution_method=attribution_method,
         prompt_mode=prompt_mode,
         prompt_ensemble=prompt_ensemble,
+        target_columns=target_columns,
+        cam_aggregation=cam_aggregation,
     )
     if mode == "anchor":
         if not all(
@@ -339,6 +354,16 @@ def parse_args() -> argparse.Namespace:
         action=argparse.BooleanOptionalAction,
         default=True,
     )
+    parser.add_argument(
+        "--target-columns",
+        choices=("tumor", "tumor_type"),
+        default="tumor",
+    )
+    parser.add_argument(
+        "--cam-aggregation",
+        choices=("class", "tumor_log_odds"),
+        default="class",
+    )
     return parser.parse_args()
 
 
@@ -442,6 +467,8 @@ def main() -> None:
             attribution_method=args.attribution_method,
             prompt_mode=args.prompt_mode,
             prompt_ensemble=args.prompt_ensemble,
+            target_columns=args.target_columns,
+            cam_aggregation=args.cam_aggregation,
         )
         run(command, cwd=args.source_root, env=env, log=log)
         stage = args.output_dir / split

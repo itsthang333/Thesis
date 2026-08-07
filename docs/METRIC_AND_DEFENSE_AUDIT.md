@@ -148,6 +148,7 @@ frozen. They must never select a mask or tune a threshold.
 | Formula | Scientific position | Required evidence |
 |---|---|---|
 | CAM, Grad-CAM, Grad-CAM++, LayerCAM | Published attribution methods | E2 matched comparison |
+| Ten-class to binary attribution | Exact softmax identity `logsumexp(z_1..z_9)-z_0` | E1 three-seed downstream Dice; no fitted coefficients |
 | Point/box prompts and SAM multimask | Published SAM interface; exact conversion is project-specific | E2/E5 prompt ablation |
 | Rich proposal union | Motivated by incomplete CAMs and proposal-set methods, but exact three-source union is project-specific | E4 all source subsets and E5 budget curve |
 | Upstream `0.60D+0.25M+0.15R` | Entirely project-specific coefficients | E7 U0–U6; do not cite as a standard formula |

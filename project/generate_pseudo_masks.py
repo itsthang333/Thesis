@@ -427,7 +427,7 @@ def parse_args() -> argparse.Namespace:
                         help="A/B: comma-separated classifier input sizes for a contrastive CAM ensemble, "
                              "e.g. '224,256,288'. Maps are normalized before averaging; empty disables it.")
     parser.add_argument("--cam-aggregation", type=str, default="class",
-                        choices=["class", "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max"],
+                        choices=["class", "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max", "tumor_log_odds"],
                         help="Class-conditioned CAM (default), aggregate CAM for all non-normal logits, "
                              "or aggregate tumor evidence contrasted against the normal logit; "
                              "the *_class_max variant also retains the selected-class contrastive peaks.")
@@ -1917,13 +1917,14 @@ def main() -> None:
 
                 # ── 2. LayerCAM fusion ────────────────────────────────────────
                 if args.cam_aggregation in {
-                    "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max"
+                    "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max", "tumor_log_odds"
                 } and target_columns == ["tumor_type"]:
-                    union_output = (
-                        layercam.cam_for_tumor_union_contrast(image_tensor)
-                        if args.cam_aggregation in {"tumor_union_contrast", "tumor_union_contrast_class_max"}
-                        else layercam.cam_for_tumor_union(image_tensor)
-                    )
+                    if args.cam_aggregation == "tumor_log_odds":
+                        union_output = layercam.cam_for_tumor_log_odds(image_tensor)
+                    elif args.cam_aggregation in {"tumor_union_contrast", "tumor_union_contrast_class_max"}:
+                        union_output = layercam.cam_for_tumor_union_contrast(image_tensor)
+                    else:
+                        union_output = layercam.cam_for_tumor_union(image_tensor)
                     fused_cam = union_output.cam[0].detach().cpu().numpy()
                     if args.cam_aggregation == "tumor_union_contrast_class_max":
                         selected_class = (
@@ -2036,13 +2037,14 @@ def main() -> None:
                 if args.cam_tta_flip:
                     flipped_tensor = torch.flip(image_tensor, dims=[3])
                     if args.cam_aggregation in {
-                        "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max"
+                        "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max", "tumor_log_odds"
                     } and target_columns == ["tumor_type"]:
-                        flipped_output = (
-                            layercam.cam_for_tumor_union_contrast(flipped_tensor)
-                            if args.cam_aggregation in {"tumor_union_contrast", "tumor_union_contrast_class_max"}
-                            else layercam.cam_for_tumor_union(flipped_tensor)
-                        )
+                        if args.cam_aggregation == "tumor_log_odds":
+                            flipped_output = layercam.cam_for_tumor_log_odds(flipped_tensor)
+                        elif args.cam_aggregation in {"tumor_union_contrast", "tumor_union_contrast_class_max"}:
+                            flipped_output = layercam.cam_for_tumor_union_contrast(flipped_tensor)
+                        else:
+                            flipped_output = layercam.cam_for_tumor_union(flipped_tensor)
                         flipped_cam = flipped_output.cam[0].detach().cpu().numpy()
                         flipped_class_cams = [flipped_cam]
                         flipped_indices = [0]
