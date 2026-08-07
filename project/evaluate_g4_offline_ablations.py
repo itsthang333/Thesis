@@ -169,8 +169,12 @@ def main() -> None:
     if sha256_file(freeze_path) != args.expected_choice_freeze_sha256:
         raise ValueError("G4 choice freeze SHA-256 mismatch")
     freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
+    allowed_stages = {
+        "g4_offline_ablation_choice_freeze_v1",
+        "g4_e7_source_correct_upstream_choice_freeze_v1",
+    }
     if (
-        freeze.get("stage") != "g4_offline_ablation_choice_freeze_v1"
+        freeze.get("stage") not in allowed_stages
         or freeze.get("split_sha256") != args.expected_split_sha256
         or freeze.get("candidate_choices_frozen_before_spatial_gt") is not True
         or freeze.get("spatial_ground_truth_used") is not False
@@ -184,6 +188,9 @@ def main() -> None:
         raise ValueError("G4 choices changed after freezing")
     choices = _read_csv(choices_path)
     arms = [str(arm) for arm in freeze["arms"]]
+    baseline_arm = str(freeze.get("baseline_arm", BASELINE_ARM))
+    if baseline_arm not in arms:
+        raise ValueError("frozen baseline arm is absent from the arm matrix")
     by_image: dict[str, dict[str, dict[str, str]]] = defaultdict(dict)
     for row in choices:
         image_id, arm = row["image_id"], row["arm"]
@@ -267,7 +274,7 @@ def main() -> None:
                     selected_320 = masks[selected_index]
                 else:
                     selected_320 = np.zeros((320, 320), dtype=bool)
-                compute_boundary = arm == BASELINE_ARM
+                compute_boundary = arm == baseline_arm
                 metric_key = (selected_index if tumor else -1, compute_boundary)
                 if metric_key not in metric_cache:
                     primary_prediction = _resize(selected_320, primary_shape)
@@ -333,7 +340,7 @@ def main() -> None:
     per_image_sha = _write_csv(per_image_path, all_rows)
 
     summaries: dict[str, object] = {}
-    baseline_tumor = [row for row in rows_by_arm[BASELINE_ARM] if bool(row["gt_positive"])]
+    baseline_tumor = [row for row in rows_by_arm[baseline_arm] if bool(row["gt_positive"])]
     for arm in arms:
         arm_rows = rows_by_arm[arm]
         tumor_rows = [row for row in arm_rows if bool(row["gt_positive"])]
@@ -343,23 +350,28 @@ def main() -> None:
             iterations=args.bootstrap_iterations,
             seed=args.bootstrap_seed,
         )
-        summary["paired_delta_vs_R7"] = paired_group_bootstrap_deltas(
+        paired_delta = paired_group_bootstrap_deltas(
             baseline_tumor,
             tumor_rows,
             metrics=("dice", "iou", "precision", "recall"),
             iterations=args.bootstrap_iterations,
             seed=args.bootstrap_seed,
         )
+        summary["paired_delta_vs_baseline"] = paired_delta
+        if baseline_arm == BASELINE_ARM:
+            summary["paired_delta_vs_R7"] = paired_delta
         summaries[arm] = summary
 
     report = {
         "schema_version": 1,
-        "study": "G4 replayable offline ablations E4/E5-partial/E6-selector/E8",
+        "study": freeze.get(
+            "study", "G4 replayable offline ablations E4/E5-partial/E6-selector/E8"
+        ),
         "primary_grid": args.primary_grid,
         "primary_endpoint": "macro Dice over 184 validation tumor images",
         "oracle_grid": "common 320x320 candidate grid",
         "native_subgroup_definition": "native polygon area / native image area",
-        "baseline_arm": BASELINE_ARM,
+        "baseline_arm": baseline_arm,
         "choice_freeze_sha256": args.expected_choice_freeze_sha256,
         "split_sha256": args.expected_split_sha256,
         "images": len(split_rows),

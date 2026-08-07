@@ -16,6 +16,7 @@ from g4_ablation import (
     deterministic_random_candidate,
     fusion_score,
     source_correct_upstream_components,
+    source_correct_upstream_components_by_source,
     upstream_components,
     upstream_score,
     within_group_percentile_rank,
@@ -96,6 +97,41 @@ class G4AblationTests(unittest.TestCase):
         # integer suffix had incorrectly merged it with LayerCAM, it would have
         # received an intermediate rank instead.
         np.testing.assert_allclose(actual.sam_component_rank, [0.0, 1.0, 0.0])
+
+    def test_by_source_matches_per_candidate_map_implementation(self) -> None:
+        masks = np.asarray(
+            [
+                [[1, 0], [0, 0]],
+                [[1, 1], [0, 0]],
+                [[0, 0], [1, 1]],
+            ],
+            dtype=np.uint8,
+        )
+        source_ids = np.asarray(["a", "a", "b"])
+        source_maps = {
+            "a": np.asarray([[1.0, 0.5], [0.0, 0.0]], dtype=np.float32),
+            "b": np.asarray([[0.0, 0.0], [0.8, 0.8]], dtype=np.float32),
+        }
+        prompt_maps = np.stack([source_maps[source] for source in source_ids])
+        sam = np.asarray([0.1, 0.9, 0.3])
+        component = np.asarray([5, 5, 5])
+        expected = source_correct_upstream_components(
+            masks,
+            prompt_maps,
+            sam,
+            np.asarray([f"{source}:{item}" for source, item in zip(source_ids, component)]),
+        )
+        actual = source_correct_upstream_components_by_source(
+            masks, source_ids, source_maps, sam, component
+        )
+        for field in (
+            "sam_score",
+            "cam_density",
+            "cam_mass_coverage",
+            "sam_component_rank",
+            "sam_global_rank",
+        ):
+            np.testing.assert_allclose(getattr(actual, field), getattr(expected, field))
 
     def test_fusion_arms_are_finite_and_r7_is_frozen_rule(self) -> None:
         g1 = np.asarray([1.0, 4.0, 2.0, 3.0])

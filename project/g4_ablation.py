@@ -174,6 +174,58 @@ def source_correct_upstream_components(
     )
 
 
+def source_correct_upstream_components_by_source(
+    masks: np.ndarray,
+    source_ids: np.ndarray,
+    source_maps: dict[str, np.ndarray],
+    sam_scores: np.ndarray,
+    component_ids: np.ndarray,
+) -> UpstreamComponents:
+    """Memory-efficient source-correct scoring for one map per source/image."""
+
+    masks = np.asarray(masks, dtype=bool)
+    source_ids = np.asarray(source_ids).astype(str).reshape(-1)
+    sam_scores = _finite_vector(sam_scores, name="sam_scores")
+    component_ids = np.asarray(component_ids).reshape(-1)
+    if masks.ndim != 3:
+        raise ValueError("masks must be NxHxW")
+    _validate_aligned(
+        masks=masks,
+        source_ids=source_ids,
+        sam_scores=sam_scores,
+        component_ids=component_ids,
+    )
+    if set(source_ids) != set(source_maps):
+        raise ValueError(
+            f"source map keys differ from candidate sources: "
+            f"{sorted(source_maps)} versus {sorted(set(source_ids))}"
+        )
+    density = np.empty(len(masks), dtype=np.float64)
+    mass = np.empty(len(masks), dtype=np.float64)
+    local_rank = np.empty(len(masks), dtype=np.float64)
+    for source in sorted(source_maps):
+        indices = np.flatnonzero(source_ids == source)
+        prompt_map = np.asarray(source_maps[source], dtype=np.float64)
+        if prompt_map.shape != masks.shape[1:]:
+            raise ValueError(f"source map shape differs for {source}")
+        source_groups = np.asarray(
+            [f"{source}:{component_ids[index]}" for index in indices]
+        )
+        components = upstream_components(
+            masks[indices], prompt_map, sam_scores[indices], source_groups
+        )
+        density[indices] = components.cam_density
+        mass[indices] = components.cam_mass_coverage
+        local_rank[indices] = components.sam_component_rank
+    return UpstreamComponents(
+        sam_score=sam_scores,
+        cam_density=density,
+        cam_mass_coverage=mass,
+        sam_component_rank=local_rank,
+        sam_global_rank=average_percentile_rank(sam_scores),
+    )
+
+
 def upstream_score(components: UpstreamComponents, arm: str) -> np.ndarray:
     arm = str(arm).upper()
     d = components.cam_density
@@ -324,6 +376,7 @@ __all__ = [
     "select_from_scores",
     "select_score_only",
     "source_correct_upstream_components",
+    "source_correct_upstream_components_by_source",
     "upstream_components",
     "upstream_score",
     "within_group_percentile_rank",
