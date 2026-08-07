@@ -48,6 +48,7 @@ HUB_WHEEL_SHA = (
     "7bcc9ad17d5b3f07b57c78e79d527102d08313caa278a641993acddcb894548d"
 )
 PROTOCOL_SHA = "c65e6771cc6e68fe51de39c19374cffab35180259e8eed40eead7eed4ff6fb74"
+PREFERRED_SPLIT_DATASET = "btxrd-matched-normal-transplant-inputs-20260802"
 SAM_SHA = {
     "vit_b": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
     "vit_l": "3adcc4315b642a4d2101128f611684e8734c41232a17c648ed1693702a49a622",
@@ -102,6 +103,33 @@ def unique_project(root: Path) -> Path:
     if len(matches) != 1:
         raise RuntimeError(f"expected one current G4 project, found {len(matches)}")
     return matches[0]
+
+
+def canonical_split(root: Path) -> Path:
+    """Resolve the byte-exact canonical split from its dedicated input.
+
+    Git archives normalize tracked text to the committed LF representation,
+    while the locked canonical manifest hash refers to the original CRLF byte
+    artifact.  The row content is unchanged, but downstream provenance is
+    byte-exact, so use the separately uploaded immutable manifest rather than
+    the source-tree copy.  Dataset-path preference also avoids ambiguity when
+    another attached historical bundle contains the same bytes.
+    """
+    matches = [
+        path for path in root.rglob("split_manifest.csv")
+        if path.is_file() and sha256(path) == SPLIT_SHA
+    ]
+    preferred = [
+        path for path in matches if PREFERRED_SPLIT_DATASET in path.parts
+    ]
+    if len(preferred) == 1:
+        return preferred[0]
+    if len(matches) == 1:
+        return matches[0]
+    raise RuntimeError(
+        f"expected one preferred canonical split, matches={matches}, "
+        f"preferred={preferred}"
+    )
 
 
 def btxrd_root(root: Path) -> Path:
@@ -195,9 +223,7 @@ def main() -> None:
     working = Path(os.environ.get("KAGGLE_WORKING_PATH", "/kaggle/working"))
     project = unique_project(input_root)
     source = project.parent
-    split = source / "artifacts" / "data_audit" / "split_manifest.csv"
-    if not split.is_file() or sha256(split) != SPLIT_SHA:
-        raise ValueError("current source canonical split is missing or changed")
+    split = canonical_split(input_root)
     classifier_320_split = unique_hash(
         input_root,
         CLASSIFIER_320_SPLIT_SHA,

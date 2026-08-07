@@ -12,6 +12,7 @@ from run_g4_e3_sam_backbone import (  # noqa: E402
     CLASSIFIER_448_SHA,
     SAM_SHA,
     _supply_command,
+    canonical_split,
 )
 
 
@@ -70,3 +71,24 @@ def test_e3_anchor_changes_only_explicit_sam_architecture_inputs() -> None:
 def test_e3_classifier_hash_contract_matches_final_pipeline() -> None:
     assert CLASSIFIER_320_SHA.startswith("ca630d")
     assert CLASSIFIER_448_SHA.startswith("b40dc5")
+
+
+def test_e3_canonical_split_prefers_dedicated_byte_exact_dataset(
+    tmp_path: Path, monkeypatch
+) -> None:
+    historical = tmp_path / "historical" / "split_manifest.csv"
+    preferred = (
+        tmp_path
+        / "btxrd-matched-normal-transplant-inputs-20260802"
+        / "source_snapshot"
+        / "artifacts"
+        / "data_audit"
+        / "split_manifest.csv"
+    )
+    historical.parent.mkdir(parents=True)
+    preferred.parent.mkdir(parents=True)
+    historical.write_bytes(b"same canonical bytes")
+    preferred.write_bytes(b"same canonical bytes")
+    module = sys.modules[canonical_split.__module__]
+    monkeypatch.setattr(module, "SPLIT_SHA", module.sha256(preferred))
+    assert canonical_split(tmp_path) == preferred
