@@ -102,6 +102,12 @@ The bootstrap cannot manufacture independent patients: because `group_id` is a
 heuristic, the thesis must call it a grouped sensitivity analysis rather than a
 patient-clustered confidence interval.
 
+The resampling principle comes from Efron's nonparametric bootstrap
+<https://doi.org/10.1214/aos/1176344552>.  The thesis-specific choice is to
+resample the complete available `group_id` blocks and to use a paired delta for
+matched methods.  This preserves within-group and within-image dependence, but
+does **not** upgrade a heuristic group into a verified patient identifier.
+
 ## 4. Classification metrics required for E1
 
 ### Binary/collapsed tumor task
@@ -130,6 +136,13 @@ scaling are documented by Guo et al.
 <https://proceedings.mlr.press/v70/guo17a.html>. The E1 comparison must report
 downstream mask Dice as the decisive endpoint; better image AUROC alone does
 not prove better weak localization.
+
+The Brier score is the classical quadratic probability score introduced by
+Brier <https://doi.org/10.1175/1520-0493(1950)078%3C0001:VOFEIT%3E2.0.CO;2>.
+Thus Brier/NLL/ECE are not invented segmentation metrics: they are secondary
+image-classification calibration diagnostics.  They cannot replace downstream
+mask Dice, and ECE-15 remains bin-dependent even though ECE itself has modern
+neural-calibration precedent.
 
 ## 5. Candidate-supply and selector metrics
 
