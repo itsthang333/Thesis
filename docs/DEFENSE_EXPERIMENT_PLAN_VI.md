@@ -87,6 +87,40 @@ một con số Dice.
 
 ## 4. Ma trận thí nghiệm trả lời tám câu hỏi phản biện
 
+### 4.1 Dòng phát triển của baseline, không phải “từ trên trời rơi xuống”
+
+Không có một paper chứa nguyên văn toàn bộ baseline. Dòng lập luận đúng là:
+
+1. [CAM, Zhou et al., CVPR 2016](https://openaccess.thecvf.com/content_cvpr_2016/html/Zhou_Learning_Deep_Features_CVPR_2016_paper.html)
+   chứng minh classifier có thể sinh bản đồ định vị yếu từ nhãn ảnh.
+2. [Grad-CAM, Selvaraju et al., ICCV 2017](https://openaccess.thecvf.com/content_iccv_2017/html/Selvaraju_Grad-CAM_Visual_Explanations_ICCV_2017_paper.html)
+   mở rộng gradient-based localization; LayerCAM, Jiang et al., TIP 2021,
+   DOI `10.1109/TIP.2021.3089943`, khai thác activation ở nhiều tầng để có bản
+   đồ chi tiết hơn. E2 kiểm chứng lựa chọn trên BTXRD, không chọn bằng citation.
+3. [SAM, Kirillov et al., ICCV 2023](https://openaccess.thecvf.com/content/ICCV2023/html/Kirillov_Segment_Anything_ICCV_2023_paper.html)
+   cung cấp promptable mask proposals và predicted-IoU score.
+4. [S2C, Kweon et al., CVPR 2024](https://openaccess.thecvf.com/content/CVPR2024/html/Kweon_From_SAM_to_CAMs_Exploring_Segment_Anything_Model_for_Weakly_CVPR_2024_paper.html)
+   là tiền lệ trực tiếp cho việc nối CAM và SAM trong WSSS. Baseline tối giản vì
+   vậy là classifier -> LayerCAM -> component/point-box prompt -> SAM -> chọn
+   proposal. Rich gallery/G1/fusion là phần mở rộng của đề tài, không quy cho
+   S2C.
+
+Ba nguồn gallery cũng có giả thuyết cụ thể, không phải ba module ngẫu nhiên:
+
+- LayerCAM-320 là nguồn anchor có localization tốt nhất trong E2.
+- LayerCAM-448 thay đổi sampling scale để candidate supply cho lesion nhỏ không
+  bị ràng buộc hoàn toàn bởi lưới 320; nó vẫn phải qua E4 để chứng minh bổ sung.
+- BiomedCLIP saliency đưa vào một representation y-sinh học khác họ classifier;
+  foundation model có nguồn gốc từ
+  [BiomedCLIP](https://arxiv.org/abs/2303.00915). Việc nguồn này hữu ích trên
+  BTXRD chỉ được khẳng định bằng source ablation/oracle E4.
+
+G1 xuất hiện vì SAM trả về một **bag** masks chứ không phải đáp án duy nhất.
+Attention/MIL cung cấp tiền lệ học từ bag label, nhưng công thức G1 cụ thể là
+thiết kế đề tài. Upstream score tồn tại như đối chứng hình học/saliency rẻ và
+độc lập với G1. Fusion rank tồn tại vì raw G1 logit và upstream score khác thang
+đo; E8, không phải một citation, quyết định rule nào phù hợp dữ liệu này.
+
 | ID | Câu hỏi | Arms/đối chứng bắt buộc | Endpoint | Trạng thái và bằng chứng hiện có |
 |---|---|---|---|---|
 | E0 | Baseline cuối có thực sự hơn pipeline gốc? | classifier-CAM; CAM+SAM upstream; G1; G1+fusion; fully supervised | Dice/IoU và paired CI | Baseline cuối common-320 Dice 0.288729; LayerCAM cũ 0.234339; fully validation khoảng 0.49. Cần bảng cùng evaluator cuối. |
@@ -176,4 +210,3 @@ một con số Dice.
 - Selected tăng nhưng subgroup nhỏ giảm: không được gọi là cải thiện toàn diện;
   phải báo trade-off.
 - Chỉ chọn cấu hình cuối từ các lựa chọn đã khóa trước GT của lần đánh giá đó.
-
