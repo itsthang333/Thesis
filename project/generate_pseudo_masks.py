@@ -78,6 +78,29 @@ def external_saliency_test_authorized(
     )
 
 
+def external_saliency_image_label_target_authorized(
+    target_columns: list[str],
+    *,
+    cam_target_class: str,
+    cam_aggregation: str,
+) -> bool:
+    """Accept only tumor/normal-event CAM targets beside frozen saliency.
+
+    The binary arm targets its one tumor logit.  The ten-class arm targets the
+    exact collapsed event log-odds ``logsumexp(tumor logits)-normal logit``.
+    Neither path targets a tumor subtype or reads a spatial annotation.
+    """
+
+    if cam_target_class != "ground_truth":
+        return False
+    return (
+        target_columns == ["tumor"] and cam_aggregation == "class"
+    ) or (
+        target_columns == ["tumor_type"]
+        and cam_aggregation == "tumor_log_odds"
+    )
+
+
 def parse_device_spec(value: str) -> str:
     """Accept generic or explicitly indexed CUDA devices."""
     normalized = value.strip().lower()
@@ -1355,10 +1378,15 @@ def main() -> None:
     if external_saliency_contract is not None:
         if not external_saliency_test_authorized(args.split, frozen_test_document):
             raise ValueError("External-saliency test generation remains locked")
-        if target_columns != ["tumor"] or args.cam_target_class != "ground_truth":
+        if not external_saliency_image_label_target_authorized(
+            target_columns,
+            cam_target_class=args.cam_target_class,
+            cam_aggregation=args.cam_aggregation,
+        ):
             raise ValueError(
-                "External saliency requires binary image labels and "
-                "--cam-target-class ground_truth"
+                "External saliency requires a binary-event image-label CAM "
+                "target: one-logit tumor/class or ten-class tumor_log_odds, "
+                "with --cam-target-class ground_truth"
             )
         if args.disable_morphology or args.morphology_fusion_mode != "components":
             raise ValueError("External saliency requires component-mode morphology")

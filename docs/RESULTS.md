@@ -72,6 +72,23 @@ The ten-class task itself is difficult and seed-sensitive: top-1 accuracy is
 collapsed result from being misreported as uniformly strong nine-disease
 classification.
 
+The binary downstream arm has now completed the full CAM -> SAM gallery -> G1
+-> rank-fusion path for all three classifier seeds and passed an independent
+output audit:
+
+| Binary seed | Overall Dice | `<1%` | `1-<5%` | `>=5%` | Gallery oracle |
+|---:|---:|---:|---:|---:|---:|
+| 42 | 0.283706 | 0.143147 | 0.440155 | 0.391938 | 0.532662 |
+| 43 | 0.273176 | 0.124510 | 0.444978 | 0.362334 | 0.516062 |
+| 44 | 0.231815 | 0.128050 | 0.361174 | 0.256265 | 0.517571 |
+| Mean +/- sample SD | **0.262899 +/- 0.027429** | â€” | â€” | â€” | â€” |
+
+This substantial downstream variation means classifier discrimination alone
+cannot establish segmentation quality. The ten-class downstream arm remains
+required for the matched label-granularity conclusion; until then, this row is
+reported as an audited partial result rather than evidence that binary labels
+are preferable.
+
 ## G4 E3: matched SAM ViT-B versus ViT-L (validation, interim)
 
 Both completed arms keep the image evidence, prompts, multimask setting,
