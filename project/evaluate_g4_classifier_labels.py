@@ -50,6 +50,36 @@ def _safe_div(a: float, b: float) -> float:
     return float(a / b) if b else 0.0
 
 
+def _average_precision(y_true: np.ndarray, probability: np.ndarray) -> float:
+    """Step-wise average precision with score ties evaluated as one threshold.
+
+    This is the non-interpolated AP convention used by common machine-learning
+    libraries: each recall increment is weighted by precision after every
+    sample at the same score has entered the predicted-positive set.  Grouping
+    ties makes the value invariant to row order.
+    """
+
+    y_true = np.asarray(y_true, dtype=np.int64).reshape(-1)
+    probability = np.asarray(probability, dtype=np.float64).reshape(-1)
+    if y_true.shape != probability.shape or not np.isfinite(probability).all():
+        raise ValueError("average precision inputs must be aligned and finite")
+    positives = int(np.sum(y_true == 1))
+    if positives == 0:
+        return 0.0
+    order = np.argsort(-probability, kind="mergesort")
+    labels = y_true[order]
+    scores = probability[order]
+    cumulative_true_positives = np.cumsum(labels == 1, dtype=np.int64)
+    # The last row of each equal-score block is one classifier threshold.
+    threshold_ends = np.flatnonzero(
+        np.r_[scores[:-1] != scores[1:], True]
+    )
+    threshold_tp = cumulative_true_positives[threshold_ends]
+    positive_increments = np.diff(np.r_[0, threshold_tp])
+    precision = threshold_tp / (threshold_ends + 1)
+    return float(np.sum((positive_increments / positives) * precision))
+
+
 def _binary_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict[str, object]:
     prediction = (probability >= 0.5).astype(np.int64)
     counts = _binary_confusion(y_true, prediction)
@@ -75,14 +105,7 @@ def _binary_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict[str, ob
         start = end
     auroc = _safe_div(float(ranks[y_true == 1].sum()) - positives * (positives + 1) / 2, positives * negatives)
 
-    descending = np.argsort(-probability, kind="mergesort")
-    sorted_true = y_true[descending]
-    cumulative_tp = np.cumsum(sorted_true == 1)
-    positive_positions = np.flatnonzero(sorted_true == 1)
-    average_precision = (
-        float(np.mean(cumulative_tp[positive_positions] / (positive_positions + 1)))
-        if positives else 0.0
-    )
+    average_precision = _average_precision(y_true, probability)
 
     ece = 0.0
     bins: list[dict[str, float | int]] = []

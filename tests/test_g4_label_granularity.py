@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from pathlib import Path
 
-from project.evaluate_g4_classifier_labels import _binary_metrics
+from project.evaluate_g4_classifier_labels import _average_precision, _binary_metrics
 from project.audit_g4_e1_completed import _paired_bootstrap
 from project.models.layercam import collapsed_tumor_log_odds
 from project.train_classifier import (
@@ -56,6 +56,18 @@ def test_binary_probability_metrics_have_known_perfect_value() -> None:
     assert metrics["f1"] == 1.0
     assert metrics["matthews_correlation_coefficient"] == 1.0
     assert metrics["negative_log_likelihood"] > 0.0
+
+
+def test_average_precision_groups_ties_and_is_row_order_invariant() -> None:
+    labels = np.asarray([1, 0, 1, 0], dtype=np.int64)
+    scores = np.asarray([0.9, 0.9, 0.2, 0.1], dtype=np.float64)
+    expected = 0.5 * 0.5 + 0.5 * (2.0 / 3.0)
+    assert np.isclose(_average_precision(labels, scores), expected)
+    permutation = np.asarray([1, 0, 3, 2])
+    assert np.isclose(
+        _average_precision(labels[permutation], scores[permutation]),
+        expected,
+    )
 
 
 def test_multiclass_attribution_target_is_exact_collapsed_binary_log_odds() -> None:

@@ -46,7 +46,7 @@ seeds 42/43/44. The ten-class tumor score is `1 - p(normal)`.
 | F1 at 0.5 | 0.780882 +/- 0.007753 | **0.795082 +/- 0.007123** |
 | MCC at 0.5 | 0.560627 +/- 0.007211 | **0.592005 +/- 0.028990** |
 | AUROC | 0.848727 +/- 0.009683 | **0.860100 +/- 0.007996** |
-| AUPRC | 0.864460 +/- 0.005855 | **0.871859 +/- 0.006982** |
+| Average precision/AUPRC | 0.860190 +/- 0.006253 | **0.869750 +/- 0.006818** |
 | Brier (lower is better) | 0.196481 +/- 0.004550 | **0.179059 +/- 0.013914** |
 | NLL (lower is better) | 1.514750 +/- 0.115097 | **1.033681 +/- 0.077392** |
 | ECE-15 (lower is better) | 0.192456 +/- 0.008731 | **0.164921 +/- 0.022648** |
@@ -58,6 +58,14 @@ negative for all seeds, with 95% intervals `[-1.058,-0.294]`,
 calibration/log-loss advantage for ten-class supervision, not yet a localization
 or segmentation advantage. Downstream frozen-mask Dice remains mandatory before
 claiming that either label granularity is superior for WSSS.
+
+The AP values above supersede the first audit's 0.864460/0.871859 values. The
+first implementation processed equal-score samples one row at a time, so AP
+could depend on stable row order. The corrected implementation treats all
+equal-score samples as one threshold, is row-order invariant, and was replayed
+from the immutable prediction CSVs. AUROC, F1, calibration metrics and all
+segmentation results are unchanged. The corrected independent audit SHA-256 is
+`967b588537d4a2f2814a68e2a660c5b35fc87dd559482efb97069a9f58d4b215`.
 
 The ten-class task itself is difficult and seed-sensitive: top-1 accuracy is
 0.7062/0.6253/0.6146 and macro F1 is 0.4743/0.3533/0.3528. This prevents the

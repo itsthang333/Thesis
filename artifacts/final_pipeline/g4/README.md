@@ -47,6 +47,11 @@ dataset identifiers and are much larger than the thesis source repository.
 - Independent audit artifact: `e1_label_granularity_audit.json`.
 - Audit SHA-256:
   `2792af5f4bb61cddb1329f670e1b94df85adc161caa9d8db4b56759caf7c52c6`.
+- Corrected tie-invariant step-wise AP audit:
+  `e1_metric_reaudit/e1_audit.json`, SHA-256
+  `967b588537d4a2f2814a68e2a660c5b35fc87dd559482efb97069a9f58d4b215`.
+  Corrected binary/ten-class-collapsed AP is 0.860190/0.869750; no Dice,
+  AUROC, F1 or calibration value changed.
 
 The exact formulas, arm definitions, safeguards, and interpretation limits are
 documented in `docs/G4_EXPERIMENT_PROTOCOL.md`,

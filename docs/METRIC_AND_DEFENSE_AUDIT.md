@@ -216,3 +216,110 @@ it does not by itself justify the later rich-gallery or selector modules.
 - Do not use oracle Dice as actual pipeline Dice.
 - Do not interpret normal specificity as tumor segmentation quality.
 - Do not report boundary distance in millimetres.
+
+## 9. Exact formula registry
+
+The defense should use the following registry verbatim.  “Established” means
+that the metric or learning principle has a published definition.  It does not
+mean that this thesis's aggregation, threshold, coefficient, or empty-case
+policy is universal.  Every project-specific convention is named explicitly.
+
+| Quantity | Exact implementation used here | Aggregation / exceptional cases | Scientific status |
+|---|---|---|---|
+| Tumor Dice | `2TP/(2TP+FP+FN)` | Primary: arithmetic mean of 184 per-tumor-image values. Tumor GT non-empty and prediction empty gives 0. Normal images are excluded from this mean. | Established overlap metric; primary endpoint is a predeclared thesis choice. |
+| Tumor IoU | `TP/(TP+FP+FN)` | Same 184-image macro aggregation as Dice. | Established overlap metric. |
+| Micro Dice/IoU | Apply the Dice/IoU formula after pooling TP/FP/FN over the cohort. | Large lesions receive more pixel weight; never substitutes for macro Dice. | Established aggregation, reported as a sensitivity estimand. |
+| Pixel precision | `TP/(TP+FP)` | Macro mean on tumor images. Empty tumor prediction gives 0. | Established; diagnoses excess extent. |
+| Pixel recall | `TP/(TP+FN)` | Macro mean on tumor images. Empty tumor prediction gives 0. | Established; diagnoses missing extent. |
+| Area ratio | `|P|/|G|` | Median and IQR on tumor images; undefined for normal GT. | Standard volume/area diagnostic; in 2-D it is an area ratio. |
+| Relative area difference | `(|P|-|G|)/|G|` | Median and IQR; negative means under-segmentation. | Standard relative volume-difference idea applied to 2-D area. |
+| HD95 | `max(Q95(d(partial P,partial G)), Q95(d(partial G,partial P)))` | Pixels at native or named resized grid. Undefined when exactly one surface is empty; report eligible/excluded counts. | Established robust surface-distance family; exact directed-percentile convention is declared and tested. |
+| ASSD | Mean of the concatenated two directed nearest-surface-distance samples. | Same unit and empty policy as HD95. Surface pixels, rather than directions, receive equal weight. | Established surface-distance family; this precise weighting convention is declared because libraries vary. |
+| Lesion TP at IoU `t` | Maximum-cardinality one-to-one matching of 8-connected GT and predicted components with component IoU `>=t`. | Report precision/recall/F1 at `t=0.10,0.25,0.50`; thresholds are exploratory, not clinical. | One-to-one object matching is established; these three thresholds are project-specific diagnostics. |
+| Normal false-positive case rate | Number of normal images with any predicted-positive pixel divided by number of normal images. | Report predicted-area median/p95 as severity. Do not mix empty/empty normal cases into tumor Dice. | Established case-level error rate; gating protocol must be stated. |
+| Candidate oracle Dice | `max_j Dice(C_ij,G_i)` over the exact frozen eligible gallery. | Validation diagnostic after all candidates and choices are frozen; never deployable. | Analysis construct, not a performance claim or training target. |
+| Selector regret | `oracle Dice - selected Dice`. | Report overall and by lesion-size group; split into within-source and cross-source regret. | Project diagnostic with a transparent algebraic definition. |
+| Candidate Recall@Dice `t` | Fraction of tumor images with oracle Dice `>=t`, `t in {0.10,0.30,0.50}`. | Uses the complete frozen gallery. | Proposal-recall analogue; thresholds are project-specific. |
+| Image AUROC | Probability interpretation: a random tumor receives a higher continuous score than a random normal, with 0.5 credit for ties. | Report each seed and mean +/- SD; use paired comparisons on the same validation images. | Established rank-discrimination metric. |
+| Image average precision/AUPRC | Area under the stepwise precision-recall curve using the declared implementation. | Report prevalence beside AP; do not use trapezoidal PR AUC interchangeably. | Established, particularly informative under class imbalance. |
+| Brier score | `N^-1 sum_i (p_i-y_i)^2` for the collapsed binary event. | Lower is better. | Established strictly proper scoring rule. |
+| Binary NLL | `-N^-1 sum_i[y_i log p_i+(1-y_i)log(1-p_i)]`, with numerical clipping only. | Lower is better. | Established strictly proper scoring rule. |
+| ECE-15 | `sum_b |B_b|/N * |accuracy(B_b)-confidence(B_b)|` with 15 equal-width bins. | Always state binning; reliability diagram, Brier and NLL accompany it. | Widely used but bin-dependent; never the sole calibration result. |
+| G1 normalized LogSumExp | `tau[log(sum_j exp(s_j/tau))-log N_i]` over valid candidates, `tau=0.20`. | Smooth maximum with correction for bag size. Every bag must be non-empty. | LogSumExp and MIL are established; normalization and `tau=0.20` are project-specific and require E6. |
+| Negative-bag instance loss | BCE-to-zero for every valid proposal in a normal image bag. | Tumor-bag non-winners remain unlabeled. | Follows the standard MIL premise that a negative bag has no positive instance. |
+| Positive-winner loss | BCE-to-one only for the detached current argmax proposal in a tumor bag. | Remaining tumor candidates are ignored. | Project-specific self-training assumption; it needs its own cumulative E6 arm and must not be presented as a standard MIL theorem. |
+| Percentile rank | For sorted values, tied items receive the average zero-based rank, divided by `max(N-1,1)`. | Computed within each image's eligible candidates. Stable lower frozen index is the final tie-break. | Midranks are established; this normalization and tie policy are declared implementation choices. |
+| Final fusion | `0.5*r_G1 + 0.5*r_upstream`. | One candidate per image; then G1 and frozen index tie-breaks. | Project-specific. E8, not a citation alone, is the evidence for the equal weights. |
+| Upstream score | `0.60D+0.25M+0.15R`, where `D` is in-mask CAM-positive density, `M` is captured CAM mass, and `R` is component-local SAM predicted-IoU percentile rank. | Must use the prompt/saliency map belonging to the candidate's own source. | Entire coefficient vector is project-specific. E7 is mandatory. |
+| Ten-class collapsed target | `logsumexp(z_1,...,z_9)-z_0 = log(P(any tumor)/P(normal))`. | No subtype label is needed at inference. | Exact probability identity for a softmax model, not a learned fusion heuristic. |
+
+The published anchors are CAM/Grad-CAM/Grad-CAM++/LayerCAM, SAM, attention
+MIL, S2C and the metric papers already linked above.  The exact thesis scores
+are novel engineering hypotheses.  Calling them “standard formulas used by
+many papers” would weaken, rather than strengthen, the defense.
+
+## 10. Defense experiment matrix and decision rules
+
+Every row below answers one foreseeable objection with a matched experiment.
+The decisive endpoint is always the frozen **actual binary-mask Dice**, unless
+the row explicitly studies classification or computation.  Oracle, AUROC and
+loss are explanatory outcomes and cannot replace actual Dice.
+
+| ID | Defense question | Arms and control | Held fixed | Required output | Current status / allowed conclusion |
+|---|---|---|---|---|---|
+| E0 | Is the result an artifact of resize coordinates? | Native, 320, 448 replay for WSSS and fully supervised | Exact frozen masks/checkpoints and cohort | Macro/micro Dice/IoU, subgroups, migration matrix | Complete. WSSS varies by at most 0.000505 and subgroup counts remain 94/72/18. Coordinate choice does not explain the result. |
+| E1 | Why binary rather than 10-class supervision? | B2 versus matched C10, seeds 42/43/44; collapse C10 by exact tumor log-odds; then identical downstream pipeline | Backbone, optimizer, epochs, checkpoint endpoint, split, SAM-B, gallery, G1, fusion | Image discrimination/calibration **and downstream selected/oracle Dice** | Image stage complete; C10 is better calibrated and slightly higher in mean discrimination, but downstream Dice is pending. No binary-superiority claim yet. |
+| E2 | Why LayerCAM and which prompt? | 4 attribution methods x point/box/point+box; CAM-only threshold control | Classifier, source, SAM-B, candidate/evaluator protocol | Actual Dice/oracle/subgroups, paired main effects, runtime | 12 selected-mask arms complete. LayerCAM has supported positive main effects; point is numerically best but prompt contrasts cross zero. CAM-only/oracle enrichment pending. |
+| E3 | Why SAM ViT-B? | ViT-B/L/H end-to-end | Inputs, prompts, multimask, gallery merge/dedup/cap, G1, fusion | Selected/oracle Dice, subgroups, seconds/image, peak VRAM, disk | B/L running; H queued. Until complete, ViT-B is only a frozen resource choice, not proven optimal. |
+| E4 | Why three localization sources? | All seven non-empty subsets of LayerCAM-320, LayerCAM-448 and external saliency | Exact selector, cap policy and cohort | Candidate count/oracle/Recall@Dice, selected Dice, regret, runtime/storage | Fixed-selector replay complete. It supports complementarity only where paired selected/oracle deltas and source regrets agree. Retrained-per-subset G1 is a separate optional question. |
+| E5 | Why a rich gallery and why cap 243? | Upstream top-1; one exact prompt; three multimasks; full pre-dedup; post-dedup; caps 27/81/162/243 | Source generation and selector | Oracle@stage/K, selected Dice, truncation regret, candidate count, resource curve | Cap curve complete and monotonic to 0.288224 at 243. Exact prompt/dedup necessity still missing because old payload lacks prompt IDs; regeneration is mandatory for the exact claim. |
+| E6a | Does learned G1 add information? | random, SAM-IoU, upstream, G1, final fusion, oracle | Identical eligible candidate set | Actual Dice, paired deltas, regret/source error | Complete: final 0.288224 native versus upstream 0.225306, G1 0.205545, random 0.101890, SAM 0.098902. G1 alone is not superior; its complementarity under fusion is the defensible claim. |
+| E6b | Which G1 features/losses are necessary? | Four cumulative feature arms and four cumulative loss arms, 3 seeds, matched capacity | Cached RAD-DINO descriptors, scorer size, train budget, split | Selected Dice/oracle/regret plus AUROC/AUPRC/calibration and seed variation | Code/protocol complete; GPU execution pending. Exact self-guided winner term remains unproven until this finishes. |
+| E7 | Why `0.60D+0.25M+0.15R`? | U0--U6: raw SAM, D, M, equal combinations, current local rank, global-rank variant | Candidates, G1, fusion/evaluator | Actual Dice, paired CI, subgroup/regret | Pending source-correct replay. Cannot use the merged anchor prompt map for other sources. Current coefficients must be called frozen empirical weights, not literature constants. |
+| E8 | Why equal percentile-rank fusion? | upstream, G1, z-score, robust-z, min-max, RRF, percentile weights .25/.50/.75 | Same candidates and scores | Actual Dice and paired CIs | Complete: equal percentile rank is best of declared rules at 0.288224 native/0.288729 common-320; alternatives z-score 0.286375 and RRF 0.285523 are close, so report effect size rather than “universal optimum.” |
+| E9 | Is the selector or proposal supply the dominant ceiling? | Selected versus within-source oracle versus all-source oracle | Frozen gallery | Regret decomposition, oracle-source confusion, Recall@Dice, misses | Required synthesis after E2/E3/E5. Existing all-gallery oracle 0.528298 versus selected 0.288729 already shows large selector regret, but absence of a good proposal for some cases remains measurable via Recall@Dice. |
+| E10 | Does the method fail differently by lesion burden? | Predeclared `<1%`, `1-<5%`, `>=5%` | Native subgroup definition | Dice/IoU/precision/recall/RVD, zero-overlap, lesion recall, paired deltas with exact n | Mandatory for every final/ablation comparison. Never choose a subgroup-specific rule using validation GT burden. |
+| E11 | Is the gain practically worth the complexity? | Baseline stages and B/L/H resource arms | Named hardware, batch and precision | Parameters, peak VRAM, wall time/image, total stage time, disk/candidates | Partially implemented; E3 supplies backbone telemetry. Final end-to-end table is still required. |
+
+### Fixed interpretation rule
+
+For every deterministic ablation report `(delta Dice, 95% paired grouped
+bootstrap CI, win/tie/loss)` against its immediate reference.  A numerical gain
+whose interval crosses zero is an observed improvement, not established
+superiority.  For stochastic learned arms, show all seeds and compare matched
+seed deltas; never select the most favourable seed for the thesis table.
+
+## 11. Metrics intentionally not added by default
+
+| Candidate metric | Decision | Reason |
+|---|---|---|
+| Pixel accuracy / pixel specificity as headline | Do not use as headline | The overwhelmingly normal background can make a poor tiny-lesion segmenter look excellent. Pixel specificity may appear only as a diagnostic. |
+| MCC on all pixels | Optional diagnostic only | Although established, it mixes the vast background with lesion overlap and does not answer the primary case-level tumor-boundary question better than Dice plus precision/recall. |
+| NSD / surface Dice | Do not run yet | It requires a distance tolerance with clinical or inter-observer justification. BTXRD has no reliable spacing or second annotation. Validation-tuning a tolerance is not defensible. |
+| FROC | Conditional | Add only if the thesis makes a lesion-detection claim and each predicted component has a frozen continuous confidence. The current final output is one semantic mask, so one-to-one lesion precision/recall/F1 is the honest object diagnostic. |
+| Per-image best threshold, GT-area matching, oracle routing | Prohibited | These use validation spatial truth to alter the prediction and would inflate actual Dice. They may appear only as labelled oracle analyses. |
+| Calibration of G1 rank scores | Do not report as probability calibration | G1 is used as a within-image ranker, not a calibrated tumor probability. Ranking regret and selected Dice are the relevant endpoints. |
+| Millimetre HD95/ASSD | Prohibited | No trustworthy pixel spacing. Report pixels on the named grid. |
+
+## 12. Minimum final result package
+
+The thesis result is not complete until one immutable package contains:
+
+1. exact split, source, checkpoint, protocol and evaluator hashes;
+2. 371 frozen masks and 371 per-image rows for WSSS and fully supervised;
+3. primary macro tumor Dice/IoU with 95% grouped sensitivity intervals;
+4. micro overlap, precision/recall, RVD/area ratio, empty and zero-overlap;
+5. conditional HD95/ASSD with units and excluded counts;
+6. one-to-one lesion precision/recall/F1 and multifocal counts;
+7. 94/72/18 lesion-size subgroups and exploratory metadata subgroups with `n`;
+8. candidate oracle, Recall@Dice and regret decomposition;
+9. the E0--E8 ablation table with actual Dice, not proxy-only metrics;
+10. end-to-end runtime, peak VRAM, storage, parameter and candidate counts;
+11. three-seed classifier/G1 tables where training randomness exists; and
+12. predeclared qualitative failure panels, including failures rather than only
+    successful examples.
+
+Until E1-downstream, E3, exact E5, E6b and source-correct E7 finish, the safest
+defense wording is: the current final system is the best **validation-selected
+configuration among the completed declared arms**, while several component
+optimality claims remain under experimental verification.
