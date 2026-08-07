@@ -11,12 +11,12 @@ from pathlib import Path
 
 
 SPLIT_SHA = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
-PROTOCOL_SHA = "66b56661ca91052c6bb1958c92d433cfcf9303f07624423068109e0b90eda454"
+PROTOCOL_SHA = "c65e6771cc6e68fe51de39c19374cffab35180259e8eed40eead7eed4ff6fb74"
 SOURCE_COMMIT = "14d7eb1c91132157df8ec5e6d6d1a7056031e7f8"
 SAM_SHA = {
     "vit_b": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
-    "vit_l": "0b3195507c641ddb6910d2bb5adee89c70cc0715ff8e89f9b83181e77b9d4b17",
-    "vit_h": "a7bf3b02f3eb018a80eab45a88421071e85f430a7f709bb075b0bb5697de6c6a",
+    "vit_l": "3adcc4315b642a4d2101128f611684e8734c41232a17c648ed1693702a49a622",
+    "vit_h": "a7bf3b02f3ebf1267aba913ff637d9a2d5c33d3173bb679e46d9f338c26f262e",
 }
 
 
@@ -37,9 +37,13 @@ def read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def _assert_no_test(payload: dict[str, object], *, name: str) -> None:
-    if payload.get("test_images_read") != 0 or payload.get("test_evaluated") is not False:
+def _assert_no_test(
+    payload: dict[str, object], *, name: str, require_images_read: bool = True
+) -> None:
+    if payload.get("test_evaluated") is not False:
         raise ValueError(f"{name} accessed/evaluated test")
+    if require_images_read and payload.get("test_images_read") != 0:
+        raise ValueError(f"{name} did not prove zero test images read")
 
 
 def audit(root: Path, model_type: str) -> dict[str, object]:
@@ -79,12 +83,18 @@ def audit(root: Path, model_type: str) -> dict[str, object]:
     for name, payload in (
         ("result", result),
         ("evaluation", evaluation),
-        ("evaluation audit", evaluation_audit),
         ("anchor", anchor),
         ("addition", addition),
         ("choices", choice_freeze),
     ):
         _assert_no_test(payload, name=name)
+    # This redundant hash/reproduction receipt predates the explicit
+    # ``test_images_read`` field.  The evaluator summary above is the
+    # authoritative fail-closed counter, while this receipt must still state
+    # explicitly that test evaluation was disabled.
+    _assert_no_test(
+        evaluation_audit, name="evaluation audit", require_images_read=False
+    )
 
     if (
         result.get("study") != "G4 E3 matched end-to-end SAM-v1 backbone ablation"
@@ -144,6 +154,7 @@ def audit(root: Path, model_type: str) -> dict[str, object]:
     if (
         evaluation.get("split") != "val"
         or evaluation.get("split_sha256") != SPLIT_SHA
+        or evaluation.get("validation_ablation") is not True
         or evaluation.get("candidate_choices_frozen_before_spatial_gt") is not True
         or int(evaluation.get("spatial_annotations_opened", -1)) != 184
         or not isinstance(summary, dict)
@@ -153,7 +164,11 @@ def audit(root: Path, model_type: str) -> dict[str, object]:
         or int(summary.get("large", {}).get("n", -1)) != 18
         or result.get("summary") != summary
         or evaluation_audit.get("pass") is not True
-        or evaluation_audit.get("overall_dice_reproduced") is not True
+        # E3 intentionally changes the SAM backbone, so the evaluator runs in
+        # validation-ablation mode and must not claim locked-baseline
+        # reproduction.  Exact B reproduction is checked numerically in the
+        # paired E3 comparison, not by mislabelling every arm as the baseline.
+        or evaluation_audit.get("overall_dice_reproduced") is not False
         or evaluation_audit.get("summary_sha256") != sha256(evaluation_path)
     ):
         raise ValueError("E3 spatial evaluation contract differs")
