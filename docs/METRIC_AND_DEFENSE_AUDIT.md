@@ -1,5 +1,8 @@
 # Metric and defense-evidence audit
 
+The Vietnamese defense-facing execution matrix is maintained in
+[`DEFENSE_EXPERIMENT_PLAN_VI.md`](DEFENSE_EXPERIMENT_PLAN_VI.md).
+
 This audit answers two different questions:
 
 1. Is a metric established and appropriate for this problem?
