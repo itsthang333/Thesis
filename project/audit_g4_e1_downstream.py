@@ -14,7 +14,12 @@ from run_g4_e1_downstream import E1_SHA, PROTOCOL_SHA
 from run_g4_e3_sam_backbone import G1_SHA, SAM_SHA, SPLIT_SHA
 
 
-SOURCE_COMMIT = "b119a1dbd470f3802c60669e364db4912d5e755a"
+SOURCE_COMMIT = {
+    "binary": "b119a1dbd470f3802c60669e364db4912d5e755a",
+    # Technical-only guard correction: permits the exact collapsed
+    # tumor-vs-normal log-odds beside the same frozen external saliency.
+    "ten_class": "be4829e03493ab7a78cfe211d14fc056b7a189cc",
+}
 RUNNER_SHA256 = "c2d0b60b13b73f0379168e83b1130aeb92a92bdafa81d6c52f69999a1bdfb4e5"
 
 
@@ -57,7 +62,7 @@ def audit(root: Path, arm: str) -> dict[str, object]:
         arm_summary.get("study") != "G4 E1 label granularity downstream WSSS"
         or arm_summary.get("arm") != arm
         or arm_summary.get("protocol_sha256") != PROTOCOL_SHA
-        or arm_summary.get("source_commit") != SOURCE_COMMIT
+        or arm_summary.get("source_commit") != SOURCE_COMMIT[arm]
         or arm_summary.get("split_sha256") != SPLIT_SHA
         or arm_summary.get("choices_frozen_before_spatial_gt") is not True
         or int(arm_summary.get("spatial_annotations_opened_per_seed", -1)) != 184
@@ -138,7 +143,7 @@ def audit(root: Path, arm: str) -> dict[str, object]:
             or reported_seed.get("evaluation_summary_sha256") != sha256(paths["evaluation"])
             or anchor.get("classifier_checkpoint_sha256") != checkpoint_sha
             or anchor.get("protocol_sha256") != PROTOCOL_SHA
-            or anchor.get("source_commit") != SOURCE_COMMIT
+            or anchor.get("source_commit") != SOURCE_COMMIT[arm]
             or anchor.get("split_sha256") != SPLIT_SHA
             or anchor.get("sam_checkpoint_sha256") != SAM_SHA["vit_b"]
             or int(anchor.get("splits", {}).get("val", {}).get("counts", {}).get("images", -1)) != 371
@@ -146,7 +151,7 @@ def audit(root: Path, arm: str) -> dict[str, object]:
             or gallery.get("split_sha256") != SPLIT_SHA
             or int(gallery.get("cohort", -1)) != 371
             or score.get("protocol_sha256") != PROTOCOL_SHA
-            or score.get("source_commit") != SOURCE_COMMIT
+            or score.get("source_commit") != SOURCE_COMMIT[arm]
             or score.get("split_sha256") != SPLIT_SHA
             or score.get("baseline_checkpoint_sha256") != G1_SHA
             or int(score.get("images", -1)) != 371
@@ -200,7 +205,7 @@ def audit(root: Path, arm: str) -> dict[str, object]:
         "pass": True,
         "arm": arm,
         "runner_sha256": RUNNER_SHA256,
-        "source_commit": SOURCE_COMMIT,
+        "source_commit": SOURCE_COMMIT[arm],
         "protocol_sha256": PROTOCOL_SHA,
         "split_sha256": SPLIT_SHA,
         "seed_results": audited_seeds,
