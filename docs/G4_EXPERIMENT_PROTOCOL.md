@@ -269,6 +269,10 @@ scientific configuration; efficacy failures are reported, not silently swept.
   identical DenseNet-121/320/optimizer budgets, and a shared binary-F1
   checkpoint endpoint. They report discrimination and calibration without
   spatial GT before downstream segmentation.
+  Both arms completed and passed an independent output audit. Ten-class-to-
+  binary improves mean NLL in every seed; paired intervals for AUROC/F1 still
+  include zero. No claim about WSSS superiority is allowed until downstream
+  frozen-mask Dice is available.
 - E2 CAM/Grad-CAM/Grad-CAM++/LayerCAM attribution and point/box/point+box
   single-prompt factorial is implemented. Every arm freezes all 371 binary
   masks before the evaluator opens 184 validation polygons; actual mask Dice

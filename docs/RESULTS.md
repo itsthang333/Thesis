@@ -35,6 +35,35 @@ The native subgroup definition yields exactly the same membership counts as the
 old 320 definition (94/72/18). Thus the headline conclusions are not an artifact
 of coordinate resolution.
 
+## G4 E1: binary versus ten-class image supervision
+
+Both arms use the same DenseNet-121, 320 input, ImageNet initialization,
+AdamW budget, canonical split, checkpoint endpoint (validation binary F1), and
+seeds 42/43/44. The ten-class tumor score is `1 - p(normal)`.
+
+| Image-level endpoint | Binary, mean +/- SD | Ten-class collapsed to binary, mean +/- SD |
+|---|---:|---:|
+| F1 at 0.5 | 0.780882 +/- 0.007753 | **0.795082 +/- 0.007123** |
+| MCC at 0.5 | 0.560627 +/- 0.007211 | **0.592005 +/- 0.028990** |
+| AUROC | 0.848727 +/- 0.009683 | **0.860100 +/- 0.007996** |
+| AUPRC | 0.864460 +/- 0.005855 | **0.871859 +/- 0.006982** |
+| Brier (lower is better) | 0.196481 +/- 0.004550 | **0.179059 +/- 0.013914** |
+| NLL (lower is better) | 1.514750 +/- 0.115097 | **1.033681 +/- 0.077392** |
+| ECE-15 (lower is better) | 0.192456 +/- 0.008731 | **0.164921 +/- 0.022648** |
+
+The paired grouped-bootstrap intervals for F1, MCC, AUROC and AUPRC include zero
+for every matched seed. NLL is the stable exception: ten-class minus binary is
+negative for all seeds, with 95% intervals `[-1.058,-0.294]`,
+`[-0.723,-0.045]`, and `[-0.738,-0.078]`. Therefore E1 currently supports a
+calibration/log-loss advantage for ten-class supervision, not yet a localization
+or segmentation advantage. Downstream frozen-mask Dice remains mandatory before
+claiming that either label granularity is superior for WSSS.
+
+The ten-class task itself is difficult and seed-sensitive: top-1 accuracy is
+0.7062/0.6253/0.6146 and macro F1 is 0.4743/0.3533/0.3528. This prevents the
+collapsed result from being misreported as uniformly strong nine-disease
+classification.
+
 These are development results on 184 tumor validation images. There are 49
 complete misses.
 

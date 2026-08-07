@@ -1,0 +1,1768 @@
+{
+  "binary": {
+    "aggregate": {
+      "auroc": {
+        "mean": 0.848727040223204,
+        "sample_std": 0.009682693638021472,
+        "values": [
+          0.8392234364101372,
+          0.8585794001395024,
+          0.8483782841199721
+        ]
+      },
+      "average_precision_auprc": {
+        "mean": 0.8644597064300997,
+        "sample_std": 0.005855297734592979,
+        "values": [
+          0.8684223511554913,
+          0.8672226012468733,
+          0.8577341668879342
+        ]
+      },
+      "brier_score": {
+        "mean": 0.196481337026322,
+        "sample_std": 0.004549751986612067,
+        "values": [
+          0.19989936924477264,
+          0.1982274670724577,
+          0.19131717476173576
+        ]
+      },
+      "ece_15_equal_width": {
+        "mean": 0.19245569289001416,
+        "sample_std": 0.008731134763370509,
+        "values": [
+          0.19386629620500279,
+          0.2003956421237285,
+          0.18310514034131117
+        ]
+      },
+      "f1": {
+        "mean": 0.7808817222737655,
+        "sample_std": 0.007753252110583949,
+        "values": [
+          0.7802197802197802,
+          0.7889447236180905,
+          0.7734806629834255
+        ]
+      },
+      "matthews_correlation_coefficient": {
+        "mean": 0.5606269919523635,
+        "sample_std": 0.007211435137336699,
+        "values": [
+          0.5687620404894224,
+          0.5550198132697568,
+          0.5580991220979117
+        ]
+      },
+      "negative_log_likelihood": {
+        "mean": 1.5147504087414678,
+        "sample_std": 0.11509720647527101,
+        "values": [
+          1.6341641072326645,
+          1.5055672509475182,
+          1.4045198680442212
+        ]
+      }
+    },
+    "arm": "binary",
+    "arm_summary_sha256": "46e47f4d30257d069b0c215974756927f29132ac2e948afac353b5c7a80e8319",
+    "runs": [
+      {
+        "binary_endpoint": {
+          "accuracy": 0.784366576819407,
+          "auroc": 0.8392234364101372,
+          "average_precision_auprc": 0.8684223511554913,
+          "balanced_accuracy": 0.784265287142525,
+          "brier_score": 0.19989936924477264,
+          "calibration_bins": [
+            {
+              "confidence": 0.003870186356771586,
+              "lower": 0.0,
+              "n": 172,
+              "prevalence": 0.21511627906976744,
+              "upper": 0.06666666666666667
+            },
+            {
+              "confidence": 0.09826371818780899,
+              "lower": 0.06666666666666667,
+              "n": 7,
+              "prevalence": 0.14285714285714285,
+              "upper": 0.13333333333333333
+            },
+            {
+              "confidence": 0.17130796611309052,
+              "lower": 0.13333333333333333,
+              "n": 1,
+              "prevalence": 0.0,
+              "upper": 0.2
+            },
+            {
+              "confidence": 0.23438268899917603,
+              "lower": 0.2,
+              "n": 2,
+              "prevalence": 0.5,
+              "upper": 0.26666666666666666
+            },
+            {
+              "confidence": 0.2776244580745697,
+              "lower": 0.26666666666666666,
+              "n": 2,
+              "prevalence": 0.0,
+              "upper": 0.3333333333333333
+            },
+            {
+              "confidence": 0.37635306517283124,
+              "lower": 0.3333333333333333,
+              "n": 3,
+              "prevalence": 0.3333333333333333,
+              "upper": 0.4
+            },
+            {
+              "confidence": 0.43785324692726135,
+              "lower": 0.4,
+              "n": 4,
+              "prevalence": 0.5,
+              "upper": 0.4666666666666667
+            },
+            {
+              "confidence": 0.5290647149085999,
+              "lower": 0.4666666666666667,
+              "n": 1,
+              "prevalence": 0.0,
+              "upper": 0.5333333333333333
+            },
+            {
+              "confidence": 0.5752705335617065,
+              "lower": 0.5333333333333333,
+              "n": 3,
+              "prevalence": 0.6666666666666666,
+              "upper": 0.6
+            },
+            {
+              "confidence": 0.6389050086339315,
+              "lower": 0.6,
+              "n": 3,
+              "prevalence": 0.6666666666666666,
+              "upper": 0.6666666666666666
+            },
+            {
+              "confidence": 0.6910545428593954,
+              "lower": 0.6666666666666666,
+              "n": 3,
+              "prevalence": 0.0,
+              "upper": 0.7333333333333333
+            },
+            {
+              "confidence": 0.8339956283569336,
+              "lower": 0.8,
+              "n": 5,
+              "prevalence": 0.6,
+              "upper": 0.8666666666666667
+            },
+            {
+              "confidence": 0.9030270874500275,
+              "lower": 0.8666666666666667,
+              "n": 2,
+              "prevalence": 0.5,
+              "upper": 0.9333333333333333
+            },
+            {
+              "confidence": 0.9982008725587576,
+              "lower": 0.9333333333333333,
+              "n": 163,
+              "prevalence": 0.8220858895705522,
+              "upper": 1.0
+            }
+          ],
+          "confusion": {
+            "fn": 42,
+            "fp": 38,
+            "tn": 149,
+            "tp": 142
+          },
+          "ece_15_equal_width": 0.19386629620500279,
+          "f1": 0.7802197802197802,
+          "matthews_correlation_coefficient": 0.5687620404894224,
+          "n": 371,
+          "negative": 187,
+          "negative_log_likelihood": 1.6341641072326645,
+          "positive": 184,
+          "precision": 0.7888888888888889,
+          "sensitivity_recall": 0.7717391304347826,
+          "specificity": 0.7967914438502673,
+          "threshold": 0.5
+        },
+        "checkpoint_epoch": 15,
+        "checkpoint_sha256": "960a6ea4ec9a452a5a8903a98ec9b8ef6026258b9d1b15d043e3954123f2247b",
+        "completed_epochs": 22,
+        "predictions_sha256": "b1daeda1f3dae45acdfcbd23ec452f47ef84ef8878bc2b12ebb488282248ab38",
+        "seed": 42,
+        "stopped_early": true,
+        "ten_class_endpoint": null
+      },
+      {
+        "binary_endpoint": {
+          "accuracy": 0.7735849056603774,
+          "auroc": 0.8585794001395024,
+          "average_precision_auprc": 0.8672226012468733,
+          "balanced_accuracy": 0.7742240176703092,
+          "brier_score": 0.1982274670724577,
+          "calibration_bins": [
+            {
+              "confidence": 0.005224586777294053,
+              "lower": 0.0,
+              "n": 132,
+              "prevalence": 0.12878787878787878,
+              "upper": 0.06666666666666667
+            },
+            {
+              "confidence": 0.0977041321721944,
+              "lower": 0.06666666666666667,
+              "n": 11,
+              "prevalence": 0.36363636363636365,
+              "upper": 0.13333333333333333
+            },
+            {
+              "confidence": 0.15106067657470704,
+              "lower": 0.13333333333333333,
+              "n": 5,
+              "prevalence": 0.4,
+              "upper": 0.2
+            },
+            {
+              "confidence": 0.22711248695850372,
+              "lower": 0.2,
+              "n": 2,
+              "prevalence": 0.0,
+              "upper": 0.26666666666666666
+            },
+            {
+              "confidence": 0.3043781816959381,
+              "lower": 0.26666666666666666,
+              "n": 2,
+              "prevalence": 0.5,
+              "upper": 0.3333333333333333
+            },
+            {
+              "confidence": 0.36023380359013873,
+              "lower": 0.3333333333333333,
+              "n": 3,
+              "prevalence": 0.6666666666666666,
+              "upper": 0.4
+            },
+            {
+              "confidence": 0.44465476274490356,
+              "lower": 0.4,
+              "n": 1,
+              "prevalence": 0.0,
+              "upper": 0.4666666666666667
+            },
+            {
+              "confidence": 0.4761989712715149,
+              "lower": 0.4666666666666667,
+              "n": 1,
+              "prevalence": 1.0,
+              "upper": 0.5333333333333333
+            },
+            {
+              "confidence": 0.5666370093822479,
+              "lower": 0.5333333333333333,
+              "n": 4,
+              "prevalence": 0.25,
+              "upper": 0.6
+            },
+            {
+              "confidence": 0.6253907680511475,
+              "lower": 0.6,
+              "n": 1,
+              "prevalence": 0.0,
+              "upper": 0.6666666666666666
+            },
+            {
+              "confidence": 0.6883375843365988,
+              "lower": 0.6666666666666666,
+              "n": 3,
+              "prevalence": 0.3333333333333333,
+              "upper": 0.7333333333333333
+            },
+            {
+              "confidence": 0.7566214084625245,
+              "lower": 0.7333333333333333,
+              "n": 5,
+              "prevalence": 0.0,
+              "upper": 0.8
+            },
+            {
+              "confidence": 0.8414939939975739,
+              "lower": 0.8,
+              "n": 2,
+              "prevalence": 0.0,
+              "upper": 0.8666666666666667
+            },
+            {
+              "confidence": 0.8940531134605407,
+              "lower": 0.8666666666666667,
+              "n": 5,
+              "prevalence": 0.4,
+              "upper": 0.9333333333333333
+            },
+            {
+              "confidence": 0.99608217717446,
+              "lower": 0.9333333333333333,
+              "n": 194,
+              "prevalence": 0.788659793814433,
+              "upper": 1.0
+            }
+          ],
+          "confusion": {
+            "fn": 27,
+            "fp": 57,
+            "tn": 130,
+            "tp": 157
+          },
+          "ece_15_equal_width": 0.2003956421237285,
+          "f1": 0.7889447236180905,
+          "matthews_correlation_coefficient": 0.5550198132697568,
+          "n": 371,
+          "negative": 187,
+          "negative_log_likelihood": 1.5055672509475182,
+          "positive": 184,
+          "precision": 0.7336448598130841,
+          "sensitivity_recall": 0.8532608695652174,
+          "specificity": 0.6951871657754011,
+          "threshold": 0.5
+        },
+        "checkpoint_epoch": 16,
+        "checkpoint_sha256": "8edb702230eb8e19317194c0e28720aeb9c68c0b0480ff861472dfecd5e8321a",
+        "completed_epochs": 23,
+        "predictions_sha256": "d7a244f0379f267cd0eb940b607fd53414f802015ca810118aebcd8b178f9386",
+        "seed": 43,
+        "stopped_early": true,
+        "ten_class_endpoint": null
+      },
+      {
+        "binary_endpoint": {
+          "accuracy": 0.7789757412398922,
+          "auroc": 0.8483782841199721,
+          "average_precision_auprc": 0.8577341668879342,
+          "balanced_accuracy": 0.7788305045338293,
+          "brier_score": 0.19131717476173576,
+          "calibration_bins": [
+            {
+              "confidence": 0.004157172126785469,
+              "lower": 0.0,
+              "n": 162,
+              "prevalence": 0.17901234567901234,
+              "upper": 0.06666666666666667
+            },
+            {
+              "confidence": 0.10435626113956625,
+              "lower": 0.06666666666666667,
+              "n": 11,
+              "prevalence": 0.5454545454545454,
+              "upper": 0.13333333333333333
+            },
+            {
+              "confidence": 0.1587147776569639,
+              "lower": 0.13333333333333333,
+              "n": 7,
+              "prevalence": 0.14285714285714285,
+              "upper": 0.2
+            },
+            {
+              "confidence": 0.2295979619026184,
+              "lower": 0.2,
+              "n": 5,
+              "prevalence": 0.4,
+              "upper": 0.26666666666666666
+            },
+            {
+              "confidence": 0.2988404830296834,
+              "lower": 0.26666666666666666,
+              "n": 3,
+              "prevalence": 0.6666666666666666,
+              "upper": 0.3333333333333333
+            },
+            {
+              "confidence": 0.3754442036151886,
+              "lower": 0.3333333333333333,
+              "n": 4,
+              "prevalence": 0.75,
+              "upper": 0.4
+            },
+            {
+              "confidence": 0.4969417005777359,
+              "lower": 0.4666666666666667,
+              "n": 2,
+              "prevalence": 0.5,
+              "upper": 0.5333333333333333
+            },
+            {
+              "confidence": 0.5561172366142273,
+              "lower": 0.5333333333333333,
+              "n": 2,
+              "prevalence": 0.0,
+              "upper": 0.6
+            },
+            {
+              "confidence": 0.622249960899353,
+              "lower": 0.6,
+              "n": 3,
+              "prevalence": 0.6666666666666666,
+              "upper": 0.6666666666666666
+            },
+            {
+              "confidence": 0.6946938931941986,
+              "lower": 0.6666666666666666,
+              "n": 2,
+              "prevalence": 0.5,
+              "upper": 0.7333333333333333
+            },
+            {
+              "confidence": 0.7736647725105286,
+              "lower": 0.7333333333333333,
+              "n": 5,
+              "prevalence": 0.6,
+              "upper": 0.8
+            },
+            {
+              "confidence": 0.8234637975692749,
+              "lower": 0.8,
+              "n": 7,
+              "prevalence": 0.2857142857142857,
+              "upper": 0.8666666666666667
+            },
+            {
+              "confidence": 0.9178739786148071,
+              "lower": 0.8666666666666667,
+              "n": 6,
+              "prevalence": 0.6666666666666666,
+              "upper": 0.9333333333333333
+            },
+            {
+              "confidence": 0.9961044023695745,
+              "lower": 0.9333333333333333,
+              "n": 152,
+              "prevalence": 0.8421052631578947,
+              "upper": 1.0
+            }
+          ],
+          "confusion": {
+            "fn": 44,
+            "fp": 38,
+            "tn": 149,
+            "tp": 140
+          },
+          "ece_15_equal_width": 0.18310514034131117,
+          "f1": 0.7734806629834255,
+          "matthews_correlation_coefficient": 0.5580991220979117,
+          "n": 371,
+          "negative": 187,
+          "negative_log_likelihood": 1.4045198680442212,
+          "positive": 184,
+          "precision": 0.7865168539325843,
+          "sensitivity_recall": 0.7608695652173914,
+          "specificity": 0.7967914438502673,
+          "threshold": 0.5
+        },
+        "checkpoint_epoch": 14,
+        "checkpoint_sha256": "3956e771040a991d279afc1c551e9f0136ce635a633805c3bd8304b3da49f6ba",
+        "completed_epochs": 21,
+        "predictions_sha256": "8fd687e8d8016132c78cfad9e57ab276ca6a9d170e7044bff090a8274de034ce",
+        "seed": 44,
+        "stopped_early": true,
+        "ten_class_endpoint": null
+      }
+    ]
+  },
+  "interpretation_boundary": "Image-level evidence only. Binary-versus-ten-class WSSS superiority requires the downstream frozen-mask Dice experiment.",
+  "paired_by_seed": {
+    "42": {
+      "comparison": "ten_class_minus_binary",
+      "group_provenance": "canonical heuristic group_id, not verified patient ID",
+      "groups": 242,
+      "iterations": 5000,
+      "metrics": {
+        "auroc": {
+          "binary": 0.8392234364101372,
+          "ci95_high": 0.06463628057262816,
+          "ci95_low": -0.006843839575113257,
+          "delta": 0.028423622413392247,
+          "probability_delta_gt_zero": 0.9398,
+          "ten_class": 0.8676470588235294
+        },
+        "average_precision_auprc": {
+          "binary": 0.8684223511554913,
+          "ci95_high": 0.050961202364145745,
+          "ci95_low": -0.03654571782518178,
+          "delta": 0.010024999171304949,
+          "probability_delta_gt_zero": 0.6838,
+          "ten_class": 0.8784473503267962
+        },
+        "brier_score": {
+          "binary": 0.19989936924477264,
+          "ci95_high": -0.0007190667881043497,
+          "ci95_low": -0.07117316503267285,
+          "delta": -0.03633815597234269,
+          "probability_delta_gt_zero": 0.023,
+          "ten_class": 0.16356121327242995
+        },
+        "f1": {
+          "binary": 0.7802197802197802,
+          "ci95_high": 0.06176326725485298,
+          "ci95_low": -0.019937162331554147,
+          "delta": 0.020916583416583423,
+          "probability_delta_gt_zero": 0.8396,
+          "ten_class": 0.8011363636363636
+        },
+        "matthews_correlation_coefficient": {
+          "binary": 0.5687620404894224,
+          "ci95_high": 0.13255205204646797,
+          "ci95_low": -0.021530977445729713,
+          "delta": 0.055922997484096126,
+          "probability_delta_gt_zero": 0.9172,
+          "ten_class": 0.6246850379735185
+        },
+        "negative_log_likelihood": {
+          "binary": 1.6341641072326645,
+          "ci95_high": -0.2935783081493491,
+          "ci95_low": -1.0579109612695348,
+          "delta": -0.6613731701871696,
+          "probability_delta_gt_zero": 0.0004,
+          "ten_class": 0.9727909370454949
+        }
+      }
+    },
+    "43": {
+      "comparison": "ten_class_minus_binary",
+      "group_provenance": "canonical heuristic group_id, not verified patient ID",
+      "groups": 242,
+      "iterations": 5000,
+      "metrics": {
+        "auroc": {
+          "binary": 0.8585794001395024,
+          "ci95_high": 0.03642394576455766,
+          "ci95_low": -0.03246687471083265,
+          "delta": 0.002354103696814769,
+          "probability_delta_gt_zero": 0.5462,
+          "ten_class": 0.8609335038363172
+        },
+        "average_precision_auprc": {
+          "binary": 0.8672226012468733,
+          "ci95_high": 0.059299174342402894,
+          "ci95_low": -0.04265668563914985,
+          "delta": 0.0053661635038493305,
+          "probability_delta_gt_zero": 0.6166,
+          "ten_class": 0.8725887647507227
+        },
+        "brier_score": {
+          "binary": 0.1982274670724577,
+          "ci95_high": 0.03178655947724095,
+          "ci95_low": -0.04577753765870057,
+          "delta": -0.007751810399431042,
+          "probability_delta_gt_zero": 0.357,
+          "ten_class": 0.19047565667302666
+        },
+        "f1": {
+          "binary": 0.7889447236180905,
+          "ci95_high": 0.04815315544258022,
+          "ci95_low": -0.03341381982325397,
+          "delta": 0.007930276381909462,
+          "probability_delta_gt_zero": 0.6394,
+          "ten_class": 0.796875
+        },
+        "matthews_correlation_coefficient": {
+          "binary": 0.5550198132697568,
+          "ci95_high": 0.1139245711977304,
+          "ci95_low": -0.06161996707785785,
+          "delta": 0.026926657801770948,
+          "probability_delta_gt_zero": 0.7176,
+          "ten_class": 0.5819464710715277
+        },
+        "negative_log_likelihood": {
+          "binary": 1.5055672509475182,
+          "ci95_high": -0.04488615298246732,
+          "ci95_low": -0.723395850238255,
+          "delta": -0.38479398366677153,
+          "probability_delta_gt_zero": 0.0134,
+          "ten_class": 1.1207732672807467
+        }
+      }
+    },
+    "44": {
+      "comparison": "ten_class_minus_binary",
+      "group_provenance": "canonical heuristic group_id, not verified patient ID",
+      "groups": 242,
+      "iterations": 5000,
+      "metrics": {
+        "auroc": {
+          "binary": 0.8483782841199721,
+          "ci95_high": 0.04207423655300954,
+          "ci95_low": -0.03276828098840784,
+          "delta": 0.0033422459893048817,
+          "probability_delta_gt_zero": 0.5736,
+          "ten_class": 0.851720530109277
+        },
+        "average_precision_auprc": {
+          "binary": 0.8577341668879342,
+          "ci95_high": 0.05161862365819017,
+          "ci95_low": -0.03493463918982079,
+          "delta": 0.006807433796037099,
+          "probability_delta_gt_zero": 0.652,
+          "ten_class": 0.8645416006839713
+        },
+        "brier_score": {
+          "binary": 0.19131717476173576,
+          "ci95_high": 0.029722372792306447,
+          "ci95_low": -0.04822945598594964,
+          "delta": -0.008177468732589621,
+          "probability_delta_gt_zero": 0.3348,
+          "ten_class": 0.18313970602914614
+        },
+        "f1": {
+          "binary": 0.7734806629834255,
+          "ci95_high": 0.06095359246507735,
+          "ci95_low": -0.03390081224661573,
+          "delta": 0.013753379569765967,
+          "probability_delta_gt_zero": 0.7156,
+          "ten_class": 0.7872340425531915
+        },
+        "matthews_correlation_coefficient": {
+          "binary": 0.5580991220979117,
+          "ci95_high": 0.10417335314532887,
+          "ci95_low": -0.08109167599947412,
+          "delta": 0.01128564327175241,
+          "probability_delta_gt_zero": 0.5958,
+          "ten_class": 0.5693847653696641
+        },
+        "negative_log_likelihood": {
+          "binary": 1.4045198680442212,
+          "ci95_high": -0.07765419082148205,
+          "ci95_low": -0.7380156185703507,
+          "delta": -0.3970396905742808,
+          "probability_delta_gt_zero": 0.0078,
+          "ten_class": 1.0074801774699405
+        }
+      }
+    }
+  },
+  "pass": true,
+  "schema_version": 1,
+  "spatial_ground_truth_read": false,
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "study": "G4 E1 completed-run independent audit",
+  "ten_class": {
+    "aggregate": {
+      "auroc": {
+        "mean": 0.8601003642563745,
+        "sample_std": 0.007995884590914722,
+        "values": [
+          0.8676470588235294,
+          0.8609335038363172,
+          0.851720530109277
+        ]
+      },
+      "average_precision_auprc": {
+        "mean": 0.8718592385871634,
+        "sample_std": 0.006981520221249747,
+        "values": [
+          0.8784473503267962,
+          0.8725887647507227,
+          0.8645416006839713
+        ]
+      },
+      "brier_score": {
+        "mean": 0.17905885865820093,
+        "sample_std": 0.0139135474390859,
+        "values": [
+          0.16356121327242995,
+          0.19047565667302666,
+          0.18313970602914614
+        ]
+      },
+      "ece_15_equal_width": {
+        "mean": 0.16492115406977195,
+        "sample_std": 0.022648094526608556,
+        "values": [
+          0.14130265307876297,
+          0.18645465229399444,
+          0.16700615683655853
+        ]
+      },
+      "f1": {
+        "mean": 0.795081802063185,
+        "sample_std": 0.00712252076201615,
+        "values": [
+          0.8011363636363636,
+          0.796875,
+          0.7872340425531915
+        ]
+      },
+      "matthews_correlation_coefficient": {
+        "mean": 0.5920054248049035,
+        "sample_std": 0.02898994567385039,
+        "values": [
+          0.6246850379735185,
+          0.5819464710715277,
+          0.5693847653696641
+        ]
+      },
+      "negative_log_likelihood": {
+        "mean": 1.0336814605987275,
+        "sample_std": 0.07739233129748654,
+        "values": [
+          0.9727909370454949,
+          1.1207732672807467,
+          1.0074801774699405
+        ]
+      }
+    },
+    "arm": "ten_class",
+    "arm_summary_sha256": "ee44bec277ebfbf5f55a4997ca0674d9580fcae00ce500be44bb80d4e2809344",
+    "runs": [
+      {
+        "binary_endpoint": {
+          "accuracy": 0.8113207547169812,
+          "auroc": 0.8676470588235294,
+          "average_precision_auprc": 0.8784473503267962,
+          "balanced_accuracy": 0.8109596605440594,
+          "brier_score": 0.16356121327242995,
+          "calibration_bins": [
+            {
+              "confidence": 0.004585813185211959,
+              "lower": 0.0,
+              "n": 157,
+              "prevalence": 0.1592356687898089,
+              "upper": 0.06666666666666667
+            },
+            {
+              "confidence": 0.08990924273218427,
+              "lower": 0.06666666666666667,
+              "n": 14,
+              "prevalence": 0.42857142857142855,
+              "upper": 0.13333333333333333
+            },
+            {
+              "confidence": 0.17645980417728424,
+              "lower": 0.13333333333333333,
+              "n": 4,
+              "prevalence": 0.75,
+              "upper": 0.2
+            },
+            {
+              "confidence": 0.23735488312585012,
+              "lower": 0.2,
+              "n": 7,
+              "prevalence": 0.2857142857142857,
+              "upper": 0.26666666666666666
+            },
+            {
+              "confidence": 0.30799976322386,
+              "lower": 0.26666666666666666,
+              "n": 9,
+              "prevalence": 0.3333333333333333,
+              "upper": 0.3333333333333333
+            },
+            {
+              "confidence": 0.3628869950771332,
+              "lower": 0.3333333333333333,
+              "n": 2,
+              "prevalence": 0.0,
+              "upper": 0.4
+            },
+            {
+              "confidence": 0.4214494347572327,
+              "lower": 0.4,
+              "n": 5,
+              "prevalence": 0.4,
+              "upper": 0.4666666666666667
+            },
+            {
+              "confidence": 0.4950081024851118,
+              "lower": 0.4666666666666667,
+              "n": 7,
+              "prevalence": 0.5714285714285714,
+              "upper": 0.5333333333333333
+            },
+            {
+              "confidence": 0.5432433187961578,
+              "lower": 0.5333333333333333,
+              "n": 2,
+              "prevalence": 0.5,
+              "upper": 0.6
+            },
+            {
+              "confidence": 0.6305330842733383,
+              "lower": 0.6,
+              "n": 4,
+              "prevalence": 0.75,
+              "upper": 0.6666666666666666
+            },
+            {
+              "confidence": 0.7036446332931519,
+              "lower": 0.6666666666666666,
+              "n": 7,
+              "prevalence": 0.5714285714285714,
+              "upper": 0.7333333333333333
+            },
+            {
+              "confidence": 0.7707477126802716,
+              "lower": 0.7333333333333333,
+              "n": 7,
+              "prevalence": 0.42857142857142855,
+              "upper": 0.8
+            },
+            {
+              "confidence": 0.8365565657615661,
+              "lower": 0.8,
+              "n": 5,
+              "prevalence": 0.8,
+              "upper": 0.8666666666666667
+            },
+            {
+              "confidence": 0.912558801472187,
+              "lower": 0.8666666666666667,
+              "n": 8,
+              "prevalence": 0.375,
+              "upper": 0.9333333333333333
+            },
+            {
+              "confidence": 0.991014956531668,
+              "lower": 0.9333333333333333,
+              "n": 133,
+              "prevalence": 0.9097744360902256,
+              "upper": 1.0
+            }
+          ],
+          "confusion": {
+            "fn": 43,
+            "fp": 27,
+            "tn": 160,
+            "tp": 141
+          },
+          "ece_15_equal_width": 0.14130265307876297,
+          "f1": 0.8011363636363636,
+          "matthews_correlation_coefficient": 0.6246850379735185,
+          "n": 371,
+          "negative": 187,
+          "negative_log_likelihood": 0.9727909370454949,
+          "positive": 184,
+          "precision": 0.8392857142857143,
+          "sensitivity_recall": 0.7663043478260869,
+          "specificity": 0.8556149732620321,
+          "threshold": 0.5
+        },
+        "checkpoint_epoch": 15,
+        "checkpoint_sha256": "e043f43655798f3389005be89cb85605ef09a87977a74733ea07bf9abc0ed7ec",
+        "completed_epochs": 22,
+        "predictions_sha256": "30b1360c70452e78200703adc90ad3bfa5bd447edd72e6ea73e737de5355e126",
+        "seed": 42,
+        "stopped_early": true,
+        "ten_class_endpoint": {
+          "accuracy": 0.706199460916442,
+          "confusion": [
+            [
+              161,
+              9,
+              3,
+              8,
+              0,
+              1,
+              0,
+              2,
+              3,
+              0
+            ],
+            [
+              22,
+              41,
+              4,
+              3,
+              0,
+              0,
+              1,
+              3,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              20,
+              0,
+              1,
+              1,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              7,
+              0,
+              1,
+              9,
+              0,
+              0,
+              0,
+              2,
+              1,
+              0
+            ],
+            [
+              2,
+              2,
+              0,
+              3,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              4,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              1
+            ],
+            [
+              3,
+              0,
+              1,
+              2,
+              0,
+              2,
+              0,
+              3,
+              0,
+              0
+            ],
+            [
+              3,
+              0,
+              1,
+              3,
+              0,
+              0,
+              0,
+              0,
+              23,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              1
+            ]
+          ],
+          "macro_f1": 0.4743452035228296,
+          "macro_precision": 0.5393233541813868,
+          "macro_recall": 0.4538476164358517,
+          "per_class": [
+            {
+              "class_index": 0,
+              "class_name": "normal",
+              "f1": 0.8193384223918575,
+              "precision": 0.7815533980582524,
+              "recall": 0.8609625668449198,
+              "support": 187
+            },
+            {
+              "class_index": 1,
+              "class_name": "osteochondroma",
+              "f1": 0.640625,
+              "precision": 0.7735849056603774,
+              "recall": 0.5466666666666666,
+              "support": 75
+            },
+            {
+              "class_index": 2,
+              "class_name": "multiple osteochondromas",
+              "f1": 0.7142857142857142,
+              "precision": 0.6666666666666666,
+              "recall": 0.7692307692307693,
+              "support": 26
+            },
+            {
+              "class_index": 3,
+              "class_name": "simple bone cyst",
+              "f1": 0.375,
+              "precision": 0.32142857142857145,
+              "recall": 0.45,
+              "support": 20
+            },
+            {
+              "class_index": 4,
+              "class_name": "giant cell tumor",
+              "f1": 0.3333333333333333,
+              "precision": 0.6666666666666666,
+              "recall": 0.2222222222222222,
+              "support": 9
+            },
+            {
+              "class_index": 5,
+              "class_name": "osteofibroma",
+              "f1": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "support": 4
+            },
+            {
+              "class_index": 6,
+              "class_name": "synovial osteochondroma",
+              "f1": 0.5,
+              "precision": 0.6666666666666666,
+              "recall": 0.4,
+              "support": 5
+            },
+            {
+              "class_index": 7,
+              "class_name": "other bt",
+              "f1": 0.2608695652173913,
+              "precision": 0.25,
+              "recall": 0.2727272727272727,
+              "support": 11
+            },
+            {
+              "class_index": 8,
+              "class_name": "osteosarcoma",
+              "f1": 0.7666666666666667,
+              "precision": 0.7666666666666667,
+              "recall": 0.7666666666666667,
+              "support": 30
+            },
+            {
+              "class_index": 9,
+              "class_name": "other mt",
+              "f1": 0.3333333333333333,
+              "precision": 0.5,
+              "recall": 0.25,
+              "support": 4
+            }
+          ]
+        }
+      },
+      {
+        "binary_endpoint": {
+          "accuracy": 0.7897574123989218,
+          "auroc": 0.8609335038363172,
+          "average_precision_auprc": 0.8725887647507227,
+          "balanced_accuracy": 0.7900924203673565,
+          "brier_score": 0.19047565667302666,
+          "calibration_bins": [
+            {
+              "confidence": 0.006925297874799916,
+              "lower": 0.0,
+              "n": 142,
+              "prevalence": 0.176056338028169,
+              "upper": 0.06666666666666667
+            },
+            {
+              "confidence": 0.09194076806306839,
+              "lower": 0.06666666666666667,
+              "n": 8,
+              "prevalence": 0.375,
+              "upper": 0.13333333333333333
+            },
+            {
+              "confidence": 0.16621065139770508,
+              "lower": 0.13333333333333333,
+              "n": 5,
+              "prevalence": 0.2,
+              "upper": 0.2
+            },
+            {
+              "confidence": 0.2402446170647939,
+              "lower": 0.2,
+              "n": 6,
+              "prevalence": 0.3333333333333333,
+              "upper": 0.26666666666666666
+            },
+            {
+              "confidence": 0.29792895913124084,
+              "lower": 0.26666666666666666,
+              "n": 4,
+              "prevalence": 0.0,
+              "upper": 0.3333333333333333
+            },
+            {
+              "confidence": 0.37074776490529376,
+              "lower": 0.3333333333333333,
+              "n": 3,
+              "prevalence": 0.0,
+              "upper": 0.4
+            },
+            {
+              "confidence": 0.4661524295806885,
+              "lower": 0.4,
+              "n": 1,
+              "prevalence": 0.0,
+              "upper": 0.4666666666666667
+            },
+            {
+              "confidence": 0.5026168624560038,
+              "lower": 0.4666666666666667,
+              "n": 3,
+              "prevalence": 0.0,
+              "upper": 0.5333333333333333
+            },
+            {
+              "confidence": 0.5666478276252747,
+              "lower": 0.5333333333333333,
+              "n": 4,
+              "prevalence": 0.25,
+              "upper": 0.6
+            },
+            {
+              "confidence": 0.6133167147636414,
+              "lower": 0.6,
+              "n": 2,
+              "prevalence": 0.5,
+              "upper": 0.6666666666666666
+            },
+            {
+              "confidence": 0.7053666313489279,
+              "lower": 0.6666666666666666,
+              "n": 6,
+              "prevalence": 0.5,
+              "upper": 0.7333333333333333
+            },
+            {
+              "confidence": 0.7591060101985931,
+              "lower": 0.7333333333333333,
+              "n": 4,
+              "prevalence": 0.75,
+              "upper": 0.8
+            },
+            {
+              "confidence": 0.8310892209410667,
+              "lower": 0.8,
+              "n": 8,
+              "prevalence": 0.625,
+              "upper": 0.8666666666666667
+            },
+            {
+              "confidence": 0.9092322587966919,
+              "lower": 0.8666666666666667,
+              "n": 7,
+              "prevalence": 0.2857142857142857,
+              "upper": 0.9333333333333333
+            },
+            {
+              "confidence": 0.9947200303985959,
+              "lower": 0.9333333333333333,
+              "n": 168,
+              "prevalence": 0.8214285714285714,
+              "upper": 1.0
+            }
+          ],
+          "confusion": {
+            "fn": 31,
+            "fp": 47,
+            "tn": 140,
+            "tp": 153
+          },
+          "ece_15_equal_width": 0.18645465229399444,
+          "f1": 0.796875,
+          "matthews_correlation_coefficient": 0.5819464710715277,
+          "n": 371,
+          "negative": 187,
+          "negative_log_likelihood": 1.1207732672807467,
+          "positive": 184,
+          "precision": 0.765,
+          "sensitivity_recall": 0.8315217391304348,
+          "specificity": 0.7486631016042781,
+          "threshold": 0.5
+        },
+        "checkpoint_epoch": 18,
+        "checkpoint_sha256": "5017e7abde408273e5c03b312bb2aa714bfbb8261104336a3e4ef8ec24c29882",
+        "completed_epochs": 25,
+        "predictions_sha256": "ab2800e4d27b1b483aaf6eac4de005985ae6dea69785258b39760b4f7bea8b57",
+        "seed": 43,
+        "stopped_early": true,
+        "ten_class_endpoint": {
+          "accuracy": 0.6253369272237197,
+          "confusion": [
+            [
+              143,
+              9,
+              3,
+              9,
+              0,
+              0,
+              3,
+              7,
+              7,
+              6
+            ],
+            [
+              18,
+              34,
+              3,
+              2,
+              0,
+              0,
+              7,
+              4,
+              5,
+              2
+            ],
+            [
+              2,
+              3,
+              16,
+              0,
+              1,
+              1,
+              0,
+              2,
+              1,
+              0
+            ],
+            [
+              4,
+              0,
+              0,
+              11,
+              2,
+              0,
+              0,
+              1,
+              2,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              6,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              0,
+              3,
+              0,
+              1,
+              0,
+              4,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0,
+              2,
+              1,
+              0,
+              0,
+              1,
+              22,
+              2
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0
+            ]
+          ],
+          "macro_f1": 0.35334288569381517,
+          "macro_precision": 0.34610822510822514,
+          "macro_recall": 0.3880393528040587,
+          "per_class": [
+            {
+              "class_index": 0,
+              "class_name": "normal",
+              "f1": 0.7900552486187845,
+              "precision": 0.8171428571428572,
+              "recall": 0.7647058823529411,
+              "support": 187
+            },
+            {
+              "class_index": 1,
+              "class_name": "osteochondroma",
+              "f1": 0.5396825396825397,
+              "precision": 0.6666666666666666,
+              "recall": 0.4533333333333333,
+              "support": 75
+            },
+            {
+              "class_index": 2,
+              "class_name": "multiple osteochondromas",
+              "f1": 0.6666666666666667,
+              "precision": 0.7272727272727273,
+              "recall": 0.6153846153846154,
+              "support": 26
+            },
+            {
+              "class_index": 3,
+              "class_name": "simple bone cyst",
+              "f1": 0.4150943396226416,
+              "precision": 0.3333333333333333,
+              "recall": 0.55,
+              "support": 20
+            },
+            {
+              "class_index": 4,
+              "class_name": "giant cell tumor",
+              "f1": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "support": 9
+            },
+            {
+              "class_index": 5,
+              "class_name": "osteofibroma",
+              "f1": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "support": 4
+            },
+            {
+              "class_index": 6,
+              "class_name": "synovial osteochondroma",
+              "f1": 0.23529411764705882,
+              "precision": 0.16666666666666666,
+              "recall": 0.4,
+              "support": 5
+            },
+            {
+              "class_index": 7,
+              "class_name": "other bt",
+              "f1": 0.25806451612903225,
+              "precision": 0.2,
+              "recall": 0.36363636363636365,
+              "support": 11
+            },
+            {
+              "class_index": 8,
+              "class_name": "osteosarcoma",
+              "f1": 0.6285714285714286,
+              "precision": 0.55,
+              "recall": 0.7333333333333333,
+              "support": 30
+            },
+            {
+              "class_index": 9,
+              "class_name": "other mt",
+              "f1": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "support": 4
+            }
+          ]
+        }
+      },
+      {
+        "binary_endpoint": {
+          "accuracy": 0.784366576819407,
+          "auroc": 0.851720530109277,
+          "average_precision_auprc": 0.8645416006839713,
+          "balanced_accuracy": 0.7845268542199488,
+          "brier_score": 0.18313970602914614,
+          "calibration_bins": [
+            {
+              "confidence": 0.005648444758521186,
+              "lower": 0.0,
+              "n": 135,
+              "prevalence": 0.15555555555555556,
+              "upper": 0.06666666666666667
+            },
+            {
+              "confidence": 0.08346321949592003,
+              "lower": 0.06666666666666667,
+              "n": 13,
+              "prevalence": 0.3076923076923077,
+              "upper": 0.13333333333333333
+            },
+            {
+              "confidence": 0.18658766150474548,
+              "lower": 0.13333333333333333,
+              "n": 8,
+              "prevalence": 0.25,
+              "upper": 0.2
+            },
+            {
+              "confidence": 0.23426590647016252,
+              "lower": 0.2,
+              "n": 7,
+              "prevalence": 0.7142857142857143,
+              "upper": 0.26666666666666666
+            },
+            {
+              "confidence": 0.3090808317065239,
+              "lower": 0.26666666666666666,
+              "n": 8,
+              "prevalence": 0.25,
+              "upper": 0.3333333333333333
+            },
+            {
+              "confidence": 0.3478066474199295,
+              "lower": 0.3333333333333333,
+              "n": 4,
+              "prevalence": 0.0,
+              "upper": 0.4
+            },
+            {
+              "confidence": 0.43583954870700836,
+              "lower": 0.4,
+              "n": 4,
+              "prevalence": 0.5,
+              "upper": 0.4666666666666667
+            },
+            {
+              "confidence": 0.5701960325241089,
+              "lower": 0.5333333333333333,
+              "n": 5,
+              "prevalence": 0.2,
+              "upper": 0.6
+            },
+            {
+              "confidence": 0.6380283534526825,
+              "lower": 0.6,
+              "n": 4,
+              "prevalence": 0.75,
+              "upper": 0.6666666666666666
+            },
+            {
+              "confidence": 0.7085412979125977,
+              "lower": 0.6666666666666666,
+              "n": 10,
+              "prevalence": 0.6,
+              "upper": 0.7333333333333333
+            },
+            {
+              "confidence": 0.7671107649803162,
+              "lower": 0.7333333333333333,
+              "n": 7,
+              "prevalence": 0.5714285714285714,
+              "upper": 0.8
+            },
+            {
+              "confidence": 0.820431387424469,
+              "lower": 0.8,
+              "n": 10,
+              "prevalence": 0.5,
+              "upper": 0.8666666666666667
+            },
+            {
+              "confidence": 0.8964760700861613,
+              "lower": 0.8666666666666667,
+              "n": 12,
+              "prevalence": 0.5833333333333334,
+              "upper": 0.9333333333333333
+            },
+            {
+              "confidence": 0.9937695268955495,
+              "lower": 0.9333333333333333,
+              "n": 144,
+              "prevalence": 0.8472222222222222,
+              "upper": 1.0
+            }
+          ],
+          "confusion": {
+            "fn": 36,
+            "fp": 44,
+            "tn": 143,
+            "tp": 148
+          },
+          "ece_15_equal_width": 0.16700615683655853,
+          "f1": 0.7872340425531915,
+          "matthews_correlation_coefficient": 0.5693847653696641,
+          "n": 371,
+          "negative": 187,
+          "negative_log_likelihood": 1.0074801774699405,
+          "positive": 184,
+          "precision": 0.7708333333333334,
+          "sensitivity_recall": 0.8043478260869565,
+          "specificity": 0.7647058823529411,
+          "threshold": 0.5
+        },
+        "checkpoint_epoch": 18,
+        "checkpoint_sha256": "1bdba52b665edd2d254e23b6b8bcd5fe4889f9297fe649a2403a8ced1e674a22",
+        "completed_epochs": 25,
+        "predictions_sha256": "6848285aaa18ae53afe120e8a61051713edaea310ab9419a33fe73eea61d6e6d",
+        "seed": 44,
+        "stopped_early": true,
+        "ten_class_endpoint": {
+          "accuracy": 0.6145552560646901,
+          "confusion": [
+            [
+              145,
+              20,
+              4,
+              5,
+              2,
+              4,
+              0,
+              3,
+              2,
+              2
+            ],
+            [
+              23,
+              38,
+              3,
+              1,
+              0,
+              3,
+              2,
+              1,
+              2,
+              2
+            ],
+            [
+              0,
+              6,
+              15,
+              1,
+              0,
+              1,
+              0,
+              2,
+              0,
+              1
+            ],
+            [
+              4,
+              1,
+              0,
+              8,
+              1,
+              0,
+              0,
+              2,
+              1,
+              3
+            ],
+            [
+              1,
+              1,
+              1,
+              3,
+              0,
+              1,
+              0,
+              0,
+              2,
+              0
+            ],
+            [
+              2,
+              1,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              2
+            ],
+            [
+              2,
+              2,
+              0,
+              0,
+              0,
+              3,
+              0,
+              3,
+              0,
+              1
+            ],
+            [
+              3,
+              2,
+              0,
+              3,
+              1,
+              1,
+              0,
+              1,
+              17,
+              2
+            ],
+            [
+              1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0
+            ]
+          ],
+          "macro_f1": 0.3528269748641568,
+          "macro_precision": 0.36707522234423845,
+          "macro_recall": 0.3548384752502399,
+          "per_class": [
+            {
+              "class_index": 0,
+              "class_name": "normal",
+              "f1": 0.7837837837837838,
+              "precision": 0.7923497267759563,
+              "recall": 0.7754010695187166,
+              "support": 187
+            },
+            {
+              "class_index": 1,
+              "class_name": "osteochondroma",
+              "f1": 0.5205479452054794,
+              "precision": 0.5352112676056338,
+              "recall": 0.5066666666666667,
+              "support": 75
+            },
+            {
+              "class_index": 2,
+              "class_name": "multiple osteochondromas",
+              "f1": 0.6122448979591837,
+              "precision": 0.6521739130434783,
+              "recall": 0.5769230769230769,
+              "support": 26
+            },
+            {
+              "class_index": 3,
+              "class_name": "simple bone cyst",
+              "f1": 0.380952380952381,
+              "precision": 0.36363636363636365,
+              "recall": 0.4,
+              "support": 20
+            },
+            {
+              "class_index": 4,
+              "class_name": "giant cell tumor",
+              "f1": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "support": 9
+            },
+            {
+              "class_index": 5,
+              "class_name": "osteofibroma",
+              "f1": 0.11111111111111112,
+              "precision": 0.07142857142857142,
+              "recall": 0.25,
+              "support": 4
+            },
+            {
+              "class_index": 6,
+              "class_name": "synovial osteochondroma",
+              "f1": 0.25,
+              "precision": 0.3333333333333333,
+              "recall": 0.2,
+              "support": 5
+            },
+            {
+              "class_index": 7,
+              "class_name": "other bt",
+              "f1": 0.23999999999999996,
+              "precision": 0.21428571428571427,
+              "recall": 0.2727272727272727,
+              "support": 11
+            },
+            {
+              "class_index": 8,
+              "class_name": "osteosarcoma",
+              "f1": 0.6296296296296297,
+              "precision": 0.7083333333333334,
+              "recall": 0.5666666666666667,
+              "support": 30
+            },
+            {
+              "class_index": 9,
+              "class_name": "other mt",
+              "f1": 0.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "support": 4
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "test_evaluated": false,
+  "test_images_read": 0
+}

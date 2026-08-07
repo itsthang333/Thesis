@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 
 from project.evaluate_g4_classifier_labels import _binary_metrics
+from project.audit_g4_e1_completed import _paired_bootstrap
 from project.train_classifier import (
     binary_metrics_from_multiclass_confusion,
     classifier_epoch_budget_audit,
@@ -65,3 +66,28 @@ def test_e1_runner_is_validation_only_and_matched() -> None:
     assert '"test_images_read": 0' in source
     assert '"test_evaluated": False' in source
     assert '"--split", "test"' not in source
+
+
+def test_e1_paired_bootstrap_preserves_matched_group_sampling() -> None:
+    binary = [
+        {"image_id": "a0", "tumor": "0", "tumor_probability": "0.4"},
+        {"image_id": "a1", "tumor": "1", "tumor_probability": "0.6"},
+        {"image_id": "b0", "tumor": "0", "tumor_probability": "0.4"},
+        {"image_id": "b1", "tumor": "1", "tumor_probability": "0.6"},
+    ]
+    ten = [
+        {"image_id": "a0", "tumor": "0", "tumor_probability": "0.1"},
+        {"image_id": "a1", "tumor": "1", "tumor_probability": "0.9"},
+        {"image_id": "b0", "tumor": "0", "tumor_probability": "0.1"},
+        {"image_id": "b1", "tumor": "1", "tumor_probability": "0.9"},
+    ]
+    report = _paired_bootstrap(
+        binary,
+        ten,
+        {"a0": "a", "a1": "a", "b0": "b", "b1": "b"},
+        iterations=20,
+        seed=7,
+    )
+    assert report["groups"] == 2
+    assert report["metrics"]["negative_log_likelihood"]["delta"] < 0
+    assert report["metrics"]["brier_score"]["delta"] < 0

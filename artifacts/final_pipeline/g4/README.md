@@ -34,6 +34,20 @@ dataset identifiers and are much larger than the thesis source repository.
 - Evaluation audit SHA-256:
   `c4c7055c6f0bfea342e35c02184f19b28c6fb740ac1431ddbbe2ffd33d9270b8`.
 
+## E1 label-granularity image-level stage
+
+- Matched binary and ten-class DenseNet-121 classifiers completed for seeds
+  42/43/44; all six runs use the same binary-F1 checkpoint endpoint and no
+  spatial GT/test.
+- Binary versus ten-class-to-binary mean AUROC: 0.848727 versus 0.860100.
+- Binary versus ten-class-to-binary mean F1: 0.780882 versus 0.795082.
+- Binary versus ten-class-to-binary mean NLL: 1.514750 versus 1.033681.
+- Discrimination paired intervals include zero; NLL favours ten-class in all
+  three matched seeds. Downstream segmentation remains pending.
+- Independent audit artifact: `e1_label_granularity_audit.json`.
+- Audit SHA-256:
+  `2792af5f4bb61cddb1329f670e1b94df85adc161caa9d8db4b56759caf7c52c6`.
+
 The exact formulas, arm definitions, safeguards, and interpretation limits are
 documented in `docs/G4_EXPERIMENT_PROTOCOL.md`,
 `docs/METRIC_AND_DEFENSE_AUDIT.md`, and `docs/RESULTS.md`.
