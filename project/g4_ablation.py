@@ -105,6 +105,75 @@ def upstream_components(
     )
 
 
+def source_correct_upstream_components(
+    masks: np.ndarray,
+    prompt_maps: np.ndarray,
+    sam_scores: np.ndarray,
+    component_groups: np.ndarray,
+) -> UpstreamComponents:
+    """Compute upstream evidence with the generating map of each candidate.
+
+    A merged rich gallery contains candidates produced by several localization
+    sources. Reusing one map for every candidate makes density and captured-mass
+    terms source-incorrect. ``prompt_maps[i]`` must therefore be the normalized
+    map that generated candidate ``i``. ``component_groups`` must also be
+    source-qualified (for example ``"layercam:3"``), preventing SAM ranks from
+    leaking across unrelated components whose integer IDs happen to collide.
+
+    This is algebraically identical to :func:`upstream_components` when all
+    candidates use the same map. Spatial annotations are neither accepted nor
+    used.
+    """
+
+    masks = np.asarray(masks, dtype=bool)
+    prompt_maps = np.asarray(prompt_maps, dtype=np.float64)
+    sam_scores = _finite_vector(sam_scores, name="sam_scores")
+    component_groups = np.asarray(component_groups).reshape(-1)
+    if masks.ndim != 3 or prompt_maps.shape != masks.shape:
+        raise ValueError("masks and prompt_maps must both be NxHxW")
+    _validate_aligned(
+        masks=masks,
+        prompt_maps=prompt_maps,
+        sam_scores=sam_scores,
+        component_groups=component_groups,
+    )
+    if not np.isfinite(prompt_maps).all() or np.any(prompt_maps < 0):
+        raise ValueError("prompt_maps must be finite and nonnegative")
+
+    flat_masks = masks.reshape(len(masks), -1)
+    flat_prompt = prompt_maps.reshape(len(masks), -1)
+    areas = flat_masks.sum(axis=1)
+    cam_mass = np.einsum("ij,ij->i", flat_masks, flat_prompt, optimize=True)
+    cam_positive = np.einsum(
+        "ij,ij->i",
+        flat_masks,
+        (flat_prompt > 0.5).astype(np.float64),
+        optimize=True,
+    )
+    density = np.divide(
+        cam_positive,
+        areas,
+        out=np.zeros(len(masks), dtype=np.float64),
+        where=areas > 0,
+    )
+    total_mass = flat_prompt.sum(axis=1)
+    mass_coverage = np.divide(
+        cam_mass,
+        total_mass,
+        out=np.zeros(len(masks), dtype=np.float64),
+        where=total_mass > 0,
+    )
+    return UpstreamComponents(
+        sam_score=sam_scores,
+        cam_density=density,
+        cam_mass_coverage=mass_coverage,
+        sam_component_rank=within_group_percentile_rank(
+            sam_scores, component_groups
+        ),
+        sam_global_rank=average_percentile_rank(sam_scores),
+    )
+
+
 def upstream_score(components: UpstreamComponents, arm: str) -> np.ndarray:
     arm = str(arm).upper()
     d = components.cam_density
@@ -254,6 +323,7 @@ __all__ = [
     "fusion_score",
     "select_from_scores",
     "select_score_only",
+    "source_correct_upstream_components",
     "upstream_components",
     "upstream_score",
     "within_group_percentile_rank",

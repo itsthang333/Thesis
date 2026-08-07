@@ -15,6 +15,7 @@ from g4_ablation import (
     candidate_filter,
     deterministic_random_candidate,
     fusion_score,
+    source_correct_upstream_components,
     upstream_components,
     upstream_score,
     within_group_percentile_rank,
@@ -47,6 +48,54 @@ class G4AblationTests(unittest.TestCase):
     def test_average_ties_are_preserved_within_each_component(self) -> None:
         actual = within_group_percentile_rank([1.0, 1.0, 3.0, 7.0], [0, 0, 0, 1])
         np.testing.assert_allclose(actual, [0.25, 0.25, 1.0, 0.0])
+
+    def test_source_correct_components_equal_shared_map_case(self) -> None:
+        masks = np.asarray(
+            [
+                [[1, 0], [0, 0]],
+                [[1, 1], [0, 0]],
+                [[0, 0], [1, 1]],
+            ],
+            dtype=np.uint8,
+        )
+        prompt = np.asarray([[1.0, 0.5], [0.0, 0.5]], dtype=np.float32)
+        sam = np.asarray([0.1, 0.9, 0.3], dtype=np.float32)
+        groups = np.asarray(["layercam:5", "layercam:5", "external:7"])
+        expected = upstream_components(masks, prompt, sam, groups)
+        actual = source_correct_upstream_components(
+            masks, np.repeat(prompt[None], len(masks), axis=0), sam, groups
+        )
+        for field in (
+            "sam_score",
+            "cam_density",
+            "cam_mass_coverage",
+            "sam_component_rank",
+            "sam_global_rank",
+        ):
+            np.testing.assert_allclose(getattr(actual, field), getattr(expected, field))
+
+    def test_source_correct_components_use_own_map_and_source_group(self) -> None:
+        masks = np.ones((3, 2, 2), dtype=np.uint8)
+        prompt_maps = np.asarray(
+            [
+                [[1.0, 1.0], [0.0, 0.0]],
+                [[1.0, 0.0], [0.0, 0.0]],
+                [[0.0, 0.0], [0.0, 0.0]],
+            ],
+            dtype=np.float32,
+        )
+        actual = source_correct_upstream_components(
+            masks,
+            prompt_maps,
+            np.asarray([0.1, 0.9, 0.3]),
+            np.asarray(["layercam:0", "layercam:0", "external:0"]),
+        )
+        np.testing.assert_allclose(actual.cam_density, [0.5, 0.25, 0.0])
+        np.testing.assert_allclose(actual.cam_mass_coverage, [1.0, 1.0, 0.0])
+        # A singleton group has the implementation's neutral rank zero. If the
+        # integer suffix had incorrectly merged it with LayerCAM, it would have
+        # received an intermediate rank instead.
+        np.testing.assert_allclose(actual.sam_component_rank, [0.0, 1.0, 0.0])
 
     def test_fusion_arms_are_finite_and_r7_is_frozen_rule(self) -> None:
         g1 = np.asarray([1.0, 4.0, 2.0, 3.0])
