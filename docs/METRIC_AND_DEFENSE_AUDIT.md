@@ -178,6 +178,12 @@ composition is already proven.
 9. E6 G1 feature and loss ablations with three seeds.
 10. E7 source-correct upstream-score ablation.
 
+E2 selected-mask endpoint status (2026-08-07): complete for all 12 factorial
+arms. LayerCAM+point is best at tumor Dice 0.205224. The paired attribution
+main effect supports LayerCAM, while prompt contrasts are less certain. This
+evidence justifies LayerCAM as the attribution family used by the final system;
+it does not by itself justify the later rich-gallery or selector modules.
+
 ### Tier B: strongly recommended
 
 - Anatomy, view, center and tumor-type subgroup results with sample sizes and

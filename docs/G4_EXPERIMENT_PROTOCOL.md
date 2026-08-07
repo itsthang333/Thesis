@@ -174,6 +174,21 @@ control. The CAM-only rule is predeclared as `prompt_map >= per-image p90`; a
 constant map yields an empty mask. No morphology, SAM output, or GT-dependent
 threshold is used in that control.
 
+Result (2026-08-07): all 12 frozen-mask arms completed on the exact 371-image
+validation split (184 tumor images). LayerCAM+point is best in this controlled
+single-source/single-prompt experiment: tumor Dice/IoU 0.205224/0.155143,
+with subgroup Dice 0.118534/0.274250/0.381836. The attribution marginal Dice
+is 0.143837/0.137324/0.149826/0.193677 for CAM/Grad-CAM/Grad-CAM++/LayerCAM.
+LayerCAM exceeds every other attribution method under paired complete-group
+bootstrap (all corresponding 95% CIs exclude zero). Prompt marginal Dice is
+0.167533/0.145091/0.155874 for point/box/box+point; the prompt contrasts do
+not yet exclude zero. Box-conditioned arms systematically over-expand masks:
+median predicted/GT area is about 6--10x, versus 1.145x for LayerCAM+point.
+The machine-readable paired analysis is
+`artifacts/final_pipeline/g4/e2_cam_prompt_factorial_results.json`. CAM-only
+and proposal-oracle replay are still being added from the frozen candidate
+payloads; they cannot change the selected-mask results above.
+
 ### E3 — SAM backbone ablation
 
 Run ViT-B, ViT-L and ViT-H with identical images, prompt coordinates, multimask
@@ -292,15 +307,16 @@ scientific configuration; efficacy failures are reported, not silently swept.
   include zero. No claim about WSSS superiority is allowed until downstream
   frozen-mask Dice is available.
 - E2 CAM/Grad-CAM/Grad-CAM++/LayerCAM attribution and point/box/point+box
-  single-prompt factorial is implemented. Every arm freezes all 371 binary
-  masks before the evaluator opens 184 validation polygons; actual mask Dice
-  is the endpoint and paired group bootstrap is reported against the matched
-  LayerCAM+point/box reference.
+  single-prompt factorial completed for all 12 arms. Every arm froze all 371
+  binary masks before the evaluator opened 184 validation polygons. The best
+  arm is LayerCAM+point at Dice 0.205224; LayerCAM has a positive paired main
+  effect over all three alternatives. CAM-only/proposal-oracle enrichment of
+  the same frozen payloads remains in progress.
 - E3 end-to-end B/L/H support, candidate oracle reporting and measured resource
-  telemetry are implemented and locally tested. The three matched Kaggle arms
-  remain to be executed; no result is claimed here before output audit.
+  telemetry are implemented and locally tested. Matched ViT-B reproduction and
+  ViT-L arms are running on private/offline Kaggle T4 kernels; ViT-H follows in
+  the first free slot. No E3 result is claimed before the frozen output exists.
 - E7 core formulas are implemented, but execution is blocked intentionally until
   source-specific prompt maps are available.
 - Exact E5, downstream E1 localization, and learned G1 feature/loss runners
-  remain to be completed. E2 is currently executing and this status section
-  must be updated as each immutable result is collected.
+  remain to be completed.

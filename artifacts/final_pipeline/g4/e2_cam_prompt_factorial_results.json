@@ -1,0 +1,196 @@
+{
+  "arm_mean_dice": {
+    "cam__box": 0.13295793222464206,
+    "cam__box_point": 0.14172081934707045,
+    "cam__point": 0.15683310872260084,
+    "gradcam__box": 0.1269511150823347,
+    "gradcam__box_point": 0.1368715290028887,
+    "gradcam__point": 0.1481484872396797,
+    "gradcam_plus_plus__box": 0.14168921864024844,
+    "gradcam_plus_plus__box_point": 0.1478601463723857,
+    "gradcam_plus_plus__point": 0.1599279098140499,
+    "layercam__box": 0.17876427369342282,
+    "layercam__box_point": 0.19704272011513305,
+    "layercam__point": 0.2052239566041357
+  },
+  "best_arm": "layercam__point",
+  "endpoint": "macro mean tumor Dice on the common 320x320 grid",
+  "groups": 167,
+  "images": 184,
+  "iterations": 10000,
+  "method_marginal_mean_dice": {
+    "cam": 0.14383728676477112,
+    "gradcam": 0.13732371044163438,
+    "gradcam_plus_plus": 0.14982575827556135,
+    "layercam": 0.19367698347089715
+  },
+  "paired_complete_group_bootstrap": {
+    "layercam__point_minus_cam__box": {
+      "ci95_high": 0.11174477979624568,
+      "ci95_low": 0.03391955034015348,
+      "delta_mean_dice": 0.07226602437949362,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_cam__box_point": {
+      "ci95_high": 0.10051547803246512,
+      "ci95_low": 0.028801697039716793,
+      "delta_mean_dice": 0.06350313725706523,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_cam__point": {
+      "ci95_high": 0.08243099587180541,
+      "ci95_low": 0.016795433655488145,
+      "delta_mean_dice": 0.04839084788153487,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_gradcam__box": {
+      "ci95_high": 0.11818481091549414,
+      "ci95_low": 0.03941434859434224,
+      "delta_mean_dice": 0.07827284152180099,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_gradcam__box_point": {
+      "ci95_high": 0.10628788365966513,
+      "ci95_low": 0.03263753175518188,
+      "delta_mean_dice": 0.06835242760124696,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_gradcam__point": {
+      "ci95_high": 0.09369973520931915,
+      "ci95_low": 0.022654037760369554,
+      "delta_mean_dice": 0.057075469364455976,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_gradcam_plus_plus__box": {
+      "ci95_high": 0.10142162639697351,
+      "ci95_low": 0.027017372664841426,
+      "delta_mean_dice": 0.06353473796388727,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_gradcam_plus_plus__box_point": {
+      "ci95_high": 0.09462172652721426,
+      "ci95_low": 0.021865834481193766,
+      "delta_mean_dice": 0.05736381023174996,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_gradcam_plus_plus__point": {
+      "ci95_high": 0.07926110676572198,
+      "ci95_low": 0.01347776527257851,
+      "delta_mean_dice": 0.04529604679008578,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_layercam__box": {
+      "ci95_high": 0.06234522034198364,
+      "ci95_low": -0.008817919323525193,
+      "delta_mean_dice": 0.02645968291071288,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "layercam__point_minus_layercam__box_point": {
+      "ci95_high": 0.04349438273367365,
+      "ci95_low": -0.026181192406606275,
+      "delta_mean_dice": 0.008181236489002654,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "method_cam_minus_gradcam": {
+      "ci95_high": 0.013877536396227599,
+      "ci95_low": 0.0002629820615609863,
+      "delta_mean_dice": 0.006513576323136734,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "method_cam_minus_gradcam_plus_plus": {
+      "ci95_high": 0.000715733660774001,
+      "ci95_low": -0.014417988962603698,
+      "delta_mean_dice": -0.005988471510790238,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "method_cam_minus_layercam": {
+      "ci95_high": -0.03330718756812987,
+      "ci95_low": -0.06754179110746997,
+      "delta_mean_dice": -0.04983969670612605,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "method_gradcam_minus_gradcam_plus_plus": {
+      "ci95_high": -0.0016881246685786064,
+      "ci95_low": -0.02623159558738914,
+      "delta_mean_dice": -0.01250204783392697,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "method_gradcam_minus_layercam": {
+      "ci95_high": -0.03725029808997612,
+      "ci95_low": -0.07724761444442751,
+      "delta_mean_dice": -0.05635327302926278,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "method_gradcam_plus_plus_minus_layercam": {
+      "ci95_high": -0.028463029953988597,
+      "ci95_low": -0.06000904667672581,
+      "delta_mean_dice": -0.04385122519533582,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "prompt_box_point_minus_box": {
+      "ci95_high": 0.023010646884421053,
+      "ci95_low": -0.0017861852315007934,
+      "delta_mean_dice": 0.010783168799207477,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "prompt_point_minus_box": {
+      "ci95_high": 0.04656455893963656,
+      "ci95_low": -0.0012265240786587177,
+      "delta_mean_dice": 0.02244273068495453,
+      "groups": 167,
+      "iterations": 10000
+    },
+    "prompt_point_minus_box_point": {
+      "ci95_high": 0.031370093417849895,
+      "ci95_low": -0.007757916268435826,
+      "delta_mean_dice": 0.011659561885747053,
+      "groups": 167,
+      "iterations": 10000
+    }
+  },
+  "population": "184 canonical validation tumor images",
+  "prompt_marginal_mean_dice": {
+    "box": 0.14509063491016197,
+    "box_point": 0.15587380370936946,
+    "point": 0.16753336559511653
+  },
+  "schema_version": 1,
+  "seed": 20260807,
+  "source_summary_sha256": {
+    "cam__box": "d3d6af17048e3af47facaf6294525115af16859afdde2777e9634cf24aaf287d",
+    "cam__box_point": "7073b19c462933439f3d90e4b23bfe642a8c87fb7a68425fa7020534e8a2e0de",
+    "cam__point": "29f08d47d72fd262026c96e3336a6b2abb5e363c779833c7b3eb6811359bd3ce",
+    "gradcam__box": "e61a8a64189c0ab840ba77bfa962fcb725dba2f15d5c71f4439211efbfef5cd3",
+    "gradcam__box_point": "055e841cb0a3c0a6b1b4d591dabc9ea8aa777959646e508a8ef7d34341eaad80",
+    "gradcam__point": "5d2563e3438afc87609df0bb04b7e67e169ef28cb0c79f1881f7a26ddc2a1e1c",
+    "gradcam_plus_plus__box": "49c8adff317f64b8558d01b2acc906f020dbc5c27557c2894687355ecb44876a",
+    "gradcam_plus_plus__box_point": "15f9ab567003d9aa999088c67dcd22ef3a71714904b0c8bf8d901a538880e8e3",
+    "gradcam_plus_plus__point": "37b206cfe07066408883931b0c983d902485ae7ce5a829e872c33386b4587bff",
+    "layercam__box": "36805db763ae861ed6b303f4711201bdfc922a611d2928b931d782e7a8d2bb98",
+    "layercam__box_point": "922f1cc958e5c31ad81bfb24421c0bd77b2abcbfa32cf1b295c5f6cfa29ee5ee",
+    "layercam__point": "19b01ea4182faef6713d7e52249aebdf04ec96074a01dd0f04ded4fe68ebe1e3"
+  },
+  "spatial_ground_truth_opened_by_this_script": false,
+  "study": "G4 E2 matched attribution-by-prompt factorial summary",
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "uncertainty_note": "Nonparametric paired bootstrap over complete heuristic groups; group_id is not a verified patient/case identifier."
+}
