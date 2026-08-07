@@ -258,9 +258,13 @@ Selector controls on one identical eligible candidate set:
 
 Feature arms: inside only; inside+local ring; plus contrast; plus four metadata
 features. Keep descriptor dimensionality/model capacity matched by zeroing the
-removed blocks. Loss arms: bag BCE; plus negative-instance loss; plus flip
-consistency. Train every learned arm for three fixed seeds and report selected
-Dice, oracle/regret, image-label metrics and seed variation.
+removed blocks. Loss arms are cumulative and separate the assumptions inside
+the original self-guided term: bag BCE; plus all instances from negative bags;
+plus the detached current winner from each positive bag; plus aligned
+horizontal-flip consistency. Train every learned arm for three fixed seeds and
+report selected Dice, oracle/regret, image-label metrics and seed variation.
+The encoder/descriptor cache is constructed once. The exact executable contract
+is frozen in `artifacts/final_pipeline/g4/e6_g1_feature_loss_protocol.json`.
 
 ### E7 — upstream-score ablation
 
@@ -331,5 +335,6 @@ scientific configuration; efficacy failures are reported, not silently swept.
   the first free slot. No E3 result is claimed before the frozen output exists.
 - E7 core formulas are implemented, but execution is blocked intentionally until
   source-specific prompt maps are available.
-- Exact E5, downstream E1 localization, and learned G1 feature/loss runners
-  remain to be completed.
+- Exact E5 remains to be completed. Downstream E1 localization and learned G1
+  feature/loss runners are implemented; their validation executions remain
+  pending.

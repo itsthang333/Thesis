@@ -304,6 +304,33 @@ def image_bag_loss(bag_logits: torch.Tensor, image_labels: torch.Tensor) -> torc
     return F.binary_cross_entropy_with_logits(bag_logits, labels)
 
 
+def negative_bag_instance_loss(
+    candidate_logits: torch.Tensor,
+    candidate_valid: torch.Tensor,
+    image_labels: torch.Tensor,
+) -> torch.Tensor:
+    """Supervise every valid instance in an image-negative bag as negative.
+
+    Under the standard MIL assumption, a negative bag contains no positive
+    instance.  Positive-bag instances remain unlabelled in this ablation, so
+    the loss does not manufacture spatial positives from an image label.
+    """
+
+    if candidate_logits.ndim != 2 or candidate_valid.shape != candidate_logits.shape:
+        raise ValueError("Candidate logits and validity must share shape [B,N]")
+    labels = image_labels.reshape(-1).bool()
+    if labels.numel() != candidate_logits.shape[0]:
+        raise ValueError("Image-label batch size differs from candidate bags")
+    valid_negative = candidate_valid.bool() & (~labels[:, None])
+    if not valid_negative.any():
+        return candidate_logits.sum() * 0.0
+    negative_logits = candidate_logits[valid_negative]
+    return F.binary_cross_entropy_with_logits(
+        negative_logits,
+        torch.zeros_like(negative_logits),
+    )
+
+
 def self_guided_instance_loss(
     candidate_logits: torch.Tensor,
     candidate_valid: torch.Tensor,
@@ -454,6 +481,7 @@ __all__ = [
     "aligned_candidate_consistency_loss",
     "image_bag_loss",
     "mask_pool_descriptors",
+    "negative_bag_instance_loss",
     "proposal_context_grid_weights",
     "project_direct_resize_masks_to_square",
     "self_guided_instance_loss",

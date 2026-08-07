@@ -152,7 +152,7 @@ frozen. They must never select a mask or tune a threshold.
 | Point/box prompts and SAM multimask | Published SAM interface; exact conversion is project-specific | E2/E5 prompt ablation |
 | Rich proposal union | Motivated by incomplete CAMs and proposal-set methods, but exact three-source union is project-specific | E4 all source subsets and E5 budget curve |
 | Upstream `0.60D+0.25M+0.15R` | Entirely project-specific coefficients | E7 U0–U6; do not cite as a standard formula |
-| G1 MIL | MIL has published precedent; exact feature blocks, pooling and losses are project-specific | E6 feature/loss ablations and seeds |
+| G1 MIL | MIL and negative-bag supervision have published precedent; exact feature blocks, pooling and coefficients are project-specific | E6 cumulative feature/loss ablations, matched capacity and three seeds |
 | Equal percentile-rank fusion | Rank normalization is generic; exact equal weighting is project-specific | E8 versus score and alternative rank fusions |
 | Reciprocal-rank fusion | Published by Cormack et al. | Included as an E8 comparator: <https://research.google/pubs/reciprocal-rank-fusion-outperforms-condorcet-and-individual-rank-learning-methods/> |
 
