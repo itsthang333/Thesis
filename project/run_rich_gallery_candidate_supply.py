@@ -163,8 +163,10 @@ def common_generation_args(
         "--candidate-diagnostics-cohort",
         "all",
     ]
-    if target_columns == "tumor":
-        command.append("--force-normal-candidate-gallery")
+    # Both matched E1 arms require proposal bags for normal images so that the
+    # downstream negative-bag objective sees the same cohort.  For ten-class
+    # checkpoints, ``tumor_log_odds`` is the exact collapsed tumor/normal event.
+    command.append("--force-normal-candidate-gallery")
     if prompt_ensemble:
         command.append("--sam-prompt-ensemble")
     else:

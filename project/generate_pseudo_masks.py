@@ -1231,13 +1231,15 @@ def main() -> None:
     if args.force_normal_candidate_gallery and (
         not args.save_candidate_diagnostics
         or args.candidate_diagnostics_cohort != "all"
-        or args.cam_target_class != "ground_truth"
-        or target_columns != ["tumor"]
+        or not external_saliency_image_label_target_authorized(
+            target_columns,
+            cam_target_class=args.cam_target_class,
+            cam_aggregation=args.cam_aggregation,
+        )
     ):
         raise ValueError(
             "--force-normal-candidate-gallery is restricted to prediction-first "
-            "full-cohort diagnostics with binary image-label ground-truth CAM "
-            "targeting"
+            "full-cohort diagnostics targeting the tumor/normal image-label event"
         )
 
     if target_columns == ["tumor_type"]:

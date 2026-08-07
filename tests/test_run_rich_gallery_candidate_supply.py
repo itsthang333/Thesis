@@ -71,6 +71,24 @@ def test_sam_model_type_is_explicit_and_propagated() -> None:
     assert values[values.index("--sam-model-type") + 1] == "vit_l"
 
 
+def test_collapsed_ten_class_keeps_full_normal_candidate_bags() -> None:
+    values = build_generation_command(
+        mode="addition",
+        source_root=Path("/source"),
+        data_root=Path("/data"),
+        split_manifest=Path("/split.csv"),
+        split="val",
+        classifier=Path("/classifier.pt"),
+        sam=Path("/sam.pth"),
+        output_dir=Path("/out"),
+        target_columns="tumor_type",
+        cam_aggregation="tumor_log_odds",
+    )
+    assert "--force-normal-candidate-gallery" in values
+    assert values[values.index("--target-columns") + 1] == "tumor_type"
+    assert values[values.index("--cam-aggregation") + 1] == "tumor_log_odds"
+
+
 def test_anchor_rejects_partial_external_lock() -> None:
     with pytest.raises(ValueError, match="complete external-saliency"):
         build_generation_command(
