@@ -51,6 +51,14 @@
     },
     {
       "absolute_error": 0.0,
+      "actual": 1.0,
+      "atol": 1e-09,
+      "expected": 1.0,
+      "name": "both_empty_dice_convention",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
       "actual": 0.5,
       "atol": 1e-09,
       "expected": 0.5,
@@ -106,6 +114,38 @@
       "pass": true
     },
     {
+      "absolute_error": 1.3877787807814457e-17,
+      "actual": 0.09999999999999999,
+      "atol": 1e-09,
+      "expected": 0.1,
+      "name": "ece_15_equal_width_fixture",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 2.0,
+      "atol": 1e-09,
+      "expected": 2.0,
+      "name": "lesion_ground_truth_component_count",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 3.0,
+      "atol": 1e-09,
+      "expected": 3.0,
+      "name": "lesion_predicted_component_count",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 2.0,
+      "atol": 1e-09,
+      "expected": 2.0,
+      "name": "lesion_one_to_one_iou50_fixture",
+      "pass": true
+    },
+    {
       "absolute_error": 1.43843755573414e-07,
       "actual": 2.2624693861562446,
       "atol": 1e-06,
@@ -128,10 +168,50 @@
       "expected": 1.4641569137923467,
       "name": "collapsed_ten_class_tumor_log_odds",
       "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 2.0,
+      "atol": 1e-12,
+      "expected": 2.0,
+      "name": "normalized_logsumexp_equal_logits",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.5,
+      "atol": 1e-09,
+      "expected": 0.5,
+      "name": "equal_percentile_rank_fixture_0",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.5,
+      "atol": 1e-09,
+      "expected": 0.5,
+      "name": "equal_percentile_rank_fixture_1",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.5,
+      "atol": 1e-09,
+      "expected": 0.5,
+      "name": "equal_percentile_rank_fixture_2",
+      "pass": true
+    },
+    {
+      "absolute_error": 0.0,
+      "actual": 0.53,
+      "atol": 1e-09,
+      "expected": 0.53,
+      "name": "project_specific_U5_algebra",
+      "pass": true
     }
   ],
-  "checks_passed": 16,
-  "checks_total": 16,
+  "checks_passed": 26,
+  "checks_total": 26,
   "external_references": {
     "metrics_reloaded": "https://www.nature.com/articles/s41592-023-02151-z",
     "monai_surface_fixture_version": "1.5.1",
@@ -140,7 +220,10 @@
   "implementation_sha256": {
     "classifier_metrics": "a5b27e70f7013721362caa97872e7bf97b76c59dccbf27815594aca593ddb841",
     "collapsed_log_odds": "836fccf1e1f40ff041be6465cc6677ce8277d9cc079dd22d6918353e615b331b",
-    "segmentation_metrics": "0590a44cdb43cfeb9f3ab8c399f83909906a8cb419804a5246d121e840b33d61"
+    "g1_pooling": "c82fa61c1e9a33f969ffb172c5099aedbbb70d5f28a323cfd638808d3974967f",
+    "rank_fusion": "a79c7fd2ad13c4992da03bbf97f7f2944704cee968ce188791023a0a3fec96fc",
+    "segmentation_metrics": "0590a44cdb43cfeb9f3ab8c399f83909906a8cb419804a5246d121e840b33d61",
+    "upstream_ablation": "35aee22b75186f8c6075ed888eb48d70e8e5bef9de800aedfe0e8caab446627b"
   },
   "pass": true,
   "schema_version": 1,

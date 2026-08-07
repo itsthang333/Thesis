@@ -26,7 +26,7 @@ def test_metric_formula_audit_passes_and_is_test_free(tmp_path: Path) -> None:
     report = json.loads(output.read_text(encoding="utf-8"))
     assert report["pass"] is True
     assert report["checks_passed"] == report["checks_total"]
-    assert report["checks_total"] >= 15
+    assert report["checks_total"] >= 24
     assert report["spatial_annotations_read"] == 0
     assert report["test_images_read"] == 0
     assert report["test_evaluated"] is False

@@ -11,8 +11,11 @@ import torch
 
 from evaluate_g4_classifier_labels import _average_precision, _binary_metrics
 from evaluation.segmentation_metrics import segmentation_metrics, summarize_segmentation_rows
+from final_selector import fixed_rank_fusion
 from frozen_io import sha256_file
+from g4_ablation import UpstreamComponents, upstream_score
 from models.layercam import collapsed_tumor_log_odds
+from models.rad_dino_mask_bag_mil import smooth_mil_pool
 
 
 def _close(actual: float, expected: float, *, atol: float = 1e-9) -> bool:
@@ -55,6 +58,8 @@ def main() -> None:
     record("precision_confusion_fixture", segmentation["precision"], 4.0 / 6.0)
     record("recall_confusion_fixture", segmentation["recall"], 1.0)
     record("relative_volume_difference_fixture", segmentation["relative_area_difference"], 0.5)
+    both_empty = segmentation_metrics(np.zeros((3, 3)), np.zeros((3, 3)))
+    record("both_empty_dice_convention", both_empty["dice"], 1.0)
 
     perfect = segmentation_metrics(target, target)
     missed_target = np.ones((4, 4), dtype=np.uint8)
@@ -95,6 +100,21 @@ def main() -> None:
     )
     # TP=2, FN=1, FP=1, TN=2 -> numerator=3, denominator=9.
     record("mcc_confusion_fixture", mcc["matthews_correlation_coefficient"], 1.0 / 3.0)
+    calibrated = _binary_metrics(
+        np.asarray([0, 1], dtype=np.int64),
+        np.asarray([0.1, 0.9], dtype=np.float64),
+    )
+    record("ece_15_equal_width_fixture", calibrated["ece_15_equal_width"], 0.1)
+
+    lesion_target = np.zeros((12, 12), dtype=np.uint8)
+    lesion_target[1:3, 1:3] = 1
+    lesion_target[8:10, 8:10] = 1
+    lesion_prediction = lesion_target.copy()
+    lesion_prediction[5, 5] = 1
+    lesion = segmentation_metrics(lesion_prediction, lesion_target)
+    record("lesion_ground_truth_component_count", lesion["gt_lesions"], 2.0)
+    record("lesion_predicted_component_count", lesion["predicted_lesions"], 3.0)
+    record("lesion_one_to_one_iou50_fixture", lesion["lesion_tp_one_to_one_iou50"], 2.0)
 
     surface_target = np.zeros((12, 12), dtype=np.uint8)
     surface_target[1:5, 1:9] = 1
@@ -111,6 +131,26 @@ def main() -> None:
     actual_log_odds = collapsed_tumor_log_odds(logits)
     record("collapsed_ten_class_tumor_log_odds", actual_log_odds.item(), expected_log_odds.item(), atol=1e-12)
 
+    candidate_logits = torch.tensor([[2.0, 2.0, 2.0]], dtype=torch.float64)
+    valid = torch.ones_like(candidate_logits, dtype=torch.bool)
+    pooled = smooth_mil_pool(candidate_logits, valid, temperature=0.2)
+    record("normalized_logsumexp_equal_logits", pooled.item(), 2.0, atol=1e-12)
+
+    fused = fixed_rank_fusion(
+        np.asarray([1.0, 3.0, 2.0]), np.asarray([3.0, 1.0, 2.0])
+    )
+    for index, expected in enumerate((0.5, 0.5, 0.5)):
+        record(f"equal_percentile_rank_fixture_{index}", fused[index], expected)
+
+    upstream = UpstreamComponents(
+        sam_score=np.asarray([0.2]),
+        cam_density=np.asarray([0.4]),
+        cam_mass_coverage=np.asarray([0.8]),
+        sam_component_rank=np.asarray([0.6]),
+        sam_global_rank=np.asarray([0.7]),
+    )
+    record("project_specific_U5_algebra", upstream_score(upstream, "U5")[0], 0.53)
+
     passed = all(bool(check["pass"]) for check in checks)
     report = {
         "schema_version": 1,
@@ -123,6 +163,9 @@ def main() -> None:
             "classifier_metrics": sha256_file(Path(__file__).resolve().parent / "evaluate_g4_classifier_labels.py"),
             "segmentation_metrics": sha256_file(Path(__file__).resolve().parent / "evaluation" / "segmentation_metrics.py"),
             "collapsed_log_odds": sha256_file(Path(__file__).resolve().parent / "models" / "layercam.py"),
+            "g1_pooling": sha256_file(Path(__file__).resolve().parent / "models" / "rad_dino_mask_bag_mil.py"),
+            "rank_fusion": sha256_file(Path(__file__).resolve().parent / "final_selector.py"),
+            "upstream_ablation": sha256_file(Path(__file__).resolve().parent / "g4_ablation.py"),
         },
         "external_references": {
             "metrics_reloaded": "https://www.nature.com/articles/s41592-023-02151-z",
