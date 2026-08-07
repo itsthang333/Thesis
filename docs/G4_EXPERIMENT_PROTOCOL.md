@@ -217,6 +217,13 @@ generation also writes measured seconds/image, CUDA peak allocated/reserved
 bytes and output bytes. Official B/L/H checkpoints are SHA-256 locked, and the
 ablation-only evaluator rejects test.
 
+`audit_g4_e3_sam_backbone.py` is a separate consumer of the completed arm. It
+re-hashes the evaluation, candidate and selection manifests; requires exactly
+371 merged galleries/choices, 184/187 tumor/normal images and subgroup counts
+94/72/18; checks the official B/L/H checkpoint binding and all resource fields;
+and rejects any test access. A runner-generated summary is not accepted as its
+own independent audit.
+
 ### E4 — localization-source ablation
 
 Run all seven non-empty subsets of LayerCAM-320, classifier-448 LayerCAM and
