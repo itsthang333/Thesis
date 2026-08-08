@@ -1,0 +1,18 @@
+{
+  "canonical_split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "cross_role_groups": 0,
+  "groups": 984,
+  "holdout_fraction_target": 0.15,
+  "images": 2981,
+  "inner_holdout_images": 465,
+  "inner_holdout_tumor_images": 229,
+  "inner_split_seed": 20260808,
+  "inner_train_images": 2516,
+  "inner_train_tumor_images": 1259,
+  "manifest_sha256": "d641bc1c2847aefab28759f41f93ea2b1489d7ad1c33beb90f11d2403eb4115b",
+  "outer_validation_images_used": 0,
+  "schema_version": 1,
+  "stage": "x4_group_aware_inner_split_v1",
+  "test_evaluated": false,
+  "test_images_read": 0
+}
