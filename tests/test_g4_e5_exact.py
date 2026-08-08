@@ -15,6 +15,7 @@ from g4_e5_exact import (  # noqa: E402
     concatenate_payloads,
     first_unique_mask_indices,
     normalized_payload,
+    project_payload_masks_to_grid,
     verify_post_dedup_reproduction,
 )
 
@@ -100,3 +101,31 @@ def test_concatenation_preserves_exact_provenance() -> None:
     assert len(joined["sam_masks"]) == 2
     assert joined["prompt_ids"].tolist()[1].startswith("classifier448:")
 
+
+def test_addition_grid_projection_replays_frozen_merge_geometry() -> None:
+    source = np.zeros((1, 7, 7), dtype=np.uint8)
+    source[0, 2:6, 3:7] = 1
+    original = payload(source, source="classifier448:layercam", exact=True)
+    projected = project_payload_masks_to_grid(original, (4, 4))
+
+    y = np.floor(np.arange(4) * 7 / 4).astype(np.int64)
+    x = np.floor(np.arange(4) * 7 / 4).astype(np.int64)
+    expected = source[:, y[:, None], x[None, :]]
+    assert projected["sam_masks"].shape == (1, 4, 4)
+    assert np.array_equal(projected["sam_masks"], expected)
+    assert np.array_equal(projected["prompt_ids"], original["prompt_ids"])
+    assert np.array_equal(projected["selection_scores"], original["selection_scores"])
+
+
+def test_projected_raw_union_reproduces_post_dedup() -> None:
+    anchor_masks = np.zeros((1, 4, 4), dtype=np.uint8)
+    anchor_masks[0, 1:3, 1:3] = 1
+    addition_masks = np.zeros((2, 8, 8), dtype=np.uint8)
+    addition_masks[0, 2:6, 2:6] = 1  # exact duplicate after 8 -> 4 replay
+    addition_masks[1, 0:2, 0:2] = 1
+    anchor = payload(anchor_masks)
+    addition = project_payload_masks_to_grid(payload(addition_masks), (4, 4))
+    raw = concatenate_payloads(anchor, addition)
+    keep = first_unique_mask_indices(raw["sam_masks"])
+    post = {field: np.asarray(raw[field])[keep] for field in raw}
+    assert verify_post_dedup_reproduction(raw, post).tolist() == [0, 2]

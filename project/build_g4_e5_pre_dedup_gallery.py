@@ -14,6 +14,7 @@ from g4_e5_exact import (
     attach_exact_multimask_provenance,
     concatenate_payloads,
     normalized_payload,
+    project_payload_masks_to_grid,
     verify_post_dedup_reproduction,
 )
 from pseudo.candidate_diagnostics import (
@@ -145,6 +146,10 @@ def main() -> None:
             normalized_payload(loaded["multimask_addition"], namespace="classifier448"),
             normalized_payload(loaded["single_addition"], namespace="classifier448"),
         )
+        addition_multi = project_payload_masks_to_grid(
+            addition_multi,
+            tuple(int(value) for value in anchor_multi["sam_masks"].shape[1:]),
+        )
         raw = concatenate_payloads(anchor_multi, addition_multi)
         post = normalized_payload(loaded["post_dedup"])
         kept = verify_post_dedup_reproduction(raw, post)
@@ -260,6 +265,7 @@ def main() -> None:
         "post_dedup_reproduced_exactly": True,
         "prompt_group_contract": "one exact single-mask candidate and three multimask candidates",
         "candidate_cap_theoretical": 243,
+        "addition_alignment": "fixed_nearest_neighbor_to_anchor_grid_before_dedup",
         "spatial_ground_truth_used": False,
         "validation_gt_read": False,
         "test_images_read": 0,

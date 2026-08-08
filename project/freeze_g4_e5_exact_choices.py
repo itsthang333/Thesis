@@ -15,6 +15,7 @@ from g4_ablation import ALL_SOURCES, candidate_filter
 from g4_e5_exact import (
     concatenate_payloads,
     normalized_payload,
+    project_payload_masks_to_grid,
     verify_post_dedup_reproduction,
 )
 from pseudo.candidate_diagnostics import (
@@ -274,6 +275,10 @@ def main() -> None:
         single_anchor = normalized_payload(loaded["single_anchor"])
         single_addition = normalized_payload(
             loaded["single_addition"], namespace="classifier448"
+        )
+        single_addition = project_payload_masks_to_grid(
+            single_addition,
+            tuple(int(value) for value in single_anchor["sam_masks"].shape[1:]),
         )
         single = concatenate_payloads(single_anchor, single_addition)
         if len(np.unique(single["prompt_ids"])) != len(single["prompt_ids"]):

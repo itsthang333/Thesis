@@ -7,6 +7,8 @@ from typing import Mapping
 
 import numpy as np
 
+from merge_frozen_candidate_galleries import resize_binary_masks_nearest
+
 
 ALIGNED_FIELDS = (
     "sam_masks",
@@ -171,6 +173,30 @@ def concatenate_payloads(
     return result
 
 
+def project_payload_masks_to_grid(
+    payload: Mapping[str, np.ndarray],
+    target_shape: tuple[int, int],
+) -> dict[str, np.ndarray]:
+    """Project only candidate masks onto the frozen anchor grid.
+
+    The final rich-gallery baseline merges the 448-pixel addition bank into
+    the 320-pixel anchor bank with ``resize_binary_masks_nearest`` before
+    duplicate removal.  E5 must replay that exact alignment before it can
+    reconstruct the pre-dedup gallery; otherwise the two banks cannot be
+    concatenated and, more importantly, duplicate identity would be defined
+    in two incompatible coordinate systems.
+    """
+
+    normalized = normalized_payload(payload)
+    if len(target_shape) != 2 or min(int(value) for value in target_shape) <= 0:
+        raise ValueError("target_shape must contain two positive dimensions")
+    normalized["sam_masks"] = resize_binary_masks_nearest(
+        normalized["sam_masks"],
+        (int(target_shape[0]), int(target_shape[1])),
+    )
+    return normalized
+
+
 def first_unique_mask_indices(masks: np.ndarray) -> np.ndarray:
     masks = np.asarray(masks, dtype=np.uint8)
     if masks.ndim != 3:
@@ -215,6 +241,7 @@ __all__ = [
     "concatenate_payloads",
     "first_unique_mask_indices",
     "normalized_payload",
+    "project_payload_masks_to_grid",
     "prompt_key",
     "verify_post_dedup_reproduction",
 ]
