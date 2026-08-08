@@ -18,3 +18,6 @@ def test_rich_gallery_target_wrapper_is_fail_closed_and_cpu_bounded() -> None:
     assert '"test_images_read": 0' in source
     assert '"test_evaluated": False' in source
     assert "torch" not in source
+    assert "load_supplies" in source
+    assert '"--addition-namespace", "classifier448"' in source
+    assert "reconstructed train candidate manifest differs" in source

@@ -38,6 +38,7 @@ G1_MODEL_SHA256 = "c82fa61c1e9a33f969ffb172c5099aedbbb70d5f28a323cfd638808d39749
 NOMINAL_MEMORY_SHA256 = "a7fbf3e4042623b1b2817f8bb02a87072db55c21bb5b9380cc259aca3a7dd526"
 GPU_RUNTIME_SHA256 = "15c159d253969c1396f597281d59fd2f5e473d82435f937e7076e3b3e500d5b2"
 FROZEN_IO_SHA256 = "423c5b9eef87a59d9f457bc4acc1f6795cff9c4b1c875f25d651b5aa88987a2d"
+MERGER_SHA256 = "b2ec6e2cb3a6ca6018c0ac8095dc119ea38b11ad7fda2dbe56a081f3aedd142a"
 
 
 def sha256(path: Path) -> str:
@@ -64,6 +65,26 @@ def dataset_root() -> Path:
     if len(roots) != 1:
         raise RuntimeError(f"expected exactly one BTXRD root, found {roots}")
     return roots[0]
+
+
+def load_supplies() -> dict[str, tuple[Path, dict[str, object]]]:
+    paths = sorted(path for path in INPUT.rglob("candidate_supply_manifest.json") if path.is_file())
+    if len(paths) != 2:
+        raise RuntimeError(f"expected exactly two frozen candidate supplies, found {paths}")
+    supplies: dict[str, tuple[Path, dict[str, object]]] = {}
+    for path in paths:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        mode = str(payload.get("mode"))
+        if mode not in {"anchor", "addition"} or mode in supplies:
+            raise RuntimeError(f"unexpected or duplicate candidate supply mode: {mode}")
+        if (
+            payload.get("spatial_ground_truth_read") is not False
+            or payload.get("test_images_read") != 0
+            or payload.get("test_evaluated") is not False
+        ):
+            raise RuntimeError(f"candidate supply violates no-GT/no-test: {mode}")
+        supplies[mode] = (path.parent, payload)
+    return supplies
 
 
 def install_runtime() -> None:
@@ -114,10 +135,46 @@ def main() -> None:
         if not path.is_file() or sha256(path) != expected:
             raise RuntimeError(f"locked scoring dependency differs: {path}")
     split = exact_file("canonical_split_manifest_85511.csv", SPLIT_SHA256)
-    candidate_manifest = exact_file(
-        "candidate_diagnostics_manifest.csv", TRAIN_CANDIDATE_MANIFEST_SHA256
+    merger = exact_file("merge_frozen_candidate_galleries.py", MERGER_SHA256)
+    supplies = load_supplies()
+    anchor_root, anchor = supplies["anchor"]
+    addition_root, addition = supplies["addition"]
+    anchor_train = anchor["splits"]["train"]
+    addition_train = addition["splits"]["train"]
+    candidate_root = WORKING / "rich_gallery_merge_train"
+    merge_command = [
+        sys.executable,
+        str(merger),
+        "--split-manifest", str(split),
+        "--expected-split-sha256", SPLIT_SHA256,
+        "--split", "train",
+        "--anchor-root", str(anchor_root / "train"),
+        "--anchor-candidate-manifest-sha256", str(anchor_train["candidate_manifest_sha256"]),
+        "--anchor-pseudo-manifest-sha256", str(anchor_train["pseudo_manifest_sha256"]),
+        "--addition-root", str(addition_root / "train"),
+        "--addition-candidate-manifest-sha256", str(addition_train["candidate_manifest_sha256"]),
+        "--addition-pseudo-manifest-sha256", str(addition_train["pseudo_manifest_sha256"]),
+        "--addition-namespace", "classifier448",
+        "--protocol-sha256", PROTOCOL_SHA256,
+        "--output-dir", str(candidate_root),
+    ]
+    print(json.dumps({"merge_command": merge_command}), flush=True)
+    subprocess.run(merge_command, cwd=project.parent, check=True)
+    candidate_manifest = candidate_root / "candidate_diagnostics_manifest.csv"
+    if sha256(candidate_manifest) != TRAIN_CANDIDATE_MANIFEST_SHA256:
+        raise RuntimeError("reconstructed train candidate manifest differs from Geometry-v3")
+    merge_contract = json.loads(
+        (candidate_root / "gallery_merge_contract.json").read_text(encoding="utf-8")
     )
-    candidate_root = candidate_manifest.parent
+    candidate_summary = json.loads(
+        (candidate_root / "candidate_diagnostics_summary.json").read_text(encoding="utf-8")
+    )
+    if (
+        merge_contract.get("output_manifest_sha256") != TRAIN_CANDIDATE_MANIFEST_SHA256
+        or candidate_summary.get("pseudo_manifest_sha256") != TRAIN_PSEUDO_MANIFEST_SHA256
+        or int(merge_contract.get("maximum_candidates", -1)) > 243
+    ):
+        raise RuntimeError("reconstructed train gallery contract differs")
     checkpoint = exact_file("rad_dino_mask_bag_mil.pt", G1_CHECKPOINT_SHA256)
     model_weight = exact_file("model.safetensors", RAD_WEIGHT_SHA256)
     model_dir = model_weight.parent
@@ -204,6 +261,7 @@ def main() -> None:
     receipt_path = WORKING / "x4_rich_gallery_train_g1_scores_receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     shutil.rmtree(output)
+    shutil.rmtree(candidate_root)
     print(json.dumps({**receipt, "receipt_sha256": sha256(receipt_path)}, indent=2, sort_keys=True))
 
 

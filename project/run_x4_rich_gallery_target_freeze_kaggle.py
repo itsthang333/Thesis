@@ -23,6 +23,7 @@ import zipfile
 INPUT = Path("/kaggle/input")
 WORKING = Path("/kaggle/working")
 SOURCE_COMMIT = "458ab52f145583fe97485a419a230c848f68b46d"
+GALLERY_PROTOCOL_SHA256 = "66b56661ca91052c6bb1958c92d433cfcf9303f07624423068109e0b90eda454"
 SPLIT_SHA256 = "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 TRAIN_CANDIDATE_MANIFEST_SHA256 = "e260be427d3a35d1b6305f17cc8e2e3ed53eb92641a9f19e6cfa6c8b10f8a436"
 TRAIN_PSEUDO_MANIFEST_SHA256 = "649ee4232bbcca930c099e888708fa6894a34229ce08e1b80a17446c745a1f13"
@@ -32,6 +33,7 @@ TARGET_IO_SHA256 = "fc82186e8530b41d8798ab9df1ce8bd347d017e933fe298f5d8f41ead906
 FROZEN_IO_SHA256 = "423c5b9eef87a59d9f457bc4acc1f6795cff9c4b1c875f25d651b5aa88987a2d"
 X4_CONTRACT_SHA256 = "cc41be0f8ea5cd675fc3e4ce21b7b47a805446898bc55fb5bda5eeadde5f8bb5"
 CANDIDATE_IO_SHA256 = "0770fa8eb6d6b3fe35a4ae2db187d0e174b9b5f0a87f8ee254e2cdc41dbf6c61"
+MERGER_SHA256 = "b2ec6e2cb3a6ca6018c0ac8095dc119ea38b11ad7fda2dbe56a081f3aedd142a"
 
 
 def sha256(path: Path) -> str:
@@ -65,6 +67,26 @@ def safe_extract(archive: Path, destination: Path) -> None:
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", newline="", encoding="utf-8-sig") as handle:
         return list(csv.DictReader(handle))
+
+
+def load_supplies() -> dict[str, tuple[Path, dict[str, object]]]:
+    paths = sorted(path for path in INPUT.rglob("candidate_supply_manifest.json") if path.is_file())
+    if len(paths) != 2:
+        raise RuntimeError(f"expected exactly two frozen candidate supplies, found {paths}")
+    supplies: dict[str, tuple[Path, dict[str, object]]] = {}
+    for path in paths:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        mode = str(payload.get("mode"))
+        if mode not in {"anchor", "addition"} or mode in supplies:
+            raise RuntimeError(f"unexpected or duplicate candidate supply mode: {mode}")
+        if (
+            payload.get("spatial_ground_truth_read") is not False
+            or payload.get("test_images_read") != 0
+            or payload.get("test_evaluated") is not False
+        ):
+            raise RuntimeError(f"candidate supply violates no-GT/no-test: {mode}")
+        supplies[mode] = (path.parent, payload)
+    return supplies
 
 
 def main() -> None:
@@ -123,10 +145,39 @@ def main() -> None:
         if not path.is_file() or sha256(path) != expected:
             raise RuntimeError(f"locked target-freeze dependency differs: {path}")
     split = exact_file("canonical_split_manifest_85511.csv", SPLIT_SHA256)
-    candidate_manifest = exact_file(
-        "candidate_diagnostics_manifest.csv", TRAIN_CANDIDATE_MANIFEST_SHA256
+    merger = exact_file("merge_frozen_candidate_galleries.py", MERGER_SHA256)
+    supplies = load_supplies()
+    anchor_root, anchor = supplies["anchor"]
+    addition_root, addition = supplies["addition"]
+    anchor_train = anchor["splits"]["train"]
+    addition_train = addition["splits"]["train"]
+    candidate_root = WORKING / "rich_gallery_merge_train"
+    merge_command = [
+        sys.executable,
+        str(merger),
+        "--split-manifest", str(split),
+        "--expected-split-sha256", SPLIT_SHA256,
+        "--split", "train",
+        "--anchor-root", str(anchor_root / "train"),
+        "--anchor-candidate-manifest-sha256", str(anchor_train["candidate_manifest_sha256"]),
+        "--anchor-pseudo-manifest-sha256", str(anchor_train["pseudo_manifest_sha256"]),
+        "--addition-root", str(addition_root / "train"),
+        "--addition-candidate-manifest-sha256", str(addition_train["candidate_manifest_sha256"]),
+        "--addition-pseudo-manifest-sha256", str(addition_train["pseudo_manifest_sha256"]),
+        "--addition-namespace", "classifier448",
+        "--protocol-sha256", GALLERY_PROTOCOL_SHA256,
+        "--output-dir", str(candidate_root),
+    ]
+    print(json.dumps({"merge_command": merge_command}), flush=True)
+    subprocess.run(merge_command, cwd=project.parent, check=True)
+    candidate_manifest = candidate_root / "candidate_diagnostics_manifest.csv"
+    if sha256(candidate_manifest) != TRAIN_CANDIDATE_MANIFEST_SHA256:
+        raise RuntimeError("reconstructed train candidate manifest differs from Geometry-v3")
+    candidate_summary = json.loads(
+        (candidate_root / "candidate_diagnostics_summary.json").read_text(encoding="utf-8")
     )
-    candidate_root = candidate_manifest.parent
+    if candidate_summary.get("pseudo_manifest_sha256") != TRAIN_PSEUDO_MANIFEST_SHA256:
+        raise RuntimeError("reconstructed train pseudo-manifest binding differs")
     output = WORKING / "x4_rich_gallery_target"
     command = [
         sys.executable,
@@ -204,6 +255,7 @@ def main() -> None:
     )
     shutil.rmtree(output)
     shutil.rmtree(extracted)
+    shutil.rmtree(candidate_root)
     print(json.dumps({**final_receipt, "receipt_sha256": sha256(final_path)}, indent=2))
 
 

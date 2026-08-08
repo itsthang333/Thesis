@@ -14,3 +14,6 @@ def test_train_score_wrapper_is_train_only_and_fail_closed() -> None:
     assert '"test_evaluated": False' in source
     assert "TRAIN_CANDIDATE_MANIFEST_SHA256" in source
     assert "G1_CHECKPOINT_SHA256" in source
+    assert "load_supplies" in source
+    assert '"--addition-namespace", "classifier448"' in source
+    assert "reconstructed train candidate manifest differs" in source
