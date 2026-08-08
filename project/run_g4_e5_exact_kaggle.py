@@ -45,14 +45,22 @@ def sha256(path: Path) -> str:
 
 
 def unique_hash(root: Path, expected: str, *, names: tuple[str, ...]) -> Path:
-    matches = [
+    matches = sorted(
+        {
         path
         for name in names
         for path in root.rglob(name)
         if path.is_file() and sha256(path) == expected
-    ]
-    if len(matches) != 1:
-        raise RuntimeError(f"expected one input SHA-256 {expected}, found {matches}")
+        },
+        key=lambda path: path.as_posix(),
+    )
+    # The Kaggle payload may attach the same immutable, content-addressed input
+    # through more than one dataset.  Multiple byte-identical copies are
+    # scientifically equivalent because every candidate has already been
+    # verified against ``expected``.  Fail only when no exact copy exists and
+    # select deterministically otherwise.
+    if not matches:
+        raise RuntimeError(f"expected input SHA-256 {expected}, found no exact copy")
     return matches[0]
 
 
