@@ -92,6 +92,26 @@ class G4SegmentationMetricTests(unittest.TestCase):
         self.assertEqual(summary["partial_multifocal_miss_images"], 1)
         self.assertEqual(summary["missed_lesions_any_overlap"], 1)
 
+    def test_one_to_one_lesion_matching_respects_all_three_iou_thresholds(self) -> None:
+        target = np.zeros((24, 24), dtype=bool)
+        target[2:6, 2:6] = True
+        target[14:18, 14:18] = True
+        prediction = np.zeros_like(target)
+        prediction[2:6, 2:6] = True
+        # The second 4x4 component overlaps the target in one 4-pixel column:
+        # IoU = 4 / (16 + 16 - 4) = 1/7. It therefore matches only at 0.10.
+        prediction[14:18, 17:21] = True
+        metrics = segmentation_metrics(prediction, target)
+        self.assertEqual(metrics["gt_lesions"], 2)
+        self.assertEqual(metrics["predicted_lesions"], 2)
+        self.assertEqual(metrics["lesion_tp_one_to_one_iou10"], 2)
+        self.assertEqual(metrics["lesion_tp_one_to_one_iou25"], 1)
+        self.assertEqual(metrics["lesion_tp_one_to_one_iou50"], 1)
+        summary = summarize_segmentation_rows([metrics])
+        self.assertAlmostEqual(summary["lesion_one_to_one_iou10_f1"], 1.0)
+        self.assertAlmostEqual(summary["lesion_one_to_one_iou25_f1"], 0.5)
+        self.assertAlmostEqual(summary["lesion_one_to_one_iou50_f1"], 0.5)
+
     def test_paired_group_bootstrap_is_deterministic_and_fail_closed(self) -> None:
         reference = [
             {"image_id": "a", "group_id": "g1", "dice": 0.1},

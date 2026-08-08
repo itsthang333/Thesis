@@ -13,6 +13,16 @@ from pseudo.manifest import sha256_file
 from x4_contract import CANONICAL_SPLIT_SHA256, load_x4_protocol
 
 
+def _json_normalized(value: object) -> object:
+    """Compare checkpoint metadata using the sidecar's JSON value domain.
+
+    PyTorch preserves tuples while JSON necessarily materializes them as
+    lists.  The scientific values are identical, so compare the canonical JSON
+    representation rather than Python container implementation types.
+    """
+    return json.loads(json.dumps(value, sort_keys=True))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, required=True)
@@ -67,7 +77,7 @@ def main() -> None:
         raise ValueError("X4 S2C checkpoint is not terminal")
     if checkpoint.get("ground_truth_spatial_supervision") is not False:
         raise ValueError("X4 S2C checkpoint does not certify no spatial GT")
-    if checkpoint.get("training_metadata") != metadata:
+    if _json_normalized(checkpoint.get("training_metadata")) != _json_normalized(metadata):
         raise ValueError("X4 S2C checkpoint metadata differs from sidecar")
     if manifest.get("training_metadata_sha256") != sha256_file(metadata_path):
         raise ValueError("X4 S2C metadata SHA differs")
