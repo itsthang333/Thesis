@@ -1,0 +1,22 @@
+{
+  "cache_manifest_sha256": "3298c74e75e2ff2019a60d0026651efd51dcb8814d6d94d3b0efe0fe60dd3d0c",
+  "cache_run_metadata_sha256": "cc626582c49fc1a0d8aac2facf6e166afecaf63c39ba00404d81cd9a485f02a1",
+  "cache_summary_sha256": "4b164683b14a19e58b9593635375f6bdf03257ebab37bc38d0bccf58cf756af7",
+  "canonical_split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "ground_truth_spatial_supervision": false,
+  "images": 371,
+  "normal_images": 187,
+  "outer_validation_selection": false,
+  "source_cache_reused": true,
+  "source_cache_split_manifest_sha256": "7b16771a634e423d2d4ce7d5a835e6ea5ff6d1a422f124aab8019ed53512529c",
+  "split": "val",
+  "status": "pass",
+  "student_trained": false,
+  "study": "X4 W2 reusable class-agnostic SAM cache adoption",
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "top_level_cache_files_and_all_payload_hashes_verified": true,
+  "tumor_images": 184,
+  "x4_protocol_sha256": "ecf39ca2a45d3bae5f42689c0605b78c6e4db3968aadfbf82036a118d46f1824"
+}
+
