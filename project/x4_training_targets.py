@@ -56,6 +56,9 @@ def validate_x4_target_bundle(
         or freeze.get("arm") != arm
         or freeze.get("split_sha256") != split_sha256
         or int(freeze.get("images", -1)) != 2981
+        or freeze.get("native_resolution_masks") is not True
+        or freeze.get("normal_targets_explicitly_empty") is not True
+        or int(freeze.get("train_spatial_annotations_read", -1)) != 0
         or freeze.get("targets_frozen_before_outer_validation_gt") is not True
         or freeze.get("outer_validation_annotations_read") != 0
         or freeze.get("test_images_read") != 0
@@ -89,4 +92,3 @@ def validate_x4_target_bundle(
     if int(freeze.get("tumor_empty_targets", -1)) != tumor_empty:
         raise ValueError("X4 target tumor-empty count differs")
     return indexed, freeze
-

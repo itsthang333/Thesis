@@ -27,7 +27,7 @@ from run_rad_dino_mask_bag_mil_probe import (
 )
 
 
-EXPECTED_COUNTS = {"val": 371, "test": 373}
+EXPECTED_COUNTS = {"train": 2981, "val": 371, "test": 373}
 EVIDENCE_FIELDS = (
     "image_id", "group_id", "tumor", "candidate_payload_sha256",
     "candidate_count", "selected_candidate_index", "selected_candidate_logit",
@@ -37,7 +37,7 @@ EVIDENCE_FIELDS = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--split", choices=("val", "test"), required=True)
+    parser.add_argument("--split", choices=("train", "val", "test"), required=True)
     parser.add_argument("--frozen-config", type=Path)
     parser.add_argument("--dataset-root", type=Path, required=True)
     parser.add_argument("--split-manifest", type=Path, required=True)
