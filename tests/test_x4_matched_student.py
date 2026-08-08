@@ -15,6 +15,7 @@ if str(PROJECT) not in sys.path:
     sys.path.insert(0, str(PROJECT))
 
 from train_x4_matched_student import choose_threshold, threshold_metrics  # noqa: E402
+from models.unet import build_segmentation_model  # noqa: E402
 from x4_training_targets import inspect_mask  # noqa: E402
 
 
@@ -52,3 +53,19 @@ def test_protocol_declares_no_outer_validation_selection() -> None:
     assert protocol["inner_split"]["outer_validation_selection_forbidden"] is True
     assert protocol["student_seeds"] == [42, 43, 44]
 
+
+def test_resnet18_unet_accepts_explicit_offline_encoder_state() -> None:
+    reference = build_segmentation_model("resnet18_unet", pretrained=False)
+    # Reconstruct the torchvision key space expected by the explicit loader.
+    from torchvision.models import resnet18
+
+    encoder = resnet18(weights=None)
+    with torch.no_grad():
+        encoder.conv1.weight.fill_(0.125)
+    model = build_segmentation_model(
+        "resnet18_unet",
+        pretrained=False,
+        encoder_state_dict=encoder.state_dict(),
+    )
+    assert torch.all(model.stem[0].weight == 0.125)
+    assert not torch.all(reference.stem[0].weight == 0.125)

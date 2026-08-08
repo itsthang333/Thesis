@@ -10,6 +10,9 @@ import json
 CANONICAL_SPLIT_SHA256 = (
     "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c"
 )
+RESNET18_IMAGENET1K_V1_SHA256 = (
+    "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
+)
 X4_PROTOCOL_RELATIVE_PATH = Path("artifacts/final_pipeline/x4/x4_protocol.json")
 STUDENT_SEEDS = (42, 43, 44)
 STUDENT_ARMS = (
@@ -50,4 +53,3 @@ def load_x4_protocol(repo_root: Path) -> tuple[dict[str, object], str]:
     ):
         raise ValueError("X4 protocol differs from the immutable code contract")
     return payload, sha256_file(path)
-

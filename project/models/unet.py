@@ -90,11 +90,20 @@ class UNet(nn.Module):
 class ResNet18UNet(nn.Module):
     """Memory-efficient U-Net with an ImageNet-pretrained ResNet-18 encoder."""
 
-    def __init__(self, out_channels: int = 1, pretrained: bool = True) -> None:
+    def __init__(
+        self,
+        out_channels: int = 1,
+        pretrained: bool = True,
+        encoder_state_dict: dict[str, torch.Tensor] | None = None,
+    ) -> None:
         super().__init__()
+        if pretrained and encoder_state_dict is not None:
+            raise ValueError("choose torchvision weights or an explicit encoder state, not both")
         encoder = resnet18(
             weights=ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
         )
+        if encoder_state_dict is not None:
+            encoder.load_state_dict(encoder_state_dict, strict=True)
         self.stem = nn.Sequential(encoder.conv1, encoder.bn1, encoder.relu)
         self.maxpool = encoder.maxpool
         self.layer1 = encoder.layer1
@@ -155,9 +164,20 @@ def architecture_name_from_metadata(metadata: object) -> str:
     raise ValueError(f"Unsupported checkpoint architecture metadata: {metadata!r}")
 
 
-def build_segmentation_model(name: str, pretrained: bool = False) -> nn.Module:
+def build_segmentation_model(
+    name: str,
+    pretrained: bool = False,
+    *,
+    encoder_state_dict: dict[str, torch.Tensor] | None = None,
+) -> nn.Module:
     if name == "unet":
+        if encoder_state_dict is not None:
+            raise ValueError("plain U-Net does not accept a ResNet encoder state")
         return UNet(in_channels=3, out_channels=1, base_channels=64)
     if name == "resnet18_unet":
-        return ResNet18UNet(out_channels=1, pretrained=pretrained)
+        return ResNet18UNet(
+            out_channels=1,
+            pretrained=pretrained,
+            encoder_state_dict=encoder_state_dict,
+        )
     raise ValueError(f"Unknown segmentation architecture: {name}")

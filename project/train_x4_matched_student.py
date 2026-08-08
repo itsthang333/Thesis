@@ -23,6 +23,7 @@ from models.unet import architecture_metadata, build_segmentation_model
 from x4_contract import (
     CANONICAL_SPLIT_SHA256,
     PSEUDO_STUDENT_ARMS,
+    RESNET18_IMAGENET1K_V1_SHA256,
     STUDENT_ARMS,
     STUDENT_SEEDS,
     THRESHOLD_GRID,
@@ -31,7 +32,6 @@ from x4_contract import (
 from x4_training_targets import validate_x4_target_bundle
 
 
-RESNET18_SHA256 = "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
 IMAGE_SIZE = 448
 BATCH_SIZE = 8
 EPOCHS = 30
@@ -242,7 +242,7 @@ def main() -> None:
         raise ValueError("X4 canonical split SHA-256 mismatch")
     if sha256_file(args.inner_split_manifest) != args.expected_inner_split_sha256:
         raise ValueError("X4 inner split SHA-256 mismatch")
-    if sha256_file(args.resnet18_weight) != RESNET18_SHA256:
+    if sha256_file(args.resnet18_weight) != RESNET18_IMAGENET1K_V1_SHA256:
         raise ValueError("X4 ResNet18 ImageNet weight SHA-256 mismatch")
     if args.seed not in STUDENT_SEEDS:
         raise ValueError("X4 student seed differs")
@@ -325,7 +325,17 @@ def main() -> None:
         pin_memory=True,
     )
     device = torch.device("cuda:0")
-    model = build_segmentation_model("resnet18_unet", pretrained=True).to(device)
+    encoder_state = torch.load(args.resnet18_weight, map_location="cpu", weights_only=True)
+    if not isinstance(encoder_state, dict) or not all(
+        isinstance(key, str) and isinstance(value, torch.Tensor)
+        for key, value in encoder_state.items()
+    ):
+        raise ValueError("X4 ResNet18 weight is not a tensor state dict")
+    model = build_segmentation_model(
+        "resnet18_unet",
+        pretrained=False,
+        encoder_state_dict=encoder_state,
+    ).to(device)
     devices = [torch.cuda.get_device_name(index) for index in range(torch.cuda.device_count())]
     if args.multi_gpu and len(devices) > 1:
         model = nn.DataParallel(model)
@@ -386,6 +396,7 @@ def main() -> None:
                 "architecture": architecture_metadata("resnet18_unet"),
                 "model_architecture": "resnet18_unet",
                 "pretrained_encoder": True,
+                "encoder_weight_sha256": RESNET18_IMAGENET1K_V1_SHA256,
                 "image_size": IMAGE_SIZE,
                 "decision_threshold": threshold,
                 "split_manifest_sha256": CANONICAL_SPLIT_SHA256,
@@ -426,6 +437,7 @@ def main() -> None:
         "target_freeze_sha256": args.expected_target_freeze_sha256,
         "target_freeze": target_freeze,
         "architecture": architecture_metadata("resnet18_unet"),
+        "encoder_weight_sha256": RESNET18_IMAGENET1K_V1_SHA256,
         "scientific_config": protocol["matched_student"],
         "best_checkpoint_sha256": sha256_file(best_path),
         "last_checkpoint_sha256": sha256_file(last_path),

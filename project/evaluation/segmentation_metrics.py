@@ -226,6 +226,13 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
     empty_predictions = sum(bool(row.get("empty_prediction")) for row in tumor)
     zero_overlap = sum(bool(row.get("zero_overlap")) for row in tumor)
     multifocal_images = sum(int(row.get("gt_lesions", 0)) > 1 for row in tumor)
+    partial_multifocal_misses = sum(
+        int(row.get("gt_lesions", 0)) > 1
+        and 0 < int(row.get("detected_lesions_any_overlap", 0)) < int(row.get("gt_lesions", 0))
+        for row in tumor
+    )
+    missed_lesions_any_overlap = max(0, gt_lesions - detected)
+    excess_predicted_lesions_any_overlap = max(0, predicted_lesions - matched_predictions)
     component_histogram: dict[str, int] = {}
     for row in tumor:
         key = str(int(row.get("gt_lesions", 0)))
@@ -274,6 +281,34 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "predicted_lesions": predicted_lesions,
         "multifocal_tumor_images": multifocal_images,
         "multifocal_tumor_image_rate": _safe_ratio(multifocal_images, len(tumor)),
+        "partial_multifocal_miss_images": partial_multifocal_misses,
+        "partial_multifocal_miss_rate": _safe_ratio(
+            partial_multifocal_misses, multifocal_images
+        ),
+        "missed_lesions_any_overlap": missed_lesions_any_overlap,
+        "excess_predicted_lesions_any_overlap": excess_predicted_lesions_any_overlap,
+        "mean_absolute_component_count_error": _finite_mean(
+            [
+                {
+                    "component_count_error": abs(
+                        int(row.get("predicted_lesions", 0)) - int(row.get("gt_lesions", 0))
+                    )
+                }
+                for row in rows
+            ],
+            "component_count_error",
+        ),
+        "median_absolute_component_count_error": _finite_median(
+            [
+                {
+                    "component_count_error": abs(
+                        int(row.get("predicted_lesions", 0)) - int(row.get("gt_lesions", 0))
+                    )
+                }
+                for row in rows
+            ],
+            "component_count_error",
+        ),
         "gt_component_count_histogram": component_histogram,
         "normal_empty_prediction_rate": _safe_ratio(normal_empty, len(normal), empty_value=float("nan")),
         "normal_specificity": _safe_ratio(normal_empty, len(normal), empty_value=float("nan")),
@@ -282,7 +317,35 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         ),
         "normal_mean_pred_area_ratio": _finite_mean(normal, "pred_area_ratio"),
         "normal_median_pred_area_ratio": _finite_median(normal, "pred_area_ratio"),
+        "normal_pred_area_ratio_iqr_low": _finite_percentile(normal, "pred_area_ratio", 25),
+        "normal_pred_area_ratio_iqr_high": _finite_percentile(normal, "pred_area_ratio", 75),
         "normal_pred_area_ratio_p95": _finite_percentile(normal, "pred_area_ratio", 95),
+        "normal_pred_area_gt_0_1pct_rate": _safe_ratio(
+            sum(float(row.get("pred_area_ratio", 0.0)) > 0.001 for row in normal),
+            len(normal),
+            empty_value=float("nan"),
+        ),
+        "normal_pred_area_gt_1pct_rate": _safe_ratio(
+            sum(float(row.get("pred_area_ratio", 0.0)) > 0.01 for row in normal),
+            len(normal),
+            empty_value=float("nan"),
+        ),
+        "normal_pred_area_gt_5pct_rate": _safe_ratio(
+            sum(float(row.get("pred_area_ratio", 0.0)) > 0.05 for row in normal),
+            len(normal),
+            empty_value=float("nan"),
+        ),
+        "normal_false_positive_components": sum(
+            int(row.get("predicted_lesions", 0)) for row in normal
+        ),
+        "normal_mean_false_positive_components": _finite_mean(normal, "predicted_lesions"),
+        "normal_median_false_positive_components": _finite_median(normal, "predicted_lesions"),
+        "normal_false_positive_components_iqr_low": _finite_percentile(
+            normal, "predicted_lesions", 25
+        ),
+        "normal_false_positive_components_iqr_high": _finite_percentile(
+            normal, "predicted_lesions", 75
+        ),
         "macro_tumor_predicted_gt_area_ratio": _finite_mean(
             tumor, "predicted_gt_area_ratio"
         ),
@@ -296,6 +359,9 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
             tumor, "predicted_gt_area_ratio", 75
         ),
         "median_tumor_relative_area_difference": _finite_median(
+            tumor, "relative_area_difference"
+        ),
+        "mean_tumor_relative_area_difference": _finite_mean(
             tumor, "relative_area_difference"
         ),
         "tumor_relative_area_difference_iqr_low": _finite_percentile(

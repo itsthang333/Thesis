@@ -70,6 +70,28 @@ class G4SegmentationMetricTests(unittest.TestCase):
         self.assertEqual(summary["tumor_zero_overlap_count"], 1)
         self.assertAlmostEqual(summary["median_tumor_relative_area_difference"], -0.5)
 
+    def test_x4_normal_and_component_summary_metrics(self) -> None:
+        target = np.zeros((10, 10), dtype=bool)
+        normal_empty = segmentation_metrics(np.zeros_like(target), target)
+        normal_fp = np.zeros_like(target)
+        normal_fp[:2, :2] = True
+        normal_fp[8:, 8:] = True
+        normal_positive = segmentation_metrics(normal_fp, target)
+        tumor_target = np.zeros_like(target)
+        tumor_target[1:3, 1:3] = True
+        tumor_target[6:8, 6:8] = True
+        tumor_prediction = np.zeros_like(target)
+        tumor_prediction[1:3, 1:3] = True
+        tumor_partial = segmentation_metrics(tumor_prediction, tumor_target)
+        summary = summarize_segmentation_rows(
+            [normal_empty, normal_positive, tumor_partial]
+        )
+        self.assertEqual(summary["normal_false_positive_case_rate"], 0.5)
+        self.assertEqual(summary["normal_false_positive_components"], 2)
+        self.assertEqual(summary["normal_pred_area_gt_1pct_rate"], 0.5)
+        self.assertEqual(summary["partial_multifocal_miss_images"], 1)
+        self.assertEqual(summary["missed_lesions_any_overlap"], 1)
+
     def test_paired_group_bootstrap_is_deterministic_and_fail_closed(self) -> None:
         reference = [
             {"image_id": "a", "group_id": "g1", "dice": 0.1},
