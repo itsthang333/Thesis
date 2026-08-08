@@ -1,0 +1,13 @@
+{
+  "assignments_sha256": "221018a8a5f4811f931662ae1d72412b2d44596e6a12ed8fa21da775521f119a",
+  "images_per_method": 371,
+  "methods": [
+    "direct_rich_gallery"
+  ],
+  "pass": true,
+  "schema_version": 1,
+  "stage": "x4_error_taxonomy_audit_v1",
+  "summary_sha256": "67d3183085bbd9e9aae84c086be7fdaef9827f124f8f44f6f63b417d3f3579fe",
+  "test_evaluated": false,
+  "test_images_read": 0
+}

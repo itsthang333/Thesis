@@ -402,3 +402,54 @@ The 0.288729 result is the validation-selected configuration; 0.260881 is its
 locked final test Dice. They must remain visibly separate. WSSS choices and
 fully-supervised masks were frozen before spatial test annotations were opened.
 The final evaluator opened exactly 187 tumor polygons in one joint pass.
+
+## X4 X9: frozen validation error taxonomy
+
+The X4 taxonomy is deliberately non-exclusive because mechanism and phenotype
+can coexist in one case. For example, a selector failure may also be a complete
+miss and an over-segmented wrong-site mask. A deterministic priority is reported
+only to make a compact primary-error table; the non-exclusive counts remain the
+scientifically preferred result.
+
+For the exact cap-243 direct Rich-Gallery arm on the native validation grid:
+
+| Frozen failure flag | Count | Rate over relevant cohort |
+|---|---:|---:|
+| Candidate supply failure, oracle Dice `<0.10` | 29 | 15.76% of 184 tumors |
+| Selector choice failure, oracle `>=0.30` and regret `>=0.20` | 78 | 42.39% |
+| Complete miss | 48 | 26.09% |
+| Over-segmentation, predicted/GT area `>2x` | 93 | 50.54% |
+| Under-segmentation, predicted/GT area `<0.5x` | 31 | 16.85% |
+| Wrong-site non-empty zero-overlap mask | 48 | 26.09% |
+| Fragmented mask | 117 | 63.59% |
+| Missing multifocal component | 20 | 10.87% |
+| Normal false positive | 0 | 0% of 187 normals, expected for known-label gating |
+| Small-lesion failure, Dice `<0.10` | 67 | 36.41% of all tumors |
+
+The zero normal-FP value is not credited as label-free specificity: the direct
+arm is explicitly gated by the known image label. Student and predicted-gate
+taxonomy rows will be appended with the same frozen rules after their X4
+prediction bundles complete.
+
+## X4 X11: confidence and risk-coverage
+
+The confidence is the already-frozen selected equal-rank fusion score. Low
+confidence is evaluated only after selection as a failure score; it never
+changes a candidate or mask.
+
+| Endpoint | Value |
+|---|---:|
+| Spearman confidence vs Dice | 0.313141 |
+| AUROC for detecting Dice `<0.10` | 0.658570 |
+| AUROC for detecting complete miss | 0.656916 |
+
+| Retained coverage | n | Mean Dice | Dice `<0.10` rate | Complete-miss rate |
+|---:|---:|---:|---:|---:|
+| 100% | 184 | 0.288729 | 48.91% | 26.63% |
+| 80% | 148 | 0.335050 | 41.22% | 20.27% |
+| 60% | 111 | 0.361465 | 37.84% | 18.92% |
+| 40% | 74 | 0.367326 | 37.84% | 18.92% |
+
+This is moderate evidence that the score contains cross-image failure
+information, but the residual failure rate remains high and the score is not a
+calibrated uncertainty estimate. No new routing rule is inferred from X11.

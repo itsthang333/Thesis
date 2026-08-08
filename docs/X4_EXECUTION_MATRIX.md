@@ -35,17 +35,17 @@ Last updated: 2026-08-08.
 | X6 | Macro/micro overlap, pixel precision/recall, extent, HD95/ASSD, empty and zero-overlap cases | Implemented in the common native-grid evaluator. HD95/ASSD are explicitly pixels and conditional-defined counts are reported. | Implemented | Run on every arm/seed and aggregate the declared subgroup tables. |
 | X7 | Seeds 42/43/44 for CAM, PuzzleCAM, S2C, Rich Gallery and fully supervised | Seed contract is frozen and common trainer supports all arms/seeds. | Running | Complete 15 matched student runs and report mean plus sample SD. |
 | X8 | 10,000 paired heuristic-group bootstrap replicates for five frozen contrasts | Group and paired-group bootstrap functions are implemented; protocol freezes the five contrasts. | Partial | Implement the cross-run contrast aggregator and execute it after all required per-image tables exist. |
-| X9 | Ten-class failure taxonomy | Requirement documented only. | Missing | Implement deterministic classification from selected/oracle/extent/lesion fields and emit counts plus per-image assignments. |
+| X9 | Ten-class failure taxonomy | `project/analyze_x4_error_taxonomy.py` implements all ten X4 classes as non-exclusive flags plus a deterministic primary label. The direct cap-243 baseline result is frozen for 371 images; it records 29 supply failures, 78 selector failures, 48 complete misses, 93 over-segmented and 31 under-segmented tumor cases. | Partial | Re-run the same fixed rules with the matched student tables after their prediction evaluations complete. |
 | X10 | Protocol-selected qualitative panel | Selection categories are frozen in the protocol document. | Missing | Implement deterministic selection and renderer after per-image X4 results exist. |
-| X11 | Risk-coverage using frozen G1/fusion confidence | Required endpoints are documented. | Missing | Implement score-Dice Spearman, failure AUROC and Dice/miss at 100/80/60/40% coverage on frozen Rich Gallery rows. |
-| X12 | Runtime, peak VRAM, storage; offline separated from online | Generators/student metadata already retain elapsed time, device and output bytes in several stages, but no common benchmark runner/summary exists. | Partial | Add one common warm-up plus >=100-image inference benchmark and aggregate median/IQR, VRAM and storage by stage. |
+| X11 | Risk-coverage using frozen G1/fusion confidence | `project/analyze_x4_risk_coverage.py` and the frozen result under `artifacts/final_pipeline/x4/x11_risk_coverage` are complete. Spearman confidence-vs-Dice is 0.313141; Dice<0.10 and complete-miss AUROC are 0.658570/0.656916. Mean Dice at 100/80/60/40% coverage is 0.288729/0.335050/0.361465/0.367326. | Complete | Interpret as moderate failure-detection evidence, not calibrated uncertainty or a new routing rule. |
+| X12 | Runtime, peak VRAM, storage; offline separated from online | X4 student Stage A now performs three warm-up forwards and measures all 371 images, emitting median/IQR latency, elapsed time, per-device peak allocated/reserved VRAM and storage while explicitly excluding offline pseudo generation. Generator stages already retain separate runtime/device/storage metadata. | Implemented | Aggregate the emitted same-GPU measurements after prediction freezes; add direct-pipeline and YOLO rows when their common benchmarks are available. |
 
 ## P0/P1 readiness
 
 | Priority | Requirement | Current state |
 |---|---|---|
 | P0 | Rich-Gallery pseudo-U-Net, matched fully, CAM, S2C, X2, normal/lesion/subgroup, three seeds, bootstrap/CI, error analysis | In progress; common metrics and X2 code are ready, but student runs, X2 result execution and taxonomy remain incomplete. |
-| P1 | PuzzleCAM, YOLO, efficiency, qualitative panel, risk-coverage | PuzzleCAM is running; the other four items remain to be implemented/run. |
+| P1 | PuzzleCAM, YOLO, efficiency, qualitative panel, risk-coverage | PuzzleCAM is running and risk-coverage is complete; YOLO, efficiency and qualitative panel remain. |
 
 ## Slot-reuse order
 

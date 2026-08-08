@@ -6,6 +6,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+import time
 
 import numpy as np
 from PIL import Image
@@ -43,6 +44,21 @@ class ImageOnlyDataset(Dataset):
             native_width, native_height = image.size
             tensor = self.transform(image)
         return tensor, row["image_id"], native_height, native_width
+
+
+def latency_summary(values: list[float]) -> dict[str, float | int]:
+    if not values:
+        raise ValueError("latency values must be non-empty")
+    array = np.asarray(values, dtype=np.float64)
+    if not np.all(np.isfinite(array)) or np.any(array < 0):
+        raise ValueError("latency values must be finite and non-negative")
+    return {
+        "images": len(values),
+        "median_seconds_per_image": float(np.median(array)),
+        "iqr_low_seconds_per_image": float(np.percentile(array, 25)),
+        "iqr_high_seconds_per_image": float(np.percentile(array, 75)),
+        "mean_seconds_per_image": float(np.mean(array)),
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -118,11 +134,28 @@ def main() -> None:
     probability_root.mkdir()
     row_by_id = {row["image_id"]: row for row in rows}
     manifest_rows: list[dict[str, object]] = []
+    warmup_iterations = 3
+    warmup_images = next(iter(loader))[0].to(device, non_blocking=True)
+    with torch.inference_mode():
+        for _ in range(warmup_iterations):
+            _ = inference_model(warmup_images)
+    torch.cuda.synchronize()
+    for index in range(torch.cuda.device_count()):
+        torch.cuda.reset_peak_memory_stats(index)
+    latency_seconds_per_image: list[float] = []
+    timed_inference_start = time.perf_counter()
     with torch.inference_mode():
         for images, image_ids, heights, widths in loader:
+            torch.cuda.synchronize()
+            batch_start = time.perf_counter()
             probabilities = torch.sigmoid(
                 inference_model(images.to(device, non_blocking=True))
             ).cpu().numpy()[:, 0]
+            torch.cuda.synchronize()
+            batch_elapsed = time.perf_counter() - batch_start
+            latency_seconds_per_image.extend(
+                [batch_elapsed / len(image_ids)] * len(image_ids)
+            )
             for probability, image_id_raw, native_height, native_width in zip(
                 probabilities, image_ids, heights, widths
             ):
@@ -161,6 +194,19 @@ def main() -> None:
         writer = csv.DictWriter(handle, fieldnames=list(manifest_rows[0]))
         writer.writeheader()
         writer.writerows(manifest_rows)
+    timed_inference_elapsed = time.perf_counter() - timed_inference_start
+    storage_bytes_before_freeze = sum(
+        path.stat().st_size for path in args.output_dir.rglob("*") if path.is_file()
+    )
+    device_memory = [
+        {
+            "device_index": index,
+            "device_name": torch.cuda.get_device_name(index),
+            "peak_allocated_bytes": int(torch.cuda.max_memory_allocated(index)),
+            "peak_reserved_bytes": int(torch.cuda.max_memory_reserved(index)),
+        }
+        for index in range(torch.cuda.device_count())
+    ]
     freeze = {
         "schema_version": 1,
         "stage": "x4_student_prediction_freeze_v1",
@@ -183,6 +229,18 @@ def main() -> None:
         "test_images_read": 0,
         "test_evaluated": False,
         "cuda_devices": devices,
+        "x12_efficiency": {
+            "stage": "matched_student_online_inference_and_freeze",
+            "same_gpu_requirement": "compare only bundles produced on the same declared GPU type",
+            "batch_size": args.batch_size,
+            "warmup_iterations": warmup_iterations,
+            "timed_images": len(latency_seconds_per_image),
+            "timed_inference_elapsed_seconds": timed_inference_elapsed,
+            "latency": latency_summary(latency_seconds_per_image),
+            "device_memory": device_memory,
+            "storage_bytes_before_prediction_freeze_json": storage_bytes_before_freeze,
+            "offline_pseudo_label_generation_included": False,
+        },
     }
     freeze_path = args.output_dir / "prediction_freeze.json"
     freeze_path.write_text(json.dumps(freeze, indent=2, sort_keys=True) + "\n", encoding="utf-8")
