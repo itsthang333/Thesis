@@ -307,15 +307,19 @@ def main() -> None:
             raise ValueError(f"candidate payload changed: {image_id}")
         with np.load(candidate_path, allow_pickle=False) as payload:
             all_proposals = payload["sam_masks"].astype(bool)
+            all_sources = np.asarray(
+                [canonical_source(value) for value in payload["proposal_source_ids"]]
+            )
         candidate_indices = cache[image_id]["candidate_indices"]
         if int(candidate_indices.max(initial=-1)) >= len(all_proposals):
             raise ValueError(f"candidate index out of range: {image_id}")
         proposals = all_proposals[candidate_indices]
-        quality = np.asarray([dice(mask, target) for mask in proposals])
+        quality = np.asarray([dice(mask, target) for mask in all_proposals])
         sources = cache[image_id]["sources"]
         for subset in subsets:
             name = subset_name(subset)
             eligible = cache[image_id]["eligible"][name]
+            gallery_eligible = np.isin(all_sources, subset)
             local = int(frozen_choices[image_id][name]["selected_local_index"])
             if local < 0:
                 prediction = np.zeros_like(target)
@@ -332,7 +336,11 @@ def main() -> None:
                 area_ratio = float(prediction.sum() / max(1, target.sum()))
                 miss = int(intersection == 0)
                 selected_source = str(sources[local])
-            oracle = float(quality[eligible].max()) if eligible.any() else 0.0
+            oracle = (
+                float(quality[gallery_eligible].max())
+                if gallery_eligible.any()
+                else 0.0
+            )
             per_image.append({
                 "subset": name,
                 "image_id": image_id,
@@ -349,8 +357,9 @@ def main() -> None:
                 "recall_at_0_10": int(oracle >= 0.10),
                 "recall_at_0_30": int(oracle >= 0.30),
                 "recall_at_0_50": int(oracle >= 0.50),
-                "candidate_count": int(eligible.sum()),
-                "full_candidate_count": int(len(proposals)),
+                "candidate_count": int(gallery_eligible.sum()),
+                "selector_scored_candidate_count": int(eligible.sum()),
+                "full_candidate_count": int(len(all_proposals)),
             })
     stage_b_seconds = time.perf_counter() - stage_b_start
     counts = Counter(
