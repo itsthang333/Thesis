@@ -1,0 +1,13 @@
+category,available,image_id,method,selection_reason
+dice_q10,1,IMG000001.jpeg,direct_rich_gallery,closest direct Dice to frozen q=0.10 value 0
+dice_q50,1,IMG000905.jpeg,direct_rich_gallery,closest direct Dice to frozen q=0.50 value 0.112600092908
+dice_q90,1,IMG000415.jpeg,direct_rich_gallery,closest direct Dice to frozen q=0.90 value 0.781701195024
+small_representative,1,IMG000641.jpeg,direct_rich_gallery,closest Dice to the frozen small subgroup median 0.00699599813961
+medium_representative,1,IMG000125.jpeg,direct_rich_gallery,closest Dice to the frozen medium subgroup median 0.498917125427
+large_representative,1,IMG000660.jpeg,direct_rich_gallery,closest Dice to the frozen large subgroup median 0.231934192595
+over_segmentation,1,IMG001759.jpeg,direct_rich_gallery,closest predicted_gt_area_ratio to the median among frozen over_segmentation cases
+under_segmentation,1,IMG001785.jpeg,direct_rich_gallery,closest predicted_gt_area_ratio to the median among frozen under_segmentation cases
+complete_miss,1,IMG000049.jpeg,direct_rich_gallery,closest full_gallery_oracle_dice_common320 to the median among frozen complete_miss cases
+wrong_location,1,IMG001206.jpeg,direct_rich_gallery,closest predicted_gt_area_ratio to the median among frozen wrong_anatomical_structure cases
+normal_false_positive,0,,,first deterministic method/image normal FP after method then image_id sort
+multifocal,1,IMG001858.jpeg,direct_rich_gallery,closest Dice to multifocal median 0.0626003251213
