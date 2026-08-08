@@ -1,0 +1,126 @@
+{
+  "candidate_manifest_sha256": "9104943a87b9325ede73e874b0523dd0d665f317b152f2eb33493fec88a690f6",
+  "evaluation_summary_sha256": "c33976b6658d193eeb68f2abb9e1a585664c834a44e8c5d5e9b54c7c7e424775",
+  "images": 371,
+  "normal_images": 187,
+  "pass": true,
+  "protocol_sha256": "c65e6771cc6e68fe51de39c19374cffab35180259e8eed40eead7eed4ff6fb74",
+  "resource_metrics": {
+    "candidate_generation_elapsed_seconds": 6103.378511431,
+    "candidate_generation_seconds_per_image_per_supply_sum": 16.451155017334234,
+    "merged_gallery_bytes": 168831912,
+    "peak_memory_allocated_bytes": 6042248704,
+    "peak_memory_reserved_bytes": 6381633536,
+    "total_arm_elapsed_seconds": 6577.7968585
+  },
+  "result_summary_sha256": "ec9d31776ce7f5f11b1975c20f7b2f73c62d2d2b2690ec6cff22dd7baa89a86e",
+  "sam_checkpoint_sha256": "a7bf3b02f3ebf1267aba913ff637d9a2d5c33d3173bb679e46d9f338c26f262e",
+  "sam_model_type": "vit_h",
+  "schema_version": 1,
+  "selection_manifest_sha256": "ca2f121c582af25baa3825ffdf0cd5bba6a0fd6f02de427f7471a30108d0b27d",
+  "source_commit": "14d7eb1c91132157df8ec5e6d6d1a7056031e7f8",
+  "spatial_annotations_opened": 184,
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "study": "independent G4 E3 SAM backbone output audit",
+  "summary": {
+    "large": {
+      "candidate_count_iqr": [
+        155.25,
+        206.75
+      ],
+      "candidate_count_median": 183.5,
+      "candidate_oracle_dice": 0.7376403213670141,
+      "candidate_recall_at_0_10": 1.0,
+      "candidate_recall_at_0_30": 1.0,
+      "candidate_recall_at_0_50": 0.7777777777777778,
+      "complete_misses": 1,
+      "dice": 0.3381403846975281,
+      "iou": 0.2568405099499049,
+      "median_selected_gt_area_ratio": 0.34986662241876043,
+      "n": 18,
+      "precision": 0.6444923453185555,
+      "recall": 0.3319845368420997,
+      "selector_regret": 0.39949993666948597,
+      "source_counts": {
+        "classifier448:layercam": 9,
+        "external_saliency": 1,
+        "layercam": 8
+      }
+    },
+    "medium": {
+      "candidate_count_iqr": [
+        149.25,
+        205.5
+      ],
+      "candidate_count_median": 171.0,
+      "candidate_oracle_dice": 0.7242559089544801,
+      "candidate_recall_at_0_10": 0.9722222222222222,
+      "candidate_recall_at_0_30": 0.9722222222222222,
+      "candidate_recall_at_0_50": 0.9027777777777778,
+      "complete_misses": 14,
+      "dice": 0.4429809655800556,
+      "iou": 0.33300202387793393,
+      "median_selected_gt_area_ratio": 1.206649121864762,
+      "n": 72,
+      "precision": 0.46475986104078676,
+      "recall": 0.5740325614370327,
+      "selector_regret": 0.2812749433744244,
+      "source_counts": {
+        "classifier448:layercam": 31,
+        "external_saliency": 11,
+        "layercam": 30
+      }
+    },
+    "overall": {
+      "candidate_count_iqr": [
+        150.0,
+        203.0
+      ],
+      "candidate_count_median": 171.0,
+      "candidate_oracle_dice": 0.5104459898806724,
+      "candidate_recall_at_0_10": 0.8097826086956522,
+      "candidate_recall_at_0_30": 0.6956521739130435,
+      "candidate_recall_at_0_50": 0.5543478260869565,
+      "complete_misses": 47,
+      "dice": 0.2792124821029368,
+      "iou": 0.20918645788990908,
+      "median_selected_gt_area_ratio": 1.9690244696879748,
+      "n": 184,
+      "precision": 0.31126183451210543,
+      "recall": 0.5102390069260213,
+      "selector_regret": 0.23123350777773566,
+      "source_counts": {
+        "classifier448:layercam": 77,
+        "external_saliency": 24,
+        "layercam": 83
+      }
+    },
+    "small": {
+      "candidate_count_iqr": [
+        153.0,
+        198.0
+      ],
+      "candidate_count_median": 172.0,
+      "candidate_oracle_dice": 0.3031713926459033,
+      "candidate_recall_at_0_10": 0.648936170212766,
+      "candidate_recall_at_0_30": 0.425531914893617,
+      "candidate_recall_at_0_50": 0.24468085106382978,
+      "complete_misses": 32,
+      "dice": 0.1424887261768176,
+      "iou": 0.10522375907908231,
+      "median_selected_gt_area_ratio": 17.206622945510485,
+      "n": 94,
+      "precision": 0.12987878020805063,
+      "recall": 0.4955096934868484,
+      "selector_regret": 0.16068266646908563,
+      "source_counts": {
+        "classifier448:layercam": 37,
+        "external_saliency": 12,
+        "layercam": 45
+      }
+    }
+  },
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "tumor_images": 184
+}

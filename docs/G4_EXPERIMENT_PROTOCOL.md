@@ -334,9 +334,11 @@ scientific configuration; efficacy failures are reported, not silently swept.
   arm is LayerCAM+point at Dice 0.205224; LayerCAM has a positive paired main
   effect over all three alternatives. The same frozen payload gives CAM-only
   Dice 0.152326, proposal oracle 0.339441 and SAM gain +0.052898.
-- E3 B/L/H runs are complete. B/L independently audited Dice is
-  0.288729/0.291185; H frozen output reports Dice 0.279212. The H independent
-  payload audit is the remaining E3 bookkeeping step.
+- E3 B/L/H runs and independent payload audits are complete. Dice is
+  0.288729/0.291185/0.279212 and oracle Dice is
+  0.528298/0.546000/0.510446. H is 3.17x slower end to end and uses 2.02x
+  peak allocated VRAM versus B while its paired Dice delta is -0.009517,
+  CI [-0.034714, 0.015280].
 - E7 source-correct replay completed and audited for all 16 arms. Legacy U5+R7
   reproduces common-320 Dice 0.288729; source-correct U6+R7 has the highest
   native point estimate 0.294956, but its paired 95% interval versus baseline

@@ -75,6 +75,28 @@ dataset identifiers and are much larger than the thesis source repository.
   `6a57c67d07ac92be68918e79bee2f5ac2855da6379592dc43c0e15c01e41181c` /
   `d36e359e972ff76acfce2fc6eca780801711d93f27f7e7e149c60999075034af`.
 
+## E3 SAM-v1 backbone ablation
+
+- ViT-B/L/H all completed and passed the same independent 371-image,
+  validation-only output audit.
+- Dice is 0.288729/0.291185/0.279212 and candidate-oracle Dice is
+  0.528298/0.546000/0.510446 for B/L/H.
+- H minus B paired Dice delta is -0.009517 with 95% CI
+  [-0.034714, 0.015280]; H requires 3.17x total wall time and 2.02x peak
+  allocated VRAM. H minus L is -0.011973 with CI
+  [-0.029889, 0.005554].
+- ViT-L's small overall point-estimate gain over B is also uncertain while
+  costing 1.84x total wall time. ViT-B is therefore retained as the frozen
+  accuracy/resource choice for this pipeline and hardware, not asserted as a
+  universally superior SAM backbone.
+- Frozen independent artifacts: `e3_vit_h_audit.json`,
+  `e3_vit_b_vs_h.json`, and `e3_vit_l_vs_h.json` (plus the existing B/L
+  audits and B-vs-L comparison).
+- H audit/B-vs-H/L-vs-H SHA-256:
+  `1c35747c6352a8b0fb99c7ea28784568cea6ed6cd078160e8e83c8ccb670181f` /
+  `ec86b2d257342bf242ef488b7be83a82f64022566ebb056fcf528efe1e58484b` /
+  `1b3c6f58722352368f5f01fc1e43d04120a8757bceeb518f426b547f3a9a1d95`.
+
 The exact formulas, arm definitions, safeguards, and interpretation limits are
 documented in `docs/G4_EXPERIMENT_PROTOCOL.md`,
 `docs/METRIC_AND_DEFENSE_AUDIT.md`, and `docs/RESULTS.md`.

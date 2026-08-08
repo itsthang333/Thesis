@@ -109,18 +109,18 @@ for the ten-class arm and
 `c49b8cfbaeb4a3c97df313e61e19d9152dc4fe97010828dfbe88cfbf78a05176`
 for the paired report.
 
-## G4 E3: matched SAM ViT-B versus ViT-L (validation, interim)
+## G4 E3: matched SAM ViT-B/L/H (validation, final)
 
-Both completed arms keep the image evidence, prompts, multimask setting,
-gallery merge/cap, G1 selector and fixed rank fusion identical; only the frozen
-SAM-v1 backbone/checkpoint changes. Both independent output audits pass. ViT-H
-is still running, so this is an interim B/L comparison and not the final E3
-backbone conclusion.
+All three arms keep the image evidence, prompts, multimask setting, gallery
+merge/cap, G1 selector and fixed rank fusion identical; only the frozen SAM-v1
+backbone/checkpoint changes. All three independent 371-image output audits
+pass, with no test access.
 
 | SAM backbone | Dice | IoU | Oracle Dice | `<1%` | `1-<5%` | `>=5%` |
 |---|---:|---:|---:|---:|---:|---:|
 | ViT-B | 0.288729 | 0.216839 | 0.528298 | 0.157723 | 0.435229 | **0.386874** |
 | ViT-L | **0.291185** | **0.219708** | **0.546000** | **0.165224** | **0.446083** | 0.329389 |
+| ViT-H | 0.279212 | 0.209186 | 0.510446 | 0.142489 | 0.442981 | 0.338140 |
 
 The paired heuristic-group bootstrap gives B-to-L Dice delta `+0.002456`
 (95% CI `[-0.020021, 0.024824]`, `P(delta>0)=0.5866`), so the point estimate
@@ -131,18 +131,23 @@ for small (CI `[-0.029231, 0.043982]`), `+0.010854` for medium (CI
 images and increases the gallery oracle, but the selector does not reliably
 convert that extra proposal supply into Dice.
 
-| Measured resource | ViT-L / ViT-B ratio |
-|---|---:|
-| Candidate-generation wall time | 2.061x |
-| Total arm wall time | 1.841x |
-| Peak allocated VRAM | 1.570x |
-| Peak reserved VRAM | 1.496x |
-| Merged gallery bytes | 1.005x |
+ViT-H is also not better: H-minus-B Dice delta is `-0.009517` (95% CI
+`[-0.034714, 0.015280]`) and H-minus-L is `-0.011973` (CI
+`[-0.029889, 0.005554]`).
 
-Therefore ViT-B remains the defensible resource/accuracy choice pending ViT-H:
-ViT-L costs materially more, its overall CI includes zero, and it likely harms
-the scarce large-lesion subgroup. This is an accuracy-cost conclusion, not a
-claim that ViT-B is universally superior.
+| Measured resource | ViT-L / ViT-B | ViT-H / ViT-B |
+|---|---:|---:|
+| Candidate-generation wall time | 2.061x | 3.779x |
+| Total arm wall time | 1.841x | 3.170x |
+| Peak allocated VRAM | 1.570x | 2.016x |
+| Peak reserved VRAM | 1.496x | 1.887x |
+| Merged gallery bytes | 1.005x | 1.013x |
+
+Therefore ViT-B remains the defensible resource/accuracy choice: ViT-L costs
+materially more for an uncertain +0.002456 point estimate and likely harms the
+scarce large-lesion subgroup, while ViT-H is slower and has a lower point
+estimate. This is a matched accuracy-cost conclusion, not a claim that ViT-B
+is universally superior.
 
 These are development results on 184 tumor validation images. There are 49
 complete misses.
