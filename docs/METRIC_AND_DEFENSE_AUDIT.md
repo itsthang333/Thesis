@@ -102,6 +102,16 @@ The bootstrap cannot manufacture independent patients: because `group_id` is a
 heuristic, the thesis must call it a grouped sensitivity analysis rather than a
 patient-clustered confidence interval.
 
+The G4 grouping check is now executable and frozen in
+`artifacts/final_pipeline/g4/g4_core_evidence_audit.json`. The canonical
+manifest contains 3,725 eligible images in 1,470 heuristic groups, including
+872 multi-image groups and zero groups crossing train/validation/test. The only
+group source is consecutive image ID plus stable metadata excluding view. No
+published `patient_id`, `case_id`, `lesion_id`, or `subject_id` field exists.
+Consequently the image is the statistical unit and no patient-level claim is
+permitted; the heuristic blocks are a leakage safeguard and sensitivity
+analysis only.
+
 The resampling principle comes from Efron's nonparametric bootstrap
 <https://doi.org/10.1214/aos/1176344552>.  The thesis-specific choice is to
 resample the complete available `group_id` blocks and to use a paired delta for

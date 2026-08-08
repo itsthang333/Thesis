@@ -316,6 +316,11 @@ scientific configuration; efficacy failures are reported, not silently swept.
 - E0 completed on 371 validation images. Native/320/448 Dice differs by at most
   0.000505 for WSSS; subgroup membership remains exactly 94/72/18. The matched
   final-retrain fully checkpoint obtains Dice 0.490149 at 448.
+- The independent core-evidence audit now binds E0's six-arm 2,226-row matrix,
+  the 27-arm selector/fusion matrix, the canonical grouping provenance and the
+  two declared oracle populations. It confirms zero cross-split heuristic
+  groups but also confirms that BTXRD supplies no verified patient/case ID;
+  patient-level confidence claims therefore remain prohibited.
 - E4, cap replay, selector-level E6 and E8 completed for 27 predeclared arms
   (10,017 frozen choices). R7 reproduced the official common-320 result exactly.
   Random/SAM/upstream/G1-only controls obtain native Dice 0.101890/0.098902/

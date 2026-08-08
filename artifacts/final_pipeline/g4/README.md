@@ -4,6 +4,12 @@ This directory indexes the independently frozen G4 validation replays. Raw
 per-image payloads remain in the private run archive because they include
 dataset identifiers and are much larger than the thesis source repository.
 
+The compact `g4_core_evidence_audit.json` binds the otherwise private E0 and
+offline selector/fusion per-image matrices by SHA-256. It also verifies the
+canonical grouping provenance and reconciles the official complete-gallery
+oracle `0.528298332` with the G1-eligible/scored oracle `0.527902026`. Its
+SHA-256 is `bfd63482713f8b35ba6724e28b616b694e0afb914e8cdcb1bf343a4cadef809e`.
+
 ## E0 common-grid replay
 
 - Validation only; no test access.
