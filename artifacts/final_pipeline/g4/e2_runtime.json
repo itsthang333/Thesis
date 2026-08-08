@@ -1,0 +1,180 @@
+{
+  "aggregate": {
+    "arms": 12,
+    "candidate_generation_max_seconds_per_arm": 342.98789626499996,
+    "candidate_generation_mean_seconds_per_arm": 296.7280128378333,
+    "candidate_generation_min_seconds_per_arm": 262.90126691599994,
+    "candidate_generation_total_seconds": 3560.7361540539996,
+    "evaluation_mean_seconds_per_arm": 16.179892872916657,
+    "evaluation_total_seconds": 194.1587144749999
+  },
+  "arms": {
+    "cam__box": {
+      "candidate_generation_seconds_per_validation_image": 0.7086287517951481,
+      "candidate_generation_wall_seconds": 262.90126691599994,
+      "evaluation_complete_seconds": 1760.94339063,
+      "evaluation_seconds_per_validation_image": 0.04376743666846403,
+      "evaluation_start_seconds": 1744.705671626,
+      "evaluation_wall_seconds": 16.237719004000155,
+      "generation_frozen_seconds": 602.353705336,
+      "generation_start_seconds": 339.45243842,
+      "log": "btxrd-g4-e2-cam-gradcam-factorial.log",
+      "validation_images": 371
+    },
+    "cam__box_point": {
+      "candidate_generation_seconds_per_validation_image": 0.7276974544285715,
+      "candidate_generation_wall_seconds": 269.97575559300003,
+      "evaluation_complete_seconds": 1777.835653442,
+      "evaluation_seconds_per_validation_image": 0.043846253539083405,
+      "evaluation_start_seconds": 1761.568693379,
+      "evaluation_wall_seconds": 16.266960062999942,
+      "generation_frozen_seconds": 873.269496505,
+      "generation_start_seconds": 603.293740912,
+      "log": "btxrd-g4-e2-cam-gradcam-factorial.log",
+      "validation_images": 371
+    },
+    "cam__point": {
+      "candidate_generation_seconds_per_validation_image": 0.8288821786280325,
+      "candidate_generation_wall_seconds": 307.51528827100003,
+      "evaluation_complete_seconds": 1744.103983059,
+      "evaluation_seconds_per_validation_image": 0.043596590846361305,
+      "evaluation_start_seconds": 1727.929647855,
+      "evaluation_wall_seconds": 16.174335204000045,
+      "generation_frozen_seconds": 336.504975503,
+      "generation_start_seconds": 28.989687232,
+      "log": "btxrd-g4-e2-cam-gradcam-factorial.log",
+      "validation_images": 371
+    },
+    "gradcam__box": {
+      "candidate_generation_seconds_per_validation_image": 0.757519570954178,
+      "candidate_generation_wall_seconds": 281.03976082400004,
+      "evaluation_complete_seconds": 1811.528128854,
+      "evaluation_seconds_per_validation_image": 0.04401977629649599,
+      "evaluation_start_seconds": 1795.196791848,
+      "evaluation_wall_seconds": 16.331337006000012,
+      "generation_frozen_seconds": 1441.461155108,
+      "generation_start_seconds": 1160.421394284,
+      "log": "btxrd-g4-e2-cam-gradcam-factorial.log",
+      "validation_images": 371
+    },
+    "gradcam__box_point": {
+      "candidate_generation_seconds_per_validation_image": 0.7671224808625337,
+      "candidate_generation_wall_seconds": 284.6024404,
+      "evaluation_complete_seconds": 1828.753670279,
+      "evaluation_seconds_per_validation_image": 0.04469694775202158,
+      "evaluation_start_seconds": 1812.171102663,
+      "evaluation_wall_seconds": 16.582567616000006,
+      "generation_frozen_seconds": 1726.998767793,
+      "generation_start_seconds": 1442.396327393,
+      "log": "btxrd-g4-e2-cam-gradcam-factorial.log",
+      "validation_images": 371
+    },
+    "gradcam__point": {
+      "candidate_generation_seconds_per_validation_image": 0.7688510025606469,
+      "candidate_generation_wall_seconds": 285.24372195,
+      "evaluation_complete_seconds": 1794.580309554,
+      "evaluation_seconds_per_validation_image": 0.04350654479784339,
+      "evaluation_start_seconds": 1778.439381434,
+      "evaluation_wall_seconds": 16.1409281199999,
+      "generation_frozen_seconds": 1159.495774101,
+      "generation_start_seconds": 874.252052151,
+      "log": "btxrd-g4-e2-cam-gradcam-factorial.log",
+      "validation_images": 371
+    },
+    "gradcam_plus_plus__box": {
+      "candidate_generation_seconds_per_validation_image": 0.8034352970592991,
+      "candidate_generation_wall_seconds": 298.07449520899996,
+      "evaluation_complete_seconds": 1929.171466218,
+      "evaluation_seconds_per_validation_image": 0.0439794650970349,
+      "evaluation_start_seconds": 1912.855084667,
+      "evaluation_wall_seconds": 16.31638155099995,
+      "generation_frozen_seconds": 663.305878347,
+      "generation_start_seconds": 365.231383138,
+      "log": "btxrd-g4-e2-gradcampp-layercam-factorial.log",
+      "validation_images": 371
+    },
+    "gradcam_plus_plus__box_point": {
+      "candidate_generation_seconds_per_validation_image": 0.8108697397331537,
+      "candidate_generation_wall_seconds": 300.832673441,
+      "evaluation_complete_seconds": 1945.935526739,
+      "evaluation_seconds_per_validation_image": 0.04360569736118576,
+      "evaluation_start_seconds": 1929.757813018,
+      "evaluation_wall_seconds": 16.177713720999918,
+      "generation_frozen_seconds": 965.063855995,
+      "generation_start_seconds": 664.231182554,
+      "log": "btxrd-g4-e2-gradcampp-layercam-factorial.log",
+      "validation_images": 371
+    },
+    "gradcam_plus_plus__point": {
+      "candidate_generation_seconds_per_validation_image": 0.9244956772641508,
+      "candidate_generation_wall_seconds": 342.98789626499996,
+      "evaluation_complete_seconds": 1912.278460432,
+      "evaluation_seconds_per_validation_image": 0.04293173909433969,
+      "evaluation_start_seconds": 1896.350785228,
+      "evaluation_wall_seconds": 15.927675204000025,
+      "generation_frozen_seconds": 362.270021226,
+      "generation_start_seconds": 19.282124961,
+      "log": "btxrd-g4-e2-gradcampp-layercam-factorial.log",
+      "validation_images": 371
+    },
+    "layercam__box": {
+      "candidate_generation_seconds_per_validation_image": 0.8276548012533691,
+      "candidate_generation_wall_seconds": 307.05993126499993,
+      "evaluation_complete_seconds": 1978.981495236,
+      "evaluation_seconds_per_validation_image": 0.04311559909703495,
+      "evaluation_start_seconds": 1962.985607971,
+      "evaluation_wall_seconds": 15.995887264999965,
+      "generation_frozen_seconds": 1584.414223771,
+      "generation_start_seconds": 1277.354292506,
+      "log": "btxrd-g4-e2-gradcampp-layercam-factorial.log",
+      "validation_images": 371
+    },
+    "layercam__box_point": {
+      "candidate_generation_seconds_per_validation_image": 0.8358132072291103,
+      "candidate_generation_wall_seconds": 310.08669988199995,
+      "evaluation_complete_seconds": 1995.738879135,
+      "evaluation_seconds_per_validation_image": 0.04349274729649595,
+      "evaluation_start_seconds": 1979.603069888,
+      "evaluation_wall_seconds": 16.135809246999997,
+      "generation_frozen_seconds": 1895.414568676,
+      "generation_start_seconds": 1585.327868794,
+      "log": "btxrd-g4-e2-gradcampp-layercam-factorial.log",
+      "validation_images": 371
+    },
+    "layercam__point": {
+      "candidate_generation_seconds_per_validation_image": 0.8367014125013477,
+      "candidate_generation_wall_seconds": 310.416224038,
+      "evaluation_complete_seconds": 1962.386928837,
+      "evaluation_seconds_per_validation_image": 0.04278005518598378,
+      "evaluation_start_seconds": 1946.515528363,
+      "evaluation_wall_seconds": 15.871400473999984,
+      "generation_frozen_seconds": 1276.410671504,
+      "generation_start_seconds": 965.994447466,
+      "log": "btxrd-g4-e2-gradcampp-layercam-factorial.log",
+      "validation_images": 371
+    }
+  },
+  "hardware": "Kaggle NvidiaTeslaT4 kernel metadata; one process per six-arm kernel",
+  "logs": [
+    {
+      "events": 2670,
+      "first_event_seconds": 28.989687232,
+      "last_event_seconds": 1834.118216117,
+      "path": "btxrd-g4-e2-cam-gradcam-factorial.log",
+      "sha256": "65f8d7bd6098ed34842ef2b8e62a1a7c6dc2f9005c58c5ee175573bae4e45fcf"
+    },
+    {
+      "events": 2670,
+      "first_event_seconds": 19.282124961,
+      "last_event_seconds": 2012.196030088,
+      "path": "btxrd-g4-e2-gradcampp-layercam-factorial.log",
+      "sha256": "b0164e07b76a7deaba658afa98ead2fbda82e5bf04fa2ce3c49eb78ebb573221"
+    }
+  ],
+  "measurement": "Kaggle event-clock wall time from launcher command emission through prediction-first candidate diagnostic freeze; evaluator measured separately through final variant report",
+  "schema_version": 1,
+  "spatial_ground_truth_used_for_runtime_selection": false,
+  "study": "G4 E2 attribution-prompt runtime recovery",
+  "test_evaluated": false,
+  "test_images_read": 0
+}

@@ -79,6 +79,19 @@ dataset identifiers and are much larger than the thesis source repository.
   Corrected binary/ten-class-collapsed AP is 0.860190/0.869750; no Dice,
   AUROC, F1 or calibration value changed.
 
+## E2 attribution/prompt runtime
+
+- The 12 factorial arms all have an exact launcher-start and 371/371
+  candidate-diagnostics-freeze event in the two original Kaggle T4 logs.
+- Candidate generation ranges from 262.901 to 342.988 seconds per 371-image
+  arm, totals 3560.736 seconds, and averages 296.728 seconds/arm.
+- The separately measured evaluator totals 194.159 seconds across 12 arms.
+- Artifact: `e2_runtime.json`, SHA-256
+  `7d80a394f01db8403ed70f343cc16bab965bc18d2799c0a896cdd92e7fe6dc7f`.
+- Bound raw-log SHA-256 values:
+  `65f8d7bd6098ed34842ef2b8e62a1a7c6dc2f9005c58c5ee175573bae4e45fcf` and
+  `b0164e07b76a7deaba658afa98ead2fbda82e5bf04fa2ce3c49eb78ebb573221`.
+
 ## E7 source-correct upstream-score ablation
 
 - Validation only; 371 frozen choices per arm, including 184 tumor images;

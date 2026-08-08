@@ -201,6 +201,24 @@ the weak small-lesion supply ceiling. For medium and large lesions, the much
 larger oracle-minus-selected gaps identify candidate selection as the dominant
 remaining error.
 
+Runtime was recovered directly from the immutable Kaggle T4 event clocks,
+from launcher-command emission through the 371/371 candidate-diagnostics
+freeze. It was not estimated from notebook duration or rerun on different
+hardware:
+
+| Attribution/prompt | Candidate-generation seconds | Seconds/image | Evaluator seconds |
+|---|---:|---:|---:|
+| CAM point / box / point+box | 307.515 / 262.901 / 269.976 | 0.829 / 0.709 / 0.728 | 16.174 / 16.238 / 16.267 |
+| Grad-CAM point / box / point+box | 285.244 / 281.040 / 284.602 | 0.769 / 0.758 / 0.767 | 16.141 / 16.331 / 16.583 |
+| Grad-CAM++ point / box / point+box | 342.988 / 298.074 / 300.833 | 0.924 / 0.803 / 0.811 | 15.928 / 16.316 / 16.178 |
+| LayerCAM point / box / point+box | 310.416 / 307.060 / 310.087 | 0.837 / 0.828 / 0.836 | 15.871 / 15.996 / 16.136 |
+
+Across all 12 arms, candidate generation totals 3560.736 seconds (mean 296.728
+seconds/arm) and the separated evaluator totals 194.159 seconds. The runtime
+artifact SHA-256 is
+`7d80a394f01db8403ed70f343cc16bab965bc18d2799c0a896cdd92e7fe6dc7f`;
+it binds the two source logs by SHA-256 and contains no test access.
+
 ## Locked final test result
 
 The independently frozen WSSS and fully-supervised predictions were evaluated

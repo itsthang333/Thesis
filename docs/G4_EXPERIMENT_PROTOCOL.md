@@ -337,6 +337,10 @@ scientific configuration; efficacy failures are reported, not silently swept.
   arm is LayerCAM+point at Dice 0.205224; LayerCAM has a positive paired main
   effect over all three alternatives. The same frozen payload gives CAM-only
   Dice 0.152326, proposal oracle 0.339441 and SAM gain +0.052898.
+  Runtime recovery from the immutable Kaggle T4 logs is also complete: the 12
+  candidate-generation arms total 3560.736 s (262.901--342.988 s/arm), while
+  their separated evaluators total 194.159 s. The parser requires all 12 exact
+  start/freeze pairs and binds both raw logs by hash.
 - E3 B/L/H runs and independent payload audits are complete. Dice is
   0.288729/0.291185/0.279212 and oracle Dice is
   0.528298/0.546000/0.510446. H is 3.17x slower end to end and uses 2.02x
@@ -357,4 +361,4 @@ scientific configuration; efficacy failures are reported, not silently swept.
   11/11 focused tests and 181/181 server download-back checks pass, and E5 v3
   is running under the unchanged scientific protocol. Learned E6 feature/loss
   v2 is also running. They remain the two substantive unfinished executions;
-  E2 resource telemetry and the final E0--E8 completeness audit remain open.
+  the final E0--E8 completeness audit remains open.
