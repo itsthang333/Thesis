@@ -33,6 +33,7 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", type=Path, required=True)
+    parser.add_argument("--arm", choices=("cam", "puzzlecam"), default="cam")
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--dataset-root", type=Path, required=True)
     parser.add_argument("--split-manifest", type=Path, required=True)
@@ -49,14 +50,14 @@ def main() -> None:
     if args.audit_output.exists():
         raise FileExistsError(args.audit_output)
     protocol, protocol_sha = load_x4_protocol(args.repo_root)
-    freeze_path = args.output_root / "x4_cam_mask_freeze.json"
-    manifest_path = args.output_root / "x4_cam_mask_manifest.csv"
+    freeze_path = args.output_root / f"x4_{args.arm}_mask_freeze.json"
+    manifest_path = args.output_root / f"x4_{args.arm}_mask_manifest.csv"
     freeze = json.loads(freeze_path.read_text(encoding="utf-8"))
     if sha256_file(args.checkpoint) != args.expected_checkpoint_sha256:
         raise ValueError("auditor CAM checkpoint SHA-256 mismatch")
     required = {
         "schema_version": 1,
-        "stage": "x4_cam_mask_freeze_v1",
+        "stage": f"x4_{args.arm}_mask_freeze_v1",
         "study": protocol["study"],
         "split": args.split,
         "source_commit": args.expected_source_commit,
@@ -64,6 +65,7 @@ def main() -> None:
         "split_sha256": CANONICAL_SPLIT_SHA256,
         "checkpoint_sha256": args.expected_checkpoint_sha256,
         "checkpoint_seed": 42,
+        "arm": args.arm,
         "cam_percentile": 90.0,
         "constant_map_rule": "empty",
         "native_resolution_masks": True,
@@ -145,7 +147,8 @@ def main() -> None:
 
     audit = {
         "schema_version": 1,
-        "stage": "independent_x4_cam_mask_output_audit_v1",
+        "stage": f"independent_x4_{args.arm}_mask_output_audit_v1",
+        "arm": args.arm,
         "status": "pass",
         "split": args.split,
         "source_commit": args.expected_source_commit,

@@ -34,6 +34,7 @@ from frozen_io import (
 )
 from models.classifier import DenseNet121AnatomyClassifier
 from models.layercam import LayerCAM
+from models.puzzle_cam import normalized_classic_cam
 from x4_contract import CANONICAL_SPLIT_SHA256, load_x4_protocol
 
 
@@ -98,6 +99,7 @@ class TumorImageDataset(Dataset):
 def checkpoint_model(
     path: Path,
     *,
+    arm: str,
     expected_sha256: str,
     expected_seed: int,
     device: torch.device,
@@ -121,6 +123,17 @@ def checkpoint_model(
                 f"X4 CAM checkpoint metadata differs for {key}: "
                 f"{state.get(key)!r} != {expected!r}"
             )
+    puzzle = state.get("puzzle_cam")
+    if arm == "puzzlecam":
+        if not isinstance(puzzle, dict) or (
+            puzzle.get("method") != "PuzzleCAM reconstruction consistency"
+            or puzzle.get("task") != "binary"
+            or float(puzzle.get("alpha_max", -1.0)) != 4.0
+            or puzzle.get("tiles") != "2x2"
+        ):
+            raise ValueError("X4 PuzzleCAM checkpoint lacks the frozen binary PuzzleCAM contract")
+    elif puzzle is not None:
+        raise ValueError("X4 CAM arm cannot use a PuzzleCAM-trained checkpoint")
     model = DenseNet121AnatomyClassifier(num_classes=1, pretrained=False)
     model.load_state_dict(state["model_state_dict"], strict=True)
     model.to(device).eval()
@@ -144,6 +157,7 @@ def write_manifest(path: Path, rows: list[dict[str, object]]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", type=Path, required=True)
+    parser.add_argument("--arm", choices=("cam", "puzzlecam"), default="cam")
     parser.add_argument("--dataset-root", type=Path, required=True)
     parser.add_argument("--split-manifest", type=Path, required=True)
     parser.add_argument("--split", choices=tuple(EXPECTED), required=True)
@@ -194,12 +208,15 @@ def main() -> None:
         torch.cuda.reset_peak_memory_stats(requested)
     model, checkpoint = checkpoint_model(
         args.checkpoint,
+        arm=args.arm,
         expected_sha256=args.expected_checkpoint_sha256,
         expected_seed=args.expected_checkpoint_seed,
         device=requested,
     )
-    layercam = LayerCAM(
-        model, device=requested, layer_weights=LAYER_WEIGHTS, gradient_mode="positive"
+    layercam = (
+        LayerCAM(model, device=requested, layer_weights=LAYER_WEIGHTS, gradient_mode="positive")
+        if args.arm == "cam"
+        else None
     )
 
     mask_root = args.output_dir / "masks"
@@ -248,12 +265,22 @@ def main() -> None:
             if requested.type == "cuda":
                 torch.cuda.synchronize(requested)
             batch_started = time.perf_counter()
-            result = layercam.cam_for_class(tensors, class_index=0)
+            if args.arm == "cam":
+                assert layercam is not None
+                result = layercam.cam_for_class(tensors, class_index=0)
+                batch_cams = result.cam
+            else:
+                with torch.inference_mode():
+                    batch_cams = normalized_classic_cam(
+                        model,
+                        tensors,
+                        torch.zeros(len(image_ids), dtype=torch.long, device=requested),
+                    )
             if requested.type == "cuda":
                 torch.cuda.synchronize(requested)
             batch_seconds = float(time.perf_counter() - batch_started)
             inference_seconds.extend([batch_seconds / len(image_ids)] * len(image_ids))
-            cams = result.cam.detach().cpu().numpy()
+            cams = batch_cams.detach().cpu().numpy()
             for index, image_id in enumerate(image_ids):
                 cam = cams[index]
                 constant = float(cam.max()) - float(cam.min()) <= 1.0e-8
@@ -278,16 +305,17 @@ def main() -> None:
                     "mask_width": width,
                     "mask_foreground_pixels": positive,
                     "mask_sha256": sha256_file(output),
-                    "source": "binary_densenet121_320_layercam_p90",
+                    "source": f"binary_densenet121_320_{args.arm}_p90",
                     "cam_percentile": CAM_PERCENTILE,
                 }
     finally:
-        layercam.close()
+        if layercam is not None:
+            layercam.close()
 
     if set(output_by_id) != {row["image_id"] for row in rows}:
         raise RuntimeError("X4 CAM output cohort is incomplete")
     manifest_rows = [output_by_id[row["image_id"]] for row in rows]
-    manifest_path = args.output_dir / "x4_cam_mask_manifest.csv"
+    manifest_path = args.output_dir / f"x4_{args.arm}_mask_manifest.csv"
     manifest_sha = write_manifest(manifest_path, manifest_rows)
     output_bytes = int(
         sum(path.stat().st_size for path in args.output_dir.rglob("*") if path.is_file())
@@ -299,14 +327,19 @@ def main() -> None:
     )
     freeze = {
         "schema_version": 1,
-        "stage": "x4_cam_mask_freeze_v1",
+        "stage": f"x4_{args.arm}_mask_freeze_v1",
         "study": protocol["study"],
         "split": args.split,
         "source_commit": args.source_commit,
         "protocol_sha256": protocol_sha,
         "split_sha256": CANONICAL_SPLIT_SHA256,
         **checkpoint,
-        "generator": "DenseNet121/320 positive-gradient LayerCAM",
+        "arm": args.arm,
+        "generator": (
+            "DenseNet121/320 positive-gradient LayerCAM"
+            if args.arm == "cam"
+            else "DenseNet121/320 binary PuzzleCAM classic CAM"
+        ),
         "layer_weights": list(LAYER_WEIGHTS),
         "cam_percentile": CAM_PERCENTILE,
         "constant_map_rule": "empty",
@@ -337,13 +370,13 @@ def main() -> None:
         "elapsed_seconds": float(time.perf_counter() - started),
         "output_bytes_before_freeze": output_bytes,
     }
-    freeze_path = args.output_dir / "x4_cam_mask_freeze.json"
+    freeze_path = args.output_dir / f"x4_{args.arm}_mask_freeze.json"
     freeze_path.write_text(
         json.dumps(freeze, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     print(
         json.dumps(
-            {**freeze, "x4_cam_mask_freeze_sha256": sha256_file(freeze_path)},
+            {**freeze, f"x4_{args.arm}_mask_freeze_sha256": sha256_file(freeze_path)},
             indent=2,
             sort_keys=True,
         )
