@@ -16,7 +16,7 @@ def test_e1_downstream_auditor_is_exact_and_validation_only() -> None:
     ast.parse(source)
     assert SOURCE_COMMIT == {
         "binary": "b119a1dbd470f3802c60669e364db4912d5e755a",
-        "ten_class": "be4829e03493ab7a78cfe211d14fc056b7a189cc",
+        "ten_class": "c3cb2eb1c59466ecc6a455da666e925ea14d4718",
     }
     assert RUNNER_SHA256 == (
         "c2d0b60b13b73f0379168e83b1130aeb92a92bdafa81d6c52f69999a1bdfb4e5"
