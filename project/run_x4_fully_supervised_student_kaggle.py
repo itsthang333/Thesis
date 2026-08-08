@@ -2,8 +2,9 @@ from __future__ import annotations
 
 """Offline Kaggle entrypoint for one matched X4 fully-supervised seed.
 
-The seed is encoded in the pushed script filename (``...seed42.py`` etc.), so
-the exact same audited wrapper bytes can be reused for all three accounts.
+Kaggle executes uploaded Python kernels as ``/kaggle/src/script.py``.  A staged
+payload must therefore bind ``KERNEL_SEED`` explicitly; filename parsing is
+retained only for local/staging validation.
 Only canonical train polygons are opened by the underlying matched trainer;
 outer validation and test remain closed during training and checkpoint choice.
 """
@@ -29,6 +30,7 @@ TRAINER_SHA256 = "e94a9f2b7587881d407a9048b4d86a390cf380403e23c9d13868e8e584188e
 TARGET_IO_SHA256 = "fc82186e8530b41d8798ab9df1ce8bd347d017e933fe298f5d8f41ead906cada"
 UNET_SHA256 = "b57f4c00c78640ad6aec2a9195192ab64ddfe8660362e6ac23373ffe3104f4ad"
 LOSSES_SHA256 = "330b1d4eb536c078ea73f4ea68b1ba34ea3392704c104dd99b5f7950a8d51e7c"
+KERNEL_SEED: int | None = None
 
 
 def sha256(path: Path) -> str:
@@ -64,9 +66,17 @@ def seed_from_script_name(path: Path) -> int:
     return int(match.group(1))
 
 
+def resolve_seed(path: Path, kernel_seed: int | None = KERNEL_SEED) -> int:
+    if kernel_seed is not None:
+        if kernel_seed not in (42, 43, 44):
+            raise ValueError(f"unsupported X4 kernel seed: {kernel_seed}")
+        return kernel_seed
+    return seed_from_script_name(path)
+
+
 def main() -> None:
     started = time.perf_counter()
-    seed = seed_from_script_name(Path(__file__))
+    seed = resolve_seed(Path(__file__))
     trainer = exact_file("train_x4_matched_student.py", TRAINER_SHA256)
     project = trainer.parent
     locked = {

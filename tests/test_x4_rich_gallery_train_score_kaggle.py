@@ -16,4 +16,8 @@ def test_train_score_wrapper_is_train_only_and_fail_closed() -> None:
     assert "G1_CHECKPOINT_SHA256" in source
     assert "load_supplies" in source
     assert '"--addition-namespace", "classifier448"' in source
-    assert "reconstructed train candidate manifest differs" in source
+    assert "EXPECTED_MERGE_TOTALS" in source
+    assert "geometry_v3_reference_candidate_manifest_sha256" in source
+    assert '"target_command"' in source
+    assert '"x4_rich_gallery_target"' in source
+    assert '"train_spatial_annotations_read": 0' in source

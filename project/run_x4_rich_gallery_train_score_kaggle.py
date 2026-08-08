@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-"""Freeze G1 choices for the 2,981-image X4 train cohort on Kaggle.
+"""Freeze G1 choices and Rich-Gallery targets for the X4 train cohort.
 
 This reuses the exact Geometry-v3 candidate gallery and fixed G1 checkpoint.
 It performs inference only and never opens BTXRD polygons or test images.  The
-result supplies the missing train-time choice manifest required by the matched
-Rich-Gallery pseudo-U-Net arm.
+result supplies the missing train-time choice manifest and target bundle for
+the matched Rich-Gallery pseudo-U-Net arm.  Both stages intentionally share one
+reconstructed gallery because ``np.savez_compressed`` container timestamps make
+byte-level manifest hashes non-reproducible across otherwise identical rebuilds.
 """
 
 import hashlib
@@ -39,6 +41,19 @@ NOMINAL_MEMORY_SHA256 = "a7fbf3e4042623b1b2817f8bb02a87072db55c21bb5b9380cc259ac
 GPU_RUNTIME_SHA256 = "15c159d253969c1396f597281d59fd2f5e473d82435f937e7076e3b3e500d5b2"
 FROZEN_IO_SHA256 = "423c5b9eef87a59d9f457bc4acc1f6795cff9c4b1c875f25d651b5aa88987a2d"
 MERGER_SHA256 = "b2ec6e2cb3a6ca6018c0ac8095dc119ea38b11ad7fda2dbe56a081f3aedd142a"
+FREEZER_SHA256 = "5eb5b4cebb677ec925f7c8c5446e655bdd5fffbc54c63d91398cad0dc2dad2ef"
+TARGET_IO_SHA256 = "fc82186e8530b41d8798ab9df1ce8bd347d017e933fe298f5d8f41ead906cada"
+X4_CONTRACT_SHA256 = "cc41be0f8ea5cd675fc3e4ce21b7b47a805446898bc55fb5bda5eeadde5f8bb5"
+CANDIDATE_IO_SHA256 = "0770fa8eb6d6b3fe35a4ae2db187d0e174b9b5f0a87f8ee254e2cdc41dbf6c61"
+EXPECTED_MERGE_TOTALS = {
+    "anchor_input": 293586,
+    "addition_input": 178929,
+    "anchor_kept": 290834,
+    "addition_kept": 177481,
+    "duplicates_removed": 4200,
+    "merged_count": 468315,
+    "addition_resized": 2981,
+}
 
 
 def sha256(path: Path) -> str:
@@ -161,8 +176,7 @@ def main() -> None:
     print(json.dumps({"merge_command": merge_command}), flush=True)
     subprocess.run(merge_command, cwd=project.parent, check=True)
     candidate_manifest = candidate_root / "candidate_diagnostics_manifest.csv"
-    if sha256(candidate_manifest) != TRAIN_CANDIDATE_MANIFEST_SHA256:
-        raise RuntimeError("reconstructed train candidate manifest differs from Geometry-v3")
+    reconstructed_candidate_sha256 = sha256(candidate_manifest)
     merge_contract = json.loads(
         (candidate_root / "gallery_merge_contract.json").read_text(encoding="utf-8")
     )
@@ -170,8 +184,9 @@ def main() -> None:
         (candidate_root / "candidate_diagnostics_summary.json").read_text(encoding="utf-8")
     )
     if (
-        merge_contract.get("output_manifest_sha256") != TRAIN_CANDIDATE_MANIFEST_SHA256
+        merge_contract.get("output_manifest_sha256") != reconstructed_candidate_sha256
         or candidate_summary.get("pseudo_manifest_sha256") != TRAIN_PSEUDO_MANIFEST_SHA256
+        or merge_contract.get("totals") != EXPECTED_MERGE_TOTALS
         or int(merge_contract.get("maximum_candidates", -1)) > 243
     ):
         raise RuntimeError("reconstructed train gallery contract differs")
@@ -195,7 +210,7 @@ def main() -> None:
         "--expected-preprocessor-sha256", RAD_PREPROCESSOR_SHA256,
         "--expected-weight-sha256", RAD_WEIGHT_SHA256,
         "--candidate-root", str(candidate_root),
-        "--candidate-manifest-sha256", TRAIN_CANDIDATE_MANIFEST_SHA256,
+        "--candidate-manifest-sha256", reconstructed_candidate_sha256,
         "--pseudo-manifest-sha256", TRAIN_PSEUDO_MANIFEST_SHA256,
         "--g1-checkpoint", str(checkpoint),
         "--expected-g1-checkpoint-sha256", G1_CHECKPOINT_SHA256,
@@ -216,7 +231,7 @@ def main() -> None:
         "cohort_split": "train",
         "split_sha256": SPLIT_SHA256,
         "baseline_checkpoint_sha256": G1_CHECKPOINT_SHA256,
-        "candidate_manifest_sha256": TRAIN_CANDIDATE_MANIFEST_SHA256,
+        "candidate_manifest_sha256": reconstructed_candidate_sha256,
         "pseudo_manifest_sha256": TRAIN_PSEUDO_MANIFEST_SHA256,
         "images": 2981,
         "validation_images": 0,
@@ -242,11 +257,12 @@ def main() -> None:
     ))
     receipt = {
         "schema_version": 1,
-        "stage": "x4_rich_gallery_train_g1_score_wrapper_v1",
+        "stage": "x4_rich_gallery_train_g1_score_wrapper_v2",
         "source_commit": SOURCE_COMMIT,
         "protocol_sha256": PROTOCOL_SHA256,
         "split_sha256": SPLIT_SHA256,
-        "candidate_manifest_sha256": TRAIN_CANDIDATE_MANIFEST_SHA256,
+        "geometry_v3_reference_candidate_manifest_sha256": TRAIN_CANDIDATE_MANIFEST_SHA256,
+        "candidate_manifest_sha256": reconstructed_candidate_sha256,
         "pseudo_manifest_sha256": TRAIN_PSEUDO_MANIFEST_SHA256,
         "g1_checkpoint_sha256": G1_CHECKPOINT_SHA256,
         "evidence_manifest_sha256": sha256(evidence_path),
@@ -260,9 +276,100 @@ def main() -> None:
     }
     receipt_path = WORKING / "x4_rich_gallery_train_g1_scores_receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    freezer = exact_file("freeze_x4_training_targets.py", FREEZER_SHA256)
+    target_locked = {
+        project / "x4_training_targets.py": TARGET_IO_SHA256,
+        project / "x4_contract.py": X4_CONTRACT_SHA256,
+        project / "pseudo" / "candidate_diagnostics.py": CANDIDATE_IO_SHA256,
+    }
+    for path, expected in target_locked.items():
+        if not path.is_file() or sha256(path) != expected:
+            raise RuntimeError(f"locked target-freeze dependency differs: {path}")
+    target_output = WORKING / "x4_rich_gallery_target"
+    target_command = [
+        sys.executable,
+        str(freezer),
+        "--arm", "rich_gallery",
+        "--source-kind", "rich_gallery",
+        "--repo-root", str(project.parent),
+        "--split-manifest", str(split),
+        "--source-root", str(output),
+        "--source-manifest", str(evidence_path),
+        "--expected-source-manifest-sha256", str(receipt["evidence_manifest_sha256"]),
+        "--source-freeze", str(freeze_path),
+        "--expected-source-freeze-sha256", str(receipt["freeze_sha256"]),
+        "--candidate-root", str(candidate_root),
+        "--candidate-manifest-sha256", reconstructed_candidate_sha256,
+        "--candidate-pseudo-manifest-sha256", TRAIN_PSEUDO_MANIFEST_SHA256,
+        "--source-commit", SOURCE_COMMIT,
+        "--output-dir", str(target_output),
+    ]
+    print(json.dumps({"target_command": target_command}), flush=True)
+    subprocess.run(target_command, cwd=project.parent, check=True)
+    sys.path.insert(0, str(project))
+    from frozen_io import load_split_rows_without_annotations  # noqa: PLC0415
+    from x4_training_targets import validate_x4_target_bundle  # noqa: PLC0415
+
+    target_freeze = target_output / "x4_target_freeze.json"
+    target_freeze_sha256 = sha256(target_freeze)
+    canonical_rows = load_split_rows_without_annotations(
+        split,
+        expected_sha256=SPLIT_SHA256,
+        split="train",
+        allow_test=False,
+    )
+    _, target_contract = validate_x4_target_bundle(
+        target_output,
+        arm="rich_gallery",
+        split_sha256=SPLIT_SHA256,
+        expected_freeze_sha256=target_freeze_sha256,
+        canonical_train_rows=canonical_rows,
+    )
+    target_archive = Path(shutil.make_archive(
+        str(WORKING / "x4_rich_gallery_target"),
+        "zip",
+        root_dir=WORKING,
+        base_dir=target_output.name,
+    ))
+    target_receipt = {
+        "schema_version": 1,
+        "stage": "x4_rich_gallery_target_freeze_inline_wrapper_v1",
+        "source_commit": SOURCE_COMMIT,
+        "split_sha256": SPLIT_SHA256,
+        "source_score_receipt_sha256": sha256(receipt_path),
+        "source_manifest_sha256": receipt["evidence_manifest_sha256"],
+        "source_freeze_sha256": receipt["freeze_sha256"],
+        "geometry_v3_reference_candidate_manifest_sha256": TRAIN_CANDIDATE_MANIFEST_SHA256,
+        "candidate_manifest_sha256": reconstructed_candidate_sha256,
+        "candidate_pseudo_manifest_sha256": TRAIN_PSEUDO_MANIFEST_SHA256,
+        "target_freeze_sha256": target_freeze_sha256,
+        "target_manifest_sha256": target_contract["manifest_sha256"],
+        "archive_sha256": sha256(target_archive),
+        "images": 2981,
+        "tumor_images": 1488,
+        "normal_images": 1493,
+        "train_spatial_annotations_read": 0,
+        "outer_validation_annotations_read": 0,
+        "test_images_read": 0,
+        "test_evaluated": False,
+        "elapsed_seconds": time.perf_counter() - started,
+    }
+    target_receipt_path = WORKING / "x4_rich_gallery_target_receipt.json"
+    target_receipt_path.write_text(
+        json.dumps(target_receipt, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     shutil.rmtree(output)
+    shutil.rmtree(target_output)
     shutil.rmtree(candidate_root)
-    print(json.dumps({**receipt, "receipt_sha256": sha256(receipt_path)}, indent=2, sort_keys=True))
+    print(json.dumps({
+        "score_receipt": {**receipt, "receipt_sha256": sha256(receipt_path)},
+        "target_receipt": {
+            **target_receipt,
+            "receipt_sha256": sha256(target_receipt_path),
+        },
+    }, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":
