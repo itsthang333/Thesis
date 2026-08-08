@@ -19,7 +19,7 @@ Live implementation/run status is tracked in `X4_EXECUTION_MATRIX.md`.
 | X4 | Normal-image evaluation | Specificity/FPR, area median/IQR and >0.1/1/5%, false components, examples |
 | X5 | Lesion/multifocal | One-to-one component precision/recall/F1 at IoU 0.10/0.25/0.50 |
 | X6 | Boundary/extent | Macro/micro overlap, precision/recall, area ratio/RVD, HD95/ASSD pixels, misses |
-| X7 | Seed robustness | Student seeds 42/43/44 for CAM, PuzzleCAM, S2C, Rich Gallery, fully |
+| X7 | Seed robustness | Matched U-Net seeds 42/43/44 for CAM-, PuzzleCAM-, S2C- and Rich-Gallery-pseudo-mask supervision plus fully supervised GT; these are standardized downstream students, not the direct original methods |
 | X8 | Paired statistics | 10,000 heuristic-group bootstrap replicates and five frozen contrasts |
 | X9 | Error taxonomy | Ten frozen failure classes using selected/oracle/extent/lesion evidence |
 | X10 | Qualitative panel | Protocol-selected quantiles, sizes, extent, misses, wrong site, normal FP, multifocal |

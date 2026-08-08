@@ -13,11 +13,11 @@ Last updated: 2026-08-08.
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
 | `wanwin` | `btxrd-x4-s2c-generator-training` | W2 S2C generator | Running |
-| `wanwin` | `btxrd-x4-cam-student-seed42` | W0 CAM student, seed 42 | Running |
-| `qwinwan` | `btxrd-x4-cam-student-seed43` | W0 CAM student, seed 43 | Running |
-| `qwinwan` | `btxrd-x4-puzzlecam-student-seed42` | W1 PuzzleCAM student, seed 42 | Running |
-| `itsthang333` | `btxrd-x4-cam-student-seed44` | W0 CAM student, seed 44 | Running |
-| `itsthang333` | `btxrd-x4-puzzlecam-student-seed43` | W1 PuzzleCAM student, seed 43 | Running |
+| `wanwin` | `btxrd-x4-cam-student-seed42` | W0 CAM-pseudo-mask matched U-Net student, seed 42 | Running |
+| `qwinwan` | `btxrd-x4-cam-student-seed43` | W0 CAM-pseudo-mask matched U-Net student, seed 43 | Running |
+| `qwinwan` | `btxrd-x4-puzzlecam-student-seed42` | W1 PuzzleCAM-pseudo-mask matched U-Net student, seed 42 | Running |
+| `itsthang333` | `btxrd-x4-cam-student-seed44` | W0 CAM-pseudo-mask matched U-Net student, seed 44 | Running |
+| `itsthang333` | `btxrd-x4-puzzlecam-student-seed43` | W1 PuzzleCAM-pseudo-mask matched U-Net student, seed 43 | Running |
 
 ## Requirement ledger
 
@@ -29,7 +29,7 @@ Last updated: 2026-08-08.
 | W1 | PuzzleCAM-to-U-Net | PuzzleCAM generator training and train/validation mask audits are complete. The standardized target bundle is frozen. Seeds 42/43 are running. | Running | Audit completed students, launch seed 44 in the first reusable slot, then freeze/evaluate all predictions. |
 | W2 | S2C-to-U-Net | Canonical train/validation S2C cache adoption audits pass. Generator training is running. Mask freezer and auditors are implemented. | Running | Audit generator; freeze/audit train and validation masks; freeze standardized target; train/evaluate three seeds. |
 | W3 | Rich-Gallery+G1+R7-to-U-Net | Direct frozen Rich Gallery/G1/R7 choices and candidate diagnostics exist. The common target freezer accepts `rich_gallery`. | Implemented | Materialize and audit the 2,981-image Rich Gallery target bundle, then train/evaluate three matched students. |
-| X3 | YOLOv8s-seg upper bound, 600 px, 300 epochs, native mAP and common binary-union evaluation | Protocol requirement documented only. | Missing | Implement canonical train-only YOLO export/training wrapper and a common validation-mask export/evaluator; run at least seed 42. |
+| X3 | YOLOv8s-seg upper bound, 600 px, 300 epochs, native mAP and common binary-union evaluation | `project/export_x4_yolo_dataset.py` exports the exact canonical train/val polygons in Ultralytics instance-seg format; `project/train_x4_yolov8s_seg.py` fixes official YOLOv8s-seg, Ultralytics 8.4.0, 600 px and 300 epochs; Stage A freezes native union masks and the separate evaluator reports native mAP plus all common X4 metrics. | Implemented, not launched | Package the pinned wheel and official pretrained checkpoint, run seed 42, then add seeds 43/44 if budget permits. |
 | X4 | Normal-image specificity/FPR, predicted area distribution/threshold rates, false components and examples | `project/evaluation/segmentation_metrics.py` implements all numeric endpoints; the student evaluator uses all 187 normal validation images. | Implemented | Produce results after each prediction freeze; add protocol-selected normal examples under X10. |
 | X5 | 8-neighbour lesion/multifocal metrics and one-to-one matching at IoU 0.10/0.25/0.50 | Implemented in `project/evaluation/segmentation_metrics.py`, including precision/recall/F1, missed/excess lesions, partial multifocal miss and component-count error. | Implemented | Run on every arm/seed and add formula regression fixtures for all three one-to-one thresholds. |
 | X6 | Macro/micro overlap, pixel precision/recall, extent, HD95/ASSD, empty and zero-overlap cases | Implemented in the common native-grid evaluator. HD95/ASSD are explicitly pixels and conditional-defined counts are reported. | Implemented | Run on every arm/seed and aggregate the declared subgroup tables. |
@@ -49,7 +49,7 @@ Last updated: 2026-08-08.
 
 ## Slot-reuse order
 
-1. A completed CAM/PuzzleCAM student slot is reused for the next missing seed
+1. A completed CAM/PuzzleCAM-pseudo-mask student slot is reused for the next missing seed
    of the same already-frozen target arm.
 2. The S2C generator slot first freezes/audits S2C masks and then launches the
    S2C student seeds.

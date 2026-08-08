@@ -1,0 +1,2 @@
+# X4 fixes the Ultralytics implementation as well as the YOLOv8s-seg checkpoint.
+ultralytics==8.4.0
