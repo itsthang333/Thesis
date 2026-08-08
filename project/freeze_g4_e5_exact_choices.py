@@ -147,17 +147,71 @@ def _points(*values: np.ndarray, columns: int) -> np.ndarray:
     return np.concatenate(arrays, axis=0)
 
 
-def _select(
+def _validate_g1_alignment(
+    candidate_indices: np.ndarray,
+    g1_logits: np.ndarray,
+    g1_upstream: np.ndarray,
+    full_upstream: np.ndarray,
+    *,
+    image_id: str,
+    label: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Validate the sparse G1 bag against its full frozen candidate bank.
+
+    G1 deliberately drops masks without sufficient token-grid support.  Its
+    evidence arrays are therefore indexed by ``candidate_indices`` and must
+    never be treated as dense candidate-order arrays.
+    """
+
+    indices = np.asarray(candidate_indices, dtype=np.int64).reshape(-1)
+    logits = np.asarray(g1_logits, dtype=np.float64).reshape(-1)
+    upstream = np.asarray(g1_upstream, dtype=np.float64).reshape(-1)
+    full = np.asarray(full_upstream, dtype=np.float32).reshape(-1)
+    if not (len(indices) == len(logits) == len(upstream)) or not len(indices):
+        raise ValueError(f"{label} G1 arrays differ or are empty: {image_id}")
+    if len(np.unique(indices)) != len(indices):
+        raise ValueError(f"{label} G1 candidate indices repeat: {image_id}")
+    if np.any(indices < 0) or np.any(indices >= len(full)):
+        raise ValueError(f"{label} G1 candidate indices are out of range: {image_id}")
+    if not np.array_equal(upstream.astype(np.float32), full[indices]):
+        raise ValueError(f"{label} G1 upstream scores differ: {image_id}")
+    return indices, logits, upstream
+
+
+def _select_indexed(
+    candidate_indices: np.ndarray,
     g1_logits: np.ndarray,
     upstream: np.ndarray,
-    indices: np.ndarray,
+    eligible_indices: np.ndarray,
 ) -> tuple[int, float, float, float]:
-    indices = np.asarray(indices, dtype=np.int64).reshape(-1)
-    if not len(indices):
-        raise ValueError("selector requires at least one eligible candidate")
-    local, fused = select_candidate(g1_logits[indices], upstream[indices])
-    selected = int(indices[local])
-    return selected, float(g1_logits[selected]), float(upstream[selected]), float(fused[local])
+    candidate_indices = np.asarray(candidate_indices, dtype=np.int64).reshape(-1)
+    eligible = set(np.asarray(eligible_indices, dtype=np.int64).reshape(-1).tolist())
+    local_indices = np.asarray(
+        [index for index, candidate in enumerate(candidate_indices) if int(candidate) in eligible],
+        dtype=np.int64,
+    )
+    if not len(local_indices):
+        raise ValueError("selector has no G1-scoreable eligible candidate")
+    local, fused = select_candidate(g1_logits[local_indices], upstream[local_indices])
+    evidence_local = int(local_indices[local])
+    selected = int(candidate_indices[evidence_local])
+    return (
+        selected,
+        float(g1_logits[evidence_local]),
+        float(upstream[evidence_local]),
+        float(fused[local]),
+    )
+
+
+def _optional_g1_value(
+    candidate_indices: np.ndarray,
+    g1_logits: np.ndarray,
+    candidate_index: int,
+) -> float | str:
+    locations = np.flatnonzero(np.asarray(candidate_indices, dtype=np.int64) == candidate_index)
+    if not len(locations):
+        return ""
+    return float(np.asarray(g1_logits, dtype=np.float64)[int(locations[0])])
 
 
 def main() -> None:
@@ -295,20 +349,22 @@ def main() -> None:
             post_g1_rows[image_id],
             expected_candidate_sha256=candidates["post"][stem]["diagnostic_sha256"],
         )
-        pre_indices = np.asarray(pre_evidence["candidate_indices"], dtype=np.int64)
-        post_indices = np.asarray(post_evidence["candidate_indices"], dtype=np.int64)
-        pre_logits = np.asarray(pre_evidence["candidate_logits"], dtype=np.float64)
-        post_logits = np.asarray(post_evidence["candidate_logits"], dtype=np.float64)
-        pre_upstream = np.asarray(pre_evidence["selection_scores"], dtype=np.float64)
-        post_upstream = np.asarray(post_evidence["selection_scores"], dtype=np.float64)
-        if not np.array_equal(pre_indices, np.arange(len(raw["sam_masks"]))) or not np.array_equal(
-            post_indices, np.arange(len(post["sam_masks"]))
-        ):
-            raise ValueError(f"G1 candidate indices are not identity ordered: {image_id}")
-        if not np.array_equal(pre_upstream.astype(np.float32), raw["selection_scores"]):
-            raise ValueError(f"pre-dedup upstream scores differ: {image_id}")
-        if not np.array_equal(post_upstream.astype(np.float32), post["selection_scores"]):
-            raise ValueError(f"post-dedup upstream scores differ: {image_id}")
+        pre_indices, pre_logits, pre_upstream = _validate_g1_alignment(
+            pre_evidence["candidate_indices"],
+            pre_evidence["candidate_logits"],
+            pre_evidence["selection_scores"],
+            raw["selection_scores"],
+            image_id=image_id,
+            label="pre-dedup",
+        )
+        post_indices, post_logits, post_upstream = _validate_g1_alignment(
+            post_evidence["candidate_indices"],
+            post_evidence["candidate_logits"],
+            post_evidence["selection_scores"],
+            post["selection_scores"],
+            image_id=image_id,
+            label="post-dedup",
+        )
 
         top_index = max(
             range(len(raw["sam_masks"])),
@@ -323,14 +379,20 @@ def main() -> None:
             raise ValueError(f"exact multimask IDs differ: {image_id}/{exact_prompt_id}")
         prompt_matches += 1
 
-        pre_selected, pre_g1_value, pre_upstream_value, pre_fused = _select(
-            pre_logits, pre_upstream, np.arange(len(raw["sam_masks"]), dtype=np.int64)
+        pre_selected, pre_g1_value, pre_upstream_value, pre_fused = _select_indexed(
+            pre_indices,
+            pre_logits,
+            pre_upstream,
+            np.arange(len(raw["sam_masks"]), dtype=np.int64),
         )
-        multi_selected, multi_g1_value, multi_upstream_value, multi_fused = _select(
-            pre_logits, pre_upstream, multi_indices
+        multi_selected, multi_g1_value, multi_upstream_value, multi_fused = _select_indexed(
+            pre_indices, pre_logits, pre_upstream, multi_indices
         )
-        post_selected_local, post_g1_value, post_upstream_value, post_fused = _select(
-            post_logits, post_upstream, np.arange(len(post["sam_masks"]), dtype=np.int64)
+        post_selected_local, post_g1_value, post_upstream_value, post_fused = _select_indexed(
+            post_indices,
+            post_logits,
+            post_upstream,
+            np.arange(len(post["sam_masks"]), dtype=np.int64),
         )
         if post_selected_local != int(baseline_rows[image_id]["selected_candidate_index"]):
             raise ValueError(f"official baseline choice is not reproduced: {image_id}")
@@ -339,12 +401,12 @@ def main() -> None:
         post_selected_raw = int(raw_first[post_selected_local])
         cap_post = candidate_filter(
             post["proposal_source_ids"],
-            post_upstream,
+            post["selection_scores"],
             allowed_sources=ALL_SOURCES,
             per_source_cap=81,
         )
-        cap_selected_local, cap_g1_value, cap_upstream_value, cap_fused = _select(
-            post_logits, post_upstream, cap_post
+        cap_selected_local, cap_g1_value, cap_upstream_value, cap_fused = _select_indexed(
+            post_indices, post_logits, post_upstream, cap_post
         )
         cap_eligible_raw = raw_first[cap_post]
         cap_selected_raw = int(raw_first[cap_selected_local])
@@ -406,9 +468,9 @@ def main() -> None:
             "E5_exact__upstream_top1": (
                 top_index,
                 np.asarray([top_index], dtype=np.int64),
-                float(pre_logits[top_index]),
-                float(pre_upstream[top_index]),
-                float(pre_upstream[top_index]),
+                _optional_g1_value(pre_indices, pre_logits, top_index),
+                float(raw["selection_scores"][top_index]),
+                float(raw["selection_scores"][top_index]),
             ),
             "E5_exact__single_prompt_single_mask": (
                 single_offset + int(single_local[0]),

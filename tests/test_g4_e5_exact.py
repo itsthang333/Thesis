@@ -18,6 +18,11 @@ from g4_e5_exact import (  # noqa: E402
     project_payload_masks_to_grid,
     verify_post_dedup_reproduction,
 )
+from freeze_g4_e5_exact_choices import (  # noqa: E402
+    _optional_g1_value,
+    _select_indexed,
+    _validate_g1_alignment,
+)
 
 
 def payload(
@@ -129,3 +134,38 @@ def test_projected_raw_union_reproduces_post_dedup() -> None:
     keep = first_unique_mask_indices(raw["sam_masks"])
     post = {field: np.asarray(raw[field])[keep] for field in raw}
     assert verify_post_dedup_reproduction(raw, post).tolist() == [0, 2]
+
+
+def test_sparse_g1_indices_are_joined_by_candidate_identity() -> None:
+    full_upstream = np.asarray([0.9, 0.7, 0.8, 0.1], dtype=np.float32)
+    indices, logits, upstream = _validate_g1_alignment(
+        np.asarray([0, 2, 3]),
+        np.asarray([-1.0, 2.0, 0.0]),
+        full_upstream[[0, 2, 3]],
+        full_upstream,
+        image_id="example.jpeg",
+        label="pre-dedup",
+    )
+    selected, g1, selected_upstream, _fused = _select_indexed(
+        indices,
+        logits,
+        upstream,
+        np.asarray([1, 2, 3]),
+    )
+    assert selected == 2
+    assert g1 == 2.0
+    assert selected_upstream == pytest.approx(0.8)
+    assert _optional_g1_value(indices, logits, 1) == ""
+    assert _optional_g1_value(indices, logits, 2) == 2.0
+
+
+def test_sparse_g1_alignment_rejects_misaligned_upstream() -> None:
+    with pytest.raises(ValueError, match="upstream scores differ"):
+        _validate_g1_alignment(
+            np.asarray([0, 2]),
+            np.asarray([0.0, 1.0]),
+            np.asarray([0.2, 0.3]),
+            np.asarray([0.2, 0.4, 0.5]),
+            image_id="example.jpeg",
+            label="post-dedup",
+        )
