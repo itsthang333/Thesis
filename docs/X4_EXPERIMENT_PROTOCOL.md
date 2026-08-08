@@ -6,6 +6,8 @@ competitive with matched fully supervised systems. All model selection occurs
 inside the canonical 2,981-image training split. The 371-image validation split
 is an outer evaluation cohort only; test remains unopened.
 
+Live implementation/run status is tracked in `X4_EXECUTION_MATRIX.md`.
+
 ## Frozen requirements
 
 | ID | Experiment | Required arms/output |
@@ -57,4 +59,3 @@ level. This measures student uncertainty but not full generator uncertainty.
 - `group_id` is heuristic and bootstrap output must not be called patient-level.
 - Qualitative examples are selected by the frozen protocol rather than visual appeal.
 - Test remains excluded from X4 development and evaluation.
-
