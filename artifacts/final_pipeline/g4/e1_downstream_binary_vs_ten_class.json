@@ -1,0 +1,534 @@
+{
+  "binary_audit_sha256": "0f334ae13cb17572867c4a6cc9e0b6ac8bd00a6f84f560604584380bea521a45",
+  "delta_direction": "ten_class_minus_binary",
+  "overall": {
+    "binary": {
+      "mean": 0.26289892139815074,
+      "sample_sd": 0.027429200926238215
+    },
+    "per_seed_delta": {
+      "42": 0.011073053067881311,
+      "43": 0.03305914541516475,
+      "44": 0.06403300622755742
+    },
+    "ten_class": {
+      "mean": 0.29895398963501857,
+      "sample_sd": 0.006328205859138228
+    },
+    "ten_class_minus_binary": {
+      "mean": 0.03605506823686783,
+      "sample_sd": 0.026606781557226587
+    }
+  },
+  "schema_version": 1,
+  "seed_reports": [
+    {
+      "losses": 54,
+      "paired_group_bootstrap": {
+        "large": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 17,
+          "images": 18,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.12297017563211918,
+              "ci95_low": -0.11605870341178191,
+              "point_delta": 0.00011451555644091826,
+              "probability_delta_gt_zero": 0.4867
+            },
+            "iou": {
+              "ci95_high": 0.10626396283842882,
+              "ci95_low": -0.09195336324012113,
+              "point_delta": 1.721462378887854e-05,
+              "probability_delta_gt_zero": 0.476
+            },
+            "precision": {
+              "ci95_high": 0.10719269288326186,
+              "ci95_low": -0.07641301870109989,
+              "point_delta": 0.014676781486812729,
+              "probability_delta_gt_zero": 0.6259
+            },
+            "recall": {
+              "ci95_high": 0.1015884146602685,
+              "ci95_low": -0.2422925166861766,
+              "point_delta": -0.06278944590227074,
+              "probability_delta_gt_zero": 0.2436
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260811
+        },
+        "medium": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 61,
+          "images": 72,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.06463853652742306,
+              "ci95_low": -0.02706760106802797,
+              "point_delta": 0.019710242969753638,
+              "probability_delta_gt_zero": 0.7969
+            },
+            "iou": {
+              "ci95_high": 0.057578597936102385,
+              "ci95_low": -0.019622483213827476,
+              "point_delta": 0.019485085625023935,
+              "probability_delta_gt_zero": 0.8358
+            },
+            "precision": {
+              "ci95_high": 0.05247730137676435,
+              "ci95_low": -0.0518920539187995,
+              "point_delta": 0.0027082517203057977,
+              "probability_delta_gt_zero": 0.5471
+            },
+            "recall": {
+              "ci95_high": 0.09811122811781801,
+              "ci95_low": -0.030010785307769367,
+              "point_delta": 0.03270743452334333,
+              "probability_delta_gt_zero": 0.8429
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260810
+        },
+        "overall": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 167,
+          "images": 184,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.03535518217463219,
+              "ci95_low": -0.013630399565530363,
+              "point_delta": 0.011073053067881342,
+              "probability_delta_gt_zero": 0.8111
+            },
+            "iou": {
+              "ci95_high": 0.030389117909130625,
+              "ci95_low": -0.009772303969544175,
+              "point_delta": 0.010387016948650662,
+              "probability_delta_gt_zero": 0.8404
+            },
+            "precision": {
+              "ci95_high": 0.02863974665882281,
+              "ci95_low": -0.019402352374806402,
+              "point_delta": 0.00508159541243357,
+              "probability_delta_gt_zero": 0.6578
+            },
+            "recall": {
+              "ci95_high": 0.09141365847841947,
+              "ci95_low": -0.006888755678390216,
+              "point_delta": 0.04283310839473503,
+              "probability_delta_gt_zero": 0.9568
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260808
+        },
+        "small": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 92,
+          "images": 94,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.031360383703597505,
+              "ci95_low": -0.01713958929917122,
+              "point_delta": 0.006555776496297532,
+              "probability_delta_gt_zero": 0.6937
+            },
+            "iou": {
+              "ci95_high": 0.025758948766462796,
+              "ci95_low": -0.012324816743716811,
+              "point_delta": 0.00540399032257233,
+              "probability_delta_gt_zero": 0.6974
+            },
+            "precision": {
+              "ci95_high": 0.025380714062817316,
+              "ci95_low": -0.01518959331001547,
+              "point_delta": 0.005062099630458838,
+              "probability_delta_gt_zero": 0.6843
+            },
+            "recall": {
+              "ci95_high": 0.14328120269289082,
+              "ci95_low": -0.0033662286778313373,
+              "point_delta": 0.07081453920416385,
+              "probability_delta_gt_zero": 0.9689
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260809
+        }
+      },
+      "seed": 42,
+      "ten_class_vs_binary_image_wins": 64,
+      "ties": 66
+    },
+    {
+      "losses": 62,
+      "paired_group_bootstrap": {
+        "large": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 17,
+          "images": 18,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.23760108993367515,
+              "ci95_low": 0.006437308773178363,
+              "point_delta": 0.11169969305209859,
+              "probability_delta_gt_zero": 0.9835
+            },
+            "iou": {
+              "ci95_high": 0.18258852117145563,
+              "ci95_low": -0.0014385251923380716,
+              "point_delta": 0.08123612383698621,
+              "probability_delta_gt_zero": 0.9727
+            },
+            "precision": {
+              "ci95_high": 0.1599356271083339,
+              "ci95_low": -0.16222876778859405,
+              "point_delta": -0.00904438072013148,
+              "probability_delta_gt_zero": 0.441
+            },
+            "recall": {
+              "ci95_high": 0.24497955003143906,
+              "ci95_low": -0.038305671669842445,
+              "point_delta": 0.09498116490509453,
+              "probability_delta_gt_zero": 0.9141
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260821
+        },
+        "medium": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 61,
+          "images": 72,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.11147648707237592,
+              "ci95_low": -0.009100811698517728,
+              "point_delta": 0.05229447681396951,
+              "probability_delta_gt_zero": 0.9537
+            },
+            "iou": {
+              "ci95_high": 0.09032641534777332,
+              "ci95_low": -0.010417501849520647,
+              "point_delta": 0.04040241328352671,
+              "probability_delta_gt_zero": 0.9418
+            },
+            "precision": {
+              "ci95_high": 0.13188426270494846,
+              "ci95_low": -0.006703021798062368,
+              "point_delta": 0.06266661997105999,
+              "probability_delta_gt_zero": 0.9626
+            },
+            "recall": {
+              "ci95_high": 0.113275365214339,
+              "ci95_low": -0.04198830648261919,
+              "point_delta": 0.03487356418384471,
+              "probability_delta_gt_zero": 0.8073
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260820
+        },
+        "overall": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 167,
+          "images": 184,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.06361428620676189,
+              "ci95_low": 0.00351258802950684,
+              "point_delta": 0.03305914541516474,
+              "probability_delta_gt_zero": 0.9873
+            },
+            "iou": {
+              "ci95_high": 0.050606212239048286,
+              "ci95_low": 0.0011569770044037866,
+              "point_delta": 0.025423963355838543,
+              "probability_delta_gt_zero": 0.9809
+            },
+            "precision": {
+              "ci95_high": 0.05312186736308144,
+              "ci95_low": -0.019853219094131132,
+              "point_delta": 0.016514616577834047,
+              "probability_delta_gt_zero": 0.8105
+            },
+            "recall": {
+              "ci95_high": 0.0772250846005045,
+              "ci95_low": -0.029153180768992624,
+              "point_delta": 0.02434586828274807,
+              "probability_delta_gt_zero": 0.8073
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260818
+        },
+        "small": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 92,
+          "images": 94,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.03346783997584841,
+              "ci95_low": -0.02368683729918784,
+              "point_delta": 0.0032668718175184364,
+              "probability_delta_gt_zero": 0.5682
+            },
+            "iou": {
+              "ci95_high": 0.028471761778130013,
+              "ci95_low": -0.01863605455976787,
+              "point_delta": 0.0032636731063257194,
+              "probability_delta_gt_zero": 0.5877
+            },
+            "precision": {
+              "ci95_high": 0.02119473870274537,
+              "ci95_low": -0.05322356996997578,
+              "point_delta": -0.0139415780280052,
+              "probability_delta_gt_zero": 0.2301
+            },
+            "recall": {
+              "ci95_high": 0.08015019978678069,
+              "ci95_low": -0.07779346713607938,
+              "point_delta": 0.0027561933457140833,
+              "probability_delta_gt_zero": 0.5239
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260819
+        }
+      },
+      "seed": 43,
+      "ten_class_vs_binary_image_wins": 70,
+      "ties": 52
+    },
+    {
+      "losses": 54,
+      "paired_group_bootstrap": {
+        "large": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 17,
+          "images": 18,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.33936715228999736,
+              "ci95_low": 0.09151846840034907,
+              "point_delta": 0.21425253243182033,
+              "probability_delta_gt_zero": 0.9997
+            },
+            "iou": {
+              "ci95_high": 0.2760225932876219,
+              "ci95_low": 0.08277454564934032,
+              "point_delta": 0.1778454346227298,
+              "probability_delta_gt_zero": 0.9999
+            },
+            "precision": {
+              "ci95_high": 0.4254702888396833,
+              "ci95_low": 0.10790478517233043,
+              "point_delta": 0.2664591462041019,
+              "probability_delta_gt_zero": 0.9993
+            },
+            "recall": {
+              "ci95_high": 0.3143294142392058,
+              "ci95_low": 0.06565427742121892,
+              "point_delta": 0.18401418338346126,
+              "probability_delta_gt_zero": 0.9992
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260831
+        },
+        "medium": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 61,
+          "images": 72,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.18383721906559525,
+              "ci95_low": 0.058784882674302145,
+              "point_delta": 0.12091581983131605,
+              "probability_delta_gt_zero": 0.9999
+            },
+            "iou": {
+              "ci95_high": 0.14292361884785645,
+              "ci95_low": 0.04121132851184039,
+              "point_delta": 0.0914237759137235,
+              "probability_delta_gt_zero": 0.9998
+            },
+            "precision": {
+              "ci95_high": 0.13519979845156557,
+              "ci95_low": 0.022341436143414255,
+              "point_delta": 0.07943368694839506,
+              "probability_delta_gt_zero": 0.9972
+            },
+            "recall": {
+              "ci95_high": 0.3006078746950362,
+              "ci95_low": 0.11416828114319687,
+              "point_delta": 0.20657232346006313,
+              "probability_delta_gt_zero": 1.0
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260830
+        },
+        "overall": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 167,
+          "images": 184,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.09902125719236242,
+              "ci95_low": 0.029155968257317044,
+              "point_delta": 0.06403300622755738,
+              "probability_delta_gt_zero": 0.9998
+            },
+            "iou": {
+              "ci95_high": 0.07895126572805086,
+              "ci95_low": 0.021685526350641842,
+              "point_delta": 0.050139562873826794,
+              "probability_delta_gt_zero": 0.9997
+            },
+            "precision": {
+              "ci95_high": 0.08613124385927783,
+              "ci95_low": 0.013911518211856856,
+              "point_delta": 0.050189040278120836,
+              "probability_delta_gt_zero": 0.9954
+            },
+            "recall": {
+              "ci95_high": 0.1565876417920495,
+              "ci95_low": 0.030284002161727656,
+              "point_delta": 0.09407742272296313,
+              "probability_delta_gt_zero": 0.9976
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260828
+        },
+        "small": {
+          "delta_direction": "comparison_minus_reference",
+          "group_key": "group_id",
+          "groups": 92,
+          "images": 94,
+          "intervals": {
+            "dice": {
+              "ci95_high": 0.025585187029881818,
+              "ci95_low": -0.04489192324399859,
+              "point_delta": -0.008302249635712397,
+              "probability_delta_gt_zero": 0.3178
+            },
+            "iou": {
+              "ci95_high": 0.023341718925536246,
+              "ci95_low": -0.03755054787021233,
+              "point_delta": -0.005936703406522327,
+              "probability_delta_gt_zero": 0.3438
+            },
+            "precision": {
+              "ci95_high": 0.02587338169077804,
+              "ci95_low": -0.058739823268486924,
+              "point_delta": -0.013624539157277061,
+              "probability_delta_gt_zero": 0.264
+            },
+            "recall": {
+              "ci95_high": 0.07782632028457379,
+              "ci95_low": -0.09883728495935341,
+              "point_delta": -0.009310817117038626,
+              "probability_delta_gt_zero": 0.4261
+            }
+          },
+          "iterations": 10000,
+          "method": "paired nonparametric group bootstrap",
+          "seed": 20260829
+        }
+      },
+      "seed": 44,
+      "ten_class_vs_binary_image_wins": 84,
+      "ties": 46
+    }
+  ],
+  "statistical_note": "Three training seeds are reported individually and as mean/sample SD. Within each matched seed, uncertainty is a paired nonparametric bootstrap over heuristic groups; group_id is not a verified patient ID.",
+  "study": "G4 E1 matched binary-versus-ten-class downstream WSSS",
+  "subgroup": {
+    "large": {
+      "binary": {
+        "mean": 0.336845746413916,
+        "sample_sd": 0.0713375428268076
+      },
+      "per_seed_delta": {
+        "42": 0.0001145155564409861,
+        "43": 0.11169969305209854,
+        "44": 0.2142525324318204
+      },
+      "ten_class": {
+        "mean": 0.44553466009403603,
+        "sample_sd": 0.04635020175005235
+      },
+      "ten_class_minus_binary": {
+        "mean": 0.10868891368011997,
+        "sample_sd": 0.10710075238834749
+      }
+    },
+    "medium": {
+      "binary": {
+        "mean": 0.41543575279170175,
+        "sample_sd": 0.04705378182021135
+      },
+      "per_seed_delta": {
+        "42": 0.0197102429697536,
+        "43": 0.052294476813969426,
+        "44": 0.12091581983131605
+      },
+      "ten_class": {
+        "mean": 0.4797425993300481,
+        "sample_sd": 0.01881393459112506
+      },
+      "ten_class_minus_binary": {
+        "mean": 0.06430684653834635,
+        "sample_sd": 0.05166105851380469
+      }
+    },
+    "small": {
+      "binary": {
+        "mean": 0.1319021691575184,
+        "sample_sd": 0.009897600395059785
+      },
+      "per_seed_delta": {
+        "42": 0.006555776496297544,
+        "43": 0.0032668718175184464,
+        "44": -0.008302249635712397
+      },
+      "ten_class": {
+        "mean": 0.1324089687168863,
+        "sample_sd": 0.015505255018849692
+      },
+      "ten_class_minus_binary": {
+        "mean": 0.0005067995593678645,
+        "sample_sd": 0.007804084461839961
+      }
+    }
+  },
+  "ten_class_audit_sha256": "64479f6c8ff330324e74219e6073f2f8541cd96699b344d7c43fd2a5f8a9e0ca",
+  "test_evaluated": false,
+  "test_images_read": 0
+}

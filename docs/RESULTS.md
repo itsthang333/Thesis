@@ -52,12 +52,11 @@ seeds 42/43/44. The ten-class tumor score is `1 - p(normal)`.
 | ECE-15 (lower is better) | 0.192456 +/- 0.008731 | **0.164921 +/- 0.022648** |
 
 The paired grouped-bootstrap intervals for F1, MCC, AUROC and AUPRC include zero
-for every matched seed. NLL is the stable exception: ten-class minus binary is
-negative for all seeds, with 95% intervals `[-1.058,-0.294]`,
-`[-0.723,-0.045]`, and `[-0.738,-0.078]`. Therefore E1 currently supports a
-calibration/log-loss advantage for ten-class supervision, not yet a localization
-or segmentation advantage. Downstream frozen-mask Dice remains mandatory before
-claiming that either label granularity is superior for WSSS.
+for every matched seed. NLL is the stable classification-side exception:
+ten-class minus binary is negative for all seeds, with 95% intervals
+`[-1.058,-0.294]`, `[-0.723,-0.045]`, and `[-0.738,-0.078]`. The decisive
+downstream experiment below is therefore required; image-level discrimination
+alone is not used as evidence of spatial improvement.
 
 The AP values above supersede the first audit's 0.864460/0.871859 values. The
 first implementation processed equal-score samples one row at a time, so AP
@@ -81,13 +80,34 @@ output audit:
 | 42 | 0.283706 | 0.143147 | 0.440155 | 0.391938 | 0.532662 |
 | 43 | 0.273176 | 0.124510 | 0.444978 | 0.362334 | 0.516062 |
 | 44 | 0.231815 | 0.128050 | 0.361174 | 0.256265 | 0.517571 |
-| Mean +/- sample SD | **0.262899 +/- 0.027429** | â€” | â€” | â€” | â€” |
+| Mean +/- sample SD | **0.262899 +/- 0.027429** | -- | -- | -- | -- |
 
-This substantial downstream variation means classifier discrimination alone
-cannot establish segmentation quality. The ten-class downstream arm remains
-required for the matched label-granularity conclusion; until then, this row is
-reported as an audited partial result rather than evidence that binary labels
-are preferable.
+The matched ten-class downstream arm has also completed and passed the same
+independent output audit:
+
+| Ten-class seed | Overall Dice | `<1%` | `1-<5%` | `>=5%` | Gallery oracle |
+|---:|---:|---:|---:|---:|---:|
+| 42 | 0.294779 | 0.149702 | 0.459865 | 0.392053 | 0.524402 |
+| 43 | 0.306235 | 0.127777 | 0.497273 | 0.474034 | 0.534792 |
+| 44 | 0.295848 | 0.119748 | 0.482090 | 0.470517 | 0.539855 |
+| Mean +/- sample SD | **0.298954 +/- 0.006328** | **0.132409 +/- 0.015505** | **0.479743 +/- 0.018814** | **0.445535 +/- 0.046350** | -- |
+
+The mean ten-class-minus-binary Dice delta is `+0.036055` (sample SD across
+three matched seeds `0.026607`), with per-seed deltas `+0.011073`, `+0.033059`
+and `+0.064033`. The paired grouped-bootstrap Dice interval crosses zero for
+seed 42 (`[-0.013630,0.035355]`) but is positive for seed 43
+(`[0.003513,0.063614]`) and seed 44 (`[0.029156,0.099021]`). The gain is
+concentrated in medium and large lesions: mean subgroup deltas are `+0.064307`
+and `+0.108689`, whereas the small-lesion mean delta is only `+0.000507` and
+changes sign across seeds. Thus ten-class supervision is supported as the
+better overall downstream configuration under this matched protocol, but it
+does **not** resolve the small-lesion bottleneck.
+
+Independent audit SHA-256 values are
+`64479f6c8ff330324e74219e6073f2f8541cd96699b344d7c43fd2a5f8a9e0ca`
+for the ten-class arm and
+`c49b8cfbaeb4a3c97df313e61e19d9152dc4fe97010828dfbe88cfbf78a05176`
+for the paired report.
 
 ## G4 E3: matched SAM ViT-B versus ViT-L (validation, interim)
 
