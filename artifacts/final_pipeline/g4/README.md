@@ -73,6 +73,24 @@ SHA-256 is `bfd63482713f8b35ba6724e28b616b694e0afb914e8cdcb1bf343a4cadef809e`.
   `865366ad6ae2077d1c5f43d76ca571941ceb4fc369b5ee9e06a97997f86aafad` /
   `f7db51ea53bc1441963e2cd761b00ad87aaecfd79327b2aa7e28ad8adc23f973`.
 
+### Exact E5 gallery construction
+
+- Completed and independently audited on 371 validation images (184 tumor;
+  subgroups 94/72/18), with 2,226 choices frozen before spatial annotations.
+- Native Dice for upstream top-1 / exact one-mask / exact three-multimask /
+  pre-dedup / post-dedup / cap243 is 0.222746 / 0.219017 / 0.219600 /
+  0.288139 / 0.288224 / 0.288224.
+- Pre/post candidate counts are 56,265/55,814; exact dedup removes 451 masks.
+  Cap243 retains all 55,814 post-dedup masks in this cohort.
+- Single-mask generation took 1564.651 s; peak allocated/reserved T4 memory is
+  2,996,665,856 / 3,382,706,176 bytes.
+- Artifacts: `e5_exact_results.json` and `e5_exact_output_audit.json`;
+  result/audit SHA-256 `de787041617042fc5ef65c77bb98f1322673747a320ef5f22a04f995473a3712` /
+  `93d0ef470ea0a0b7750d63f0d6348d4045e0488906dbaf1b20ae38ef2eaa0520`.
+- Kaggle v4 failed only after all expensive payloads were frozen. The corrected
+  sparse/full index separation and hash-locked local recovery required no GPU
+  rerun and opened no test data.
+
 ## E1 label-granularity image-level stage
 
 - Matched binary and ten-class DenseNet-121 classifiers completed for seeds
@@ -157,3 +175,7 @@ SHA-256 is `bfd63482713f8b35ba6724e28b616b694e0afb914e8cdcb1bf343a4cadef809e`.
 The exact formulas, arm definitions, safeguards, and interpretation limits are
 documented in `docs/G4_EXPERIMENT_PROTOCOL.md`,
 `docs/METRIC_AND_DEFENSE_AUDIT.md`, and `docs/RESULTS.md`.
+
+The final fail-closed E0--E8 requirement audit is
+`g4_completion_audit.json`; it passes and has SHA-256
+`3afb701873d4afab48ac5a1673d90003e2e3011c46959300769c0b6e873c682f`.

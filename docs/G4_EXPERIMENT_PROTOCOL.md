@@ -252,6 +252,18 @@ deduplication, and after cap 243. It requires regenerated payload metadata:
 `multimask_index`. The old merged artifact lacks exact `prompt_id`; a
 prompt-mode-only replay must not be misreported as the exact single-prompt arm.
 
+The exact study is now complete and independently audited on all 371 canonical
+validation images (184 tumor; subgroups 94/72/18), with every choice frozen
+before polygons were opened. Native selected Dice for upstream top-1, exact
+single-prompt/single-mask, exact single-prompt/three-multimask, full pre-dedup,
+full post-dedup and cap 243 is respectively 0.222746, 0.219017, 0.219600,
+0.288139, 0.288224 and 0.288224. Thus the large gain comes from the rich prompt
+and source gallery, not merely from requesting three SAM masks for one prompt.
+Exact deduplication changes Dice by only +0.000085, and cap 243 is inactive in
+this frozen cohort because every post-dedup per-image bank already satisfies
+the declared cap. Single-mask generation over both 371-image supplies took
+1564.651 s on T4, with peak allocated/reserved memory of 2.997/3.383 GB.
+
 ### E6 — G1 selector and G1 design
 
 Selector controls on one identical eligible candidate set:
@@ -360,15 +372,20 @@ scientific configuration; efficacy failures are reported, not silently swept.
   selected Dice 0.283344/0.282440/0.280697 and the single-source arms obtain
   0.275499/0.258021/0.234636. The independent audit passes, and the replay
   reports candidate counts plus 47.524 seconds for all seven Stage-A/B arms.
-- Exact E5 v2 failed technically because its frozen 320 and 448 candidate banks
-  were concatenated before the baseline's fixed 448-to-320 nearest-neighbour
-  projection. The geometry replay is now explicitly identical to the baseline,
-  11/11 focused tests and 181/181 server download-back checks pass, and E5 v3
-  is running under the unchanged scientific protocol.
+- Exact E5 is complete without regenerating the expensive candidate stages.
+  Kaggle v4 produced all 371 single-anchor, single-addition, pre-dedup and G1
+  payloads, then failed in the freezer because the upstream-only arm indexed a
+  sparse G1 array as the full candidate bank. The corrected freezer separates
+  those index spaces; 11/11 focused tests pass. Deterministic recovery froze
+  2,226 choices, resumed the 10,000-draw bootstrap from the hash-locked 2,226
+  per-image rows, and passed an independent replay audit. Full post-dedup and
+  cap243 native Dice is 0.288224; exact single-prompt three-multimask Dice is
+  0.219600. No GPU rerun, spatial-GT selection or test access occurred.
 - Learned E6 feature/loss v2 completed and passed the independent output audit:
   21 checkpoints, 24 learned arms plus the fixed baseline, 9,275 frozen
   selections, exact 371/184 validation counts and no test access. The best
   three-seed mean is the full feature/loss model at native Dice
   `0.279855 +/- 0.007371`, below the fixed R7 baseline `0.288224`. A single
   bag-negative seed reaches `0.290598`, but selecting it post hoc is prohibited.
-  Exact E5 and the final E0--E8 completeness audit remain open.
+  The final E0--E8 completion audit is generated after binding the recovered
+  E5 result and resource telemetry artifacts.

@@ -88,11 +88,19 @@ def audit(repo_root: Path) -> dict[str, object]:
     _zero_test(metric, "metric")
 
     e1_label = payload["e1_label"]
+    binary_seeds = {
+        int(item.get("seed", -1))
+        for item in e1_label.get("binary", {}).get("runs", [])
+    }
+    ten_class_seeds = {
+        int(item.get("seed", -1))
+        for item in e1_label.get("ten_class", {}).get("runs", [])
+    }
     if (
         e1_label.get("pass") is not True
         or e1_label.get("split_sha256") != SPLIT_SHA
-        or int(e1_label.get("binary", {}).get("seeds", -1)) != 3
-        or int(e1_label.get("ten_class", {}).get("seeds", -1)) != 3
+        or binary_seeds != {42, 43, 44}
+        or ten_class_seeds != {42, 43, 44}
         or e1_label.get("spatial_ground_truth_read") is not False
     ):
         raise ValueError("G4 E1 label-granularity evidence differs")
@@ -112,7 +120,7 @@ def audit(repo_root: Path) -> dict[str, object]:
     e2 = payload["e2"]
     expected_e2 = {
         f"{method}__{prompt}"
-        for method in ("cam", "gradcam", "gradcampp", "layercam")
+        for method in ("cam", "gradcam", "gradcam_plus_plus", "layercam")
         for prompt in ("point", "box", "box_point")
     }
     if (

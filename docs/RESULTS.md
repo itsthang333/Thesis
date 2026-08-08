@@ -346,6 +346,27 @@ estimate increases monotonically through 243, but the paired intervals for 81
 and 162 versus 243 include zero. Thus 243 is retained as the frozen accuracy
 choice, not claimed as a universal optimum.
 
+### G4 exact gallery-construction replay
+
+| Exact arm | Native Dice | Native IoU | Common-320 selected Dice | Common-320 oracle Dice |
+|---|---:|---:|---:|---:|
+| Upstream top-1 | 0.222746 | 0.168166 | 0.223240 | 0.223240 |
+| One exact prompt, one SAM mask | 0.219017 | 0.167275 | 0.219606 | 0.219606 |
+| One exact prompt, three SAM masks | 0.219600 | 0.165521 | 0.219828 | 0.246165 |
+| Full pre-dedup gallery | 0.288139 | 0.216249 | 0.288645 | 0.528298 |
+| Full post-dedup gallery | **0.288224** | **0.216295** | **0.288729** | **0.528298** |
+| Cap 243 | **0.288224** | **0.216295** | **0.288729** | **0.528298** |
+
+The exact replay isolates the mechanism: requesting three masks instead of one
+for the same prompt contributes only +0.000583 native Dice, whereas expanding
+from one prompt to the full prompt/source gallery contributes about +0.0686.
+Byte-exact deduplication contributes only +0.000085, and the cap243 arm is
+identical to post-dedup because no image exceeds the frozen balanced cap after
+deduplication. Therefore the evidence supports diverse candidate supply, not a
+claim that multimask, deduplication, or the number 243 is intrinsically optimal.
+The two 371-image single-mask supplies took 1564.651 s on Kaggle T4; peak
+allocated/reserved VRAM was 2.997/3.383 GB.
+
 ### G4 source-subset replay at native resolution
 
 | Sources | Native Dice | Small | Medium | Large |

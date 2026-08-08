@@ -19,8 +19,10 @@ from g4_e5_exact import (  # noqa: E402
     verify_post_dedup_reproduction,
 )
 from freeze_g4_e5_exact_choices import (  # noqa: E402
+    _derive_post_dedup,
     _optional_g1_value,
     _select_indexed,
+    _top_upstream_index,
     _validate_g1_alignment,
 )
 
@@ -157,6 +159,26 @@ def test_sparse_g1_indices_are_joined_by_candidate_identity() -> None:
     assert selected_upstream == pytest.approx(0.8)
     assert _optional_g1_value(indices, logits, 1) == ""
     assert _optional_g1_value(indices, logits, 2) == 2.0
+
+
+def test_upstream_top1_uses_full_bank_not_sparse_g1_positions() -> None:
+    full_upstream = np.asarray([0.1, 0.95, 0.8], dtype=np.float32)
+    # Candidate 1 is intentionally absent from the hypothetical G1 bag.
+    sparse_indices = np.asarray([0, 2], dtype=np.int64)
+    assert _top_upstream_index(full_upstream) == 1
+    assert sparse_indices[_top_upstream_index(full_upstream[sparse_indices])] == 2
+
+
+def test_recovery_derives_exact_first_occurrence_post_bank() -> None:
+    masks = np.zeros((3, 4, 4), dtype=np.uint8)
+    masks[0, 1:3, 1:3] = 1
+    masks[1] = masks[0]
+    masks[2, 0, 0] = 1
+    raw = normalized_payload(payload(masks, exact=True))
+    post, raw_first = _derive_post_dedup(raw)
+    assert raw_first.tolist() == [0, 2]
+    assert len(post["sam_masks"]) == 2
+    assert np.array_equal(post["sam_masks"], raw["sam_masks"][[0, 2]])
 
 
 def test_sparse_g1_alignment_rejects_misaligned_upstream() -> None:

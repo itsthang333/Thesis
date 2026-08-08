@@ -14,6 +14,7 @@ from frozen_io import load_split_rows_without_annotations, sha256_file
 from g4_ablation import ALL_SOURCES, candidate_filter
 from g4_e5_exact import (
     concatenate_payloads,
+    first_unique_mask_indices,
     normalized_payload,
     project_payload_masks_to_grid,
     verify_post_dedup_reproduction,
@@ -40,10 +41,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--split-manifest", type=Path, required=True)
     parser.add_argument("--expected-split-sha256", required=True)
-    for label in ("pre-dedup", "post-dedup", "single-anchor", "single-addition"):
+    for label in ("pre-dedup", "single-anchor", "single-addition"):
         parser.add_argument(f"--{label}-root", type=Path, required=True)
         parser.add_argument(f"--expected-{label}-manifest-sha256", required=True)
         parser.add_argument(f"--expected-{label}-pseudo-sha256", required=True)
+    parser.add_argument("--post-dedup-root", type=Path)
+    parser.add_argument("--expected-post-dedup-manifest-sha256", required=True)
+    parser.add_argument("--expected-post-dedup-pseudo-sha256", required=True)
+    parser.add_argument("--derive-post-dedup-from-pre", action="store_true")
     parser.add_argument("--expected-pre-dedup-contract-sha256", required=True)
     parser.add_argument("--pre-g1-root", type=Path, required=True)
     parser.add_argument("--expected-pre-g1-freeze-sha256", required=True)
@@ -214,8 +219,34 @@ def _optional_g1_value(
     return float(np.asarray(g1_logits, dtype=np.float64)[int(locations[0])])
 
 
+def _top_upstream_index(full_upstream: np.ndarray) -> int:
+    """Select upstream top-1 in the full candidate identity space.
+
+    This arm is intentionally independent of G1 scoreability. Candidates
+    omitted by sparse G1 evidence therefore remain eligible.
+    """
+
+    values = np.asarray(full_upstream, dtype=np.float64).reshape(-1)
+    if not len(values) or not np.all(np.isfinite(values)):
+        raise ValueError("full upstream candidate scores are empty or non-finite")
+    return max(range(len(values)), key=lambda index: (float(values[index]), -index))
+
+
+def _derive_post_dedup(raw: dict[str, np.ndarray]) -> tuple[dict[str, np.ndarray], np.ndarray]:
+    """Replay frozen first-occurrence mask deduplication from the raw bank."""
+
+    raw_first = first_unique_mask_indices(raw["sam_masks"])
+    post = {field: np.asarray(value)[raw_first] for field, value in raw.items()}
+    return normalized_payload(post), raw_first
+
+
 def main() -> None:
     args = parse_args()
+    if args.derive_post_dedup_from_pre == (args.post_dedup_root is not None):
+        raise ValueError(
+            "choose exactly one post-dedup source: --post-dedup-root or "
+            "--derive-post-dedup-from-pre"
+        )
     args.output_dir.mkdir(parents=True, exist_ok=False)
     gallery_root = args.output_dir / "candidate_gallery"
     choice_root = args.output_dir / "choices"
@@ -244,17 +275,19 @@ def main() -> None:
         or pre_contract.get("test_images_read") != 0
     ):
         raise ValueError("pre-dedup build contract violates the E5 boundary")
+    if (
+        pre_contract.get("input_manifest_sha256", {}).get("post_dedup")
+        != args.expected_post_dedup_manifest_sha256
+        or pre_contract.get("input_pseudo_manifest_sha256", {}).get("post_dedup")
+        != args.expected_post_dedup_pseudo_sha256
+    ):
+        raise ValueError("pre-dedup contract binds a different post-dedup gallery")
 
     candidate_specs = {
         "pre": (
             args.pre_dedup_root,
             args.expected_pre_dedup_manifest_sha256,
             args.expected_pre_dedup_pseudo_sha256,
-        ),
-        "post": (
-            args.post_dedup_root,
-            args.expected_post_dedup_manifest_sha256,
-            args.expected_post_dedup_pseudo_sha256,
         ),
         "single_anchor": (
             args.single_anchor_root,
@@ -267,6 +300,12 @@ def main() -> None:
             args.expected_single_addition_pseudo_sha256,
         ),
     }
+    if args.post_dedup_root is not None:
+        candidate_specs["post"] = (
+            args.post_dedup_root,
+            args.expected_post_dedup_manifest_sha256,
+            args.expected_post_dedup_pseudo_sha256,
+        )
     candidates = {
         label: _validate_candidates(
             root,
@@ -292,6 +331,17 @@ def main() -> None:
         "baseline_checkpoint_sha256"
     ):
         raise ValueError("pre/post G1 checkpoints differ")
+    if (
+        pre_g1_freeze.get("candidate_manifest_sha256")
+        != args.expected_pre_dedup_manifest_sha256
+        or pre_g1_freeze.get("pseudo_manifest_sha256")
+        != args.expected_pre_dedup_pseudo_sha256
+        or post_g1_freeze.get("candidate_manifest_sha256")
+        != args.expected_post_dedup_manifest_sha256
+        or post_g1_freeze.get("pseudo_manifest_sha256")
+        != args.expected_post_dedup_pseudo_sha256
+    ):
+        raise ValueError("pre/post G1 evidence binds a different gallery")
 
     baseline_freeze_path = args.baseline_choice_root / "prediction_freeze.json"
     if sha256_file(baseline_freeze_path) != args.expected_baseline_choice_freeze_sha256:
@@ -305,6 +355,10 @@ def main() -> None:
         or baseline_freeze.get("validation_gt_read") is not False
         or baseline_freeze.get("test_images_read") != 0
         or baseline_freeze.get("test_evaluated") is not False
+        or baseline_freeze.get("candidate_manifest_sha256")
+        != args.expected_post_dedup_manifest_sha256
+        or baseline_freeze.get("pseudo_manifest_sha256")
+        != args.expected_post_dedup_pseudo_sha256
     ):
         raise ValueError("baseline choice freeze violates the E5 boundary")
     baseline_manifest = args.baseline_choice_root / "selection_manifest.csv"
@@ -325,7 +379,11 @@ def main() -> None:
             for label in candidate_specs
         }
         raw = normalized_payload(loaded["pre"])
-        post = normalized_payload(loaded["post"])
+        if args.derive_post_dedup_from_pre:
+            post, raw_first = _derive_post_dedup(raw)
+        else:
+            post = normalized_payload(loaded["post"])
+            raw_first = verify_post_dedup_reproduction(raw, post)
         single_anchor = normalized_payload(loaded["single_anchor"])
         single_addition = normalized_payload(
             loaded["single_addition"], namespace="classifier448"
@@ -337,7 +395,6 @@ def main() -> None:
         single = concatenate_payloads(single_anchor, single_addition)
         if len(np.unique(single["prompt_ids"])) != len(single["prompt_ids"]):
             raise ValueError(f"single-mask prompt IDs are not unique: {image_id}")
-        raw_first = verify_post_dedup_reproduction(raw, post)
 
         pre_evidence = _g1_payload(
             args.pre_g1_root,
@@ -347,7 +404,11 @@ def main() -> None:
         post_evidence = _g1_payload(
             args.post_g1_root,
             post_g1_rows[image_id],
-            expected_candidate_sha256=candidates["post"][stem]["diagnostic_sha256"],
+            expected_candidate_sha256=(
+                post_g1_rows[image_id]["candidate_payload_sha256"]
+                if args.derive_post_dedup_from_pre
+                else candidates["post"][stem]["diagnostic_sha256"]
+            ),
         )
         pre_indices, pre_logits, pre_upstream = _validate_g1_alignment(
             pre_evidence["candidate_indices"],
@@ -365,11 +426,13 @@ def main() -> None:
             image_id=image_id,
             label="post-dedup",
         )
+        # The legacy baseline manifest calls this field ``candidate_count``,
+        # but it records the sparse G1-scoreable bag rather than the full
+        # post-dedup gallery. Keep that historical meaning explicit.
+        if len(post_indices) != int(baseline_rows[image_id]["candidate_count"]):
+            raise ValueError(f"baseline sparse G1 candidate count differs: {image_id}")
 
-        top_index = max(
-            range(len(raw["sam_masks"])),
-            key=lambda index: (float(pre_upstream[index]), -index),
-        )
+        top_index = _top_upstream_index(raw["selection_scores"])
         exact_prompt_id = str(raw["prompt_ids"][top_index])
         multi_indices = np.flatnonzero(raw["prompt_ids"] == exact_prompt_id).astype(np.int64)
         single_local = np.flatnonzero(single["prompt_ids"] == exact_prompt_id).astype(np.int64)
@@ -565,6 +628,11 @@ def main() -> None:
         "pre_g1_freeze_sha256": args.expected_pre_g1_freeze_sha256,
         "post_g1_freeze_sha256": args.expected_post_g1_freeze_sha256,
         "baseline_choice_freeze_sha256": args.expected_baseline_choice_freeze_sha256,
+        "post_dedup_source": (
+            "derived_exactly_from_pre_contract"
+            if args.derive_post_dedup_from_pre
+            else "materialized_post_dedup_root"
+        ),
         "g1_checkpoint_sha256": pre_g1_freeze["baseline_checkpoint_sha256"],
         "prompt_matches": prompt_matches,
         "baseline_exact_matches": baseline_matches,
