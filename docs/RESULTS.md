@@ -290,6 +290,35 @@ but its paired interval versus R2 includes zero. The defensible conclusion is
 that rank fusion materially beats either raw score alone; the evidence does not
 prove that 0.50/0.50 is uniquely optimal.
 
+### G4 G1 feature/loss ablation
+
+The learned E6b study completed all three fixed seeds. It trains seven unique
+models per seed and reports eight matched learned arms per seed; the full
+feature and full loss rows are exact aliases of one checkpoint. All 9,275
+choices were frozen before the evaluator opened the 184 validation polygons.
+
+| G1 family | Native Dice mean +/- sample SD | Small | Medium | Large |
+|---|---:|---:|---:|---:|
+| Inside only | 0.254762 +/- 0.009047 | **0.168614** | 0.358707 | 0.288866 |
+| Inside + ring | 0.261485 +/- 0.003095 | 0.166947 | 0.367642 | 0.330559 |
+| Inside + ring + contrast | 0.258307 +/- 0.007577 | 0.146443 | 0.386439 | 0.329955 |
+| Full features | **0.279855 +/- 0.007371** | 0.147177 | **0.425241** | 0.391183 |
+| Bag BCE only | 0.277179 +/- 0.007149 | 0.147841 | 0.413912 | **0.405681** |
+| Bag + negative instances | 0.279598 +/- 0.010227 | 0.149928 | 0.421107 | 0.390731 |
+| Bag + negative + self-guided winner | 0.278379 +/- 0.008294 | 0.147554 | 0.420051 | 0.394891 |
+| Full loss | **0.279855 +/- 0.007371** | 0.147177 | **0.425241** | 0.391183 |
+| Fixed R7 baseline | **0.288224** | 0.156724 | **0.435221** | 0.386958 |
+
+The largest single-seed point estimate is bag + negative instances at seed 42
+(`0.290598` native Dice), but its three-seed mean is only `0.279598`. Selecting
+that seed after observing validation Dice would be invalid model selection.
+Thus E6b does not improve the frozen baseline and does not establish that the
+self-guided winner or flip-consistency terms are necessary. It does support the
+importance of the full descriptor: removing metadata/contrast/context lowers
+the three-seed overall result, although inside-only is less poor on the small
+subgroup. Independent audit SHA-256:
+`f73169decc6cc535c2fd0a003cf012301ed4a5bbf29e50757781e85a29f5c87f`.
+
 ### G4 source-correct upstream-score replay
 
 The source-correct E7 study froze 371 choices for each of 16 predeclared arms

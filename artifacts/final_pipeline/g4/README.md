@@ -37,6 +37,19 @@ dataset identifiers and are much larger than the thesis source repository.
 - Evaluation audit SHA-256:
   `c4c7055c6f0bfea342e35c02184f19b28c6fb740ac1431ddbbe2ffd33d9270b8`.
 
+### E6b learned G1 feature/loss ablation
+
+- Completed and independently audited: 21 checkpoints, three fixed seeds,
+  24 learned reports plus R7, 9,275 frozen selections, 371 validation images
+  including 184 tumor, and zero test access.
+- Best three-seed mean: full feature/loss, native Dice
+  `0.279855 +/- 0.007371`, below fixed R7 `0.288224`.
+- Best individual seed: bag-negative seed 42, native Dice `0.290598`; it is
+  explicitly ineligible for post-hoc model selection because the family mean
+  is `0.279598 +/- 0.010227`.
+- Artifact: `e6_g1_feature_loss_audit.json`; private independent audit SHA-256
+  `f73169decc6cc535c2fd0a003cf012301ed4a5bbf29e50757781e85a29f5c87f`.
+
 ### Exact current-split E4 source subsets
 
 - All seven non-empty subsets were replayed with the same frozen G1 plus equal

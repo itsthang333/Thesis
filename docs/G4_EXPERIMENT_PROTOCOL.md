@@ -359,6 +359,11 @@ scientific configuration; efficacy failures are reported, not silently swept.
   were concatenated before the baseline's fixed 448-to-320 nearest-neighbour
   projection. The geometry replay is now explicitly identical to the baseline,
   11/11 focused tests and 181/181 server download-back checks pass, and E5 v3
-  is running under the unchanged scientific protocol. Learned E6 feature/loss
-  v2 is also running. They remain the two substantive unfinished executions;
-  the final E0--E8 completeness audit remains open.
+  is running under the unchanged scientific protocol.
+- Learned E6 feature/loss v2 completed and passed the independent output audit:
+  21 checkpoints, 24 learned arms plus the fixed baseline, 9,275 frozen
+  selections, exact 371/184 validation counts and no test access. The best
+  three-seed mean is the full feature/loss model at native Dice
+  `0.279855 +/- 0.007371`, below the fixed R7 baseline `0.288224`. A single
+  bag-negative seed reaches `0.290598`, but selecting it post hoc is prohibited.
+  Exact E5 and the final E0--E8 completeness audit remain open.
