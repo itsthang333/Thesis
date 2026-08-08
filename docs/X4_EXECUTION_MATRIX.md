@@ -24,7 +24,7 @@ Last updated: 2026-08-08.
 | ID | Required evidence | Implementation/evidence | Status | Next blocking action |
 |---|---|---|---|---|
 | X1 | Direct Rich Gallery versus Rich-Gallery pseudo-U-Net versus matched fully-U-Net | Direct Rich Gallery validation evidence exists in the frozen final/G4 artifacts. Common student trainer, prediction freezer and native evaluator are implemented. | Partial | Freeze Rich Gallery train targets; train Rich Gallery and fully-supervised seeds 42/43/44; evaluate all on the same native grid. |
-| X2 | Known binary label, binary predicted gate, ten-class predicted gate and label-free student | Gate names are frozen in `project/x4_contract.py`. G4 contains the matched binary/ten-class classifiers and downstream evidence. | Partial | Implement the four-arm deployment evaluator using frozen predictions; report actual mask Dice and normal-image behavior. |
+| X2 | Known binary label, binary predicted gate, ten-class predicted gate and label-free student | `project/freeze_x4_gate_predictions.py` freezes all four 371-image arms before GT. It binds the audited G4 binary/ten-class probabilities at threshold 0.5, the frozen direct Rich-Gallery choices and the matched Rich-Gallery student. `project/evaluate_x4_gate_predictions.py` reports the common native-grid tumor/subgroup and normal-image endpoints. | Implemented | Run seeds 42/43/44 after the Rich-Gallery student prediction freezes exist. |
 | W0 | CAM-to-U-Net | CAM train/validation mask freezes and audits are complete. The standardized 2,981-image target bundle is frozen. Seeds 42/43/44 are running across three accounts. | Running | Audit completed students, then freeze/evaluate 371 predictions for all seeds. |
 | W1 | PuzzleCAM-to-U-Net | PuzzleCAM generator training and train/validation mask audits are complete. The standardized target bundle is frozen. Seeds 42/43 are running. | Running | Audit completed students, launch seed 44 in the first reusable slot, then freeze/evaluate all predictions. |
 | W2 | S2C-to-U-Net | Canonical train/validation S2C cache adoption audits pass. Generator training is running. Mask freezer and auditors are implemented. | Running | Audit generator; freeze/audit train and validation masks; freeze standardized target; train/evaluate three seeds. |
@@ -44,7 +44,7 @@ Last updated: 2026-08-08.
 
 | Priority | Requirement | Current state |
 |---|---|---|
-| P0 | Rich-Gallery pseudo-U-Net, matched fully, CAM, S2C, X2, normal/lesion/subgroup, three seeds, bootstrap/CI, error analysis | In progress; common metrics are ready, but student runs, X2, cross-run statistics and taxonomy remain incomplete. |
+| P0 | Rich-Gallery pseudo-U-Net, matched fully, CAM, S2C, X2, normal/lesion/subgroup, three seeds, bootstrap/CI, error analysis | In progress; common metrics and X2 code are ready, but student runs, X2 result execution and taxonomy remain incomplete. |
 | P1 | PuzzleCAM, YOLO, efficiency, qualitative panel, risk-coverage | PuzzleCAM is running; the other four items remain to be implemented/run. |
 
 ## Slot-reuse order
