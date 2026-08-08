@@ -7,7 +7,6 @@ import csv
 import json
 from pathlib import Path
 
-import numpy as np
 from PIL import Image
 
 from datasets.btxrd import resolve_btxrd_root
@@ -35,7 +34,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--arm", choices=("cam", "puzzlecam"), default="cam")
     parser.add_argument("--output-root", type=Path, required=True)
-    parser.add_argument("--dataset-root", type=Path, required=True)
+    parser.add_argument(
+        "--dataset-root",
+        type=Path,
+        help=(
+            "Optional BTXRD root for re-reading image bytes. When omitted, native "
+            "geometry is verified against the immutable canonical split manifest."
+        ),
+    )
     parser.add_argument("--split-manifest", type=Path, required=True)
     parser.add_argument("--split", choices=tuple(EXPECTED), required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -65,7 +71,6 @@ def main() -> None:
         "split_sha256": CANONICAL_SPLIT_SHA256,
         "checkpoint_sha256": args.expected_checkpoint_sha256,
         "checkpoint_seed": 42,
-        "arm": args.arm,
         "cam_percentile": 90.0,
         "constant_map_rule": "empty",
         "native_resolution_masks": True,
@@ -76,6 +81,11 @@ def main() -> None:
         "test_images_read": 0,
         "test_evaluated": False,
     }
+    # The original CAM arm was frozen before the multi-arm field was added.
+    # Preserve compatibility only for that exact legacy arm; later arms must
+    # carry their explicit identity.
+    if args.arm != "cam" or "arm" in freeze:
+        required["arm"] = args.arm
     differences = {
         key: {"actual": freeze.get(key), "expected": expected}
         for key, expected in required.items()
@@ -106,7 +116,7 @@ def main() -> None:
     if len(manifest) != len(by_id) or set(by_id) != set(canonical):
         raise ValueError("auditor CAM output IDs differ from canonical cohort")
 
-    root = resolve_btxrd_root(args.dataset_root)
+    root = resolve_btxrd_root(args.dataset_root) if args.dataset_root else None
     foreground = 0
     tumor_empty = 0
     for image_id, source in canonical.items():
@@ -120,17 +130,26 @@ def main() -> None:
         if sha256_file(mask_path) != row["mask_sha256"]:
             raise ValueError(f"auditor CAM mask hash differs: {image_id}")
         with Image.open(mask_path) as handle:
-            mask = np.asarray(handle.convert("L"))
-        image_path = locate_verified_image(root, source)
-        with Image.open(image_path) as handle:
-            width, height = handle.size
-        if mask.shape != (height, width) or mask.shape != (
-            int(row["mask_height"]), int(row["mask_width"])
-        ):
+            mask = handle.convert("L")
+            mask_width, mask_height = mask.size
+            histogram = mask.histogram()
+        width, height = int(source["width"]), int(source["height"])
+        if width <= 0 or height <= 0:
+            raise ValueError(f"invalid canonical native geometry: {image_id}")
+        if root is not None:
+            image_path = locate_verified_image(root, source)
+            with Image.open(image_path) as handle:
+                image_width, image_height = handle.size
+            if (image_width, image_height) != (width, height):
+                raise ValueError(f"canonical/image geometry differs: {image_id}")
+        if (mask_width, mask_height) != (width, height) or (
+            mask_width,
+            mask_height,
+        ) != (int(row["mask_width"]), int(row["mask_height"])):
             raise ValueError(f"auditor CAM native geometry differs: {image_id}")
-        if not set(np.unique(mask).tolist()).issubset({0, 255}):
+        if sum(histogram[1:255]) != 0:
             raise ValueError(f"auditor CAM mask is not binary: {image_id}")
-        positive = int((mask > 0).sum())
+        positive = int(histogram[255])
         if positive != int(row["mask_foreground_pixels"]):
             raise ValueError(f"auditor CAM foreground count differs: {image_id}")
         if int(source["tumor"]) == 0 and positive != 0:
@@ -163,6 +182,11 @@ def main() -> None:
         "tumor_empty_masks": tumor_empty,
         "total_foreground_pixels": foreground,
         "native_geometry_verified": True,
+        "native_geometry_reference": (
+            "canonical_manifest_plus_image_bytes"
+            if root is not None
+            else "canonical_manifest"
+        ),
         "normal_masks_empty": True,
         "spatial_annotations_read": 0,
         "test_images_read": 0,

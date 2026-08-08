@@ -8,15 +8,17 @@ Two upstream representations are accepted:
 * ``rich_gallery`` for a frozen candidate bank plus frozen G1/R7 choices.
 
 The output schema is deliberately identical for all four WSSS student arms.
-Normal images are always materialized as explicit empty masks.  This stage may
-read canonical train images for their native shape, but never reads train
-polygons, outer-validation polygons, or test data.
+Normal images are always materialized as explicit empty masks.  Native geometry
+is taken from the immutable canonical split manifest.  An optional dataset root
+can additionally verify the image bytes against that manifest, but polygons and
+test data are never read.
 """
 
 import argparse
 import csv
 import json
 from pathlib import Path
+import shutil
 import time
 
 import numpy as np
@@ -91,7 +93,11 @@ def parse_args() -> argparse.Namespace:
         "--source-kind", choices=("mask_manifest", "rich_gallery"), required=True
     )
     parser.add_argument("--repo-root", type=Path, required=True)
-    parser.add_argument("--dataset-root", type=Path, required=True)
+    parser.add_argument(
+        "--dataset-root",
+        type=Path,
+        help="Optional BTXRD root for an additional image-byte geometry check.",
+    )
     parser.add_argument("--split-manifest", type=Path, required=True)
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--source-manifest", type=Path, required=True)
@@ -168,7 +174,7 @@ def main() -> None:
             expected_manifest_sha256=args.candidate_manifest_sha256,
         )
 
-    root = resolve_btxrd_root(args.dataset_root)
+    root = resolve_btxrd_root(args.dataset_root) if args.dataset_root else None
     mask_root = args.output_dir / "masks"
     mask_root.mkdir(parents=True, exist_ok=False)
     manifest_rows: list[dict[str, object]] = []
@@ -181,23 +187,40 @@ def main() -> None:
             raise ValueError(f"source group differs: {image_id}")
         if int(source.get("tumor", canonical["tumor"])) != int(canonical["tumor"]):
             raise ValueError(f"source label differs: {image_id}")
-        image_path = locate_verified_image(root, canonical)
-        with Image.open(image_path) as image:
-            native_width, native_height = image.size
+        native_width = int(canonical["width"])
+        native_height = int(canonical["height"])
+        if native_width <= 0 or native_height <= 0:
+            raise ValueError(f"invalid canonical native geometry: {image_id}")
+        if root is not None:
+            image_path = locate_verified_image(root, canonical)
+            with Image.open(image_path) as image:
+                image_width, image_height = image.size
+            if (image_width, image_height) != (native_width, native_height):
+                raise ValueError(f"canonical/image geometry differs: {image_id}")
 
         selected_index = None
         selected_source = "explicit_empty_normal"
-        if int(canonical["tumor"]) == 0:
-            native = np.zeros((native_height, native_width), dtype=bool)
-        elif args.source_kind == "mask_manifest":
+        copy_source: Path | None = None
+        foreground: int
+        if args.source_kind == "mask_manifest":
             path = source_mask_path(source, args.source_root)
             with Image.open(path) as image:
-                native = binary_at_native(
-                    np.asarray(image.convert("L")),
-                    width=native_width,
-                    height=native_height,
-                )
+                mask = image.convert("L")
+                if mask.size != (native_width, native_height):
+                    raise ValueError(f"source mask native geometry differs: {image_id}")
+                histogram = mask.histogram()
+            if sum(histogram[1:255]) != 0:
+                raise ValueError(f"source mask is not binary: {image_id}")
+            foreground = int(histogram[255])
+            expected_foreground = source.get("mask_foreground_pixels", "").strip()
+            if expected_foreground and foreground != int(expected_foreground):
+                raise ValueError(f"source mask foreground differs: {image_id}")
+            if int(canonical["tumor"]) == 0 and foreground != 0:
+                raise ValueError(f"normal source mask is non-empty: {image_id}")
+            copy_source = path
             selected_source = str(source.get("source", args.arm))
+        elif int(canonical["tumor"]) == 0:
+            native = np.zeros((native_height, native_width), dtype=bool)
         else:
             assert candidate_rows is not None and args.candidate_root is not None
             candidate = candidate_rows[Path(image_id).stem]
@@ -215,14 +238,18 @@ def main() -> None:
                 )
                 selected_source = str(sources[selected_index])
 
-        foreground = int(native.sum())
+        if copy_source is None:
+            foreground = int(native.sum())
         tumor_empty += int(int(canonical["tumor"]) == 1 and foreground == 0)
         total_foreground += foreground
         relative = Path("masks") / f"{Path(image_id).stem}.png"
         output_path = args.output_dir / relative
-        Image.fromarray(native.astype(np.uint8) * 255, mode="L").save(
-            output_path, optimize=True
-        )
+        if copy_source is not None:
+            shutil.copyfile(copy_source, output_path)
+        else:
+            Image.fromarray(native.astype(np.uint8) * 255, mode="L").save(
+                output_path, optimize=True
+            )
         manifest_rows.append(
             {
                 "image_id": image_id,
@@ -270,6 +297,11 @@ def main() -> None:
         "tumor_empty_targets": tumor_empty,
         "total_foreground_pixels": total_foreground,
         "native_resolution_masks": True,
+        "native_geometry_reference": (
+            "canonical_manifest_plus_image_bytes"
+            if root is not None
+            else "canonical_manifest"
+        ),
         "normal_targets_explicitly_empty": True,
         "train_spatial_annotations_read": 0,
         "targets_frozen_before_outer_validation_gt": True,
