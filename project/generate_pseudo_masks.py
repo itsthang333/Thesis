@@ -364,6 +364,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-box-area-ratio", type=float, default=0.35,
                         help="Drop SAM box prompts larger than this fraction of the image; <=0 disables")
     parser.add_argument("--sam-single-mask", action="store_true")
+    parser.add_argument(
+        "--allow-validation-sam-single-mask-ablation",
+        action="store_true",
+        help="Permit the predeclared G4 E5 single-mask SAM arm on validation only",
+    )
     parser.add_argument("--include-cam-candidate", action="store_true",
                         help="A/B: append each image-level CAM component itself as a fallback candidate "
                              "alongside SAM masks; no segmentation annotation is used.")
@@ -586,6 +591,8 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         raise ValueError("component_topk ablation is allowed only on the validation split")
     if args.allow_validation_prompt_ablation and args.split != "val":
         raise ValueError("prompt ablation is allowed only on the validation split")
+    if args.allow_validation_sam_single_mask_ablation and args.split != "val":
+        raise ValueError("single-mask SAM ablation is allowed only on validation")
 
     require_or_set("--target-columns", "target_columns", ",".join(profile.target_columns))
     require_or_set("--image-size", "image_size", profile.classifier_image_size)
@@ -679,6 +686,13 @@ def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
         "--use-clahe": "use_clahe",
     }
     for option, attribute in locked_false.items():
+        if (
+            option == "--sam-single-mask"
+            and args.allow_validation_sam_single_mask_ablation
+            and args.split == "val"
+        ):
+            setattr(args, attribute, True)
+            continue
         if option in explicit and getattr(args, attribute):
             raise ValueError(f"--pipeline-profile {args.pipeline_profile} fixes {option} off")
         setattr(args, attribute, False)
@@ -1118,6 +1132,7 @@ def build_external_saliency_proposal_gallery(
             replace(
                 component,
                 component_id=offset + int(component.component_id),
+                prompt_percentile=float(prompt_percentile),
             )
             for component in local_components
         )
@@ -2196,7 +2211,11 @@ def main() -> None:
                                 bone_support = np.maximum(bone_support, local_support)
                             offset = len(bone_components)
                             bone_components.extend(
-                                replace(component, component_id=offset + int(component.component_id))
+                                replace(
+                                    component,
+                                    component_id=offset + int(component.component_id),
+                                    prompt_percentile=float(prompt_percentile),
+                                )
                                 for component in local_components
                             )
                         max_prompt_components = args.max_components * len(prompt_percentiles)
@@ -2487,6 +2506,52 @@ def main() -> None:
                     raise RuntimeError(
                         "Candidate source/prompt provenance is not aligned with SAM masks"
                     )
+                component_percentile_by_id = {
+                    int(component.component_id): float(
+                        getattr(component, "prompt_percentile", -1.0)
+                    )
+                    for component in sam_components
+                }
+                candidate_cam_levels = np.asarray(
+                    [
+                        component_percentile_by_id.get(int(component_id), -1.0)
+                        for component_id in (
+                            component_ids
+                            if component_ids is not None
+                            else np.full(len(sam_masks), -1, dtype=np.int32)
+                        )
+                    ],
+                    dtype=np.float32,
+                )
+                prompt_ids: list[str] = []
+                multimask_indices: list[int] = []
+                prompt_occurrences: dict[tuple[str, float, int, str], int] = {}
+                component_vector = np.asarray(
+                    component_ids
+                    if component_ids is not None
+                    else np.full(len(sam_masks), -1, dtype=np.int32),
+                    dtype=np.int32,
+                )
+                for source_id, cam_level, component_id, prompt_mode in zip(
+                    proposal_source_ids.astype(str),
+                    candidate_cam_levels,
+                    component_vector,
+                    prompt_mode_array.astype(str),
+                ):
+                    key = (
+                        str(source_id),
+                        float(cam_level),
+                        int(component_id),
+                        str(prompt_mode),
+                    )
+                    occurrence = prompt_occurrences.get(key, 0)
+                    prompt_occurrences[key] = occurrence + 1
+                    prompt_ids.append(
+                        f"{source_id}|p{float(cam_level):g}|c{int(component_id)}|{prompt_mode}"
+                    )
+                    multimask_indices.append(-1 if prompt_mode == "cam" else occurrence)
+                prompt_id_array = np.asarray(prompt_ids, dtype="U128")
+                multimask_index_array = np.asarray(multimask_indices, dtype=np.int16)
 
                 classifier_causal_scores = None
                 if args.selection_method == "coverage_mass_sam_causal":
@@ -2521,6 +2586,9 @@ def main() -> None:
                         ),
                         prompt_modes=np.asarray(candidate_prompt_modes, dtype="U16"),
                         proposal_source_ids=proposal_source_ids,
+                        cam_levels=candidate_cam_levels,
+                        prompt_ids=prompt_id_array,
+                        multimask_indices=multimask_index_array,
                         selector_map=np.asarray(
                             affinity_selector_map
                             if affinity_selector_map is not None
@@ -2678,6 +2746,9 @@ def main() -> None:
                         component_ids=component_ids,
                         prompt_modes=candidate_prompt_modes,
                         proposal_source_ids=proposal_source_ids,
+                        cam_levels=candidate_cam_levels,
+                        prompt_ids=prompt_id_array,
+                        multimask_indices=multimask_index_array,
                     )
                     candidate_diagnostic_rows.append(
                         {

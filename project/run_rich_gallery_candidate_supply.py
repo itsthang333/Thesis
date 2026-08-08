@@ -61,6 +61,7 @@ def common_generation_args(
     prompt_ensemble: bool = True,
     target_columns: str = "tumor",
     cam_aggregation: str = "class",
+    sam_single_mask: bool = False,
     classifier_split_manifest: Path | None = None,
     frozen_config: Path | None = None,
 ) -> list[str]:
@@ -176,6 +177,12 @@ def common_generation_args(
             "--disable-sam-prompt-ensemble",
             "--allow-validation-prompt-ablation",
         ])
+    if sam_single_mask:
+        if split != "val":
+            raise ValueError("single-mask SAM ablation is validation-only")
+        command.extend(
+            ["--sam-single-mask", "--allow-validation-sam-single-mask-ablation"]
+        )
     if classifier_split_manifest is not None:
         command.extend(
             ["--classifier-split-manifest", str(classifier_split_manifest)]
@@ -210,6 +217,7 @@ def build_generation_command(
     prompt_ensemble: bool = True,
     target_columns: str = "tumor",
     cam_aggregation: str = "class",
+    sam_single_mask: bool = False,
 ) -> list[str]:
     command = common_generation_args(
         source_root=source_root,
@@ -227,6 +235,7 @@ def build_generation_command(
         prompt_ensemble=prompt_ensemble,
         target_columns=target_columns,
         cam_aggregation=cam_aggregation,
+        sam_single_mask=sam_single_mask,
     )
     if mode == "anchor":
         if not all(
@@ -366,6 +375,11 @@ def parse_args() -> argparse.Namespace:
         choices=("class", "tumor_log_odds"),
         default="class",
     )
+    parser.add_argument(
+        "--sam-single-mask",
+        action="store_true",
+        help="Run the predeclared validation-only G4 E5 single-mask SAM arm",
+    )
     return parser.parse_args()
 
 
@@ -471,6 +485,7 @@ def main() -> None:
             prompt_ensemble=args.prompt_ensemble,
             target_columns=args.target_columns,
             cam_aggregation=args.cam_aggregation,
+            sam_single_mask=args.sam_single_mask,
         )
         run(command, cwd=args.source_root, env=env, log=log)
         stage = args.output_dir / split
@@ -518,6 +533,7 @@ def main() -> None:
         "classifier_checkpoint_sha256": args.expected_classifier_sha256,
         "sam_checkpoint_sha256": args.expected_sam_sha256,
         "sam_model_type": args.sam_model_type,
+        "sam_single_mask": args.sam_single_mask,
         "attribution_method": args.attribution_method,
         "prompt_mode": args.prompt_mode,
         "prompt_ensemble": args.prompt_ensemble,

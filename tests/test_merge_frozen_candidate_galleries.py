@@ -16,9 +16,15 @@ from merge_frozen_candidate_galleries import (  # noqa: E402
 )
 
 
-def payload(masks: np.ndarray, source: str, prompt_value: float) -> dict[str, np.ndarray]:
+def payload(
+    masks: np.ndarray,
+    source: str,
+    prompt_value: float,
+    *,
+    exact_provenance: bool = False,
+) -> dict[str, np.ndarray]:
     count = len(masks)
-    return {
+    result = {
         "sam_masks": masks.astype(np.uint8),
         "sam_scores": np.linspace(0.5, 0.8, count, dtype=np.float32),
         "selection_scores": np.linspace(0.2, 0.4, count, dtype=np.float32),
@@ -28,9 +34,37 @@ def payload(masks: np.ndarray, source: str, prompt_value: float) -> dict[str, np
         "proposal_source_ids": np.asarray([source] * count),
         "prompt_map": np.full(masks.shape[1:], prompt_value, dtype=np.float32),
     }
+    if exact_provenance:
+        result.update(
+            {
+                "cam_levels": np.full(count, 90.0, dtype=np.float32),
+                "prompt_ids": np.asarray(
+                    [f"{source}|p90|c{index}|box" for index in range(count)]
+                ),
+                "multimask_indices": np.zeros(count, dtype=np.int16),
+            }
+        )
+    return result
 
 
 class MergeFrozenCandidateGalleriesTests(unittest.TestCase):
+    def test_exact_provenance_survives_dedup_and_namespaces_addition(self) -> None:
+        a = np.zeros((1, 4, 4), dtype=np.uint8)
+        a[0, :2, :2] = 1
+        b = np.zeros((1, 4, 4), dtype=np.uint8)
+        b[0, 2:, 2:] = 1
+        merged, _ = merge_payloads(
+            payload(a, "layercam", 0.25, exact_provenance=True),
+            payload(b, "layercam", 0.75, exact_provenance=True),
+            addition_namespace="classifier448",
+        )
+        self.assertEqual(merged["cam_levels"].tolist(), [90.0, 90.0])
+        self.assertEqual(merged["multimask_indices"].tolist(), [0, 0])
+        self.assertEqual(
+            merged["prompt_ids"].astype(str).tolist(),
+            ["layercam|p90|c0|box", "classifier448:layercam|p90|c0|box"],
+        )
+
     def test_unconditional_union_deduplicates_and_preserves_anchor_prompt(self) -> None:
         a = np.zeros((2, 4, 4), dtype=np.uint8)
         a[0, :2, :2] = 1

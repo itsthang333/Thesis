@@ -92,6 +92,18 @@ def merge_payloads(
         for field in required:
             if len(np.asarray(payload[field]).reshape(-1)) != count:
                 raise ValueError(f"{name} field {field} does not align with masks")
+    provenance_fields = ("cam_levels", "prompt_ids", "multimask_indices")
+    provenance_present = all(field in anchor for field in provenance_fields)
+    if provenance_present != all(field in addition for field in provenance_fields):
+        raise ValueError("Anchor/addition exact provenance availability differs")
+    if provenance_present:
+        for name, payload, count in (
+            ("anchor", anchor, len(anchor_masks)),
+            ("addition", addition, len(addition_masks)),
+        ):
+            for field in provenance_fields:
+                if len(np.asarray(payload[field]).reshape(-1)) != count:
+                    raise ValueError(f"{name} field {field} does not align with masks")
 
     seen: set[bytes] = set()
     anchor_keep: list[int] = []
@@ -142,6 +154,24 @@ def merge_payloads(
         ),
         "prompt_map": np.asarray(anchor["prompt_map"], dtype=np.float32),
     }
+    if provenance_present:
+        addition_prompt_ids = np.asarray(addition["prompt_ids"], dtype="U192")
+        addition_prompt_ids = np.asarray(
+            [f"{addition_namespace}:{value}" for value in addition_prompt_ids],
+            dtype="U192",
+        )
+        result.update(
+            {
+                "cam_levels": joined("cam_levels", np.float32),
+                "prompt_ids": np.concatenate(
+                    [
+                        np.asarray(anchor["prompt_ids"], dtype="U192")[anchor_indices],
+                        addition_prompt_ids[addition_indices],
+                    ]
+                ),
+                "multimask_indices": joined("multimask_indices", np.int16),
+            }
+        )
     if len(result["sam_masks"]) == 0:
         raise ValueError("Merged gallery cannot be empty")
     return result, {
@@ -262,6 +292,9 @@ def main() -> None:
             component_ids=merged["component_ids"],
             prompt_modes=merged["prompt_modes"],
             proposal_source_ids=merged["proposal_source_ids"],
+            cam_levels=merged.get("cam_levels"),
+            prompt_ids=merged.get("prompt_ids"),
+            multimask_indices=merged.get("multimask_indices"),
         )
         output_rows.append(
             {

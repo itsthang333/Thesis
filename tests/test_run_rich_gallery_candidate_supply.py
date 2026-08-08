@@ -160,3 +160,32 @@ def test_single_prompt_ablation_is_explicit_and_validation_only() -> None:
             prompt_mode="point",
             prompt_ensemble=False,
         )
+
+
+def test_single_mask_ablation_is_explicit_and_validation_only() -> None:
+    values = build_generation_command(
+        mode="addition",
+        source_root=Path("/source"),
+        data_root=Path("/data"),
+        split_manifest=Path("/split.csv"),
+        split="val",
+        classifier=Path("/classifier.pt"),
+        sam=Path("/sam.pth"),
+        output_dir=Path("/out"),
+        sam_single_mask=True,
+    )
+    assert "--sam-single-mask" in values
+    assert "--allow-validation-sam-single-mask-ablation" in values
+
+    with pytest.raises(ValueError, match="single-mask SAM ablation is validation-only"):
+        build_generation_command(
+            mode="addition",
+            source_root=Path("/source"),
+            data_root=Path("/data"),
+            split_manifest=Path("/split.csv"),
+            split="train",
+            classifier=Path("/classifier.pt"),
+            sam=Path("/sam.pth"),
+            output_dir=Path("/out"),
+            sam_single_mask=True,
+        )

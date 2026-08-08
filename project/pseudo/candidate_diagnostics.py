@@ -38,6 +38,9 @@ def save_candidate_diagnostics(
     component_ids: np.ndarray | None,
     prompt_modes: Iterable[str],
     proposal_source_ids: Iterable[str] | None = None,
+    cam_levels: Iterable[float] | None = None,
+    prompt_ids: Iterable[str] | None = None,
+    multimask_indices: Iterable[int] | None = None,
 ) -> dict[str, object]:
     """Save one pickle-free NPZ without ever consulting segmentation GT."""
     path = Path(path)
@@ -70,6 +73,32 @@ def save_candidate_diagnostics(
     )
     if len(sources) != len(candidates):
         raise ValueError("Candidate and proposal-source counts differ")
+    provenance_present = any(
+        value is not None for value in (cam_levels, prompt_ids, multimask_indices)
+    )
+    if provenance_present and not all(
+        value is not None for value in (cam_levels, prompt_ids, multimask_indices)
+    ):
+        raise ValueError("Exact candidate provenance must be supplied as one complete set")
+    levels = (
+        np.asarray(list(cam_levels), dtype=np.float32).reshape(-1)
+        if cam_levels is not None
+        else np.full(len(candidates), -1.0, dtype=np.float32)
+    )
+    exact_prompt_ids = (
+        np.asarray(list(prompt_ids), dtype="U128").reshape(-1)
+        if prompt_ids is not None
+        else np.full(len(candidates), "", dtype="U128")
+    )
+    multimask = (
+        np.asarray(list(multimask_indices), dtype=np.int16).reshape(-1)
+        if multimask_indices is not None
+        else np.full(len(candidates), -1, dtype=np.int16)
+    )
+    if not (
+        len(levels) == len(exact_prompt_ids) == len(multimask) == len(candidates)
+    ):
+        raise ValueError("Candidate and exact-provenance counts differ")
 
     support_present = bone_support is not None
     support = (
@@ -92,7 +121,10 @@ def save_candidate_diagnostics(
 
     np.savez_compressed(
         path,
-        schema_version=np.asarray([2 if sources_present else 1], dtype=np.int32),
+        schema_version=np.asarray(
+            [3 if provenance_present else (2 if sources_present else 1)],
+            dtype=np.int32,
+        ),
         sam_masks=candidates,
         refined_mask=np.asarray(refined_mask, dtype=np.uint8),
         final_mask=np.asarray(final_mask, dtype=np.uint8),
@@ -108,6 +140,9 @@ def save_candidate_diagnostics(
         component_ids=components,
         prompt_modes=modes,
         proposal_source_ids=sources,
+        cam_levels=levels,
+        prompt_ids=exact_prompt_ids,
+        multimask_indices=multimask,
     )
     return {
         "diagnostic_path": str(Path("candidate_diagnostics") / path.name),
