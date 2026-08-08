@@ -16,6 +16,8 @@ Last updated: 2026-08-08.
 | `wanwin` | `btxrd-x4-cam-student-seed42` | W0 CAM student, seed 42 | Running |
 | `qwinwan` | `btxrd-x4-cam-student-seed43` | W0 CAM student, seed 43 | Running |
 | `qwinwan` | `btxrd-x4-puzzlecam-student-seed42` | W1 PuzzleCAM student, seed 42 | Running |
+| `itsthang333` | `btxrd-x4-cam-student-seed44` | W0 CAM student, seed 44 | Running |
+| `itsthang333` | `btxrd-x4-puzzlecam-student-seed43` | W1 PuzzleCAM student, seed 43 | Running |
 
 ## Requirement ledger
 
@@ -23,8 +25,8 @@ Last updated: 2026-08-08.
 |---|---|---|---|---|
 | X1 | Direct Rich Gallery versus Rich-Gallery pseudo-U-Net versus matched fully-U-Net | Direct Rich Gallery validation evidence exists in the frozen final/G4 artifacts. Common student trainer, prediction freezer and native evaluator are implemented. | Partial | Freeze Rich Gallery train targets; train Rich Gallery and fully-supervised seeds 42/43/44; evaluate all on the same native grid. |
 | X2 | Known binary label, binary predicted gate, ten-class predicted gate and label-free student | Gate names are frozen in `project/x4_contract.py`. G4 contains the matched binary/ten-class classifiers and downstream evidence. | Partial | Implement the four-arm deployment evaluator using frozen predictions; report actual mask Dice and normal-image behavior. |
-| W0 | CAM-to-U-Net | CAM train/validation mask freezes and audits are complete. The standardized 2,981-image target bundle is frozen. Seeds 42 and 43 are running. | Running | Audit completed students, launch seed 44, then freeze/evaluate 371 predictions for all seeds. |
-| W1 | PuzzleCAM-to-U-Net | PuzzleCAM generator training and train/validation mask audits are complete. The standardized target bundle is frozen. Seed 42 is running. | Running | Audit seed 42, launch seeds 43/44, then freeze/evaluate all predictions. |
+| W0 | CAM-to-U-Net | CAM train/validation mask freezes and audits are complete. The standardized 2,981-image target bundle is frozen. Seeds 42/43/44 are running across three accounts. | Running | Audit completed students, then freeze/evaluate 371 predictions for all seeds. |
+| W1 | PuzzleCAM-to-U-Net | PuzzleCAM generator training and train/validation mask audits are complete. The standardized target bundle is frozen. Seeds 42/43 are running. | Running | Audit completed students, launch seed 44 in the first reusable slot, then freeze/evaluate all predictions. |
 | W2 | S2C-to-U-Net | Canonical train/validation S2C cache adoption audits pass. Generator training is running. Mask freezer and auditors are implemented. | Running | Audit generator; freeze/audit train and validation masks; freeze standardized target; train/evaluate three seeds. |
 | W3 | Rich-Gallery+G1+R7-to-U-Net | Direct frozen Rich Gallery/G1/R7 choices and candidate diagnostics exist. The common target freezer accepts `rich_gallery`. | Implemented | Materialize and audit the 2,981-image Rich Gallery target bundle, then train/evaluate three matched students. |
 | X3 | YOLOv8s-seg upper bound, 600 px, 300 epochs, native mAP and common binary-union evaluation | Protocol requirement documented only. | Missing | Implement canonical train-only YOLO export/training wrapper and a common validation-mask export/evaluator; run at least seed 42. |
