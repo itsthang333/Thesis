@@ -329,7 +329,7 @@ def main() -> None:
             else:
                 prediction = proposals[local]
                 intersection = int(np.logical_and(prediction, target).sum())
-                selected_dice = float(quality[local])
+                selected_dice = dice(prediction, target)
                 selected_iou = iou(prediction, target)
                 precision = float(intersection / max(1, prediction.sum()))
                 recall = float(intersection / max(1, target.sum()))
