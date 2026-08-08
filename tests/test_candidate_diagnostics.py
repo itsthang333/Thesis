@@ -54,7 +54,7 @@ class CandidateDiagnosticsTests(unittest.TestCase):
             masks = np.zeros((3, 8, 8), dtype=np.uint8)
             masks[:, 2:4, 2:4] = 1
             path = root / "candidate_diagnostics" / "exact.npz"
-            save_candidate_diagnostics(
+            saved = save_candidate_diagnostics(
                 path,
                 sam_masks=masks,
                 refined_mask=np.zeros((8, 8), dtype=np.uint8),
@@ -74,6 +74,31 @@ class CandidateDiagnosticsTests(unittest.TestCase):
                 prompt_ids=["layercam|p90|c4|point"] * 3,
                 multimask_indices=[0, 1, 2],
             )
+            row = {
+                "image_name": "exact.jpeg",
+                **saved,
+            }
+            summary = write_candidate_diagnostics_manifest(
+                root,
+                [row],
+                expected_image_names=["exact.jpeg"],
+                split="val",
+                image_size=8,
+                pseudo_manifest_sha256="pseudo-lock",
+                selection_method="test",
+                support_clip_kernel=0,
+                cam_percentile=90.0,
+                cohort="all",
+            )
+            indexed, validated = validate_candidate_diagnostics_manifest(
+                root,
+                expected_image_names=["exact.jpeg"],
+                split="val",
+                expected_pseudo_manifest_sha256="pseudo-lock",
+                expected_manifest_sha256=summary["manifest_sha256"],
+            )
+            self.assertEqual(set(indexed), {"exact"})
+            self.assertEqual(validated["manifest_rows"], 1)
             with np.load(path, allow_pickle=False) as payload:
                 self.assertEqual(int(payload["schema_version"][0]), 3)
                 self.assertEqual(len(set(payload["prompt_ids"].astype(str))), 1)

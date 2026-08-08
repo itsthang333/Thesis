@@ -291,7 +291,7 @@ def validate_candidate_diagnostics_manifest(
             raise ValueError(f"Candidate diagnostic file/hash mismatch for {stem}")
         with np.load(path, allow_pickle=False) as payload:
             schema_version = int(payload["schema_version"][0])
-            if schema_version not in {1, 2}:
+            if schema_version not in {1, 2, 3}:
                 raise ValueError(f"Unsupported candidate diagnostic schema for {stem}")
             expected_shape = (int(summary["image_size"]),) * 2
             if tuple(payload["final_mask"].shape) != expected_shape:
@@ -305,6 +305,15 @@ def validate_candidate_diagnostics_manifest(
                 ):
                     raise ValueError(
                         f"Candidate proposal-source provenance mismatch for {stem}"
+                    )
+            if schema_version >= 3:
+                required = ("cam_levels", "prompt_ids", "multimask_indices")
+                if any(field not in payload for field in required) or any(
+                    len(payload[field]) != len(payload["sam_masks"])
+                    for field in required
+                ):
+                    raise ValueError(
+                        f"Candidate exact-prompt provenance mismatch for {stem}"
                     )
 
     return indexed, {
