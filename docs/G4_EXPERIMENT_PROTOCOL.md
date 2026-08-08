@@ -308,7 +308,7 @@ No arm is rescued with validation-GT thresholds, per-image area, oracle choices,
 or test selection. Unexpected technical errors may be fixed without changing the
 scientific configuration; efficacy failures are reported, not silently swept.
 
-## 6. Implementation status (2026-08-07)
+## 6. Implementation status (2026-08-08)
 
 - Metric definitions corrected; empty and zero-overlap are distinct; symmetric
   HD95/ASSD, macro/micro overlap, extent and paired group bootstrap are tested.
@@ -324,24 +324,22 @@ scientific configuration; efficacy failures are reported, not silently swept.
   identical DenseNet-121/320/optimizer budgets, and a shared binary-F1
   checkpoint endpoint. They report discrimination and calibration without
   spatial GT before downstream segmentation.
-  Both arms completed and passed an independent output audit. Ten-class-to-
-  binary improves mean NLL in every seed; paired intervals for AUROC/F1 still
-  include zero. No claim about WSSS superiority is allowed until downstream
-  frozen-mask Dice is available. The downstream runner now freezes the exact
-  collapsed log-odds LayerCAM target and holds SAM-B, the external and
-  classifier-448 supplies, G1 and fusion fixed across all six runs.
+  Both arms and their matched downstream localizations completed and passed
+  independent output audits. Mean downstream Dice is 0.262899 for binary and
+  0.298954 for ten-class-to-binary (delta +0.036055); the benefit is concentrated
+  in medium/large lesions while small is essentially unchanged.
 - E2 CAM/Grad-CAM/Grad-CAM++/LayerCAM attribution and point/box/point+box
   single-prompt factorial completed for all 12 arms. Every arm froze all 371
   binary masks before the evaluator opened 184 validation polygons. The best
   arm is LayerCAM+point at Dice 0.205224; LayerCAM has a positive paired main
-  effect over all three alternatives. CAM-only/proposal-oracle enrichment of
-  the same frozen payloads remains in progress.
-- E3 end-to-end B/L/H support, candidate oracle reporting and measured resource
-  telemetry are implemented and locally tested. Matched ViT-B reproduction and
-  ViT-L arms are running on private/offline Kaggle T4 kernels; ViT-H follows in
-  the first free slot. No E3 result is claimed before the frozen output exists.
-- E7 core formulas are implemented, but execution is blocked intentionally until
-  source-specific prompt maps are available.
-- Exact E5 remains to be completed. Downstream E1 localization and learned G1
-  feature/loss runners are implemented; their validation executions remain
-  pending.
+  effect over all three alternatives. The same frozen payload gives CAM-only
+  Dice 0.152326, proposal oracle 0.339441 and SAM gain +0.052898.
+- E3 B/L/H runs are complete. B/L independently audited Dice is
+  0.288729/0.291185; H frozen output reports Dice 0.279212. The H independent
+  payload audit is the remaining E3 bookkeeping step.
+- E7 source-correct replay completed and audited for all 16 arms. Legacy U5+R7
+  reproduces common-320 Dice 0.288729; source-correct U6+R7 has the highest
+  native point estimate 0.294956, but its paired 95% interval versus baseline
+  [-0.010248, 0.024597] includes zero.
+- Exact E5 v2 and learned E6 feature/loss v2 are running on private/offline
+  Kaggle T4 kernels. They remain the two substantive unfinished G4 executions.

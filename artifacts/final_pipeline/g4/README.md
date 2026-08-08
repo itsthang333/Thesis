@@ -43,7 +43,8 @@ dataset identifiers and are much larger than the thesis source repository.
 - Binary versus ten-class-to-binary mean F1: 0.780882 versus 0.795082.
 - Binary versus ten-class-to-binary mean NLL: 1.514750 versus 1.033681.
 - Discrimination paired intervals include zero; NLL favours ten-class in all
-  three matched seeds. Downstream segmentation remains pending.
+  three matched seeds. The matched downstream study is also complete: binary
+  and ten-class mean mask Dice are 0.262899 and 0.298954, respectively.
 - Independent audit artifact: `e1_label_granularity_audit.json`.
 - Audit SHA-256:
   `2792af5f4bb61cddb1329f670e1b94df85adc161caa9d8db4b56759caf7c52c6`.
@@ -52,6 +53,27 @@ dataset identifiers and are much larger than the thesis source repository.
   `967b588537d4a2f2814a68e2a660c5b35fc87dd559482efb97069a9f58d4b215`.
   Corrected binary/ten-class-collapsed AP is 0.860190/0.869750; no Dice,
   AUROC, F1 or calibration value changed.
+
+## E7 source-correct upstream-score ablation
+
+- Validation only; 371 frozen choices per arm, including 184 tumor images;
+  exact subgroup counts 94/72/18 and zero test access.
+- Sixteen predeclared upstream-only and upstream-plus-G1 arms were evaluated
+  after the source-specific saliency/component evidence was frozen.
+- Legacy U5+R7 reproduces common-320 Dice 0.288729487 and obtains native Dice
+  0.288224022.
+- Source-correct U5+R7 obtains native Dice 0.289357584.
+- The largest point estimate is source-correct global-rank U6+R7: native Dice
+  0.294955925 (small/medium/large 0.149495/0.450780/0.431288) and common-320
+  Dice 0.295568298. Its paired native delta is +0.006732, but the 95% interval
+  [-0.010248, 0.024597] includes zero; it is therefore evidence about the
+  formula, not proof of superiority.
+- Frozen artifacts: `e7_source_correct_summary.json`,
+  `e7_source_correct_evaluation_audit.json`, and
+  `e7_source_correct_run_manifest.json`.
+- Summary/audit SHA-256:
+  `6a57c67d07ac92be68918e79bee2f5ac2855da6379592dc43c0e15c01e41181c` /
+  `d36e359e972ff76acfce2fc6eca780801711d93f27f7e7e149c60999075034af`.
 
 The exact formulas, arm definitions, safeguards, and interpretation limits are
 documented in `docs/G4_EXPERIMENT_PROTOCOL.md`,

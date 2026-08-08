@@ -231,6 +231,19 @@ but its paired interval versus R2 includes zero. The defensible conclusion is
 that rank fusion materially beats either raw score alone; the evidence does not
 prove that 0.50/0.50 is uniquely optimal.
 
+### G4 source-correct upstream-score replay
+
+The source-correct E7 study froze 371 choices for each of 16 predeclared arms
+before opening the 184 validation polygons. Legacy U5+R7 reproduces native Dice
+0.288224 and common-320 Dice 0.288729. Recomputing density, mass and component
+rank from each candidate's own source changes U5+R7 only slightly to native
+Dice 0.289358. The global-rank U6+R7 arm has the largest point estimate:
+native Dice 0.294956, common-320 Dice 0.295568, and small/medium/large Dice
+0.149495/0.450780/0.431288. Its paired native delta is +0.006732, but the 95%
+group-bootstrap interval [-0.010248, 0.024597] includes zero. This supports a
+possible advantage of cross-source global rank; it does not establish a
+statistically reliable replacement for the locked R7 baseline.
+
 ### G4 gallery-cap replay
 
 | Total balanced cap | Native Dice | Native delta vs 243 | Paired 95% CI |
