@@ -222,7 +222,8 @@ def main() -> None:
                 [canonical_source(value) for value in payload["proposal_source_ids"]]
             )
         if not (
-            np.array_equal(candidate_indices, np.arange(len(candidate_indices)))
+            len(np.unique(candidate_indices)) == len(candidate_indices)
+            and np.all(candidate_indices[:-1] < candidate_indices[1:])
             and g1.shape == upstream.shape == sources.shape
         ):
             raise ValueError(f"candidate alignment differs: {image_id}")
@@ -235,16 +236,23 @@ def main() -> None:
             local = stable_select(fused, g1, eligible)
             eligible_map[name] = eligible
             frozen_choices[image_id][name] = {
-                "selected_candidate_index": local,
+                "selected_local_index": local,
+                "selected_candidate_index": (
+                    int(candidate_indices[local]) if local >= 0 else -1
+                ),
                 "selected_source": str(sources[local]) if local >= 0 else "none",
                 "candidate_count": int(eligible.sum()),
             }
         full = subset_name(SOURCES)
-        if int(frozen_choices[image_id][full]["selected_candidate_index"]) != int(
-            row["selected_candidate_index"]
+        if (
+            int(frozen_choices[image_id][full]["selected_local_index"])
+            != int(row["selected_local_index"])
+            or int(frozen_choices[image_id][full]["selected_candidate_index"])
+            != int(row["selected_candidate_index"])
         ):
             raise ValueError(f"full baseline does not reproduce: {image_id}")
         cache[image_id] = {
+            "candidate_indices": candidate_indices,
             "eligible": eligible_map,
             "sources": sources,
         }
@@ -298,13 +306,17 @@ def main() -> None:
         if sha256(candidate_path) != candidate_row["diagnostic_sha256"]:
             raise ValueError(f"candidate payload changed: {image_id}")
         with np.load(candidate_path, allow_pickle=False) as payload:
-            proposals = payload["sam_masks"].astype(bool)
+            all_proposals = payload["sam_masks"].astype(bool)
+        candidate_indices = cache[image_id]["candidate_indices"]
+        if int(candidate_indices.max(initial=-1)) >= len(all_proposals):
+            raise ValueError(f"candidate index out of range: {image_id}")
+        proposals = all_proposals[candidate_indices]
         quality = np.asarray([dice(mask, target) for mask in proposals])
         sources = cache[image_id]["sources"]
         for subset in subsets:
             name = subset_name(subset)
             eligible = cache[image_id]["eligible"][name]
-            local = int(frozen_choices[image_id][name]["selected_candidate_index"])
+            local = int(frozen_choices[image_id][name]["selected_local_index"])
             if local < 0:
                 prediction = np.zeros_like(target)
                 selected_dice = selected_iou = precision = recall = area_ratio = 0.0
