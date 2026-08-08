@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 
 from PIL import Image
-import numpy as np
 
 from frozen_io import sha256_file
 
@@ -19,13 +18,15 @@ def inspect_mask(path: Path) -> dict[str, int | str]:
     if not path.is_file():
         raise FileNotFoundError(path)
     with Image.open(path) as handle:
-        mask = np.asarray(handle.convert("L"))
-    if mask.ndim != 2 or not set(np.unique(mask).tolist()).issubset({0, 1, 255}):
+        mask = handle.convert("L")
+        width, height = mask.size
+        histogram = mask.histogram()
+    if sum(histogram[2:255]) != 0:
         raise ValueError(f"X4 target mask is not a binary 2-D image: {path}")
     return {
-        "mask_height": int(mask.shape[0]),
-        "mask_width": int(mask.shape[1]),
-        "mask_foreground_pixels": int((mask > 0).sum()),
+        "mask_height": int(height),
+        "mask_width": int(width),
+        "mask_foreground_pixels": int(histogram[1] + histogram[255]),
         "mask_sha256": sha256_file(path),
     }
 
