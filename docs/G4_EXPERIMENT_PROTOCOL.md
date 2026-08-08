@@ -328,6 +328,9 @@ scientific configuration; efficacy failures are reported, not silently swept.
   independent output audits. Mean downstream Dice is 0.262899 for binary and
   0.298954 for ten-class-to-binary (delta +0.036055); the benefit is concentrated
   in medium/large lesions while small is essentially unchanged.
+  The matched CAM-only control also completed for all six checkpoints: mean
+  Dice is 0.133468 for binary and 0.172241 for ten-class-to-binary, with exact
+  371/184 validation counts and no test access.
 - E2 CAM/Grad-CAM/Grad-CAM++/LayerCAM attribution and point/box/point+box
   single-prompt factorial completed for all 12 arms. Every arm froze all 371
   binary masks before the evaluator opened 184 validation polygons. The best
@@ -343,5 +346,15 @@ scientific configuration; efficacy failures are reported, not silently swept.
   reproduces common-320 Dice 0.288729; source-correct U6+R7 has the highest
   native point estimate 0.294956, but its paired 95% interval versus baseline
   [-0.010248, 0.024597] includes zero.
-- Exact E5 v2 and learned E6 feature/loss v2 are running on private/offline
-  Kaggle T4 kernels. They remain the two substantive unfinished G4 executions.
+- Exact current-split E4 completed all seven non-empty source subsets. Full
+  selected/oracle Dice is 0.288729/0.528298; the three two-source arms obtain
+  selected Dice 0.283344/0.282440/0.280697 and the single-source arms obtain
+  0.275499/0.258021/0.234636. The independent audit passes, and the replay
+  reports candidate counts plus 47.524 seconds for all seven Stage-A/B arms.
+- Exact E5 v2 failed technically because its frozen 320 and 448 candidate banks
+  were concatenated before the baseline's fixed 448-to-320 nearest-neighbour
+  projection. The geometry replay is now explicitly identical to the baseline,
+  11/11 focused tests and 181/181 server download-back checks pass, and E5 v3
+  is running under the unchanged scientific protocol. Learned E6 feature/loss
+  v2 is also running. They remain the two substantive unfinished executions;
+  E2 resource telemetry and the final E0--E8 completeness audit remain open.

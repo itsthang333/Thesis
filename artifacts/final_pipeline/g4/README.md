@@ -27,12 +27,32 @@ dataset identifiers and are much larger than the thesis source repository.
 - Exact R7 reproduction: common-320 Dice 0.288729487.
 - Native R7 Dice: 0.288224022.
 - G1-eligible candidate oracle: common-320 Dice 0.527902026.
+- The official complete-gallery oracle is 0.528298332. The 0.000396 gap to the
+  G1-eligible oracle is caused by candidates excluded from G1 scoring; these
+  are two named candidate populations, not conflicting metric implementations.
 - Random/SAM/upstream/G1 native Dice: 0.101890 / 0.098902 / 0.225306 /
   0.205545.
 - Evaluation summary SHA-256:
   `1ae1b1f20bed1b4f403efd28e74b6c58769e4db0d56c3f9baf3de93ba5a471fb`.
 - Evaluation audit SHA-256:
   `c4c7055c6f0bfea342e35c02184f19b28c6fb740ac1431ddbbe2ffd33d9270b8`.
+
+### Exact current-split E4 source subsets
+
+- All seven non-empty subsets were replayed with the same frozen G1 plus equal
+  percentile-rank selector on exactly 371 validation images (184 tumor,
+  subgroups 94/72/18), with zero test access.
+- Full selected/oracle Dice: 0.288729487 / 0.528298332.
+- Two-source selected Dice: 0.283344376 (L320+C448), 0.282440158
+  (C448+external), and 0.280697091 (L320+external).
+- Single-source selected Dice: 0.275498639 / 0.258021296 / 0.234635977 for
+  L320 / C448 / external.
+- Stage-A plus Stage-B time for all seven replays: 47.523953 s after reuse of
+  the frozen 1615.225732 s candidate-generation stage.
+- Artifacts: `e4_source_subset_results.json` and
+  `e4_source_subset_audit.json`; report/audit SHA-256
+  `865366ad6ae2077d1c5f43d76ca571941ceb4fc369b5ee9e06a97997f86aafad` /
+  `f7db51ea53bc1441963e2cd761b00ad87aaecfd79327b2aa7e28ad8adc23f973`.
 
 ## E1 label-granularity image-level stage
 
@@ -45,6 +65,11 @@ dataset identifiers and are much larger than the thesis source repository.
 - Discrimination paired intervals include zero; NLL favours ten-class in all
   three matched seeds. The matched downstream study is also complete: binary
   and ten-class mean mask Dice are 0.262899 and 0.298954, respectively.
+- The CAM-only completion is also frozen for all six checkpoints. Binary and
+  ten-class-to-binary mean CAM-only Dice is 0.133468 and 0.172241. Artifacts:
+  `e1_cam_only_completion.json` and `e1_cam_only_completion_audit.json`;
+  independent audit SHA-256
+  `4efd081d16e02a660271e82a7087aeb90174ba1e72d58a4845dba955fd3a7c3f`.
 - Independent audit artifact: `e1_label_granularity_audit.json`.
 - Audit SHA-256:
   `2792af5f4bb61cddb1329f670e1b94df85adc161caa9d8db4b56759caf7c52c6`.

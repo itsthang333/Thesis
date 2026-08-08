@@ -103,7 +103,26 @@ changes sign across seeds. Thus ten-class supervision is supported as the
 better overall downstream configuration under this matched protocol, but it
 does **not** resolve the small-lesion bottleneck.
 
-Independent audit SHA-256 values are
+The independently completed CAM-only control uses the predeclared, GT-blind
+rule `prompt_map >= within-image p90` (constant maps become empty). It shows
+that the ten-class advantage is already present before SAM and selection:
+
+| CAM-only endpoint, mean +/- sample SD | Binary | Ten-class collapsed to binary |
+|---|---:|---:|
+| Overall Dice | 0.133468 +/- 0.026500 | **0.172241 +/- 0.002391** |
+| `<1%` Dice | 0.019959 +/- 0.001420 | **0.023936 +/- 0.001019** |
+| `1-<5%` Dice | 0.236813 +/- 0.043249 | **0.295709 +/- 0.003029** |
+| `>=5%` Dice | 0.312857 +/- 0.094632 | **0.452848 +/- 0.016014** |
+
+This control does not make the CAM mask the final method. It separates the
+image-supervision effect from the later SAM/gallery/G1 effect: SAM plus the
+fixed downstream stages raises mean Dice from 0.133468 to 0.262899 for binary
+and from 0.172241 to 0.298954 for ten-class. The CAM-only output contains 371
+rows per seed, opens exactly 184 validation polygons only after prediction
+freeze, reads no test images, and passed independent audit SHA-256
+`4efd081d16e02a660271e82a7087aeb90174ba1e72d58a4845dba955fd3a7c3f`.
+
+Independent downstream audit SHA-256 values are
 `64479f6c8ff330324e74219e6073f2f8541cd96699b344d7c43fd2a5f8a9e0ca`
 for the ten-class arm and
 `c49b8cfbaeb4a3c97df313e61e19d9152dc4fe97010828dfbe88cfbf78a05176`
@@ -199,18 +218,35 @@ of the fully-supervised test Dice. Its validation-to-test Dice change is
 
 ## Why all three candidate sources remain
 
-The same fixed fusion rule was used for every source-subset comparison. No
-two-source subset preserved the full validation result:
+The same frozen G1 plus equal percentile-rank fusion rule was used for every
+source subset. The exact current-split replay evaluates all seven non-empty
+subsets; the oracle is computed over the complete retained gallery, not only
+the candidates that happen to receive a valid G1 score:
 
-| Available sources | Overall Dice |
-|---|---:|
-| LayerCAM + classifier-448 + external saliency | **0.288729** |
-| LayerCAM + classifier-448 | 0.283344 |
-| Classifier-448 + external saliency | 0.282440 |
-| LayerCAM + external saliency | 0.280697 |
+| Available sources | Selected Dice | Gallery oracle | Candidate count median [IQR] |
+|---|---:|---:|---:|
+| LayerCAM-320 + classifier-448 + external saliency | **0.288729** | **0.528298** | 171 [151, 204] |
+| LayerCAM-320 + classifier-448 | 0.283344 | 0.485033 | 95.5 [70.75, 125] |
+| Classifier-448 + external saliency | 0.282440 | 0.496066 | 126 [108, 144] |
+| LayerCAM-320 + external saliency | 0.280697 | 0.483726 | 126 [108, 144] |
+| LayerCAM-320 only | 0.275499 | 0.409076 | 45 [27, 63] |
+| Classifier-448 only | 0.258021 | 0.430183 | 45 [27, 63] |
+| External saliency only | 0.234636 | 0.387303 | 81 [81, 81] |
 
 The gallery complexity is therefore supported by an ablation: each source
-rescues a different subset of validation images.
+rescues a different subset of validation images. The complete three-source arm
+is the best overall point estimate and the best small-lesion point estimate.
+It is not best for every subgroup: LayerCAM-320 + external is higher for medium
+lesions and external-only is higher for large lesions. Accordingly, the claim
+is complementary supply under one global inference rule, not universal
+per-image superiority of every source.
+
+The seven-subset Stage-A/Stage-B replay took 47.524 seconds total after reusing
+the frozen E3 gallery (0.01830 seconds per subset-image); the original ViT-B
+candidate-generation stage took 1615.226 seconds and stored 166,663,308 bytes.
+The exact report/audit SHA-256 values are
+`865366ad6ae2077d1c5f43d76ca571941ceb4fc369b5ee9e06a97997f86aafad` /
+`f7db51ea53bc1441963e2cd761b00ad87aaecfd79327b2aa7e28ad8adc23f973`.
 
 The independent G4 replay (evaluation SHA-256
 `1ae1b1f20bed1b4f403efd28e74b6c58769e4db0d56c3f9baf3de93ba5a471fb`)
@@ -282,9 +318,12 @@ dependent selector error; it does not imply every source is best for every case.
 
 ## Remaining bottleneck
 
-Candidate supply is not the main validation ceiling: the all-source per-image
-oracle Dice is 0.527902. The dominant gap is selecting the correct candidate
-and its extent. Small lesions are strongly over-segmented (median area ratio
+Candidate supply is not the only validation ceiling: the official complete
+all-source per-image oracle Dice is 0.528298, while the G1-eligible/scored
+candidate subset has oracle Dice 0.527902. The 0.000396 difference is caused by
+candidate eligibility for G1 scoring, not a metric inconsistency. The dominant
+gap from either oracle to selected Dice 0.288729 is selecting the correct
+candidate and its extent. Small lesions are strongly over-segmented (median area ratio
 14.6x), medium lesions are mainly identity/localization limited, and large
 lesions are under-segmented (median area ratio 0.382x). A single global area
 correction was therefore not included.
