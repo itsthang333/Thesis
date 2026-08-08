@@ -147,6 +147,36 @@ claim that ViT-B is universally superior.
 These are development results on 184 tumor validation images. There are 49
 complete misses.
 
+### G4 E2 attribution/prompt decomposition
+
+The independent 4-attribution x 3-prompt decomposition completed on the same
+184 validation tumor images.  The table below reports marginals over the three
+prompt modes; `selected` uses the frozen upstream selector, while `oracle` is
+diagnostic proposal supply and is never an inference result.
+
+| Attribution | CAM-only Dice | Selected SAM Dice | Proposal-oracle Dice | Selector regret |
+|---|---:|---:|---:|---:|
+| CAM | 0.132644 | 0.143837 | 0.231095 | 0.087258 |
+| Grad-CAM | 0.129019 | 0.137324 | 0.218027 | 0.080704 |
+| Grad-CAM++ | 0.134681 | 0.149826 | 0.236080 | 0.086254 |
+| **LayerCAM** | **0.152326** | **0.193677** | **0.330514** | **0.136837** |
+
+The best individual arm is LayerCAM + point prompt: CAM-only Dice 0.152326,
+selected Dice 0.205224, proposal-oracle Dice 0.339441, and Recall@Dice
+0.1/0.3/0.5 of 0.586957/0.483696/0.347826.  Its subgroup decomposition is:
+
+| Subgroup | CAM-only Dice | Selected Dice | Proposal-oracle Dice | Selector regret |
+|---|---:|---:|---:|---:|
+| `<1%`, n=94 | 0.019024 | 0.118534 | 0.168793 | 0.050259 |
+| `1-<5%`, n=72 | 0.260831 | 0.274250 | 0.496441 | 0.222191 |
+| `>=5%`, n=18 | 0.414433 | 0.381836 | 0.602605 | 0.220769 |
+
+Thus LayerCAM is selected by BTXRD evidence, not citation alone. SAM materially
+improves the point estimate, especially for small lesions, but cannot repair
+the weak small-lesion supply ceiling. For medium and large lesions, the much
+larger oracle-minus-selected gaps identify candidate selection as the dominant
+remaining error.
+
 ## Locked final test result
 
 The independently frozen WSSS and fully-supervised predictions were evaluated

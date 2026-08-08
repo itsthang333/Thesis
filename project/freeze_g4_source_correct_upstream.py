@@ -30,6 +30,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-candidate-manifest-sha256", required=True)
     parser.add_argument("--g1-root", type=Path, required=True)
     parser.add_argument("--expected-g1-freeze-sha256", required=True)
+    parser.add_argument("--baseline-choice-root", type=Path, required=True)
+    parser.add_argument("--expected-baseline-choice-freeze-sha256", required=True)
     parser.add_argument("--addition-root", type=Path, required=True)
     parser.add_argument("--external-saliency-root", type=Path, required=True)
     parser.add_argument("--expected-external-manifest-sha256", required=True)
@@ -118,12 +120,40 @@ def main() -> None:
         raise ValueError("G1 evidence manifest changed after freezing")
     g1_rows = {row["image_id"]: row for row in _read_csv(g1_manifest_path)}
 
+    baseline_freeze_path = args.baseline_choice_root / "prediction_freeze.json"
+    if sha256_file(baseline_freeze_path) != args.expected_baseline_choice_freeze_sha256:
+        raise ValueError("final baseline choice freeze SHA-256 mismatch")
+    baseline_freeze = json.loads(baseline_freeze_path.read_text(encoding="utf-8"))
+    if (
+        baseline_freeze.get("candidate_choices_frozen_before_spatial_gt") is not True
+        or baseline_freeze.get("spatial_ground_truth_used") is not False
+        or baseline_freeze.get("validation_gt_read") is not False
+        or baseline_freeze.get("test_evaluated") is not False
+        or baseline_freeze.get("test_images_read") != 0
+        or baseline_freeze.get("split_sha256") != args.expected_split_sha256
+        or baseline_freeze.get("candidate_manifest_sha256")
+        != args.expected_candidate_manifest_sha256
+        or baseline_freeze.get("g1_diagnostic_freeze_sha256")
+        != args.expected_g1_freeze_sha256
+    ):
+        raise ValueError("final baseline choice freeze violates the locked contract")
+    baseline_manifest_path = args.baseline_choice_root / "selection_manifest.csv"
+    if sha256_file(baseline_manifest_path) != baseline_freeze["selection_manifest_sha256"]:
+        raise ValueError("final baseline selection manifest changed after freezing")
+    baseline_rows = {
+        row["image_id"]: row for row in _read_csv(baseline_manifest_path)
+    }
+
     external_manifest_path = args.external_saliency_root / "saliency_manifest.csv"
     if sha256_file(external_manifest_path) != args.expected_external_manifest_sha256:
         raise ValueError("external saliency manifest SHA-256 mismatch")
     external_rows = {row["image_id"]: row for row in _read_csv(external_manifest_path)}
-    if set(g1_rows) != set(split_by_id) or set(external_rows) != set(split_by_id):
-        raise ValueError("G1/external cohorts differ from canonical validation")
+    if (
+        set(g1_rows) != set(split_by_id)
+        or set(baseline_rows) != set(split_by_id)
+        or set(external_rows) != set(split_by_id)
+    ):
+        raise ValueError("G1/baseline/external cohorts differ from canonical validation")
 
     arms = ["legacy_U5", "legacy_U5_R7"]
     arms += [f"source_correct_{arm}" for arm in UPSTREAM_ARMS]
@@ -224,7 +254,9 @@ def main() -> None:
                     selections[arm] = _select_fused(g1, score, indices)
                 else:
                     selections[arm] = select_score_only(score, indices)
-            if selections["legacy_U5_R7"] == int(g1_row["selected_candidate_index"]):
+            if selections["legacy_U5_R7"] == int(
+                baseline_rows[image_id]["selected_candidate_index"]
+            ):
                 legacy_matches += 1
 
             evidence_path = evidence_out / f"{ordinal:04d}_{Path(image_id).stem}.npz"
@@ -289,6 +321,10 @@ def main() -> None:
         "split_sha256": args.expected_split_sha256,
         "candidate_manifest_sha256": args.expected_candidate_manifest_sha256,
         "g1_freeze_sha256": args.expected_g1_freeze_sha256,
+        "baseline_choice_freeze_sha256": args.expected_baseline_choice_freeze_sha256,
+        "baseline_selection_manifest_sha256": baseline_freeze[
+            "selection_manifest_sha256"
+        ],
         "external_saliency_manifest_sha256": args.expected_external_manifest_sha256,
         "choices_sha256": choice_sha,
         "component_evidence_manifest_sha256": evidence_sha,

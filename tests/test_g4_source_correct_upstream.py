@@ -41,6 +41,15 @@ class SourceCorrectUpstreamFreezeTests(unittest.TestCase):
         self.assertIn("allow_test=False", source)
         self.assertIn('"test_images_read": 0', source)
 
+    def test_legacy_reproduction_is_bound_to_final_fused_choice_freeze(self) -> None:
+        source = (PROJECT / "freeze_g4_source_correct_upstream.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("--baseline-choice-root", source)
+        self.assertIn("--expected-baseline-choice-freeze-sha256", source)
+        self.assertIn('baseline_rows[image_id]["selected_candidate_index"]', source)
+        self.assertNotIn('int(g1_row["selected_candidate_index"])', source)
+
 
 if __name__ == "__main__":
     unittest.main()
