@@ -48,12 +48,17 @@ def test_ultralytics_batch_two_proto_patch_is_exact_and_fail_closed(tmp_path: Pa
     loss_path.write_text(
         "def loss(proto):\n"
         "        if len(proto) == 2:\n"
-        "            proto, pred_semseg = proto\n",
+        "            proto, pred_semseg = proto\n"
+        "        else:\n"
+        "            loss[1] += (proto * 0).sum() + (pred_masks * 0).sum()  # inf sums may lead to nan loss\n"
+        "            loss[4] += (pred_semseg * 0).sum() + (sem_masks * 0).sum()\n",
         encoding="utf-8",
     )
     report = patch_ultralytics_batch_two_proto(tmp_path)
     patched = loss_path.read_text(encoding="utf-8")
     assert "if isinstance(proto, (tuple, list)) and len(proto) == 2:" in patched
+    assert "if pred_semseg is not None:" in patched
+    assert 'sem_masks = batch["sem_masks"].to(self.device)' in patched
     assert report["sha256_before"] != report["sha256_after"]
     with pytest.raises(RuntimeError, match="precondition differs"):
         patch_ultralytics_batch_two_proto(tmp_path)

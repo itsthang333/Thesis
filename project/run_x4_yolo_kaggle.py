@@ -42,26 +42,54 @@ def locate_dataset_root(input_root: Path) -> Path:
 
 
 def patch_ultralytics_batch_two_proto(package_root: Path) -> dict[str, str]:
-    """Patch the Ultralytics 8.4.0 batch-size-two proto dispatch bug.
+    """Patch two Ultralytics 8.4.0 segmentation-loss dispatch bugs.
 
     In ``v8SegmentationLoss.loss`` the upstream release uses ``len(proto) == 2``
     to detect a two-item tuple.  A regular four-dimensional proto tensor also
     has length two when the final batch contains two images, so it is wrongly
     unpacked into two three-dimensional tensors.  Restricting the branch to an
     actual tuple/list preserves every scientific setting and only fixes that
-    incompatible dispatch.
+    incompatible dispatch.  The same release also dereferences ``None`` in a
+    background-only batch when no semantic head exists.  Such batches are
+    legitimate in this binary instance-segmentation study, so the unused-
+    gradient term must be conditional on an actual semantic prediction.
     """
 
     loss_path = package_root / "ultralytics" / "utils" / "loss.py"
     original = "        if len(proto) == 2:\n"
     replacement = "        if isinstance(proto, (tuple, list)) and len(proto) == 2:\n"
+    background_original = (
+        "        else:\n"
+        "            loss[1] += (proto * 0).sum() + (pred_masks * 0).sum()  # inf sums may lead to nan loss\n"
+        "            loss[4] += (pred_semseg * 0).sum() + (sem_masks * 0).sum()\n"
+    )
+    background_replacement = (
+        "        else:\n"
+        "            loss[1] += (proto * 0).sum() + (pred_masks * 0).sum()  # inf sums may lead to nan loss\n"
+        "            if pred_semseg is not None:\n"
+        "                sem_masks = batch[\"sem_masks\"].to(self.device)\n"
+        "                loss[4] += (pred_semseg * 0).sum() + (sem_masks * 0).sum()\n"
+    )
     text = loss_path.read_text(encoding="utf-8")
-    if text.count(original) != 1 or replacement in text:
+    if (
+        text.count(original) != 1
+        or replacement in text
+        or text.count(background_original) != 1
+        or background_replacement in text
+    ):
         raise RuntimeError("Ultralytics 8.4.0 proto patch precondition differs")
     before = sha256_file(loss_path)
-    loss_path.write_text(text.replace(original, replacement), encoding="utf-8")
+    patched = text.replace(original, replacement).replace(
+        background_original, background_replacement
+    )
+    loss_path.write_text(patched, encoding="utf-8")
     after = sha256_file(loss_path)
-    if before == after or loss_path.read_text(encoding="utf-8").count(replacement) != 1:
+    verified = loss_path.read_text(encoding="utf-8")
+    if (
+        before == after
+        or verified.count(replacement) != 1
+        or verified.count(background_replacement) != 1
+    ):
         raise RuntimeError("Ultralytics 8.4.0 proto patch did not apply exactly")
     return {"loss_path": str(loss_path), "sha256_before": before, "sha256_after": after}
 
@@ -152,7 +180,7 @@ def main() -> None:
         "--output-dir",
         str(export_root),
         "--image-mode",
-        "symlink",
+        "copy",
     ]
     print(json.dumps({"export_command": export_command}), flush=True)
     subprocess.run(export_command, cwd=project.parent, env=environment, check=True)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from export_x4_yolo_dataset import polygons_to_yolo_rows
+from export_x4_yolo_dataset import materialize_image, polygons_to_yolo_rows
 from freeze_x4_yolo_predictions import union_instance_masks
 
 
@@ -32,3 +32,16 @@ def test_union_instance_masks_handles_empty_resize_and_union():
     union = union_instance_masks(masks, height=8, width=6)
     assert union.shape == (8, 6)
     assert union.any()
+
+
+def test_copy_materialization_is_writable_and_does_not_modify_source(tmp_path):
+    source = tmp_path / "readonly" / "image.jpeg"
+    source.parent.mkdir()
+    source.write_bytes(b"original-jpeg-bytes")
+    source.chmod(0o444)
+    destination = tmp_path / "export" / "image.jpeg"
+    destination.parent.mkdir()
+    materialize_image(source, destination, mode="copy")
+    assert not destination.is_symlink()
+    destination.write_bytes(b"ultralytics-repaired-copy")
+    assert source.read_bytes() == b"original-jpeg-bytes"

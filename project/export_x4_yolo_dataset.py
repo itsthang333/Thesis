@@ -57,7 +57,10 @@ def materialize_image(source: Path, destination: Path, *, mode: str) -> str:
     elif mode == "hardlink":
         os.link(source, destination)
     elif mode == "copy":
-        shutil.copy2(source, destination)
+        # ``copy2`` preserves the read-only mode of Kaggle input files.  PIL's
+        # JPEG verifier may need to append a missing EOI marker, so materialize
+        # bytes into a fresh writable working file without copying permissions.
+        shutil.copyfile(source, destination)
     else:
         raise ValueError(f"Unknown image materialization mode: {mode}")
     return mode
