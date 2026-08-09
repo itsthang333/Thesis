@@ -117,6 +117,44 @@ def install_runtime(input_root: Path, working: Path) -> None:
     )
 
 
+def locate_dsll_supply(
+    input_root: Path,
+    working: Path,
+    archive_sha256: str,
+) -> tuple[Path, Path]:
+    """Resolve either the original ZIP or Kaggle's server-expanded archive."""
+    archive_matches = [
+        path
+        for path in input_root.rglob("dsll_merged_supply.zip")
+        if path.is_file() and sha256(path) == archive_sha256
+    ]
+    if len(archive_matches) == 1:
+        supply_root = working / "dsll_supply"
+        with zipfile.ZipFile(archive_matches[0]) as handle:
+            handle.extractall(supply_root)
+        return supply_root / "merged_train", supply_root / "merged_val"
+    if len(archive_matches) > 1:
+        raise RuntimeError(f"duplicate merged supply archives: {archive_matches}")
+
+    expected = {
+        "a513e9230eef8401dd73e64623618aee26ca6e75d496816e9b020db8ec008e3e": "train",
+        "c9757f7ffd76bfa776571ca2f00661b2fbf91a387271ee755d197ca5317a3e4c": "val",
+    }
+    roots: dict[str, Path] = {}
+    for manifest in input_root.rglob("candidate_diagnostics_manifest.csv"):
+        digest = sha256(manifest)
+        split = expected.get(digest)
+        if split is not None:
+            if split in roots:
+                raise RuntimeError(f"duplicate expanded DSLL {split} supplies")
+            roots[split] = manifest.parent
+    if set(roots) != {"train", "val"}:
+        raise RuntimeError(
+            "neither the locked archive nor its exact server-expanded train/val supplies were found"
+        )
+    return roots["train"], roots["val"]
+
+
 def merge_split(
     *,
     project: Path,
@@ -189,14 +227,9 @@ def main() -> None:
     split_file = exact_file(
         input_root, "canonical_split_manifest_85511.csv", SPLIT_SHA256
     )
-    archive = exact_file(
-        input_root,
-        "dsll_merged_supply.zip",
-        args.merged_supply_archive_sha256,
+    dsll_train_root, dsll_val_root = locate_dsll_supply(
+        input_root, working, args.merged_supply_archive_sha256
     )
-    supply_root = working / "dsll_supply"
-    with zipfile.ZipFile(archive) as handle:
-        handle.extractall(supply_root)
     dsll_manifest = {
         "train_candidate_manifest_sha256": "a513e9230eef8401dd73e64623618aee26ca6e75d496816e9b020db8ec008e3e",
         "train_pseudo_manifest_sha256": "16def408e874cc1549715302124ce8d5ea5abf313b1e1bf68977dc2aca4f6f7f",
@@ -218,7 +251,7 @@ def main() -> None:
         project=project,
         split_file=split_file,
         split="train",
-        dsll_root=supply_root / "merged_train",
+        dsll_root=dsll_train_root,
         dsll_manifest=dsll_manifest,
         classifier_root=classifier_root,
         classifier_manifest=classifier_manifest,
@@ -228,7 +261,7 @@ def main() -> None:
         project=project,
         split_file=split_file,
         split="val",
-        dsll_root=supply_root / "merged_val",
+        dsll_root=dsll_val_root,
         dsll_manifest=dsll_manifest,
         classifier_root=classifier_root,
         classifier_manifest=classifier_manifest,
