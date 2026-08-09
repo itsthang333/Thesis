@@ -32,6 +32,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--owner", required=True)
+    parser.add_argument("--data-source", required=True)
+    parser.add_argument("--yolo-input-source", required=True)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--training-slug", required=True)
     parser.add_argument("--training-bundle", type=Path, required=True)
@@ -138,8 +140,8 @@ def main() -> None:
                 "machine_shape": "NvidiaTeslaT4",
                 "enable_internet": False,
                 "dataset_sources": [
-                    f"{args.owner}/data-btxrd",
-                    f"{args.owner}/btxrd-x4-yolo-inputs-20260809",
+                    args.data_source,
+                    args.yolo_input_source,
                     f"{args.owner}/{dataset_slug}",
                 ],
                 "competition_sources": [],
