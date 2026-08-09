@@ -62,6 +62,7 @@ def test_kernel_contract_rejects_test_access() -> None:
         "freeze_runner_sha256": "f" * 64,
         "evaluator_sha256": "0" * 64,
         "output_prefix": "x4_yolo_seed42",
+        "evaluation_batch": 1,
         "test_images_read": 0,
         "test_evaluated": False,
     }

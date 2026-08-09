@@ -80,7 +80,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--output-prefix", required=True)
     parser.add_argument("--device", default="0")
-    parser.add_argument("--batch", type=int, default=8)
+    parser.add_argument("--batch", type=int, default=1)
     return parser.parse_args()
 
 

@@ -48,6 +48,7 @@ def validate_contract(contract: dict[str, object]) -> None:
         or contract.get("stage") != "x4_yolo_kaggle_evaluation_contract_v1"
         or contract.get("test_images_read") != 0
         or contract.get("test_evaluated") is not False
+        or contract.get("evaluation_batch") != 1
         or not isinstance(contract.get("seed"), int)
         or any(not isinstance(contract.get(key), str) for key in required_strings)
     ):
@@ -101,7 +102,7 @@ def main() -> None:
         "--device",
         "0",
         "--batch",
-        "8",
+        str(contract["evaluation_batch"]),
     ]
     print(json.dumps({"contract_sha256": sha256(contract_path), "command": command}), flush=True)
     subprocess.run(command, cwd=source_root, env=environment, check=True)
