@@ -548,6 +548,47 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def load_image_list(path: Path) -> set[str]:
+    """Load a unique shard list, ignoring only a leading UTF-8 BOM."""
+
+    names = [
+        line.strip().lstrip("\ufeff")
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip().lstrip("\ufeff")
+        and not line.strip().lstrip("\ufeff").startswith("#")
+    ]
+    if len(names) != len(set(names)):
+        raise ValueError(f"--image-list {path} contains duplicate image IDs")
+    return set(names)
+
+
+def validate_auxiliary_cohort(
+    dataset_names: list[str],
+    auxiliary_rows: dict[str, object],
+    *,
+    allow_manifest_superset: bool,
+    label: str,
+) -> None:
+    """Fail closed on map identity while allowing a locked full manifest for a shard."""
+
+    if len(dataset_names) != len(set(dataset_names)):
+        raise ValueError(f"{label} dataset cohort contains duplicate image IDs")
+    dataset_set = set(dataset_names)
+    auxiliary_set = set(auxiliary_rows)
+    valid = (
+        dataset_set.issubset(auxiliary_set)
+        if allow_manifest_superset
+        else dataset_set == auxiliary_set and len(dataset_names) == len(auxiliary_rows)
+    )
+    if not valid:
+        missing = sorted(dataset_set - auxiliary_set)
+        extra = sorted(auxiliary_set - dataset_set)
+        raise ValueError(
+            f"{label} cohort differs from the exact pseudo-mask dataset cohort: "
+            f"missing={missing[:5]} extra_count={len(extra)}"
+        )
+
+
 def apply_pipeline_profile(args: argparse.Namespace) -> argparse.Namespace:
     """Resolve the tested pipeline configuration without using segmentation GT.
 
@@ -1685,34 +1726,37 @@ def main() -> None:
         split_manifest=args.split_manifest,
     )
     if args.image_list is not None:
-        requested_names = {
-            line.strip() for line in args.image_list.read_text(encoding="utf-8").splitlines()
-            if line.strip() and not line.lstrip().startswith("#")
-        }
+        requested_names = load_image_list(args.image_list)
         original_count = len(dataset.samples)
         dataset.samples = [
             sample for sample in dataset.samples if str(sample["image_id"]) in requested_names
         ]
         if not dataset.samples:
             raise ValueError(f"--image-list {args.image_list} matched no images in split '{args.split}'")
+        matched_names = {str(sample["image_id"]) for sample in dataset.samples}
+        unmatched = sorted(requested_names - matched_names)
+        if unmatched:
+            raise ValueError(
+                f"--image-list {args.image_list} contains IDs outside split "
+                f"'{args.split}': {unmatched[:5]}"
+            )
         print(f"Image-list filter: {len(dataset.samples)}/{original_count} samples")
     if external_saliency_contract is not None:
         dataset_names = [str(sample["image_id"]) for sample in dataset.samples]
-        if set(dataset_names) != set(external_saliency_rows) or len(
-            dataset_names
-        ) != len(external_saliency_rows):
-            raise ValueError(
-                "External saliency cohort differs from the exact pseudo-mask dataset cohort"
-            )
+        validate_auxiliary_cohort(
+            dataset_names,
+            external_saliency_rows,
+            allow_manifest_superset=args.image_list is not None,
+            label="External saliency",
+        )
     if affinity_selector_contract is not None:
         dataset_names = [str(sample["image_id"]) for sample in dataset.samples]
-        if set(dataset_names) != set(affinity_selector_rows) or len(
-            dataset_names
-        ) != len(affinity_selector_rows):
-            raise ValueError(
-                "Affinity selector cohort differs from the exact pseudo-mask "
-                "dataset cohort"
-            )
+        validate_auxiliary_cohort(
+            dataset_names,
+            affinity_selector_rows,
+            allow_manifest_superset=args.image_list is not None,
+            label="Affinity selector",
+        )
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
