@@ -13,12 +13,17 @@ Last updated: 2026-08-09.
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
 | `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v4 | X3 YOLOv8s-seg seed42 after batch-two/background-only/writable-copy fixes | Running |
+| `wanwin` | `btxrd-x4-rich-gallery-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, Rich student seed42 | Running |
 | `qwinwan` | `btxrd-x4-yolov8s-seg-seed44` v1 | X3 YOLOv8s-seg seed44 with the audited v4 compatibility source | Running |
+| `qwinwan` | `btxrd-x4-puzzlecam-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, PuzzleCAM student seed42 | Running |
 | `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Running |
+| `itsthang333` | `btxrd-x4-cam-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, CAM student seed42 | Running |
 
-The other three GPU slots are currently free. All 15 student runs and their
-371-image prediction freezes are complete; the next slot-filling priority is
-the bounded X2 gate experiment, not another student rerun.
+All six GPU slots are occupied. All 15 student runs and their original
+371-image prediction freezes are complete. The three bounded X12 jobs do not
+retrain models: they reuse exact seed42 checkpoints and measure 371-image
+online inference latency, T4 peak memory and prediction storage with three
+warm-up passes while explicitly excluding offline pseudo-label generation.
 
 The two YOLO v2 jobs stopped after a deterministic Ultralytics
 8.4.0 compatibility failure on a final batch of size two.  The upstream loss
@@ -93,7 +98,7 @@ the current validation WSSS baseline at Dice 0.2887294867.
 | X9 | Ten-class failure taxonomy | Complete for Direct Rich and all 15 students under `artifacts/final_pipeline/x4/x9_error_taxonomy_all_students`. Rich students over-segment 165-176/184 tumors and trigger normal FP on 144-178/187 normals; S2C misses/under-segments 184/184 tumors. | Complete | Use taxonomy to explain mechanism-specific failures. |
 | X10 | Protocol-selected qualitative panel | Complete. The pre-render freeze supplies 12/12 categories without visual cherry-picking, including normal FP. Twelve panels were rendered with exact Direct Rich choices/gallery plus CAM, PuzzleCAM, S2C, Rich-student and fully-supervised seed42 bundles. All provenance was verified before 11 tumor annotations were opened; no test read. | Complete | Transfer the frozen panels and selection protocol to the thesis. |
 | X11 | Risk-coverage using frozen G1/fusion confidence | `project/analyze_x4_risk_coverage.py` and the frozen result under `artifacts/final_pipeline/x4/x11_risk_coverage` are complete. Spearman confidence-vs-Dice is 0.313141; Dice<0.10 and complete-miss AUROC are 0.658570/0.656916. Mean Dice at 100/80/60/40% coverage is 0.288729/0.335050/0.361465/0.367326. | Complete | Interpret as moderate failure-detection evidence, not calibrated uncertainty or a new routing rule. |
-| X12 | Runtime, peak VRAM, storage; offline separated from online | X4 student Stage A now performs three warm-up forwards and measures all 371 images, emitting median/IQR latency, elapsed time, per-device peak allocated/reserved VRAM and storage while explicitly excluding offline pseudo generation. Generator stages already retain separate runtime/device/storage metadata. | Implemented | Aggregate the emitted same-GPU measurements after prediction freezes; add direct-pipeline and YOLO rows when their common benchmarks are available. |
+| X12 | Runtime, peak VRAM, storage; offline separated from online | The fail-closed same-T4 wrapper is implemented and tested (8/8 focused tests). It reuses exact seed42 checkpoints, requires 371 timed images, three warm-ups, T4 memory evidence and no-GT/no-test provenance, while discarding duplicate masks after binding the manifest hash. First wave CAM/PuzzleCAM/Rich jobs is running; S2C/Fully follow as slots free. | Running | Download/audit first-wave reports, launch S2C/Fully, then aggregate student/direct/YOLO online rows separately from offline generator resources. |
 
 ## P0/P1 readiness
 
