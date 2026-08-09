@@ -30,8 +30,11 @@ Live implementation/run status is tracked in `X4_EXECUTION_MATRIX.md`.
 
 ## L4 supplementary protocol
 
-X13 resolves the remaining E4 candidate-count confound. For each validation
-image, `K_i=min(27,N_L320,N_C448,N_external)` is computed before spatial GT.
+X13 resolves the remaining E4 candidate-count confound. For each of the 184
+known-tumor validation images, where the frozen pipeline intentionally creates
+all three proposal sources, `K_i=min(27,N_L320,N_C448,N_external)` is computed
+before spatial GT. The 187 known-normal images abstain with an empty mask under
+the same binary gate and are retained explicitly in the choice freeze.
 Each source subset keeps exactly `K_i` candidates by descending frozen
 upstream score (G1 logit and stable candidate order are deterministic ties),
 then uses the unchanged equal percentile-rank R7 selector. The primary endpoint

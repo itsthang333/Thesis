@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from project.run_l4_x13_equal_budget_source import budget_indices, r7_select
+import pytest
+
+from project.run_l4_x13_equal_budget_source import (
+    budget_indices,
+    r7_select,
+    source_budget_for_label,
+)
 
 
 def test_every_subset_receives_exact_budget() -> None:
@@ -30,3 +36,17 @@ def test_upstream_budget_rule_and_r7_are_deterministic() -> None:
     kept = budget_indices(("layercam320",), sources, upstream, g1, 3)
     assert kept.tolist() == [1, 2, 0]
     assert r7_select(g1, upstream, kept) in kept.tolist()
+
+
+def test_known_normal_abstains_but_tumor_uses_equal_source_budget() -> None:
+    normal_counts = {"layercam320": 61, "classifier448": 53, "external_saliency": 0}
+    assert source_budget_for_label(normal_counts, tumor=False, k_max=27) is None
+
+    tumor_counts = {"layercam320": 61, "classifier448": 53, "external_saliency": 19}
+    assert source_budget_for_label(tumor_counts, tumor=True, k_max=27) == 19
+
+    with pytest.raises(ValueError, match="tumor image has an empty source"):
+        source_budget_for_label(normal_counts, tumor=True, k_max=27)
+
+    with pytest.raises(ValueError, match="known-normal image has external proposals"):
+        source_budget_for_label(tumor_counts, tumor=False, k_max=27)

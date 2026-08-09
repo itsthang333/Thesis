@@ -63,6 +63,20 @@ def subset_name(subset: tuple[str, ...]) -> str:
     return "+".join(subset)
 
 
+def source_budget_for_label(
+    counts: dict[str, int], *, tumor: bool, k_max: int
+) -> int | None:
+    """Return the matched tumor budget; ``None`` means known-normal abstention."""
+    if not tumor:
+        if counts["external_saliency"] != 0:
+            raise ValueError(f"known-normal image has external proposals: {counts}")
+        return None
+    budget = min(k_max, *(counts[source] for source in SOURCES))
+    if budget <= 0:
+        raise ValueError(f"tumor image has an empty source: {counts}")
+    return budget
+
+
 def budget_indices(
     subset: tuple[str, ...],
     sources: np.ndarray,
@@ -196,12 +210,18 @@ def main() -> None:
     candidate_rows = {row["image_name"]: row for row in read_csv(candidate_manifest)}
     score_rows = {row["image_id"]: row for row in read_csv(score_manifest)}
     choice_rows = read_csv(selection_manifest)
+    split_by_id = {
+        row["image_id"]: row
+        for row in read_csv(args.split_manifest)
+        if row.get("split") == "val" and row.get("eligible") == "1"
+    }
     image_ids = [row["image_id"] for row in choice_rows]
     if (
         len(image_ids) != 371
         or len(set(image_ids)) != 371
         or set(image_ids) != set(candidate_rows)
         or set(image_ids) != set(score_rows)
+        or set(image_ids) != set(split_by_id)
     ):
         raise ValueError("X13 canonical cohort differs")
 
@@ -230,9 +250,30 @@ def main() -> None:
         ):
             raise ValueError(f"score alignment differs: {image_id}")
         counts = {source: int(np.sum(sources == source)) for source in SOURCES}
-        budget = min(args.k_max, *counts.values())
-        if budget <= 0:
-            raise ValueError(f"one source is empty: {image_id}/{counts}")
+        # The frozen Direct-Rich protocol uses the known binary image label as
+        # a gate.  External saliency proposals therefore exist only for tumor
+        # images; known-normal images abstain and emit an empty mask.  X13's
+        # source-complementarity endpoint is macro Dice over the 184 tumor
+        # images, so equal-budget selection is defined only where all three
+        # sources are intentionally available.  Retaining all 371 rows in the
+        # freeze makes this gate explicit rather than silently dropping cases.
+        budget = source_budget_for_label(
+            counts,
+            tumor=split_by_id[image_id]["tumor"] == "1",
+            k_max=args.k_max,
+        )
+        if budget is None:
+            frozen[image_id] = {
+                "source_counts": counts,
+                "k_i": 0,
+                "arms": {},
+                "abstained_by_known_normal_label": True,
+            }
+            score_cache[image_id] = {
+                "candidate_indices": candidate_indices,
+                "sources": sources,
+            }
+            continue
         arms: dict[str, object] = {}
         for subset in subsets:
             name = subset_name(subset)
@@ -258,6 +299,8 @@ def main() -> None:
         "study": "L4 X13 equal-budget source complementarity choice freeze",
         "source_commit": args.source_commit,
         "budget_rule": "K_i=min(27,N_layercam320,N_classifier448,N_external_saliency)",
+        "budget_cohort": "184 known-tumor validation images",
+        "known_normal_policy": "abstain with empty mask before spatial evaluation",
         "budget_selection_rule": "descending upstream; tie descending G1; tie candidate order",
         "selector": "unchanged R7 equal percentile-rank fusion",
         "validation_images": 371,
