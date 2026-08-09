@@ -183,6 +183,8 @@ def _supply_command(
     mode: str,
     external_root: Path | None = None,
     classifier_split: Path | None = None,
+    expected_sam_sha256: str | None = None,
+    protocol_sha256: str = PROTOCOL_SHA,
 ) -> list[str]:
     command = [
         sys.executable,
@@ -195,10 +197,10 @@ def _supply_command(
         "--classifier-checkpoint", str(classifier),
         "--expected-classifier-sha256", sha256(classifier),
         "--sam-checkpoint", str(sam),
-        "--expected-sam-sha256", SAM_SHA[sam_model_type],
+        "--expected-sam-sha256", expected_sam_sha256 or SAM_SHA[sam_model_type],
         "--sam-model-type", sam_model_type,
         "--source-commit", source_commit,
-        "--protocol-sha256", PROTOCOL_SHA,
+        "--protocol-sha256", protocol_sha256,
         "--output-dir", str(output),
         "--splits", "val",
     ]

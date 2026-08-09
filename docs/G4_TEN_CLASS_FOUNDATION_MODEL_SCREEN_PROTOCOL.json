@@ -1,0 +1,56 @@
+{
+  "name": "g4_ten_class_foundation_model_screen_v1",
+  "purpose": "Measure whether a stronger promptable segmentation foundation model improves the frozen best rich-gallery pipeline after the ten-class classifier replacement.",
+  "evaluation_split": "val",
+  "screen_seed": 43,
+  "replication_rule": "Run seeds 42 and 44 only when a screen arm beats the matched seed-43 SAM-v1 comparator on actual binary-mask Dice.",
+  "test_policy": "No arm may read test. Select one final configuration from validation, freeze it, then perform at most one final test evaluation.",
+  "fixed_modules": [
+    "ten-class DenseNet121 LayerCAM target logsumexp(nine tumor logits)-normal logit",
+    "external saliency supply",
+    "classifier448 addition supply",
+    "prompt construction and prompt ensemble",
+    "gallery merge, deduplication and cap",
+    "frozen G1 mask scorer",
+    "equal percentile-rank fusion",
+    "native-resolution binary-mask evaluator"
+  ],
+  "arms": [
+    {
+      "id": "sam_v1_vit_l",
+      "role": "matched comparator",
+      "official_source": "facebookresearch/segment-anything",
+      "prompt_contract": "point, box and box+point ensemble"
+    },
+    {
+      "id": "sam2_1_hiera_large",
+      "role": "direct replacement screen",
+      "official_source": "facebookresearch/sam2@2b90b9f5ceec907a1c18123530e92e794ad901a4",
+      "prompt_contract": "same point, box, box+point and dense-grid inputs"
+    },
+    {
+      "id": "sam_med2d_vit_b_256_adapter",
+      "role": "medical-domain replacement screen",
+      "official_source": "OpenGVLab/SAM-Med2D@bfd2b93b1158100c8abd81f61766a2de92c1c175",
+      "prompt_contract": "same point, box, box+point and dense-grid inputs; official 256-pixel encoder"
+    },
+    {
+      "id": "medsam_vit_b",
+      "role": "medical-domain replacement screen",
+      "official_source": "bowang-lab/MedSAM@d71e8a1a99ad751840a22a7fa3ecfb4166fb1488",
+      "prompt_contract": "same operational point, box, box+point and dense-grid inputs; interpretation must disclose that MedSAM was principally trained/evaluated with box prompts"
+    }
+  ],
+  "primary_endpoint": "mean tumor-image binary-mask Dice on 184 canonical validation tumor images",
+  "secondary_endpoints": [
+    "IoU",
+    "Dice for lesion-area subgroups n=94/72/18",
+    "candidate oracle Dice",
+    "selection regret",
+    "runtime and peak GPU memory"
+  ],
+  "selection": "All candidate choices are frozen before validation polygons are opened.",
+  "spatial_ground_truth_training": false,
+  "test_images_read": 0,
+  "test_evaluated": false
+}

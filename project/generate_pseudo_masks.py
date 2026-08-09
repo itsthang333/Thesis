@@ -244,10 +244,24 @@ def parse_args() -> argparse.Namespace:
                         help="Path to an attached local SAM checkpoint. Runtime downloads are disabled "
                         "so that the run is reproducible and works with Kaggle Internet off.")
     parser.add_argument(
+        "--sam-backend",
+        choices=("sam_v1", "sam2", "sam_med2d", "medsam"),
+        default="sam_v1",
+        help="Hash-locked official promptable segmentation backend.",
+    )
+    parser.add_argument(
+        "--sam-source-root",
+        type=Path,
+        default=None,
+        help="Required official source checkout for non-SAM-v1 backends.",
+    )
+    parser.add_argument(
         "--sam-model-type",
-        choices=("vit_b", "vit_l", "vit_h"),
         default="vit_b",
-        help="Official SAM-v1 registry architecture matched to --sam-checkpoint.",
+        help=(
+            "Backend-specific architecture identifier: vit_b/vit_l/vit_h, "
+            "sam2.1_hiera_large, or vit_b_256_adapter."
+        ),
     )
     parser.add_argument(
         "--sam-device",
@@ -1564,8 +1578,11 @@ def main() -> None:
             "sam_image_size": args.sam_image_size,
             "sam_preserve_aspect": args.sam_preserve_aspect,
             "image_list": str(args.image_list.resolve()) if args.image_list else None,
-            "sam_backend": f"sam_v1_{args.sam_model_type}",
+            "sam_backend": args.sam_backend,
             "sam_model_type": args.sam_model_type,
+            "sam_source_root": (
+                str(args.sam_source_root.resolve()) if args.sam_source_root else None
+            ),
             "sam_device": str(sam_device),
             "classifier_device": str(device),
             "layercam_weights": list(layercam_weights),
@@ -1749,6 +1766,8 @@ def main() -> None:
         checkpoint_path=args.sam_checkpoint,
         device=str(sam_device),
         model_type=args.sam_model_type,
+        backend=args.sam_backend,
+        source_root=args.sam_source_root,
     )
 
     mask_dir = args.output_dir / "masks"
@@ -2918,6 +2937,7 @@ def main() -> None:
         }
     resource_metrics = {
         "schema_version": 1,
+        "sam_backend": args.sam_backend,
         "sam_model_type": args.sam_model_type,
         "images_processed": int(processed),
         "elapsed_seconds": elapsed_seconds,

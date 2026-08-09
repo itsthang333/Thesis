@@ -10,7 +10,7 @@ from pathlib import Path
 
 from run_g4_e1_downstream import E1_SHA
 from run_g4_e3_sam_backbone import G1_SHA, SAM_SHA, SPLIT_SHA
-from run_g4_ten_class_sam_factorial import PROTOCOL_SHA, SUPPORTED_SAM
+from run_g4_ten_class_sam_factorial import PROTOCOL_SHA
 
 
 def sha256(path: Path) -> str:
@@ -35,9 +35,20 @@ def require_no_test(payload: dict[str, object], name: str) -> None:
         raise ValueError(f"{name} did not prove zero test access")
 
 
-def audit(root: Path, seed: int, model_type: str) -> dict[str, object]:
-    if seed not in E1_SHA["ten_class"] or model_type not in SUPPORTED_SAM:
+def audit(
+    root: Path,
+    seed: int,
+    model_type: str,
+    *,
+    backend: str = "sam_v1",
+    expected_sam_sha256: str | None = None,
+    protocol_sha256: str = PROTOCOL_SHA,
+) -> dict[str, object]:
+    if seed not in E1_SHA["ten_class"]:
         raise ValueError("unsupported factorial arm")
+    sam_sha = expected_sam_sha256 or SAM_SHA.get(model_type)
+    if sam_sha is None:
+        raise ValueError("unknown SAM checkpoint requires expected_sam_sha256")
     paths = {
         "result": root / "summary.json",
         "anchor": root / "anchor" / "candidate_supply_manifest.json",
@@ -71,9 +82,10 @@ def audit(root: Path, seed: int, model_type: str) -> dict[str, object]:
         result.get("study") != "G4 ten-class x SAM factorial"
         or int(result.get("seed", -1)) != seed
         or result.get("classifier_checkpoint_sha256") != E1_SHA["ten_class"][seed]
+        or result.get("sam_backend", "sam_v1") != backend
         or result.get("sam_model_type") != model_type
-        or result.get("sam_checkpoint_sha256") != SAM_SHA[model_type]
-        or result.get("protocol_sha256") != PROTOCOL_SHA
+        or result.get("sam_checkpoint_sha256") != sam_sha
+        or result.get("protocol_sha256") != protocol_sha256
         or result.get("split_sha256") != SPLIT_SHA
         or result.get("choices_frozen_before_spatial_gt") is not True
         or int(result.get("spatial_annotations_opened", -1)) != 184
@@ -82,15 +94,17 @@ def audit(root: Path, seed: int, model_type: str) -> dict[str, object]:
         raise ValueError("root factorial contract differs")
     if (
         anchor.get("classifier_checkpoint_sha256") != E1_SHA["ten_class"][seed]
-        or anchor.get("sam_checkpoint_sha256") != SAM_SHA[model_type]
-        or anchor.get("protocol_sha256") != PROTOCOL_SHA
+        or anchor.get("sam_checkpoint_sha256") != sam_sha
+        or anchor.get("sam_backend", "sam_v1") != backend
+        or anchor.get("protocol_sha256") != protocol_sha256
         or anchor.get("split_sha256") != SPLIT_SHA
-        or addition.get("sam_checkpoint_sha256") != SAM_SHA[model_type]
-        or addition.get("protocol_sha256") != PROTOCOL_SHA
-        or gallery.get("protocol_sha256") != PROTOCOL_SHA
+        or addition.get("sam_checkpoint_sha256") != sam_sha
+        or addition.get("sam_backend", "sam_v1") != backend
+        or addition.get("protocol_sha256") != protocol_sha256
+        or gallery.get("protocol_sha256") != protocol_sha256
         or gallery.get("split_sha256") != SPLIT_SHA
         or scores.get("baseline_checkpoint_sha256") != G1_SHA
-        or scores.get("protocol_sha256") != PROTOCOL_SHA
+        or scores.get("protocol_sha256") != protocol_sha256
         or choices.get("candidate_choices_frozen_before_spatial_gt") is not True
         or choices.get("spatial_ground_truth_used") is not False
         or evaluation.get("candidate_choices_frozen_before_spatial_gt") is not True
@@ -117,10 +131,11 @@ def audit(root: Path, seed: int, model_type: str) -> dict[str, object]:
         "study": "independent G4 ten-class x SAM factorial audit",
         "pass": True,
         "seed": seed,
+        "sam_backend": backend,
         "sam_model_type": model_type,
         "classifier_checkpoint_sha256": E1_SHA["ten_class"][seed],
-        "sam_checkpoint_sha256": SAM_SHA[model_type],
-        "protocol_sha256": PROTOCOL_SHA,
+        "sam_checkpoint_sha256": sam_sha,
+        "protocol_sha256": protocol_sha256,
         "split_sha256": SPLIT_SHA,
         "summary": summary,
         "selection_manifest_sha256": sha256(paths["selection"]),
@@ -137,10 +152,20 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--sam-model-type", choices=SUPPORTED_SAM, required=True)
+    parser.add_argument("--sam-backend", default="sam_v1")
+    parser.add_argument("--sam-model-type", required=True)
+    parser.add_argument("--expected-sam-sha256")
+    parser.add_argument("--protocol-sha256", default=PROTOCOL_SHA)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    report = audit(args.root.resolve(), args.seed, args.sam_model_type)
+    report = audit(
+        args.root.resolve(),
+        args.seed,
+        args.sam_model_type,
+        backend=args.sam_backend,
+        expected_sam_sha256=args.expected_sam_sha256,
+        protocol_sha256=args.protocol_sha256,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"pass": True, "seed": args.seed, "overall": report["summary"]["overall"]}, indent=2))

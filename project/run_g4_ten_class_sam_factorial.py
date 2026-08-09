@@ -39,13 +39,23 @@ from run_g4_e3_sam_backbone import (
 
 
 PROTOCOL_SHA = "949a6f9441fa2f1964a9f2e133e95a871b8701291e5c2fd5507b0bcac9a96df6"
+# Backward-compatible name retained for the already launched ViT-L factorial.
 SUPPORTED_SAM = ("vit_l",)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, choices=tuple(E1_SHA["ten_class"]), required=True)
-    parser.add_argument("--sam-model-type", choices=SUPPORTED_SAM, default="vit_l")
+    parser.add_argument(
+        "--sam-backend",
+        choices=("sam_v1", "sam2", "sam_med2d", "medsam"),
+        default="sam_v1",
+    )
+    parser.add_argument("--sam-model-type", default="vit_l")
+    parser.add_argument("--expected-sam-sha256")
+    parser.add_argument("--sam-checkpoint-name", action="append", default=[])
+    parser.add_argument("--sam-source-root", type=Path)
+    parser.add_argument("--protocol-sha256", default=PROTOCOL_SHA)
     parser.add_argument("--source-commit", required=True)
     return parser.parse_args()
 
@@ -70,10 +80,19 @@ def main() -> None:
         CLASSIFIER_448_SHA,
         names=("best_classifier448.pt", "best_classifier.pt"),
     )
+    expected_sam_sha = args.expected_sam_sha256 or SAM_SHA.get(args.sam_model_type)
+    if expected_sam_sha is None:
+        raise ValueError("Non-baseline SAM backend requires --expected-sam-sha256")
+    default_names = {
+        "vit_l": ("sam_vit_l_0b3195.pth",),
+        "vit_b": ("sam_vit_b_01ec64.pth",),
+        "sam2.1_hiera_large": ("sam2.1_hiera_large.pt",),
+        "vit_b_256_adapter": ("sam-med2d_b.pth",),
+    }
     sam = unique_hash(
         input_root,
-        SAM_SHA[args.sam_model_type],
-        names=("sam_vit_l_0b3195.pth",),
+        expected_sam_sha,
+        names=tuple(args.sam_checkpoint_name) or default_names.get(args.sam_model_type, ()),
     )
     rad_weight = unique_hash(input_root, RAD_WEIGHT_SHA, names=("model.safetensors",))
     rad_dir = rad_weight.parent
@@ -94,11 +113,17 @@ def main() -> None:
     ):
         raise ValueError("external saliency supply violates the validation contract")
 
+    if args.sam_backend != "sam_v1":
+        if args.sam_source_root is None or not args.sam_source_root.is_dir():
+            raise ValueError("Non-SAM-v1 backend requires an existing --sam-source-root")
     sam_package = unique_named(input_root, "automatic_mask_generator.py").parent.parent
     env = os.environ.copy()
     env.update({
         "PYTHONPATH": os.pathsep.join([
-            str(source / "project"), str(sam_package), env.get("PYTHONPATH", "")
+            str(source / "project"),
+            str(args.sam_source_root) if args.sam_source_root else str(sam_package),
+            str(sam_package),
+            env.get("PYTHONPATH", "")
         ]).rstrip(os.pathsep),
         "PYTHONHASHSEED": "0",
         "PYTHONUNBUFFERED": "1",
@@ -109,7 +134,9 @@ def main() -> None:
         "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
     })
 
-    arm_root = working / f"g4_ten_class_{args.sam_model_type}_seed_{args.seed}"
+    arm_root = working / (
+        f"g4_ten_class_{args.sam_backend}_{args.sam_model_type}_seed_{args.seed}"
+    )
     arm_root.mkdir(parents=True, exist_ok=False)
     anchor = arm_root / "anchor"
     anchor_command = _supply_command(
@@ -123,6 +150,8 @@ def main() -> None:
         output=anchor,
         mode="anchor",
         external_root=external_root,
+        expected_sam_sha256=expected_sam_sha,
+        protocol_sha256=args.protocol_sha256,
     )
     anchor_command.extend([
         "--classifier-split-manifest", str(split),
@@ -130,10 +159,13 @@ def main() -> None:
         "--target-columns", "tumor_type",
         "--cam-aggregation", "tumor_log_odds",
     ])
+    anchor_command.extend(["--sam-backend", args.sam_backend])
+    if args.sam_source_root is not None:
+        anchor_command.extend(["--sam-source-root", str(args.sam_source_root)])
     # _supply_command carries E3's protocol; replace it with this factorial's
     # immutable protocol while leaving every scientific argument explicit.
     protocol_index = anchor_command.index("--protocol-sha256") + 1
-    anchor_command[protocol_index] = PROTOCOL_SHA
+    anchor_command[protocol_index] = args.protocol_sha256
     run(anchor_command, cwd=source, env=env)
 
     addition = arm_root / "addition"
@@ -147,8 +179,13 @@ def main() -> None:
         source_commit=args.source_commit,
         output=addition,
         mode="addition",
+        expected_sam_sha256=expected_sam_sha,
+        protocol_sha256=args.protocol_sha256,
     )
-    addition_command[addition_command.index("--protocol-sha256") + 1] = PROTOCOL_SHA
+    addition_command.extend(["--sam-backend", args.sam_backend])
+    if args.sam_source_root is not None:
+        addition_command.extend(["--sam-source-root", str(args.sam_source_root)])
+    addition_command[addition_command.index("--protocol-sha256") + 1] = args.protocol_sha256
     run(addition_command, cwd=source, env=env)
 
     anchor_manifest = json.loads((anchor / "candidate_supply_manifest.json").read_text(encoding="utf-8"))
@@ -169,7 +206,7 @@ def main() -> None:
         "--addition-candidate-manifest-sha256", str(addition_val["candidate_manifest_sha256"]),
         "--addition-pseudo-manifest-sha256", str(addition_val["pseudo_manifest_sha256"]),
         "--addition-namespace", "classifier448",
-        "--protocol-sha256", PROTOCOL_SHA,
+        "--protocol-sha256", args.protocol_sha256,
         "--output-dir", str(gallery),
     ], cwd=source, env=env)
     contract = json.loads((gallery / "gallery_merge_contract.json").read_text(encoding="utf-8"))
@@ -192,7 +229,7 @@ def main() -> None:
         "--g1-checkpoint", str(g1),
         "--expected-g1-checkpoint-sha256", G1_SHA,
         "--source-commit", args.source_commit,
-        "--protocol-sha256", PROTOCOL_SHA,
+        "--protocol-sha256", args.protocol_sha256,
         "--output-dir", str(scores),
     ], cwd=source, env=env)
 
@@ -233,9 +270,10 @@ def main() -> None:
         "study": "G4 ten-class x SAM factorial",
         "seed": args.seed,
         "classifier_checkpoint_sha256": checkpoint_sha,
+        "sam_backend": args.sam_backend,
         "sam_model_type": args.sam_model_type,
-        "sam_checkpoint_sha256": SAM_SHA[args.sam_model_type],
-        "protocol_sha256": PROTOCOL_SHA,
+        "sam_checkpoint_sha256": expected_sam_sha,
+        "protocol_sha256": args.protocol_sha256,
         "source_commit": args.source_commit,
         "split_sha256": SPLIT_SHA,
         "attribution_target": "logsumexp(tumor logits)-normal logit",

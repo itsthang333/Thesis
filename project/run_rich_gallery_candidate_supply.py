@@ -55,6 +55,8 @@ def common_generation_args(
     classifier: Path,
     sam: Path,
     sam_model_type: str = "vit_b",
+    sam_backend: str = "sam_v1",
+    sam_source_root: Path | None = None,
     output_dir: Path,
     attribution_method: str = "layercam",
     prompt_mode: str = "box_point",
@@ -86,6 +88,8 @@ def common_generation_args(
         str(classifier),
         "--sam-checkpoint",
         str(sam),
+        "--sam-backend",
+        sam_backend,
         "--sam-model-type",
         sam_model_type,
         "--classifier-device",
@@ -164,6 +168,8 @@ def common_generation_args(
         "--candidate-diagnostics-cohort",
         "all",
     ]
+    if sam_source_root is not None:
+        command.extend(["--sam-source-root", str(sam_source_root)])
     # Both matched E1 arms require proposal bags for normal images so that the
     # downstream negative-bag objective sees the same cohort.  For ten-class
     # checkpoints, ``tumor_log_odds`` is the exact collapsed tumor/normal event.
@@ -204,6 +210,8 @@ def build_generation_command(
     classifier: Path,
     sam: Path,
     sam_model_type: str = "vit_b",
+    sam_backend: str = "sam_v1",
+    sam_source_root: Path | None = None,
     output_dir: Path,
     classifier_split_manifest: Path | None = None,
     external_root: Path | None = None,
@@ -228,6 +236,8 @@ def build_generation_command(
         classifier=classifier,
         sam=sam,
         sam_model_type=sam_model_type,
+        sam_backend=sam_backend,
+        sam_source_root=sam_source_root,
         output_dir=output_dir,
         frozen_config=frozen_config,
         attribution_method=attribution_method,
@@ -334,8 +344,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-classifier-sha256", required=True)
     parser.add_argument("--sam-checkpoint", type=Path, required=True)
     parser.add_argument(
+        "--sam-backend",
+        choices=("sam_v1", "sam2", "sam_med2d", "medsam"),
+        default="sam_v1",
+    )
+    parser.add_argument("--sam-source-root", type=Path)
+    parser.add_argument(
         "--sam-model-type",
-        choices=("vit_b", "vit_l", "vit_h"),
         default="vit_b",
     )
     parser.add_argument("--expected-sam-sha256", required=True)
@@ -471,6 +486,8 @@ def main() -> None:
             classifier=args.classifier_checkpoint,
             sam=args.sam_checkpoint,
             sam_model_type=args.sam_model_type,
+            sam_backend=args.sam_backend,
+            sam_source_root=args.sam_source_root,
             output_dir=args.output_dir / split,
             external_root=external,
             external_manifest_sha256=external_lock.get("manifest_sha256"),
@@ -507,6 +524,7 @@ def main() -> None:
             != EXPECTED_COUNTS[split]["images"]
             or metadata.get("split") != split
             or metadata.get("sam_model_type") != args.sam_model_type
+            or metadata.get("sam_backend") != args.sam_backend
             or metadata.get("force_normal_candidate_gallery") is not True
             or metadata.get("candidate_diagnostics_cohort") != "all"
         ):
@@ -532,6 +550,7 @@ def main() -> None:
         "split_sha256": args.expected_split_sha256,
         "classifier_checkpoint_sha256": args.expected_classifier_sha256,
         "sam_checkpoint_sha256": args.expected_sam_sha256,
+        "sam_backend": args.sam_backend,
         "sam_model_type": args.sam_model_type,
         "sam_single_mask": args.sam_single_mask,
         "attribution_method": args.attribution_method,
