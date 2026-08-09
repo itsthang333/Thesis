@@ -100,6 +100,7 @@ def main() -> None:
         "evaluator_sha256": hashes["project/evaluate_x4_yolo_predictions.py"],
         "output_prefix": f"x4_yolov8s_seg_seed{args.seed}",
         "evaluation_batch": 1,
+        "retina_masks": False,
         "test_images_read": 0,
         "test_evaluated": False,
     }

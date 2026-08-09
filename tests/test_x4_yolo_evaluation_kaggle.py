@@ -63,6 +63,7 @@ def test_kernel_contract_rejects_test_access() -> None:
         "evaluator_sha256": "0" * 64,
         "output_prefix": "x4_yolo_seed42",
         "evaluation_batch": 1,
+        "retina_masks": False,
         "test_images_read": 0,
         "test_evaluated": False,
     }
@@ -77,3 +78,4 @@ def test_prediction_runner_binds_ultralytics_output_to_writable_stage_a_dir() ->
     assert 'project=str(args.output_dir / "_ultralytics")' in source
     assert 'name="predict"' in source
     assert "exist_ok=True" in source
+    assert "retina_masks=False" in source

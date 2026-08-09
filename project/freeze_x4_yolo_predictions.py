@@ -104,7 +104,11 @@ def main() -> None:
         imgsz=args.imgsz,
         conf=args.conf,
         iou=args.iou,
-        retina_masks=True,
+        # Standard Ultralytics mask-grid output. Upsampling every instance to
+        # the native X-ray shape can require >14 GiB before the masks are
+        # unioned; union first, then resize the binary union in
+        # ``union_instance_masks`` to preserve the native evaluation grid.
+        retina_masks=False,
         device=args.device,
         verbose=False,
         save=False,

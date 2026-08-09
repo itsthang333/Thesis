@@ -49,6 +49,7 @@ def validate_contract(contract: dict[str, object]) -> None:
         or contract.get("test_images_read") != 0
         or contract.get("test_evaluated") is not False
         or contract.get("evaluation_batch") != 1
+        or contract.get("retina_masks") is not False
         or not isinstance(contract.get("seed"), int)
         or any(not isinstance(contract.get(key), str) for key in required_strings)
     ):
