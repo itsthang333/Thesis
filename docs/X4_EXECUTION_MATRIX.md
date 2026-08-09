@@ -6,18 +6,22 @@ This file is the requirement-by-requirement execution ledger for `X4.pdf`.
 yet complete.  Validation is the canonical 371-image outer cohort; test remains
 locked throughout X4 development.
 
-Last updated: 2026-08-09.
+Last updated: 2026-08-10.
 
-## Current GPU allocation
+## Paused GPU state
+
+All new experiments were paused on 2026-08-10 at the researcher's request so
+that the next available GPU budget can be assigned to one highest-priority
+experiment. No X4 test image was opened during this pause.
 
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
-| `wanwin` | `btxrd-x4-yolo-eval-seed42` v3 | Freeze/evaluate completed YOLO seed42 checkpoint | Technical wrapper error under diagnosis; no efficacy result |
+| `wanwin` | `btxrd-x4-yolo-eval-seed42` v6 | Freeze/evaluate completed YOLO seed42 checkpoint | Technical CUDA OOM in the YOLO prototype head; no efficacy result |
 | `wanwin` | `btxrd-g4-ten-medsam-screen` v1 | Validation-only ten-class + MedSAM matched foundation-model screen | Complete: Dice 0.232962 |
-| `qwinwan` | `btxrd-x4-yolo-eval-seed44` v3 | Freeze/evaluate completed YOLO seed44 checkpoint | Technical wrapper error under diagnosis; no efficacy result |
-| `qwinwan` | `btxrd-g4-ten-sam2l-screen` v1 | Validation-only ten-class + SAM2.1-L matched foundation-model screen | Running |
-| `itsthang333` | `btxrd-x4-yolo-eval-seed43` v3 | Freeze/evaluate completed YOLO seed43 checkpoint | Technical wrapper error under diagnosis; no efficacy result |
-| `itsthang333` | `btxrd-g4-ten-sammed2d` v2 | Validation-only ten-class + SAM-Med2D matched screen | Retry pending after restoring missing official-source archive |
+| `qwinwan` | `btxrd-x4-yolo-eval-seed44` v6 | Freeze/evaluate completed YOLO seed44 checkpoint | Technical CUDA OOM in the YOLO prototype head; no efficacy result |
+| `qwinwan` | `btxrd-g4-ten-sam2l-screen` v2 | Validation-only ten-class + SAM2.1-L matched foundation-model screen | Cancelled while running; no final Dice result |
+| `itsthang333` | `btxrd-x4-yolo-eval-seed43` v6 | Freeze/evaluate completed YOLO seed43 checkpoint | Technical CUDA OOM in the YOLO prototype head; no efficacy result |
+| `itsthang333` | `btxrd-g4-ten-sammed2d` | Validation-only ten-class + SAM-Med2D matched screen | Not launched; complete input payload restored and preserved |
 
 Three second-account slots became available after X12 completion. L4 adds X13
 and X14 as non-duplicate supplementary work. X13 is complete and audited;
@@ -32,6 +36,13 @@ The three YOLO training jobs are complete. Their native Ultralytics mask
 substitutes for the common binary-union Dice endpoint: checkpoint download,
 371-image prediction freeze and Stage-B Dice/IoU evaluation remain pending.
 All three receipts bind the canonical split and report zero test access.
+
+The matched v6 YOLO evaluation retries also produced no binary-mask Dice.
+All three independently reached the same CUDA OOM in the segmentation
+prototype head on the first inference pass: a 4.09-GiB allocation request on
+GPU 0 after 12.95 GiB was already in use. This occurs before the low-resolution
+instance-mask union and therefore is not evidence about YOLO segmentation
+efficacy. Partial prediction files are not treated as a valid 371-image result.
 
 All five bounded X12 student/fully jobs are
 complete and audited, so their former slots are intentionally not filled with
