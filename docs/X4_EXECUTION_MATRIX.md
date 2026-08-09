@@ -15,8 +15,8 @@ Last updated: 2026-08-09.
 | `wanwin` | `btxrd-x4-rich-gallery-student-seed42` v1 | W3 Rich-Gallery-pseudo-mask matched U-Net, seed 42 | Running |
 | `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v4 | X3 YOLOv8s-seg seed42 after batch-two/background-only/writable-copy fixes | Running |
 | `qwinwan` | `btxrd-x4-yolov8s-seg-seed44` v1 | X3 YOLOv8s-seg seed44 with the audited v4 compatibility source | Running |
-| `qwinwan` | `btxrd-x4-rich-gallery-seed43-prediction-freeze` v1 | W3 freeze 371 Rich-student seed43 predictions before spatial GT | Running |
-| `itsthang333` | `btxrd-x4-rich-gallery-seed44-prediction-freeze` v1 | W3 freeze 371 Rich-student seed44 predictions before spatial GT | Running |
+| `qwinwan` | `btxrd-x4-rich-gallery-seed43-prediction-freeze` v2 | W3 freeze 371 Rich-student seed43 predictions before spatial GT | Running |
+| `itsthang333` | `btxrd-x4-rich-gallery-seed44-prediction-freeze` v2 | W3 freeze 371 Rich-student seed44 predictions before spatial GT | Running |
 | `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Running |
 
 The two YOLO v2 jobs stopped after a deterministic Ultralytics
@@ -33,6 +33,12 @@ copies without changing source images.  Seven focused tests pass; rebuilt
 private payloads and server-returned runner/exporter hashes match on all three
 accounts.  Corrected seed42/43 v4 jobs are running.  Seed44 was launched on
 `qwinwan` after its S2C and Rich-student training slots completed.
+
+The first Rich-student prediction-freeze versions failed before inference
+because one archive basename in the reused wrapper remained hard-coded as
+`x4_s2c_...`.  Version two changes only that basename to the arm-qualified
+`x4_{ARM}_...`; checkpoint hashes, thresholds and the scientific protocol are
+unchanged.  Static archive/checkpoint hash checks and syntax checks pass.
 
 ## Audited native-resolution validation results available
 
