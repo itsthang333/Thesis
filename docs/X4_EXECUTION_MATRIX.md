@@ -19,6 +19,12 @@ Last updated: 2026-08-09.
 | `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Running |
 | `itsthang333` | `btxrd-x4-s2c-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, S2C student seed42 | Complete |
 
+Three second-account slots became available after X12 completion. L4 adds X13
+and X14 as non-duplicate supplementary work. X13 is a frozen-gallery replay
+and is assigned first; X14 then uses the freed slot for its matched three-seed
+selector-depth study. Cross-account slots are used only after the same
+hash-bound frozen inputs have been copied to that account.
+
 The three YOLO jobs remain active. All five bounded X12 student/fully jobs are
 complete and audited, so their former slots are intentionally not filled with
 duplicate runs. These jobs do not retrain models: they reuse exact seed42
@@ -133,6 +139,10 @@ pseudo-label generation is excluded by design and must be reported separately.
 | X10 | Protocol-selected qualitative panel | Complete. The pre-render freeze supplies 12/12 categories without visual cherry-picking, including normal FP. Twelve panels were rendered with exact Direct Rich choices/gallery plus CAM, PuzzleCAM, S2C, Rich-student and fully-supervised seed42 bundles. All provenance was verified before 11 tumor annotations were opened; no test read. | Complete | Transfer the frozen panels and selection protocol to the thesis. |
 | X11 | Risk-coverage using frozen G1/fusion confidence | `project/analyze_x4_risk_coverage.py` and the frozen result under `artifacts/final_pipeline/x4/x11_risk_coverage` are complete. Spearman confidence-vs-Dice is 0.313141; Dice<0.10 and complete-miss AUROC are 0.658570/0.656916. Mean Dice at 100/80/60/40% coverage is 0.288729/0.335050/0.361465/0.367326. | Complete | Interpret as moderate failure-detection evidence, not calibrated uncertainty or a new routing rule. |
 | X12 | Runtime, peak VRAM, storage; offline separated from online | Same-T4 student/fully benchmark complete for all five seed42 checkpoints: 371 timed images, three warm-ups, 0 validation annotations and 0 test images read. Median online latency is 10.623-10.785 ms/image and peak allocation is 614.185 MiB. Raw receipts and aggregate CSV are under `artifacts/final_pipeline/x4/x12_efficiency_seed42`. | Student/fully complete | Add Direct Rich and YOLO online rows separately; report offline pseudo-label/generator resources outside this table. |
+| X13 | Equal-budget source complementarity | Implementation and focused tests complete. Every subset receives `K_i=min(27,N_L320,N_C448,N_external)` candidates chosen by a frozen upstream ranking before GT; unchanged R7 produces the final choice. | Ready to launch | Upload exact frozen 371-image gallery/score payload to a free account, run Stage A/B validation only, then report Dice/oracle/Recall/regret/subgroups/paired CI. |
+| X14 | Selector depth/capacity baseline | Design frozen: upstream, linear, one-hidden-layer and current two-hidden-layer G1; selector-only and identical R7 fusion; three matched seeds. | Implementation in progress | Reuse the exact E6 candidate/descriptor contract, freeze architecture code and launch after source/cache audit. |
+| X15 | Optional four-fold robustness | Four locked endpoints only; group-aware train+validation folds; test excluded. | Deferred | Run only if GPU remains after X3/X13/X14. |
+| X8b | Locked-test uncertainty | Requires only already-frozen test predictions, not retraining. | Deferred by test lock | Do not access during X4 development; perform only under explicit final-analysis authorization. |
 
 ## P0/P1 readiness
 

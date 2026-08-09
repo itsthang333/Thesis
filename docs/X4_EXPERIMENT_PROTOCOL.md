@@ -25,6 +25,28 @@ Live implementation/run status is tracked in `X4_EXECUTION_MATRIX.md`.
 | X10 | Qualitative panel | Protocol-selected quantiles, sizes, extent, misses, wrong site, normal FP, multifocal |
 | X11 | Risk-coverage | Score-Dice Spearman, failure AUROC, Dice/miss at 100/80/60/40% coverage |
 | X12 | Efficiency | Median/IQR time, peak VRAM and storage; offline generation separated from inference |
+| X13 | Equal-budget source complementarity | Seven source subsets, identical per-image candidate budget, unchanged G1/upstream/R7 |
+| X14 | Selector capacity | Upstream, linear MIL, one-hidden-layer MIL, current two-hidden-layer G1; selector-only and matched R7 fusion, three seeds |
+
+## L4 supplementary protocol
+
+X13 resolves the remaining E4 candidate-count confound. For each validation
+image, `K_i=min(27,N_L320,N_C448,N_external)` is computed before spatial GT.
+Each source subset keeps exactly `K_i` candidates by descending frozen
+upstream score (G1 logit and stable candidate order are deterministic ties),
+then uses the unchanged equal percentile-rank R7 selector. The primary endpoint
+is actual macro Dice over the 184 tumor images; oracle Dice, Recall@Dice,
+regret, subgroup results and grouped-bootstrap CIs are secondary.
+
+X14 tests whether G1 depth itself is necessary. Linear, one-hidden-layer and
+current two-hidden-layer scorers use the same frozen candidate pool, descriptor
+vector, train/inner split, MIL pooling/loss, optimizer, epoch budget and seeds
+42/43/44. No candidate target is derived from Dice or polygons. Each learned
+selector is reported both alone and fused with the same upstream score by R7.
+
+The optional four-fold endpoint study is lower priority and starts only after
+X13, X14 and X3 finish. Locked-test uncertainty analysis is not part of X4
+development and remains deferred while the test lock is active.
 
 ## Matched student contract
 
