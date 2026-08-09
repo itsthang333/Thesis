@@ -41,6 +41,31 @@ def locate_dataset_root(input_root: Path) -> Path:
     return roots[0]
 
 
+def patch_ultralytics_batch_two_proto(package_root: Path) -> dict[str, str]:
+    """Patch the Ultralytics 8.4.0 batch-size-two proto dispatch bug.
+
+    In ``v8SegmentationLoss.loss`` the upstream release uses ``len(proto) == 2``
+    to detect a two-item tuple.  A regular four-dimensional proto tensor also
+    has length two when the final batch contains two images, so it is wrongly
+    unpacked into two three-dimensional tensors.  Restricting the branch to an
+    actual tuple/list preserves every scientific setting and only fixes that
+    incompatible dispatch.
+    """
+
+    loss_path = package_root / "ultralytics" / "utils" / "loss.py"
+    original = "        if len(proto) == 2:\n"
+    replacement = "        if isinstance(proto, (tuple, list)) and len(proto) == 2:\n"
+    text = loss_path.read_text(encoding="utf-8")
+    if text.count(original) != 1 or replacement in text:
+        raise RuntimeError("Ultralytics 8.4.0 proto patch precondition differs")
+    before = sha256_file(loss_path)
+    loss_path.write_text(text.replace(original, replacement), encoding="utf-8")
+    after = sha256_file(loss_path)
+    if before == after or loss_path.read_text(encoding="utf-8").count(replacement) != 1:
+        raise RuntimeError("Ultralytics 8.4.0 proto patch did not apply exactly")
+    return {"loss_path": str(loss_path), "sha256_before": before, "sha256_after": after}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-root", type=Path, default=Path("/kaggle/input"))
@@ -97,6 +122,7 @@ def main() -> None:
     ]
     print(json.dumps({"offline_install": [Path(item).name if item.endswith(".whl") else item for item in install]}), flush=True)
     subprocess.run(install, check=True)
+    print(json.dumps({"ultralytics_compatibility_patch": patch_ultralytics_batch_two_proto(package_root)}), flush=True)
     environment = os.environ.copy()
     environment.update(
         {

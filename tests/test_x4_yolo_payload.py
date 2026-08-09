@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from project.build_x4_yolo_kaggle_payload import SOURCE_FILES, verify_payload, write_manifest
+from project.run_x4_yolo_kaggle import patch_ultralytics_batch_two_proto
 
 
 def test_payload_contains_legacy_script_import_closure() -> None:
@@ -39,3 +40,20 @@ def test_payload_rejects_unlisted_file(tmp_path: Path) -> None:
     (tmp_path / "extra.txt").write_text("extra", encoding="utf-8")
     with pytest.raises(RuntimeError, match="file set differs"):
         verify_payload(tmp_path)
+
+
+def test_ultralytics_batch_two_proto_patch_is_exact_and_fail_closed(tmp_path: Path) -> None:
+    loss_path = tmp_path / "ultralytics" / "utils" / "loss.py"
+    loss_path.parent.mkdir(parents=True)
+    loss_path.write_text(
+        "def loss(proto):\n"
+        "        if len(proto) == 2:\n"
+        "            proto, pred_semseg = proto\n",
+        encoding="utf-8",
+    )
+    report = patch_ultralytics_batch_two_proto(tmp_path)
+    patched = loss_path.read_text(encoding="utf-8")
+    assert "if isinstance(proto, (tuple, list)) and len(proto) == 2:" in patched
+    assert report["sha256_before"] != report["sha256_after"]
+    with pytest.raises(RuntimeError, match="precondition differs"):
+        patch_ultralytics_batch_two_proto(tmp_path)
