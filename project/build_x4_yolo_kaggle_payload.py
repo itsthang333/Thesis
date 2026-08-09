@@ -13,6 +13,11 @@ from pathlib import Path
 
 SOURCE_FILES = (
     "project/__init__.py",
+    # ``export_x4_yolo_dataset.py`` is intentionally executed as a script on
+    # Kaggle.  In that entrypoint ``datasets.common`` falls back to importing
+    # this module as top-level ``config``.  Keep it in the minimal payload;
+    # otherwise export fails before reading data or starting the GPU job.
+    "project/config.py",
     "project/run_x4_yolo_kaggle.py",
     "project/export_x4_yolo_dataset.py",
     "project/train_x4_yolov8s_seg.py",

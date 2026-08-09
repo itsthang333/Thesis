@@ -5,7 +5,15 @@ from pathlib import Path
 
 import pytest
 
-from project.build_x4_yolo_kaggle_payload import verify_payload, write_manifest
+from project.build_x4_yolo_kaggle_payload import SOURCE_FILES, verify_payload, write_manifest
+
+
+def test_payload_contains_legacy_script_import_closure() -> None:
+    """Guard the exact import path used by the offline Kaggle wrapper."""
+
+    assert "project/config.py" in SOURCE_FILES
+    assert "project/datasets/common.py" in SOURCE_FILES
+    assert "project/datasets/btxrd.py" in SOURCE_FILES
 
 
 def test_payload_manifest_exact_match_and_tamper(tmp_path: Path) -> None:
