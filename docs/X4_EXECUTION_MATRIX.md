@@ -12,11 +12,11 @@ Last updated: 2026-08-09.
 
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
-| `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v4 | X3 YOLOv8s-seg seed42 after batch-two/background-only/writable-copy fixes | Running |
-| `wanwin` | `btxrd-l4-x14-selector-capacity` v1 | X14 matched linear/one-hidden/current-G1 capacity study, three seeds | Running |
-| `qwinwan` | `btxrd-x4-yolov8s-seg-seed44` v1 | X3 YOLOv8s-seg seed44 with the audited v4 compatibility source | Running |
+| `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v4 | X3 YOLOv8s-seg seed42 after batch-two/background-only/writable-copy fixes | Training complete; common Dice evaluation pending |
+| `wanwin` | `btxrd-g4-ten-medsam-screen` v1 | Validation-only ten-class + MedSAM matched foundation-model screen | Running |
+| `qwinwan` | `btxrd-x4-yolov8s-seg-seed44` v1 | X3 YOLOv8s-seg seed44 with the audited v4 compatibility source | Training complete; common Dice evaluation pending |
 | `qwinwan` | `btxrd-l4-x13-equal-budget-source` v3 | X13 equal-budget frozen-gallery replay | Complete and audited |
-| `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Running |
+| `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Training complete; common Dice evaluation pending |
 | `itsthang333` | `btxrd-x4-s2c-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, S2C student seed42 | Complete |
 
 Three second-account slots became available after X12 completion. L4 adds X13
@@ -25,7 +25,14 @@ X14 now occupies the second `wanwin` GPU slot for its matched three-seed
 selector-depth study. Cross-account inputs were server-download verified
 against their bound local SHA-256 values before either run.
 
-The three YOLO jobs remain active. All five bounded X12 student/fully jobs are
+The three YOLO training jobs are complete. Their native Ultralytics mask
+`mAP50/mAP50-95` values are `0.561096/0.277663` (seed42),
+`0.533550/0.267338` (seed43), and `0.541830/0.272754` (seed44). These are not
+substitutes for the common binary-union Dice endpoint: checkpoint download,
+371-image prediction freeze and Stage-B Dice/IoU evaluation remain pending.
+All three receipts bind the canonical split and report zero test access.
+
+All five bounded X12 student/fully jobs are
 complete and audited, so their former slots are intentionally not filled with
 duplicate runs. These jobs do not retrain models: they reuse exact seed42
 checkpoints and measure 371-image online inference latency, T4 peak memory and
@@ -44,8 +51,8 @@ JPEGs that it attempted to repair.  V4 conditionally applies the unused-
 gradient term only when a semantic head exists and materializes writable byte
 copies without changing source images.  Seven focused tests pass; rebuilt
 private payloads and server-returned runner/exporter hashes match on all three
-accounts.  Corrected seed42/43 v4 jobs are running.  Seed44 was launched on
-`qwinwan` after its S2C and Rich-student training slots completed.
+accounts. Corrected seed42/43 v4 jobs and seed44 v1 have now completed
+training.
 
 The first Rich-student prediction-freeze versions failed before inference
 because one archive basename in the reused wrapper remained hard-coded as

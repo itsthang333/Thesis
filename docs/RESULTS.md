@@ -168,8 +168,33 @@ scarce large-lesion subgroup, while ViT-H is slower and has a lower point
 estimate. This is a matched accuracy-cost conclusion, not a claim that ViT-B
 is universally superior.
 
-These are development results on 184 tumor validation images. There are 49
-complete misses.
+### G4 factorial follow-up: ten-class supervision with SAM-v1 ViT-L
+
+The three predeclared seeds completed on the canonical validation cohort with
+the same gallery construction, G1 selector and equal percentile-rank fusion.
+Selections were frozen before opening the 184 tumor polygons; every receipt
+reports `test_images_read=0`.
+
+| Seed | Dice | IoU | `<1%` | `1-<5%` | `>=5%` | Oracle Dice |
+|---:|---:|---:|---:|---:|---:|---:|
+| 42 | 0.288140 | 0.221103 | 0.133150 | 0.458049 | 0.417903 | 0.544467 |
+| 43 | **0.297877** | 0.223081 | 0.125539 | 0.476739 | **0.482423** | 0.553963 |
+| 44 | 0.289900 | 0.221337 | 0.119135 | **0.479823** | 0.421988 | **0.555922** |
+| Mean +/- sample SD | **0.291973 +/- 0.005189** | - | - | - | - | - |
+
+The mean improves on the binary + ViT-B baseline by only `+0.003243`, but is
+`-0.006981` below the already measured ten-class + ViT-B mean
+(`0.298953990`). Thus the two individually plausible changes are not additive:
+ten-class supervision is beneficial, whereas replacing ViT-B by ViT-L in that
+ten-class pipeline lowers the three-seed mean. The same bottleneck remains
+visible: the gallery oracle is high (`0.544-0.556`), but selector regret is
+`0.256-0.266`, and small-lesion masks remain substantially over-extended.
+Accordingly, ten-class + ViT-B remains the current matched multi-seed choice;
+ViT-L is not promoted merely because it is a larger SAM backbone.
+
+These are development results on 184 tumor validation images. In the original
+single-seed ViT-B/L/H comparison, the reported ViT-B arm has 49 complete
+misses; the three ten-class + ViT-L seeds have 46/35/37 misses respectively.
 
 ### G4 E2 attribution/prompt decomposition
 
