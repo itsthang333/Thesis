@@ -146,7 +146,12 @@ def main() -> None:
         training_extract, "training_report.json", str(receipt["training_report_sha256"])
     )
     training_root = training_report.parent
-    exact_file(training_root, "best.pt", str(receipt["best_checkpoint_sha256"]))
+    checkpoint = training_root / "best.pt"
+    if (
+        not checkpoint.is_file()
+        or sha256_file(checkpoint) != str(receipt["best_checkpoint_sha256"])
+    ):
+        raise RuntimeError("Top-level X4 YOLO best checkpoint differs")
     dataset_root = locate_dataset_root(args.input_root)
 
     freeze_runner = exact_file(
