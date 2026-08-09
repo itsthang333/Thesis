@@ -1,0 +1,24 @@
+{
+  "all_provenance_verified_before_annotations": true,
+  "candidate_manifest_sha256": "3e1af0c676739b6e3c440210faebe22c1c07b91f1e5e907492063dd860133619",
+  "choices_sha256": "ed881a16855990fa4e96b5b6c1574b646f4f3aa8117b3c6f9ef8b5a02869ff92",
+  "direct_per_image_sha256": "a395e4a25ede4d6c73959b2cfd523cd676fe8f0a5a9d2e60a0d04b6bba43a76c",
+  "panel_manifest_sha256": "7fed2139cdba5c703222c391b506279ac0dff41ab38b35771dfe0b0635bbf5c7",
+  "prediction_bundle_freezes": {
+    "cam_student": "e1279132e622ea021d83a4870a891bf3aba8cade2c304ae327002588b5d3613a",
+    "fully_supervised": "396f16be7f7fe9fbe8c02f9e038deb85c61160a7e874b87e9b12ff8d47696409",
+    "puzzlecam_student": "69d6c653981b63d5931fd93a8f84575b7c6ab8604a45b3ec1644f73d04a7da30",
+    "rich_gallery_student": "00685f2e85e6cd359387a97c186802a8bf0913b114a682a71b03980eae805cc0",
+    "s2c_student": "4e169316494eeff8fa9783ea880d286016d82d47b32f40b9220adae33467d3dc"
+  },
+  "schema_version": 1,
+  "selected_cases": 12,
+  "selection_by_visual_appeal": false,
+  "selection_freeze_sha256": "9e31b948db7977422480f0a1c1ff0e7427fdd59c9cc7f07dfb16bd8e5d3f7c39",
+  "selection_frozen_before_image_or_gt_rendering": true,
+  "selection_manifest_sha256": "1eec5c9eb31d2b25559686e20b5d339bbb93ab45a0f4030daccb4c3adcbd847d",
+  "stage": "x4_qualitative_panel_render_v1",
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "validation_annotations_opened": 11
+}
