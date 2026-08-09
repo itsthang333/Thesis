@@ -13,17 +13,17 @@ Last updated: 2026-08-09.
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
 | `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v4 | X3 YOLOv8s-seg seed42 after batch-two/background-only/writable-copy fixes | Running |
-| `wanwin` | `btxrd-x4-fully-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, fully supervised seed42 | Complete |
+| `wanwin` | `btxrd-l4-x14-selector-capacity` v1 | X14 matched linear/one-hidden/current-G1 capacity study, three seeds | Running |
 | `qwinwan` | `btxrd-x4-yolov8s-seg-seed44` v1 | X3 YOLOv8s-seg seed44 with the audited v4 compatibility source | Running |
-| `qwinwan` | `btxrd-x4-puzzlecam-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, PuzzleCAM student seed42 | Complete |
+| `qwinwan` | `btxrd-l4-x13-equal-budget-source` v3 | X13 equal-budget frozen-gallery replay | Complete and audited |
 | `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Running |
 | `itsthang333` | `btxrd-x4-s2c-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, S2C student seed42 | Complete |
 
 Three second-account slots became available after X12 completion. L4 adds X13
-and X14 as non-duplicate supplementary work. X13 is a frozen-gallery replay
-and is assigned first; X14 then uses the freed slot for its matched three-seed
-selector-depth study. Cross-account slots are used only after the same
-hash-bound frozen inputs have been copied to that account.
+and X14 as non-duplicate supplementary work. X13 is complete and audited;
+X14 now occupies the second `wanwin` GPU slot for its matched three-seed
+selector-depth study. Cross-account inputs were server-download verified
+against their bound local SHA-256 values before either run.
 
 The three YOLO jobs remain active. All five bounded X12 student/fully jobs are
 complete and audited, so their former slots are intentionally not filled with
@@ -119,6 +119,35 @@ Every row uses the same Tesla T4 x2 environment, three warm-ups and all 371
 validation images. The results measure online inference only; offline
 pseudo-label generation is excluded by design and must be reported separately.
 
+## X13 equal-budget source complementarity
+
+Version three completed after two fail-fast technical diagnoses. Version one
+missed the source root in `PYTHONPATH`; version two correctly exposed that the
+external source is generated only for the 184 known-tumor images. The final
+protocol therefore applies identical per-image budgets on those 184 cases and
+records explicit empty-mask abstention for all 187 known-normal cases. The
+independent audit passes with 371 frozen choices, 1,288 tumor/subset rows and
+zero test reads. Mean candidate budget is 26.897 (range bounded by 27).
+
+| Equal-budget source subset | Dice | IoU | Oracle Dice | Regret | `<1%` | `1-<5%` | `>=5%` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| L320 + C448 | **0.275508** | 0.205566 | 0.410035 | 0.134526 | 0.147928 | 0.421661 | 0.357148 |
+| C448 + external | 0.274591 | **0.207330** | **0.412641** | 0.138049 | **0.151048** | 0.417439 | 0.348371 |
+| L320 + C448 + external | 0.271698 | 0.202496 | 0.411649 | 0.139951 | 0.145263 | **0.423016** | 0.326698 |
+| C448 | 0.258230 | 0.190881 | 0.384003 | 0.125773 | 0.135765 | 0.409702 | 0.291882 |
+| L320 | 0.255826 | 0.192786 | 0.369000 | **0.113175** | 0.117984 | 0.396001 | **0.414964** |
+| L320 + external | 0.254619 | 0.192893 | 0.379548 | 0.124929 | 0.127964 | 0.396047 | 0.350320 |
+| external | 0.228535 | 0.172433 | 0.361730 | 0.133195 | 0.061102 | 0.400756 | 0.414028 |
+
+At a matched proposal count, the external source does not improve selected
+Dice over the L320+C448 pair. Full-minus-L320+C448 is -0.005366 with grouped
+bootstrap CI [-0.019132, 0.005643], so there is no evidence that adding the
+external source improves the selector endpoint. Full does beat external-only
+by 0.042861, CI [0.008315, 0.078053], showing complementarity of the two
+internal sources rather than a universal benefit from every source. This is an
+ablation result; it does not replace the unrestricted Direct-Rich baseline
+Dice 0.288729.
+
 ## Requirement ledger
 
 | ID | Required evidence | Implementation/evidence | Status | Next blocking action |
@@ -139,8 +168,8 @@ pseudo-label generation is excluded by design and must be reported separately.
 | X10 | Protocol-selected qualitative panel | Complete. The pre-render freeze supplies 12/12 categories without visual cherry-picking, including normal FP. Twelve panels were rendered with exact Direct Rich choices/gallery plus CAM, PuzzleCAM, S2C, Rich-student and fully-supervised seed42 bundles. All provenance was verified before 11 tumor annotations were opened; no test read. | Complete | Transfer the frozen panels and selection protocol to the thesis. |
 | X11 | Risk-coverage using frozen G1/fusion confidence | `project/analyze_x4_risk_coverage.py` and the frozen result under `artifacts/final_pipeline/x4/x11_risk_coverage` are complete. Spearman confidence-vs-Dice is 0.313141; Dice<0.10 and complete-miss AUROC are 0.658570/0.656916. Mean Dice at 100/80/60/40% coverage is 0.288729/0.335050/0.361465/0.367326. | Complete | Interpret as moderate failure-detection evidence, not calibrated uncertainty or a new routing rule. |
 | X12 | Runtime, peak VRAM, storage; offline separated from online | Same-T4 student/fully benchmark complete for all five seed42 checkpoints: 371 timed images, three warm-ups, 0 validation annotations and 0 test images read. Median online latency is 10.623-10.785 ms/image and peak allocation is 614.185 MiB. Raw receipts and aggregate CSV are under `artifacts/final_pipeline/x4/x12_efficiency_seed42`. | Student/fully complete | Add Direct Rich and YOLO online rows separately; report offline pseudo-label/generator resources outside this table. |
-| X13 | Equal-budget source complementarity | Implementation and focused tests complete. On the 184 known-tumor images where all three sources are intentionally generated, every subset receives `K_i=min(27,N_L320,N_C448,N_external)` candidates chosen by frozen upstream ranking before GT; unchanged R7 produces the final choice. The 187 known-normal images explicitly abstain, matching the frozen binary gate. V1 failed on missing `PYTHONPATH`; V2 exposed the expected source-availability asymmetry rather than an efficacy result. The corrected cohort policy has 3/3 focused tests passing. | Technical retry pending | Update the exact source payload and rerun the same validation-only endpoint; report Dice/oracle/Recall/regret/subgroups/paired CI. |
-| X14 | Selector depth/capacity baseline | Design and implementation frozen: upstream, linear, one-hidden-layer and exact current two-hidden-layer G1; selector-only and identical R7 fusion; seeds42/43/44. All learned arms share one RAD-DINO descriptor cache, one group-aware inner split, the full MIL objective, optimizer and fixed 16 epochs with no best-epoch selection. Stage-A output auditor and Stage-B evaluator support are implemented; 31/31 focused/regression tests pass. | Packaging | Bind exact source/protocol/input hashes, server-download verify the payload and launch one matched GPU job. |
+| X13 | Equal-budget source complementarity | Complete and independently audited: 371 freezes, 184 tumor cases x seven subsets, 187 known-normal abstentions and zero test reads. Best matched-budget subset is L320+C448 Dice 0.275508; full is 0.271698 and external-only 0.228535. Full-minus-L320+C448 CI crosses zero, while full significantly beats external-only. | Complete | Report that candidate-count control supports L320+C448 complementarity but not an added selected-Dice benefit from external proposals. |
+| X14 | Selector depth/capacity baseline | Design and implementation frozen: upstream, linear, one-hidden-layer and exact current two-hidden-layer G1; selector-only and identical R7 fusion; seeds42/43/44. All learned arms share one RAD-DINO descriptor cache, one group-aware inner split, the full MIL objective, optimizer and fixed 16 epochs with no best-epoch selection. Stage-A output auditor and Stage-B evaluator support are implemented; 31/31 focused/regression tests pass. Source/protocol payload server-download hashes match. | v1 running on `wanwin` T4 | On completion, independently audit 9 checkpoints/7,420 choices, then report actual Dice/regret/subgroups/source-choice error/paired CI. |
 | X15 | Optional four-fold robustness | Four locked endpoints only; group-aware train+validation folds; test excluded. | Deferred | Run only if GPU remains after X3/X13/X14. |
 | X8b | Locked-test uncertainty | Requires only already-frozen test predictions, not retraining. | Deferred by test lock | Do not access during X4 development; perform only under explicit final-analysis authorization. |
 
