@@ -13,18 +13,19 @@ Last updated: 2026-08-09.
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
 | `wanwin` | `btxrd-x4-rich-gallery-student-seed42` v1 | W3 Rich-Gallery-pseudo-mask matched U-Net, seed 42 | Running |
-| `wanwin` | `btxrd-x4-fully-seed43-prediction-freeze` v1 | Fully-supervised seed43 Stage-A freeze | Complete; Stage-B evaluated |
+| `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v3 | X3 YOLOv8s-seg seed42 after batch-two compatibility fix | Running |
 | `qwinwan` | `btxrd-x4-rich-gallery-student-seed43` v1 | W3 Rich-Gallery-pseudo-mask matched U-Net, seed 43 | Running |
 | `qwinwan` | `btxrd-x4-s2c-student-seed43` v1 | W2 S2C-pseudo-mask matched U-Net, seed 43 | Running |
 | `itsthang333` | `btxrd-x4-rich-gallery-student-seed44` v1 | W3 Rich-Gallery-pseudo-mask matched U-Net, seed 44 | Running |
-| `itsthang333` | `btxrd-x4-puzzlecam-seed44-prediction-freeze` v1 | PuzzleCAM seed44 Stage-A freeze | Complete; Stage-B evaluated |
+| `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v3 | X3 YOLOv8s-seg seed43 after batch-two compatibility fix | Running |
 
-The two YOLO v2 jobs are temporarily stopped after a deterministic Ultralytics
+The two YOLO v2 jobs stopped after a deterministic Ultralytics
 8.4.0 compatibility failure on a final batch of size two.  The upstream loss
 code mistakes a four-dimensional tensor whose batch dimension is two for a
 two-item tuple, unpacks it to three dimensions and then fails.  The exact
 type-guard compatibility patch has 6/6 focused tests passing; no scientific
-setting is changed.
+setting is changed.  The rebuilt private payloads and server-returned runner
+hashes matched exactly, and both corrected v3 jobs are now running.
 
 ## Audited native-resolution validation results available
 
@@ -65,7 +66,7 @@ validation baseline at Dice 0.2887294867.
 | W1 | PuzzleCAM-to-U-Net | PuzzleCAM generator training and train/validation mask audits are complete. The standardized target bundle is frozen. Seeds 42/43/44 passed training, prediction-freeze and Stage-B checks; Dice is 0.116542/0.116134/0.116389 (mean 0.116355, sample SD 0.000206). | Complete | Include the stable over-segmentation and normal-FP failure in X8/X9. |
 | W2 | S2C-to-U-Net | Generator/checkpoint/cache provenance passed, and both mask archives plus the common target bundle completed. Independent native-mask audit exposed an efficacy failure: only 1/1,488 tumor train images contains any selected S2C segment (432 foreground pixels), while 0/184 tumor validation images contains one; all 1,493/187 normal masks are correctly empty. Seeds 42/44 training and 371-image Stage-B evaluations completed: both produce empty masks on 184/184 tumor images and Dice/IoU 0 in every subgroup. Seed43 runs. | Two seeds evaluated; seed43 running | Complete seed43 to close the required three-seed ablation, then report the deterministic all-background collapse. |
 | W3 | Rich-Gallery+G1+R7-to-U-Net | V3 reconstructed the exact semantic supply, scored all 2,981 train images with locked G1 and froze targets inline. Both archives matched receipt SHA. Independent target validation passed exact canonical IDs/hashes: 2,981 targets, 1,488/1,488 tumor targets non-empty, zero outer-validation annotations and zero test reads. Students 42/43/44 now run. | Student training running | Audit/freeze/evaluate all three Rich students. |
-| X3 | YOLOv8s-seg upper bound, 600 px, 300 epochs, native mAP and common binary-union evaluation | Export, fixed protocol and Stage-A/B code are implemented. V2 passed import closure, exported the exact train/validation set and entered GPU training, then both accounts reproduced an Ultralytics 8.4.0 tensor/tuple dispatch bug when a batch has size two. A fail-closed one-line type guard plus regression test fixes only this compatibility fault. | Technical fix tested; rerun pending | Rebuild/download-back the exact payload and rerun seeds 42/43 in the two released slots, then add seed44. |
+| X3 | YOLOv8s-seg upper bound, 600 px, 300 epochs, native mAP and common binary-union evaluation | Export, fixed protocol and Stage-A/B code are implemented. V2 reproduced an Ultralytics 8.4.0 tensor/tuple dispatch bug when a batch has size two. A fail-closed one-line type guard fixes only this compatibility fault; 6/6 tests and private payload/server-runner hash checks pass. | Seeds 42/43 v3 running | Confirm both pass the former epoch-one failure point, then audit/freeze/evaluate and add seed44. |
 | X4 | Normal-image specificity/FPR, predicted area distribution/threshold rates, false components and examples | `project/evaluation/segmentation_metrics.py` implements all numeric endpoints; the student evaluator uses all 187 normal validation images. | Implemented | Produce results after each prediction freeze; add protocol-selected normal examples under X10. |
 | X5 | 8-neighbour lesion/multifocal metrics and one-to-one matching at IoU 0.10/0.25/0.50 | Implemented in `project/evaluation/segmentation_metrics.py`, including precision/recall/F1, missed/excess lesions, partial multifocal miss and component-count error. Exact fixtures now verify the expected 2/1/1 matches and F1 1.0/0.5/0.5 at the three thresholds. | Implemented and tested | Run on every arm/seed after each prediction freeze. |
 | X6 | Macro/micro overlap, pixel precision/recall, extent, HD95/ASSD, empty and zero-overlap cases | Implemented in the common native-grid evaluator. HD95/ASSD are explicitly pixels and conditional-defined counts are reported. | Implemented | Run on every arm/seed and aggregate the declared subgroup tables. |
