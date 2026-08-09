@@ -170,7 +170,9 @@ def main() -> None:
     environment = os.environ.copy()
     environment.update(
         {
-            "PYTHONPATH": str(package_root) + os.pathsep + str(source_root),
+            "PYTHONPATH": os.pathsep.join(
+                (str(package_root), str(source_root / "project"), str(source_root))
+            ),
             "PYTHONHASHSEED": str(args.seed),
             "PYTHONUNBUFFERED": "1",
             "PYTHONPYCACHEPREFIX": "/kaggle/working/pycache",

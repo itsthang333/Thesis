@@ -18,6 +18,7 @@ SOURCE_FILES = (
     "project/train_x4_yolov8s_seg.py",
     "project/frozen_io.py",
     "project/x4_contract.py",
+    "project/config.py",
     "project/datasets/__init__.py",
     "project/datasets/btxrd.py",
     "project/datasets/common.py",

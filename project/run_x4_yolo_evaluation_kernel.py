@@ -70,7 +70,9 @@ def main() -> None:
     runner = exact_file("run_x4_yolo_evaluation_kaggle.py", str(contract["runner_sha256"]))
     source_root = runner.parent.parent
     environment = os.environ.copy()
-    environment["PYTHONPATH"] = str(source_root)
+    environment["PYTHONPATH"] = os.pathsep.join(
+        (str(source_root / "project"), str(source_root))
+    )
     command = [
         sys.executable,
         str(runner),
