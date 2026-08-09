@@ -12,12 +12,12 @@ Last updated: 2026-08-09.
 
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
-| `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v4 | X3 YOLOv8s-seg seed42 after batch-two/background-only/writable-copy fixes | Training complete; common Dice evaluation pending |
-| `wanwin` | `btxrd-g4-ten-medsam-screen` v1 | Validation-only ten-class + MedSAM matched foundation-model screen | Running |
-| `qwinwan` | `btxrd-x4-yolov8s-seg-seed44` v1 | X3 YOLOv8s-seg seed44 with the audited v4 compatibility source | Training complete; common Dice evaluation pending |
-| `qwinwan` | `btxrd-l4-x13-equal-budget-source` v3 | X13 equal-budget frozen-gallery replay | Complete and audited |
-| `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Training complete; common Dice evaluation pending |
-| `itsthang333` | `btxrd-x4-s2c-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, S2C student seed42 | Complete |
+| `wanwin` | `btxrd-x4-yolo-eval-seed42` v3 | Freeze/evaluate completed YOLO seed42 checkpoint | Technical wrapper error under diagnosis; no efficacy result |
+| `wanwin` | `btxrd-g4-ten-medsam-screen` v1 | Validation-only ten-class + MedSAM matched foundation-model screen | Complete: Dice 0.232962 |
+| `qwinwan` | `btxrd-x4-yolo-eval-seed44` v3 | Freeze/evaluate completed YOLO seed44 checkpoint | Technical wrapper error under diagnosis; no efficacy result |
+| `qwinwan` | `btxrd-g4-ten-sam2l-screen` v1 | Validation-only ten-class + SAM2.1-L matched foundation-model screen | Running |
+| `itsthang333` | `btxrd-x4-yolo-eval-seed43` v3 | Freeze/evaluate completed YOLO seed43 checkpoint | Technical wrapper error under diagnosis; no efficacy result |
+| `itsthang333` | `btxrd-g4-ten-sammed2d` v2 | Validation-only ten-class + SAM-Med2D matched screen | Retry pending after restoring missing official-source archive |
 
 Three second-account slots became available after X12 completion. L4 adds X13
 and X14 as non-duplicate supplementary work. X13 is complete and audited;

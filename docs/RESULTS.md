@@ -196,6 +196,27 @@ These are development results on 184 tumor validation images. In the original
 single-seed ViT-B/L/H comparison, the reported ViT-B arm has 49 complete
 misses; the three ten-class + ViT-L seeds have 46/35/37 misses respectively.
 
+### G4 matched foundation screen: ten-class + MedSAM ViT-B
+
+The validation-only MedSAM arm completed with the same ten-class classifier,
+three-source gallery, G1 selector and fixed equal percentile-rank fusion. Its
+choices were frozen before opening the 184 validation polygons and the receipt
+reports `test_images_read=0`.
+
+| Arm | Dice | IoU | `<1%` | `1-<5%` | `>=5%` | Oracle Dice | Misses |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ten-class + MedSAM ViT-B | **0.232962** | 0.164977 | 0.067943 | 0.422559 | 0.336336 | 0.373278 | 59 |
+
+MedSAM is therefore not promoted: it is `-0.065992` below the ten-class +
+SAM-v1 ViT-B three-seed mean (`0.298954`). The failure is already visible in
+candidate supply rather than being only a selector defect. For the 94 small
+lesions, proposal-oracle Dice is `0.172543`, 48 cases are complete misses and
+the selected-to-GT area ratio has median `23.13x`. Medium lesions remain the
+least damaged subgroup (`0.422559`), whereas large-lesion recall is too low
+(`0.280288`). This matched result does not claim that MedSAM is intrinsically
+inferior; its official training is primarily box-prompt oriented, while this
+screen preserves the baseline's operational point/box prompt protocol.
+
 ### G4 E2 attribution/prompt decomposition
 
 The independent 4-attribution x 3-prompt decomposition completed on the same
