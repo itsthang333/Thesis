@@ -65,7 +65,12 @@ def main() -> None:
     started = time.perf_counter()
     input_root = Path(os.environ.get("KAGGLE_INPUT_PATH", "/kaggle/input"))
     working = Path(os.environ.get("KAGGLE_WORKING_PATH", "/kaggle/working"))
-    project = unique_project(input_root)
+    # Bind task code to the exact runner selected by the kernel wrapper.  This
+    # avoids ambiguity when an account also has a historical source archive
+    # attached for immutable model/runtime assets.
+    project = Path(__file__).resolve().parent
+    if not (project / "run_g4_e3_sam_backbone.py").is_file():
+        project = unique_project(input_root)
     source = project.parent
     split = canonical_split(input_root)
     data = btxrd_root(input_root)
