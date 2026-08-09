@@ -173,6 +173,7 @@ def main() -> None:
         "g4_offline_ablation_choice_freeze_v1",
         "g4_e7_source_correct_upstream_choice_freeze_v1",
         "g4_e5_exact_choice_freeze_v1",
+        "l4_x14_selector_capacity_choice_freeze_v1",
     }
     if (
         freeze.get("stage") not in allowed_stages

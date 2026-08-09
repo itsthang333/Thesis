@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "study": "L4 X14 matched selector-capacity diagnostic",
+  "purpose": "Test whether current G1 depth is necessary while holding representation, learning objective and selection fusion fixed.",
+  "canonical_split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "candidate_contract": {
+    "train_images": 2981,
+    "validation_images": 371,
+    "validation_tumor_images": 184,
+    "maximum_candidates_per_image": 243,
+    "descriptor": "frozen RAD-DINO projected multi-layer inside/ring/contrast/metadata descriptor",
+    "descriptor_cache_encoded_once": true
+  },
+  "inner_split": {
+    "algorithm": "x4_group_aware_inner_split_v1",
+    "seed": 20260808,
+    "holdout_fraction": 0.15,
+    "stratification": "tumor_type",
+    "group_separation": true,
+    "outer_validation_used_for_architecture_or_epoch_selection": false
+  },
+  "architectures": {
+    "S0": "frozen upstream heuristic without learning",
+    "S1": "LayerNorm plus linear scalar scorer",
+    "S2": "LayerNorm plus one 256-unit GELU hidden layer and dropout 0.10",
+    "S3": "current G1: LayerNorm plus 256-unit GELU, dropout 0.10, 128-unit GELU and scalar output"
+  },
+  "matched_training": {
+    "seeds": [42, 43, 44],
+    "epochs": 16,
+    "batch_size": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "image_bag_loss_weight": 1.0,
+    "self_guided_instance_loss_weight": 0.25,
+    "aligned_flip_consistency_loss_weight": 0.1,
+    "instance_warmup_epochs": 2,
+    "best_epoch_selection": false
+  },
+  "selection_arms": [
+    "exact deployed E8__R7 baseline",
+    "upstream-only",
+    "each learned selector alone",
+    "each learned selector fused with upstream by unchanged equal percentile-rank R7"
+  ],
+  "primary_endpoint": "native-grid macro Dice over 184 validation tumor images",
+  "secondary_endpoints": [
+    "IoU",
+    "small/medium/large Dice",
+    "candidate oracle Dice",
+    "selector regret",
+    "source-choice error",
+    "three-seed mean and sample SD",
+    "paired group-bootstrap confidence interval versus E8__R7"
+  ],
+  "annotation_boundary": {
+    "candidate_training_targets_from_dice_or_polygon": false,
+    "choices_frozen_before_validation_polygons": true,
+    "test_images_read": 0,
+    "test_evaluated": false
+  }
+}
