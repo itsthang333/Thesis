@@ -97,7 +97,7 @@ def _write_manifest(root: Path, rows: list[dict[str, object]]) -> str:
 
 def main() -> None:
     args = parse_args()
-    if args.input_size != 448 or args.projection_dim != 128 or args.projection_seed != 42 or args.maximum_candidates != 243:
+    if args.input_size != 448 or args.projection_dim != 128 or args.projection_seed != 42 or not 1 <= args.maximum_candidates <= 567:
         raise ValueError("scoring geometry differs from the frozen G1 contract")
     verify_frozen_test_config(
         args.frozen_config,
@@ -231,7 +231,7 @@ def main() -> None:
         "descriptor_evidence_manifest_sha256": evidence_manifest_sha,
         "images": len(rows),
         "validation_images": len(rows) if args.split == "val" else 0,
-        "maximum_candidates": 243,
+        "maximum_candidates": args.maximum_candidates,
         "validation_gt_read": False,
         "spatial_ground_truth_used": False,
         "consumer_trained": False,

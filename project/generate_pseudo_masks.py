@@ -46,6 +46,7 @@ from models.s2c_cpm import (
     S2CCPMDirectCAM,
 )
 from models.layercam import LayerCAM
+from dsll_top3 import generate_dsll_sources, source_specific_candidate_features
 from models.cam_attribution import FinalLayerCAMFamily
 from models.unet import architecture_name_from_metadata, build_segmentation_model
 from evaluation.frozen_test_guard import verify_frozen_test_config
@@ -97,7 +98,7 @@ def external_saliency_image_label_target_authorized(
         target_columns == ["tumor"] and cam_aggregation == "class"
     ) or (
         target_columns == ["tumor_type"]
-        and cam_aggregation == "tumor_log_odds"
+        and cam_aggregation in {"tumor_log_odds", "dsll_top3_gallery"}
     )
 
 
@@ -469,10 +470,15 @@ def parse_args() -> argparse.Namespace:
                         help="A/B: comma-separated classifier input sizes for a contrastive CAM ensemble, "
                              "e.g. '224,256,288'. Maps are normalized before averaging; empty disables it.")
     parser.add_argument("--cam-aggregation", type=str, default="class",
-                        choices=["class", "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max", "tumor_log_odds"],
+                        choices=["class", "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max", "tumor_log_odds", "dsll_top3_gallery"],
                         help="Class-conditioned CAM (default), aggregate CAM for all non-normal logits, "
                              "or aggregate tumor evidence contrasted against the normal logit; "
                              "the *_class_max variant also retains the selected-class contrastive peaks.")
+    parser.add_argument(
+        "--save-dsll-cam-maps",
+        action="store_true",
+        help="Freeze the five continuous DSLL maps in candidate diagnostics (validation only).",
+    )
     parser.add_argument("--cam-contrast-normal", action="store_true",
                         help="A/B: for tumor_type, condition LayerCAM on logit(class)-logit(normal) to suppress normal/background evidence.")
     parser.add_argument("--disable-cam-contrast-normal", action="store_true",
@@ -1257,6 +1263,13 @@ def main() -> None:
     else:
         target_columns = [c.strip() for c in args.target_columns.split(",") if c.strip()]
 
+    if args.cam_aggregation == "dsll_top3_gallery" and target_columns != ["tumor_type"]:
+        raise ValueError("DSLL Top-3 requires the ten-class tumor_type classifier")
+    if args.save_dsll_cam_maps and (
+        args.cam_aggregation != "dsll_top3_gallery" or args.split != "val"
+    ):
+        raise ValueError("Frozen DSLL CAM maps are restricted to DSLL validation")
+
     if args.force_normal_candidate_gallery and (
         not args.save_candidate_diagnostics
         or args.candidate_diagnostics_cohort != "all"
@@ -1860,6 +1873,7 @@ def main() -> None:
                     (
                         target_columns == ["tumor_type"]
                         and should_skip_tumor_type(class_weights, use_ground_truth_class, gt_class)
+                        and not args.force_normal_candidate_gallery
                         and not (args.force_non_normal_cam and not use_ground_truth_class)
                     )
                     or (
@@ -1980,7 +1994,19 @@ def main() -> None:
                     classifier_confidence = float(predicted_class_weights[selected])
 
                 # ── 2. LayerCAM fusion ────────────────────────────────────────
-                if args.cam_aggregation in {
+                dsll_sources = []
+                if args.cam_aggregation == "dsll_top3_gallery":
+                    dsll_sources = generate_dsll_sources(
+                        layercam,
+                        image_tensor,
+                        logits.detach(),
+                        flip_tta=bool(args.cam_tta_flip),
+                    )
+                    fused_cam = dsll_sources[0].cam
+                    per_class_cams = [source.cam for source in dsll_sources]
+                    active_indices = [0] * len(dsll_sources)
+                    class_weights = np.ones(len(dsll_sources), dtype=np.float32)
+                elif args.cam_aggregation in {
                     "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max", "tumor_log_odds"
                 } and target_columns == ["tumor_type"]:
                     if args.cam_aggregation == "tumor_log_odds":
@@ -2098,7 +2124,7 @@ def main() -> None:
                         (cam - float(cam.min())) / (float(cam.max()) - float(cam.min()) + 1e-8)
                         for cam in per_class_cams
                     ]
-                if args.cam_tta_flip:
+                if args.cam_tta_flip and args.cam_aggregation != "dsll_top3_gallery":
                     flipped_tensor = torch.flip(image_tensor, dims=[3])
                     if args.cam_aggregation in {
                         "tumor_union", "tumor_union_contrast", "tumor_union_contrast_class_max", "tumor_log_odds"
@@ -2200,6 +2226,9 @@ def main() -> None:
                 bone_support = None
                 bone_components = []
                 prompt_map = fused_cam
+                component_source_by_id: dict[int, str] = {}
+                component_map_by_id: dict[int, np.ndarray] = {}
+                component_class_by_id: dict[int, tuple[int, float, int]] = {}
                 if not args.disable_morphology:
                     if args.morphology_fusion_mode == "components":
                         active_weights = [float(class_weights[i]) for i in active_indices]
@@ -2240,6 +2269,48 @@ def main() -> None:
                         max_prompt_components = args.max_components * len(prompt_percentiles)
                         if args.all_cam_components and len(bone_components) > max_prompt_components:
                             bone_components = bone_components[:max_prompt_components]
+                        if args.cam_aggregation == "dsll_top3_gallery":
+                            bone_components = []
+                            bone_likelihood = np.zeros_like(fused_cam, dtype=np.float32)
+                            bone_support = np.zeros_like(fused_cam, dtype=np.uint8)
+                            for source in dsll_sources:
+                                source_components = []
+                                for prompt_percentile in prompt_percentiles:
+                                    local_likelihood, local_support, local_components = (
+                                        morphology.build_class_conditioned_components(
+                                            image_rgb,
+                                            [source.cam],
+                                            [1.0],
+                                            cam_percentile=prompt_percentile,
+                                            min_component_area=max(20, args.min_component_area // 2),
+                                            max_components=(args.max_components if args.all_cam_components else 1),
+                                            points_per_component=args.points_per_component,
+                                            bbox_padding_ratio=args.bbox_padding_ratio,
+                                            negative_points_per_component=args.negative_points_per_component,
+                                            debug_dir=None,
+                                        )
+                                    )
+                                    bone_likelihood = np.maximum(bone_likelihood, local_likelihood)
+                                    bone_support = np.maximum(bone_support, local_support)
+                                    source_offset = len(source_components)
+                                    source_components.extend(
+                                        replace(
+                                            component,
+                                            component_id=source_offset + int(component.component_id),
+                                            prompt_percentile=float(prompt_percentile),
+                                        )
+                                        for component in local_components
+                                    )
+                                source_components = source_components[:max_prompt_components]
+                                global_offset = len(bone_components)
+                                for component in source_components:
+                                    component_id = global_offset + int(component.component_id)
+                                    bone_components.append(replace(component, component_id=component_id))
+                                    component_source_by_id[component_id] = source.source_id
+                                    component_map_by_id[component_id] = source.cam
+                                    component_class_by_id[component_id] = (
+                                        source.class_id, source.probability, source.rank
+                                    )
                         if bone_likelihood is None:
                             bone_likelihood = np.zeros_like(fused_cam, dtype=np.float32)
                         if bone_support is None:
@@ -2275,6 +2346,11 @@ def main() -> None:
                                 for component in external_components
                             ]
                             bone_components.extend(external_saliency_components)
+                            for component in external_saliency_components:
+                                component_id = int(component.component_id)
+                                component_source_by_id[component_id] = "biomedclip_saliency"
+                                component_map_by_id[component_id] = external_saliency_map
+                                component_class_by_id[component_id] = (-3, 0.0, -1)
                         if teacher_probability is not None:
                             teacher_support, teacher_components = (
                                 morphology.build_probability_components(
@@ -2297,6 +2373,12 @@ def main() -> None:
                                 )
                                 for component in teacher_components
                             )
+                        if args.cam_aggregation != "dsll_top3_gallery":
+                            for component in bone_components:
+                                component_id = int(component.component_id)
+                                component_map_by_id.setdefault(component_id, fused_cam)
+                                component_source_by_id.setdefault(component_id, args.attribution_method)
+                                component_class_by_id.setdefault(component_id, (-1, 0.0, -1))
                     else:
                         bone_likelihood, bone_support = morphology.build_tumor_guidance(
                             image_rgb,
@@ -2495,13 +2577,32 @@ def main() -> None:
                     ], axis=0)
                     candidate_prompt_modes.extend(["cam"] * len(cam_masks))
 
+                if args.cam_aggregation == "dsll_top3_gallery" and len(sam_masks):
+                    seen_masks: set[bytes] = set()
+                    keep_indices: list[int] = []
+                    for candidate_index, candidate_mask in enumerate(sam_masks):
+                        key = np.packbits(candidate_mask.astype(np.uint8), axis=None).tobytes()
+                        if key not in seen_masks:
+                            seen_masks.add(key)
+                            keep_indices.append(candidate_index)
+                    keep = np.asarray(keep_indices, dtype=np.int64)
+                    sam_masks = np.asarray(sam_masks)[keep]
+                    sam_scores = np.asarray(sam_scores)[keep]
+                    if component_ids is not None:
+                        component_ids = np.asarray(component_ids)[keep]
+                    candidate_prompt_modes = [candidate_prompt_modes[index] for index in keep_indices]
+
                 if component_ids is not None:
                     external_component_end = (
                         cam_component_count + len(external_saliency_components)
                     )
                     for component_id in component_ids:
                         component_id_int = int(component_id)
-                        if (
+                        if args.cam_aggregation == "dsll_top3_gallery":
+                            candidate_proposal_sources.append(
+                                component_source_by_id[component_id_int]
+                            )
+                        elif (
                             external_saliency_contract is not None
                             and args.external_saliency_role == "replace"
                         ):
@@ -2571,6 +2672,32 @@ def main() -> None:
                     multimask_indices.append(-1 if prompt_mode == "cam" else occurrence)
                 prompt_id_array = np.asarray(prompt_ids, dtype="U128")
                 multimask_index_array = np.asarray(multimask_indices, dtype=np.int16)
+                source_map_mean_scores = np.zeros(len(sam_masks), dtype=np.float32)
+                source_map_mass_coverages = np.zeros(len(sam_masks), dtype=np.float32)
+                source_score_densities = np.zeros(len(sam_masks), dtype=np.float32)
+                source_specific_scores = None
+                source_class_ids = np.full(len(sam_masks), -1, dtype=np.int16)
+                source_class_probabilities = np.zeros(len(sam_masks), dtype=np.float32)
+                source_class_ranks = np.full(len(sam_masks), -1, dtype=np.int8)
+                if args.cam_aggregation == "dsll_top3_gallery":
+                    if component_ids is None:
+                        raise RuntimeError("DSLL requires component-bound proposal provenance")
+                    (
+                        source_map_mean_scores,
+                        source_map_mass_coverages,
+                        source_score_densities,
+                        source_specific_scores,
+                    ) = source_specific_candidate_features(
+                        sam_masks,
+                        np.asarray(component_ids, dtype=np.int32),
+                        component_map_by_id,
+                        np.asarray(sam_scores, dtype=np.float32),
+                    )
+                    for candidate_index, component_id in enumerate(component_ids):
+                        class_id, probability, rank = component_class_by_id[int(component_id)]
+                        source_class_ids[candidate_index] = int(class_id)
+                        source_class_probabilities[candidate_index] = float(probability)
+                        source_class_ranks[candidate_index] = int(rank)
 
                 classifier_causal_scores = None
                 if args.selection_method == "coverage_mass_sam_causal":
@@ -2664,6 +2791,8 @@ def main() -> None:
                     prompt_area_target=args.prompt_area_target,
                     prompt_area_log_sigma=args.prompt_area_log_sigma,
                 )
+                if source_specific_scores is not None:
+                    selection_scores = source_specific_scores
                 refined, selection_details = select_and_fuse_masks(
                     sam_masks,
                     selection_map,
@@ -2765,6 +2894,20 @@ def main() -> None:
                         component_ids=component_ids,
                         prompt_modes=candidate_prompt_modes,
                         proposal_source_ids=proposal_source_ids,
+                        source_map_mean_scores=source_map_mean_scores,
+                        source_map_mass_coverages=source_map_mass_coverages,
+                        source_score_densities=source_score_densities,
+                        source_class_ids=source_class_ids,
+                        source_class_probabilities=source_class_probabilities,
+                        source_class_ranks=source_class_ranks,
+                        dsll_source_maps=(
+                            np.stack([source.cam for source in dsll_sources], axis=0)
+                            if args.save_dsll_cam_maps else None
+                        ),
+                        dsll_source_map_ids=(
+                            [source.source_id for source in dsll_sources]
+                            if args.save_dsll_cam_maps else None
+                        ),
                         cam_levels=candidate_cam_levels,
                         prompt_ids=prompt_id_array,
                         multimask_indices=multimask_index_array,

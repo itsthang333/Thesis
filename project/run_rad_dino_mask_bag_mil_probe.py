@@ -137,6 +137,14 @@ def _load_candidate_payload(
         masks = payload["sam_masks"].astype(np.float32)
         prompt_map = payload["prompt_map"].astype(np.float32)
         sam_scores = payload["sam_scores"].astype(np.float32).reshape(-1)
+        source_means = (
+            payload["source_map_mean_scores"].astype(np.float32).reshape(-1)
+            if "source_map_mean_scores" in payload else None
+        )
+        source_mass = (
+            payload["source_map_mass_coverages"].astype(np.float32).reshape(-1)
+            if "source_map_mass_coverages" in payload else None
+        )
     if masks.ndim != 3 or prompt_map.ndim != 2:
         raise ValueError("Candidate payload has an invalid spatial layout")
     if masks.shape[1:] != prompt_map.shape or len(masks) != len(sam_scores):
@@ -162,7 +170,11 @@ def _load_candidate_payload(
     total = float(prompt_map.size)
     prompt_mass = max(float(prompt_map.sum()), 1.0e-8)
     metadata: list[list[float]] = []
-    for mask, sam_score in zip(masks, sam_scores, strict=True):
+    if source_means is not None and (
+        source_mass is None or len(source_means) != len(masks) or len(source_mass) != len(masks)
+    ):
+        raise ValueError("Source-specific candidate metadata is incomplete")
+    for candidate_index, (mask, sam_score) in enumerate(zip(masks, sam_scores, strict=True)):
         binary = mask > 0.5
         area = float(binary.sum())
         inside = prompt_map[binary]
@@ -170,8 +182,16 @@ def _load_candidate_payload(
             [
                 float(np.clip(sam_score, 0.0, 1.0)),
                 float(np.log1p(area) / np.log1p(total)),
-                float((prompt_map * binary).sum() / prompt_mass),
-                float(inside.mean()) if inside.size else 0.0,
+                (
+                    float(source_mass[candidate_index])
+                    if source_mass is not None
+                    else float((prompt_map * binary).sum() / prompt_mass)
+                ),
+                (
+                    float(source_means[candidate_index])
+                    if source_means is not None
+                    else (float(inside.mean()) if inside.size else 0.0)
+                ),
             ]
         )
     fallback_flags = np.full(len(masks), int(fallback), dtype=np.uint8)
@@ -558,8 +578,8 @@ def main() -> None:
     if args.encoder_batch_size < 2:
         raise ValueError("Mask-bag v1 requires encoder batch >=2")
     if args.rich_gallery_union:
-        if not 1 <= args.maximum_candidates <= 243:
-            raise ValueError("Rich gallery union cap must be in [1, 243]")
+        if not 1 <= args.maximum_candidates <= 567:
+            raise ValueError("Rich gallery union cap must be in [1, 567]")
     elif args.maximum_candidates != 81:
         raise ValueError("Mask-bag v1 requires candidate cap 81")
     seed_everything(args.seed)

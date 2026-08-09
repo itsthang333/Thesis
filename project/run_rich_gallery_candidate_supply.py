@@ -69,9 +69,11 @@ def common_generation_args(
 ) -> list[str]:
     if target_columns == "tumor" and cam_aggregation != "class":
         raise ValueError("binary tumor supply requires class CAM aggregation")
-    if target_columns == "tumor_type" and cam_aggregation != "tumor_log_odds":
+    if target_columns == "tumor_type" and cam_aggregation not in {
+        "tumor_log_odds", "dsll_top3_gallery"
+    }:
         raise ValueError(
-            "ten-class G4 supply requires exact collapsed tumor_log_odds"
+            "ten-class supply requires collapsed tumor_log_odds or frozen DSLL Top-3"
         )
     command = [
         sys.executable,

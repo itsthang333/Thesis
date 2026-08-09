@@ -1,0 +1,64 @@
+{
+  "protocol_id": "btxrd_dsll_top3_early_collapse_v1_20260810",
+  "scope": "validation_only_image_label_supervision",
+  "hypothesis": "Collapsing nine disease logits before LayerCAM destroys class-specific spatial evidence; predicted disease Top-3 late localization should improve CAM and proposal supply.",
+  "classifier": {
+    "architecture": "DenseNet121",
+    "classes": 10,
+    "input_size": 320,
+    "checkpoint_seed": 42,
+    "checkpoint_sha256": "e043f43655798f3389005be89cb85605ef09a87977a74733ea07bf9abc0ed7ec"
+  },
+  "dsll": {
+    "normal_class": 0,
+    "disease_classes": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "top_k": 3,
+    "top_k_source": "predicted_conditional_disease_posterior",
+    "class_target": "z_c_minus_z_0",
+    "generic_target": "logsumexp_z_1_to_9_minus_z_0",
+    "normalize_each_map_before_fusion": true,
+    "late_fusion": "conditional_posterior_weighted_mean_then_renormalize",
+    "horizontal_flip_tta": true,
+    "layercam_layers": ["denseblock2", "denseblock3", "denseblock4"],
+    "layercam_weights": [0.2, 0.3, 0.5],
+    "gradient_mode": "positive"
+  },
+  "proposal_gallery": {
+    "sources": [
+      "tumor_logodds_320",
+      "disease_top1_320",
+      "disease_top2_320",
+      "disease_top3_320",
+      "disease_latefusion_320",
+      "binary_448",
+      "biomedclip_saliency"
+    ],
+    "cam_percentiles": [85, 90, 95],
+    "max_components_per_source_percentile": 3,
+    "prompt_modes": ["box_point", "point", "box"],
+    "sam": "SAM_v1_ViT_B_multimask3",
+    "deduplication": "exact_binary_pixels_first_occurrence",
+    "first_run_candidate_cap": 567
+  },
+  "source_score": "0.60*density_above_0.5 + 0.25*source_map_mass_coverage + 0.15*within_component_SAM_percentile_rank",
+  "g1": {
+    "retrain": true,
+    "seed": 42,
+    "architecture": "1156_to_256_to_128_to_1_RAD_DINO_mask_bag_MIL",
+    "candidate_map_features": "source_specific",
+    "source_identity_features": false
+  },
+  "final_selection": "0.5*within_image_percentile_rank_G1 + 0.5*within_image_percentile_rank_source_score",
+  "endpoints": [
+    "pre_SAM_Dice_each_DSLL_map",
+    "proposal_oracle_generic",
+    "proposal_oracle_generic_plus_DSLL",
+    "proposal_oracle_full_7_source",
+    "selected_binary_mask_Dice",
+    "oracle_minus_selected_regret",
+    "subgroup_Dice_lesion_area"
+  ],
+  "selection_split": "validation",
+  "test_images_read": 0,
+  "spatial_ground_truth_training": false
+}

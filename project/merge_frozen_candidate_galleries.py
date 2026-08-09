@@ -122,6 +122,41 @@ def merge_payloads(
     anchor_indices = np.asarray(anchor_keep, dtype=np.int64)
     addition_indices = np.asarray(addition_keep, dtype=np.int64)
 
+    def source_features(payload: dict[str, np.ndarray], masks: np.ndarray) -> dict[str, np.ndarray]:
+        count = len(masks)
+        if "source_map_mean_scores" in payload:
+            return {
+                "source_map_mean_scores": np.asarray(payload["source_map_mean_scores"], dtype=np.float32),
+                "source_map_mass_coverages": np.asarray(payload["source_map_mass_coverages"], dtype=np.float32),
+                "source_score_densities": np.asarray(payload["source_score_densities"], dtype=np.float32),
+                "source_class_ids": np.asarray(payload["source_class_ids"], dtype=np.int16),
+                "source_class_probabilities": np.asarray(payload["source_class_probabilities"], dtype=np.float32),
+                "source_class_ranks": np.asarray(payload["source_class_ranks"], dtype=np.int8),
+            }
+        prompt_map = np.asarray(payload["prompt_map"], dtype=np.float32)
+        means = np.zeros(count, dtype=np.float32)
+        mass = np.zeros(count, dtype=np.float32)
+        density = np.zeros(count, dtype=np.float32)
+        total_mass = max(float(prompt_map.sum()), 1.0e-8)
+        for index, mask in enumerate(masks.astype(bool)):
+            if not mask.any():
+                continue
+            values = prompt_map[mask]
+            means[index] = float(values.mean())
+            mass[index] = float(values.sum() / total_mass)
+            density[index] = float((values > 0.5).mean())
+        return {
+            "source_map_mean_scores": means,
+            "source_map_mass_coverages": mass,
+            "source_score_densities": density,
+            "source_class_ids": np.full(count, -4, dtype=np.int16),
+            "source_class_probabilities": np.zeros(count, dtype=np.float32),
+            "source_class_ranks": np.full(count, -1, dtype=np.int8),
+        }
+
+    anchor_features = source_features(anchor, anchor_masks)
+    addition_features = source_features(addition, np.asarray(addition["sam_masks"], dtype=np.uint8))
+
     def joined(field: str, dtype: Any) -> np.ndarray:
         return np.concatenate(
             [
@@ -154,6 +189,23 @@ def merge_payloads(
         ),
         "prompt_map": np.asarray(anchor["prompt_map"], dtype=np.float32),
     }
+    for feature_name, dtype in (
+        ("source_map_mean_scores", np.float32),
+        ("source_map_mass_coverages", np.float32),
+        ("source_score_densities", np.float32),
+        ("source_class_ids", np.int16),
+        ("source_class_probabilities", np.float32),
+        ("source_class_ranks", np.int8),
+    ):
+        result[feature_name] = np.concatenate(
+            [
+                np.asarray(anchor_features[feature_name])[anchor_indices].astype(dtype),
+                np.asarray(addition_features[feature_name])[addition_indices].astype(dtype),
+            ]
+        )
+    if "dsll_source_maps" in anchor:
+        result["dsll_source_maps"] = np.asarray(anchor["dsll_source_maps"], dtype=np.float32)
+        result["dsll_source_map_ids"] = np.asarray(anchor["dsll_source_map_ids"], dtype="U32")
     if provenance_present:
         addition_prompt_ids = np.asarray(addition["prompt_ids"], dtype="U192")
         addition_prompt_ids = np.asarray(
@@ -292,6 +344,14 @@ def main() -> None:
             component_ids=merged["component_ids"],
             prompt_modes=merged["prompt_modes"],
             proposal_source_ids=merged["proposal_source_ids"],
+            source_map_mean_scores=merged["source_map_mean_scores"],
+            source_map_mass_coverages=merged["source_map_mass_coverages"],
+            source_score_densities=merged["source_score_densities"],
+            source_class_ids=merged["source_class_ids"],
+            source_class_probabilities=merged["source_class_probabilities"],
+            source_class_ranks=merged["source_class_ranks"],
+            dsll_source_maps=merged.get("dsll_source_maps"),
+            dsll_source_map_ids=merged.get("dsll_source_map_ids"),
             cam_levels=merged.get("cam_levels"),
             prompt_ids=merged.get("prompt_ids"),
             multimask_indices=merged.get("multimask_indices"),
