@@ -1,0 +1,45 @@
+{
+  "arm": "fully_supervised",
+  "checkpoint_sha256": "39128cb12e3b6542da46831cf4b705edf5220b594af24a8d4464086aa1ca8562",
+  "prediction_freeze_sha256": "86003d307c582e5de8166078b6ed5192068c7c1a9bdec7e1a23a0d32bf7a0c68",
+  "prediction_manifest_sha256": "8de5632ad41f85a297bcca59bfa4980bc137efc5ac412a48382729a9b160fa75",
+  "schema_version": 1,
+  "seed": 42,
+  "split_sha256": "85511ee1bd1339c7b6b4f527acc504869da935997fd6b2485042edd619193c8c",
+  "stage": "x4_student_efficiency_benchmark_v1",
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "validation_annotations_read": 0,
+  "x12_efficiency": {
+    "batch_size": 8,
+    "device_memory": [
+      {
+        "device_index": 0,
+        "device_name": "Tesla T4",
+        "peak_allocated_bytes": 644019712,
+        "peak_reserved_bytes": 880803840
+      },
+      {
+        "device_index": 1,
+        "device_name": "Tesla T4",
+        "peak_allocated_bytes": 607762432,
+        "peak_reserved_bytes": 834666496
+      }
+    ],
+    "latency": {
+      "images": 371,
+      "iqr_high_seconds_per_image": 0.010781332375000119,
+      "iqr_low_seconds_per_image": 0.01059073125000154,
+      "mean_seconds_per_image": 0.010606728142857225,
+      "median_seconds_per_image": 0.010662067249999296
+    },
+    "offline_pseudo_label_generation_included": false,
+    "same_gpu_requirement": "compare only bundles produced on the same declared GPU type",
+    "stage": "matched_student_online_inference_and_freeze",
+    "storage_bytes_before_prediction_freeze_json": 109508689,
+    "timed_images": 371,
+    "timed_inference_elapsed_seconds": 32.892999793,
+    "warmup_iterations": 3
+  },
+  "x4_protocol_sha256": "ecf39ca2a45d3bae5f42689c0605b78c6e4db3968aadfbf82036a118d46f1824"
+}

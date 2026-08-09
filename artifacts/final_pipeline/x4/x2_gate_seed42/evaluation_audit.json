@@ -1,0 +1,14 @@
+{
+  "images_per_arm": 371,
+  "pass": true,
+  "per_image_sha256": "abcb39eac9d266c62791a51f3f342c93520a3b3ff1f8ede0df7bd6693649a743",
+  "prediction_freeze_sha256": "e5307b2363d8e0a394c6128a59726bc1aa656246f76f36d5f19eec81d37e6737",
+  "schema_version": 1,
+  "seed": 42,
+  "stage": "x4_gate_native_evaluation_audit_v1",
+  "subgroups_sha256": "17491d36dafea9513190fced86e78de2ba16039560175f6d6dc401214f219095",
+  "summary_sha256": "f1b5e6893b74cc9da114220d4f453cf748c4174b72f7282c3863976196aa4eb1",
+  "test_evaluated": false,
+  "test_images_read": 0,
+  "validation_annotations_opened": 184
+}

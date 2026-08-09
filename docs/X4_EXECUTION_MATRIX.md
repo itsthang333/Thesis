@@ -13,17 +13,18 @@ Last updated: 2026-08-09.
 | Account | Kernel | Purpose | State at update |
 |---|---|---|---|
 | `wanwin` | `btxrd-x4-yolov8s-seg-seed42` v4 | X3 YOLOv8s-seg seed42 after batch-two/background-only/writable-copy fixes | Running |
-| `wanwin` | `btxrd-x4-rich-gallery-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, Rich student seed42 | Running |
+| `wanwin` | `btxrd-x4-fully-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, fully supervised seed42 | Complete |
 | `qwinwan` | `btxrd-x4-yolov8s-seg-seed44` v1 | X3 YOLOv8s-seg seed44 with the audited v4 compatibility source | Running |
-| `qwinwan` | `btxrd-x4-puzzlecam-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, PuzzleCAM student seed42 | Running |
+| `qwinwan` | `btxrd-x4-puzzlecam-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, PuzzleCAM student seed42 | Complete |
 | `itsthang333` | `btxrd-x4-yolov8s-seg-seed43` v4 | X3 YOLOv8s-seg seed43 after batch-two/background-only/writable-copy fixes | Running |
-| `itsthang333` | `btxrd-x4-cam-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, CAM student seed42 | Running |
+| `itsthang333` | `btxrd-x4-s2c-seed42-efficiency` v1 | X12 same-T4 online inference benchmark, S2C student seed42 | Complete |
 
-All six GPU slots are occupied. All 15 student runs and their original
-371-image prediction freezes are complete. The three bounded X12 jobs do not
-retrain models: they reuse exact seed42 checkpoints and measure 371-image
-online inference latency, T4 peak memory and prediction storage with three
-warm-up passes while explicitly excluding offline pseudo-label generation.
+The three YOLO jobs remain active. All five bounded X12 student/fully jobs are
+complete and audited, so their former slots are intentionally not filled with
+duplicate runs. These jobs do not retrain models: they reuse exact seed42
+checkpoints and measure 371-image online inference latency, T4 peak memory and
+prediction storage with three warm-up passes while explicitly excluding
+offline pseudo-label generation.
 
 The two YOLO v2 jobs stopped after a deterministic Ultralytics
 8.4.0 compatibility failure on a final batch of size two.  The upstream loss
@@ -79,12 +80,45 @@ every seed. This follows the audited S2C targets (only 1/1,488 tumor training
 targets has foreground), not an evaluator fault. Direct Rich Gallery remains
 the current validation WSSS baseline at Dice 0.2887294867.
 
+## X2 gate ablation
+
+All four arms were frozen before any polygon was opened, then evaluated on the
+same 371-image native-resolution endpoint. The table reports the three-seed
+mean; the known-label arm is deterministic and is repeated only to preserve the
+matched seed protocol.
+
+| Gate arm | Mean Dice | Sample SD | Mean IoU | `<1%` | `1-<5%` | `>=5%` |
+|---|---:|---:|---:|---:|---:|---:|
+| Known binary label | 0.288224 | 0.000000 | 0.216295 | 0.156725 | 0.435221 | 0.386958 |
+| Binary predicted gate | 0.251309 | 0.007822 | 0.190746 | 0.129155 | 0.376875 | 0.386958 |
+| Ten-class predicted gate | 0.253956 | 0.014822 | 0.191749 | 0.123362 | 0.398274 | 0.358680 |
+| Label-free Rich student | 0.081545 | 0.012158 | 0.047626 | 0.011604 | 0.123906 | 0.277349 |
+
+The ten-class gate does not outperform the binary gate materially and both
+remain below the known binary label reference. This supplies the requested
+empirical answer: replacing the binary task with ten disease classes does not
+improve final segmentation in this matched experiment.
+
+## X12 matched T4 student efficiency
+
+| Arm, seed42 | Median ms/image | IQR ms/image | Peak allocated MiB | Prediction storage MiB |
+|---|---:|---:|---:|---:|
+| CAM student | 10.731 | 10.643-10.847 | 614.185 | 96.187 |
+| PuzzleCAM student | 10.623 | 10.598-10.778 | 614.185 | 89.113 |
+| S2C student | 10.785 | 10.668-10.852 | 614.185 | 57.946 |
+| Rich-Gallery student | 10.771 | 10.608-10.811 | 614.185 | 86.613 |
+| Fully supervised U-Net | 10.662 | 10.591-10.781 | 614.185 | 104.436 |
+
+Every row uses the same Tesla T4 x2 environment, three warm-ups and all 371
+validation images. The results measure online inference only; offline
+pseudo-label generation is excluded by design and must be reported separately.
+
 ## Requirement ledger
 
 | ID | Required evidence | Implementation/evidence | Status | Next blocking action |
 |---|---|---|---|---|
 | X1 | Direct Rich Gallery versus Rich-Gallery pseudo-U-Net versus matched fully-U-Net | All matched runs are complete. Direct Rich is 0.288729. Rich students are 0.071517/0.095067/0.078052; fully supervised is 0.456580/0.456626/0.449361. | Complete | Report the direct-vs-student conclusion and paired uncertainty in the thesis. |
-| X2 | Known binary label, binary predicted gate, ten-class predicted gate and label-free student | All three Stage-A freezes passed: four arms x 371 images per seed, bound to the audited G4 binary/ten-class probabilities, exact Direct Rich choices/gallery and Rich-student bundles. No polygon/test was opened before the 4,452 masks were immutable. | Stage-B running | Complete native-grid Dice/IoU/subgroup evaluation for seeds42/43/44. |
+| X2 | Known binary label, binary predicted gate, ten-class predicted gate and label-free student | Complete for all three seeds. Four arms x 371 images per seed were frozen before polygons; Stage B opened exactly 184 validation annotations. Mean Dice is 0.288224 known-label, 0.251309 binary gate, 0.253956 ten-class gate and 0.081545 label-free Rich student. | Complete | Report that ten-class supervision did not improve the matched final segmentation endpoint. |
 | W0 | CAM-to-U-Net | CAM train/validation mask freezes and audits are complete. The standardized 2,981-image target bundle is frozen. Seeds 42, 43 and 44 completed and passed training-output checks. All three 371-image prediction freezes passed archive/freeze SHA verification and common Stage-B evaluation. Dice is 0.141918/0.123913/0.142643 for seeds 42/43/44. | Complete | Aggregate mean/sample SD and include the over-segmentation/normal-FP evidence in X8/X9. |
 | W1 | PuzzleCAM-to-U-Net | PuzzleCAM generator training and train/validation mask audits are complete. The standardized target bundle is frozen. Seeds 42/43/44 passed training, prediction-freeze and Stage-B checks; Dice is 0.116542/0.116134/0.116389 (mean 0.116355, sample SD 0.000206). | Complete | Include the stable over-segmentation and normal-FP failure in X8/X9. |
 | W2 | S2C-to-U-Net | All three trainings/freezes/evaluations passed provenance checks and produce Dice/IoU 0. Only 1/1,488 tumor train targets has foreground, explaining the deterministic all-background collapse. | Complete | Report as target-generation efficacy failure. |
@@ -98,14 +132,14 @@ the current validation WSSS baseline at Dice 0.2887294867.
 | X9 | Ten-class failure taxonomy | Complete for Direct Rich and all 15 students under `artifacts/final_pipeline/x4/x9_error_taxonomy_all_students`. Rich students over-segment 165-176/184 tumors and trigger normal FP on 144-178/187 normals; S2C misses/under-segments 184/184 tumors. | Complete | Use taxonomy to explain mechanism-specific failures. |
 | X10 | Protocol-selected qualitative panel | Complete. The pre-render freeze supplies 12/12 categories without visual cherry-picking, including normal FP. Twelve panels were rendered with exact Direct Rich choices/gallery plus CAM, PuzzleCAM, S2C, Rich-student and fully-supervised seed42 bundles. All provenance was verified before 11 tumor annotations were opened; no test read. | Complete | Transfer the frozen panels and selection protocol to the thesis. |
 | X11 | Risk-coverage using frozen G1/fusion confidence | `project/analyze_x4_risk_coverage.py` and the frozen result under `artifacts/final_pipeline/x4/x11_risk_coverage` are complete. Spearman confidence-vs-Dice is 0.313141; Dice<0.10 and complete-miss AUROC are 0.658570/0.656916. Mean Dice at 100/80/60/40% coverage is 0.288729/0.335050/0.361465/0.367326. | Complete | Interpret as moderate failure-detection evidence, not calibrated uncertainty or a new routing rule. |
-| X12 | Runtime, peak VRAM, storage; offline separated from online | The fail-closed same-T4 wrapper is implemented and tested (8/8 focused tests). It reuses exact seed42 checkpoints, requires 371 timed images, three warm-ups, T4 memory evidence and no-GT/no-test provenance, while discarding duplicate masks after binding the manifest hash. First wave CAM/PuzzleCAM/Rich jobs is running; S2C/Fully follow as slots free. | Running | Download/audit first-wave reports, launch S2C/Fully, then aggregate student/direct/YOLO online rows separately from offline generator resources. |
+| X12 | Runtime, peak VRAM, storage; offline separated from online | Same-T4 student/fully benchmark complete for all five seed42 checkpoints: 371 timed images, three warm-ups, 0 validation annotations and 0 test images read. Median online latency is 10.623-10.785 ms/image and peak allocation is 614.185 MiB. Raw receipts and aggregate CSV are under `artifacts/final_pipeline/x4/x12_efficiency_seed42`. | Student/fully complete | Add Direct Rich and YOLO online rows separately; report offline pseudo-label/generator resources outside this table. |
 
 ## P0/P1 readiness
 
 | Priority | Requirement | Current state |
 |---|---|---|
-| P0 | Rich-Gallery pseudo-U-Net, matched fully, CAM, S2C, X2, normal/lesion/subgroup, three seeds, bootstrap/CI, error analysis | All 15 student runs, bootstrap/CI and taxonomy are complete. X2 execution remains the only unfinished P0 item. |
-| P1 | PuzzleCAM, YOLO, efficiency, qualitative panel, risk-coverage | PuzzleCAM is 3/3 evaluated and risk-coverage is complete; YOLO compatibility reruns, efficiency aggregation and the final qualitative panel remain. |
+| P0 | Rich-Gallery pseudo-U-Net, matched fully, CAM, S2C, X2, normal/lesion/subgroup, three seeds, bootstrap/CI, error analysis | Complete: all 15 student runs, X2, bootstrap/CI and taxonomy have audited result artifacts. |
+| P1 | PuzzleCAM, YOLO, efficiency, qualitative panel, risk-coverage | PuzzleCAM, student/fully efficiency, risk-coverage and the qualitative panel are complete; YOLO and separate Direct-Rich/YOLO efficiency rows remain. |
 
 ## Slot-reuse order
 
