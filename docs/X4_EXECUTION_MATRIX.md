@@ -21,8 +21,9 @@ Last updated: 2026-08-09.
 
 Three second-account slots became available after X12 completion. L4 adds X13
 and X14 as non-duplicate supplementary work. X13 is complete and audited;
-X14 now occupies the second `wanwin` GPU slot for its matched three-seed
-selector-depth study. Cross-account inputs were server-download verified
+X14 v1 stopped before training because its wrapper retained a stale expected
+gallery SHA-256; this is a technical provenance failure, not an efficacy
+result. Cross-account inputs were server-download verified
 against their bound local SHA-256 values before either run.
 
 The three YOLO training jobs are complete. Their native Ultralytics mask
@@ -176,7 +177,7 @@ Dice 0.288729.
 | X11 | Risk-coverage using frozen G1/fusion confidence | `project/analyze_x4_risk_coverage.py` and the frozen result under `artifacts/final_pipeline/x4/x11_risk_coverage` are complete. Spearman confidence-vs-Dice is 0.313141; Dice<0.10 and complete-miss AUROC are 0.658570/0.656916. Mean Dice at 100/80/60/40% coverage is 0.288729/0.335050/0.361465/0.367326. | Complete | Interpret as moderate failure-detection evidence, not calibrated uncertainty or a new routing rule. |
 | X12 | Runtime, peak VRAM, storage; offline separated from online | Same-T4 student/fully benchmark complete for all five seed42 checkpoints: 371 timed images, three warm-ups, 0 validation annotations and 0 test images read. Median online latency is 10.623-10.785 ms/image and peak allocation is 614.185 MiB. Raw receipts and aggregate CSV are under `artifacts/final_pipeline/x4/x12_efficiency_seed42`. | Student/fully complete | Add Direct Rich and YOLO online rows separately; report offline pseudo-label/generator resources outside this table. |
 | X13 | Equal-budget source complementarity | Complete and independently audited: 371 freezes, 184 tumor cases x seven subsets, 187 known-normal abstentions and zero test reads. Best matched-budget subset is L320+C448 Dice 0.275508; full is 0.271698 and external-only 0.228535. Full-minus-L320+C448 CI crosses zero, while full significantly beats external-only. | Complete | Report that candidate-count control supports L320+C448 complementarity but not an added selected-Dice benefit from external proposals. |
-| X14 | Selector depth/capacity baseline | Design and implementation frozen: upstream, linear, one-hidden-layer and exact current two-hidden-layer G1; selector-only and identical R7 fusion; seeds42/43/44. All learned arms share one RAD-DINO descriptor cache, one group-aware inner split, the full MIL objective, optimizer and fixed 16 epochs with no best-epoch selection. Stage-A output auditor and Stage-B evaluator support are implemented; 31/31 focused/regression tests pass. Source/protocol payload server-download hashes match. | v1 running on `wanwin` T4 | On completion, independently audit 9 checkpoints/7,420 choices, then report actual Dice/regret/subgroups/source-choice error/paired CI. |
+| X14 | Selector depth/capacity baseline | Design and implementation frozen: upstream, linear, one-hidden-layer and exact current two-hidden-layer G1; selector-only and identical R7 fusion; seeds42/43/44. All learned arms share one RAD-DINO descriptor cache, one group-aware inner split, the full MIL objective, optimizer and fixed 16 epochs with no best-epoch selection. Stage-A output auditor and Stage-B evaluator support are implemented; 31/31 focused/regression tests pass. Source/protocol payload server-download hashes match. V1 failed its pre-training gallery hash guard because the wrapper expected a stale SHA-256. | Technical pre-training error; no efficacy result | Rebind the exact server-returned gallery SHA, rerun provenance checks, then launch once when a slot is available. |
 | X15 | Optional four-fold robustness | Four locked endpoints only; group-aware train+validation folds; test excluded. | Deferred | Run only if GPU remains after X3/X13/X14. |
 | X8b | Locked-test uncertainty | Requires only already-frozen test predictions, not retraining. | Deferred by test lock | Do not access during X4 development; perform only under explicit final-analysis authorization. |
 
