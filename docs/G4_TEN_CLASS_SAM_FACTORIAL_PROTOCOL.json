@@ -1,0 +1,22 @@
+{
+  "attribution": "LayerCAM of logsumexp(nine tumor logits) minus the normal logit",
+  "candidate_supplies": {
+    "addition": "frozen classifier448 CAM prompts refined by the tested SAM checkpoint",
+    "anchor": "ten-class seed-specific CAM prompts refined by the tested SAM checkpoint",
+    "external_saliency": "frozen and shared"
+  },
+  "classifier_seeds": [42, 43, 44],
+  "endpoint": "mean tumor-image binary-mask Dice on the canonical validation split",
+  "evaluation_split": "val",
+  "fixed_downstream": [
+    "rich-gallery merge/dedup/cap",
+    "frozen G1 checkpoint",
+    "equal percentile-rank fusion R7",
+    "native-resolution binary-mask evaluator"
+  ],
+  "name": "g4_ten_class_sam_factorial_v1",
+  "sam_arms": ["vit_l"],
+  "selection": "all candidate choices are frozen before validation polygons are opened",
+  "test_evaluated": false,
+  "test_images_read": 0
+}
