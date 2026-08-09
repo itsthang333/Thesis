@@ -1,0 +1,28 @@
+{
+  "assignments_sha256": "5e68f98c99e3eef2122f57ff37004071003dd999e923995f8784f2928b1cbfce",
+  "images_per_method": 371,
+  "methods": [
+    "direct_rich_gallery",
+    "cam_seed42",
+    "cam_seed43",
+    "cam_seed44",
+    "puzzlecam_seed42",
+    "puzzlecam_seed43",
+    "puzzlecam_seed44",
+    "s2c_seed42",
+    "s2c_seed43",
+    "s2c_seed44",
+    "rich_gallery_seed42",
+    "rich_gallery_seed43",
+    "rich_gallery_seed44",
+    "fully_supervised_seed42",
+    "fully_supervised_seed43",
+    "fully_supervised_seed44"
+  ],
+  "pass": true,
+  "schema_version": 1,
+  "stage": "x4_error_taxonomy_audit_v1",
+  "summary_sha256": "834305ca957262edfbd43c9082aee1776204b92de0eab8ee9ded9d269558028c",
+  "test_evaluated": false,
+  "test_images_read": 0
+}

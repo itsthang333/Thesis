@@ -45,7 +45,12 @@ def _bool(value: object) -> bool:
     return str(value).strip().casefold() in {"1", "true", "yes"}
 
 
-def read_evaluation_rows(path: Path) -> list[dict[str, object]]:
+def read_evaluation_rows(
+    path: Path,
+    *,
+    expected_images: int = 371,
+    expected_tumor_images: int = 184,
+) -> list[dict[str, object]]:
     with path.open("r", newline="", encoding="utf-8-sig") as handle:
         raw = list(csv.DictReader(handle))
     rows: list[dict[str, object]] = []
@@ -86,6 +91,10 @@ def read_evaluation_rows(path: Path) -> list[dict[str, object]]:
             row["gt_positive"] = _bool(raw_row["gt_positive"])
         elif "tumor" in raw_row:
             row["gt_positive"] = _bool(raw_row["tumor"])
+        elif expected_images == expected_tumor_images:
+            # A tumor-only reference table can omit a constant tumor column;
+            # the caller has already bound the exact all-tumor cohort size.
+            row["gt_positive"] = True
         else:
             row["gt_positive"] = int(row.get("gt_lesions", 0)) > 0
         if "predicted_positive" in raw_row:
@@ -99,10 +108,18 @@ def read_evaluation_rows(path: Path) -> list[dict[str, object]]:
                 row[key] = _bool(raw_row[key])
         rows.append(row)
     image_ids = [str(row.get("image_id", "")) for row in rows]
-    if len(rows) != 371 or len(set(image_ids)) != 371 or "" in image_ids:
-        raise ValueError(f"X4 per-image cohort is not exact 371: {path}")
-    if sum(bool(row["gt_positive"]) for row in rows) != 184:
-        raise ValueError(f"X4 per-image tumor cohort is not exact 184: {path}")
+    if (
+        len(rows) != expected_images
+        or len(set(image_ids)) != expected_images
+        or "" in image_ids
+    ):
+        raise ValueError(
+            f"X4 per-image cohort is not exact {expected_images}: {path}"
+        )
+    if sum(bool(row["gt_positive"]) for row in rows) != expected_tumor_images:
+        raise ValueError(
+            f"X4 per-image tumor cohort is not exact {expected_tumor_images}: {path}"
+        )
     return rows
 
 
@@ -129,9 +146,21 @@ def summarize_study(
         missing = sorted(expected - set(runs))
         extra = sorted(set(runs) - expected)
         raise ValueError(f"X4 run matrix differs; missing={missing}, extra={extra}")
-    cohort = {str(row["image_id"]) for row in direct_rows}
-    if any({str(row["image_id"]) for row in rows} != cohort for rows in runs.values()):
-        raise ValueError("X4 student cohorts differ")
+    direct_tumor_cohort = {
+        str(row["image_id"]) for row in direct_rows if bool(row["gt_positive"])
+    }
+    if len(direct_tumor_cohort) != 184:
+        raise ValueError("X4 direct Rich-Gallery tumor cohort is not exact 184")
+    if any(
+        {
+            str(row["image_id"])
+            for row in rows
+            if bool(row["gt_positive"])
+        }
+        != direct_tumor_cohort
+        for rows in runs.values()
+    ):
+        raise ValueError("X4 student/direct tumor cohorts differ")
 
     per_run: dict[str, object] = {}
     arm_seed_summaries: dict[str, list[dict[str, object]]] = {arm: [] for arm in STUDENT_ARMS}
@@ -184,7 +213,14 @@ def summarize_study(
                 iterations=iterations,
                 seed=seed + run_seed,
             )
-            seed_reports.append({"seed": run_seed, **report})
+            bootstrap_seed = int(report.pop("seed"))
+            seed_reports.append(
+                {
+                    **report,
+                    "seed": run_seed,
+                    "bootstrap_seed": bootstrap_seed,
+                }
+            )
         paired[name] = {
             "delta_direction": f"{comparison_arm}_minus_{reference_arm}",
             "per_seed": seed_reports,
@@ -243,7 +279,14 @@ def main() -> None:
     if len(run_paths) != len(args.run):
         raise ValueError("duplicate X4 arm/seed run")
     runs = {key: read_evaluation_rows(path) for key, path in run_paths.items()}
-    direct = read_evaluation_rows(args.direct_rich_gallery_per_image)
+    # The frozen Direct Rich-Gallery endpoint is defined only on the 184 tumor
+    # images.  Student runs still contain all 371 validation images so their
+    # normal-image specificity remains measurable.
+    direct = read_evaluation_rows(
+        args.direct_rich_gallery_per_image,
+        expected_images=184,
+        expected_tumor_images=184,
+    )
     report = summarize_study(
         runs,
         direct,

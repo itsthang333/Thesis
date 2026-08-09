@@ -66,6 +66,25 @@ def test_x4_study_aggregates_three_seeds_and_five_contrasts() -> None:
     report = summarize_study(runs, _rows(0.25), iterations=10, seed=7)
     assert set(report["across_seeds"]) == set(STUDENT_ARMS)
     assert len(report["paired_contrasts"]) == 5
+    for contrast in report["paired_contrasts"].values():
+        assert [row["seed"] for row in contrast["per_seed"]] == list(STUDENT_SEEDS)
+        assert [row["bootstrap_seed"] for row in contrast["per_seed"]] == [
+            7 + seed for seed in STUDENT_SEEDS
+        ]
     rich = report["across_seeds"]["rich_gallery"]["overall"]["mean_tumor_dice"]
     assert rich["n"] == 3
     assert rich["sample_sd"] > 0
+
+
+def test_x4_study_accepts_frozen_direct_tumor_only_cohort() -> None:
+    runs = {
+        (arm, seed): _rows(0.2)
+        for arm in STUDENT_ARMS
+        for seed in STUDENT_SEEDS
+    }
+    direct_tumor_rows = [row for row in _rows(0.25) if row["gt_positive"]]
+    report = summarize_study(runs, direct_tumor_rows, iterations=10, seed=7)
+    contrast = report["paired_contrasts"][
+        "rich_gallery_student_vs_direct_rich_gallery"
+    ]
+    assert len(contrast["per_seed"]) == 3
