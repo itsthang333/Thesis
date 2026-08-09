@@ -108,6 +108,9 @@ def main() -> None:
         device=args.device,
         verbose=False,
         save=False,
+        project=str(args.output_dir / "_ultralytics"),
+        name="predict",
+        exist_ok=True,
     )
     rows: list[dict[str, object]] = []
     latencies: list[float] = []

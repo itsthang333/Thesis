@@ -7,6 +7,7 @@ import pytest
 
 from project.run_x4_yolo_evaluation_kaggle import safe_extract, validate_training_receipt
 from project.run_x4_yolo_evaluation_kernel import validate_contract
+import project.freeze_x4_yolo_predictions as freeze_x4_yolo_predictions
 
 
 def valid_receipt() -> dict[str, object]:
@@ -68,3 +69,10 @@ def test_kernel_contract_rejects_test_access() -> None:
     contract["test_images_read"] = 1
     with pytest.raises(RuntimeError):
         validate_contract(contract)
+
+
+def test_prediction_runner_binds_ultralytics_output_to_writable_stage_a_dir() -> None:
+    source = Path(freeze_x4_yolo_predictions.__file__).read_text(encoding="utf-8")
+    assert 'project=str(args.output_dir / "_ultralytics")' in source
+    assert 'name="predict"' in source
+    assert "exist_ok=True" in source
