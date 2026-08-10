@@ -1,0 +1,119 @@
+{
+  "augmentation": {
+    "horizontal_flip_probability": 0.5,
+    "other_augmentations": false
+  },
+  "backbone": {
+    "architecture": "DenseNet121",
+    "batch_norm_affine_trainable": true,
+    "batch_norm_running_statistics_frozen": true,
+    "checkpoint": "ten_class_seed42",
+    "image_size": 640,
+    "normalization": "imagenet",
+    "resize": "direct_640x640"
+  },
+  "candidate_descriptor": {
+    "allowed": [
+      "p2_inside_mean",
+      "p2_adaptive_ring_mean",
+      "inside_minus_ring"
+    ],
+    "dimension": 384,
+    "forbidden": [
+      "area",
+      "source_id",
+      "prompt_type",
+      "sam_score",
+      "upstream_score",
+      "g1_score",
+      "coordinates",
+      "candidate_count"
+    ],
+    "hidden_dimension": 256
+  },
+  "candidate_gallery": {
+    "cohort": "all_train_and_validation_images",
+    "duplicate_cluster_iou": 0.9,
+    "maximum_candidates": 243,
+    "normal_policy_equals_tumor_policy": true,
+    "sources": [
+      "layercam320_sam_vit_b",
+      "layercam448_sam_vit_b",
+      "biomedclip_sam_vit_b"
+    ]
+  },
+  "experiment": "HR_CBPMIL_IE_PLUS_v1",
+  "fpn": {
+    "channels": 128,
+    "group_norm_groups": 32,
+    "output_grid": [
+      160,
+      160
+    ],
+    "taps": [
+      "denseblock1",
+      "denseblock2",
+      "denseblock3",
+      "denseblock4"
+    ]
+  },
+  "inference": {
+    "extent_capture": "evidence_weighted_fractional_family_union",
+    "extent_purity": "inside_over_inside_plus_adaptive_ring",
+    "family": "one_hop_same_location_only",
+    "family_score": "cluster_identity_times_extent",
+    "final_mask": "one_existing_sam_candidate",
+    "same_location_containment": 0.65,
+    "same_location_iou": 0.15,
+    "top_distinct_clusters": 3,
+    "tta": [
+      "identity",
+      "horizontal_flip"
+    ]
+  },
+  "loss": {
+    "aux10_weight_from_epoch3": 0.1,
+    "candidate_normal_negative_weight": 0.25,
+    "dense_weight": 0.5,
+    "intra_schedule": {
+      "1-3": 0.0,
+      "4": 0.0625,
+      "5": 0.125,
+      "6": 0.1875,
+      "7-30": 0.25
+    },
+    "pmil_weight": 1.0
+  },
+  "mask_projection": {
+    "fractional": "avg_pool_2x2_stride2",
+    "input_grid": [
+      320,
+      320
+    ],
+    "survival": "max_pool_2x2_stride2_greater_than_zero"
+  },
+  "pmil": {
+    "classification": "sigmoid_instance_logit",
+    "cluster_detection": "logmeanexp_then_softmax",
+    "duplicate_balancing": true,
+    "image_probability": "sum_q_times_cluster_balanced_detection"
+  },
+  "seed": 42,
+  "selection_endpoint": "actual_binary_mask_validation_dice",
+  "spatial_ground_truth_training": false,
+  "test_access": false,
+  "training": {
+    "adamw_backbone_lr": 1e-05,
+    "adamw_head_lr": 0.0001,
+    "effective_batch_size": 8,
+    "ema_decay_from_epoch3": 0.999,
+    "epochs": 30,
+    "final_weights": "epoch30_ema",
+    "gradient_accumulation": 4,
+    "gradient_clip": 1.0,
+    "head_warmup_epochs": 2,
+    "physical_batch_size": 2,
+    "scheduler": "two_epoch_linear_warmup_then_cosine",
+    "weight_decay": 0.0001
+  }
+}
