@@ -44,6 +44,8 @@ def resize_binary_masks_nearest(
         raise ValueError("Masks/target shape are invalid for nearest resizing")
     source_height, source_width = values.shape[1:]
     target_height, target_width = (int(target_shape[0]), int(target_shape[1]))
+    if not len(values):
+        return np.zeros((0, target_height, target_width), dtype=np.uint8)
     if (source_height, source_width) == (target_height, target_width):
         return values.copy()
     y = np.floor(
@@ -54,7 +56,73 @@ def resize_binary_masks_nearest(
     ).astype(np.int64)
     y = np.clip(y, 0, source_height - 1)
     x = np.clip(x, 0, source_width - 1)
-    return (values[:, y[:, None], x[None, :]] > 0).astype(np.uint8)
+    resized = (values[:, y[:, None], x[None, :]] > 0).astype(np.uint8)
+    # Preserve the PDF contract that every existing proposal remains in the
+    # gallery. Inverse nearest sampling can miss a sub-pixel/thin foreground
+    # entirely when 448-grid proposals are projected to 320. For only those
+    # otherwise-empty outputs, forward-map the foreground source pixel nearest
+    # its centroid using pixel-centre coordinates. All ordinary masks retain
+    # the exact frozen nearest-neighbour result.
+    empty_after_nearest = ~resized.reshape(len(resized), -1).any(axis=1)
+    for index in np.flatnonzero(empty_after_nearest).tolist():
+        foreground = np.argwhere(values[index] > 0)
+        if not len(foreground):
+            continue
+        centroid = foreground.mean(axis=0)
+        source_y, source_x = foreground[
+            np.argmin(((foreground - centroid) ** 2).sum(axis=1))
+        ]
+        target_y = min(
+            int(np.floor((float(source_y) + 0.5) * target_height / source_height)),
+            target_height - 1,
+        )
+        target_x = min(
+            int(np.floor((float(source_x) + 0.5) * target_width / source_width)),
+            target_width - 1,
+        )
+        resized[index, target_y, target_x] = 1
+    return resized
+
+
+_CANDIDATE_ALIGNED_FIELDS = (
+    "sam_masks",
+    "sam_scores",
+    "selection_scores",
+    "classifier_causal_scores",
+    "component_ids",
+    "prompt_modes",
+    "proposal_source_ids",
+    "source_map_mean_scores",
+    "source_map_mass_coverages",
+    "source_score_densities",
+    "source_class_ids",
+    "source_class_probabilities",
+    "source_class_ranks",
+    "cam_levels",
+    "prompt_ids",
+    "multimask_indices",
+)
+
+
+def _filter_invalid_empty_candidates(
+    payload: dict[str, np.ndarray], masks: np.ndarray
+) -> tuple[dict[str, np.ndarray], np.ndarray, int]:
+    """Remove source rows that have no candidate geometry at all."""
+
+    count = int(len(masks))
+    keep = np.flatnonzero(masks.reshape(count, -1).any(axis=1))
+    removed = count - int(len(keep))
+    if not removed:
+        return payload, masks, 0
+    filtered = dict(payload)
+    for field in _CANDIDATE_ALIGNED_FIELDS:
+        if field not in filtered:
+            continue
+        values = np.asarray(filtered[field])
+        if values.ndim < 1 or values.shape[0] != count:
+            raise ValueError(f"Candidate field {field} does not align before empty filtering")
+        filtered[field] = values[keep]
+    return filtered, masks[keep], removed
 
 
 def merge_payloads(
@@ -74,9 +142,50 @@ def merge_payloads(
         raise ValueError("Anchor prompt map does not match candidate geometry")
     if np.asarray(addition["prompt_map"]).shape != addition_masks.shape[1:]:
         raise ValueError("Addition prompt map does not match candidate geometry")
+    anchor_input_count = int(len(anchor_masks))
+    addition_input_count = int(len(addition_masks))
+    anchor, anchor_masks, anchor_original_empty_removed = (
+        _filter_invalid_empty_candidates(anchor, anchor_masks)
+    )
+    addition, addition_masks, addition_original_empty_removed = (
+        _filter_invalid_empty_candidates(addition, addition_masks)
+    )
     addition_input_shape = tuple(int(value) for value in addition_masks.shape[1:])
     anchor_shape = tuple(int(value) for value in anchor_masks.shape[1:])
-    addition_masks = resize_binary_masks_nearest(addition_masks, anchor_shape)
+    addition_nearest_plain = resize_binary_masks_nearest(addition_masks, anchor_shape)
+    # Recompute the plain inverse-nearest outcome without the survival fallback
+    # solely to expose the exact number of mandatory recoveries in provenance.
+    source_height, source_width = addition_masks.shape[1:]
+    target_height, target_width = anchor_shape
+    y_plain = np.clip(
+        np.floor(
+            np.arange(target_height, dtype=np.float64)
+            * source_height
+            / target_height
+        ).astype(np.int64),
+        0,
+        source_height - 1,
+    )
+    x_plain = np.clip(
+        np.floor(
+            np.arange(target_width, dtype=np.float64)
+            * source_width
+            / target_width
+        ).astype(np.int64),
+        0,
+        source_width - 1,
+    )
+    plain_projection = addition_masks[:, y_plain[:, None], x_plain[None, :]] > 0
+    addition_empty_after_nearest_recovered = (
+        int(
+            np.count_nonzero(
+                ~plain_projection.reshape(len(plain_projection), -1).any(axis=1)
+            )
+        )
+        if len(plain_projection)
+        else 0
+    )
+    addition_masks = addition_nearest_plain
 
     required = (
         "sam_scores",
@@ -255,15 +364,20 @@ def merge_payloads(
     if len(result["sam_masks"]) == 0:
         raise ValueError("Merged gallery cannot be empty")
     return result, {
-        "anchor_input": int(len(anchor_masks)),
-        "addition_input": int(len(addition_masks)),
+        "anchor_input": anchor_input_count,
+        "addition_input": addition_input_count,
         "anchor_kept": int(len(anchor_indices)),
         "addition_kept": int(len(addition_indices)),
         "duplicates_removed": int(
             len(anchor_masks) + len(addition_masks) - len(result["sam_masks"])
         ),
         "merged_count": int(len(result["sam_masks"])),
+        "anchor_original_empty_removed": int(anchor_original_empty_removed),
+        "addition_original_empty_removed": int(addition_original_empty_removed),
         "addition_resized": int(addition_input_shape != anchor_shape),
+        "addition_empty_after_nearest_recovered": (
+            addition_empty_after_nearest_recovered
+        ),
         "addition_provenance_backfilled": int(backfilled_addition_provenance),
     }
 
@@ -341,7 +455,10 @@ def main() -> None:
         "addition_kept": 0,
         "duplicates_removed": 0,
         "merged_count": 0,
+        "anchor_original_empty_removed": 0,
+        "addition_original_empty_removed": 0,
         "addition_resized": 0,
+        "addition_empty_after_nearest_recovered": 0,
         "addition_provenance_backfilled": 0,
     }
     maximum_candidates = 0
@@ -438,9 +555,15 @@ def main() -> None:
         "addition_alignment": (
             "identity"
             if anchor_image_size == addition_image_size
-            else "fixed_nearest_neighbor_to_anchor_grid_before_dedup"
+            else (
+                "fixed_nearest_neighbor_to_anchor_grid_with_"
+                "single_pixel_survival_fallback_before_dedup"
+            )
         ),
         "anchor_prompt_map_for_all_candidates": True,
+        "invalid_empty_frozen_candidate_policy": (
+            "remove_rows_without_geometry_before_dedup_and_report_exact_count"
+        ),
         "exact_mask_deduplication": True,
         "missing_addition_provenance_policy": (
             "nan_level_minus1_multimask_stable_unavailable_prompt_id"

@@ -155,6 +155,42 @@ class MergeFrozenCandidateGalleriesTests(unittest.TestCase):
             resize_binary_masks_nearest(addition[1:], (4, 4))[0],
         )
 
+    def test_preserves_candidate_that_nearest_projection_would_empty(self) -> None:
+        anchor = np.zeros((1, 4, 4), dtype=np.uint8)
+        anchor[0, :2, :2] = 1
+        addition = np.zeros((2, 8, 8), dtype=np.uint8)
+        addition[0, 1, 1] = 1  # No 4x4 output sample lands on this source cell.
+        addition[1, 6:, 6:] = 1
+        merged, stats = merge_payloads(
+            payload(anchor, "layercam", 0.25),
+            payload(addition, "layercam", 0.75),
+            addition_namespace="classifier448",
+        )
+        self.assertEqual(stats["addition_input"], 2)
+        self.assertEqual(stats["addition_empty_after_nearest_recovered"], 1)
+        self.assertEqual(stats["addition_kept"], 2)
+        self.assertTrue(merged["sam_masks"].reshape(3, -1).any(axis=1).all())
+        self.assertEqual(
+            merged["proposal_source_ids"].tolist(),
+            [
+                "layercam",
+                "classifier448:layercam",
+                "classifier448:layercam",
+            ],
+        )
+
+    def test_removes_empty_candidate_already_present_in_frozen_supply(self) -> None:
+        valid = np.ones((1, 4, 4), dtype=np.uint8)
+        empty = np.zeros((1, 8, 8), dtype=np.uint8)
+        merged, stats = merge_payloads(
+            payload(valid, "layercam", 0.25),
+            payload(empty, "layercam", 0.75),
+            addition_namespace="classifier448",
+        )
+        self.assertEqual(stats["addition_original_empty_removed"], 1)
+        self.assertEqual(stats["addition_kept"], 0)
+        self.assertEqual(merged["sam_masks"].shape, (1, 4, 4))
+
 
 if __name__ == "__main__":
     unittest.main()
