@@ -15,11 +15,11 @@ from torchvision.transforms import functional as TF
 try:
     from ..config import IMAGENET_MEAN, IMAGENET_STD
     from ..frozen_io import locate_verified_image, sha256_file
-    from ..selectors.hr_cbpmil_ie_plus import duplicate_cluster_ids
+    from ..hr_selectors.hr_cbpmil_ie_plus import duplicate_cluster_ids
 except ImportError:  # pragma: no cover - script entrypoints with PYTHONPATH=project
     from config import IMAGENET_MEAN, IMAGENET_STD
     from frozen_io import locate_verified_image, sha256_file
-    from selectors.hr_cbpmil_ie_plus import duplicate_cluster_ids
+    from hr_selectors.hr_cbpmil_ie_plus import duplicate_cluster_ids
 
 
 def load_candidate_masks(candidate_root: Path, manifest_row: dict[str, str]) -> np.ndarray:

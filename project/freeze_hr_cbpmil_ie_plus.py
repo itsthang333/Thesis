@@ -15,7 +15,7 @@ from data.hr_cbpmil_bags import HRCBPMILBagDataset, collate_hr_cbpmil_bags, load
 from frozen_io import load_split_rows_without_annotations, sha256_file
 from models.hr_cbpmil_ie_plus import HRCBPMILIEPlus
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
-from selectors.hr_cbpmil_ie_plus import select_ie_plus
+from hr_selectors.hr_cbpmil_ie_plus import select_ie_plus
 
 
 def parse_args() -> argparse.Namespace:

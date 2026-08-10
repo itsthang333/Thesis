@@ -12,7 +12,7 @@ from project.models.hr_cbpmil_ie_plus import (
     intra_loss_weight,
     project_candidate_masks,
 )
-from project.selectors.hr_cbpmil_ie_plus import (
+from project.hr_selectors.hr_cbpmil_ie_plus import (
     duplicate_cluster_ids,
     select_ie_plus,
 )
