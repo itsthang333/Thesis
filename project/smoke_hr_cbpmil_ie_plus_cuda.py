@@ -27,7 +27,7 @@ def main() -> None:
     device = torch.device("cuda:0")
     model = HRCBPMILIEPlus(args.classifier_checkpoint).to(device).train()
     optimizer = torch.optim.AdamW(model.parameters(), lr=1.0e-4, weight_decay=1.0e-4)
-    scaler = torch.amp.GradScaler("cuda")
+    scaler = torch.amp.GradScaler("cuda", init_scale=1024.0)
     image = torch.randn((2, 3, 640, 640), device=device)
     masks = torch.zeros((2, 243, 320, 320), dtype=torch.uint8, device=device)
     for batch in range(2):

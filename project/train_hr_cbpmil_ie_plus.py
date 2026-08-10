@@ -204,7 +204,9 @@ def main() -> None:
         },
     ]
     optimizer = torch.optim.AdamW(parameters, weight_decay=1.0e-4)
-    scaler = torch.amp.GradScaler("cuda")
+    # A conservative fixed initial scale avoids a deterministic first-step
+    # overflow on T4 while retaining dynamic AMP growth/backoff thereafter.
+    scaler = torch.amp.GradScaler("cuda", init_scale=1024.0)
     start_epoch = 1
     global_step = 0
     optimizer_steps = 0
