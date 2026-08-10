@@ -167,6 +167,30 @@ internal sources rather than a universal benefit from every source. This is an
 ablation result; it does not replace the unrestricted Direct-Rich baseline
 Dice 0.288729.
 
+## DSLL Top-3 plus early-collapse diagnostic
+
+The final `wanwin/btxrd-dsll-top3-g1-validation` version 2 run completed in
+11,589 seconds. Its receipt, archive, checkpoint, score freeze, choice freeze,
+selection manifest and per-image table were independently hash-checked. It
+contains exactly 2,981 training and 371 validation images; the 371 choices were
+frozen before opening the 184 validation polygons, and no test image was read.
+Independent aggregation of all per-image rows reproduces the published result.
+
+| Cohort | n | Selected Dice | Selected IoU | Generic oracle | Generic + DSLL oracle | Full seven-source oracle | Selector regret |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Overall | 184 | 0.272935 | 0.207377 | 0.412356 | 0.493133 | **0.560114** | 0.287179 |
+| `<1%` | 94 | 0.130710 | 0.099219 | 0.205497 | 0.302469 | 0.369284 | 0.238574 |
+| `1-<5%` | 72 | 0.424694 | 0.318341 | 0.630832 | 0.694114 | 0.759284 | 0.334590 |
+| `>=5%` | 18 | **0.408625** | 0.328345 | 0.618719 | 0.684896 | 0.759988 | 0.351363 |
+
+DSLL therefore improves candidate supply rather than the deployed endpoint:
+the seven-source oracle rises above the prior 0.528298 ceiling to 0.560114,
+while selected Dice falls from 0.288729 to 0.272935. The small and medium
+subgroups decline by 0.027013 and 0.010535; only the large subgroup improves by
+0.021751. This is direct evidence that selector regret, not proposal absence,
+is the immediate bottleneck after adding DSLL. The DSLL gallery remains useful
+as a candidate source, but this G1/R7 consumer does not replace the baseline.
+
 ## Requirement ledger
 
 | ID | Required evidence | Implementation/evidence | Status | Next blocking action |
@@ -191,6 +215,7 @@ Dice 0.288729.
 | X14 | Selector depth/capacity baseline | Design and implementation frozen: upstream, linear, one-hidden-layer and exact current two-hidden-layer G1; selector-only and identical R7 fusion; seeds42/43/44. All learned arms share one RAD-DINO descriptor cache, one group-aware inner split, the full MIL objective, optimizer and fixed 16 epochs with no best-epoch selection. Stage-A output auditor and Stage-B evaluator support are implemented; 31/31 focused/regression tests pass. Source/protocol payload server-download hashes match. V1 failed its pre-training gallery hash guard because the wrapper expected a stale SHA-256. | Technical pre-training error; no efficacy result | Rebind the exact server-returned gallery SHA, rerun provenance checks, then launch once when a slot is available. |
 | X15 | Optional four-fold robustness | Four locked endpoints only; group-aware train+validation folds; test excluded. | Deferred | Run only if GPU remains after X3/X13/X14. |
 | X8b | Locked-test uncertainty | Requires only already-frozen test predictions, not retraining. | Deferred by test lock | Do not access during X4 development; perform only under explicit final-analysis authorization. |
+| DSLL | Ten-class Top-3/late-fusion proposal supply plus early-collapse and G1/R7 selection | Version 2 COMPLETE and hash-audited. Full seven-source oracle is 0.560114, but actual selected Dice is 0.272935 versus the 0.288729 baseline. | Complete; supply gain, selector efficacy failure | Retain DSLL as evidence/candidate supply; do not promote this selector configuration. |
 
 ## P0/P1 readiness
 
