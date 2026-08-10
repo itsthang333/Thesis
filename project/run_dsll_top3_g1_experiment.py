@@ -187,6 +187,7 @@ def merge_split(
             "--addition-candidate-manifest-sha256", str(addition["candidate_manifest_sha256"]),
             "--addition-pseudo-manifest-sha256", str(addition["pseudo_manifest_sha256"]),
             "--addition-namespace", "classifier448",
+            "--allow-missing-addition-provenance",
             "--protocol-sha256", PROTOCOL_SHA256,
             "--output-dir", str(output),
         ],

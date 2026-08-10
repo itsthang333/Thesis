@@ -87,6 +87,34 @@ class MergeFrozenCandidateGalleriesTests(unittest.TestCase):
             merged["prompt_map"], np.full((4, 4), 0.25, dtype=np.float32)
         )
 
+    def test_legacy_addition_provenance_is_explicitly_backfilled(self) -> None:
+        a = np.zeros((1, 4, 4), dtype=np.uint8)
+        a[0, :2, :2] = 1
+        b = np.zeros((1, 4, 4), dtype=np.uint8)
+        b[0, 2:, 2:] = 1
+        merged, stats = merge_payloads(
+            payload(a, "dsll", 0.25, exact_provenance=True),
+            payload(b, "layercam", 0.75, exact_provenance=False),
+            addition_namespace="classifier448",
+            allow_missing_addition_provenance=True,
+        )
+        self.assertEqual(stats["addition_provenance_backfilled"], 1)
+        self.assertEqual(merged["multimask_indices"].tolist(), [0, -1])
+        self.assertTrue(np.isnan(merged["cam_levels"][1]))
+        self.assertIn(
+            "classifier448:legacy_provenance_unavailable",
+            str(merged["prompt_ids"][1]),
+        )
+
+    def test_legacy_addition_provenance_still_fails_closed_by_default(self) -> None:
+        masks = np.ones((1, 4, 4), dtype=np.uint8)
+        with self.assertRaisesRegex(ValueError, "availability differs"):
+            merge_payloads(
+                payload(masks, "dsll", 0.25, exact_provenance=True),
+                payload(masks, "layercam", 0.75, exact_provenance=False),
+                addition_namespace="classifier448",
+            )
+
     def test_rejects_invalid_namespace(self) -> None:
         masks = np.ones((1, 4, 4), dtype=np.uint8)
         with self.assertRaisesRegex(ValueError, "source prefix"):

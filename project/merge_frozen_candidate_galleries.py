@@ -62,6 +62,7 @@ def merge_payloads(
     addition: dict[str, np.ndarray],
     *,
     addition_namespace: str,
+    allow_missing_addition_provenance: bool = False,
 ) -> tuple[dict[str, np.ndarray], dict[str, int]]:
     if not addition_namespace or ":" in addition_namespace:
         raise ValueError("addition_namespace must be a nonempty source prefix")
@@ -93,9 +94,36 @@ def merge_payloads(
             if len(np.asarray(payload[field]).reshape(-1)) != count:
                 raise ValueError(f"{name} field {field} does not align with masks")
     provenance_fields = ("cam_levels", "prompt_ids", "multimask_indices")
-    provenance_present = all(field in anchor for field in provenance_fields)
-    if provenance_present != all(field in addition for field in provenance_fields):
-        raise ValueError("Anchor/addition exact provenance availability differs")
+    anchor_provenance_present = all(field in anchor for field in provenance_fields)
+    addition_provenance_present = all(field in addition for field in provenance_fields)
+    backfilled_addition_provenance = 0
+    if anchor_provenance_present != addition_provenance_present:
+        if not (
+            allow_missing_addition_provenance
+            and anchor_provenance_present
+            and not addition_provenance_present
+        ):
+            raise ValueError("Anchor/addition exact provenance availability differs")
+        addition = dict(addition)
+        addition_count = len(addition_masks)
+        addition["cam_levels"] = np.full(addition_count, np.nan, dtype=np.float32)
+        addition["multimask_indices"] = np.full(
+            addition_count, -1, dtype=np.int16
+        )
+        addition["prompt_ids"] = np.asarray(
+            [
+                "legacy_provenance_unavailable"
+                f"|{str(np.asarray(addition['proposal_source_ids'])[index])}"
+                f"|c{int(np.asarray(addition['component_ids'])[index])}"
+                f"|{str(np.asarray(addition['prompt_modes'])[index])}"
+                f"|i{index}"
+                for index in range(addition_count)
+            ],
+            dtype="U192",
+        )
+        addition_provenance_present = True
+        backfilled_addition_provenance = addition_count
+    provenance_present = anchor_provenance_present and addition_provenance_present
     if provenance_present:
         for name, payload, count in (
             ("anchor", anchor, len(anchor_masks)),
@@ -236,6 +264,7 @@ def merge_payloads(
         ),
         "merged_count": int(len(result["sam_masks"])),
         "addition_resized": int(addition_input_shape != anchor_shape),
+        "addition_provenance_backfilled": int(backfilled_addition_provenance),
     }
 
 
@@ -262,6 +291,14 @@ def main() -> None:
     parser.add_argument("--addition-candidate-manifest-sha256", required=True)
     parser.add_argument("--addition-pseudo-manifest-sha256", required=True)
     parser.add_argument("--addition-namespace", required=True)
+    parser.add_argument(
+        "--allow-missing-addition-provenance",
+        action="store_true",
+        help=(
+            "Preserve exact anchor provenance while marking a legacy addition "
+            "with NaN/-1/stable unavailable sentinels. This changes metadata only."
+        ),
+    )
     parser.add_argument("--protocol-sha256", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -305,6 +342,7 @@ def main() -> None:
         "duplicates_removed": 0,
         "merged_count": 0,
         "addition_resized": 0,
+        "addition_provenance_backfilled": 0,
     }
     maximum_candidates = 0
     for row in rows:
@@ -316,7 +354,12 @@ def main() -> None:
         anchor = _read_payload(anchor_path)
         addition = _read_payload(addition_path)
         merged, stats = merge_payloads(
-            anchor, addition, addition_namespace=args.addition_namespace
+            anchor,
+            addition,
+            addition_namespace=args.addition_namespace,
+            allow_missing_addition_provenance=(
+                args.allow_missing_addition_provenance
+            ),
         )
         for key in totals:
             totals[key] += stats[key]
@@ -399,6 +442,11 @@ def main() -> None:
         ),
         "anchor_prompt_map_for_all_candidates": True,
         "exact_mask_deduplication": True,
+        "missing_addition_provenance_policy": (
+            "nan_level_minus1_multimask_stable_unavailable_prompt_id"
+            if args.allow_missing_addition_provenance
+            else "reject"
+        ),
         "maximum_candidates": maximum_candidates,
         "totals": totals,
         "output_manifest_sha256": summary["manifest_sha256"],
