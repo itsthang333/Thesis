@@ -36,7 +36,7 @@ def test_adaptive_ring_never_drops_candidate() -> None:
 
 
 def test_cluster_fairness_is_independent_of_duplicate_count() -> None:
-    logits = torch.zeros((1, 11))
+    logits = torch.zeros((1, 11), dtype=torch.float16)
     clusters = torch.tensor([[0] + [1] * 10])
     valid = torch.ones_like(clusters, dtype=torch.bool)
     cluster_mass, within, detection = cluster_balanced_detection(logits, clusters, valid)
@@ -45,6 +45,7 @@ def test_cluster_fairness_is_independent_of_duplicate_count() -> None:
     assert torch.allclose(within[0, :1], torch.tensor([1.0]))
     assert torch.allclose(within[0, 1:], torch.full((10,), 0.1))
     assert torch.isfinite(detection).all()
+    assert detection.dtype == torch.float32
     assert torch.allclose(detection.sum(dim=1), torch.ones(1))
 
 

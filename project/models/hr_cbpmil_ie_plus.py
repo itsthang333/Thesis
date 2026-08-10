@@ -175,9 +175,12 @@ def cluster_balanced_detection(
     if detection_logits.shape != cluster_ids.shape or cluster_ids.shape != candidate_valid.shape:
         raise ValueError("Detection, cluster and validity tensors must align")
     batch, candidates = detection_logits.shape
-    cluster_mass = torch.zeros_like(detection_logits)
-    within = torch.zeros_like(detection_logits)
-    detection = torch.zeros_like(detection_logits)
+    # Always compute the probability simplex in FP32. Under AMP the incoming
+    # logits are FP16, while softmax/logsumexp may promote to FP32.
+    logits32 = detection_logits.float()
+    cluster_mass = torch.zeros_like(logits32)
+    within = torch.zeros_like(logits32)
+    detection = torch.zeros_like(logits32)
     for batch_index in range(batch):
         valid_indices = torch.nonzero(candidate_valid[batch_index], as_tuple=False).flatten()
         if not len(valid_indices):
@@ -190,12 +193,12 @@ def cluster_balanced_detection(
         member_sets: list[torch.Tensor] = []
         for cluster_id in unique_ids:
             members = valid_indices[ids == cluster_id]
-            logits = detection_logits[batch_index, members]
+            logits = logits32[batch_index, members]
             balanced_logits.append(torch.logsumexp(logits, dim=0) - torch.log(logits.new_tensor(float(len(members)))))
             member_sets.append(members)
         masses = torch.softmax(torch.stack(balanced_logits), dim=0)
         for mass, members in zip(masses, member_sets, strict=True):
-            local = torch.softmax(detection_logits[batch_index, members], dim=0)
+            local = torch.softmax(logits32[batch_index, members], dim=0)
             cluster_mass[batch_index, members] = mass
             within[batch_index, members] = local
             detection[batch_index, members] = mass * local
