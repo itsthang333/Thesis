@@ -6,7 +6,9 @@ import numpy as np
 import torch
 
 from project.models.hr_cbpmil_ie_plus import (
+    _weighted_spatial_mean,
     adaptive_candidate_rings,
+    check_finite,
     cluster_balanced_detection,
     hr_cbpmil_loss,
     intra_loss_weight,
@@ -33,6 +35,31 @@ def test_adaptive_ring_never_drops_candidate() -> None:
     masks[0, 1] = True
     rings = adaptive_candidate_rings(masks, torch.ones((1, 2), dtype=torch.bool))
     assert rings.flatten(2).any(dim=2).all()
+
+
+def test_one_pixel_fractional_weighted_mean_is_not_diluted() -> None:
+    feature = torch.zeros((1, 1, 160, 160))
+    feature[0, 0, 8, 9] = 4.0
+    weights = torch.zeros((1, 1, 160, 160))
+    weights[0, 0, 8, 9] = 0.25
+    output = _weighted_spatial_mean(
+        feature,
+        weights,
+        torch.ones((1, 1), dtype=torch.bool),
+        name="one_pixel",
+    )
+    assert output.dtype == torch.float32
+    assert torch.allclose(output, torch.tensor([[[4.0]]]))
+
+
+def test_weighted_mean_rejects_empty_valid_region() -> None:
+    with np.testing.assert_raises(FloatingPointError):
+        _weighted_spatial_mean(
+            torch.zeros((1, 1, 2, 2)),
+            torch.zeros((1, 1, 2, 2)),
+            torch.ones((1, 1), dtype=torch.bool),
+            name="empty",
+        )
 
 
 def test_cluster_fairness_is_independent_of_duplicate_count() -> None:
@@ -100,6 +127,84 @@ def test_loss_is_finite_and_schedule_is_exact() -> None:
     assert torch.isfinite(losses["total"])
     losses["total"].backward()
     assert [intra_loss_weight(i) for i in range(1, 8)] == [0, 0, 0, 0.0625, 0.125, 0.1875, 0.25]
+
+
+def test_log_space_intra_responsibility_matches_probability_formula() -> None:
+    classification = torch.tensor([[0.2, -0.7, 1.1]], requires_grad=True)
+    detection = torch.tensor([[0.2, 0.3, 0.5]])
+    inside = torch.tensor([[1.0, -0.5, 0.25]], requires_grad=True)
+    ring = torch.tensor([[0.0, 0.1, -0.25]], requires_grad=True)
+    output = {
+        "image_probability": (torch.sigmoid(classification) * detection).sum(dim=1),
+        "dense_logits": torch.zeros(1, 160, 160, requires_grad=True),
+        "classification_logits": classification,
+        "instance_probability": torch.sigmoid(classification),
+        "detection_mass": detection,
+        "dense_inside": inside,
+        "dense_ring": ring,
+        "logits10": torch.zeros(1, 10, requires_grad=True),
+    }
+    losses = hr_cbpmil_loss(
+        output,
+        torch.tensor([1]),
+        torch.tensor([3]),
+        torch.ones((1, 3), dtype=torch.bool),
+        epoch_number=7,
+    )
+    unnormalized = torch.sigmoid(classification.detach()) * detection
+    expected_weights = unnormalized / unnormalized.sum(dim=1, keepdim=True)
+    expected = (expected_weights * torch.nn.functional.softplus(-(inside - ring))).sum()
+    assert torch.allclose(losses["intra"], expected, atol=1.0e-6)
+
+
+def test_log_space_intra_is_finite_for_extreme_small_probabilities() -> None:
+    classification = torch.tensor([[-1000.0, -900.0]], requires_grad=True)
+    detection = torch.tensor([[1.0e-30, 1.0]])
+    output = {
+        "image_probability": torch.tensor([1.0e-20], requires_grad=True),
+        "dense_logits": torch.zeros(1, 160, 160, requires_grad=True),
+        "classification_logits": classification,
+        "instance_probability": torch.sigmoid(classification),
+        "detection_mass": detection,
+        "dense_inside": torch.tensor([[-2.0, 1.0]], requires_grad=True),
+        "dense_ring": torch.tensor([[1.0, 0.0]], requires_grad=True),
+        "logits10": torch.zeros(1, 10, requires_grad=True),
+    }
+    losses = hr_cbpmil_loss(
+        output,
+        torch.tensor([1]),
+        torch.tensor([3]),
+        torch.ones((1, 2), dtype=torch.bool),
+        epoch_number=4,
+    )
+    assert torch.isfinite(losses["intra"])
+    assert torch.isfinite(losses["total"])
+
+
+def test_nonfinite_dense_field_fails_fast() -> None:
+    output = {
+        "image_probability": torch.tensor([0.5]),
+        "dense_logits": torch.full((1, 160, 160), -torch.inf),
+        "classification_logits": torch.zeros(1, 1),
+        "instance_probability": torch.full((1, 1), 0.5),
+        "detection_mass": torch.ones(1, 1),
+        "dense_inside": torch.zeros(1, 1),
+        "dense_ring": torch.zeros(1, 1),
+        "logits10": torch.zeros(1, 10),
+    }
+    with np.testing.assert_raises(FloatingPointError):
+        hr_cbpmil_loss(
+            output,
+            torch.tensor([1]),
+            torch.tensor([3]),
+            torch.ones((1, 1), dtype=torch.bool),
+            epoch_number=4,
+        )
+
+
+def test_check_finite_reports_nonfinite_kind() -> None:
+    with np.testing.assert_raises(FloatingPointError):
+        check_finite("bad", torch.tensor([0.0, torch.inf, torch.nan]))
 
 
 def test_model_api_has_no_forbidden_candidate_features() -> None:

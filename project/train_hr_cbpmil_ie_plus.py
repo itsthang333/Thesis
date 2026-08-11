@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import random
 from copy import deepcopy
 from pathlib import Path
@@ -22,8 +23,13 @@ from data.hr_cbpmil_bags import (
     write_data_boundary_receipt,
 )
 from frozen_io import load_split_rows_without_annotations, sha256_file
-from models.hr_cbpmil_ie_plus import HRCBPMILIEPlus, hr_cbpmil_loss
+from models.hr_cbpmil_ie_plus import HRCBPMILIEPlus, check_finite, hr_cbpmil_loss
 from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
+
+try:  # Linux/Kaggle; Windows is used for local unit tests and packaging.
+    import resource
+except ImportError:  # pragma: no cover - platform dependent
+    resource = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -87,6 +93,98 @@ def move_batch(batch: dict[str, object], device: torch.device) -> dict[str, obje
         key: value.to(device, non_blocking=True) if isinstance(value, torch.Tensor) else value
         for key, value in batch.items()
     }
+
+
+def current_rss_bytes() -> int:
+    """Return current process RSS without introducing a third-party dependency."""
+
+    status = Path("/proc/self/status")
+    if status.is_file():
+        for line in status.read_text(encoding="utf-8").splitlines():
+            if line.startswith("VmRSS:"):
+                return int(line.split()[1]) * 1024
+    # On Linux ru_maxrss is KiB; this fallback is telemetry-only on other hosts.
+    if resource is not None:
+        value = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+        return value * (1024 if os.name != "nt" else 1)
+    return 0
+
+
+def append_jsonl(path: Path, row: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, sort_keys=True, allow_nan=False) + "\n")
+
+
+def tensor_max_abs(value: torch.Tensor) -> float:
+    check_finite("telemetry_tensor", value)
+    return float(value.detach().float().abs().max().cpu()) if value.numel() else 0.0
+
+
+def runtime_telemetry(
+    *,
+    event: str,
+    epoch: int,
+    batch_index: int,
+    global_step: int,
+    batch: dict[str, object] | None = None,
+    output: dict[str, torch.Tensor] | None = None,
+    scaler: torch.amp.GradScaler | None = None,
+    gradient_norm: float | None = None,
+) -> dict[str, object]:
+    row: dict[str, object] = {
+        "event": event,
+        "epoch": int(epoch),
+        "batch_index": int(batch_index),
+        "global_step": int(global_step),
+        "cpu_rss_bytes": current_rss_bytes(),
+        "gpu_allocated_bytes": int(torch.cuda.memory_allocated()),
+        "gpu_reserved_bytes": int(torch.cuda.memory_reserved()),
+        "gpu_max_allocated_bytes": int(torch.cuda.max_memory_allocated()),
+        "gpu_max_reserved_bytes": int(torch.cuda.max_memory_reserved()),
+    }
+    if scaler is not None:
+        row["grad_scale"] = float(scaler.get_scale())
+    if gradient_norm is not None:
+        row["gradient_norm"] = float(gradient_norm)
+    if batch is not None:
+        valid = batch["candidate_valid"]
+        clusters = batch["cluster_ids"]
+        assert isinstance(valid, torch.Tensor) and isinstance(clusters, torch.Tensor)
+        row["image_ids"] = list(batch["image_id"])
+        row["candidate_counts"] = valid.sum(dim=1).cpu().tolist()
+        row["cluster_counts"] = [
+            int(torch.unique(cluster_row[valid_row]).numel())
+            for cluster_row, valid_row in zip(clusters, valid, strict=True)
+        ]
+    if output is not None:
+        row.update(
+            {
+                "max_abs_dense": tensor_max_abs(output["dense_logits"]),
+                "max_abs_classification": tensor_max_abs(output["classification_logits"]),
+                "max_abs_detection": tensor_max_abs(output["detection_logits"]),
+                "max_abs_delta": tensor_max_abs(output["dense_inside"] - output["dense_ring"]),
+                "pmil_probability_min": float(output["image_probability"].min().detach().cpu()),
+                "pmil_probability_max": float(output["image_probability"].max().detach().cpu()),
+            }
+        )
+    return row
+
+
+def rng_state() -> dict[str, object]:
+    return {
+        "python": random.getstate(),
+        "numpy": np.random.get_state(),
+        "torch_cpu": torch.get_rng_state(),
+        "torch_cuda": torch.cuda.get_rng_state_all(),
+    }
+
+
+def restore_rng_state(state: dict[str, object]) -> None:
+    random.setstate(state["python"])
+    np.random.set_state(state["numpy"])
+    torch.set_rng_state(state["torch_cpu"])
+    torch.cuda.set_rng_state_all(state["torch_cuda"])
 
 
 @torch.no_grad()
@@ -225,11 +323,15 @@ def main() -> None:
         optimizer_steps = int(resume["optimizer_steps"])
         amp_skipped_steps = int(resume["amp_skipped_steps"])
         history = list(resume["history"])
+        if "rng_state" in resume:
+            restore_rng_state(resume["rng_state"])
 
     steps_per_epoch = math.ceil(len(train_dataset) / 2 / 4)
     accumulation = 4
+    telemetry_path = args.output_dir / "numerical_telemetry.jsonl"
     for epoch in range(start_epoch, args.stop_after_epoch + 1):
         seed_all(args.seed + epoch)
+        torch.cuda.reset_peak_memory_stats()
         if epoch == 3:
             ema.load_state_dict(base_model.state_dict(), strict=True)
         generator = torch.Generator().manual_seed(args.seed + epoch)
@@ -247,28 +349,65 @@ def main() -> None:
         optimizer.zero_grad(set_to_none=True)
         for batch_index, batch in enumerate(train_loader, start=1):
             batch = move_batch(batch, device)
-            with torch.autocast(device_type="cuda", dtype=torch.float16):
-                output = model(
-                    batch["image"],
-                    batch["candidate_masks"],
-                    batch["candidate_valid"],
-                    batch["cluster_ids"],
+            try:
+                with torch.autocast(device_type="cuda", dtype=torch.float16):
+                    output = model(
+                        batch["image"],
+                        batch["candidate_masks"],
+                        batch["candidate_valid"],
+                        batch["cluster_ids"],
+                    )
+                    losses = hr_cbpmil_loss(
+                        output,
+                        batch["binary_label"],
+                        batch["class10_label"],
+                        batch["candidate_valid"],
+                        epoch_number=epoch,
+                    )
+                    scaled_loss = losses["total"] / accumulation
+            except (FloatingPointError, RuntimeError) as error:
+                failure = runtime_telemetry(
+                    event="forward_failure",
+                    epoch=epoch,
+                    batch_index=batch_index,
+                    global_step=global_step,
+                    batch=batch,
+                    scaler=scaler,
                 )
-                losses = hr_cbpmil_loss(
-                    output,
-                    batch["binary_label"],
-                    batch["class10_label"],
-                    batch["candidate_valid"],
-                    epoch_number=epoch,
+                failure["error"] = repr(error)
+                (args.output_dir / "numerical_failure.json").write_text(
+                    json.dumps(failure, indent=2, sort_keys=True, allow_nan=False) + "\n",
+                    encoding="utf-8",
                 )
-                scaled_loss = losses["total"] / accumulation
+                raise
             scaler.scale(scaled_loss).backward()
             for key, value in losses.items():
                 running[key] = running.get(key, 0.0) + float(value.detach().cpu())
             final_batch = batch_index == len(train_loader)
             if batch_index % accumulation == 0 or final_batch:
                 scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(base_model.parameters(), 1.0)
+                try:
+                    gradient_norm_tensor = torch.nn.utils.clip_grad_norm_(
+                        base_model.parameters(), 1.0, error_if_nonfinite=True
+                    )
+                    check_finite("gradient_norm", gradient_norm_tensor)
+                except (FloatingPointError, RuntimeError) as error:
+                    failure = runtime_telemetry(
+                        event="gradient_failure",
+                        epoch=epoch,
+                        batch_index=batch_index,
+                        global_step=global_step,
+                        batch=batch,
+                        output=output,
+                        scaler=scaler,
+                    )
+                    failure["error"] = repr(error)
+                    (args.output_dir / "numerical_failure.json").write_text(
+                        json.dumps(failure, indent=2, sort_keys=True, allow_nan=False) + "\n",
+                        encoding="utf-8",
+                    )
+                    raise
+                gradient_norm = float(gradient_norm_tensor.detach().cpu())
                 previous_scale = scaler.get_scale()
                 global_step += 1
                 scale = learning_rate_scale(global_step, steps_per_epoch, args.epochs)
@@ -278,11 +417,40 @@ def main() -> None:
                 scaler.update()
                 if scaler.get_scale() < previous_scale:
                     amp_skipped_steps += 1
+                    failure = runtime_telemetry(
+                        event="amp_skip_failure",
+                        epoch=epoch,
+                        batch_index=batch_index,
+                        global_step=global_step,
+                        batch=batch,
+                        output=output,
+                        scaler=scaler,
+                        gradient_norm=gradient_norm,
+                    )
+                    (args.output_dir / "numerical_failure.json").write_text(
+                        json.dumps(failure, indent=2, sort_keys=True, allow_nan=False) + "\n",
+                        encoding="utf-8",
+                    )
+                    raise FloatingPointError("AMP skipped an optimizer step")
                 else:
                     optimizer_steps += 1
                     if epoch >= 3:
                         update_ema(ema, model, 0.999)
                 optimizer.zero_grad(set_to_none=True)
+                if global_step == 1 or global_step % 200 == 0:
+                    append_jsonl(
+                        telemetry_path,
+                        runtime_telemetry(
+                            event="optimizer_step",
+                            epoch=epoch,
+                            batch_index=batch_index,
+                            global_step=global_step,
+                            batch=batch,
+                            output=output,
+                            scaler=scaler,
+                            gradient_norm=gradient_norm,
+                        ),
+                    )
 
         validation = label_safe_validation(ema if epoch >= 3 else model, val_loader, device)
         epoch_row = {
@@ -292,7 +460,15 @@ def main() -> None:
             "amp_skipped_steps": amp_skipped_steps,
             "train": {key: value / len(train_loader) for key, value in running.items()},
             "validation": validation,
+            "runtime": runtime_telemetry(
+                event="epoch_end",
+                epoch=epoch,
+                batch_index=len(train_loader),
+                global_step=global_step,
+                scaler=scaler,
+            ),
         }
+        append_jsonl(telemetry_path, epoch_row["runtime"])
         history.append(epoch_row)
         checkpoint = {
             "stage": "hr_cbpmil_ie_plus_training_checkpoint_v1",
@@ -305,6 +481,8 @@ def main() -> None:
             "optimizer_state_dict": optimizer.state_dict(),
             "scaler_state_dict": scaler.state_dict(),
             "history": history,
+            "rng_state": rng_state(),
+            "numerical_implementation": "hr_cbpmil_ie_plus_v2.1_amp_safe",
             "source_commit": args.source_commit,
             "protocol_sha256": args.protocol_sha256,
             "split_sha256": args.expected_split_sha256,
@@ -316,6 +494,8 @@ def main() -> None:
             "test_evaluated": False,
         }
         torch.save(checkpoint, args.output_dir / "last_checkpoint.pt")
+        if epoch == 3:
+            torch.save(checkpoint, args.output_dir / "trusted_checkpoint_epoch03.pt")
         (args.output_dir / "training_history.json").write_text(
             json.dumps(history, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
@@ -329,6 +509,12 @@ def main() -> None:
         "optimizer_steps": optimizer_steps,
         "amp_skipped_steps": amp_skipped_steps,
         "checkpoint_sha256": sha256_file(args.output_dir / "last_checkpoint.pt"),
+        "trusted_epoch03_checkpoint_sha256": (
+            sha256_file(args.output_dir / "trusted_checkpoint_epoch03.pt")
+            if (args.output_dir / "trusted_checkpoint_epoch03.pt").is_file()
+            else None
+        ),
+        "numerical_implementation": "hr_cbpmil_ie_plus_v2.1_amp_safe",
         "cluster_cache_sha256": {
             "train": sha256_file(train_cluster_path),
             "val": sha256_file(val_cluster_path),
