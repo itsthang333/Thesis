@@ -34,10 +34,21 @@ while pgrep -f "pipeline_epoch1.yaml train-hrnet" >/dev/null; do
 done
 
 if [[ ! -s "${MAIN_OUTPUT}/checkpoints/hrnet_last.pt" ]]; then
-  printf '%s epoch-1 checkpoint is missing after warm-up\n' "$(date --iso-8601=seconds)" \
+  printf '%s epoch-1 checkpoint is missing; restarting warm-up under Supervisor\n' \
+    "$(date --iso-8601=seconds)" \
     | tee -a "${LOG_DIR}/managed.log"
-  stop_instance 1
-  exit 1
+  EPOCH1_CONFIG="${REPO_DIR}/configs/pipeline_epoch1.yaml"
+  python "${REPO_DIR}/scripts/vast/prepare_benchmark_config.py" \
+    --source "${MAIN_CONFIG}" \
+    --target "${EPOCH1_CONFIG}" \
+    --output-dir "${MAIN_OUTPUT}"
+  btxrd-wsss --config "${EPOCH1_CONFIG}" train-hrnet 2>&1 \
+    | tee -a "${LOG_DIR}/epoch1.log"
+  warmup_code=${PIPESTATUS[0]}
+  if (( warmup_code != 0 )); then
+    stop_instance "${warmup_code}"
+    exit "${warmup_code}"
+  fi
 fi
 
 if [[ ! -f "${BENCHMARK_OUTPUT}/benchmark.complete" ]]; then
