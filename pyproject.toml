@@ -9,7 +9,7 @@ description = "Native-resolution weakly supervised bone-tumor localization"
 requires-python = ">=3.11"
 dependencies = [
   "numpy>=1.26,<3",
-  "pillow>=10,<12",
+  "pillow>=10,<13",
   "pandas>=2.2,<3",
   "openpyxl>=3.1,<4",
   "pyyaml>=6,<7",
