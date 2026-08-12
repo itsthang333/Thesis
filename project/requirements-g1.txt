@@ -1,6 +1,0 @@
--r requirements.txt
-
-# RAD-DINO/G1 is a separate environment because the frozen selector used a
-# newer transformers release than the BiomedCLIP proposal stage.
-transformers==4.50.2
-safetensors>=0.4.5,<1

@@ -1,6 +1,0 @@
-arm,seed,timed_images,warmup_iterations,median_ms_per_image,iqr_low_ms_per_image,iqr_high_ms_per_image,timed_elapsed_seconds,peak_allocated_mb,peak_reserved_mb,prediction_storage_mb,gpu
-cam,42,371,3,10.730534,10.642549,10.847410,32.0932,614.185,840.000,96.187,"Tesla T4 x2"
-puzzlecam,42,371,3,10.622911,10.597886,10.777939,31.5417,614.185,840.000,89.113,"Tesla T4 x2"
-s2c,42,371,3,10.785473,10.668148,10.851679,32.8106,614.185,840.000,57.946,"Tesla T4 x2"
-rich_gallery,42,371,3,10.770878,10.608314,10.811223,31.0835,614.185,840.000,86.613,"Tesla T4 x2"
-fully_supervised,42,371,3,10.662067,10.590731,10.781332,32.8930,614.185,840.000,104.436,"Tesla T4 x2"

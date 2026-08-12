@@ -26,6 +26,14 @@ Thumbs.db
 outputs/
 runs/
 checkpoints/
+.cache/
+wandb/
+mlruns/
+/data/
+/models/
+*.npz
+*.npy
+*.jsonl
 .tmp_notebook_outputs/
 *.pt
 *.pth
@@ -47,3 +55,7 @@ Thesis_Report_Latex/
 
 kaggle_outputs/
 tmp/
+
+# Vast.ai persistent workspace mounts
+workspace/
+volume/

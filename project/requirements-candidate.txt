@@ -1,9 +1,0 @@
--r requirements.txt
-
-# Exact environment used by the frozen BiomedCLIP proposal source.
-open-clip-torch==2.32.0
-transformers==4.35.2
-
-# Online/server install. Kaggle Internet=Off must attach this exact source
-# commit as a Dataset and add it to PYTHONPATH instead.
-segment-anything @ git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588

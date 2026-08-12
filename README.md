@@ -1,116 +1,114 @@
-# BTXRD WSSS - thesis-final pipeline
+# BTXRD native-resolution WSSS (RTX 5090)
 
-This branch contains the locked thesis method: **Rich Gallery G1 + fixed equal
-percentile-rank fusion**. Spatial annotations are never used to create
-candidates, train G1, score candidates, or choose a final mask.
+Pipeline mới để định vị khối u xương nhỏ từ nhãn mức ảnh. Nhánh này không chứa pipeline
+DenseNet/LayerCAM cũ. Polygon chỉ được đọc trong lệnh `evaluate`, không đi vào huấn luyện,
+tạo proposal, chấm điểm hay chọn mask.
 
-## Development result
-
-The method was selected on the canonical validation cohort. These numbers are
-not presented as test performance.
-
-| Cohort | n | Dice | IoU | Complete misses |
-|---|---:|---:|---:|---:|
-| Tumor overall | 184 | **0.288729** | **0.216839** | 49 |
-| Lesion area `<1%` | 94 | 0.157723 | 0.118576 | 35 |
-| Lesion area `1-<5%` | 72 | 0.435229 | 0.323558 | 13 |
-| Lesion area `>=5%` | 18 | 0.386874 | 0.303117 | 1 |
-
-The historical fully-supervised ResNet18-U-Net comparison reached validation
-Dice 0.492765. The model retrained on the final manifest and subsequently used
-for the locked test comparison reached validation Dice 0.490149 at the same
-threshold 0.20 (0.489581 after native-grid inversion). The latter is the matched
-final-checkpoint comparison. Fully supervised output is never an input to WSSS.
-
-The final test was evaluated exactly once after source, assets and method were
-frozen. WSSS reached Dice 0.260881 and the independently frozen fully-supervised
-comparison reached 0.524423 on the 187 tumor test images. No G4 ablation uses
-test images or test polygons.
-
-## End-to-end method
+## Pipeline đã khóa
 
 ```text
-BTXRD train images + binary tumor/normal image labels
-  -> DenseNet121 classifiers at 320 and 448
-  -> LayerCAM-320 and classifier-448 proposal evidence
-  -> frozen BiomedCLIP external saliency
-  -> SAM ViT-B proposals from all three sources
-  -> exact union and duplicate removal (maximum 243 masks/image)
-  -> G1 Geometry-v3 candidate encoder + image-label MIL training
-  -> freeze each candidate's G1 logit and upstream score
-  -> 0.5 * percentile_rank(G1) + 0.5 * percentile_rank(upstream)
-  -> stable argmax and immutable mask choices without spatial GT
-  -> spatial evaluator (validation during development; test once at the end)
+native radiograph
+  ├─ HRNetV2-W48 full-view (long side 1536) ── hrnet_full map
+  ├─ cùng HRNet trên native tiles 512/1024 ─── hrnet_tile map
+  └─ frozen BiomedCLIP full + tiles ────────── biomedclip map
+                         │
+              component-tree proposals
+              8 full + 16 tile + 8 BiomedCLIP
+                         │
+       SAM ViT-B ROI pass 1: scale 1.5, single mask
+       SAM pass 2: chỉ ROI uncertain/novel, scale 3, multimask
+                         │
+        tối đa 80 raw → gates + source/size diversity → 48
+                         │
+        frozen RAD-DINO descriptors (2×/4× context, 448)
+                         │
+            G1 mask-bag MIL MLP (chỉ phần này học)
+                         │
+       0.5 G1 rank + 0.5 source-correct upstream rank
+             + tối đa 6 multifocal unions → native mask
 ```
 
-The three proposal sources are retained because every two-source ablation
-reduced validation Dice. See [docs/RESULTS.md](docs/RESULTS.md).
+HRNet được fine-tune bằng dense image-label MIL. SAM ViT-B, BiomedCLIP và RAD-DINO được
+đóng băng. G1 được train trên `selector_holdout_fold`, tách khỏi dữ liệu đã train HRNet.
 
-## Matched final comparison
+## Artifact và đánh giá từng giai đoạn
 
-The repository contains two isolated executable tracks:
+Mọi stage có thể resume theo từng ảnh và ghi vào `experiment.output_dir`:
 
-- `project/run_fully_supervised_comparison.py`: train/validation only,
-  polygon-supervised ResNet18-U-Net at 448 px;
-- the WSSS stages above: binary image labels only before evaluation.
+```text
+checkpoints/hrnet_best.pt, hrnet_last.pt, g1_best.pt
+calibration/hrnet_normal_cdf.npz
+source_maps/<image_id>.npz
+raw/galleries/<image_id>.npz
+galleries/<image_id>.npz
+descriptors/<image_id>.npz
+final_masks/<image_id>.png
+evaluation/<stage>/per_image.jsonl, summary.json
+```
 
-For final test, both tracks freeze predictions before spatial test GT.
-`evaluate_final_rich_gallery.py` then reads each tumor annotation once and
-writes WSSS and fully-supervised per-image results plus `comparison.csv`.
-On Kaggle the tracks may run as two private jobs. On one A100 they should run
-as independent sequential jobs to avoid resource contention; this scheduling
-choice does not change either scientific protocol.
+`evaluate` đo dense-map Dice/IoU/pointing accuracy, raw/selected candidate-oracle,
+complete-miss, kết quả theo kích thước tổn thương và ablation gallery K=24/36/48/72.
 
-## Scientific test policy
-
-- Validation chose the method and all hyperparameters.
-- The final source commit and every external asset are SHA-256 locked.
-- Test images may be processed only after that lock exists.
-- The setting assumes the binary image label is available when localizing a
-  test image. It is therefore image-label-aware WSSS localization, not
-  label-free deployment segmentation.
-- Test polygons remain unavailable until all 373 choices have been frozen.
-- The 187 tumor test polygons are opened by the final evaluator only once.
-- Test output cannot be used to modify the method or rerun a tuned variant.
-
-See [docs/TEST_PROTOCOL.md](docs/TEST_PROTOCOL.md) for the A100 procedure.
-The stage-by-stage T4x2/A100 support matrix is in
-[docs/EXECUTION_MATRIX.md](docs/EXECUTION_MATRIX.md).
-
-## Repository layout
-
-- `project/`: executable final pipeline and its dependency closure.
-- `tests/`: focused fail-closed and numerical tests.
-- `artifacts/final_pipeline/`: validation result and immutable provenance.
-- `docs/`: method, results, test protocol, limitations, and archive pointer.
-
-The complete research history and all retired experiments remain preserved at
-commit `aca685f` on branch `codex/research-sync-20260731`.
-
-## Installation
+## Chạy cục bộ
 
 ```bash
-python -m venv .venv
-python -m pip install --upgrade pip
-# Install the platform-specific PyTorch/CUDA wheel first, then choose one:
-python -m pip install -r project/requirements-candidate.txt
-python -m pip install -r project/requirements-g1.txt
-python -m pip install -r project/requirements-fully.txt
+python -m pip install -e '.[train,sam,dev]'
+btxrd-wsss --config configs/pipeline.yaml show-config
+btxrd-wsss --config configs/pipeline.yaml preflight
+pytest
 ```
 
-Candidate/BiomedCLIP and G1 use separate environments because the frozen
-validation run used `transformers` 4.35.2 and 4.50.2 respectively. Installing
-both stage files into one environment is incorrect.
-
-BTXRD, SAM ViT-B, BiomedCLIP/RAD-DINO snapshots, and trained checkpoints are
-not committed. Their authoritative hashes and parameters are recorded in
-`artifacts/final_pipeline/final_run_config.json` and frozen again before test.
-
-## Verification
+Manifest phải giữ split/group hiện có của nghiên cứu. Chỉ dùng `build-manifest` khi thực sự
+muốn tạo lại split:
 
 ```bash
-python -m py_compile project/*.py project/evaluation/*.py
-python -m pytest -q tests
+btxrd-wsss --config configs/pipeline.yaml build-manifest
 ```
 
-No test image or test annotation is needed for this preflight.
+Chạy từng stage:
+
+```bash
+btxrd-wsss --config configs/pipeline.yaml train-hrnet
+btxrd-wsss --config configs/pipeline.yaml source-maps
+btxrd-wsss --config configs/pipeline.yaml sam-gallery
+btxrd-wsss --config configs/pipeline.yaml rad-dino
+btxrd-wsss --config configs/pipeline.yaml train-g1
+btxrd-wsss --config configs/pipeline.yaml select
+btxrd-wsss --config configs/pipeline.yaml evaluate --splits val,test
+```
+
+## Vast.ai: 1×RTX 5090
+
+Giới hạn mặc định: `$0.60/h`, disk 300 GB, verified host, CUDA 12.8+, direct SSH.
+
+```bash
+python -m pip install vastai
+vastai set api-key YOUR_KEY
+MAX_DPH=0.60 DISK_GB=300 bash scripts/vast/search_fastest.sh
+
+export OFFER_ID=12345678
+export OFFER_DPH=0.55
+bash scripts/vast/create_fastest.sh
+```
+
+Sau khi SSH, clone/copy repo vào `/workspace/native-wsss`, đặt BTXRD và manifest tại các
+đường dẫn trong `configs/pipeline.yaml`, rồi:
+
+```bash
+bash scripts/vast/bootstrap.sh
+bash scripts/vast/run_5090.sh
+```
+
+`bootstrap.sh` tải checkpoint cần thiết và chạy một forward thật qua HRNet, BiomedCLIP,
+SAM ViT-B và RAD-DINO trước khi bắt đầu huấn luyện dài.
+
+Sau epoch HRNet đầu tiên có thể benchmark 100 ảnh; các artifact đó được giữ lại và full run
+sẽ resume thay vì tính lại:
+
+```bash
+bash scripts/vast/benchmark_100.sh
+```
+
+Chi phí compute tối đa ở `$0.60/h`: 12 giờ `$7.20`, 24 giờ `$14.40`, 30 giờ `$18.00`.
+Storage và bandwidth phụ thuộc offer. Trước khi destroy instance, chạy
+`scripts/vast/sync_outputs.sh`; disk của instance không còn sau khi destroy.
