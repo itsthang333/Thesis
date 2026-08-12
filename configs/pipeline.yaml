@@ -151,4 +151,4 @@ runtime:
   pin_memory: true
   persistent_workers: true
   maximum_dollars_per_hour: 0.60
-  disk_gb: 300
+  disk_gb: 400

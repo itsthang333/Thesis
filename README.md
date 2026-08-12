@@ -79,12 +79,12 @@ btxrd-wsss --config configs/pipeline.yaml evaluate --splits val,test
 
 ## Vast.ai: 1×RTX 5090
 
-Giới hạn mặc định: `$0.60/h`, disk 300 GB, verified host, CUDA 12.8+, direct SSH.
+Giới hạn mặc định: `$0.60/h`, disk 400 GB, verified host, CUDA 12.8+, direct SSH.
 
 ```bash
 python -m pip install vastai
 vastai set api-key YOUR_KEY
-MAX_DPH=0.60 DISK_GB=300 bash scripts/vast/search_fastest.sh
+MAX_DPH=0.60 DISK_GB=400 bash scripts/vast/search_fastest.sh
 
 export OFFER_ID=12345678
 export OFFER_DPH=0.55
