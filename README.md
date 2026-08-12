@@ -115,7 +115,3 @@ sẽ resume thay vì tính lại:
 ```bash
 bash scripts/vast/benchmark_100.sh
 ```
-
-Chi phí compute tối đa ở `$0.60/h`: 12 giờ `$7.20`, 24 giờ `$14.40`, 30 giờ `$18.00`.
-Storage và bandwidth phụ thuộc offer. Trước khi destroy instance, chạy
-`scripts/vast/sync_outputs.sh`; disk của instance không còn sau khi destroy.
