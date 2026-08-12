@@ -36,7 +36,7 @@ hrnet:
   dropout: 0.1
   output_classes: 10
   topk_fractions: [0.0005, 0.002, 0.01]
-  epochs: 40
+  epochs: 12
   early_stopping_patience: 6
   batch_size: 1
   gradient_accumulation: 8

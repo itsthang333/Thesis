@@ -70,6 +70,21 @@ if [[ ! -f "${BENCHMARK_OUTPUT}/benchmark.complete" ]]; then
   touch "${BENCHMARK_OUTPUT}/benchmark.complete"
 fi
 
+python "${REPO_DIR}/scripts/vast/check_time_budget.py" \
+  --config "${MAIN_CONFIG}" \
+  --main-output "${MAIN_OUTPUT}" \
+  --benchmark-output "${BENCHMARK_OUTPUT}" \
+  --images 3746 \
+  --max-hours "${WSSS_MAX_PROJECTED_HOURS:-22}" \
+  2>&1 | tee -a "${LOG_DIR}/time_budget.log"
+budget_code=${PIPESTATUS[0]}
+if (( budget_code != 0 )); then
+  printf '%s projected runtime exceeds budget; stopping before full run\n' \
+    "$(date --iso-8601=seconds)" | tee -a "${LOG_DIR}/managed.log"
+  stop_instance "${budget_code}"
+  exit "${budget_code}"
+fi
+
 attempt=1
 exit_code=1
 while (( attempt <= MAX_ATTEMPTS )); do
