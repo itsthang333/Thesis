@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ -f /venv/main/bin/activate ]]; then
+  source /venv/main/bin/activate
+fi
+
 WORKSPACE="${WSSS_WORKSPACE:-/workspace}"
 REPO_DIR="${WSSS_REPO_DIR:-${WORKSPACE}/native-wsss}"
 CONFIG="${WSSS_CONFIG:-${REPO_DIR}/configs/pipeline.yaml}"
