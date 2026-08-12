@@ -102,8 +102,9 @@ bash scripts/vast/install_supervisor.sh
 Supervisor chạy pipeline nền, tự resume theo checkpoint, thử lại tối đa ba lần và
 tự `stop` Vast instance khi hoàn tất hoặc lỗi liên tiếp. Theo dõi bằng
 `supervisorctl status btxrd-wsss` và `/workspace/logs/managed.log`.
-Trước full run, epoch 1 và 100 ảnh được benchmark riêng; instance tự dừng nếu
-dự phóng các stage còn lại vượt 22 giờ.
+Trước full run, epoch 1 và 100 ảnh được benchmark riêng. Dự phóng thời gian
+được ghi vào `time_budget.json` để theo dõi nhưng không chặn full run. Chỉ thêm
+`--enforce` khi chủ đích muốn biến giới hạn này thành hard stop.
 
 `bootstrap.sh` tải checkpoint cần thiết và chạy một forward thật qua HRNet, BiomedCLIP,
 SAM ViT-B và RAD-DINO trước khi bắt đầu huấn luyện dài.

@@ -26,6 +26,11 @@ def main() -> None:
     parser.add_argument("--benchmark-output", required=True)
     parser.add_argument("--images", type=int, required=True)
     parser.add_argument("--max-hours", type=float, default=22.0)
+    parser.add_argument(
+        "--enforce",
+        action="store_true",
+        help="Return exit code 2 when projected runtime exceeds the budget.",
+    )
     args = parser.parse_args()
 
     config = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
@@ -55,7 +60,7 @@ def main() -> None:
     output_path = Path(args.benchmark_output) / "time_budget.json"
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps(payload, indent=2))
-    raise SystemExit(0 if payload["within_budget"] else 2)
+    raise SystemExit(0 if payload["within_budget"] or not args.enforce else 2)
 
 
 if __name__ == "__main__":

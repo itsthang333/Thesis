@@ -79,7 +79,7 @@ python "${REPO_DIR}/scripts/vast/check_time_budget.py" \
   2>&1 | tee -a "${LOG_DIR}/time_budget.log"
 budget_code=${PIPESTATUS[0]}
 if (( budget_code != 0 )); then
-  printf '%s projected runtime exceeds budget; stopping before full run\n' \
+  printf '%s enforced runtime budget exceeded; stopping before full run\n' \
     "$(date --iso-8601=seconds)" | tee -a "${LOG_DIR}/managed.log"
   stop_instance "${budget_code}"
   exit "${budget_code}"
