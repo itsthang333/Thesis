@@ -1,4 +1,4 @@
-# BTXRD native-resolution WSSS (RTX 5090)
+# BTXRD native-resolution WSSS
 
 Pipeline mới để định vị khối u xương nhỏ từ nhãn mức ảnh. Nhánh này không chứa pipeline
 DenseNet/LayerCAM cũ. Polygon chỉ được đọc trong lệnh `evaluate`, không đi vào huấn luyện,
