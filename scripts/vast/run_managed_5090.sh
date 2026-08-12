@@ -51,7 +51,10 @@ if [[ ! -s "${MAIN_OUTPUT}/checkpoints/hrnet_last.pt" ]]; then
   fi
 fi
 
-if [[ ! -f "${BENCHMARK_OUTPUT}/benchmark.complete" ]]; then
+if [[ -f "${BENCHMARK_OUTPUT}/benchmark.skip" ]]; then
+  printf '%s benchmark skipped by explicit full-run request\n' \
+    "$(date --iso-8601=seconds)" | tee -a "${LOG_DIR}/managed.log"
+elif [[ ! -f "${BENCHMARK_OUTPUT}/benchmark.complete" ]]; then
   python "${REPO_DIR}/scripts/vast/prepare_benchmark_config.py" \
     --source "${MAIN_CONFIG}" \
     --target "${BENCHMARK_CONFIG}" \
@@ -70,19 +73,21 @@ if [[ ! -f "${BENCHMARK_OUTPUT}/benchmark.complete" ]]; then
   touch "${BENCHMARK_OUTPUT}/benchmark.complete"
 fi
 
-python "${REPO_DIR}/scripts/vast/check_time_budget.py" \
-  --config "${MAIN_CONFIG}" \
-  --main-output "${MAIN_OUTPUT}" \
-  --benchmark-output "${BENCHMARK_OUTPUT}" \
-  --images 3746 \
-  --max-hours "${WSSS_MAX_PROJECTED_HOURS:-22}" \
-  2>&1 | tee -a "${LOG_DIR}/time_budget.log"
-budget_code=${PIPESTATUS[0]}
-if (( budget_code != 0 )); then
-  printf '%s enforced runtime budget exceeded; stopping before full run\n' \
-    "$(date --iso-8601=seconds)" | tee -a "${LOG_DIR}/managed.log"
-  stop_instance "${budget_code}"
-  exit "${budget_code}"
+if [[ ! -f "${BENCHMARK_OUTPUT}/benchmark.skip" ]]; then
+  python "${REPO_DIR}/scripts/vast/check_time_budget.py" \
+    --config "${MAIN_CONFIG}" \
+    --main-output "${MAIN_OUTPUT}" \
+    --benchmark-output "${BENCHMARK_OUTPUT}" \
+    --images 3746 \
+    --max-hours "${WSSS_MAX_PROJECTED_HOURS:-22}" \
+    2>&1 | tee -a "${LOG_DIR}/time_budget.log"
+  budget_code=${PIPESTATUS[0]}
+  if (( budget_code != 0 )); then
+    printf '%s enforced runtime budget exceeded; stopping before full run\n' \
+      "$(date --iso-8601=seconds)" | tee -a "${LOG_DIR}/managed.log"
+    stop_instance "${budget_code}"
+    exit "${budget_code}"
+  fi
 fi
 
 attempt=1
