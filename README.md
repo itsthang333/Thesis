@@ -96,8 +96,12 @@ Sau khi SSH, clone/copy repo vào `/workspace/native-wsss`, đặt BTXRD và man
 
 ```bash
 bash scripts/vast/bootstrap.sh
-bash scripts/vast/run_5090.sh
+bash scripts/vast/install_supervisor.sh
 ```
+
+Supervisor chạy pipeline nền, tự resume theo checkpoint, thử lại tối đa ba lần và
+tự `stop` Vast instance khi hoàn tất hoặc lỗi liên tiếp. Theo dõi bằng
+`supervisorctl status btxrd-wsss` và `/workspace/logs/managed.log`.
 
 `bootstrap.sh` tải checkpoint cần thiết và chạy một forward thật qua HRNet, BiomedCLIP,
 SAM ViT-B và RAD-DINO trước khi bắt đầu huấn luyện dài.

@@ -19,6 +19,7 @@ export CUDA_MODULE_LOADING=LAZY
 
 python -m pip install --upgrade pip setuptools wheel
 python -m pip install -e "${REPO_DIR}[train,sam,dev]"
+python -m pip install "vastai>=0.2"
 
 SAM_CHECKPOINT="${WORKSPACE}/models/sam_vit_b_01ec64.pth"
 if [[ ! -s "${SAM_CHECKPOINT}" ]]; then
