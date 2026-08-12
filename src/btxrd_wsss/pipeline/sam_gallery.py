@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+from types import SimpleNamespace
 from typing import Protocol
 
 import numpy as np
 
 from btxrd_wsss.config import SAMConfig, SelectionConfig
-from btxrd_wsss.pipeline.selection import score_and_gate
+from btxrd_wsss.pipeline.selection import percentile_ranks, score_and_gate
 from btxrd_wsss.types import CandidateMask, Proposal
 
 
@@ -55,8 +56,8 @@ def _as_rgb_u8(image: np.ndarray) -> np.ndarray:
     return values
 
 
-def _stability(logits: np.ndarray, offset: float = 1.0) -> float:
-    high, low = logits > offset, logits > -offset
+def _stability(logits: np.ndarray, threshold: float = 0.0, offset: float = 1.0) -> float:
+    high, low = logits > threshold + offset, logits > threshold - offset
     denominator = low.sum()
     return 1.0 if denominator == 0 else float(high.sum() / denominator)
 
@@ -113,12 +114,55 @@ class SAMViTBROIBackend:
             return_logits=True,
         )
         results: list[tuple[np.ndarray, float, float]] = []
+        threshold = float(self.predictor.model.mask_threshold)
         for local_logits, score in zip(logits, scores, strict=True):
-            local_mask = local_logits > 0
+            local_mask = local_logits > threshold
             native = np.zeros(native_shape, dtype=bool)
             native[ry0:ry1, rx0:rx1] = local_mask
-            results.append((native, float(score), _stability(local_logits)))
+            results.append((native, float(score), _stability(local_logits, threshold)))
         return results
+
+
+class SAMMed2DROIBackend(SAMViTBROIBackend):
+    """Official SAM-Med2D ViT-B adapter, isolated from the original SAM namespace."""
+
+    name = "sam_med2d_vit_b_roi"
+
+    def __init__(
+        self,
+        checkpoint: str,
+        device: str = "cuda",
+        model_type: str = "vit_b",
+        *,
+        image_size: int = 256,
+        encoder_adapter: bool = True,
+    ) -> None:
+        from btxrd_wsss.vendor.sam_med2d import SamPredictor, sam_model_registry
+
+        arguments = SimpleNamespace(
+            image_size=image_size,
+            sam_checkpoint=checkpoint,
+            encoder_adapter=encoder_adapter,
+        )
+        model = sam_model_registry[model_type](arguments)
+        model.eval().to(device)
+        for parameter in model.parameters():
+            parameter.requires_grad_(False)
+        self.predictor = SamPredictor(model)
+
+
+def create_sam_backend(config: SAMConfig, device: str) -> SAMBackend:
+    if config.backend == "sam_med2d":
+        return SAMMed2DROIBackend(
+            config.checkpoint,
+            device,
+            config.model_type,
+            image_size=config.image_size,
+            encoder_adapter=config.encoder_adapter,
+        )
+    if config.backend == "sam_vit_b":
+        return SAMViTBROIBackend(config.checkpoint, device, config.model_type)
+    raise ValueError(f"Unsupported SAM backend: {config.backend}")
 
 
 def _candidate_id(proposal: Proposal, backend: str, roi_scale: float, index: int) -> str:
@@ -185,6 +229,14 @@ def build_adaptive_gallery(
         if len(gallery) >= config.maximum_raw_candidates:
             break
     initial_by_proposal = {item.proposal_id: item for item in gallery}
+    initial_quality = [
+        float(np.clip((item.predicted_iou + item.stability) / 2, 0, 1)) for item in gallery
+    ]
+    quality_ranks = percentile_ranks(initial_quality)
+    quality_by_candidate = {
+        item.candidate_id: float(rank)
+        for item, rank in zip(gallery, quality_ranks, strict=True)
+    }
     expansion: list[tuple[float, Proposal]] = []
     for proposal in proposals:
         candidate = initial_by_proposal.get(proposal.proposal_id)
@@ -193,7 +245,7 @@ def build_adaptive_gallery(
         else:
             component = proposal.component_mask
             coverage = np.logical_and(candidate.mask, component).sum() / max(1, component.sum())
-            quality = (candidate.predicted_iou + candidate.stability) / 2
+            quality = quality_by_candidate[candidate.candidate_id]
             small_bonus = float(component.sum() / component.size <= config.small_area_ratio)
             alternatives = [old for old in gallery if old.proposal_id != candidate.proposal_id]
             novelty = 1 - max(
@@ -250,7 +302,7 @@ def select_diverse_gallery(
     selection_config: SelectionConfig,
 ) -> list[CandidateMask]:
     """Source/size-aware greedy diversity selection before expensive RAD-DINO."""
-    candidates = score_and_gate(candidates, source_maps, selection_config)
+    candidates = score_and_gate(candidates, source_maps, selection_config, sam_config)
     selected: list[CandidateMask] = []
     selected_ids: set[str] = set()
 

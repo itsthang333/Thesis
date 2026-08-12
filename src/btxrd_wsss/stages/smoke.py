@@ -10,7 +10,7 @@ from btxrd_wsss.config import PipelineConfig
 from btxrd_wsss.models.biomedclip import FrozenBiomedCLIP
 from btxrd_wsss.models.hrnet_mil import HRNetDenseMIL
 from btxrd_wsss.models.rad_dino_g1 import FrozenRadDINODescriptor
-from btxrd_wsss.pipeline.sam_gallery import SAMViTBROIBackend
+from btxrd_wsss.pipeline.sam_gallery import create_sam_backend
 from btxrd_wsss.types import CandidateMask, Proposal
 
 
@@ -74,13 +74,14 @@ def smoke_models(config: PipelineConfig) -> dict[str, object]:
         component_mask=component,
         metadata={"peak_x": 56, "peak_y": 40, "source_confidence": 0.8},
     )
-    sam = SAMViTBROIBackend(config.sam.checkpoint, config.runtime.device, config.sam.model_type)
+    sam = create_sam_backend(config.sam, config.runtime.device)
     predictions = sam.predict_roi(
         pixels, proposal, roi_scale=config.sam.initial_roi_scale, multimask=False
     )
     mask, predicted_iou, stability = predictions[0]
     if not mask.any():
         mask = component.copy()
+    sam_name = sam.name
     report["sam"] = {
         "mask_shape": list(mask.shape),
         "predicted_iou": predicted_iou,
@@ -94,7 +95,7 @@ def smoke_models(config: PipelineConfig) -> dict[str, object]:
         mask=mask,
         proposal_id="smoke",
         proposal_source="hrnet_tile",
-        sam_backend="sam_vit_b_roi",
+        sam_backend=sam_name,
         prompt_type="box+point",
         predicted_iou=predicted_iou,
         stability=stability,

@@ -15,7 +15,7 @@ native radiograph
               component-tree proposals
               8 full + 16 tile + 8 BiomedCLIP
                          │
-       SAM ViT-B ROI pass 1: scale 1.5, single mask
+       SAM-Med2D ViT-B ROI pass 1: scale 1.5, single mask
        SAM pass 2: chỉ ROI uncertain/novel, scale 3, multimask
                          │
         tối đa 80 raw → gates + source/size diversity → 48

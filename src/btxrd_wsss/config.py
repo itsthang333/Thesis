@@ -80,9 +80,11 @@ class ProposalConfig:
 
 @dataclass(frozen=True)
 class SAMConfig:
+    backend: str
     model_type: str
     checkpoint: str
     image_size: int
+    encoder_adapter: bool
     initial_roi_scale: float
     expansion_roi_scale: float
     multimask: bool
@@ -132,6 +134,8 @@ class SelectionConfig:
     upstream_rank_weight: float
     minimum_mask_area: int
     maximum_mask_area_ratio: float
+    minimum_tiny_stability: float
+    minimum_small_stability: float
     minimum_stability: float
     minimum_component_coverage: float
     add_multifocal_unions: bool
@@ -249,6 +253,17 @@ def validate_config(config: PipelineConfig) -> None:
         if any(not 0 < value < 1 for value in values):
             raise ValueError(f"{name} must use probabilities in (0,1)")
     _require_probability(config.sam.duplicate_iou, "duplicate_iou", open_zero=True)
+    if config.sam.backend not in {"sam_vit_b", "sam_med2d"}:
+        raise ValueError("SAM backend must be one of: sam_vit_b, sam_med2d")
+    if config.sam.model_type != "vit_b":
+        raise ValueError("This pipeline currently supports only the ViT-B SAM family")
+    if config.sam.backend == "sam_med2d":
+        if config.sam.image_size != 256:
+            raise ValueError("The official SAM-Med2D checkpoint requires image_size=256")
+        if not config.sam.encoder_adapter:
+            raise ValueError("The official SAM-Med2D checkpoint requires encoder_adapter=true")
+    elif config.sam.image_size != 1024 or config.sam.encoder_adapter:
+        raise ValueError("Original SAM ViT-B requires image_size=1024 and encoder_adapter=false")
     _require_probability(config.sam.tiny_area_ratio, "tiny_area_ratio", open_zero=True)
     _require_probability(config.sam.small_area_ratio, "small_area_ratio", open_zero=True)
     if config.sam.tiny_area_ratio >= config.sam.small_area_ratio:
@@ -267,7 +282,15 @@ def validate_config(config: PipelineConfig) -> None:
     _require_probability(
         config.selection.maximum_mask_area_ratio, "maximum_mask_area_ratio", open_zero=True
     )
+    _require_probability(config.selection.minimum_tiny_stability, "minimum_tiny_stability")
+    _require_probability(config.selection.minimum_small_stability, "minimum_small_stability")
     _require_probability(config.selection.minimum_stability, "minimum_stability")
+    if not (
+        config.selection.minimum_tiny_stability
+        <= config.selection.minimum_small_stability
+        <= config.selection.minimum_stability
+    ):
+        raise ValueError("Stability floors must increase from tiny to small to large masks")
     _require_probability(config.selection.minimum_component_coverage, "minimum_component_coverage")
     if abs(config.selection.g1_rank_weight + config.selection.upstream_rank_weight - 1) > 1e-9:
         raise ValueError("Final rank weights must sum to one")

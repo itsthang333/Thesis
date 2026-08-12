@@ -2,7 +2,7 @@ import numpy as np
 
 from btxrd_wsss.config import SAMConfig, SelectionConfig
 from btxrd_wsss.pipeline.sam_gallery import select_diverse_gallery
-from btxrd_wsss.pipeline.selection import percentile_ranks
+from btxrd_wsss.pipeline.selection import percentile_ranks, score_and_gate
 from btxrd_wsss.types import CandidateMask
 
 
@@ -11,7 +11,11 @@ def test_percentile_rank_singleton_is_half() -> None:
 
 
 def _candidate(
-    identifier: str, source: str, box: tuple[int, int, int, int], shape=(100, 100)
+    identifier: str,
+    source: str,
+    box: tuple[int, int, int, int],
+    shape=(100, 100),
+    stability: float = 0.9,
 ) -> CandidateMask:
     mask = np.zeros(shape, bool)
     x0, y0, x1, y1 = box
@@ -25,7 +29,7 @@ def _candidate(
         sam_backend="mock",
         prompt_type="box",
         predicted_iou=0.9,
-        stability=0.9,
+        stability=stability,
         roi_scale=1.5,
         metadata={
             "source_component": component,
@@ -39,9 +43,11 @@ def _candidate(
 
 def test_diversity_gallery_preserves_tiny_candidates() -> None:
     sam = SAMConfig(
+        backend="sam_vit_b",
         model_type="vit_b",
         checkpoint="x",
         image_size=1024,
+        encoder_adapter=False,
         initial_roi_scale=1.5,
         expansion_roi_scale=3.0,
         multimask=True,
@@ -60,16 +66,23 @@ def test_diversity_gallery_preserves_tiny_candidates() -> None:
         hrnet_weights={
             "contrast": 0.3,
             "purity": 0.25,
-            "coverage": 0.2,
-            "sam_quality": 0.15,
+            "coverage": 0.25,
+            "sam_quality": 0.1,
             "peak": 0.1,
         },
-        biomedclip_weights={"purity": 0.35, "contrast": 0.25, "coverage": 0.2, "sam_quality": 0.2},
+        biomedclip_weights={
+            "purity": 0.35,
+            "contrast": 0.25,
+            "coverage": 0.25,
+            "sam_quality": 0.15,
+        },
         source_confidence_floor=0.5,
         g1_rank_weight=0.5,
         upstream_rank_weight=0.5,
         minimum_mask_area=1,
         maximum_mask_area_ratio=0.5,
+        minimum_tiny_stability=0.0,
+        minimum_small_stability=0.25,
         minimum_stability=0.5,
         minimum_component_coverage=0.25,
         add_multifocal_unions=True,
@@ -88,3 +101,10 @@ def test_diversity_gallery_preserves_tiny_candidates() -> None:
     }
     selected = select_diverse_gallery(candidates, maps, sam_config=sam, selection_config=selection)
     assert "tiny" in {item.candidate_id for item in selected}
+
+    low_stability = [
+        _candidate("tiny-low", "hrnet_tile", (2, 2, 4, 4), stability=0.05),
+        _candidate("large-low", "hrnet_tile", (10, 10, 30, 30), stability=0.05),
+    ]
+    accepted = score_and_gate(low_stability, maps, selection, sam)
+    assert {item.candidate_id for item in accepted} == {"tiny-low"}

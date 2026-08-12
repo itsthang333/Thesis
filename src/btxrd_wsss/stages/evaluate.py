@@ -10,7 +10,10 @@ from PIL import Image
 from btxrd_wsss.artifacts import load_gallery, load_source_maps
 from btxrd_wsss.config import PipelineConfig
 from btxrd_wsss.data.manifest import read_manifest
-from btxrd_wsss.evaluation.candidates import candidate_gallery_metrics
+from btxrd_wsss.evaluation.candidates import (
+    candidate_gallery_metrics,
+    candidate_quality_diagnostics,
+)
 from btxrd_wsss.evaluation.ground_truth import load_labelme_mask
 from btxrd_wsss.evaluation.segmentation import segmentation_metrics
 from btxrd_wsss.evaluation.stage_report import StageReportWriter
@@ -80,6 +83,12 @@ def evaluate_spatial_stages(
             }
         raw = load_gallery(output_dir / "raw", record.image_id)
         selected = load_gallery(output_dir, record.image_id)
+        quality_by_source = {
+            source: candidate_quality_diagnostics(
+                [candidate for candidate in raw if candidate.proposal_source == source], target
+            )
+            for source in ("hrnet_full", "hrnet_tile", "biomedclip")
+        }
         cap_metrics: dict[str, object] = {}
         for cap in (24, 36, 48, 72):
             cap_config = replace(config.sam, maximum_selected_candidates=cap)
@@ -109,6 +118,11 @@ def evaluate_spatial_stages(
                 "sources": source_metrics,
                 "raw_gallery": candidate_gallery_metrics(raw, target),
                 "selected_gallery": candidate_gallery_metrics(selected, target),
+                "sam_quality": {
+                    "raw": candidate_quality_diagnostics(raw, target),
+                    "selected": candidate_quality_diagnostics(selected, target),
+                    "by_source": quality_by_source,
+                },
                 "cap_ablation": cap_metrics,
                 "final": final_metrics,
             }

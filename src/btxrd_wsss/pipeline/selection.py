@@ -7,7 +7,7 @@ import numpy as np
 from scipy import ndimage
 from scipy.stats import rankdata
 
-from btxrd_wsss.config import SelectionConfig
+from btxrd_wsss.config import SAMConfig, SelectionConfig
 from btxrd_wsss.types import CandidateMask, Selection
 
 
@@ -29,21 +29,62 @@ def candidate_evidence(candidate: CandidateMask, evidence: np.ndarray) -> dict[s
         "contrast": float(np.clip(inside - outside, 0, 1)),
         "coverage": float(intersection / max(1, component.sum())),
         "peak": float(mask[peak]),
-        "sam_quality": float(np.clip((candidate.predicted_iou + candidate.stability) / 2, 0, 1)),
+        "predicted_iou": float(np.clip(candidate.predicted_iou, 0, 1)),
+        "stability": float(np.clip(candidate.stability, 0, 1)),
+        "sam_quality_raw": float(
+            np.clip((candidate.predicted_iou + candidate.stability) / 2, 0, 1)
+        ),
     }
 
 
-def passes_gates(
-    candidate: CandidateMask, stats: dict[str, float], config: SelectionConfig
-) -> bool:
+def mask_size_bucket(candidate: CandidateMask, sam_config: SAMConfig) -> str:
+    area_ratio = float(candidate.mask.sum() / candidate.mask.size)
+    if area_ratio < sam_config.tiny_area_ratio:
+        return "tiny"
+    if area_ratio < sam_config.small_area_ratio:
+        return "small"
+    return "large"
+
+
+def stability_floor(
+    candidate: CandidateMask, sam_config: SAMConfig, selection_config: SelectionConfig
+) -> float:
+    bucket = mask_size_bucket(candidate, sam_config)
+    if bucket == "tiny":
+        return selection_config.minimum_tiny_stability
+    if bucket == "small":
+        return selection_config.minimum_small_stability
+    return selection_config.minimum_stability
+
+
+def gate_reasons(
+    candidate: CandidateMask,
+    stats: dict[str, float],
+    sam_config: SAMConfig,
+    selection_config: SelectionConfig,
+) -> list[str]:
     area = int(candidate.mask.sum())
-    return (
-        area >= config.minimum_mask_area
-        and area / candidate.mask.size <= config.maximum_mask_area_ratio
-        and candidate.stability >= config.minimum_stability
-        and stats["coverage"] >= config.minimum_component_coverage
-        and stats["peak"] == 1.0
-    )
+    reasons: list[str] = []
+    if area < selection_config.minimum_mask_area:
+        reasons.append("area_too_small")
+    if area / candidate.mask.size > selection_config.maximum_mask_area_ratio:
+        reasons.append("area_too_large")
+    if candidate.stability < stability_floor(candidate, sam_config, selection_config):
+        reasons.append("low_stability")
+    if stats["coverage"] < selection_config.minimum_component_coverage:
+        reasons.append("low_component_coverage")
+    if stats["peak"] != 1.0:
+        reasons.append("misses_source_peak")
+    return reasons
+
+
+def passes_gates(
+    candidate: CandidateMask,
+    stats: dict[str, float],
+    sam_config: SAMConfig,
+    selection_config: SelectionConfig,
+) -> bool:
+    return not gate_reasons(candidate, stats, sam_config, selection_config)
 
 
 def upstream_score(source: str, stats: dict[str, float], config: SelectionConfig) -> float:
@@ -109,18 +150,72 @@ def add_multifocal_unions(
 def score_and_gate(
     candidates: list[CandidateMask],
     source_maps: dict[str, np.ndarray],
-    config: SelectionConfig,
+    selection_config: SelectionConfig,
+    sam_config: SAMConfig,
 ) -> list[CandidateMask]:
-    accepted: list[CandidateMask] = []
+    preliminary: list[tuple[CandidateMask, dict[str, float]]] = []
     for candidate in candidates:
         stats = candidate_evidence(candidate, source_maps[candidate.proposal_source])
-        if not passes_gates(candidate, stats, config):
+        if not passes_gates(candidate, stats, sam_config, selection_config):
             continue
-        metadata = dict(candidate.metadata)
-        metadata.update(stats)
-        metadata["upstream_score"] = upstream_score(candidate.proposal_source, stats, config)
-        accepted.append(replace(candidate, metadata=metadata))
+        preliminary.append((candidate, stats))
+
+    accepted: list[CandidateMask] = []
+    sources = dict.fromkeys(candidate.proposal_source for candidate, _stats in preliminary)
+    for source in sources:
+        members = [
+            (candidate, stats)
+            for candidate, stats in preliminary
+            if candidate.proposal_source == source
+        ]
+        iou_ranks = percentile_ranks([stats["predicted_iou"] for _candidate, stats in members])
+        stability_ranks = percentile_ranks([stats["stability"] for _candidate, stats in members])
+        for (candidate, stats), iou_rank, stability_rank in zip(
+            members, iou_ranks, stability_ranks, strict=True
+        ):
+            # The SAM-Med2D IoU head is not calibrated on BTXRD. Source-local ranks
+            # retain useful ordering without treating its absolute values as probabilities.
+            stats["sam_quality"] = float((iou_rank + stability_rank) / 2)
+            metadata = dict(candidate.metadata)
+            metadata.update(stats)
+            metadata["size_bucket"] = mask_size_bucket(candidate, sam_config)
+            metadata["stability_floor"] = stability_floor(
+                candidate, sam_config, selection_config
+            )
+            metadata["upstream_score"] = upstream_score(
+                candidate.proposal_source, stats, selection_config
+            )
+            accepted.append(replace(candidate, metadata=metadata))
     return accepted
+
+
+def gate_audit(
+    candidates: list[CandidateMask],
+    source_maps: dict[str, np.ndarray],
+    sam_config: SAMConfig,
+    selection_config: SelectionConfig,
+) -> dict[str, object]:
+    rejected: dict[str, int] = {}
+    by_size: dict[str, dict[str, int]] = {}
+    accepted = 0
+    for candidate in candidates:
+        stats = candidate_evidence(candidate, source_maps[candidate.proposal_source])
+        reasons = gate_reasons(candidate, stats, sam_config, selection_config)
+        bucket = mask_size_bucket(candidate, sam_config)
+        counts = by_size.setdefault(bucket, {"total": 0, "accepted": 0})
+        counts["total"] += 1
+        if not reasons:
+            accepted += 1
+            counts["accepted"] += 1
+        for reason in reasons:
+            rejected[reason] = rejected.get(reason, 0) + 1
+    return {
+        "total": len(candidates),
+        "accepted": accepted,
+        "rejected": len(candidates) - accepted,
+        "rejection_reasons": rejected,
+        "by_size": by_size,
+    }
 
 
 def unions_with_logits(

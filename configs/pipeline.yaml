@@ -70,9 +70,11 @@ proposals:
     biomedclip: 8
 
 sam:
+  backend: sam_med2d
   model_type: vit_b
-  checkpoint: /workspace/models/sam_vit_b_01ec64.pth
-  image_size: 1024
+  checkpoint: /workspace/models/sam-med2d_b.pth
+  image_size: 256
+  encoder_adapter: true
   initial_roi_scale: 1.5
   expansion_roi_scale: 3.0
   multimask: true
@@ -118,19 +120,21 @@ selection:
   hrnet_weights:
     contrast: 0.30
     purity: 0.25
-    coverage: 0.20
-    sam_quality: 0.15
+    coverage: 0.25
+    sam_quality: 0.10
     peak: 0.10
   biomedclip_weights:
     purity: 0.35
     contrast: 0.25
-    coverage: 0.20
-    sam_quality: 0.20
+    coverage: 0.25
+    sam_quality: 0.15
   source_confidence_floor: 0.50
   g1_rank_weight: 0.50
   upstream_rank_weight: 0.50
   minimum_mask_area: 4
   maximum_mask_area_ratio: 0.50
+  minimum_tiny_stability: 0.00
+  minimum_small_stability: 0.25
   minimum_stability: 0.50
   minimum_component_coverage: 0.25
   add_multifocal_unions: true

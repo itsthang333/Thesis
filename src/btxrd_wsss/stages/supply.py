@@ -27,10 +27,11 @@ from btxrd_wsss.models.biomedclip import FrozenBiomedCLIP
 from btxrd_wsss.models.rad_dino_g1 import FrozenRadDINODescriptor
 from btxrd_wsss.pipeline.proposals import ProposalGenerator
 from btxrd_wsss.pipeline.sam_gallery import (
-    SAMViTBROIBackend,
     build_adaptive_gallery,
+    create_sam_backend,
     select_diverse_gallery,
 )
+from btxrd_wsss.pipeline.selection import gate_audit
 from btxrd_wsss.stages.hrnet import (
     calibrate_hrnet,
     empirical_cdf,
@@ -112,7 +113,7 @@ def generate_sam_galleries(
     config: PipelineConfig, *, splits: set[str] | None = None, limit: int | None = None
 ) -> None:
     output_dir = Path(config.experiment.output_dir)
-    backend = SAMViTBROIBackend(config.sam.checkpoint, config.runtime.device, config.sam.model_type)
+    backend = create_sam_backend(config.sam, config.runtime.device)
     generator = ProposalGenerator(config.proposals)
     report = StageReportWriter(output_dir, "sam_gallery")
     completed = report.completed_ids() if config.experiment.resume else set()
@@ -124,6 +125,7 @@ def generate_sam_galleries(
         maps, confidences = load_source_maps(output_dir, record.image_id)
         proposals = generator.generate_all(maps, image_id=record.image_id, confidences=confidences)
         raw = build_adaptive_gallery(image, proposals, backend, config=config.sam)
+        audit = gate_audit(raw, maps, config.sam, config.selection)
         selected = select_diverse_gallery(
             raw,
             maps,
@@ -147,6 +149,21 @@ def generate_sam_galleries(
                 for item in selected
             ),
         }
+
+        def quality_summary(items: list) -> dict[str, float | int]:
+            if not items:
+                return {"count": 0}
+            predicted_iou = np.asarray([item.predicted_iou for item in items], np.float32)
+            stability = np.asarray([item.stability for item in items], np.float32)
+            return {
+                "count": len(items),
+                "predicted_iou_mean": float(predicted_iou.mean()),
+                "predicted_iou_p10": float(np.percentile(predicted_iou, 10)),
+                "predicted_iou_p50": float(np.percentile(predicted_iou, 50)),
+                "stability_mean": float(stability.mean()),
+                "stability_p10": float(np.percentile(stability, 10)),
+                "stability_p50": float(np.percentile(stability, 50)),
+            }
         report.append(
             {
                 "image_id": record.image_id,
@@ -156,6 +173,9 @@ def generate_sam_galleries(
                 "selected_candidate_count": len(selected),
                 "source_counts": source_counts,
                 "size_counts": size_counts,
+                "gate_audit": audit,
+                "raw_quality": quality_summary(raw),
+                "selected_quality": quality_summary(selected),
                 "seconds": time.perf_counter() - started,
             }
         )
