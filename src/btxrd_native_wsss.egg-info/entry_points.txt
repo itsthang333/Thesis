@@ -1,0 +1,2 @@
+[console_scripts]
+btxrd-wsss = btxrd_wsss.cli:main
