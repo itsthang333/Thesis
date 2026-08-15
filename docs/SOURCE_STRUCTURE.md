@@ -1,7 +1,8 @@
 # Source structure
 
 The repository is organized around the data flow of the final WSSS method.
-Generated data and model weights are external inputs and are never committed.
+Generated datasets and experiment outputs remain external; the frozen final
+model assets are committed through Git LFS under `checkpoints/final_method/`.
 
 ## Root
 
@@ -14,6 +15,7 @@ Generated data and model weights are external inputs and are never committed.
 | `tests/` | Unit, contract, and numerical tests for the retained method. |
 | `docs/` | Source map and operating instructions only. |
 | `notebooks/` | Interactive, annotation-free inference demonstration. |
+| `checkpoints/final_method/` | Hash-verified final checkpoints and local model snapshots stored with Git LFS. |
 
 ## Pipeline entry points
 

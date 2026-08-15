@@ -32,6 +32,12 @@ checkpoints/
 *.pth
 *.ckpt
 
+# Final frozen method assets are intentionally versioned through Git LFS.
+!checkpoints/
+checkpoints/*
+!checkpoints/final_method/
+!checkpoints/final_method/**
+
 # Local datasets downloaded outside Git
 dataset/
 BTXRD/

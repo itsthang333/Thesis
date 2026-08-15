@@ -4,16 +4,20 @@ This document describes the complete training and inference sequence. Paths
 shown in angle brackets are deployment-specific and must be replaced by the
 operator. Every output directory must be new or empty.
 
-## Inputs kept outside the repository
+## Model assets and external inputs
 
-Prepare the following external resources:
+After cloning, run `git lfs pull` and verify the bundled model assets:
+
+```bash
+git lfs pull
+powershell -ExecutionPolicy Bypass -File checkpoints/final_method/VERIFY_SHA256.ps1
+```
+
+The complete final checkpoint package is under `checkpoints/final_method/`.
+Prepare the following dataset-specific external resources:
 
 - BTXRD image directory and its image-level labels;
 - a group-aware split manifest created by the included split tool;
-- ImageNet DenseNet initialization weights;
-- a local SAM ViT-B checkpoint;
-- a frozen BiomedCLIP snapshot available in the Hugging Face cache;
-- a frozen RAD-DINO model directory;
 - writable output directories for every stage.
 
 Record SHA-256 hashes for the split manifest and every model artifact. Commands
@@ -72,7 +76,7 @@ still presenting one sequential notebook.
 
 Before running the first cell, provide:
 
-- the external checkpoint package root;
+- the repository checkpoint root (`checkpoints/final_method` by default);
 - the BTXRD root;
 - the canonical split manifest;
 - a validation image ID, or a final frozen test lock when using a test image.

@@ -6,3 +6,7 @@
 *.txt text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+checkpoints/final_method/**/*.pt filter=lfs diff=lfs merge=lfs -text
+checkpoints/final_method/**/*.pth filter=lfs diff=lfs merge=lfs -text
+checkpoints/final_method/**/*.bin filter=lfs diff=lfs merge=lfs -text
+checkpoints/final_method/**/*.safetensors filter=lfs diff=lfs merge=lfs -text

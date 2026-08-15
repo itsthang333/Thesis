@@ -20,8 +20,9 @@ generation, proposal generation, G1 training, scoring, or mask selection.
 They are opened only by the separate evaluator after predictions have been
 frozen.
 
-No dataset copy, checkpoint, experiment output, performance table, research
-archive, or qualitative test case is stored in this repository.
+The frozen final-method checkpoints are versioned with Git LFS under
+`checkpoints/final_method/`. Dataset copies, experiment outputs, performance
+tables, research archives, and qualitative test cases are not stored here.
 
 ## Documentation
 
