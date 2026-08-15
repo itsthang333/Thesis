@@ -1,4 +1,0 @@
--r requirements.txt
-
-# PyTorch/torchvision are installed as the platform-matched CUDA pair before
-# this file. torchvision must expose ResNet18_Weights.IMAGENET1K_V1.

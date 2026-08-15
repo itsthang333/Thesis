@@ -96,7 +96,7 @@ def test_mask_bag_gate_is_prediction_first_and_all_checks_required() -> None:
         encoding="utf-8"
     )
     assert 'choices=("val", "test")' in source
-    assert 'args.split == "test" and args.expected_overall_dice is not None' in source
+    assert "expected_overall_dice" not in source
     assert '"candidate_choices_frozen_before_spatial_gt": True' in source
     assert '"candidate_choices_frozen_before_test_gt": args.split == "test"' in source
     assert '"test_evaluated": args.split == "test"' in source

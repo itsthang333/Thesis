@@ -107,8 +107,6 @@ def verify_frozen_test_config(
         "classifier_checkpoint",
         "classifier_budget_audit",
         "sam_checkpoint",
-        "unet_checkpoint",
-        "supervised_unet_checkpoint",
     ):
         artifact = document.get(key)
         if not artifact:
@@ -148,5 +146,5 @@ def verify_frozen_test_config(
             and _sha256_file(requested_path) == item.get("sha256")
             for item in allowed
         ):
-            raise ValueError("Requested checkpoint is not one of the frozen U-Net checkpoints")
+            raise ValueError("Requested checkpoint is not one of the frozen checkpoints")
     return document
