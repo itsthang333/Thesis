@@ -82,6 +82,8 @@ The stage-by-stage T4x2/A100 support matrix is in
 - `tests/`: focused fail-closed and numerical tests.
 - `artifacts/final_pipeline/`: validation result and immutable provenance.
 - `docs/`: method, results, test protocol, limitations, and archive pointer.
+- `notebooks/demo_rich_gallery_inference.ipynb`: defense-ready replay of one
+  locked successful test case, with inference kept separate from GT evaluation.
 
 The complete research history and all retired experiments remain preserved at
 commit `aca685f` on branch `codex/research-sync-20260731`.
