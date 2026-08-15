@@ -90,8 +90,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--puzzle-alpha-max", type=float, default=0.0,
                         help="Max weight for PuzzleCAM's consistency loss (see models/puzzle_cam.py). "
                         "0 (default) disables it entirely -- pure CrossEntropy, unchanged behavior. "
-                        "Supports both the binary tumor head (BCE) and the single-label "
-                        "tumor_type head (cross entropy). Linearly ramps from 0 "
+                        "Only applies to the single-label ('tumor_type') task. Linearly ramps from 0 "
                         "to this value over the first half of --epochs, per the paper's warmup schedule.")
     parser.add_argument("--attention-alpha-max", type=float, default=0.0,
                         help="Max weight for the Teacher-Student attention distillation loss (see "
@@ -134,17 +133,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--early-stop-patience", type=int, default=0,
                         help="Stop training if val_f1 does not improve for this many consecutive "
                         "epochs. 0 disables early stopping (always run the full --epochs).")
-    parser.add_argument(
-        "--checkpoint-selection-metric",
-        choices=("task_f1", "binary_f1"),
-        default="task_f1",
-        help=(
-            "Validation-only checkpoint endpoint. task_f1 preserves the historical "
-            "behaviour (macro F1 for tumor_type, binary F1 for tumor). binary_f1 "
-            "collapses the ten-class confusion matrix into normal versus any tumor, "
-            "which is the matched endpoint for the G4 binary-vs-ten-class ablation."
-        ),
-    )
     parser.add_argument(
         "--sam-segment-map-root",
         type=Path,
@@ -337,24 +325,6 @@ def metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
     }
 
 
-def binary_metrics_from_multiclass_confusion(matrix: torch.Tensor) -> dict[str, float]:
-    """Collapse class 0=normal and classes 1..N=tumor into a binary task.
-
-    The predicted class is the multiclass argmax used to construct ``matrix``.
-    This makes the checkpoint endpoint invariant to the number of tumor
-    subclasses while preserving the actual decision rule of the classifier.
-    """
-    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1] or matrix.shape[0] < 2:
-        raise ValueError("expected a square multiclass confusion matrix with >=2 classes")
-    counts = {
-        "tn": int(matrix[0, 0].item()),
-        "fp": int(matrix[0, 1:].sum().item()),
-        "fn": int(matrix[1:, 0].sum().item()),
-        "tp": int(matrix[1:, 1:].sum().item()),
-    }
-    return metrics_from_confusion(counts)
-
-
 def run_epoch(
     model,
     loader,
@@ -367,12 +337,9 @@ def run_epoch(
     sam_segment_contrastive_weight: float = 0.0,
     sam_segment_temperature: float = 1.0,
     sam_segment_feature_stage: str = "denseblock2",
-    puzzle_alpha: float = 0.0,
 ) -> tuple[float, dict[str, float], dict[str, int], dict[str, float]]:
     total_classification_loss = 0.0
     total_ssc_loss = 0.0
-    total_puzzle_cls_loss = 0.0
-    total_reconstruction_loss = 0.0
     total_optimization_loss = 0.0
     counts = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
     batches = 0
@@ -406,16 +373,6 @@ def run_epoch(
                 else:
                     logits = model(images)
                 classification_loss = criterion(logits, targets)
-            if train and puzzle_alpha > 0:
-                with torch.cuda.amp.autocast(enabled=False):
-                    _, _, reconstruction_loss, puzzle_cls_loss = puzzle_cam_consistency_loss(
-                        model,
-                        images.float(),
-                        targets,
-                    )
-            else:
-                reconstruction_loss = classification_loss.new_zeros(())
-                puzzle_cls_loss = classification_loss.new_zeros(())
             if use_ssc:
                 region_maps = sam_segment_store.load_batch(image_ids, device=device)
                 with torch.cuda.amp.autocast(enabled=False):
@@ -427,16 +384,10 @@ def run_epoch(
                 loss = (
                     classification_loss
                     + sam_segment_contrastive_weight * ssc_loss
-                    + puzzle_cls_loss
-                    + puzzle_alpha * reconstruction_loss
                 )
             else:
                 ssc_loss = classification_loss.new_zeros(())
-                loss = (
-                    classification_loss
-                    + puzzle_cls_loss
-                    + puzzle_alpha * reconstruction_loss
-                )
+                loss = classification_loss
 
             if torch.isnan(loss) or torch.isinf(loss):
                 print(f"  [WARNING] Skipping batch with non-finite loss (pathological input)")
@@ -455,8 +406,6 @@ def run_epoch(
             counts[key] += batch_counts[key]
         total_classification_loss += classification_loss.item()
         total_ssc_loss += ssc_loss.item()
-        total_puzzle_cls_loss += puzzle_cls_loss.item()
-        total_reconstruction_loss += reconstruction_loss.item()
         total_optimization_loss += loss.item()
         batches += 1
         batch_metrics = metrics_from_confusion(batch_counts)
@@ -471,16 +420,12 @@ def run_epoch(
         diagnostics = {
             "classification_loss": 0.0,
             "sam_segment_contrastive_loss": 0.0,
-            "puzzle_classification_loss": 0.0,
-            "reconstruction_loss": 0.0,
             "optimization_loss": 0.0,
         }
         return 0.0, metrics_from_confusion(counts), counts, diagnostics
     diagnostics = {
         "classification_loss": total_classification_loss / batches,
         "sam_segment_contrastive_loss": total_ssc_loss / batches,
-        "puzzle_classification_loss": total_puzzle_cls_loss / batches,
-        "reconstruction_loss": total_reconstruction_loss / batches,
         "optimization_loss": total_optimization_loss / batches,
     }
     return (
@@ -613,9 +558,7 @@ def save_checkpoint(
     split_manifest: Path | None = None,
     image_size: int | None = None,
     seed: int | None = None,
-    checkpoint_selection_metric: str = "task_f1",
     sam_segment_contrastive: dict[str, object] | None = None,
-    puzzle_cam: dict[str, object] | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -633,7 +576,6 @@ def save_checkpoint(
             "pipeline_profile": pipeline_profile,
             "image_size": image_size,
             "seed": seed,
-            "checkpoint_selection_metric": checkpoint_selection_metric,
             "split_manifest": str(split_manifest.resolve()) if split_manifest else None,
             "split_manifest_sha256": (
                 hashlib.sha256(split_manifest.resolve().read_bytes()).hexdigest()
@@ -641,7 +583,6 @@ def save_checkpoint(
                 else None
             ),
             "sam_segment_contrastive": sam_segment_contrastive,
-            "puzzle_cam": puzzle_cam,
         },
         path,
     )
@@ -705,19 +646,15 @@ def classifier_epoch_budget_audit(
     *,
     stopped_early: bool = False,
     early_stop_patience: int = 0,
-    metric_key: str = "val_f1",
-    metric_name: str = "audited-split validation F1",
 ) -> dict[str, object]:
     """Diagnose whether the audited validation curve supports the epoch budget."""
     if not records:
         raise ValueError("Cannot audit an empty classifier training history")
-    if metric_key not in records[0]:
-        raise ValueError(f"Classifier history is missing metric {metric_key!r}")
-    best = max(records, key=lambda row: float(row[metric_key]))
+    best = max(records, key=lambda row: float(row["val_f1"]))
     tail = records[-min(3, len(records)):]
     if len(tail) >= 2:
         x = np.asarray([float(row["epoch"]) for row in tail], dtype=np.float64)
-        y = np.asarray([float(row[metric_key]) for row in tail], dtype=np.float64)
+        y = np.asarray([float(row["val_f1"]) for row in tail], dtype=np.float64)
         tail_slope = float(np.polyfit(x, y, 1)[0])
     else:
         tail_slope = None
@@ -746,14 +683,12 @@ def classifier_epoch_budget_audit(
         assessment = "inconclusive"
         assessment_basis = "neither a valid early stop nor a non-positive trailing trend was observed"
     return {
-        "metric": metric_name,
+        "metric": "audited-split validation F1",
         "requested_epochs": int(requested_epochs),
         "completed_epochs": last_epoch,
         "best_epoch": best_epoch,
-        "best_metric_value": float(best[metric_key]),
-        "final_metric_value": float(records[-1][metric_key]),
-        "best_val_f1": float(best[metric_key]),
-        "final_val_f1": float(records[-1][metric_key]),
+        "best_val_f1": float(best["val_f1"]),
+        "final_val_f1": float(records[-1]["val_f1"]),
         "epochs_since_best": epochs_since_best,
         "stopped_early": bool(stopped_early),
         "early_stop_patience": int(early_stop_patience),
@@ -780,7 +715,6 @@ def main() -> None:
     print(f"  Image size: {args.image_size}")
     print(f"  Batch size: {args.batch_size}")
     print(f"  Learning rate: {args.lr}")
-    print(f"  Checkpoint selection metric: {args.checkpoint_selection_metric}")
     print(f"  Puzzle alpha: {args.puzzle_alpha_max}")
     print(f"  Attention alpha: {args.attention_alpha_max}")
     seed_everything(args.seed)
@@ -958,7 +892,6 @@ def main() -> None:
                 "attention_alpha_max": args.attention_alpha_max,
                 "preprocessing_mode": args.preprocessing_mode,
                 "normalization": normalization,
-                "checkpoint_selection_metric": args.checkpoint_selection_metric,
                 "sam_segment_contrastive": sam_segment_config,
             },
             indent=2,
@@ -979,7 +912,6 @@ def main() -> None:
         else:
             writer.writerow([
                 "epoch", "train_loss", "train_acc", "train_precision", "train_recall", "train_f1",
-                "train_puzzle_cls_loss", "train_reconstruction_loss", "puzzle_alpha",
                 "train_sam_segment_contrastive_loss", "train_optimization_loss",
                 "train_tp", "train_fp", "train_fn", "train_tn",
                 "val_loss", "val_acc", "val_precision", "val_recall", "val_f1",
@@ -989,24 +921,14 @@ def main() -> None:
     teacher = None
     epoch_budget_records: list[dict[str, float | int]] = []
     stopped_early = False
-    puzzle_config = (
-        {
-            "method": "PuzzleCAM reconstruction consistency",
-            "task": "ten_class" if is_multiclass else "binary",
-            "alpha_max": float(args.puzzle_alpha_max),
-            "schedule": "linear_to_alpha_max_over_first_half",
-            "tiles": "2x2",
-        }
-        if args.puzzle_alpha_max > 0
-        else None
-    )
 
     for epoch in range(1, args.epochs + 1):
-        current_puzzle_alpha = (
-            puzzle_alpha_schedule(epoch, args.epochs, alpha_max=args.puzzle_alpha_max)
-            if args.puzzle_alpha_max > 0 else 0.0
-        )
         if is_multiclass:
+            current_puzzle_alpha = (
+                puzzle_alpha_schedule(epoch, args.epochs, alpha_max=args.puzzle_alpha_max)
+                if args.puzzle_alpha_max > 0 else 0.0
+            )
+
             current_attention_alpha = 0.0
             if args.attention_alpha_max > 0 and epoch > args.teacher_warmup_epochs:
                 if teacher is None:
@@ -1040,7 +962,6 @@ def main() -> None:
                 sam_segment_contrastive_weight=args.sam_segment_contrastive_weight,
                 sam_segment_temperature=args.sam_segment_temperature,
                 sam_segment_feature_stage=args.sam_segment_feature_stage,
-                puzzle_alpha=current_puzzle_alpha,
             )
             val_loss, val_metrics, val_counts, _val_diagnostics = run_epoch(
                 model,
@@ -1052,21 +973,9 @@ def main() -> None:
                 train=False,
             )
 
-        if is_multiclass:
-            binary_val_metrics = binary_metrics_from_multiclass_confusion(val_confusion)
-        else:
-            binary_val_metrics = val_metrics
-        selection_value = (
-            float(binary_val_metrics["f1"])
-            if args.checkpoint_selection_metric == "binary_f1"
-            else float(val_metrics["f1"])
-        )
-
         epoch_budget_records.append({
             "epoch": epoch,
             "val_f1": float(val_metrics["f1"]),
-            "val_binary_f1": float(binary_val_metrics["f1"]),
-            "selection_value": selection_value,
             "val_weighted_f1": float(val_metrics.get("weighted_f1", val_metrics["f1"])),
             "val_loss": float(val_loss),
         })
@@ -1097,9 +1006,6 @@ def main() -> None:
                         train_metrics["precision"],
                         train_metrics["recall"],
                         train_metrics["f1"],
-                        train_diagnostics["puzzle_classification_loss"],
-                        train_diagnostics["reconstruction_loss"],
-                        current_puzzle_alpha,
                         train_diagnostics["sam_segment_contrastive_loss"],
                         train_diagnostics["optimization_loss"],
                         train_counts["tp"],
@@ -1118,7 +1024,7 @@ def main() -> None:
                     ]
                 )
 
-        puzzle_suffix = f" puzzle_alpha={current_puzzle_alpha:.3f}" if args.puzzle_alpha_max > 0 else ""
+        puzzle_suffix = f" puzzle_alpha={current_puzzle_alpha:.3f}" if is_multiclass and args.puzzle_alpha_max > 0 else ""
         teacher_suffix = ""
         if is_multiclass and args.attention_alpha_max > 0:
             teacher_suffix = (
@@ -1145,12 +1051,6 @@ def main() -> None:
             print("   " + " ".join(f"{name[:6]:>7}" for name in TUMOR_TYPE_CLASS_NAMES))
             for i, name in enumerate(TUMOR_TYPE_CLASS_NAMES):
                 print(f"  {name[:10]:<10}" + " ".join(f"{int(val_confusion[i, j]):>7}" for j in range(num_classes)))
-            print(
-                "  collapsed binary (normal vs any tumor): "
-                f"precision={binary_val_metrics['precision']:.4f} "
-                f"recall={binary_val_metrics['recall']:.4f} "
-                f"f1={binary_val_metrics['f1']:.4f}"
-            )
         else:
             positive_label = target_columns[0]
             print(
@@ -1159,8 +1059,8 @@ def main() -> None:
                 f"| precision={val_metrics['precision']:.4f} recall={val_metrics['recall']:.4f}"
             )
 
-        if selection_value > best_val_f1:
-            best_val_f1 = selection_value
+        if val_metrics["f1"] > best_val_f1:
+            best_val_f1 = val_metrics["f1"]
             epochs_without_improvement = 0
             save_checkpoint(
                 args.output_dir / "best_classifier.pt", model, optimizer, epoch, best_val_f1,
@@ -1171,14 +1071,9 @@ def main() -> None:
                 split_manifest=args.split_manifest,
                 image_size=args.image_size,
                 seed=args.seed,
-                checkpoint_selection_metric=args.checkpoint_selection_metric,
                 sam_segment_contrastive=sam_segment_config,
-                puzzle_cam=puzzle_config,
             )
-            print(
-                "  --> Saved new best checkpoint "
-                f"({args.checkpoint_selection_metric}={best_val_f1:.4f})"
-            )
+            print(f"  --> Saved new best checkpoint (val_f1={best_val_f1:.4f})")
         else:
             epochs_without_improvement += 1
 
@@ -1191,9 +1086,7 @@ def main() -> None:
             split_manifest=args.split_manifest,
             image_size=args.image_size,
             seed=args.seed,
-            checkpoint_selection_metric=args.checkpoint_selection_metric,
             sam_segment_contrastive=sam_segment_config,
-            puzzle_cam=puzzle_config,
         )
 
         if epoch in cam_epochs and cam_preview_indices:
@@ -1204,8 +1097,7 @@ def main() -> None:
             stopped_early = True
             print(
                 f"Early stopping: val_f1 did not improve for {epochs_without_improvement} epochs "
-                f"(patience={args.early_stop_patience}). "
-                f"Best {args.checkpoint_selection_metric}={best_val_f1:.4f}."
+                f"(patience={args.early_stop_patience}). Best val_f1={best_val_f1:.4f}."
             )
             break
 
@@ -1214,8 +1106,6 @@ def main() -> None:
         args.epochs,
         stopped_early=stopped_early,
         early_stop_patience=args.early_stop_patience,
-        metric_key="selection_value",
-        metric_name=f"audited-split validation {args.checkpoint_selection_metric}",
     )
     budget_audit.update({
         "split": args.val_split,

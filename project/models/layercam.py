@@ -20,13 +20,6 @@ class _HookState:
     gradients: torch.Tensor | None = None
 
 
-def collapsed_tumor_log_odds(logits: torch.Tensor) -> torch.Tensor:
-    """Exact normal-vs-any-tumor log-odds for mutually exclusive logits."""
-    if logits.ndim != 2 or logits.shape[1] < 2:
-        raise ValueError("logits must have shape [B,K] with K>=2")
-    return torch.logsumexp(logits[:, 1:], dim=1) - logits[:, 0]
-
-
 class LayerCAM:
     LAYER_WEIGHTS = (0.2, 0.3, 0.5)
 
@@ -174,32 +167,6 @@ class LayerCAM:
                 "cam_for_tumor_union_contrast requires a multi-class head with a normal class at index 0"
             )
         (logits[:, 1:].sum(dim=1) - logits[:, 0]).sum().backward()
-        return self._finish_cam(logits, input_tensor.shape[-2:])
-
-    def cam_for_tumor_log_odds(self, input_tensor: torch.Tensor) -> LayerCAMOutput:
-        """LayerCAM for exact collapsed tumor-vs-normal softmax log-odds.
-
-        For mutually exclusive classes with class 0=normal and 1..K=tumor,
-        ``log(P(tumor)/P(normal))`` simplifies exactly to
-        ``logsumexp(z_1..z_K) - z_0``.  This gives the ten-class E1 arm the
-        same binary semantic target as the one-logit arm without requiring a
-        tumor subtype at inference.
-        """
-        self.model.zero_grad(set_to_none=True)
-        for state in self._states:
-            state.activations = None
-            state.gradients = None
-        outputs = self.model(input_tensor)
-        logits = outputs[0] if isinstance(outputs, (tuple, list)) else outputs
-        if logits.ndim == 1:
-            logits = logits.unsqueeze(0)
-        if logits.shape[1] < 2:
-            raise ValueError(
-                "cam_for_tumor_log_odds requires a multi-class head with "
-                "a normal class at index 0"
-            )
-        tumor_log_odds = collapsed_tumor_log_odds(logits)
-        tumor_log_odds.sum().backward()
         return self._finish_cam(logits, input_tensor.shape[-2:])
 
     # ------------------------------------------------------------------

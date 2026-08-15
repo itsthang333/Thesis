@@ -29,7 +29,6 @@ class TumorComponent:
     bbox: tuple[int, int, int, int]  # x0, y0, x1, y1
     positive_points: tuple[tuple[int, int], ...]  # row, col
     negative_points: tuple[tuple[int, int], ...] = ()
-    prompt_percentile: float = -1.0
 
 
 def _normalise_percentile(

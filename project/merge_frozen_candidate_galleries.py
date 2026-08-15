@@ -44,8 +44,6 @@ def resize_binary_masks_nearest(
         raise ValueError("Masks/target shape are invalid for nearest resizing")
     source_height, source_width = values.shape[1:]
     target_height, target_width = (int(target_shape[0]), int(target_shape[1]))
-    if not len(values):
-        return np.zeros((0, target_height, target_width), dtype=np.uint8)
     if (source_height, source_width) == (target_height, target_width):
         return values.copy()
     y = np.floor(
@@ -56,73 +54,7 @@ def resize_binary_masks_nearest(
     ).astype(np.int64)
     y = np.clip(y, 0, source_height - 1)
     x = np.clip(x, 0, source_width - 1)
-    resized = (values[:, y[:, None], x[None, :]] > 0).astype(np.uint8)
-    # Preserve the PDF contract that every existing proposal remains in the
-    # gallery. Inverse nearest sampling can miss a sub-pixel/thin foreground
-    # entirely when 448-grid proposals are projected to 320. For only those
-    # otherwise-empty outputs, forward-map the foreground source pixel nearest
-    # its centroid using pixel-centre coordinates. All ordinary masks retain
-    # the exact frozen nearest-neighbour result.
-    empty_after_nearest = ~resized.reshape(len(resized), -1).any(axis=1)
-    for index in np.flatnonzero(empty_after_nearest).tolist():
-        foreground = np.argwhere(values[index] > 0)
-        if not len(foreground):
-            continue
-        centroid = foreground.mean(axis=0)
-        source_y, source_x = foreground[
-            np.argmin(((foreground - centroid) ** 2).sum(axis=1))
-        ]
-        target_y = min(
-            int(np.floor((float(source_y) + 0.5) * target_height / source_height)),
-            target_height - 1,
-        )
-        target_x = min(
-            int(np.floor((float(source_x) + 0.5) * target_width / source_width)),
-            target_width - 1,
-        )
-        resized[index, target_y, target_x] = 1
-    return resized
-
-
-_CANDIDATE_ALIGNED_FIELDS = (
-    "sam_masks",
-    "sam_scores",
-    "selection_scores",
-    "classifier_causal_scores",
-    "component_ids",
-    "prompt_modes",
-    "proposal_source_ids",
-    "source_map_mean_scores",
-    "source_map_mass_coverages",
-    "source_score_densities",
-    "source_class_ids",
-    "source_class_probabilities",
-    "source_class_ranks",
-    "cam_levels",
-    "prompt_ids",
-    "multimask_indices",
-)
-
-
-def _filter_invalid_empty_candidates(
-    payload: dict[str, np.ndarray], masks: np.ndarray
-) -> tuple[dict[str, np.ndarray], np.ndarray, int]:
-    """Remove source rows that have no candidate geometry at all."""
-
-    count = int(len(masks))
-    keep = np.flatnonzero(masks.reshape(count, -1).any(axis=1))
-    removed = count - int(len(keep))
-    if not removed:
-        return payload, masks, 0
-    filtered = dict(payload)
-    for field in _CANDIDATE_ALIGNED_FIELDS:
-        if field not in filtered:
-            continue
-        values = np.asarray(filtered[field])
-        if values.ndim < 1 or values.shape[0] != count:
-            raise ValueError(f"Candidate field {field} does not align before empty filtering")
-        filtered[field] = values[keep]
-    return filtered, masks[keep], removed
+    return (values[:, y[:, None], x[None, :]] > 0).astype(np.uint8)
 
 
 def merge_payloads(
@@ -130,7 +62,6 @@ def merge_payloads(
     addition: dict[str, np.ndarray],
     *,
     addition_namespace: str,
-    allow_missing_addition_provenance: bool = False,
 ) -> tuple[dict[str, np.ndarray], dict[str, int]]:
     if not addition_namespace or ":" in addition_namespace:
         raise ValueError("addition_namespace must be a nonempty source prefix")
@@ -142,50 +73,9 @@ def merge_payloads(
         raise ValueError("Anchor prompt map does not match candidate geometry")
     if np.asarray(addition["prompt_map"]).shape != addition_masks.shape[1:]:
         raise ValueError("Addition prompt map does not match candidate geometry")
-    anchor_input_count = int(len(anchor_masks))
-    addition_input_count = int(len(addition_masks))
-    anchor, anchor_masks, anchor_original_empty_removed = (
-        _filter_invalid_empty_candidates(anchor, anchor_masks)
-    )
-    addition, addition_masks, addition_original_empty_removed = (
-        _filter_invalid_empty_candidates(addition, addition_masks)
-    )
     addition_input_shape = tuple(int(value) for value in addition_masks.shape[1:])
     anchor_shape = tuple(int(value) for value in anchor_masks.shape[1:])
-    addition_nearest_plain = resize_binary_masks_nearest(addition_masks, anchor_shape)
-    # Recompute the plain inverse-nearest outcome without the survival fallback
-    # solely to expose the exact number of mandatory recoveries in provenance.
-    source_height, source_width = addition_masks.shape[1:]
-    target_height, target_width = anchor_shape
-    y_plain = np.clip(
-        np.floor(
-            np.arange(target_height, dtype=np.float64)
-            * source_height
-            / target_height
-        ).astype(np.int64),
-        0,
-        source_height - 1,
-    )
-    x_plain = np.clip(
-        np.floor(
-            np.arange(target_width, dtype=np.float64)
-            * source_width
-            / target_width
-        ).astype(np.int64),
-        0,
-        source_width - 1,
-    )
-    plain_projection = addition_masks[:, y_plain[:, None], x_plain[None, :]] > 0
-    addition_empty_after_nearest_recovered = (
-        int(
-            np.count_nonzero(
-                ~plain_projection.reshape(len(plain_projection), -1).any(axis=1)
-            )
-        )
-        if len(plain_projection)
-        else 0
-    )
-    addition_masks = addition_nearest_plain
+    addition_masks = resize_binary_masks_nearest(addition_masks, anchor_shape)
 
     required = (
         "sam_scores",
@@ -202,45 +92,6 @@ def merge_payloads(
         for field in required:
             if len(np.asarray(payload[field]).reshape(-1)) != count:
                 raise ValueError(f"{name} field {field} does not align with masks")
-    provenance_fields = ("cam_levels", "prompt_ids", "multimask_indices")
-    anchor_provenance_present = all(field in anchor for field in provenance_fields)
-    addition_provenance_present = all(field in addition for field in provenance_fields)
-    backfilled_addition_provenance = 0
-    if anchor_provenance_present != addition_provenance_present:
-        if not (
-            allow_missing_addition_provenance
-            and anchor_provenance_present
-            and not addition_provenance_present
-        ):
-            raise ValueError("Anchor/addition exact provenance availability differs")
-        addition = dict(addition)
-        addition_count = len(addition_masks)
-        addition["cam_levels"] = np.full(addition_count, np.nan, dtype=np.float32)
-        addition["multimask_indices"] = np.full(
-            addition_count, -1, dtype=np.int16
-        )
-        addition["prompt_ids"] = np.asarray(
-            [
-                "legacy_provenance_unavailable"
-                f"|{str(np.asarray(addition['proposal_source_ids'])[index])}"
-                f"|c{int(np.asarray(addition['component_ids'])[index])}"
-                f"|{str(np.asarray(addition['prompt_modes'])[index])}"
-                f"|i{index}"
-                for index in range(addition_count)
-            ],
-            dtype="U192",
-        )
-        addition_provenance_present = True
-        backfilled_addition_provenance = addition_count
-    provenance_present = anchor_provenance_present and addition_provenance_present
-    if provenance_present:
-        for name, payload, count in (
-            ("anchor", anchor, len(anchor_masks)),
-            ("addition", addition, len(addition_masks)),
-        ):
-            for field in provenance_fields:
-                if len(np.asarray(payload[field]).reshape(-1)) != count:
-                    raise ValueError(f"{name} field {field} does not align with masks")
 
     seen: set[bytes] = set()
     anchor_keep: list[int] = []
@@ -258,41 +109,6 @@ def merge_payloads(
 
     anchor_indices = np.asarray(anchor_keep, dtype=np.int64)
     addition_indices = np.asarray(addition_keep, dtype=np.int64)
-
-    def source_features(payload: dict[str, np.ndarray], masks: np.ndarray) -> dict[str, np.ndarray]:
-        count = len(masks)
-        if "source_map_mean_scores" in payload:
-            return {
-                "source_map_mean_scores": np.asarray(payload["source_map_mean_scores"], dtype=np.float32),
-                "source_map_mass_coverages": np.asarray(payload["source_map_mass_coverages"], dtype=np.float32),
-                "source_score_densities": np.asarray(payload["source_score_densities"], dtype=np.float32),
-                "source_class_ids": np.asarray(payload["source_class_ids"], dtype=np.int16),
-                "source_class_probabilities": np.asarray(payload["source_class_probabilities"], dtype=np.float32),
-                "source_class_ranks": np.asarray(payload["source_class_ranks"], dtype=np.int8),
-            }
-        prompt_map = np.asarray(payload["prompt_map"], dtype=np.float32)
-        means = np.zeros(count, dtype=np.float32)
-        mass = np.zeros(count, dtype=np.float32)
-        density = np.zeros(count, dtype=np.float32)
-        total_mass = max(float(prompt_map.sum()), 1.0e-8)
-        for index, mask in enumerate(masks.astype(bool)):
-            if not mask.any():
-                continue
-            values = prompt_map[mask]
-            means[index] = float(values.mean())
-            mass[index] = float(values.sum() / total_mass)
-            density[index] = float((values > 0.5).mean())
-        return {
-            "source_map_mean_scores": means,
-            "source_map_mass_coverages": mass,
-            "source_score_densities": density,
-            "source_class_ids": np.full(count, -4, dtype=np.int16),
-            "source_class_probabilities": np.zeros(count, dtype=np.float32),
-            "source_class_ranks": np.full(count, -1, dtype=np.int8),
-        }
-
-    anchor_features = source_features(anchor, anchor_masks)
-    addition_features = source_features(addition, np.asarray(addition["sam_masks"], dtype=np.uint8))
 
     def joined(field: str, dtype: Any) -> np.ndarray:
         return np.concatenate(
@@ -326,59 +142,18 @@ def merge_payloads(
         ),
         "prompt_map": np.asarray(anchor["prompt_map"], dtype=np.float32),
     }
-    for feature_name, dtype in (
-        ("source_map_mean_scores", np.float32),
-        ("source_map_mass_coverages", np.float32),
-        ("source_score_densities", np.float32),
-        ("source_class_ids", np.int16),
-        ("source_class_probabilities", np.float32),
-        ("source_class_ranks", np.int8),
-    ):
-        result[feature_name] = np.concatenate(
-            [
-                np.asarray(anchor_features[feature_name])[anchor_indices].astype(dtype),
-                np.asarray(addition_features[feature_name])[addition_indices].astype(dtype),
-            ]
-        )
-    if "dsll_source_maps" in anchor:
-        result["dsll_source_maps"] = np.asarray(anchor["dsll_source_maps"], dtype=np.float32)
-        result["dsll_source_map_ids"] = np.asarray(anchor["dsll_source_map_ids"], dtype="U32")
-    if provenance_present:
-        addition_prompt_ids = np.asarray(addition["prompt_ids"], dtype="U192")
-        addition_prompt_ids = np.asarray(
-            [f"{addition_namespace}:{value}" for value in addition_prompt_ids],
-            dtype="U192",
-        )
-        result.update(
-            {
-                "cam_levels": joined("cam_levels", np.float32),
-                "prompt_ids": np.concatenate(
-                    [
-                        np.asarray(anchor["prompt_ids"], dtype="U192")[anchor_indices],
-                        addition_prompt_ids[addition_indices],
-                    ]
-                ),
-                "multimask_indices": joined("multimask_indices", np.int16),
-            }
-        )
     if len(result["sam_masks"]) == 0:
         raise ValueError("Merged gallery cannot be empty")
     return result, {
-        "anchor_input": anchor_input_count,
-        "addition_input": addition_input_count,
+        "anchor_input": int(len(anchor_masks)),
+        "addition_input": int(len(addition_masks)),
         "anchor_kept": int(len(anchor_indices)),
         "addition_kept": int(len(addition_indices)),
         "duplicates_removed": int(
             len(anchor_masks) + len(addition_masks) - len(result["sam_masks"])
         ),
         "merged_count": int(len(result["sam_masks"])),
-        "anchor_original_empty_removed": int(anchor_original_empty_removed),
-        "addition_original_empty_removed": int(addition_original_empty_removed),
         "addition_resized": int(addition_input_shape != anchor_shape),
-        "addition_empty_after_nearest_recovered": (
-            addition_empty_after_nearest_recovered
-        ),
-        "addition_provenance_backfilled": int(backfilled_addition_provenance),
     }
 
 
@@ -405,14 +180,6 @@ def main() -> None:
     parser.add_argument("--addition-candidate-manifest-sha256", required=True)
     parser.add_argument("--addition-pseudo-manifest-sha256", required=True)
     parser.add_argument("--addition-namespace", required=True)
-    parser.add_argument(
-        "--allow-missing-addition-provenance",
-        action="store_true",
-        help=(
-            "Preserve exact anchor provenance while marking a legacy addition "
-            "with NaN/-1/stable unavailable sentinels. This changes metadata only."
-        ),
-    )
     parser.add_argument("--protocol-sha256", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -455,11 +222,7 @@ def main() -> None:
         "addition_kept": 0,
         "duplicates_removed": 0,
         "merged_count": 0,
-        "anchor_original_empty_removed": 0,
-        "addition_original_empty_removed": 0,
         "addition_resized": 0,
-        "addition_empty_after_nearest_recovered": 0,
-        "addition_provenance_backfilled": 0,
     }
     maximum_candidates = 0
     for row in rows:
@@ -471,12 +234,7 @@ def main() -> None:
         anchor = _read_payload(anchor_path)
         addition = _read_payload(addition_path)
         merged, stats = merge_payloads(
-            anchor,
-            addition,
-            addition_namespace=args.addition_namespace,
-            allow_missing_addition_provenance=(
-                args.allow_missing_addition_provenance
-            ),
+            anchor, addition, addition_namespace=args.addition_namespace
         )
         for key in totals:
             totals[key] += stats[key]
@@ -504,17 +262,6 @@ def main() -> None:
             component_ids=merged["component_ids"],
             prompt_modes=merged["prompt_modes"],
             proposal_source_ids=merged["proposal_source_ids"],
-            source_map_mean_scores=merged["source_map_mean_scores"],
-            source_map_mass_coverages=merged["source_map_mass_coverages"],
-            source_score_densities=merged["source_score_densities"],
-            source_class_ids=merged["source_class_ids"],
-            source_class_probabilities=merged["source_class_probabilities"],
-            source_class_ranks=merged["source_class_ranks"],
-            dsll_source_maps=merged.get("dsll_source_maps"),
-            dsll_source_map_ids=merged.get("dsll_source_map_ids"),
-            cam_levels=merged.get("cam_levels"),
-            prompt_ids=merged.get("prompt_ids"),
-            multimask_indices=merged.get("multimask_indices"),
         )
         output_rows.append(
             {
@@ -555,21 +302,10 @@ def main() -> None:
         "addition_alignment": (
             "identity"
             if anchor_image_size == addition_image_size
-            else (
-                "fixed_nearest_neighbor_to_anchor_grid_with_"
-                "single_pixel_survival_fallback_before_dedup"
-            )
+            else "fixed_nearest_neighbor_to_anchor_grid_before_dedup"
         ),
         "anchor_prompt_map_for_all_candidates": True,
-        "invalid_empty_frozen_candidate_policy": (
-            "remove_rows_without_geometry_before_dedup_and_report_exact_count"
-        ),
         "exact_mask_deduplication": True,
-        "missing_addition_provenance_policy": (
-            "nan_level_minus1_multimask_stable_unavailable_prompt_id"
-            if args.allow_missing_addition_provenance
-            else "reject"
-        ),
         "maximum_candidates": maximum_candidates,
         "totals": totals,
         "output_manifest_sha256": summary["manifest_sha256"],

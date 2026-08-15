@@ -27,7 +27,7 @@ from run_rad_dino_mask_bag_mil_probe import (
 )
 
 
-EXPECTED_COUNTS = {"train": 2981, "val": 371, "test": 373}
+EXPECTED_COUNTS = {"val": 371, "test": 373}
 EVIDENCE_FIELDS = (
     "image_id", "group_id", "tumor", "candidate_payload_sha256",
     "candidate_count", "selected_candidate_index", "selected_candidate_logit",
@@ -37,7 +37,7 @@ EVIDENCE_FIELDS = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--split", choices=("train", "val", "test"), required=True)
+    parser.add_argument("--split", choices=("val", "test"), required=True)
     parser.add_argument("--frozen-config", type=Path)
     parser.add_argument("--dataset-root", type=Path, required=True)
     parser.add_argument("--split-manifest", type=Path, required=True)
@@ -97,7 +97,7 @@ def _write_manifest(root: Path, rows: list[dict[str, object]]) -> str:
 
 def main() -> None:
     args = parse_args()
-    if args.input_size != 448 or args.projection_dim != 128 or args.projection_seed != 42 or not 1 <= args.maximum_candidates <= 567:
+    if args.input_size != 448 or args.projection_dim != 128 or args.projection_seed != 42 or args.maximum_candidates != 243:
         raise ValueError("scoring geometry differs from the frozen G1 contract")
     verify_frozen_test_config(
         args.frozen_config,
@@ -231,7 +231,7 @@ def main() -> None:
         "descriptor_evidence_manifest_sha256": evidence_manifest_sha,
         "images": len(rows),
         "validation_images": len(rows) if args.split == "val" else 0,
-        "maximum_candidates": args.maximum_candidates,
+        "maximum_candidates": 243,
         "validation_gt_read": False,
         "spatial_ground_truth_used": False,
         "consumer_trained": False,

@@ -84,8 +84,18 @@ def main() -> None:
     args = parse_args()
     source_root = args.source_root.resolve()
     project = source_root / "project"
-    if not (project / "train_classifier.py").is_file():
-        raise FileNotFoundError("Source snapshot does not contain train_classifier.py")
+    required_entrypoints = (
+        project / "train_classifier.py",
+        project / "evaluate_classifier.py",
+    )
+    missing_entrypoints = [
+        str(path) for path in required_entrypoints if not path.is_file()
+    ]
+    if missing_entrypoints:
+        raise FileNotFoundError(
+            "Source snapshot is missing required classifier entrypoints: "
+            + ", ".join(missing_entrypoints)
+        )
     if args.output_dir.exists() and any(args.output_dir.iterdir()):
         raise FileExistsError("Classifier supply output must be empty")
     args.output_dir.mkdir(parents=True, exist_ok=True)

@@ -54,27 +54,10 @@ def common_generation_args(
     split: str,
     classifier: Path,
     sam: Path,
-    sam_model_type: str = "vit_b",
-    sam_backend: str = "sam_v1",
-    sam_source_root: Path | None = None,
     output_dir: Path,
-    attribution_method: str = "layercam",
-    prompt_mode: str = "box_point",
-    prompt_ensemble: bool = True,
-    target_columns: str = "tumor",
-    cam_aggregation: str = "class",
-    sam_single_mask: bool = False,
     classifier_split_manifest: Path | None = None,
     frozen_config: Path | None = None,
 ) -> list[str]:
-    if target_columns == "tumor" and cam_aggregation != "class":
-        raise ValueError("binary tumor supply requires class CAM aggregation")
-    if target_columns == "tumor_type" and cam_aggregation not in {
-        "tumor_log_odds", "dsll_top3_gallery"
-    }:
-        raise ValueError(
-            "ten-class supply requires collapsed tumor_log_odds or frozen DSLL Top-3"
-        )
     command = [
         sys.executable,
         str(source_root / "project" / "generate_pseudo_masks.py"),
@@ -90,18 +73,12 @@ def common_generation_args(
         str(classifier),
         "--sam-checkpoint",
         str(sam),
-        "--sam-backend",
-        sam_backend,
-        "--sam-model-type",
-        sam_model_type,
         "--classifier-device",
         "cuda",
         "--sam-device",
         "cuda",
         "--target-columns",
-        target_columns,
-        "--attribution-method",
-        attribution_method,
+        "tumor",
         "--sam-image-size",
         "512",
         "--batch-size",
@@ -132,7 +109,8 @@ def common_generation_args(
         "--morphology-fusion-mode",
         "components",
         "--sam-prompt-mode",
-        prompt_mode,
+        "box_point",
+        "--sam-prompt-ensemble",
         "--max-components",
         "3",
         "--all-cam-components",
@@ -164,33 +142,11 @@ def common_generation_args(
         "empty",
         "--cam-target-class",
         "ground_truth",
-        "--cam-aggregation",
-        cam_aggregation,
         "--save-candidate-diagnostics",
         "--candidate-diagnostics-cohort",
         "all",
+        "--force-normal-candidate-gallery",
     ]
-    if sam_source_root is not None:
-        command.extend(["--sam-source-root", str(sam_source_root)])
-    # Both matched E1 arms require proposal bags for normal images so that the
-    # downstream negative-bag objective sees the same cohort.  For ten-class
-    # checkpoints, ``tumor_log_odds`` is the exact collapsed tumor/normal event.
-    command.append("--force-normal-candidate-gallery")
-    if prompt_ensemble:
-        command.append("--sam-prompt-ensemble")
-    else:
-        if split != "val":
-            raise ValueError("single-mode prompt ablation is validation-only")
-        command.extend([
-            "--disable-sam-prompt-ensemble",
-            "--allow-validation-prompt-ablation",
-        ])
-    if sam_single_mask:
-        if split != "val":
-            raise ValueError("single-mask SAM ablation is validation-only")
-        command.extend(
-            ["--sam-single-mask", "--allow-validation-sam-single-mask-ablation"]
-        )
     if classifier_split_manifest is not None:
         command.extend(
             ["--classifier-split-manifest", str(classifier_split_manifest)]
@@ -211,9 +167,6 @@ def build_generation_command(
     split: str,
     classifier: Path,
     sam: Path,
-    sam_model_type: str = "vit_b",
-    sam_backend: str = "sam_v1",
-    sam_source_root: Path | None = None,
     output_dir: Path,
     classifier_split_manifest: Path | None = None,
     external_root: Path | None = None,
@@ -222,12 +175,6 @@ def build_generation_command(
     external_source_commit: str | None = None,
     external_weight_sha256: str | None = None,
     frozen_config: Path | None = None,
-    attribution_method: str = "layercam",
-    prompt_mode: str = "box_point",
-    prompt_ensemble: bool = True,
-    target_columns: str = "tumor",
-    cam_aggregation: str = "class",
-    sam_single_mask: bool = False,
 ) -> list[str]:
     command = common_generation_args(
         source_root=source_root,
@@ -237,17 +184,8 @@ def build_generation_command(
         split=split,
         classifier=classifier,
         sam=sam,
-        sam_model_type=sam_model_type,
-        sam_backend=sam_backend,
-        sam_source_root=sam_source_root,
         output_dir=output_dir,
         frozen_config=frozen_config,
-        attribution_method=attribution_method,
-        prompt_mode=prompt_mode,
-        prompt_ensemble=prompt_ensemble,
-        target_columns=target_columns,
-        cam_aggregation=cam_aggregation,
-        sam_single_mask=sam_single_mask,
     )
     if mode == "anchor":
         if not all(
@@ -345,16 +283,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--classifier-checkpoint", type=Path, required=True)
     parser.add_argument("--expected-classifier-sha256", required=True)
     parser.add_argument("--sam-checkpoint", type=Path, required=True)
-    parser.add_argument(
-        "--sam-backend",
-        choices=("sam_v1", "sam2", "sam_med2d", "medsam"),
-        default="sam_v1",
-    )
-    parser.add_argument("--sam-source-root", type=Path)
-    parser.add_argument(
-        "--sam-model-type",
-        default="vit_b",
-    )
     parser.add_argument("--expected-sam-sha256", required=True)
     parser.add_argument("--external-saliency-supply-root", type=Path)
     parser.add_argument("--expected-external-supply-manifest-sha256")
@@ -367,36 +295,6 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated subset of train,val,test. Test requires --frozen-config.",
     )
     parser.add_argument("--frozen-config", type=Path)
-    parser.add_argument(
-        "--attribution-method",
-        choices=("layercam", "cam", "gradcam", "gradcam_plus_plus"),
-        default="layercam",
-    )
-    parser.add_argument(
-        "--prompt-mode",
-        choices=("point", "box", "box_point"),
-        default="box_point",
-    )
-    parser.add_argument(
-        "--prompt-ensemble",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-    )
-    parser.add_argument(
-        "--target-columns",
-        choices=("tumor", "tumor_type"),
-        default="tumor",
-    )
-    parser.add_argument(
-        "--cam-aggregation",
-        choices=("class", "tumor_log_odds"),
-        default="class",
-    )
-    parser.add_argument(
-        "--sam-single-mask",
-        action="store_true",
-        help="Run the predeclared validation-only G4 E5 single-mask SAM arm",
-    )
     return parser.parse_args()
 
 
@@ -487,9 +385,6 @@ def main() -> None:
             split=split,
             classifier=args.classifier_checkpoint,
             sam=args.sam_checkpoint,
-            sam_model_type=args.sam_model_type,
-            sam_backend=args.sam_backend,
-            sam_source_root=args.sam_source_root,
             output_dir=args.output_dir / split,
             external_root=external,
             external_manifest_sha256=external_lock.get("manifest_sha256"),
@@ -499,12 +394,6 @@ def main() -> None:
                 supply.get("biomedclip_weight_sha256") if supply else None
             ),
             frozen_config=args.frozen_config,
-            attribution_method=args.attribution_method,
-            prompt_mode=args.prompt_mode,
-            prompt_ensemble=args.prompt_ensemble,
-            target_columns=args.target_columns,
-            cam_aggregation=args.cam_aggregation,
-            sam_single_mask=args.sam_single_mask,
         )
         run(command, cwd=args.source_root, env=env, log=log)
         stage = args.output_dir / split
@@ -525,8 +414,6 @@ def main() -> None:
             or int(pseudo_summary.get("manifest_rows", -1))
             != EXPECTED_COUNTS[split]["images"]
             or metadata.get("split") != split
-            or metadata.get("sam_model_type") != args.sam_model_type
-            or metadata.get("sam_backend") != args.sam_backend
             or metadata.get("force_normal_candidate_gallery") is not True
             or metadata.get("candidate_diagnostics_cohort") != "all"
         ):
@@ -541,7 +428,6 @@ def main() -> None:
             "pseudo_manifest_sha256": pseudo_summary["manifest_sha256"],
             "pseudo_summary_sha256": sha256_file(stage / "pseudo_mask_summary.json"),
             "run_metadata_sha256": sha256_file(stage / "run_metadata.json"),
-            "resource_metrics_sha256": sha256_file(stage / "resource_metrics.json"),
         }
     manifest = {
         "schema_version": 1,
@@ -552,12 +438,6 @@ def main() -> None:
         "split_sha256": args.expected_split_sha256,
         "classifier_checkpoint_sha256": args.expected_classifier_sha256,
         "sam_checkpoint_sha256": args.expected_sam_sha256,
-        "sam_backend": args.sam_backend,
-        "sam_model_type": args.sam_model_type,
-        "sam_single_mask": args.sam_single_mask,
-        "attribution_method": args.attribution_method,
-        "prompt_mode": args.prompt_mode,
-        "prompt_ensemble": args.prompt_ensemble,
         "external_saliency_supply_manifest_sha256": (
             args.expected_external_supply_manifest_sha256
             if args.mode == "anchor"

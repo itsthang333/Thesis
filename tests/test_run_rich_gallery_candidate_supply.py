@@ -56,39 +56,6 @@ def test_addition_command_reproduces_448_geometry_without_external_saliency() ->
     assert "external-saliency" not in joined
 
 
-def test_sam_model_type_is_explicit_and_propagated() -> None:
-    values = build_generation_command(
-        mode="addition",
-        source_root=Path("/source"),
-        data_root=Path("/data"),
-        split_manifest=Path("/split.csv"),
-        split="val",
-        classifier=Path("/classifier.pt"),
-        sam=Path("/sam_l.pth"),
-        sam_model_type="vit_l",
-        output_dir=Path("/out"),
-    )
-    assert values[values.index("--sam-model-type") + 1] == "vit_l"
-
-
-def test_collapsed_ten_class_keeps_full_normal_candidate_bags() -> None:
-    values = build_generation_command(
-        mode="addition",
-        source_root=Path("/source"),
-        data_root=Path("/data"),
-        split_manifest=Path("/split.csv"),
-        split="val",
-        classifier=Path("/classifier.pt"),
-        sam=Path("/sam.pth"),
-        output_dir=Path("/out"),
-        target_columns="tumor_type",
-        cam_aggregation="tumor_log_odds",
-    )
-    assert "--force-normal-candidate-gallery" in values
-    assert values[values.index("--target-columns") + 1] == "tumor_type"
-    assert values[values.index("--cam-aggregation") + 1] == "tumor_log_odds"
-
-
 def test_anchor_rejects_partial_external_lock() -> None:
     with pytest.raises(ValueError, match="complete external-saliency"):
         build_generation_command(
@@ -128,64 +95,3 @@ def test_test_generation_requires_and_propagates_frozen_config() -> None:
         frozen_config=Path("/lock.json"),
     )
     assert values[values.index("--frozen-config") + 1] == str(Path("/lock.json"))
-
-
-def test_single_prompt_ablation_is_explicit_and_validation_only() -> None:
-    values = build_generation_command(
-        mode="addition",
-        source_root=Path("/source"),
-        data_root=Path("/data"),
-        split_manifest=Path("/split.csv"),
-        split="val",
-        classifier=Path("/classifier.pt"),
-        sam=Path("/sam.pth"),
-        output_dir=Path("/out"),
-        prompt_mode="point",
-        prompt_ensemble=False,
-    )
-    assert "--disable-sam-prompt-ensemble" in values
-    assert "--allow-validation-prompt-ablation" in values
-    assert values[values.index("--sam-prompt-mode") + 1] == "point"
-
-    with pytest.raises(ValueError, match="validation-only"):
-        build_generation_command(
-            mode="addition",
-            source_root=Path("/source"),
-            data_root=Path("/data"),
-            split_manifest=Path("/split.csv"),
-            split="train",
-            classifier=Path("/classifier.pt"),
-            sam=Path("/sam.pth"),
-            output_dir=Path("/out"),
-            prompt_mode="point",
-            prompt_ensemble=False,
-        )
-
-
-def test_single_mask_ablation_is_explicit_and_validation_only() -> None:
-    values = build_generation_command(
-        mode="addition",
-        source_root=Path("/source"),
-        data_root=Path("/data"),
-        split_manifest=Path("/split.csv"),
-        split="val",
-        classifier=Path("/classifier.pt"),
-        sam=Path("/sam.pth"),
-        output_dir=Path("/out"),
-        sam_single_mask=True,
-    )
-    assert "--sam-single-mask" in values
-    assert "--allow-validation-sam-single-mask-ablation" in values
-
-    with pytest.raises(ValueError, match="single-mask SAM ablation is validation-only"):
-        build_generation_command(
-            mode="addition",
-            source_root=Path("/source"),
-            data_root=Path("/data"),
-            split_manifest=Path("/split.csv"),
-            split="train",
-            classifier=Path("/classifier.pt"),
-            sam=Path("/sam.pth"),
-            output_dir=Path("/out"),
-            sam_single_mask=True,
-        )

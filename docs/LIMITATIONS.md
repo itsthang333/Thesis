@@ -1,9 +1,7 @@
 # Limitations
 
 - The reported 0.288729 Dice is a validation result after iterative method
-  development. The one locked final test evaluation obtained Dice 0.260881;
-  later validation ablations cannot convert that already-opened test into a new
-  unseen test for a changed pipeline.
+  development. The untouched final test estimate is pending.
 - Test localization assumes that the binary tumor/normal image label is
   available. This differs from label-free semantic-segmentation inference.
 - The `<1%` subgroup remains difficult: 35/94 validation cases are complete

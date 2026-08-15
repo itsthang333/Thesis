@@ -26,12 +26,6 @@ def _safe_ratio(numerator: float, denominator: float, empty_value: float = 0.0) 
 
 
 def _surface_distances(pred: np.ndarray, target: np.ndarray) -> tuple[float, float]:
-    """Return symmetric HD95 and ASSD on one pixel grid.
-
-    HD95 is the maximum of the two directed 95th percentiles. ASSD is the mean
-    of the concatenated directed surface-distance samples. This matches the
-    symmetric conventions implemented by MONAI 1.5.1 on a unit-spacing grid.
-    """
     if not pred.any() and not target.any():
         return 0.0, 0.0
     if not pred.any() or not target.any():
@@ -43,16 +37,10 @@ def _surface_distances(pred: np.ndarray, target: np.ndarray) -> tuple[float, flo
     target_surface = target ^ ndimage.binary_erosion(target, structure=structure, border_value=0)
     distance_to_target = ndimage.distance_transform_edt(~target_surface)
     distance_to_pred = ndimage.distance_transform_edt(~pred_surface)
-    pred_to_target = distance_to_target[pred_surface]
-    target_to_pred = distance_to_pred[target_surface]
-    if pred_to_target.size == 0 or target_to_pred.size == 0:
+    distances = np.concatenate([distance_to_target[pred_surface], distance_to_pred[target_surface]])
+    if distances.size == 0:
         return float("nan"), float("nan")
-    hd95 = max(
-        float(np.percentile(pred_to_target, 95)),
-        float(np.percentile(target_to_pred, 95)),
-    )
-    assd = float(np.mean(np.concatenate([pred_to_target, target_to_pred])))
-    return hd95, assd
+    return float(np.percentile(distances, 95)), float(np.mean(distances))
 
 
 def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> dict[str, int]:
@@ -114,12 +102,7 @@ def _lesion_detection(pred: np.ndarray, target: np.ndarray) -> dict[str, int]:
     }
 
 
-def segmentation_metrics(
-    pred: np.ndarray,
-    target: np.ndarray,
-    *,
-    compute_boundary: bool = True,
-) -> dict[str, float | int | bool]:
+def segmentation_metrics(pred: np.ndarray, target: np.ndarray) -> dict[str, float | int | bool]:
     pred = np.asarray(pred).astype(bool)
     target = np.asarray(target).astype(bool)
     if pred.shape != target.shape or pred.ndim != 2:
@@ -136,11 +119,7 @@ def segmentation_metrics(
     precision = _safe_ratio(tp, tp + fp, empty_value=1.0 if target_sum == 0 else 0.0)
     recall = _safe_ratio(tp, tp + fn, empty_value=1.0)
     specificity = _safe_ratio(tn, tn + fp, empty_value=1.0)
-    hd95_px, assd_px = (
-        _surface_distances(pred, target)
-        if compute_boundary
-        else (float("nan"), float("nan"))
-    )
+    hd95_px, assd_px = _surface_distances(pred, target)
     lesion_metrics = _lesion_detection(pred, target)
     return {
         "tp_pixels": tp,
@@ -160,16 +139,6 @@ def segmentation_metrics(
         "pred_area_ratio": pred_sum / float(pred.size),
         "predicted_positive": pred_sum > 0,
         "gt_positive": target_sum > 0,
-        "empty_prediction": pred_sum == 0,
-        "zero_overlap": target_sum > 0 and tp == 0,
-        "predicted_gt_area_ratio": (
-            float(pred_sum / target_sum) if target_sum > 0 else float("nan")
-        ),
-        "relative_area_difference": (
-            float((pred_sum - target_sum) / target_sum)
-            if target_sum > 0
-            else float("nan")
-        ),
         **lesion_metrics,
     }
 
@@ -190,15 +159,6 @@ def _finite_median(rows: Iterable[dict[str, object]], key: str) -> float:
         if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value)):
             values.append(float(value))
     return float(np.median(values)) if values else float("nan")
-
-
-def _finite_percentile(rows: Iterable[dict[str, object]], key: str, percentile: float) -> float:
-    values: list[float] = []
-    for row in rows:
-        value = row.get(key)
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value)):
-            values.append(float(value))
-    return float(np.percentile(values, percentile)) if values else float("nan")
 
 
 def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, object]:
@@ -223,20 +183,13 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         and math.isfinite(float(row.get("hd95_px", float("nan"))))
         for row in tumor
     )
-    empty_predictions = sum(bool(row.get("empty_prediction")) for row in tumor)
-    zero_overlap = sum(bool(row.get("zero_overlap")) for row in tumor)
+    complete_misses = sum(not bool(row.get("predicted_positive")) for row in tumor)
     multifocal_images = sum(int(row.get("gt_lesions", 0)) > 1 for row in tumor)
-    partial_multifocal_misses = sum(
-        int(row.get("gt_lesions", 0)) > 1
-        and 0 < int(row.get("detected_lesions_any_overlap", 0)) < int(row.get("gt_lesions", 0))
-        for row in tumor
-    )
-    missed_lesions_any_overlap = max(0, gt_lesions - detected)
-    excess_predicted_lesions_any_overlap = max(0, predicted_lesions - matched_predictions)
     component_histogram: dict[str, int] = {}
     for row in tumor:
         key = str(int(row.get("gt_lesions", 0)))
         component_histogram[key] = component_histogram.get(key, 0) + 1
+    tumor_empty = sum(not bool(row.get("predicted_positive")) for row in tumor)
     normal_empty = sum(not bool(row.get("predicted_positive")) for row in normal)
     summary = {
         "images": len(rows),
@@ -245,8 +198,6 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "main_population": "tumor images only",
         "mean_tumor_dice": _finite_mean(tumor, "dice"),
         "median_tumor_dice": _finite_median(tumor, "dice"),
-        "tumor_dice_iqr_low": _finite_percentile(tumor, "dice", 25),
-        "tumor_dice_iqr_high": _finite_percentile(tumor, "dice", 75),
         "mean_tumor_iou": _finite_mean(tumor, "iou"),
         "median_tumor_iou": _finite_median(tumor, "iou"),
         "mean_tumor_precision": _finite_mean(tumor, "precision"),
@@ -255,22 +206,17 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "mean_tumor_assd_px_conditional_defined": _finite_mean(tumor, "assd_px"),
         "boundary_metric_definition": (
             "conditional mean over tumor images with both GT and prediction non-empty; "
-            "HD95=max of directed 95th percentiles and ASSD=mean of concatenated "
-            "directed surface samples (MONAI symmetric convention); "
-            "distances are pixels on the declared evaluation grid (not mm); "
-            "empty-prediction cases are excluded; non-empty zero-overlap cases remain "
-            "defined and are counted separately"
+            "distances are pixels on the resized evaluation grid (not mm); "
+            "complete misses are excluded and counted separately"
         ),
         "boundary_metric_eligible_tumor_images": boundary_eligible,
         "boundary_metric_excluded_tumor_images": len(tumor) - boundary_eligible,
-        "boundary_metric_zero_overlap_cases": zero_overlap,
+        "boundary_metric_complete_misses": complete_misses,
         "tumor_non_empty_prediction_rate": _safe_ratio(
             sum(bool(row.get("predicted_positive")) for row in tumor), len(tumor)
         ),
-        "tumor_empty_prediction_count": empty_predictions,
-        "tumor_empty_prediction_rate": _safe_ratio(empty_predictions, len(tumor)),
-        "tumor_zero_overlap_count": zero_overlap,
-        "tumor_zero_overlap_rate": _safe_ratio(zero_overlap, len(tumor)),
+        "tumor_empty_prediction_count": tumor_empty,
+        "tumor_empty_prediction_rate": _safe_ratio(tumor_empty, len(tumor)),
         "tumor_overlap_detection_rate": _safe_ratio(
             sum(int(row.get("tp_pixels", 0)) > 0 for row in tumor), len(tumor)
         ),
@@ -281,97 +227,12 @@ def summarize_segmentation_rows(rows: list[dict[str, object]]) -> dict[str, obje
         "predicted_lesions": predicted_lesions,
         "multifocal_tumor_images": multifocal_images,
         "multifocal_tumor_image_rate": _safe_ratio(multifocal_images, len(tumor)),
-        "partial_multifocal_miss_images": partial_multifocal_misses,
-        "partial_multifocal_miss_rate": _safe_ratio(
-            partial_multifocal_misses, multifocal_images
-        ),
-        "missed_lesions_any_overlap": missed_lesions_any_overlap,
-        "excess_predicted_lesions_any_overlap": excess_predicted_lesions_any_overlap,
-        "mean_absolute_component_count_error": _finite_mean(
-            [
-                {
-                    "component_count_error": abs(
-                        int(row.get("predicted_lesions", 0)) - int(row.get("gt_lesions", 0))
-                    )
-                }
-                for row in rows
-            ],
-            "component_count_error",
-        ),
-        "median_absolute_component_count_error": _finite_median(
-            [
-                {
-                    "component_count_error": abs(
-                        int(row.get("predicted_lesions", 0)) - int(row.get("gt_lesions", 0))
-                    )
-                }
-                for row in rows
-            ],
-            "component_count_error",
-        ),
         "gt_component_count_histogram": component_histogram,
         "normal_empty_prediction_rate": _safe_ratio(normal_empty, len(normal), empty_value=float("nan")),
         "normal_specificity": _safe_ratio(normal_empty, len(normal), empty_value=float("nan")),
         "normal_false_positive_case_rate": _safe_ratio(
             len(normal) - normal_empty, len(normal), empty_value=float("nan")
         ),
-        "normal_mean_pred_area_ratio": _finite_mean(normal, "pred_area_ratio"),
-        "normal_median_pred_area_ratio": _finite_median(normal, "pred_area_ratio"),
-        "normal_pred_area_ratio_iqr_low": _finite_percentile(normal, "pred_area_ratio", 25),
-        "normal_pred_area_ratio_iqr_high": _finite_percentile(normal, "pred_area_ratio", 75),
-        "normal_pred_area_ratio_p95": _finite_percentile(normal, "pred_area_ratio", 95),
-        "normal_pred_area_gt_0_1pct_rate": _safe_ratio(
-            sum(float(row.get("pred_area_ratio", 0.0)) > 0.001 for row in normal),
-            len(normal),
-            empty_value=float("nan"),
-        ),
-        "normal_pred_area_gt_1pct_rate": _safe_ratio(
-            sum(float(row.get("pred_area_ratio", 0.0)) > 0.01 for row in normal),
-            len(normal),
-            empty_value=float("nan"),
-        ),
-        "normal_pred_area_gt_5pct_rate": _safe_ratio(
-            sum(float(row.get("pred_area_ratio", 0.0)) > 0.05 for row in normal),
-            len(normal),
-            empty_value=float("nan"),
-        ),
-        "normal_false_positive_components": sum(
-            int(row.get("predicted_lesions", 0)) for row in normal
-        ),
-        "normal_mean_false_positive_components": _finite_mean(normal, "predicted_lesions"),
-        "normal_median_false_positive_components": _finite_median(normal, "predicted_lesions"),
-        "normal_false_positive_components_iqr_low": _finite_percentile(
-            normal, "predicted_lesions", 25
-        ),
-        "normal_false_positive_components_iqr_high": _finite_percentile(
-            normal, "predicted_lesions", 75
-        ),
-        "macro_tumor_predicted_gt_area_ratio": _finite_mean(
-            tumor, "predicted_gt_area_ratio"
-        ),
-        "median_tumor_predicted_gt_area_ratio": _finite_median(
-            tumor, "predicted_gt_area_ratio"
-        ),
-        "tumor_predicted_gt_area_ratio_iqr_low": _finite_percentile(
-            tumor, "predicted_gt_area_ratio", 25
-        ),
-        "tumor_predicted_gt_area_ratio_iqr_high": _finite_percentile(
-            tumor, "predicted_gt_area_ratio", 75
-        ),
-        "median_tumor_relative_area_difference": _finite_median(
-            tumor, "relative_area_difference"
-        ),
-        "mean_tumor_relative_area_difference": _finite_mean(
-            tumor, "relative_area_difference"
-        ),
-        "tumor_relative_area_difference_iqr_low": _finite_percentile(
-            tumor, "relative_area_difference", 25
-        ),
-        "tumor_relative_area_difference_iqr_high": _finite_percentile(
-            tumor, "relative_area_difference", 75
-        ),
-        "micro_dice": _safe_ratio(2 * tp, 2 * tp + fp + fn, empty_value=1.0),
-        "micro_iou": _safe_ratio(tp, tp + fp + fn, empty_value=1.0),
         "pixel_specificity": _safe_ratio(tn, tn + fp, empty_value=float("nan")),
         "pixel_precision": _safe_ratio(tp, tp + fp, empty_value=float("nan")),
         "pixel_recall": _safe_ratio(tp, tp + fn, empty_value=float("nan")),
@@ -446,8 +307,6 @@ def bootstrap_group_confidence_intervals(
     metrics = (
         "mean_tumor_dice",
         "mean_tumor_iou",
-        "micro_dice",
-        "micro_iou",
         "mean_tumor_precision",
         "mean_tumor_recall",
         "mean_tumor_hd95_px_conditional_defined",
@@ -460,7 +319,6 @@ def bootstrap_group_confidence_intervals(
         "lesion_one_to_one_iou50_precision",
         "normal_empty_prediction_rate",
         "normal_false_positive_case_rate",
-        "tumor_zero_overlap_rate",
     )
     samples: dict[str, list[float]] = {metric: [] for metric in metrics}
     rng = np.random.default_rng(seed)
@@ -487,70 +345,6 @@ def bootstrap_group_confidence_intervals(
         "group_key": group_key,
         "group_provenance": "heuristic grouping; not verified patient/case identifiers",
         "groups": len(group_ids),
-        "iterations": iterations,
-        "seed": seed,
-        "intervals": intervals,
-    }
-
-
-def paired_group_bootstrap_deltas(
-    reference_rows: list[dict[str, object]],
-    comparison_rows: list[dict[str, object]],
-    *,
-    id_key: str = "image_id",
-    group_key: str = "group_id",
-    metrics: tuple[str, ...] = ("dice", "iou", "precision", "recall"),
-    iterations: int = 10000,
-    seed: int = 42,
-) -> dict[str, object]:
-    """Paired group bootstrap of comparison-minus-reference macro metrics."""
-
-    if iterations < 1:
-        raise ValueError("bootstrap iterations must be positive")
-    reference = {str(row[id_key]): row for row in reference_rows}
-    comparison = {str(row[id_key]): row for row in comparison_rows}
-    if len(reference) != len(reference_rows) or len(comparison) != len(comparison_rows):
-        raise ValueError("paired bootstrap image IDs must be unique")
-    if set(reference) != set(comparison):
-        raise ValueError("paired bootstrap cohorts differ")
-    grouped: dict[str, list[str]] = defaultdict(list)
-    for image_id, row in reference.items():
-        other = comparison[image_id]
-        if str(row.get(group_key, "")) != str(other.get(group_key, "")):
-            raise ValueError(f"paired bootstrap group differs for {image_id}")
-        grouped[str(row.get(group_key, "") or f"image:{image_id}")].append(image_id)
-    group_ids = sorted(grouped)
-    if not group_ids:
-        raise ValueError("cannot bootstrap an empty cohort")
-
-    def delta_for(ids: list[str], metric: str) -> float:
-        ref_values = np.asarray([float(reference[item][metric]) for item in ids])
-        cmp_values = np.asarray([float(comparison[item][metric]) for item in ids])
-        return float(np.mean(cmp_values - ref_values))
-
-    point_ids = sorted(reference)
-    samples = {metric: [] for metric in metrics}
-    rng = np.random.default_rng(seed)
-    for _ in range(iterations):
-        chosen = rng.choice(group_ids, size=len(group_ids), replace=True)
-        sampled_ids = [image_id for group in chosen for image_id in grouped[str(group)]]
-        for metric in metrics:
-            samples[metric].append(delta_for(sampled_ids, metric))
-    intervals = {}
-    for metric in metrics:
-        values = np.asarray(samples[metric], dtype=np.float64)
-        intervals[metric] = {
-            "point_delta": delta_for(point_ids, metric),
-            "ci95_low": float(np.percentile(values, 2.5)),
-            "ci95_high": float(np.percentile(values, 97.5)),
-            "probability_delta_gt_zero": float(np.mean(values > 0.0)),
-        }
-    return {
-        "method": "paired nonparametric group bootstrap",
-        "delta_direction": "comparison_minus_reference",
-        "group_key": group_key,
-        "groups": len(group_ids),
-        "images": len(reference),
         "iterations": iterations,
         "seed": seed,
         "intervals": intervals,

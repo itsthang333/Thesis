@@ -29,7 +29,7 @@ def test_runner_has_image_only_surface_and_resource_adaptive_encoder() -> None:
     assert 'default=81' in source
     assert 'args.maximum_candidates != 81' in source
     assert '"--rich-gallery-union"' in source
-    assert "1 <= args.maximum_candidates <= 567" in source
+    assert "1 <= args.maximum_candidates <= 243" in source
     assert "logits = 0.5 * (original_logits + flipped_logits)" in source
     assert '"candidate_logit_tta": "mean_original_aligned_horizontal_flip"' in source
     assert "project_direct_resize_masks_to_square(" in source

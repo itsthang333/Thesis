@@ -115,38 +115,4 @@ class BtxrdHybridPipelineConfig(BtxrdBestPipelineConfig):
     teacher_ema_decay: float = 0.999
     teacher_cam_percentile: float = 96.0
 
-
 BTXRD_HYBRID_PIPELINE = BtxrdHybridPipelineConfig()
-
-
-@dataclass(frozen=True)
-class BtxrdS2CPipelineConfig:
-    """Frozen resource-aware S2C generator used by X4 W2."""
-
-    name: str = "x4_s2c_cached_binary_fpn"
-    classifier_image_size: int = 448
-    classifier_batch_size: int = 2
-    classifier_epochs: int = 20
-    classifier_lr: float = 1e-4
-    classifier_weight_decay: float = 1e-4
-    classifier_seed: int = 42
-    fpn_channels: int = 64
-    embedding_dim: int = 64
-    dropout: float = 0.1
-    pool_top_fraction: float = 0.0025
-    ssc_loss_weight: float = 1.0
-    ssc_temperature: float = 0.05
-    ssc_max_pixels_per_segment: int = 64
-    cpm_loss_weight: float = 1.0
-    cpm_start_epoch: int = 3
-    cpm_scales: tuple[float, ...] = (0.75, 1.0, 1.25)
-    cpm_positive_threshold: float = 0.50
-    cpm_min_positive_score: float = 0.20
-    cpm_negative_threshold: float = 0.10
-    cpm_min_sam_quality: float = 0.70
-    cpm_top_k: int = 1
-    cpm_positive_weight_max: float = 20.0
-    flip_equivariance_loss_weight: float = 0.0
-
-
-BTXRD_S2C_PIPELINE = BtxrdS2CPipelineConfig()

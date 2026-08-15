@@ -16,7 +16,6 @@ from pseudo.candidate_diagnostics import validate_candidate_diagnostics_manifest
 
 
 EXPECTED_COUNTS = {
-    "train": {"images": 2981, "tumor": 1488, "normal": 1493},
     "val": {"images": 371, "tumor": 184, "normal": 187},
     "test": {"images": 373, "tumor": 187, "normal": 186},
 }
@@ -24,7 +23,7 @@ EXPECTED_COUNTS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--split", choices=("train", "val", "test"), default="val")
+    parser.add_argument("--split", choices=("val", "test"), default="val")
     parser.add_argument("--frozen-config", type=Path)
     parser.add_argument("--split-manifest", type=Path, required=True)
     parser.add_argument("--expected-split-sha256", required=True)
@@ -156,7 +155,6 @@ def main() -> None:
         "tumor_images": counts["tumor"],
         "normal_images": counts["normal"],
         "candidate_choices_frozen_before_spatial_gt": True,
-        "candidate_choices_frozen_before_outer_validation_gt": args.split == "train",
         "candidate_choices_frozen_before_validation_gt": args.split == "val",
         "candidate_choices_frozen_before_test_gt": args.split == "test",
         "spatial_ground_truth_used": False,

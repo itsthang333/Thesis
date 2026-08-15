@@ -38,17 +38,6 @@ def save_candidate_diagnostics(
     component_ids: np.ndarray | None,
     prompt_modes: Iterable[str],
     proposal_source_ids: Iterable[str] | None = None,
-    source_map_mean_scores: Iterable[float] | None = None,
-    source_map_mass_coverages: Iterable[float] | None = None,
-    source_score_densities: Iterable[float] | None = None,
-    source_class_ids: Iterable[int] | None = None,
-    source_class_probabilities: Iterable[float] | None = None,
-    source_class_ranks: Iterable[int] | None = None,
-    dsll_source_maps: np.ndarray | None = None,
-    dsll_source_map_ids: Iterable[str] | None = None,
-    cam_levels: Iterable[float] | None = None,
-    prompt_ids: Iterable[str] | None = None,
-    multimask_indices: Iterable[int] | None = None,
 ) -> dict[str, object]:
     """Save one pickle-free NPZ without ever consulting segmentation GT."""
     path = Path(path)
@@ -81,82 +70,6 @@ def save_candidate_diagnostics(
     )
     if len(sources) != len(candidates):
         raise ValueError("Candidate and proposal-source counts differ")
-    source_feature_values = (
-        source_map_mean_scores,
-        source_map_mass_coverages,
-        source_score_densities,
-        source_class_ids,
-        source_class_probabilities,
-        source_class_ranks,
-    )
-    source_features_present = any(value is not None for value in source_feature_values)
-    if source_features_present and not all(value is not None for value in source_feature_values):
-        raise ValueError("Source-specific candidate features must be supplied as one complete set")
-    map_means = np.asarray(
-        list(source_map_mean_scores) if source_map_mean_scores is not None else np.zeros(len(candidates)),
-        dtype=np.float32,
-    ).reshape(-1)
-    map_mass = np.asarray(
-        list(source_map_mass_coverages) if source_map_mass_coverages is not None else np.zeros(len(candidates)),
-        dtype=np.float32,
-    ).reshape(-1)
-    score_density = np.asarray(
-        list(source_score_densities) if source_score_densities is not None else np.zeros(len(candidates)),
-        dtype=np.float32,
-    ).reshape(-1)
-    class_ids = np.asarray(
-        list(source_class_ids) if source_class_ids is not None else np.full(len(candidates), -1),
-        dtype=np.int16,
-    ).reshape(-1)
-    class_probabilities = np.asarray(
-        list(source_class_probabilities) if source_class_probabilities is not None else np.zeros(len(candidates)),
-        dtype=np.float32,
-    ).reshape(-1)
-    class_ranks = np.asarray(
-        list(source_class_ranks) if source_class_ranks is not None else np.full(len(candidates), -1),
-        dtype=np.int8,
-    ).reshape(-1)
-    if any(len(values) != len(candidates) for values in (
-        map_means, map_mass, score_density, class_ids, class_probabilities, class_ranks
-    )):
-        raise ValueError("Candidate and source-specific feature counts differ")
-    frozen_dsll_maps = np.asarray(
-        dsll_source_maps if dsll_source_maps is not None else np.zeros((0, *shape)),
-        dtype=np.float32,
-    )
-    frozen_dsll_ids = np.asarray(
-        list(dsll_source_map_ids) if dsll_source_map_ids is not None else [], dtype="U32"
-    ).reshape(-1)
-    if frozen_dsll_maps.ndim != 3 or tuple(frozen_dsll_maps.shape[1:]) != shape:
-        raise ValueError("Frozen DSLL maps do not match candidate geometry")
-    if len(frozen_dsll_maps) != len(frozen_dsll_ids):
-        raise ValueError("Frozen DSLL map IDs and maps differ")
-    provenance_present = any(
-        value is not None for value in (cam_levels, prompt_ids, multimask_indices)
-    )
-    if provenance_present and not all(
-        value is not None for value in (cam_levels, prompt_ids, multimask_indices)
-    ):
-        raise ValueError("Exact candidate provenance must be supplied as one complete set")
-    levels = (
-        np.asarray(list(cam_levels), dtype=np.float32).reshape(-1)
-        if cam_levels is not None
-        else np.full(len(candidates), -1.0, dtype=np.float32)
-    )
-    exact_prompt_ids = (
-        np.asarray(list(prompt_ids), dtype="U128").reshape(-1)
-        if prompt_ids is not None
-        else np.full(len(candidates), "", dtype="U128")
-    )
-    multimask = (
-        np.asarray(list(multimask_indices), dtype=np.int16).reshape(-1)
-        if multimask_indices is not None
-        else np.full(len(candidates), -1, dtype=np.int16)
-    )
-    if not (
-        len(levels) == len(exact_prompt_ids) == len(multimask) == len(candidates)
-    ):
-        raise ValueError("Candidate and exact-provenance counts differ")
 
     support_present = bone_support is not None
     support = (
@@ -179,10 +92,7 @@ def save_candidate_diagnostics(
 
     np.savez_compressed(
         path,
-        schema_version=np.asarray(
-            [4 if source_features_present else (3 if provenance_present else (2 if sources_present else 1))],
-            dtype=np.int32,
-        ),
+        schema_version=np.asarray([2 if sources_present else 1], dtype=np.int32),
         sam_masks=candidates,
         refined_mask=np.asarray(refined_mask, dtype=np.uint8),
         final_mask=np.asarray(final_mask, dtype=np.uint8),
@@ -198,17 +108,6 @@ def save_candidate_diagnostics(
         component_ids=components,
         prompt_modes=modes,
         proposal_source_ids=sources,
-        source_map_mean_scores=map_means,
-        source_map_mass_coverages=map_mass,
-        source_score_densities=score_density,
-        source_class_ids=class_ids,
-        source_class_probabilities=class_probabilities,
-        source_class_ranks=class_ranks,
-        dsll_source_maps=frozen_dsll_maps,
-        dsll_source_map_ids=frozen_dsll_ids,
-        cam_levels=levels,
-        prompt_ids=exact_prompt_ids,
-        multimask_indices=multimask,
     )
     return {
         "diagnostic_path": str(Path("candidate_diagnostics") / path.name),
@@ -357,7 +256,7 @@ def validate_candidate_diagnostics_manifest(
             raise ValueError(f"Candidate diagnostic file/hash mismatch for {stem}")
         with np.load(path, allow_pickle=False) as payload:
             schema_version = int(payload["schema_version"][0])
-            if schema_version not in {1, 2, 3, 4}:
+            if schema_version not in {1, 2}:
                 raise ValueError(f"Unsupported candidate diagnostic schema for {stem}")
             expected_shape = (int(summary["image_size"]),) * 2
             if tuple(payload["final_mask"].shape) != expected_shape:
@@ -371,31 +270,6 @@ def validate_candidate_diagnostics_manifest(
                 ):
                     raise ValueError(
                         f"Candidate proposal-source provenance mismatch for {stem}"
-                    )
-            if schema_version >= 3:
-                required = ("cam_levels", "prompt_ids", "multimask_indices")
-                if any(field not in payload for field in required) or any(
-                    len(payload[field]) != len(payload["sam_masks"])
-                    for field in required
-                ):
-                    raise ValueError(
-                        f"Candidate exact-prompt provenance mismatch for {stem}"
-                    )
-            if schema_version >= 4:
-                source_fields = (
-                    "source_map_mean_scores",
-                    "source_map_mass_coverages",
-                    "source_score_densities",
-                    "source_class_ids",
-                    "source_class_probabilities",
-                    "source_class_ranks",
-                )
-                if any(field not in payload for field in source_fields) or any(
-                    len(payload[field]) != len(payload["sam_masks"])
-                    for field in source_fields
-                ):
-                    raise ValueError(
-                        f"Candidate source-specific feature provenance mismatch for {stem}"
                     )
 
     return indexed, {

@@ -34,14 +34,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-fully-freeze-sha256")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-overall-dice", type=float)
-    parser.add_argument(
-        "--allow-validation-ablation",
-        action="store_true",
-        help=(
-            "Evaluate a predeclared validation-only ablation whose Dice is not "
-            "expected to reproduce the locked baseline. Never valid on test."
-        ),
-    )
     return parser.parse_args()
 
 
@@ -84,43 +76,12 @@ def _summarize(rows: list[dict[str, object]]) -> dict[str, object]:
             ),
             "source_counts": dict(sorted(Counter(str(row["source"]) for row in selected).items())),
         }
-        if selected and "candidate_oracle_dice" in selected[0]:
-            summary[group].update({
-                "candidate_oracle_dice": float(
-                    np.mean([float(row["candidate_oracle_dice"]) for row in selected])
-                ),
-                "selector_regret": float(
-                    np.mean([
-                        float(row["candidate_oracle_dice"]) - float(row["dice"])
-                        for row in selected
-                    ])
-                ),
-                "candidate_recall_at_0_10": float(
-                    np.mean([float(row["candidate_oracle_dice"]) >= 0.10 for row in selected])
-                ),
-                "candidate_recall_at_0_30": float(
-                    np.mean([float(row["candidate_oracle_dice"]) >= 0.30 for row in selected])
-                ),
-                "candidate_recall_at_0_50": float(
-                    np.mean([float(row["candidate_oracle_dice"]) >= 0.50 for row in selected])
-                ),
-                "candidate_count_median": float(
-                    np.median([int(row["candidate_count"]) for row in selected])
-                ),
-                "candidate_count_iqr": [
-                    float(value) for value in np.percentile(
-                        [int(row["candidate_count"]) for row in selected], [25, 75]
-                    )
-                ],
-            })
     return summary
 
 
 def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=False)
-    if args.allow_validation_ablation and args.split != "val":
-        raise ValueError("--allow-validation-ablation is validation-only")
     split_rows = load_split_rows_without_annotations(
         args.split_manifest,
         expected_sha256=args.expected_split_sha256,
@@ -221,8 +182,7 @@ def main() -> None:
         if sha256_file(candidate_path) != selection["candidate_payload_sha256"]:
             raise ValueError(f"candidate payload changed: {image_id}")
         with np.load(candidate_path, allow_pickle=False) as payload:
-            candidate_masks = payload["sam_masks"].astype(bool)
-            prediction = candidate_masks[int(selection["selected_candidate_index"])]
+            prediction = payload["sam_masks"][int(selection["selected_candidate_index"])].astype(bool)
         target = np.asarray(
             Image.fromarray(native_target.astype(np.uint8) * 255, mode="L").resize(
                 (prediction.shape[1], prediction.shape[0]), Image.Resampling.NEAREST
@@ -231,17 +191,6 @@ def main() -> None:
         intersection = int(np.logical_and(prediction, target).sum())
         pred_area = int(prediction.sum())
         gt_area = int(target.sum())
-        candidate_intersections = np.logical_and(
-            candidate_masks, target[None]
-        ).sum(axis=(1, 2))
-        candidate_denominators = candidate_masks.sum(axis=(1, 2)) + gt_area
-        candidate_dice = np.divide(
-            2.0 * candidate_intersections,
-            candidate_denominators,
-            out=np.zeros(len(candidate_masks), dtype=np.float64),
-            where=candidate_denominators > 0,
-        )
-        oracle_index = int(np.argmax(candidate_dice))
         per_image.append(
             {
                 "image_id": image_id,
@@ -255,9 +204,6 @@ def main() -> None:
                 "selected_gt_area_ratio": float(pred_area / max(1, gt_area)),
                 "source": selection["selected_source"],
                 "selected_candidate_index": int(selection["selected_candidate_index"]),
-                "candidate_count": int(len(candidate_masks)),
-                "candidate_oracle_index": oracle_index,
-                "candidate_oracle_dice": float(candidate_dice[oracle_index]),
             }
         )
         if fully_rows is not None and args.fully_prediction_root is not None:
@@ -297,15 +243,7 @@ def main() -> None:
     counts = {group: int(summary[group]["n"]) for group in ("overall", "small", "medium", "large")}
     if args.split == "val" and counts != EXPECTED_VAL_COUNTS:
         raise ValueError(f"validation subgroup counts differ: {counts}")
-    expected_dice = (
-        None
-        if args.allow_validation_ablation
-        else (
-            EXPECTED_DICE
-            if args.split == "val" and args.expected_overall_dice is None
-            else args.expected_overall_dice
-        )
-    )
+    expected_dice = EXPECTED_DICE if args.split == "val" and args.expected_overall_dice is None else args.expected_overall_dice
     if expected_dice is not None and abs(float(summary["overall"]["dice"]) - expected_dice) > 1.0e-12:
         raise ValueError("final validation Dice did not reproduce the frozen result")
 
@@ -345,7 +283,6 @@ def main() -> None:
             writer.writerows(comparison_rows)
     report = {
         "method": "G1 + fixed equal percentile-rank fusion",
-        "validation_ablation": bool(args.allow_validation_ablation),
         "split": args.split,
         "selection_freeze_sha256": args.expected_selection_freeze_sha256,
         "split_sha256": args.expected_split_sha256,
@@ -375,9 +312,7 @@ def main() -> None:
         ),
         "comparison_sha256": sha256_file(comparison_path) if comparison_path is not None else None,
         "joint_annotation_pass": fully_summary is not None,
-        "overall_dice_reproduced": (
-            args.split == "val" and not args.allow_validation_ablation
-        ),
+        "overall_dice_reproduced": args.split == "val",
         "test_evaluated": args.split == "test",
     }
     (args.output_dir / "evaluation_audit.json").write_text(

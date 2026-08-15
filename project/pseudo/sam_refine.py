@@ -1,18 +1,8 @@
 from __future__ import annotations
 
-"""SAM v1 wrapper for point-prompted pseudo-mask generation.
+"""SAM v1 ViT-B wrapper for point-prompted pseudo-mask generation."""
 
-The official Segment Anything registry exposes three matched SAM-v1 model
-types (ViT-B/L/H).  Keeping the model type explicit is important for the G4
-backbone ablation: checkpoint identity alone must never silently choose an
-architecture.
-"""
-
-import importlib
-import importlib.util
-import sys
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -22,148 +12,37 @@ Component = Any
 
 
 class SAMPredictor:
-    """Thin fail-closed wrapper around an official promptable SAM model.
-
-    ``sam_v1`` remains the default and is byte-for-byte compatible with the
-    thesis baseline.  The other backends are loaded only from an explicitly
-    supplied, hash-locked official source checkout.  Keeping one wrapper is
-    deliberate: prompt construction, gallery filtering and downstream
-    selection must not change during the G4 backbone/foundation-model panel.
-    """
-
-    MODEL_TYPES = ("vit_b", "vit_l", "vit_h")
-    BACKENDS = ("sam_v1", "sam2", "sam_med2d", "medsam")
+    """Thin fail-closed wrapper around the official SAM v1 ViT-B model."""
 
     def __init__(
         self,
         checkpoint_path: str | Path,
         device: str = "cuda",
-        model_type: str = "vit_b",
-        backend: str = "sam_v1",
-        source_root: str | Path | None = None,
     ) -> None:
-        if backend not in self.BACKENDS:
-            raise ValueError(f"Unsupported SAM backend {backend!r}; choose from {self.BACKENDS}")
+        try:
+            from segment_anything import (
+                SamAutomaticMaskGenerator,
+                SamPredictor,
+                sam_model_registry,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                "segment_anything is not installed. "
+                "Run: pip install git+https://github.com/facebookresearch/segment-anything.git"
+            ) from exc
+
         checkpoint_path = Path(checkpoint_path)
         if not checkpoint_path.is_file():
             raise FileNotFoundError(
-                f"SAM {backend}/{model_type} checkpoint not found at {checkpoint_path}. "
-                "Provide the matching official SAM-v1 checkpoint explicitly."
+                f"SAM ViT-B checkpoint not found at {checkpoint_path}. "
+                "Provide the official sam_vit_b_01ec64.pth file explicitly."
             )
 
-        if backend == "sam_v1":
-            if model_type not in self.MODEL_TYPES:
-                raise ValueError(
-                    f"Unsupported SAM-v1 model type {model_type!r}; choose from {self.MODEL_TYPES}"
-                )
-            try:
-                from segment_anything import (
-                    SamAutomaticMaskGenerator,
-                    SamPredictor,
-                    sam_model_registry,
-                )
-            except ImportError as exc:
-                raise ImportError(
-                    "segment_anything is not installed. Run: pip install "
-                    "git+https://github.com/facebookresearch/segment-anything.git"
-                ) from exc
-            sam = sam_model_registry[model_type](checkpoint=str(checkpoint_path))
-            sam.to(device=device)
-            predictor = SamPredictor(sam)
-            automatic_mask_generator_cls = SamAutomaticMaskGenerator
-        elif backend == "sam2":
-            root = self._require_source_root(source_root, "sam2")
-            if str(root) not in sys.path:
-                sys.path.insert(0, str(root))
-            from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
-            from sam2.build_sam import build_sam2
-            from sam2.sam2_image_predictor import SAM2ImagePredictor
-
-            allowed = {"sam2.1_hiera_large": "configs/sam2.1/sam2.1_hiera_l.yaml"}
-            if model_type not in allowed:
-                raise ValueError(
-                    f"Unsupported SAM2 model type {model_type!r}; choose from {tuple(allowed)}"
-                )
-            sam = build_sam2(
-                allowed[model_type],
-                str(checkpoint_path),
-                device=device,
-                apply_postprocessing=True,
-            )
-            predictor = SAM2ImagePredictor(sam)
-            automatic_mask_generator_cls = SAM2AutomaticMaskGenerator
-        elif backend == "sam_med2d":
-            root = self._require_source_root(source_root, "SAM-Med2D")
-            package = self._load_segment_anything_alias(
-                "btxrd_sam_med2d_segment_anything", root / "segment_anything"
-            )
-            predictor_mod = importlib.import_module(
-                f"{package.__name__}.predictor_sammed"
-            )
-            if model_type != "vit_b_256_adapter":
-                raise ValueError("SAM-Med2D official screening requires vit_b_256_adapter")
-            args = SimpleNamespace(
-                image_size=256,
-                sam_checkpoint=str(checkpoint_path),
-                encoder_adapter=True,
-            )
-            sam = package.sam_model_registry["vit_b"](args)
-            sam.to(device=device)
-            sam.eval()
-            predictor = predictor_mod.SammedPredictor(sam)
-            automatic_mask_generator_cls = package.SamAutomaticMaskGenerator
-        else:  # medsam
-            root = self._require_source_root(source_root, "MedSAM")
-            package = self._load_segment_anything_alias(
-                "btxrd_medsam_segment_anything", root / "segment_anything"
-            )
-            if model_type != "vit_b":
-                raise ValueError("Official MedSAM checkpoint is a ViT-B model")
-            sam = package.sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
-            sam.to(device=device)
-            sam.eval()
-            predictor = package.SamPredictor(sam)
-            automatic_mask_generator_cls = package.SamAutomaticMaskGenerator
-
-        self._predictor = predictor
-        self._automatic_mask_generator_cls = automatic_mask_generator_cls
-        self.backend = backend
-        self.model_type = model_type
+        sam = sam_model_registry["vit_b"](checkpoint=str(checkpoint_path))
+        sam.to(device=device)
+        self._predictor = SamPredictor(sam)
+        self._automatic_mask_generator_cls = SamAutomaticMaskGenerator
         self.last_prompt_stats: dict[str, int] = {}
-
-    @staticmethod
-    def _require_source_root(source_root: str | Path | None, name: str) -> Path:
-        if source_root is None:
-            raise ValueError(f"{name} requires an explicit --sam-source-root")
-        root = Path(source_root).resolve()
-        if not root.is_dir():
-            raise FileNotFoundError(f"Official {name} source root not found: {root}")
-        return root
-
-    @staticmethod
-    def _load_segment_anything_alias(alias: str, package_dir: Path):
-        """Load a SAM-family fork without shadowing installed SAM-v1.
-
-        MedSAM and SAM-Med2D both retain the top-level package name
-        ``segment_anything``.  Loading them under a private alias preserves
-        relative imports and prevents accidental import-order contamination.
-        """
-        if alias in sys.modules:
-            return sys.modules[alias]
-        init_path = package_dir / "__init__.py"
-        if not init_path.is_file():
-            raise FileNotFoundError(f"Missing official package entrypoint: {init_path}")
-        spec = importlib.util.spec_from_file_location(
-            alias,
-            init_path,
-            submodule_search_locations=[str(package_dir)],
-        )
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Could not load official SAM package at {package_dir}")
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[alias] = module
-        spec.loader.exec_module(module)
-        return module
 
     def predict_grid_gallery(
         self,

@@ -48,35 +48,19 @@ def _normalize_cam(cam: torch.Tensor, degenerate_threshold: float = 1e-4) -> tor
     return torch.where(cam_range > degenerate_threshold, normalized, torch.zeros_like(normalized))
 
 
-def normalized_classic_cam(
-    model: nn.Module,
-    images: torch.Tensor,
-    class_index: torch.Tensor,
-) -> torch.Tensor:
-    """Return the same normalized full-image CAM optimized by PuzzleCAM."""
-    features = model.forward_features(images).float()
-    return _normalize_cam(classic_cam(features, model.classifier, class_index))
-
-
 def puzzle_cam_consistency_loss(
     model: nn.Module,
     images: torch.Tensor,
     target_class: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     batch_size = images.shape[0]
-    is_binary = int(model.classifier.out_features) == 1
-    cam_class = (
-        torch.zeros(batch_size, dtype=torch.long, device=images.device)
-        if is_binary
-        else target_class.reshape(-1).long()
-    )
 
     with torch.cuda.amp.autocast(enabled=False):
         full_features = model.forward_features(images).float()
-        full_cam = classic_cam(full_features, model.classifier, cam_class)
+        full_cam = classic_cam(full_features, model.classifier, target_class)
 
         tiled_images = tile_2x2(images)
-        tiled_target_class = cam_class.repeat(4)
+        tiled_target_class = target_class.repeat(4)
         tiled_features = model.forward_features(tiled_images).float()
         tiled_cam = classic_cam(tiled_features, model.classifier, tiled_target_class)
         reconstructed = merge_2x2(tiled_cam, batch_size)
@@ -91,11 +75,6 @@ def puzzle_cam_consistency_loss(
         merged_features = merge_2x2(tiled_features, batch_size)
         merged_pooled = model.avgpool(merged_features).flatten(1)
         merged_logits = model.classifier(merged_pooled)
-        if is_binary:
-            p_cls_loss = F.binary_cross_entropy_with_logits(
-                merged_logits.reshape(-1), target_class.reshape(-1).float()
-            )
-        else:
-            p_cls_loss = F.cross_entropy(merged_logits, target_class.reshape(-1).long())
+        p_cls_loss = F.cross_entropy(merged_logits, target_class)
 
     return full_cam_norm, reconstructed_norm, re_loss, p_cls_loss
