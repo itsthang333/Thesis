@@ -8,6 +8,7 @@ import math
 import os
 import platform
 import random
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -67,6 +68,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-split-sha256", required=True)
     parser.add_argument("--expected-model-weight-sha256", required=True)
+    parser.add_argument(
+        "--model-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Optional complete local BiomedCLIP snapshot. When supplied, the "
+            "model, tokenizer, and text architecture are loaded directly from "
+            "this directory without consulting the Hugging Face cache."
+        ),
+    )
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--output-size", type=int, default=320)
     parser.add_argument("--seed", type=int, default=42)
@@ -135,6 +146,50 @@ def find_weight_file(expected_sha256: str) -> Path:
     return next(iter(resolved.values()))
 
 
+def load_biomedclip(
+    open_clip: Any,
+    *,
+    model_dir: Path | None,
+) -> tuple[Any, Any, Any, Path]:
+    """Load the frozen model either from its original cache or a local snapshot."""
+
+    if model_dir is None:
+        model, preprocess = open_clip.create_model_from_pretrained(BIOMEDCLIP_MODEL_ID)
+        tokenizer = open_clip.get_tokenizer(BIOMEDCLIP_MODEL_ID)
+        return model, preprocess, tokenizer, Path()
+
+    root = model_dir.expanduser().resolve()
+    required = (
+        "open_clip_config.json",
+        "open_clip_pytorch_model.bin",
+        "config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "special_tokens_map.json",
+        "vocab.txt",
+    )
+    missing = [name for name in required if not (root / name).is_file()]
+    if missing:
+        raise FileNotFoundError(
+            f"Local BiomedCLIP snapshot is incomplete: {', '.join(missing)}"
+        )
+    config = json.loads((root / "open_clip_config.json").read_text(encoding="utf-8"))
+    text_cfg = config["model_cfg"]["text_cfg"]
+    text_cfg["hf_model_name"] = str(root)
+    text_cfg["hf_tokenizer_name"] = str(root)
+    with tempfile.TemporaryDirectory(prefix="btxrd_biomedclip_") as temporary:
+        local_config = Path(temporary) / "btxrd_biomedclip_local.json"
+        local_config.write_text(json.dumps(config), encoding="utf-8")
+        open_clip.add_model_config(local_config)
+        model, preprocess = open_clip.create_model_from_pretrained(
+            "btxrd_biomedclip_local",
+            pretrained=str(root / "open_clip_pytorch_model.bin"),
+            pretrained_hf=False,
+        )
+        tokenizer = open_clip.get_tokenizer("btxrd_biomedclip_local")
+    return model, preprocess, tokenizer, root / "open_clip_pytorch_model.bin"
+
+
 def save_map(path: Path, saliency: np.ndarray) -> None:
     if saliency.ndim != 2 or not np.isfinite(saliency).all():
         raise ValueError("Cannot save a non-finite/non-2D saliency map")
@@ -195,9 +250,17 @@ def main() -> None:
         raise ValueError(f"transformers version drift: {transformers.__version__}")
 
     device = torch.device(args.device)
-    model, preprocess = open_clip.create_model_from_pretrained(BIOMEDCLIP_MODEL_ID)
-    tokenizer = open_clip.get_tokenizer(BIOMEDCLIP_MODEL_ID)
-    weight_path = find_weight_file(args.expected_model_weight_sha256)
+    model, preprocess, tokenizer, local_weight = load_biomedclip(
+        open_clip,
+        model_dir=args.model_dir,
+    )
+    weight_path = (
+        local_weight
+        if args.model_dir is not None
+        else find_weight_file(args.expected_model_weight_sha256)
+    )
+    if sha256_file(weight_path) != args.expected_model_weight_sha256:
+        raise ValueError("Frozen BiomedCLIP weight SHA-256 mismatch")
     verify_frozen_test_config(
         args.frozen_config,
         split=args.split,

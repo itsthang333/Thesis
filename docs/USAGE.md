@@ -52,6 +52,37 @@ python -m pip install -r project/requirements-g1.txt
 On Windows, replace `source <environment>/bin/activate` with the corresponding
 `<environment>\\Scripts\\activate` command.
 
+## Interactive end-to-end demonstration
+
+The repository includes
+`notebooks/BTXRD_Rich_Gallery_G1_Demo.ipynb`. It runs one manifest-selected
+image through every inference stage and displays prediction-time artifacts
+without opening spatial annotations.
+
+Install Jupyter and plotting support in the candidate environment:
+
+```bash
+python -m pip install -r project/requirements-demo.txt
+```
+
+Keep the separate G1 environment described above. The notebook invokes
+`.venv-candidate` for BiomedCLIP, LayerCAM, and SAM, then invokes `.venv-g1`
+for RAD-DINO and G1. This preserves the two frozen Transformers versions while
+still presenting one sequential notebook.
+
+Before running the first cell, provide:
+
+- the external checkpoint package root;
+- the BTXRD root;
+- the canonical split manifest;
+- a validation image ID, or a final frozen test lock when using a test image.
+
+The supplied default image ID is a validation demonstration case. Every heavy
+stage writes to `demo_outputs/<image_stem>/`; rerunning that stage deliberately
+replaces only its own demo output. The final cell shows the input radiograph,
+BiomedCLIP map, fused prompt evidence, and selected native-resolution mask.
+No Dice, IoU, polygon, bounding box, or lesion-size information is consumed.
+
 ## Build the immutable split manifest
 
 ```bash
@@ -108,6 +139,7 @@ python project/generate_biomedclip_saliency.py \
   --dataset-root <BTXRD_ROOT> \
   --split-manifest <SPLIT_MANIFEST> \
   --split <SPLIT> \
+  --model-dir <BIOMEDCLIP_SNAPSHOT_DIR> \
   --output-dir <SALIENCY_ROOT>/<SPLIT> \
   --expected-split-sha256 <SPLIT_SHA256> \
   --expected-model-weight-sha256 <BIOMEDCLIP_WEIGHT_SHA256> \

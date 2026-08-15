@@ -13,6 +13,7 @@ Generated data and model weights are external inputs and are never committed.
 | `project/` | Executable pipeline source. |
 | `tests/` | Unit, contract, and numerical tests for the retained method. |
 | `docs/` | Source map and operating instructions only. |
+| `notebooks/` | Interactive, annotation-free inference demonstration. |
 
 ## Pipeline entry points
 
@@ -32,6 +33,7 @@ Generated data and model weights are external inputs and are never committed.
 | `evaluate_final_rich_gallery.py` | Open spatial annotations only after freezing and compute metrics. |
 | `freeze_final_test_protocol.py` | Bind source, split, checkpoints, and auxiliary assets before test access. |
 | `capture_final_run_environment.py` | Record the software and accelerator environment. |
+| `demo_final_pipeline.py` | Orchestrate the exact pipeline on one image for the notebook demo. |
 
 ## Packages
 
@@ -70,6 +72,7 @@ Utility for building the group-aware BTXRD split manifest.
 - `project/requirements.txt`: shared packages;
 - `project/requirements-candidate.txt`: candidate and BiomedCLIP environment;
 - `project/requirements-g1.txt`: RAD-DINO and G1 environment.
+- `project/requirements-demo.txt`: Jupyter and visualization packages layered on the candidate environment.
 
 Candidate generation and G1 use separate environments because their frozen
 model stacks require different Transformers releases.

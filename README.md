@@ -27,6 +27,7 @@ archive, or qualitative test case is stored in this repository.
 
 - [Source structure](docs/SOURCE_STRUCTURE.md)
 - [Installation, training, inference, and evaluation](docs/USAGE.md)
+- [Interactive one-image inference demo](notebooks/BTXRD_Rich_Gallery_G1_Demo.ipynb)
 
 ## Quick verification
 

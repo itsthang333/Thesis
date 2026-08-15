@@ -24,6 +24,7 @@ Thumbs.db
 
 # Project outputs and checkpoints
 outputs/
+demo_outputs/
 runs/
 checkpoints/
 .tmp_notebook_outputs/
