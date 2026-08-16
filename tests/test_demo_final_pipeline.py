@@ -15,6 +15,7 @@ def test_demo_config_json_round_trip(tmp_path: Path) -> None:
         checkpoint_root=tmp_path / "weights",
         dataset_root=tmp_path / "data",
         split_manifest=tmp_path / "split.csv",
+        classifier_320_split_manifest=tmp_path / "classifier_320_split.csv",
         split="val",
         image_id="IMG000001.jpeg",
         work_dir=tmp_path / "work",
@@ -45,7 +46,7 @@ def test_local_biomedclip_loader_rewrites_text_paths(tmp_path: Path) -> None:
                 "hf_tokenizer_name": "remote/model",
             }
         },
-        "preprocess_cfg": {},
+        "preprocess_cfg": {"mean": [0.1, 0.2, 0.3], "std": [0.4, 0.5, 0.6]},
     }
     (model_dir / "open_clip_config.json").write_text(json.dumps(config))
     for name in (
@@ -67,11 +68,13 @@ def test_local_biomedclip_loader_rewrites_text_paths(tmp_path: Path) -> None:
             assert name == "btxrd_biomedclip_local"
             assert self.config_path is not None
             local = json.loads(self.config_path.read_text())
-            text = local["model_cfg"]["text_cfg"]
+            text = local["text_cfg"]
             assert text["hf_model_name"] == str(model_dir.resolve())
             assert text["hf_tokenizer_name"] == str(model_dir.resolve())
             self.pretrained = kwargs["pretrained"]
             self.pretrained_hf = kwargs["pretrained_hf"]
+            assert kwargs["image_mean"] == (0.1, 0.2, 0.3)
+            assert kwargs["image_std"] == (0.4, 0.5, 0.6)
             return "model", "preprocess"
 
         def get_tokenizer(self, name: str):

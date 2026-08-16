@@ -68,6 +68,7 @@ class DemoConfig:
     checkpoint_root: Path
     dataset_root: Path
     split_manifest: Path
+    classifier_320_split_manifest: Path
     split: str
     image_id: str
     work_dir: Path
@@ -103,7 +104,7 @@ class DemoConfig:
         values = json.loads(path.read_text(encoding="utf-8"))
         for name in (
             "repository_root", "checkpoint_root", "dataset_root",
-            "split_manifest", "work_dir",
+            "split_manifest", "classifier_320_split_manifest", "work_dir",
         ):
             values[name] = Path(values[name])
         if values.get("frozen_config"):
@@ -144,8 +145,15 @@ def validate_demo(config: DemoConfig) -> dict[str, object]:
         raise ValueError("The demo split must be val or test")
     if config.split == "test" and config.frozen_config is None:
         raise ValueError("A locked final-test protocol is required for a test demo")
-    if not torch.cuda.is_available() or config.device != "cuda":
-        raise RuntimeError("The exact demo requires one CUDA GPU")
+    if config.device not in {"cpu", "cuda"}:
+        raise ValueError("The demo device must be 'cpu' or 'cuda'")
+    if config.device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested but is unavailable")
+    if not config.classifier_320_split_manifest.is_file():
+        raise FileNotFoundError(
+            "Missing split manifest bound to the 320 px classifier: "
+            f"{config.classifier_320_split_manifest}"
+        )
     files = {
         "classifier_320": config.classifier_320,
         "classifier_448": config.classifier_448,
@@ -313,7 +321,9 @@ def generate_candidate_demo(config: DemoConfig, mode: str) -> dict[str, object]:
         source_root=config.repository_root,
         data_root=config.dataset_root,
         split_manifest=config.split_manifest,
-        classifier_split_manifest=config.split_manifest,
+        classifier_split_manifest=(
+            config.classifier_320_split_manifest if mode == "anchor" else config.split_manifest
+        ),
         split=config.split,
         classifier=(config.classifier_320 if mode == "anchor" else config.classifier_448),
         sam=config.sam_checkpoint,
@@ -325,6 +335,12 @@ def generate_candidate_demo(config: DemoConfig, mode: str) -> dict[str, object]:
         external_weight_sha256=(CHECKPOINT_HASHES["biomedclip"] if mode == "anchor" else None),
         frozen_config=config.frozen_config,
     )
+    # The production wrapper defaults both proposal models to CUDA.  A local
+    # thesis demo must also be able to run deterministically on a CPU-only
+    # workstation (or on a GPU whose VRAM is too small for SAM ViT-B).
+    for option in ("--classifier-device", "--sam-device"):
+        option_index = command.index(option)
+        command[option_index + 1] = config.device
     command.extend(["--image-list", str(image_list), "--num-workers", "0"])
     env = os.environ.copy()
     env.update({"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "PYTHONUNBUFFERED": "1"})

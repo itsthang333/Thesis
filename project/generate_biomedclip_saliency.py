@@ -174,17 +174,25 @@ def load_biomedclip(
             f"Local BiomedCLIP snapshot is incomplete: {', '.join(missing)}"
         )
     config = json.loads((root / "open_clip_config.json").read_text(encoding="utf-8"))
-    text_cfg = config["model_cfg"]["text_cfg"]
+    model_cfg = config["model_cfg"]
+    preprocess_cfg = config["preprocess_cfg"]
+    text_cfg = model_cfg["text_cfg"]
     text_cfg["hf_model_name"] = str(root)
     text_cfg["hf_tokenizer_name"] = str(root)
     with tempfile.TemporaryDirectory(prefix="btxrd_biomedclip_") as temporary:
         local_config = Path(temporary) / "btxrd_biomedclip_local.json"
-        local_config.write_text(json.dumps(config), encoding="utf-8")
+        # open_clip 2.32 registers model JSON files whose top level is the
+        # model configuration itself.  The Hugging Face snapshot wraps that
+        # object alongside preprocessing metadata, so register only model_cfg
+        # and pass the frozen normalization values explicitly below.
+        local_config.write_text(json.dumps(model_cfg), encoding="utf-8")
         open_clip.add_model_config(local_config)
         model, preprocess = open_clip.create_model_from_pretrained(
             "btxrd_biomedclip_local",
             pretrained=str(root / "open_clip_pytorch_model.bin"),
             pretrained_hf=False,
+            image_mean=tuple(float(value) for value in preprocess_cfg["mean"]),
+            image_std=tuple(float(value) for value in preprocess_cfg["std"]),
         )
         tokenizer = open_clip.get_tokenizer("btxrd_biomedclip_local")
     return model, preprocess, tokenizer, root / "open_clip_pytorch_model.bin"
